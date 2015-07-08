@@ -3,6 +3,7 @@ import string
 
 from ..... import base
 from pulp.server.auth import authorization
+from pulp.server.controllers import user as user_controller
 from pulp.server.db.model.auth import Role
 from pulp.server.managers import factory as manager_factory
 import pulp.server.exceptions as exceptions
@@ -14,8 +15,6 @@ class PermissionManagerTests(base.PulpServerTests):
 
         self.alpha_num = string.letters + string.digits
 
-        self.user_manager = manager_factory.user_manager()
-        self.user_query_manager = manager_factory.user_query_manager()
         self.role_manager = manager_factory.role_manager()
         self.role_query_manager = manager_factory.role_query_manager()
         self.permission_manager = manager_factory.permission_manager()
@@ -34,7 +33,7 @@ class PermissionManagerTests(base.PulpServerTests):
     def _create_user(self):
         username = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))
         password = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))
-        return self.user_manager.create_user(login=username, password=password, name=username)
+        return user_controller.create_user(login=username, password=password, name=username)
 
     def _create_role(self):
         name = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))
@@ -49,75 +48,75 @@ class PermissionManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.CREATE
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_user_create_success(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.CREATE
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_user_read_failure(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_user_read_success(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_user_update_failure(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.UPDATE
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_user_update_success(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.UPDATE
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_user_delete_failure(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.DELETE
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_user_delete_success(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.DELETE
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_user_execute_failure(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.EXECUTE
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_user_execute_success(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.EXECUTE
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_user_permission_revoke(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        self.permission_manager.grant(r, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
-        self.permission_manager.revoke(r, u['login'], [o])
-        self.assertFalse(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(r, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
+        self.permission_manager.revoke(r, u.login, [o])
+        self.assertFalse(user_controller.is_authorized(r, u.login, o))
 
     def test_non_existing_user_permission_revoke(self):
         login = 'non-existing-user-login'
@@ -146,15 +145,15 @@ class PermissionManagerTests(base.PulpServerTests):
         r = self._create_resource()
         p = r.rsplit('/', 2)[0] + '/'
         o = authorization.READ
-        self.permission_manager.grant(p, u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant(p, u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_root_permissions(self):
         u = self._create_user()
         r = self._create_resource()
         o = authorization.READ
-        self.permission_manager.grant('/', u['login'], [o])
-        self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
+        self.permission_manager.grant('/', u.login, [o])
+        self.assertTrue(user_controller.is_authorized(r, u.login, o))
 
     def test_operation_name_to_value(self):
         pm = manager_factory.permission_manager()

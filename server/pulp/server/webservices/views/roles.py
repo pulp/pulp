@@ -3,6 +3,7 @@ from django.views.generic import View
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
+from pulp.server.controllers import user as user_controller
 from pulp.server.managers import factory
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
@@ -28,12 +29,11 @@ class RolesView(View):
         :rtype: django.http.HttpResponse
         """
         role_query_manager = factory.role_query_manager()
-        user_query_manager = factory.user_query_manager()
         permissions_manager = factory.permission_manager()
         roles = role_query_manager.find_all()
         for role in roles:
-            role['users'] = [u['login'] for u in
-                             user_query_manager.find_users_belonging_to_role(role['id'])]
+            users = [u.login for u in user_controller.find_users_belonging_to_role(role['id'])]
+            role['users'] = users
 
             resource_permission = {}
             # isolate schema change
@@ -99,8 +99,7 @@ class RoleResourceView(View):
         role = factory.role_query_manager().find_by_id(role_id)
         if role is None:
             raise pulp_exceptions.MissingResource(role_id)
-        role['users'] = [u['login'] for u in
-                         factory.user_query_manager().find_users_belonging_to_role(role['id'])]
+        role['users'] = [u.login for u in user_controller.find_users_belonging_to_role(role['id'])]
         permissions_manager = factory.permission_manager()
         # isolate schema change
         resource_permission = {}
@@ -175,8 +174,7 @@ class RoleUsersView(View):
         :return: Response containing the users
         :rtype: django.http.HttpResponse
         """
-        user_query_manager = factory.user_query_manager()
-        role_users = user_query_manager.find_users_belonging_to_role(role_id)
+        role_users = user_controller.find_users_belonging_to_role(role_id)
         return generate_json_response_with_pulp_encoder(role_users)
 
     @auth_required(authorization.UPDATE)

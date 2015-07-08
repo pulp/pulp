@@ -7,7 +7,6 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Unit
 from pulp.plugins.types import database, model
 from pulp.server.db import model as me_model
-from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit, RepoImporter
 import pulp.server.exceptions as exceptions
@@ -162,7 +161,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-2')
         self.manager.associate_unit_by_id(source_repo_id, 'mock-type', 'unit-3')
 
-        fake_user = User('associate-user', '')
+        fake_user = me_model.User('associate-user', '')
         manager_factory.principal_manager().set_principal(principal=fake_user)
 
         mock_plugins.MOCK_IMPORTER.import_units.return_value = [Unit('mock-type', {'k': 'v'}, {},

@@ -68,15 +68,15 @@ class TestAuthenticationMethods(base.PulpServerTests):
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
     @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated')
-    @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_superuser',
+    @mock.patch('pulp.server.webservices.views.decorators.model.User.objects')
+    @mock.patch('pulp.server.webservices.views.decorators.user_controller.is_authorized',
                 return_value=False)
-    @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_authorized',
-                return_value=False)
-    def test_auth_decorator_not_super(self, mock_is_authed, *unused_mocks):
+    def test_auth_decorator_not_super(self, mock_is_authed, mock_user_qs, *unused_mocks):
         """
         Test that if the user is not a super user and the operation requires super user,
         an exception is raised. This test mocks out the authentication portion of the decorator.
         """
+        mock_user_qs.get_or_404.return_value.is_superuser.return_value = False
         decorated_func = decorators.auth_required(0, True)(self.func)
         self.assertRaises(PulpCodedAuthenticationException, decorated_func, None)
         self.assertEqual(0, mock_is_authed.call_count)
@@ -91,6 +91,7 @@ class TestAuthenticationMethods(base.PulpServerTests):
                 return_value=None)
     @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated',
                 return_value=None)
+    @mock.patch('pulp.server.webservices.views.decorators.model.User.objects')
     @mock.patch('pulp.server.webservices.views.decorators.is_consumer_authorized',
                 return_value=False)
     def test_auth_decorator_consumer_not_authorized(self, mock_is_authorized, *unused_mocks):
@@ -105,7 +106,8 @@ class TestAuthenticationMethods(base.PulpServerTests):
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
     @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated')
-    @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_authorized',
+    @mock.patch('pulp.server.webservices.views.decorators.model.User.objects')
+    @mock.patch('pulp.server.webservices.views.decorators.user_controller.is_authorized',
                 return_value=False)
     def test_auth_decorator_not_authorized(self, mock_is_authorized, *unused_mocks):
         """

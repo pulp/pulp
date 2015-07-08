@@ -322,3 +322,27 @@ class TestRepository(unittest.TestCase):
         result = test_serializer.to_representation(repo)
         self.assertDictEqual(result, {'best': 'joule', 'still_good': 'morning_times',
                                       '_id': 'test_id', 'id': 'test_repo_id'})
+
+
+class TestUser(unittest.TestCase):
+    """
+    Tests for the user serializer.
+    """
+
+    def test_meta(self):
+        """
+        Make sure that password is excluded and `id` is displayed as `_id`.
+        """
+        self.assertEquals(serializers.User.Meta.exclude_fields, ['password'])
+        self.assertDictEqual(serializers.User.Meta.remapped_fields, {'id': '_id'})
+
+    @mock.patch('pulp.server.webservices.views.serializers.reverse')
+    def test_get_href(self, mock_rev):
+        """
+        Test that reverse is correctly called to create an href for the user.
+        """
+        user = mock.MagicMock()
+        test_serializer = serializers.User()
+        result = test_serializer.get_href(user)
+        self.assertEquals(result, mock_rev.return_value)
+        mock_rev.assert_called_once_with('user_resource', kwargs={'login': user.login})

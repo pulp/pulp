@@ -5,39 +5,12 @@ import json
 import unittest
 
 import mock
-from bson import objectid
 
 from base import (assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE)
-from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
-from pulp.server.managers.auth.user import query
-from pulp.server.webservices.views import users, util
+from pulp.server.exceptions import InvalidValue, MissingValue
+from pulp.server.db import model
+from pulp.server.webservices.views import serializers, util
 from pulp.server.webservices.views.users import (UserResourceView, UserSearchView, UsersView)
-
-
-class TestSerialize(unittest.TestCase):
-    """
-    This class contains tests for the serialize() function.
-    """
-    @mock.patch('pulp.server.webservices.views.users._add_link', side_effect=users._add_link)
-    @mock.patch('pulp.server.webservices.views.users._process_dictionary_against_whitelist',
-                side_effect=users._process_dictionary_against_whitelist)
-    def test_serialize(self, _process_dictionary_against_whitelist, _add_link):
-        """
-        Test operation of the serialize() function.
-        """
-        user = {
-            '_id': objectid.ObjectId('54d950aeae7e1d0a0cc47aa6'), 'name': 'admin',
-            'roles': ['super-users'], '_ns': 'users', 'login': 'admin',
-            'password': '/NVf1/LCwqo=,pZTWY7wgoXDtkYi9QlXgZUAWT...eae7e1d0a0cc47aa6'}
-
-        new_user = users.serialize(user)
-
-        expected_user = {
-            '_id': objectid.ObjectId('54d950aeae7e1d0a0cc47aa6'), 'name': 'admin',
-            'roles': ['super-users'], '_ns': 'users', 'login': 'admin', '_href': '/v2/users/admin/'}
-        self.assertEqual(new_user, expected_user)
-        _process_dictionary_against_whitelist.assert_called_once_with(user, users.USER_WHITELIST)
-        _add_link.assert_called_once_with(user)
 
 
 class TestUserSearchView(unittest.TestCase):
@@ -50,8 +23,8 @@ class TestUserSearchView(unittest.TestCase):
         """
         self.assertEqual(UserSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
-        self.assertTrue(isinstance(UserSearchView.manager, query.UserQueryManager))
-        self.assertEqual(UserSearchView.serializer, users.serialize)
+        self.assertEqual(UserSearchView.model, model.User)
+        self.assertEqual(UserSearchView.model.serializer, serializers.User)
 
 
 class TestUsersView(unittest.TestCase):
@@ -62,45 +35,18 @@ class TestUsersView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_get_users(self, mock_factory, mock_resp):
+    @mock.patch('pulp.server.webservices.views.users.model.User')
+    def test_get_users(self, mock_model, mock_resp):
         """
         Test users retrieval.
         """
-        existing_users = [{'login': 'test-user', 'name': 'test-user', 'id': '12345'}]
-        mock_factory.user_query_manager.return_value.find_all.return_value = existing_users
-
         request = mock.MagicMock()
         view = UsersView()
         response = view.get(request)
-
-        expected_cont = [{'_href': '/v2/users/test-user/', 'login': 'test-user',
-                          'name': 'test-user'}]
-        mock_resp.assert_called_once_with(expected_cont)
+        mock_model.serializer.assert_called_once_with(mock_model.objects.return_value,
+                                                      multiple=True)
+        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.users.generate_redirect_response')
-    @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_create_user(self, mock_factory, mock_resp, mock_redirect):
-        """
-        Test user creation.
-        """
-        resp = {'login': 'test-user', 'name': 'test-user'}
-        mock_factory.user_manager.return_value.create_user.return_value = resp
-
-        request = mock.MagicMock()
-        request.body = json.dumps({'login': 'test-user', 'name': 'test-user', 'password': '11111'})
-        user = UsersView()
-        response = user.post(request)
-
-        expected_cont = {'_href': '/v2/users/test-user/', 'login': 'test-user',
-                         'name': 'test-user'}
-        mock_resp.assert_called_once_with(expected_cont)
-        mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
-        self.assertTrue(response is mock_redirect.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -139,16 +85,31 @@ class TestUsersView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['invalid_param'])
 
-    def test_add_link(self):
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.users.generate_redirect_response')
+    @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.users.factory')
+    @mock.patch('pulp.server.webservices.views.users.model.User')
+    @mock.patch('pulp.server.webservices.views.users.user_controller')
+    def test_create_user(self, mock_ctrl, mock_model, mock_factory, mock_resp, mock_redirect):
         """
-        Test that the reverse works correctly.
+        Test user creation.
         """
-        user = {'login': 'user1'}
-        link = users._add_link(user)
-        href = {'_href': '/v2/users/user1/'}
-        expected_cont = {'login': 'user1', '_href': '/v2/users/user1/'}
-        self.assertEqual(link, href)
-        self.assertEqual(user, expected_cont)
+        request = mock.MagicMock()
+        request.body = json.dumps({'login': 'test-user', 'name': 'test-user', 'password': '111'})
+        mock_model.serializer.return_value.data = {'_id': 'copy to id', '_href': 'mock/path'}
+        user = UsersView()
+        response = user.post(request)
+
+        mock_ctrl.create_user.assert_called_once_with('test-user', password='111', name='test-user')
+        mock_model.serializer.assert_called_once_with(mock_ctrl.create_user.return_value)
+        mock_auto_perm = mock_factory.permission_manager().grant_automatic_permissions_for_resource
+        mock_auto_perm.assert_called_once_with('mock/path')
+        mock_resp.assert_called_once_with({'id': 'copy to id', '_href': 'mock/path',
+                                           '_id': 'copy to id'})
+        mock_redirect.assert_called_once_with(mock_resp.return_value, 'mock/path')
+        self.assertTrue(response is mock_redirect.return_value)
 
 
 class TestUserResourceView(unittest.TestCase):
@@ -159,81 +120,54 @@ class TestUserResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_get_single_user(self, mock_f, mock_resp):
+    @mock.patch('pulp.server.webservices.views.users.model.User')
+    def test_get_single_user(self, mock_model, mock_resp):
         """
         Test single user retrieval.
         """
-        user = {'login': 'test-user', 'name': 'test-user', 'id': '12345'}
-        mock_f.user_query_manager.return_value.find_by_login.return_value = user
-
         request = mock.MagicMock()
         user = UserResourceView()
         response = user.get(request, 'test-user')
 
-        expected_cont = {'login': 'test-user', 'name': 'test-user', '_href': '/v2/users/test-user/'}
-        mock_resp.assert_called_once_with(expected_cont)
-        mock_f.user_query_manager.return_value.find_by_login.assert_called_once_with('test-user')
+        mock_model.objects.get_or_404.assert_called_once_with(login='test-user')
+        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_get_invalid_user(self, mock_factory):
-        """
-        Test nonexistent user retrieval.
-        """
-        mock_factory.user_query_manager.return_value.find_by_login.return_value = None
-
-        request = mock.MagicMock()
-        user = UserResourceView()
-        try:
-            response = user.get(request, 'nonexistent_login')
-        except MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised with nonexistent_user")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertEqual(response.error_data['resources'], {'resource_id': 'nonexistent_login'})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.users.reverse')
     @mock.patch('pulp.server.webservices.views.users.Permission.get_collection')
     @mock.patch('pulp.server.webservices.views.users.generate_json_response')
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_delete_single_user(self, mock_factory, mock_resp, mock_perm):
+    @mock.patch('pulp.server.webservices.views.users.user_controller')
+    def test_delete_single_user(self, mock_ctrl, mock_resp, mock_perm, mock_rev):
         """
         Test user deletion.
         """
-        mock_factory.user_manager.return_value.delete_user.return_value = None
-        mock_perm.return_value.find_one.return_value = 'some'
-
+        mock_perm().find_one.return_value = 'some'
         request = mock.MagicMock()
         user = UserResourceView()
         response = user.delete(request, 'test-user')
 
-        mock_factory.user_manager.return_value.delete_user.assert_called_once_with('test-user')
-        mock_resp.assert_called_once_with(None)
+        mock_ctrl.delete_user.assert_called_once_with('test-user')
+        mock_resp.assert_called_once_with()
+        mock_perm().remove.assert_called_once_with({'resource': mock_rev.return_value})
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.users.factory')
-    def test_update_user(self, mock_factory, mock_resp):
+    @mock.patch('pulp.server.webservices.views.users.model.User')
+    @mock.patch('pulp.server.webservices.views.users.user_controller')
+    def test_update_user(self, mock_ctrl, mock_model, mock_resp):
         """
         Test user update
         """
-        resp = {'login': 'test-user', 'name': 'some-user', 'id': '12345'}
-        mock_factory.user_manager.return_value.update_user.return_value = resp
-
         request = mock.MagicMock()
         request.body = json.dumps({'delta': {'name': 'some-user'}})
         user = UserResourceView()
         response = user.put(request, 'test-user')
 
-        expected_cont = {'login': 'test-user', 'name': 'some-user'}
-
-        mock_resp.assert_called_once_with(expected_cont)
+        mock_ctrl.update_user.assert_called_once_with('test-user', {'name': 'some-user'})
+        mock_model.serializer.assert_called_once_with(mock_ctrl.update_user.return_value)
+        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
         self.assertTrue(response is mock_resp.return_value)

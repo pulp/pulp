@@ -183,4 +183,6 @@ class SearchView(generic.View):
         results = list(search_method(query))
         if hasattr(cls, 'serializer'):
             results = [cls.serializer(r) for r in results]
+        elif hasattr(cls, 'model') and hasattr(cls.model, 'serializer'):
+            results = cls.model.serializer(results, multiple=True).data
         return results
