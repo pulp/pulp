@@ -27,7 +27,7 @@ class TestSearchView(unittest.TestCase):
 
         request = mock.MagicMock()
         # Simulate an empty POST body
-        request.GET = {'field': ['name', 'id'], 'filters': '{"name":"admin"}'}
+        request.GET = {'field': '["name", "id"]', 'filters': '{"name":"admin"}'}
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
