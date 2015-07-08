@@ -71,7 +71,7 @@ class RepoSyncScheduleManager(object):
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
-        task = repo_controller.sync.name
+        task = repo_controller.queue_sync_with_auto_publish.name
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
         resource = RepoImporter.build_resource_tag(repo_id, importer_id)
@@ -211,7 +211,7 @@ class RepoPublishScheduleManager(object):
         utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
-        task = repo_controller.publish.name
+        task = repo_controller.queue_publish.name
         args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
         resource = RepoDistributor.build_resource_tag(repo_id, distributor_id)
