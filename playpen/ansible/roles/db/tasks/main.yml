@@ -1,0 +1,17 @@
+---
+- name: Install packages
+  dnf: name={{ item }} state=present
+  with_items:
+      - mongodb
+      - mongodb-server
+
+- name: Disable MongoDB journal
+  lineinfile:
+      backrefs: yes
+      dest: /etc/mongodb.conf
+      regexp: "^journal = true"
+      line: "nojournal = true"
+  notify: restart mongod
+
+- name: Start and enable services
+  service: name=mongod state=started enabled=yes

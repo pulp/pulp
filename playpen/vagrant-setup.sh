@@ -51,16 +51,13 @@ fi
 
 # install rpms, then remove pulp*
 echo "installing RPMs"
-sudo dnf install -y git mongodb mongodb-server python-gofer-qpid python-qpid python-qpid-qmf \
+sudo dnf install -y git python-gofer-qpid python-qpid python-qpid-qmf \
                     python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
 
-# disable mongo journaling since this is a dev setup
-echo "Disabling MongoDB journal and starting services"
-sudo sed -i 's/journal = true/nojournal = true/' /etc/mongodb.conf
-for s in qpidd mongod; do
-  sudo systemctl enable $s
-  sudo systemctl start $s
-done
+echo "Starting qpidd"
+sudo systemctl enable qpidd
+sudo systemctl start qpidd
+
 
 
 pushd devel
