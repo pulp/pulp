@@ -75,9 +75,7 @@ class TestConfig(TestCase):
     @patch('pulp.client.admin.config.Config')
     @patch('pulp.client.admin.config.validate_overrides')
     def test_read_calls_validate_overrides(self, mock_validate_overrides, fake_config):
-
-        # test
-        cfg = read_config()
+        read_config()
 
         mock_validate_overrides.assert_called_once()
 

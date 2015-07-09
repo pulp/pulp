@@ -15,14 +15,15 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 paths_to_check = [
     'agent',
     'bindings',
+    'client_admin/pulp/client/admin/tasks.py',
+    'client_admin/test/unit/test_config.py',
+    'client_admin/test/unit/test_event.py',
     'client_consumer',
     'client_lib',
     'devel/',
     'oid_validation/',
     'repoauth/',
-    'server/pulp/plugins',
-    'server/pulp/server/',
-    'server/test/unit/']
+    'server/']
 
 PACKAGES = [
     os.path.dirname(__file__),
