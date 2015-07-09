@@ -90,6 +90,32 @@ def _process_repos(repo_objs, details, importers, distributors):
     return repos
 
 
+def _get_valid_importer(repo_id, importer_id):
+    """
+    Validates if the specified repo_id and importer_id are valid.
+    If not MissingResource exception is raised.
+
+    :param repo_id: id of the repo
+    :type repo_id: str
+    :param importer_id: id of the importer
+    :type importer_id: str
+
+    :return: key-value pairs describing the importer in use
+    :rtype:  dict
+    :raises pulp_exceptions.MissingResource: if repo or importer cannot be found
+    """
+
+    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    importer_manager = manager_factory.repo_importer_manager()
+    try:
+        importer = importer_manager.get_importer(repo_id)
+        if importer['id'] != importer_id:
+            raise pulp_exceptions.MissingResource(importer_id=importer_id)
+    except pulp_exceptions.MissingResource:
+            raise pulp_exceptions.MissingResource(importer_id=importer_id)
+    return importer
+
+
 class ReposView(View):
     """
     View for all repos.
@@ -378,12 +404,7 @@ class RepoImporterResourceView(View):
         :rtype : django.http.HttpResponse
         :raises pulp_exceptions.MissingResource: if importer_id does not match importer for repo
         """
-
-        importer_manager = manager_factory.repo_importer_manager()
-        importer = importer_manager.get_importer(repo_id)
-        if importer['id'] != importer_id:
-            raise pulp_exceptions.MissingResource(importer_id=importer_id)
-
+        importer = _get_valid_importer(repo_id, importer_id)
         serializer = serializers.ImporterSerializer(importer)
         return generate_json_response_with_pulp_encoder(serializer.data)
 
@@ -402,12 +423,7 @@ class RepoImporterResourceView(View):
         :raises pulp_exceptions.MissingResource: if importer cannot be found for this repo
         :raises pulp_exceptions.OperationPostponed: to dispatch a task to delete the importer
         """
-
-        importer_manager = manager_factory.repo_importer_manager()
-        importer = importer_manager.get_importer(repo_id)
-        if importer['id'] != importer_id:
-            raise pulp_exceptions.MissingResource(importer_id=importer_id)
-
+        _get_valid_importer(repo_id, importer_id)
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                      tags.action_tag('delete_importer')]
@@ -433,11 +449,7 @@ class RepoImporterResourceView(View):
         :raises pulp_exceptions.OperationPostponed: dispatch a task
         """
 
-        importer_manager = manager_factory.repo_importer_manager()
-        importer = importer_manager.get_importer(repo_id)
-        if importer['id'] != importer_id:
-            raise pulp_exceptions.MissingResource(importer_id=importer_id)
-
+        _get_valid_importer(repo_id, importer_id)
         importer_config = request.body_as_json.get('importer_config', None)
 
         if importer_config is None:
