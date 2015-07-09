@@ -2,16 +2,48 @@
 
 # Let's add p{start,stop,restart,status} to the .bashrc
 if ! grep pstart ~/.bashrc; then
-    echo -e "\n\npstart() {\n    _paction start\n}\n" >> ~/.bashrc
-    echo -e "pstop() {\n    _paction stop\n}\n" >> ~/.bashrc
-    echo -e "prestart() {\n    _paction restart\n}\n" >> ~/.bashrc
-    echo -e "pstatus() {\n    _paction status\n}\n" >> ~/.bashrc
-    echo -e "_paction() {\n" >> ~/.bashrc
-    echo -e "    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do" >> ~/.bashrc
-    echo -e "        sudo systemctl \$1 \$s;\n    done;\n}" >> ~/.bashrc
+    cat << EOF >> ~/.bashrc
+
+pstart() {
+    _paction start
+}
+
+pstop() {
+    _paction stop
+}
+
+prestart() {
+    _paction restart
+}
+
+pstatus() {
+    _paction status
+}
+
+ptests() {
+    pushd /home/vagrant/devel;
+    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
+        if [ -d \$r ]; then
+            pushd \$r;
+            workon \$r;
+            ./run-tests.py -x --enable-coverage;
+            deactivate;
+            popd;
+        fi
+    done;
+    popd;
+}
+
+_paction() {
+
+    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
+        sudo systemctl \$1 \$s;
+    done;
+}
+EOF
 fi
 if ! grep DJANGO_SETTINGS_MODULE ~/.bashrc; then
-    echo "export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings" >> ~/.bashrc
+    echo -e "\nexport DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings" >> ~/.bashrc
 fi
 # We always need to source those variables from the bashrc, in case the user is running this for the
 # first time, or invoking the script directly with bash.
@@ -44,7 +76,6 @@ for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_
     # Install dependencies for automated tests
     pip install -r test_requirements.txt
     sudo python ./pulp-dev.py -I
-    ./run-tests.py -x --enable-coverage
     deactivate
     popd
   fi
