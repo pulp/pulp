@@ -8,8 +8,8 @@
 - name: Disable MongoDB journal
   lineinfile:
       backrefs: yes
-      dest: /etc/mongodb.conf
-      regexp: "^journal = true"
+      dest: /etc/mongod.conf
+      regexp: "^#nojournal = true"
       line: "nojournal = true"
   notify: restart mongod
 

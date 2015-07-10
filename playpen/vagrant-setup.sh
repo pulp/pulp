@@ -87,7 +87,6 @@ if [ -d crane ]; then
     # Install dependencies
     sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' python-crane.spec | grep -v "/.*" | uniq)
     pip install -r test-requirements.txt
-    python setup.py test
 
     cat << EOF > /home/vagrant/devel/crane/crane.conf
 [general]
