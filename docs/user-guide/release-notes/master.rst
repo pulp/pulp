@@ -51,6 +51,8 @@ After migrating the database, restart `httpd`, `pulp_workers`, `pulp_celerybeat`
 Rest API Changes
 ----------------
 
+* Tasks with complete states (except `canceled` state) can now be deleted.
+
 Binding API Changes
 -------------------
 

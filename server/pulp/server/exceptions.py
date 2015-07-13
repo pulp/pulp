@@ -136,6 +136,22 @@ class PulpCodedAuthenticationException(PulpCodedException):
         return self.old_error_code
 
 
+class PulpCodedForbiddenException(PulpCodedException):
+    """
+    Class for coded forbidden exceptions. Raising this exception results in a
+    403 forbidden request being returned.
+
+    :param error_code: The particular error code that should be used for this forbidden
+                       exception
+    :type  error_code: pulp.common.error_codes.Error
+    """
+
+    http_status_code = httplib.FORBIDDEN
+
+    def __init__(self, error_code=error_codes.PLP0040, **kwargs):
+        super(PulpCodedForbiddenException, self).__init__(error_code=error_code, **kwargs)
+
+
 class MissingResource(PulpExecutionException):
     """"
     Base class for exceptions raised due to requesting a resource that does not

@@ -119,6 +119,30 @@ All currently running and waiting tasks may be listed. This returns an array of
 
 | :return:`array of` :ref:`task_report`
 
+
+Deleting Completed Tasks
+------------------------
+
+All completed tasks with states *finished, error, timed out, skipped* may be deleted.
+This call returns response code 204 if successful or code 403 if the request is forbidden.
+
+| :method:`delete`
+| :path:`/v2/tasks/`
+| :permission:`delete`
+
+* :param:`?state,str,only states *finished, error, timed out, skipped* can be deleted.
+
+For example::
+
+  /pulp/api/v2/tasks/?state=finished&state=skipped
+
+| :response_list:`_`
+
+* :response_code:`204,if the tasks were successfully deleted`
+* :response_code:`403, if there was a forbidden request`
+
+| :return:`HttpResponse or pulp Exception`
+
 Searching for Tasks
 -------------------
 

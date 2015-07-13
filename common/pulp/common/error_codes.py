@@ -94,6 +94,7 @@ PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
 PLP0039 = Error("PLP0039", _("The unit model with the id %(model_id)s failed to register. The "
                              "class %(model_class)s is not a subclass of ContentUnit."),
                 ['model_id', 'model_class'])
+PLP0040 = Error("PLP0040", _("This request is forbidden."), [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
@@ -113,3 +114,6 @@ PLP1008 = Error("PLP1008", _("The importer type %(importer_type_id)s does not ex
 PLP1009 = Error("PLP1009", _("The request body does not contain valid JSON"), [])
 PLP1010 = Error("PLP1010", _("Provided value %(value)s for field %(field)s must be of type "
                              "%(field_type)s."), ["value", "field", "field_type"])
+PLP1011 = Error("PLP1011", _("Invalid task state passed to parameters list: %(state)s. "
+                             "Valid states are finished, error, timed out and skipped"), ["state"])
+PLP1012 = Error("PLP1012", _("No task state given to parameters list for delete."), [])
