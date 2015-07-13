@@ -1,6 +1,6 @@
 coverage
 flake8
-mock
+mock<1.1
 nose
 nosexcover
 unittest2
