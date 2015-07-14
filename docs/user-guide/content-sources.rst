@@ -38,29 +38,29 @@ are supported:
  - **paths** <str>
      An *optional* list of URL relative paths. Delimited by space or newline.
  - **max_concurrent** <int>
-     Limit the number of concurrent downloads.
+     An *optional* limit to the number of concurrent downloads.
  - **max_speed** <int>
-     Limit the bandwidth used during downloads.
+     An *optional* limit to the bandwidth used during downloads.
  - **ssl_ca_cert** <str>
-     An optional SSL CA certificate (absolute path).
+     An *optional* SSL CA certificate (absolute path).
  - **ssl_validation** <bool>
-     An optional flag to validate the server SSL certificate using the CA.
+     An *optional* flag to validate the server SSL certificate using the CA.
  - **ssl_client_cert** <str>
-     An optional SSL client certificate (absolute path).
+     An *optional* SSL client certificate (absolute path).
  - **ssl_client_key** <str>
-     An optional SSL client key (absolute path).
+     An *optional* SSL client key (absolute path).
  - **proxy_url** <str>
-     An optional URL for a proxy.
+     An *optional* URL for a proxy.
  - **proxy_port** <short>
-     An optional proxy port#.
+     An *optional* proxy port#.
  - **proxy_username** <str>
-     An optional proxy userid.
+     An *optional* proxy userid.
  - **proxy_password** <str>
-     An optional proxy password.
+     An *optional* proxy password.
  - **basic_auth_username** <str>
-     An optional basic auth username.
+     An *optional* basic auth username.
  - **basic_auth_password** <str>
-     An optional basic auth password.
+     An *optional* basic auth password.
 
 Example:
  
@@ -73,10 +73,10 @@ Example:
  name: Content World
  type: yum
  base_url: http://content-world/content/
- url: f18/x86_64/os/ \
-      f18/i386/os/ \
-      f19/x86_64/os \
-      f19/i386/os
+ paths: f18/x86_64/os/ \
+        f18/i386/os/ \
+        f19/x86_64/os \
+        f19/i386/os
  max_concurrent: 10
  max_speed: 1000
  ssl_ca_cert: /etc/pki/tls/certs/content-world.ca
@@ -146,3 +146,4 @@ The pulp-admin client can be used to refresh content catalog using a specific co
 
 
   Task Succeeded
+
