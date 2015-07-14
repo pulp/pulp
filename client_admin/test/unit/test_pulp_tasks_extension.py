@@ -153,6 +153,16 @@ class AllTasksTests(base_builtins.PulpClientTests):
         # Verify
         self.assertTrue('These arguments cannot be used together\n' in self.recorder.lines)
 
+    def test_translate_state_discrepancy(self):
+        # Setup
+        state = ['successful', 'failed']
+
+        # Test
+        result = self.all_tasks_section.translate_state_discrepancy(state)
+
+        # Verify
+        self.assertEquals(result, ['finished', 'error'])
+
     def test_details(self):
         # Setup
         report = copy.copy(EXAMPLE_CALL_REPORT)
