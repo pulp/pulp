@@ -84,8 +84,8 @@ class PulpConnection(object):
         self.verify_ssl = verify_ssl
         self.ca_path = ca_path
 
-    def DELETE(self, path, body=None, log_request_body=True):
-        return self._request('DELETE', path, body=body, log_request_body=log_request_body)
+    def DELETE(self, path, body=None, log_request_body=True, queries=()):
+        return self._request('DELETE', path, queries, body=body, log_request_body=log_request_body)
 
     def GET(self, path, queries=()):
         return self._request('GET', path, queries)

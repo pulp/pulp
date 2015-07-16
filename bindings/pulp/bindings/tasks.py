@@ -1,6 +1,7 @@
 """
 This module contains bindings to the Task APIs.
 """
+
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.responses import Task
 from pulp.bindings.search import SearchAPI
@@ -68,6 +69,24 @@ class TasksAPI(PulpAPI):
             tasks.append(Task(doc))
 
         response.response_body = tasks
+        return response
+
+    def purge_tasks(self, states=()):
+        """
+        Deletes completed tasks (except tasks in state 'canceled') in the system.
+        If states are specified, only tasks that are in given states are purged.
+        By default, all the completed tasks except tasks in state 'canceled', are purged.
+
+        :param states:            tuple of states given by user through command line
+                                  Default to return all completed tasks except 'canceled'
+        :type  states:            tuple
+        :return:                  HttpResponse from REST API;
+        :rtype:                   Response
+        """
+        path = '/v2/tasks/'
+        state = [('state', s) for s in states]
+        response = self.server.DELETE(path, queries=state)
+
         return response
 
     def get_repo_tasks(self, repo_id):
