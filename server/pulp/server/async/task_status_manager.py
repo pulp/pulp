@@ -128,6 +128,10 @@ class TaskStatusManager(object):
         else:
             finished = timestamp
 
+        select = {
+            'task_id': task_id,
+            'state': {'$ne': constants.CALL_CANCELED_STATE}
+        }
         update = {
             '$set': {
                 'finish_time': finished,
@@ -136,7 +140,7 @@ class TaskStatusManager(object):
             }
         }
 
-        collection.update({'task_id': task_id}, update, safe=True)
+        collection.update(select, update, safe=True)
 
     @staticmethod
     def set_task_failed(task_id, traceback=None, timestamp=None):
