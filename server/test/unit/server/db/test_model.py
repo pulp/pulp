@@ -3,18 +3,13 @@
 """
 Tests for the pulp.server.db.model module.
 """
-import os
-import shutil
-from tempfile import mkdtemp
 
-from mock import patch
+from mock import patch, Mock
 
-import mongoengine
-from mongoengine import DateTimeField, DictField, Document, IntField, StringField
+from mongoengine import ValidationError, DateTimeField, DictField, Document, IntField, StringField
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
-from pulp.devel.unit.util import touch
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
@@ -25,12 +20,6 @@ class TestContentUnit(unittest.TestCase):
     """
     Test ContentUnit model
     """
-
-    def setUp(self):
-        self.working_dir = mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.working_dir, ignore_errors=True)
 
     def test_model_fields(self):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
@@ -127,69 +116,6 @@ class TestContentUnit(unittest.TestCase):
         # make sure the id wasn't replaced
         self.assertEquals(helper.id, 'foo')
 
-    def test_set_content(self):
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-        helper = ContentUnitHelper()
-        helper.set_content(self.working_dir)
-        self.assertEquals(helper._source_location, self.working_dir)
-
-    def test_set_content_bad_source_location(self):
-        """
-        Test that the appropriate exception is raised when set_content
-        is called with a non existent source_location
-        """
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-        helper = ContentUnitHelper()
-        try:
-            helper.set_content(os.path.join(self.working_dir, 'foo'))
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0036)
-
-    @patch('pulp.server.db.model.config')
-    def test_pre_save_signal_directory_content(self, mock_config):
-        source_dir = os.path.join(self.working_dir, 'src')
-        target_dir = os.path.join(self.working_dir, 'target')
-        os.mkdir(source_dir)
-        os.mkdir(target_dir)
-        mock_config.config.get.return_value = target_dir
-        # create something in the source directory to test the copy
-        touch(os.path.join(source_dir, 'foo', 'bar'))
-
-        class ContentUnitHelper(model.ContentUnit):
-            unit_type_id = 'foo_unit'
-        foo = ContentUnitHelper()
-        foo.set_content(source_dir)
-        foo.id = 'abbcd'
-
-        model.ContentUnit.pre_save_signal(object(), foo)
-        full_path = os.path.join(target_dir, 'units', 'foo_unit', 'a', 'bb', 'abbcd', 'foo', 'bar')
-        self.assertTrue(os.path.exists(full_path))
-
-    @patch('pulp.server.db.model.config')
-    def test_pre_save_signal_file_content(self, mock_config):
-        source_dir = os.path.join(self.working_dir, 'src')
-        target_dir = os.path.join(self.working_dir, 'target')
-        os.mkdir(source_dir)
-        os.mkdir(target_dir)
-        mock_config.config.get.return_value = target_dir
-        # create something in the source directory to test the copy
-        source_file = os.path.join(source_dir, 'bar')
-        touch(source_file)
-
-        class ContentUnitHelper(model.ContentUnit):
-            unit_type_id = 'foo_unit'
-            pass
-        foo = ContentUnitHelper()
-        foo.set_content(source_file)
-        foo.id = 'abbcd'
-        model.ContentUnit.pre_save_signal(object(), foo)
-        full_path = os.path.join(target_dir, 'units', 'foo_unit', 'a', 'bb', 'abbcd', 'bar')
-        self.assertTrue(os.path.exists(full_path))
-        self.assertTrue(os.path.isfile(full_path))
-
     @patch('pulp.server.db.model.Repository.objects')
     @patch('pulp.server.db.model.RepositoryContentUnit.objects')
     def test_get_repositories(self, mock_rcu_query, mock_repository_query):
@@ -225,6 +151,110 @@ class TestContentUnit(unittest.TestCase):
         n_tuple = helper.unit_key_as_named_tuple
 
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
+
+
+class TestFileContentUnit(unittest.TestCase):
+
+    class TestUnit(model.FileContentUnit):
+        pass
+
+    def test_init(self):
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit._source_location, None)
+
+    @patch('os.path.exists')
+    def test_set_content(self, exists):
+        path = '1234'
+        unit = TestFileContentUnit.TestUnit()
+        exists.return_value = True
+        unit.set_content(path)
+        exists.assert_called_once_with(path)
+        self.assertEquals(unit._source_location, path)
+
+    @patch('os.path.exists')
+    def test_set_content_bad_source_location(self, exists):
+        """
+        Test that the appropriate exception is raised when set_content
+        is called with a non existent source_location
+        """
+        exists.return_value = False
+        unit = TestFileContentUnit.TestUnit()
+        try:
+            unit.set_content('1234')
+            self.fail("Previous call should have raised a PulpCodedException")
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0036)
+
+    @patch('pulp.server.db.model.FileStorage.put')
+    @patch('pulp.server.db.model.FileStorage.open')
+    @patch('pulp.server.db.model.FileStorage.close')
+    def test_pre_save_signal(self, close, _open, put):
+        sender = Mock()
+        kwargs = {'a': 1, 'b': 2}
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._source_location = '1234'
+        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+            unit.pre_save_signal(sender, unit, **kwargs)
+
+        # validation
+        base.assert_called_once_with(sender, unit, **kwargs)
+        _open.assert_called_once_with()
+        close.assert_called_once_with()
+        put.assert_called_once_with(unit, unit._source_location)
+
+    @patch('pulp.server.db.model.FileStorage.put')
+    @patch('pulp.server.db.model.FileStorage.open')
+    @patch('pulp.server.db.model.FileStorage.close')
+    def test_pre_save_signal_no_content(self, close, _open, put):
+        sender = Mock()
+        kwargs = {'a': 1, 'b': 2}
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._source_location = None
+        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+            unit.pre_save_signal(sender, unit, **kwargs)
+
+        # validation
+        base.assert_called_once_with(sender, unit, **kwargs)
+        self.assertFalse(_open.called)
+        self.assertFalse(close.called)
+        self.assertFalse(put.called)
+
+
+class TestSharedContentUnit(unittest.TestCase):
+
+    class TestUnit(model.SharedContentUnit):
+        pass
+
+    def test_abstract(self):
+        unit = TestSharedContentUnit.TestUnit()
+        try:
+            unit.storage_id
+            self.fail('NotImplementedError expected and not raised')
+        except NotImplementedError:
+            pass
+
+    @patch('pulp.server.db.model.SharedStorage.link')
+    @patch('pulp.server.db.model.SharedStorage.open')
+    @patch('pulp.server.db.model.SharedStorage.close')
+    @patch('pulp.server.db.model.SharedContentUnit.storage_id', '1234')
+    def test_pre_save_signal(self, close, _open, link):
+        sender = Mock()
+        kwargs = {'a': 1, 'b': 2}
+
+        # test
+        unit = TestSharedContentUnit.TestUnit()
+        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+            unit.pre_save_signal(sender, unit, **kwargs)
+
+        # validation
+        base.assert_called_once_with(sender, unit, **kwargs)
+        _open.assert_called_once_with()
+        close.assert_called_once_with()
+        link.assert_called_once_with(unit)
 
 
 class TestRepositoryContentUnit(unittest.TestCase):
@@ -436,7 +466,7 @@ class TestRepository(unittest.TestCase):
         Ensure that validation raises as expected when invalid characters are present.
         """
         repo_obj = model.Repository('invalid_char%')
-        self.assertRaises(mongoengine.ValidationError, repo_obj.validate)
+        self.assertRaises(ValidationError, repo_obj.validate)
 
     def test_create_i18n(self):
         """
