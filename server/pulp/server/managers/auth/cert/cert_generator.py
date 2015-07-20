@@ -132,16 +132,6 @@ class CertGenerationManager(object):
         '''
         return '%s%s%s%s' % (ADMIN_PREFIX, user['login'], ADMIN_SPLITTER, user['id'])
 
-    def is_admin_user(self, encoded_string):
-        '''
-        Indicates if the encoded user string represents an admin user. If the string is
-        identified as an admin user, it can be parsed with decode_admin_user.
-
-        @return: True if the user string represents an admin user; False otherwise
-        @rtype:  boolean
-        '''
-        return encoded_string.startswith(ADMIN_PREFIX)
-
     def decode_admin_user(self, encoded_string):
         '''
         Decodes the single line admin user identification produced by encode_admin_user
