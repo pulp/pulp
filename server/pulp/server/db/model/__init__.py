@@ -1,8 +1,6 @@
 import copy
-import errno
 import logging
 import os
-import shutil
 import uuid
 from collections import namedtuple
 
@@ -11,8 +9,10 @@ from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntFi
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
+
+from pulp.server import exceptions
+from pulp.server.content.storage import FileStorage, SharedStorage
 from pulp.plugins.model import Repository as plugin_repo
-from pulp.server import config, exceptions
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
@@ -404,11 +404,6 @@ class ContentUnit(Document):
 
     _NAMED_TUPLE = None
 
-    def __init__(self, *args, **kwargs):
-        super(ContentUnit, self).__init__(*args, **kwargs)
-        self._source_location = None
-        self._relative_path = None
-
     @classmethod
     def attach_signals(cls):
         """
@@ -455,47 +450,6 @@ class ContentUnit(Document):
             document.id = str(uuid.uuid4())
         document.last_updated = dateutils.now_utc_timestamp()
 
-        # If content was set on this unit, copy the content into place
-        if document._source_location:
-            server_storage_dir = config.config.get('server', 'storage_dir')
-            platform_storage_location = os.path.join(server_storage_dir, 'units',
-                                                     document.unit_type_id,
-                                                     str(document.id)[0],
-                                                     str(document.id)[1:3],
-                                                     str(document.id))
-            # Make if source is a directory, recursively copy it, otherwise copy the file
-            if os.path.isdir(document._source_location):
-                shutil.copytree(document._source_location, platform_storage_location)
-            else:
-                target_file_name = os.path.basename(document._source_location)
-                # Make sure the base directory exists
-                try:
-                    os.makedirs(platform_storage_location)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
-                # Copy the file
-                document_full_storage_location = os.path.join(platform_storage_location,
-                                                              target_file_name)
-                shutil.copy(document._source_location, document_full_storage_location)
-                platform_storage_location = document_full_storage_location
-            document.storage_path = platform_storage_location
-
-    def set_content(self, source_location):
-        """
-        Store the source of the content for the unit and the relative path
-        where it should be stored within the plugin content directory.
-
-        :param source_location: The absolute path to the content in the plugin working directory.
-        :type source_location: str
-
-        :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
-        """
-        if not os.path.exists(source_location):
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
-                                                source_location=source_location)
-        self._source_location = source_location
-
     def get_repositories(self):
         """
         Get an iterable of Repository models for all the repositories that contain this unit
@@ -534,6 +488,94 @@ class ContentUnit(Document):
         type and the same unit key will get the same hash value.
         """
         return hash(self.unit_type_id + self.unit_key_str)
+
+
+class FileContentUnit(ContentUnit):
+    """
+    A content unit representing content that is of type *file* or *directory*.
+
+    :ivar _source_location: The absolute path to file or directory
+        to be copied to the platform storage location when the unit
+        is saved. See: set_content().
+    :type _source_location: str
+    """
+
+    meta = {
+        'abstract': True,
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(FileContentUnit, self).__init__(*args, **kwargs)
+        self._source_location = None
+
+    @classmethod
+    def pre_save_signal(cls, sender, document, **kwargs):
+        """
+        The signal that is triggered before a unit is saved, this is used to
+        support the legacy behavior of generating the unit id and setting
+        the last_updated timestamp
+
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: FileContentUnit
+        """
+        super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
+        if not document._source_location:
+            # no content
+            return
+        with FileStorage() as storage:
+            storage.put(document, document._source_location)
+
+    def set_content(self, source_location):
+        """
+        Store the source of the content for the unit and the relative path
+        where it should be stored within the plugin content directory.
+
+        :param source_location: The absolute path to the content in the plugin working directory.
+        :type source_location: str
+
+        :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
+        """
+        if not os.path.exists(source_location):
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
+                                                source_location=source_location)
+        self._source_location = source_location
+
+
+class SharedContentUnit(ContentUnit):
+    """
+    A content unit representing content that is stored in a
+    shared storage facility.
+    """
+
+    meta = {
+        'abstract': True,
+    }
+
+    @property
+    def storage_id(self):
+        """
+        The identifier for the shared storage location.
+        :return: An identifier for shared storage.
+        :rtype: str
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def pre_save_signal(cls, sender, document, **kwargs):
+        """
+        The signal that is triggered before a unit is saved.
+        Set the storage_path on the document and add the symbolic link.
+
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: SharedContentUnit
+        """
+        super(SharedContentUnit, cls).pre_save_signal(sender, document, **kwargs)
+        with SharedStorage(document.storage_id) as storage:
+            storage.link(document)
 
 
 class CeleryBeatLock(Document):
