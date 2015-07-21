@@ -63,4 +63,5 @@ PRIMARY_ID = '___/primary/___'
 # this is used by both platform and plugins to find the default CA path
 DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
-SCHEDULER_WORKER_NAME = "scheduler"
+SCHEDULER_WORKER_NAME = 'scheduler'
+RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'
