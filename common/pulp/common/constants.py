@@ -63,7 +63,10 @@ PRIMARY_ID = '___/primary/___'
 # this is used by both platform and plugins to find the default CA path
 DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
-# CeleryBeat constants
-SCHEDULER_WORKER_NAME = "scheduler"
+# celerybeat constants
 CELERYBEAT_WAIT_SECONDS = 200
+SCHEDULER_WORKER_NAME = 'scheduler'
 TICK_SECONDS = 90
+
+# resource manager constants
+RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'

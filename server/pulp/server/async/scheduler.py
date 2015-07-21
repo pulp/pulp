@@ -11,7 +11,8 @@ from celery import beat
 from celery.result import AsyncResult
 import mongoengine
 
-from pulp.common.constants import SCHEDULER_WORKER_NAME, CELERYBEAT_WAIT_SECONDS, TICK_SECONDS
+from pulp.common.constants import (CELERYBEAT_WAIT_SECONDS, RESOURCE_MANAGER_WORKER_NAME,
+                                   SCHEDULER_WORKER_NAME, TICK_SECONDS)
 from pulp.server.async import worker_watcher
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
@@ -160,9 +161,9 @@ class EventMonitor(threading.Thread):
 
     def monitor_events(self):
         """
-        Process celery events.
+        Process Celery events.
 
-        Receives events from celery and matches each with the appropriate handler function. The
+        Receives events from Celery and matches each with the appropriate handler function. The
         following events are monitored for: 'task-failed', 'task-succeeded', 'worker-heartbeat',
         and 'worker-offline'. The call to capture() is blocking, and does not return.
 
@@ -185,56 +186,80 @@ class EventMonitor(threading.Thread):
             recv.capture(limit=None, timeout=None, wakeup=True)
 
 
-class WorkerTimeoutMonitor(threading.Thread):
+class CeleryProcessTimeoutMonitor(threading.Thread):
     """
-    A thread dedicated to processing Celery events.
+    A thread dedicated to monitoring Celery processes that have stopped checking in.
 
-    This object is designed to wakeup periodically and look for workers who have gone missing.
+    Once a Celery process is determined to be missing it logs and handles cleanup appropriately.
     """
 
-    # The amount of time in seconds before a worker is considered missing
-    WORKER_TIMEOUT_SECONDS = 300
+    # The amount of time in seconds before a Celery process is considered missing
+    CELERY_TIMEOUT_SECONDS = 300
 
-    # The frequency in seconds with which this thread should look for missing workers.
+    # The frequency in seconds with which this thread should look for missing Celery processes.
     FREQUENCY = 60
 
     def run(self):
         """
-        The thread entry point. It sleeps for FREQUENCY seconds, and then calls check_workers()
+        The thread entry point. Sleep for FREQUENCY seconds, then call check_celery_processes()
 
-        This method has a try/except block around check_workers() to add durability to this
-        background thread.
+        This method has a try/except block around check_celery_processes() to add durability to
+        this background thread.
         """
         _logger.info(_('Worker Timeout Monitor Started'))
         while True:
             time.sleep(self.FREQUENCY)
             try:
-                self.check_workers()
+                self.check_celery_processes()
             except Exception as e:
                 _logger.error(e)
 
-    def check_workers(self):
+    def check_celery_processes(self):
         """
-        Look for missing workers, and dispatch a cleanup task if one goes missing.
+        Look for missing Celery processes, log and cleanup as needed.
 
-        To find a missing worker, filter the Workers model for entries older than
+        To find a missing Celery process, filter the Workers model for entries older than
         utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
-        a comparable datetime.
+        a comparable datetime. For each missing worker found, call _delete_worker() synchronously
+        for cleanup.
 
-        For each missing worker found, dispatch a _delete_worker task requesting that the resource
-        manager delete the Worker and cleanup any associated work.
-
-        This method logs and the debug and error levels.
+        This method also checks that at least one resource_manager and one scheduler process is
+        present. If there are zero of either, log at the error level that Pulp will not operate
+        correctly.
         """
-        msg = _(
-            'Looking for workers missing for more than %s seconds') % self.WORKER_TIMEOUT_SECONDS
+        msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager '
+                'processes are missing for more than %d seconds') % self.CELERY_TIMEOUT_SECONDS
         _logger.debug(msg)
-        oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
-        worker_list = Worker.objects(last_heartbeat__lt=oldest_heartbeat_time)
+        oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.CELERY_TIMEOUT_SECONDS)
+        worker_list = Worker.objects.all()
+        worker_count = 0
+        resource_manager_count = 0
+        scheduler_count = 0
         for worker in worker_list:
-            msg = _("Workers '%s' has gone missing, removing from list of workers") % worker.name
+            if worker.last_heartbeat < oldest_heartbeat_time:
+                msg = _("Worker '%s' has gone missing, removing from list of workers") % worker.name
+                _logger.error(msg)
+                _delete_worker(worker.name)
+            elif worker.name.startswith(SCHEDULER_WORKER_NAME):
+                scheduler_count = scheduler_count + 1
+            elif worker.name.startswith(RESOURCE_MANAGER_WORKER_NAME):
+                resource_manager_count = resource_manager_count + 1
+            else:
+                worker_count = worker_count + 1
+        if resource_manager_count == 0:
+            msg = _("There are 0 pulp_resource_manager processes running. Pulp will not operate "
+                    "correctly without at least one pulp_resource_mananger process running.")
             _logger.error(msg)
-            _delete_worker(worker.name)
+        if scheduler_count == 0:
+            msg = _("There are 0 pulp_celerybeat processes running. Pulp will not operate "
+                    "correctly without at least one pulp_celerybeat process running.")
+            _logger.error(msg)
+        output_dict = {'workers': worker_count, 'celerybeat': scheduler_count,
+                       'resource_manager': resource_manager_count}
+        msg = _("%(workers)d pulp_worker processes, %(celerybeat)d "
+                "pulp_celerybeat processes, and %(resource_manager)d "
+                "pulp_resource_manager processes") % output_dict
+        _logger.debug(msg)
 
 
 class Scheduler(beat.Scheduler):
@@ -302,7 +327,7 @@ class Scheduler(beat.Scheduler):
         event_monitor.daemon = True
         event_monitor.start()
         # start monitoring workers who may timeout
-        worker_timeout_monitor = WorkerTimeoutMonitor()
+        worker_timeout_monitor = CeleryProcessTimeoutMonitor()
         worker_timeout_monitor.daemon = True
         worker_timeout_monitor.start()
 
