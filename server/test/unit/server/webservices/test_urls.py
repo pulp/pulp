@@ -2,6 +2,8 @@ import unittest
 
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 
+from pulp.server.webservices.urls import handler404
+
 
 def assert_url_match(expected_url, url_name, *args, **kwargs):
         """
@@ -43,6 +45,15 @@ def assert_url_match(expected_url, url_name, *args, **kwargs):
                 raise AssertionError('Url name {0} not equal to expected url name {1}'.format(
                     matched_view.url_name, url_name)
                 )
+
+
+class TestNotFoundHandler(unittest.TestCase):
+
+    def test_not_found_handler(self):
+        """
+        Test that the handler404 module attribute is set as expected.
+        """
+        self.assertEqual(handler404, 'pulp.server.webservices.views.util.page_not_found')
 
 
 class TestDjangoContentUrls(unittest.TestCase):

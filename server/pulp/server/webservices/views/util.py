@@ -2,6 +2,7 @@ from datetime import datetime
 from functools import wraps
 
 import functools
+import httplib
 import json
 import sys
 
@@ -66,7 +67,7 @@ generate_json_response_with_pulp_encoder = functools.partial(
 
 def generate_redirect_response(response, href):
     response['Location'] = iri_to_uri(href)
-    response.status_code = 201
+    response.status_code = httplib.CREATED
     response.reason_phrase = 'CREATED'
     return response
 
@@ -111,3 +112,26 @@ def json_body_required(func, allow_empty=False):
     return wrapper
 
 json_body_allow_empty = functools.partial(json_body_required, allow_empty=True)
+
+
+def page_not_found(request, *args, **kwargs):
+    """
+    Returns a HttpResponse with an empty json payload and a httplib.NOT_FOUND response code.
+
+    This function uses *args and **kwargs to be compatible with newer versions of Django which
+    have additional parameters.
+
+    :param request: The WSGI object containing the request
+    :type request: django.core.handlers.wsgi.WSGIRequest
+    :param args: Additional positional arguments
+    :type args: list
+    :param kwargs: Additional keyword arguments
+    :type kwargs: dict
+
+    :return: A response object that contains a httplib.NOT_FOUND status code and an empty json
+             payload.
+    :rtype: django.http.HttpResponse
+    """
+    json_response = generate_json_response()
+    json_response.status_code = httplib.NOT_FOUND
+    return json_response
