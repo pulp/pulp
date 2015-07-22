@@ -2,11 +2,12 @@
 This module contains tests for the pulp.server.webservices.views.tasks module.
 """
 import mock
-import unittest
 
 from mongoengine.queryset import DoesNotExist
 
 from .base import assert_auth_DELETE, assert_auth_READ
+from pulp.common.compat import unittest
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db import model
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views import util
@@ -99,6 +100,37 @@ class TestTaskCollection(unittest.TestCase):
         mock_resp.assert_called_once_with(['mock_1', 'mock_2'])
         mock_task_serializer.assert_has_calls([mock.call('mock_1'), mock.call('mock_2')])
         self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.tasks.TaskStatus')
+    def test_delete_task_collection(self, mock_task_status):
+        """
+        Test get task_collection with tags.
+        """
+
+        mock_request = mock.MagicMock()
+        mock_request.GET.getlist.return_value = ['finished']
+
+        task_collection = TaskCollectionView()
+        task_collection.delete(mock_request)
+
+        mock_task_status.objects.assert_called_once_with(state='finished')
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.tasks.TaskStatus')
+    def test_delete_task_collection_no_status(self, mock_task_status):
+        """
+        Test get task_collection with no state.
+        """
+
+        mock_request = mock.MagicMock()
+        mock_request.GET.getlist.return_value = []
+
+        task_collection = TaskCollectionView()
+        with self.assertRaises(pulp_exceptions.PulpCodedForbiddenException):
+            task_collection.delete(mock_request)
 
 
 class TestTaskResource(unittest.TestCase):
