@@ -115,5 +115,5 @@ PLP1009 = Error("PLP1009", _("The request body does not contain valid JSON"), []
 PLP1010 = Error("PLP1010", _("Provided value %(value)s for field %(field)s must be of type "
                              "%(field_type)s."), ["value", "field", "field_type"])
 PLP1011 = Error("PLP1011", _("Invalid task state passed to parameters list: %(state)s. "
-                             "Valid states are finished, error, timed out and skipped"), ["state"])
+                             "Valid states are finished, error and skipped"), ["state"])
 PLP1012 = Error("PLP1012", _("No task state given to parameters list for delete."), [])
