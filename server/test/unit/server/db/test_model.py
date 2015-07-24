@@ -547,10 +547,10 @@ class TestCeleryBeatLock(unittest.TestCase):
         self.assertTrue(isinstance(model.CeleryBeatLock.celerybeat_name, StringField))
         self.assertTrue(model.CeleryBeatLock.celerybeat_name.required)
 
-        self.assertTrue(model.CeleryBeatLock.timestamp, DateTimeField)
+        self.assertTrue(isinstance(model.CeleryBeatLock.timestamp, DateTimeField))
         self.assertTrue(model.CeleryBeatLock.timestamp.required)
 
-        self.assertTrue(model.CeleryBeatLock.lock, StringField)
+        self.assertTrue(isinstance(model.CeleryBeatLock.lock, StringField))
         self.assertTrue(model.CeleryBeatLock.lock.required)
         self.assertTrue(model.CeleryBeatLock.lock.default, 'locked')
         self.assertTrue(model.CeleryBeatLock.lock.unique)
