@@ -75,6 +75,9 @@ from pulp.server.webservices.views.root_actions import LoginView
 from pulp.server.webservices.views.status import StatusView
 
 
+handler404 = 'pulp.server.webservices.views.util.page_not_found'
+
+
 urlpatterns = patterns('',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'), # flake8: noqa
     url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),

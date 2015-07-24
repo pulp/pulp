@@ -31,7 +31,6 @@ class ExceptionHandlerMiddleware(object):
         :return: Response containing processed exception
         :rtype: django.http.HttpResponseServerError
         """
-
         if isinstance(exception, PulpException):
             status = exception.http_status_code
             response = error.http_error_obj(status, str(exception))
