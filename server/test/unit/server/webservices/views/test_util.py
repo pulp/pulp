@@ -1,3 +1,4 @@
+import httplib
 import json
 import mock
 import unittest
@@ -6,9 +7,8 @@ from django.http import HttpResponse, HttpResponseNotFound
 
 from pulp.server.exceptions import InputEncodingError, PulpCodedValidationException
 from pulp.server.webservices.views import util
-from pulp.server.webservices.views.util import (json_body_allow_empty,
-                                                json_body_required,
-                                                pulp_json_encoder)
+from pulp.server.webservices.views.util import (json_body_allow_empty, json_body_required,
+                                                page_not_found, pulp_json_encoder)
 
 
 class TestResponseGenerators(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestResponseGenerators(unittest.TestCase):
         test_content = {'foo': 'bar'}
         response = util.generate_json_response(test_content)
         self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, httplib.OK)
         self.assertEqual(response._headers.get('content-type'),
                          ('Content-Type', 'application/json'))
         response_content = json.loads(response.content)
@@ -35,7 +35,7 @@ class TestResponseGenerators(unittest.TestCase):
         """
         response = util.generate_json_response(None, HttpResponseNotFound)
         self.assertTrue(isinstance(response, HttpResponseNotFound))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, httplib.NOT_FOUND)
         self.assertEqual(response._headers.get('content-type'),
                          ('Content-Type', 'application/json'))
 
@@ -67,7 +67,7 @@ class TestResponseGenerators(unittest.TestCase):
         href = '/some/url/'
         response = HttpResponse(content=test_content)
         redirect_response = util.generate_redirect_response(response, href)
-        self.assertEqual(redirect_response.status_code, 201)
+        self.assertEqual(redirect_response.status_code, httplib.CREATED)
         self.assertEqual(redirect_response.reason_phrase, 'CREATED')
         self.assertEqual(redirect_response._headers['location'][1],
                          str(mock_iri_to_uri.return_value))
@@ -103,7 +103,7 @@ class TestMustHaveJSONBody(unittest.TestCase):
             raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
                                  ' is passed.')
 
-        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
 
     def test_json_body_required_empty(self):
@@ -122,7 +122,7 @@ class TestMustHaveJSONBody(unittest.TestCase):
             raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
                                  ' is passed.')
 
-        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
 
     def test_json_body_allow_empty_valid(self):
@@ -163,7 +163,7 @@ class TestMustHaveJSONBody(unittest.TestCase):
             raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
                                  ' is passed.')
 
-        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
 
 
@@ -183,3 +183,17 @@ class TestEnsureInputEncoding(unittest.TestCase):
         input = {u'valid': u'json'}
         response = util._ensure_input_encoding(input)
         self.assertEqual(response, {'valid': 'json'})
+
+
+class TestPageNotFound(unittest.TestCase):
+
+    @mock.patch('pulp.server.webservices.views.util.generate_json_response')
+    def test_status_code_is_set(self, mock_generate_json_response):
+        returned_obj = page_not_found(mock.Mock())
+        self.assertEqual(returned_obj.status_code, httplib.NOT_FOUND)
+
+    @mock.patch('pulp.server.webservices.views.util.generate_json_response')
+    def test_generate_json_response_is_returned(self, mock_generate_json_response):
+        returned_obj = page_not_found(mock.Mock())
+        mock_generate_json_response.assert_called_once_with()
+        self.assertTrue(returned_obj is mock_generate_json_response.return_value)
