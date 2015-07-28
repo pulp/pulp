@@ -16,7 +16,7 @@ The task information object is used to report information about any asynchronous
 task.
 
 * **_href** *(string)* - uri path to retrieve this task report object.
-* **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
+* **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error' and 'canceled'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
 * **task_type** *(string)* - **deprecated** the fully qualified (package/method) type of the task that is executing the asynchronous call. The field is empty for tasks performed by consumer agent.
 * **progress_report** *(object)* - arbitrary progress information, usually in the form of an object
@@ -123,14 +123,14 @@ All currently running and waiting tasks may be listed. This returns an array of
 Deleting Completed Tasks
 ------------------------
 
-All completed tasks with states *finished, error, timed out, skipped* may be deleted.
+All completed tasks with states *finished, error, skipped* may be deleted.
 This call returns response code 204 if successful or code 403 if the request is forbidden.
 
 | :method:`delete`
 | :path:`/v2/tasks/`
 | :permission:`delete`
 
-* :param:`?state,str,only states *finished, error, timed out, skipped* can be deleted.
+* :param:`?state,str,only states *finished, error, skipped* can be deleted.
 
 For example::
 

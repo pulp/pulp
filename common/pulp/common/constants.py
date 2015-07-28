@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 # key used in a repository's "notes" field with a value describing what type
 # of content is in the repository.
@@ -44,15 +33,13 @@ CALL_SUSPENDED_STATE = 'suspended'
 CALL_FINISHED_STATE = 'finished'
 CALL_ERROR_STATE = 'error'
 CALL_CANCELED_STATE = 'canceled'
-CALL_TIMED_OUT_STATE = 'timed out'
 
 CALL_INCOMPLETE_STATES = (CALL_WAITING_STATE, CALL_ACCEPTED_STATE, CALL_RUNNING_STATE,
                           CALL_SUSPENDED_STATE)
 CALL_COMPLETE_STATES = (CALL_SKIPPED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STATE,
-                        CALL_CANCELED_STATE, CALL_TIMED_OUT_STATE)
+                        CALL_CANCELED_STATE)
 CALL_STATES = (CALL_WAITING_STATE, CALL_SKIPPED_STATE, CALL_ACCEPTED_STATE, CALL_RUNNING_STATE,
-               CALL_SUSPENDED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STATE, CALL_CANCELED_STATE,
-               CALL_TIMED_OUT_STATE)
+               CALL_SUSPENDED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STATE, CALL_CANCELED_STATE)
 
 # this constant is used to determine which content source is the primary
 # source, vs an alternate source.  Note that this field will go away in Pulp
