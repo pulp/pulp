@@ -1,0 +1,894 @@
+From 59a6b19924a2615e00fef9a5c712bb162d27bc70 Mon Sep 17 00:00:00 2001
+From: Chris Duryee <cduryee@redhat.com>
+Date: Mon, 2 Feb 2015 19:14:35 +0000
+Subject: [PATCH 1/5] Add additional string to check for when connecting to
+ qpid
+
+When we connect to qpid, we need to ensure that we skip to the next SASL
+mechanism if the current mechanism fails. Otherwise, we will keep retrying the
+connection with a non-working mech.
+
+This patch adds an additional string that is returned when PLAIN is not
+available, but python-saslwrapper is installed.
+
+Conflicts:
+	kombu/tests/transport/test_qpid.py
+---
+ kombu/tests/transport/test_qpid.py | 30 +++++++++++++++++++++++++++++-
+ kombu/transport/qpid.py            |  8 +++++++-
+ 2 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index eb7d8f5..89e2df2 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -392,7 +392,35 @@ class TestConnectionInit(ExtraAssertionsMixin, ConnectionTestBase):
+     @patch(QPID_MODULE + '.ConnectionError', new=(MockException, ))
+     @patch(QPID_MODULE + '.sys.exc_info')
+     @patch(QPID_MODULE + '.qpid')
+-    def test_init_unknown_connection_error(self, mock_qpid, mock_exc_info):
++    def test_connection__init__mutates_ConnError_by_message2(self, mock_qpid,
++                                                            mock_exc_info):
++        """
++        Test for PLAIN connection via python-saslwrapper, sans cyrus-sasl-plain
++
++        This test is specific for what is returned when we attempt to connect
++        with PLAIN mech and python-saslwrapper is installed, but
++        cyrus-sasl-plain is not installed.
++        """
++        my_conn_error = MockException()
++        my_conn_error.text = 'Error in sasl_client_start (-4) SASL(-4): no '\
++                             'mechanism available'
++        mock_qpid.messaging.Connection.establish.side_effect = my_conn_error
++        mock_exc_info.return_value = ('a', 'b', None)
++        try:
++            self.conn = Connection(**self.connection_options)
++        except AuthenticationFailure as error:
++            exc_info = sys.exc_info()
++            self.assertTrue(not isinstance(error, MockException))
++            self.assertTrue(exc_info[1] is 'b')
++            self.assertTrue(exc_info[2] is None)
++        else:
++            self.fail('ConnectionError type was not mutated correctly')
++
++
++    @patch(QPID_MODULE + '.ConnectionError', new=(MockException, ))
++    @patch(QPID_MODULE + '.sys.exc_info')
++    @patch(QPID_MODULE + '.qpid')
++    def test_unknown_connection_error(self, mock_qpid, mock_exc_info):
+         # If we get a connection error that we don't understand,
+         # bubble it up as-is
+         my_conn_error = MockException()
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index ef88bc5..2d02a2b 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -1271,14 +1271,20 @@ class Connection(object):
+                 )
+                 break
+             except ConnectionError as conn_exc:
++                # if we get one of these errors, do not raise an exception.
++                # Raising will cause the connection to be retried. Instead,
++                # just continue on to the next mech.
+                 coded_as_auth_failure = getattr(conn_exc, 'code', None) == 320
+                 contains_auth_fail_text = \
+                     'Authentication failed' in conn_exc.text
+                 contains_mech_fail_text = \
+                     'sasl negotiation failed: no mechanism agreed' \
+                     in conn_exc.text
++                contains_mech_unavail_text = 'no mechanism available' \
++                    in conn_exc.text
+                 if coded_as_auth_failure or \
+-                        contains_auth_fail_text or contains_mech_fail_text:
++                        contains_auth_fail_text or contains_mech_fail_text or \
++                        contains_mech_unavail_text:
+                     logger.debug(
+                         'Unable to connect to qpid with SASL mechanism %s',
+                         sasl_mech,
+-- 
+1.9.3
+
+
+From 6ede7d04c1a86f819481c78dece066b12865a978 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Fri, 20 Feb 2015 11:59:54 -0500
+Subject: [PATCH 2/5] Fixes close bug where the connection was not being closed
+
+---
+ kombu/tests/transport/test_qpid.py | 19 ++++++++++++-------
+ kombu/transport/qpid.py            | 25 ++++++++++++++-----------
+ 2 files changed, 26 insertions(+), 18 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index 89e2df2..29dea46 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -477,6 +477,16 @@ class TestConnectionGetQpidConnection(ConnectionTestBase):
+ 
+ @case_no_python3
+ @case_no_pypy
++class TestConnectionClose(ConnectionTestBase):
++
++    def test_connection_close(self):
++        self.conn._qpid_conn = Mock()
++        self.conn.close()
++        self.conn._qpid_conn.close.assert_called_once_with()
++
++
++@case_no_python3
++@case_no_pypy
+ class TestConnectionCloseChannel(ConnectionTestBase):
+ 
+     def setUp(self):
+@@ -2015,16 +2025,11 @@ class TestTransport(ExtraAssertionsMixin, Case):
+         self.mock_client = Mock()
+ 
+     def test_close_connection(self):
+-        """Test that close_connection calls close on each channel in the
+-        list of channels on the connection object."""
++        """Test that close_connection calls close on the connection."""
+         my_transport = Transport(self.mock_client)
+         mock_connection = Mock()
+-        mock_channel_1 = Mock()
+-        mock_channel_2 = Mock()
+-        mock_connection.channels = [mock_channel_1, mock_channel_2]
+         my_transport.close_connection(mock_connection)
+-        mock_channel_1.close.assert_called_with()
+-        mock_channel_2.close.assert_called_with()
++        mock_connection.close.assert_called_once_with()
+ 
+     def test_default_connection_params(self):
+         """Test that the default_connection_params are correct"""
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index 2d02a2b..9e4fed1 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -963,7 +963,7 @@ class Channel(base.StdChannel):
+             self.connection._callbacks.pop(queue, None)
+ 
+     def close(self):
+-        """Close Channel and all associated messages.
++        """Cancel all associated messages and close the Channel.
+ 
+         This cancels all consumers by calling :meth:`basic_cancel` for each
+         known consumer_tag. It also closes the self._broker sessions. Closing
+@@ -1307,6 +1307,14 @@ class Connection(object):
+         """
+         return self._qpid_conn
+ 
++    def close(self):
++        """Close the connection
++
++        Closing the connection will close all associated session, senders, or
++        receivers used by the Connection.
++        """
++        self._qpid_conn.close()
++
+     def close_channel(self, channel):
+         """Close a Channel.
+ 
+@@ -1645,18 +1653,13 @@ class Transport(base.Transport):
+         return conn
+ 
+     def close_connection(self, connection):
+-        """Close the :class:`Connection` object, and all associated
+-        :class:`Channel` objects.
+-
+-        Iterates through all :class:`Channel` objects associated with the
+-        :class:`Connection`, pops them from the list of channels, and calls
+-        :meth:Channel.close` on each.
++        """
++        Close the :class:`Connection` object.
+ 
+-        :param connection: The Connection that should be closed
+-        :type connection: Connection
++        :param connection: The Connection that should be closed.
++        :type connection: :class:`kombu.transport.qpid.Connection`
+         """
+-        for channel in connection.channels:
+-                channel.close()
++        connection.close()
+ 
+     def drain_events(self, connection, timeout=0, **kwargs):
+         """Handle and call callbacks for all ready Transport messages.
+-- 
+1.9.3
+
+
+From f9bf2e33898f142ab7f80ccda81535e43a9867e7 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Wed, 10 Jun 2015 17:06:35 -0400
+Subject: [PATCH 3/5] Causes the monitoring thread to exit if SessionClosed is
+ raised.
+
+Conflicts:
+	kombu/transport/qpid.py
+---
+ kombu/tests/transport/test_qpid.py | 13 +++++++++++++
+ kombu/transport/qpid.py            | 33 +++++++++++++++++----------------
+ 2 files changed, 30 insertions(+), 16 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index 29dea46..ea662b5 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -1475,6 +1475,19 @@ class TestReceiversMonitorRun(ReceiversMonitorTestBase):
+             self.monitor.run()
+         mock_monitor_receivers.assert_called_once_with()
+ 
++    @patch(QPID_MODULE + '.SessionClosed', new=QpidException)
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch(QPID_MODULE + '.time.sleep')
++    def test_receivers_monitor_run_exits_on_session_closed(
++            self, mock_sleep, mock_monitor_receivers):
++        mock_monitor_receivers.side_effect = QpidException()
++        try:
++            self.monitor.run()
++        except Exception:
++            self.fail('No exception should be raised here')
++        mock_monitor_receivers.assert_called_once_with()
++        mock_sleep.has_calls([])
++
+     @patch.object(Transport, 'connection_errors', new=(BreakOutException, ))
+     @patch.object(ReceiversMonitor, 'monitor_receivers')
+     @patch(QPID_MODULE + '.time.sleep')
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index 9e4fed1..65dcb11 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -53,9 +53,11 @@ except ImportError:  # pragma: no cover
+ try:
+     from qpid.messaging.exceptions import ConnectionError
+     from qpid.messaging.exceptions import Empty as QpidEmpty
++    from qpid.messaging.exceptions import SessionClosed
+ except ImportError:  # pragma: no cover
+     ConnectionError = None
+     QpidEmpty = None
++    SessionClosed = None
+ 
+ try:
+     import qpid
+@@ -1371,22 +1373,19 @@ class ReceiversMonitor(threading.Thread):
+     def run(self):
+         """Thread entry point for ReceiversMonitor
+ 
+-        Calls :meth:`monitor_receivers` with a log-and-reenter behavior. This
+-        guards against unexpected exceptions which could cause this thread to
+-        exit unexpectedly.
+-
+-        If a recoverable error occurs, then the exception needs to be
+-        propagated to the Main Thread where an exception handler can properly
+-        handle it. An Exception is checked if it is recoverable, and if so,
+-        it is stored as saved_exception on the self._session object. The
+-        character 'e' is then written to the self.w_fd file descriptor
+-        causing Main Thread to raise the saved exception. Once the Exception
+-        info is saved and the file descriptor is written, this Thread
+-        gracefully exits.
+-
+-        Typically recoverable errors are connection errors, and can be
+-        recovered through a call to Transport.establish_connection which will
+-        spawn a new ReceiversMonitor Thread.
++        Calls :meth:`monitor_receivers` with a log-and-reenter behavior for
++        non connection errors. This guards against unexpected exceptions
++        which could cause this thread to exit unexpectedly.
++
++        A :class:`qpid.messaging.exceptions.SessionClosed` exception should
++        cause this thread to exit. This is a normal exit condition and the
++        thread is no longer needed.
++
++        If a connection error occurs, the exception needs to be propagated
++        to MainThread where the kombu exception handler can properly handle
++        it. The exception is stored as saved_exception on the self._session
++        object. The character 'e' is then written to the self.w_fd file
++        descriptor and then this thread exits.
+         """
+         while True:
+             try:
+@@ -1395,6 +1394,8 @@ class ReceiversMonitor(threading.Thread):
+                 self._session.saved_exception = exc
+                 os.write(self._w_fd, 'e')
+                 break
++            except SessionClosed:
++                break
+             except Exception as exc:
+                 logger.error(exc, exc_info=1)
+             time.sleep(10)
+-- 
+1.9.3
+
+
+From 3dc6dc2b7d4b5946d282921d34353bab48dfb168 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Tue, 28 Jul 2015 09:41:14 -0400
+Subject: [PATCH 4/5] Adds in QpidException which is also needed from upstream
+ Kombu.
+
+---
+ kombu/tests/transport/test_qpid.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index ea662b5..dcd221e 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -73,6 +73,17 @@ class ExtraAssertionsMixin(object):
+             self.assertEqual(a[key], b[key])
+ 
+ 
++class QpidException(Exception):
++    """
++    An object used to mock Exceptions provided by qpid.messaging.exceptions
++    """
++
++    def __init__(self, code=None, text=None):
++        super(Exception, self).__init__(self)
++        self.code = code
++        self.text = text
++
++
+ class MockException(Exception):
+     pass
+ 
+-- 
+1.9.3
+
+
+From 7609704c1e39f29002180cdc478ba0d4fa0a225d Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Mon, 27 Jul 2015 15:39:45 -0400
+Subject: [PATCH 5/5] Fixes SASL mech selection to be from broker string
+
+Also fixes some small test runner errors in qpid
+and redis transport related to a newer version
+of mock running on Travis.
+
+Fixes #498
+
+Conflicts:
+	kombu/transport/qpid.py
+---
+ kombu/tests/transport/test_qpid.py  |  95 ++++++++----------
+ kombu/tests/transport/test_redis.py |  10 +-
+ kombu/transport/qpid.py             | 193 ++++++++++++++++++------------------
+ 3 files changed, 145 insertions(+), 153 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index dcd221e..225a976 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -325,11 +325,9 @@ class ConnectionTestBase(Case):
+         self.connection_options = {
+             'host': 'localhost',
+             'port': 5672,
+-            'username': 'guest',
+-            'password': '',
+             'transport': 'tcp',
+             'timeout': 10,
+-            'sasl_mechanisms': 'ANONYMOUS PLAIN',
++            'sasl_mechanisms': 'ANONYMOUS',
+         }
+         self.mock_qpid_connection = mock_qpid.messaging.Connection
+         self.conn = Connection(**self.connection_options)
+@@ -343,7 +341,6 @@ class TestConnectionInit(ExtraAssertionsMixin, ConnectionTestBase):
+         # ensure that only one mech was passed into connection. The other
+         # options should all be passed through as-is
+         modified_conn_opts = self.connection_options
+-        modified_conn_opts['sasl_mechanisms'] = 'PLAIN'
+         self.assertDictEqual(
+             modified_conn_opts, self.conn.connection_options,
+         )
+@@ -354,7 +351,6 @@ class TestConnectionInit(ExtraAssertionsMixin, ConnectionTestBase):
+ 
+     def test_connection__init__establishes_connection(self):
+         modified_conn_opts = self.connection_options
+-        modified_conn_opts['sasl_mechanisms'] = 'PLAIN'
+         self.mock_qpid_connection.establish.assert_called_with(
+             **modified_conn_opts
+         )
+@@ -1197,7 +1193,16 @@ class TestChannel(ExtraAssertionsMixin, Case):
+         self.mock_broker.addQueue.side_effect = unique_exception
+         with self.assertRaises(unique_exception.__class__):
+             self.my_channel.queue_declare(mock_queue)
+-        self.mock_broker.addQueue.assert_called_once()
++        self.mock_broker.addQueue.assert_called_once_with(
++            mock_queue,
++            options={
++                'exclusive': False,
++                'durable': False,
++                'qpid.policy_type':'ring',
++                'passive': False,
++                'arguments': None,
++                'auto-delete': True
++            })
+ 
+     def test_exchange_declare_raises_exception_and_silenced(self):
+         """Create exchange where an exception is raised and then silenced"""
+@@ -1350,10 +1355,10 @@ class TestChannel(ExtraAssertionsMixin, Case):
+         self.my_channel.basic_publish(
+             mock_message, mock_exchange, mock_routing_key,
+         )
+-        mock_encode_body.assert_called_once(
++        mock_encode_body.assert_called_once_with(
+             mock_original_body, mock_body_encoding,
+         )
+-        mock_buffer.assert_called_once(mock_encode_body)
++        mock_buffer.assert_called_once_with(mock_encoded_body)
+         self.assertIs(mock_message['body'], mock_encoded_buffered_body)
+         self.assertIs(
+             mock_message['properties']['body_encoding'], mock_body_encoding,
+@@ -1619,8 +1624,9 @@ class TestTransportInit(Case):
+         self.mock_verify_runtime_environment.assert_called_once_with()
+ 
+     def test_transport___init___calls_parent_class___init__(self):
+-        Transport(Mock())
+-        self.mock_base_Transport__init__.assert_caled_once_with()
++        m = Mock()
++        Transport(m)
++        self.mock_base_Transport__init__.assert_called_once_with(m)
+ 
+     def test_transport___init___calls_os_pipe(self):
+         Transport(Mock())
+@@ -1726,6 +1732,8 @@ class TestTransportEstablishConnection(Case):
+         self.client.connect_timeout = 4
+         self.client.ssl = False
+         self.client.transport_options = {}
++        self.client.userid = ''
++        self.client.password = ''
+         self.transport = Transport(self.client)
+         self.mock_conn = Mock()
+         self.transport.Connection = self.mock_conn
+@@ -1742,23 +1750,9 @@ class TestTransportEstablishConnection(Case):
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+             username=new_userid_string,
+-            sasl_mechanisms='PLAIN ANONYMOUS',
+-            host='127.0.0.1',
+-            timeout=4,
+-            password='',
+-            port=5672,
+-            transport='tcp',
+-        )
+-
+-    def test_transport_establish_conn_sasl_mech_sorting(self):
+-        self.client.sasl_mechanisms = 'MECH1 MECH2'
+-        self.transport.establish_connection()
+-        self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='MECH1 MECH2',
++            sasl_mechanisms='PLAIN',
+             host='127.0.0.1',
+             timeout=4,
+-            password='',
+             port=5672,
+             transport='tcp',
+         )
+@@ -1766,11 +1760,9 @@ class TestTransportEstablishConnection(Case):
+     def test_transport_establish_conn_empty_client_is_default(self):
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             timeout=4,
+-            password='',
+             port=5672,
+             transport='tcp',
+         )
+@@ -1780,12 +1772,10 @@ class TestTransportEstablishConnection(Case):
+         self.client.transport_options['new_param'] = new_param_value
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             timeout=4,
+             new_param=new_param_value,
+-            password='',
+             port=5672,
+             transport='tcp',
+         )
+@@ -1794,24 +1784,27 @@ class TestTransportEstablishConnection(Case):
+         self.client.hostname = 'localhost'
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             timeout=4,
+-            password='',
+             port=5672,
+             transport='tcp',
+         )
+ 
++    def test_transport_password_no_username_raises_exception(self):
++        self.client.password = 'somepass'
++        self.assertRaises(Exception, self.transport.establish_connection)
++
+     def test_transport_establish_conn_set_password(self):
++        self.client.userid = 'someuser'
+         self.client.password = 'somepass'
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            username='someuser',
++            password='somepass',
++            sasl_mechanisms='PLAIN',
+             host='127.0.0.1',
+             timeout=4,
+-            password='somepass',
+             port=5672,
+             transport='tcp',
+         )
+@@ -1820,11 +1813,9 @@ class TestTransportEstablishConnection(Case):
+         self.client.ssl = False
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             timeout=4,
+-            password='',
+             port=5672,
+             transport='tcp',
+         )
+@@ -1838,15 +1829,13 @@ class TestTransportEstablishConnection(Case):
+         }
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+             ssl_certfile='my_certfile',
+             ssl_trustfile='my_cacerts',
+             timeout=4,
+             ssl_skip_hostname_check=False,
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             ssl_keyfile='my_keyfile',
+-            password='',
+             port=5672, transport='ssl',
+         )
+ 
+@@ -1859,15 +1848,13 @@ class TestTransportEstablishConnection(Case):
+         }
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+             ssl_certfile='my_certfile',
+             ssl_trustfile='my_cacerts',
+             timeout=4,
+             ssl_skip_hostname_check=True,
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='127.0.0.1',
+             ssl_keyfile='my_keyfile',
+-            password='',
+             port=5672, transport='ssl',
+         )
+ 
+@@ -1904,11 +1891,11 @@ class TestTransportEstablishConnection(Case):
+         self.client.hostname = 'some_other_hostname'
+         self.transport.establish_connection()
+         self.mock_conn.assert_called_once_with(
+-            username='guest',
+-            sasl_mechanisms='PLAIN ANONYMOUS',
++            sasl_mechanisms='ANONYMOUS',
+             host='some_other_hostname',
+-            timeout=4, password='',
+-            port=5672, transport='tcp',
++            timeout=4,
++            port=5672,
++            transport='tcp',
+         )
+ 
+ 
+@@ -2058,10 +2045,12 @@ class TestTransport(ExtraAssertionsMixin, Case):
+     def test_default_connection_params(self):
+         """Test that the default_connection_params are correct"""
+         correct_params = {
+-            'userid': 'guest', 'password': '',
+-            'port': 5672, 'virtual_host': '',
+             'hostname': 'localhost',
+-            'sasl_mechanisms': 'PLAIN ANONYMOUS',
++            'password': None,
++            'port': 5672,
++            'sasl_mechanisms': 'ANONYMOUS',
++            'userid': None,
++            'virtual_host': '',
+         }
+         my_transport = Transport(self.mock_client)
+         result_params = my_transport.default_connection_params
+diff --git a/kombu/tests/transport/test_redis.py b/kombu/tests/transport/test_redis.py
+index 17f2dcc..175843e 100644
+--- a/kombu/tests/transport/test_redis.py
++++ b/kombu/tests/transport/test_redis.py
+@@ -578,16 +578,18 @@ class test_Channel(Case):
+         srem = x.client.srem = Mock()
+ 
+         x._delete('queue', 'exchange', 'routing_key', None)
+-        delete.assert_has_call('queue')
+-        srem.assert_has_call(x.keyprefix_queue % ('exchange', ),
+-                             x.sep.join(['routing_key', '', 'queue']))
++        delete.assert_any_call('queue')
++        srem.assert_called_once_with(
++            x.keyprefix_queue % ('exchange', ),
++            x.sep.join(['routing_key', '', 'queue'])
++        )
+ 
+     def test_has_queue(self):
+         self.channel._in_poll = False
+         exists = self.channel.client.exists = Mock()
+         exists.return_value = True
+         self.assertTrue(self.channel._has_queue('foo'))
+-        exists.assert_has_call('foo')
++        exists.assert_any_call('foo')
+ 
+         exists.return_value = False
+         self.assertFalse(self.channel._has_queue('foo'))
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index 65dcb11..5ccb29a 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -42,6 +42,7 @@ import threading
+ import time
+ 
+ from itertools import count
++from gettext import gettext as _
+ 
+ import amqp.protocol
+ 
+@@ -1202,7 +1203,6 @@ class Connection(object):
+ 
+     # A class reference to the :class:`Channel` object
+     Channel = Channel
+-    SASL_ANONYMOUS_MECH = 'ANONYMOUS'
+ 
+     def __init__(self, **connection_options):
+         """Instantiate a Connection object.
+@@ -1212,26 +1212,31 @@ class Connection(object):
+         * host: The host that connections should connect to.
+         * port: The port that connection should connect to.
+         * username: The username that connections should connect with.
++              Optional.
+         * password: The password that connections should connect with.
+-        * transport: The transport type that connections should use. Either
+-              'tcp', or 'ssl' are expected as values.
+-        * timeout: the timeout used when a Connection connects to the broker.
++              Optional but requires a username.
++        * transport: The transport type that connections should use.
++              Either 'tcp', or 'ssl' are expected as values.
++        * timeout: the timeout used when a Connection connects to the
++              broker.
+         * sasl_mechanisms: The sasl authentication mechanism type to use.
+-              refer to SASL documentation for an explanation of valid values.
++              refer to SASL documentation for an explanation of valid
++              values.
+ 
+         Creates a :class:`qpid.messaging.endpoints.Connection` object with
+         the saved parameters, and stores it as _qpid_conn.
+ 
+         qpid.messaging has an AuthenticationFailure exception type, but
+         instead raises a ConnectionError with a message that indicates an
+-        authentication failure occurred in those situations. ConnectionError
+-        is listed as a recoverable error type, so kombu will attempt to retry
+-        if a ConnectionError is raised. Retrying the operation without
+-        adjusting the credentials is not correct, so this method specifically
+-        checks for a ConnectionError that indicates an Authentication Failure
+-        occurred. In those situations, the error type is mutated while
+-        preserving the original message and raised so kombu will allow the
+-        exception to not be considered recoverable.
++        authentication failure occurred in those situations.
++        ConnectionError is listed as a recoverable error type, so kombu
++        will attempt to retry if a ConnectionError is raised. Retrying
++        the operation without adjusting the credentials is not correct,
++        so this method specifically checks for a ConnectionError that
++        indicates an Authentication Failure occurred. In those
++        situations, the error type is mutated while preserving the
++        original message and raised so kombu will allow the exception to
++        not be considered recoverable.
+ 
+         """
+         self.connection_options = connection_options
+@@ -1240,66 +1245,42 @@ class Connection(object):
+         self._qpid_conn = None
+         establish = qpid.messaging.Connection.establish
+ 
+-        # There is a behavior difference in qpid.messaging's sasl_mechanism
+-        # selection method and cyrus-sasl's. The former will put PLAIN before
+-        # ANONYMOUS if a username and password is given, but the latter will
+-        # simply take whichever mech is listed first. Thus, if we had
+-        # "ANONYMOUS PLAIN" as the default, the user would never be able to
+-        # select PLAIN if cyrus-sasl was installed.
+-
+-        # The following code will put ANONYMOUS last in the mech list, and then
+-        # try sasl mechs one by one. This should still result in secure
+-        # behavior since it will select the first suitable mech. Unsuitable
+-        # mechs will be rejected by the server.
+-
+-        _saslm = connection_options['sasl_mechanisms'].split()
+-        sasl_mechanisms = [x for x in _saslm
+-                           if x != self.SASL_ANONYMOUS_MECH]
+-        if self.SASL_ANONYMOUS_MECH in _saslm:
+-            sasl_mechanisms.append(self.SASL_ANONYMOUS_MECH)
+-
+-        for sasl_mech in sasl_mechanisms:
+-            try:
+-                logger.debug(
+-                    'Attempting to connect to qpid '
+-                    'with SASL mechanism %s', sasl_mech,
+-                )
+-                modified_conn_opts = self.connection_options
+-                modified_conn_opts['sasl_mechanisms'] = sasl_mech
+-                self._qpid_conn = establish(**modified_conn_opts)
+-                # connection was successful if we got this far
+-                logger.info(
+-                    'Connected to qpid with SASL mechanism %s', sasl_mech,
+-                )
+-                break
+-            except ConnectionError as conn_exc:
+-                # if we get one of these errors, do not raise an exception.
+-                # Raising will cause the connection to be retried. Instead,
+-                # just continue on to the next mech.
+-                coded_as_auth_failure = getattr(conn_exc, 'code', None) == 320
+-                contains_auth_fail_text = \
+-                    'Authentication failed' in conn_exc.text
+-                contains_mech_fail_text = \
+-                    'sasl negotiation failed: no mechanism agreed' \
+-                    in conn_exc.text
+-                contains_mech_unavail_text = 'no mechanism available' \
+-                    in conn_exc.text
+-                if coded_as_auth_failure or \
+-                        contains_auth_fail_text or contains_mech_fail_text or \
+-                        contains_mech_unavail_text:
+-                    logger.debug(
+-                        'Unable to connect to qpid with SASL mechanism %s',
+-                        sasl_mech,
+-                    )
+-                    continue
+-                raise
+-
+-        if not self.get_qpid_connection():
+-            logger.error(
+-                'Unable to authenticate to qpid using '
+-                'the following mechanisms: %s', sasl_mechanisms,
+-            )
+-            raise AuthenticationFailure(sys.exc_info()[1])
++        # There are several inconsistent behaviors in the sasl libraries
++        # used on different systems. This implementation uses only
++        # advertises one type to the server either ANONYMOUS or PLAIN.
++
++        sasl_mech = connection_options['sasl_mechanisms']
++
++        try:
++            msg = _('Attempting to connect to qpid with '
++                    'SASL mechanism %s') % sasl_mech
++            logger.debug(msg)
++            self._qpid_conn = establish(**self.connection_options)
++            # connection was successful if we got this far
++            msg = _('Connected to qpid with SASL '
++                    'mechanism %s') % sasl_mech
++            logger.info(msg)
++        except ConnectionError as conn_exc:
++            # if we get one of these errors, do not raise an exception.
++            # Raising will cause the connection to be retried. Instead,
++            # just continue on to the next mech.
++            coded_as_auth_failure = getattr(conn_exc, 'code', None) == 320
++            contains_auth_fail_text = \
++                'Authentication failed' in conn_exc.text
++            contains_mech_fail_text = \
++                'sasl negotiation failed: no mechanism agreed' \
++                in conn_exc.text
++            contains_mech_unavail_text = 'no mechanism available' \
++                in conn_exc.text
++            if coded_as_auth_failure or \
++                    contains_auth_fail_text or contains_mech_fail_text or \
++                    contains_mech_unavail_text:
++                msg = _('Unable to connect to qpid with SASL '
++                        'mechanism %s') % sasl_mech
++                logger.error(msg)
++                raise AuthenticationFailure(sys.exc_info()[1])
++            raise
++
+ 
+     def get_qpid_connection(self):
+         """Return the existing connection (singleton).
+@@ -1601,19 +1582,20 @@ class Transport(base.Transport):
+     def establish_connection(self):
+         """Establish a Connection object.
+ 
+-        Determines the correct options to use when creating any connections
+-        needed by this Transport, and create a :class:`Connection` object
+-        which saves those values for connections generated as they are
+-        needed. The options are a mixture of what is passed in through the
+-        creator of the Transport, and the defaults provided by
++        Determines the correct options to use when creating any
++        connections needed by this Transport, and create a
++        :class:`Connection` object which saves those values for
++        connections generated as they are needed. The options are a
++        mixture of what is passed in through the creator of the
++        Transport, and the defaults provided by
+         :meth:`default_connection_params`. Options cover broker network
+         settings, timeout behaviors, authentication, and identity
+         verification settings.
+ 
+         This method also creates and stores a
+         :class:`~qpid.messaging.endpoints.Session` using the
+-        :class:`~qpid.messaging.endpoints.Connection` created by this method.
+-        The Session is stored on self.
++        :class:`~qpid.messaging.endpoints.Connection` created by this
++        method. The Session is stored on self.
+ 
+         :return: The created :class:`Connection` object is returned.
+         :rtype: :class:`Connection`
+@@ -1638,13 +1620,22 @@ class Transport(base.Transport):
+                 conninfo.transport_options['ssl_skip_hostname_check'] = True
+         else:
+             conninfo.qpid_transport = 'tcp'
+-        opts = dict({'host': conninfo.hostname, 'port': conninfo.port,
+-                     'username': conninfo.userid,
+-                     'password': conninfo.password,
+-                     'transport': conninfo.qpid_transport,
+-                     'timeout': conninfo.connect_timeout,
+-                     'sasl_mechanisms': conninfo.sasl_mechanisms},
+-                    **conninfo.transport_options or {})
++        opts = dict({
++            'host': conninfo.hostname,
++            'port': conninfo.port,
++            'sasl_mechanisms': conninfo.sasl_mechanisms,
++            'timeout': conninfo.connect_timeout,
++            'transport': conninfo.qpid_transport
++        }, **conninfo.transport_options or {})
++        if conninfo.userid is not None:
++            opts['username'] = conninfo.userid
++            opts['sasl_mechanisms'] = 'PLAIN'
++        elif conninfo.password is not None:
++                raise Exception(
++                    'Password configured but no username. A username is '
++                    'required when using a password.')
++        if conninfo.password is not None:
++            opts['password'] = conninfo.password
+         conn = self.Connection(**opts)
+         conn.client = self.client
+         self.session = conn.get_qpid_connection().session()
+@@ -1721,15 +1712,25 @@ class Transport(base.Transport):
+         These connection parameters will be used whenever the creator of
+         Transport does not specify a required parameter.
+ 
+-        NOTE: password is set to '' by default instead of None so the a
+-        connection is attempted[1]. An empty password is considered valid for
+-        qpidd if "auth=no" is set on the server.
+-
+-        [1] https://issues.apache.org/jira/browse/QPID-6109
+-
+         :return: A dict containing the default parameters.
+         :rtype: dict
+         """
+-        return {'userid': 'guest', 'password': '',
+-                'port': self.default_port, 'virtual_host': '',
+-                'hostname': 'localhost', 'sasl_mechanisms': 'PLAIN ANONYMOUS'}
++        return {
++            'hostname': 'localhost',
++            'password': None,
++            'port': self.default_port,
++            'sasl_mechanisms': 'ANONYMOUS',
++            'userid': None,
++            'virtual_host': ''
++        }
++
++    def __del__(self):
++        """
++        Ensure file descriptors opened in __init__() are closed.
++        """
++        for fd in (self.r, self._w):
++            try:
++                os.close(fd)
++            except OSError:
++                # ignored
++                pass
+-- 
+1.9.3
+
