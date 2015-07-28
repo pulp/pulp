@@ -79,7 +79,7 @@ _default_values = {
         'ks_url': '/pulp/ks',
     },
     'tasks': {
-        'broker_url': 'qpid://guest@localhost/',
+        'broker_url': 'qpid://localhost/',
         'celery_require_ssl': 'false',
         'cacert': '/etc/pki/pulp/qpid/ca.crt',
         'keyfile': '/etc/pki/pulp/qpid/client.crt',

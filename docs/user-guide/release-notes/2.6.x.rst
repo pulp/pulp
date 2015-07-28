@@ -2,6 +2,18 @@
 Pulp 2.6 Release Notes
 =========================
 
+Pulp 2.6.4
+==========
+
+Pulp now connects to Qpid with the ANONYMOUS SASL authentication
+mechanism. This aligns with Qpid's default behavior.
+
+Bug Fixes
+---------
+
+This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.4>`.
+
+
 Pulp 2.6.3
 ==========
 
