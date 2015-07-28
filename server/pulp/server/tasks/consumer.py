@@ -155,7 +155,7 @@ def install_content(consumer_id, units, options):
 
 
 @celery.task(base=Task)
-def update_content(consumer_id, units, options):
+def update_content(consumer_id, units, options, scheduled_call_id=None):
     """
     Update units on a consumer.
 
@@ -165,6 +165,8 @@ def update_content(consumer_id, units, options):
     :type units: list or tuple
     :param options: options to pass to the install manager
     :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
     :returns Dictionary representation of a task status
     :rtype: dictionary
     """

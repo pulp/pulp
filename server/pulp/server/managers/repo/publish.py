@@ -357,7 +357,7 @@ class RepoPublishManager(object):
         return auto_distributors
 
     @staticmethod
-    def queue_publish(repo_id, distributor_id, overrides=None):
+    def queue_publish(repo_id, distributor_id, overrides=None, scheduled_call_id=None):
         """
         Create an itinerary for repo publish.
         :param repo_id: id of the repo to publish
@@ -366,6 +366,8 @@ class RepoPublishManager(object):
         :type distributor_id: str
         :param overrides: dictionary of options to pass to the publish manager
         :type overrides: dict or None
+        :param scheduled_call_id: id of scheduled call that dispatched this task
+        :type scheduled_call_id: str
         :return: task result object
         :rtype: pulp.server.async.tasks.TaskResult
         """

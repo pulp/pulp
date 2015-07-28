@@ -49,7 +49,7 @@ class RepoSyncManager(object):
     Manager used to handle sync and sync query operations.
     """
     @staticmethod
-    def sync(repo_id, sync_config_override=None):
+    def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         """
         Performs a synchronize operation on the given repository.
 
@@ -321,7 +321,7 @@ class RepoSyncManager(object):
         return dir
 
     @staticmethod
-    def queue_sync_with_auto_publish(repo_id, overrides=None):
+    def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
         """
         Sync a repository and upon successful completion, publish
         any distributors that are configured for auto publish.
@@ -330,12 +330,15 @@ class RepoSyncManager(object):
         :type repo_id: str
         :param overrides: dictionary of configuration overrides for this sync
         :type overrides: dict or None
+        :param scheduled_call_id: id of scheduled call that dispatched this task
+        :type scheduled_call_id: str
         :return: A task result containing the details of the task executed and any spawned tasks
         :rtype: TaskResult
         """
         kwargs = {
             'repo_id': repo_id,
             'sync_config_override': overrides,
+            'scheduled_call_id': scheduled_call_id,
         }
 
         tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]

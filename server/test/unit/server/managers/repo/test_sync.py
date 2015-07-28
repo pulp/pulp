@@ -77,10 +77,12 @@ class RepoSyncManagerTests(base.PulpServerTests):
     def test_queue_sync(self, mock_sync_task):
         repo_id = 'foo'
         overrides = {'baz': 1}
-        self.sync_manager.queue_sync_with_auto_publish(repo_id, overrides)
+        scheduled_call_id = None
+        self.sync_manager.queue_sync_with_auto_publish(repo_id, overrides, scheduled_call_id)
         kwargs = {
             'repo_id': repo_id,
-            'sync_config_override': overrides
+            'sync_config_override': overrides,
+            'scheduled_call_id': None,
         }
         tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]
         mock_sync_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,

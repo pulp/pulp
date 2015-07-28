@@ -20,6 +20,7 @@ from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource, Worker
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers import resources, factory as managers
+from pulp.server.managers.schedule import utils
 
 
 controller = control.Control(app=celery)
@@ -340,6 +341,11 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         """
         logger.debug("Task successful : [%s]" % task_id)
+        if 'scheduled_call_id' in kwargs:
+            if not isinstance(retval, AsyncResult):
+                logger.info(_('resetting consecutive failure count for schedule %(id)s')
+                             % {'id': kwargs['scheduled_call_id']})
+                utils.reset_failure_count(kwargs['scheduled_call_id'])
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
@@ -382,6 +388,8 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
         logger.debug("Task failed : [%s]" % task_id)
+        if 'scheduled_call_id' in kwargs:
+            utils.increment_failure_count(kwargs['scheduled_call_id'])
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)

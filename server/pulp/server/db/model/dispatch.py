@@ -199,6 +199,7 @@ class ScheduledCall(Model):
         self.schedule = schedule
         self.task = task
         self.total_run_count = total_run_count
+        self.kwargs['scheduled_call_id'] = self.id
 
         if first_run is None:
             # get the date and time from the iso_schedule value, and if it does not have a date and
