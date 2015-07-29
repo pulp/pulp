@@ -90,5 +90,7 @@ def configure_SSL():
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
 
+        if config.has_option('tasks', 'broker_login_method'):
+            celery.conf.update(BROKER_LOGIN_METHOD=config.get('tasks', 'broker_login_method'))
 
 configure_SSL()
