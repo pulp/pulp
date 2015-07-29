@@ -8,7 +8,7 @@ import re
 from pulp.server import config
 from pulp.server.db.connection import get_collection
 from pulp.server.db import model
-from pulp.server.db.model.repository import RepoContentUnit, RepoImporter
+from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
@@ -78,7 +78,7 @@ class RepoManager(object):
 
         results = []
         repo_importers = list(
-            RepoImporter.get_collection().find({'importer_type_id': importer_type_id}))
+            get_collection('repo_importers').find({'importer_type_id': importer_type_id}))
         for ri in repo_importers:
             repo_obj = model.Repository.objects.get(repo_id=ri['repo_id'])
             repo = serializers.Repository(repo_obj).data

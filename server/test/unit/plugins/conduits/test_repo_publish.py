@@ -22,7 +22,7 @@ class RepoPublishConduitTests(base.PulpServerTests):
         model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.distributor.model.Repository.objects')
     def setUp(self, mock_repo_qs):
         super(RepoPublishConduitTests, self).setUp()
         mock_plugins.install()

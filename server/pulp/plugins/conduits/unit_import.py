@@ -55,7 +55,6 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
 
         self.__association_manager = manager_factory.repo_unit_association_manager()
         self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
-        self.__importer_manager = manager_factory.repo_importer_manager()
 
     def __str__(self):
         return _('ImportUnitConduit for repository [%(r)s]') % {'r': self.repo_id}

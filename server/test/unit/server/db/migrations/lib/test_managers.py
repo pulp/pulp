@@ -8,7 +8,7 @@ from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
 from pulp.server.db import model
-from pulp.server.db.model.repository import RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.db.model import TaskStatus
 from pulp.server.db.migrations.lib import managers
 
@@ -37,7 +37,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         super(RepoManagerTests, self).clean()
 
         model.Repository.drop_collection()
-        RepoImporter.get_collection().remove()
+        model.Importer.drop_collection()
         RepoDistributor.get_collection().remove()
         TaskStatus.objects().delete()
 
@@ -83,19 +83,20 @@ class RepoManagerTests(base.ResourceReservationTests):
 
 @mock.patch('pulp.server.db.migrations.lib.managers.serializers.Repository')
 @mock.patch('pulp.server.db.migrations.lib.managers.model.Repository.objects')
-@mock.patch('pulp.server.db.migrations.lib.managers.RepoImporter.get_collection')
+@mock.patch('pulp.server.db.migrations.lib.managers.get_collection')
 class TestRepoMangerFindWithImporterType(base.PulpServerTests):
     """
     Tests for finding repositories by importer type.
     """
 
-    def test_find_with_importer_type(self, mock_importer_coll, mock_repo_qs, mock_repo_ser):
+    def test_find_with_importer_type(self, mock_coll, mock_repo_qs, mock_repo_ser):
         """
         Ensure that repos are found and importers are placed into them.
         """
+        mock_importer_coll = mock_coll.return_value
         mock_repos = {'repo_id': 'repo-a'}
         mock_importers = [{'id': 'imp1', 'repo_id': 'repo-a'}]
-        mock_importer_coll().find.return_value = mock_importers
+        mock_importer_coll.find.return_value = mock_importers
         mock_repo_ser().data = mock_repos
 
         repos = managers.RepoManager().find_with_importer_type('mock-imp-type')

@@ -5,69 +5,6 @@ from pulp.server.db.model.reaper_base import ReaperMixin
 import pulp.common.dateutils as dateutils
 
 
-class RepoImporter(Model):
-    """
-    Definition of an importer assigned to a repository. This couples the type of
-    importer being used with the configuration for it for a given repository.
-    This is effectively an "instance" of an importer.
-
-    Each RepoImporter is uniquely identified by the tuple of ID and repo ID.
-
-    @ivar repo_id: identifies the repo to which it is associated
-    @type repo_id: str
-
-    @ivar id: uniquely identifies this instance for the repo it's associated with
-    @type id: str
-
-    @ivar importer_type_id: used to look up the importer plugin when this
-                            importer is used
-    @type importer_type_id: str
-
-    @ivar config: importer config passed to the plugin when it is invoked
-    @type config: dict
-
-    @ivar scratchpad: free-form field for the importer plugin to use to store
-                      whatever it needs (keep in mind this instance is scoped to
-                      a particular repo)
-    @type scratchpad: anything pickle-able
-
-    @ivar last_sync: timestamp of the last sync (regardless of success or failure)
-                     in ISO8601 format
-    @type last_sync: str
-    """
-
-    RESOURCE_TEMPLATE = 'pulp:importer:%s:%s'
-
-    collection_name = 'repo_importers'
-    unique_indices = (('repo_id', 'id'),)
-
-    def __init__(self, repo_id, id, importer_type_id, config):
-        super(RepoImporter, self).__init__()
-
-        # General
-        self.repo_id = repo_id
-        self.id = id
-        self.importer_type_id = importer_type_id
-        self.config = config
-        self.scratchpad = None
-        self.last_sync = None
-        self.scheduled_syncs = []
-
-    @classmethod
-    def build_resource_tag(cls, repo_id, importer_id):
-        """
-        :param repo_id:     unique ID for a repository
-        :type  repo_id:     basestring
-        :param importer_id: unique ID for the importer
-        :type  importer_id: basestring
-
-        :return:    a globally unique identifier for the repo and importer that
-                    can be used in cross-type comparisons.
-        :rtype:     basestring
-        """
-        return cls.RESOURCE_TEMPLATE % (repo_id, importer_id)
-
-
 class RepoDistributor(Model):
     """
     Definition of a distributor assigned to a repository. This couples the type

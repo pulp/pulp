@@ -5,13 +5,13 @@ from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
+from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import model
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
 import pulp.server.managers.content.cud as content_manager
 import pulp.server.managers.content.query as query_manager
-import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.unit_association as association_manager
 import pulp.server.managers.repo.unit_association_query as association_query_manager
 
@@ -26,21 +26,23 @@ class RepoSyncConduitTests(base.PulpServerTests):
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
         model.Repository.drop_collection()
+        model.Importer.drop_collection()
         RepoContentUnit.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
-    def setUp(self, mock_repo_qs):
+    @mock.patch('pulp.server.controllers.importer.remove_importer')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Importer.objects')
+    def setUp(self, mock_repo_qs, mock_imp_qs, mock_remove):
         super(RepoSyncConduitTests, self).setUp()
         mock_plugins.install()
         types_database.update_database([TYPE_1_DEF, TYPE_2_DEF])
 
-        self.importer_manager = importer_manager.RepoImporterManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
         self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.content_manager = content_manager.ContentManager()
         self.query_manager = query_manager.ContentQueryManager()
 
-        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-1'), 'mock-importer', {})
         self.conduit = RepoSyncConduit('repo-1', 'test-importer')
 
     def tearDown(self):

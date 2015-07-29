@@ -19,8 +19,9 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
+from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import connection, model
-from pulp.server.db.model.repository import (RepoDistributor, RepoImporter, RepoContentUnit,
+from pulp.server.db.model.repository import (RepoDistributor, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -164,7 +165,7 @@ def disassociate_units(repository, unit_iterable):
 
 
 def create_repo(repo_id, display_name=None, description=None, notes=None, importer_type_id=None,
-                importer_repo_plugin_config=None, distributor_list=[]):
+                importer_repo_plugin_config=None, distributor_list=None):
     """
     Create a repository and add importers and distributors if they are specified. If there are any
     issues adding any of the importers or distributors, the repo will be deleted and the exceptions
@@ -202,7 +203,9 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
     """
 
     # Prevalidation.
-    if not isinstance(distributor_list, (list, tuple)):
+    if not isinstance(distributor_list, (list, tuple, type(None))):
+        raise pulp_exceptions.InvalidValue(['distributor_list'])
+    if not all(isinstance(distributor, dict) for distributor in distributor_list or []):
         raise pulp_exceptions.InvalidValue(['distributor_list'])
 
     # Note: the repo must be saved before the importer and distributor managers can be called
@@ -218,10 +221,8 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
 
     # Add the importer. Delete the repository if this fails.
     if importer_type_id is not None:
-        importer_manager = manager_factory.repo_importer_manager()
         try:
-            importer_manager.set_importer(repo_id, importer_type_id,
-                                          importer_repo_plugin_config)
+            importer_controller.set_importer(repo, importer_type_id, importer_repo_plugin_config)
         except Exception:
             _logger.exception(
                 'Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
@@ -230,10 +231,7 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
 
     # Add the distributors. Delete the repository if this fails.
     distributor_manager = manager_factory.repo_distributor_manager()
-    for distributor in distributor_list:
-        if not isinstance(distributor, dict):
-            repo.delete()
-            raise pulp_exceptions.InvalidValue(['distributor_list'])
+    for distributor in distributor_list or []:
         try:
             # Validation will occur in distributor manager.
             type_id = distributor.get('distributor_type_id')
@@ -293,15 +291,13 @@ def delete(repo_id):
     # the server logs for more information.
     error_tuples = []  # tuple of failed step and exception arguments
 
-    importer_manager = manager_factory.repo_importer_manager()
     distributor_manager = manager_factory.repo_distributor_manager()
 
     # Inform the importer
-    importer_coll = RepoImporter.get_collection()
-    repo_importer = importer_coll.find_one({'repo_id': repo_id})
+    repo_importer = model.Importer.objects(repo_id=repo_id).first()
     if repo_importer is not None:
         try:
-            importer_manager.remove_importer(repo_id)
+            importer_controller.remove_importer(repo_id)
         except Exception, e:
             _logger.exception('Error received removing importer [%s] from repo [%s]' % (
                 repo_importer['importer_type_id'], repo_id))
@@ -327,7 +323,7 @@ def delete(repo_id):
         # calls to other methods in this manager, but in case those failed we still want to attempt
         # to keep the database clean.
         RepoDistributor.get_collection().remove({'repo_id': repo_id}, safe=True)
-        RepoImporter.get_collection().remove({'repo_id': repo_id}, safe=True)
+        model.Importer.objects(repo_id=repo_id).delete()
         RepoSyncResult.get_collection().remove({'repo_id': repo_id}, safe=True)
         RepoPublishResult.get_collection().remove({'repo_id': repo_id}, safe=True)
         RepoContentUnit.get_collection().remove({'repo_id': repo_id}, safe=True)
@@ -409,8 +405,7 @@ def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_confi
                 error_code=error_codes.PLP1010, field='delta', field_type='dict', value=repo_delta)
 
     if importer_config is not None:
-        importer_manager = manager_factory.repo_importer_manager()
-        importer_manager.update_importer_config(repo.repo_id, importer_config)
+        importer_controller.update_importer_config(repo.repo_id, importer_config)
 
     additional_tasks = []
     if distributor_configs is not None:
@@ -530,19 +525,15 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     transfer_repo = repo_obj.to_transfer_repo()
 
-    importer_collection = RepoImporter.get_collection()
-    repo_importer = importer_collection.find_one({'repo_id': repo_obj.repo_id})
-    if repo_importer is None:
-        raise pulp_exceptions.MissingResource(repository=repo_id)
-
+    repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
     try:
-        importer, imp_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+        importer, imp_config = plugin_api.get_importer_by_id(repo_importer.importer_type_id)
     except plugin_exceptions.PluginNotFound:
         raise pulp_exceptions.MissingResource(repository=repo_id)
 
-    call_config = PluginCallConfiguration(imp_config, repo_importer['config'], sync_config_override)
+    call_config = PluginCallConfiguration(imp_config, repo_importer.config, sync_config_override)
     transfer_repo.working_dir = common_utils.get_working_directory()
-    conduit = RepoSyncConduit(repo_id, repo_importer['id'])
+    conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id)
     sync_result_collection = RepoSyncResult.get_collection()
 
     # Fire an events around the call
@@ -597,8 +588,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     finally:
         # Do an update instead of a save in case the importer has changed the scratchpad
-        importer_collection.update(
-            {'repo_id': repo_obj.repo_id}, {'$set': {'last_sync': sync_end_timestamp}}, safe=True)
+        model.Importer.objects(repo_id=repo_obj.repo_id).update(last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
         sync_result_collection.save(sync_result, safe=True)
 

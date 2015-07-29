@@ -16,6 +16,7 @@ from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet
+from pulp.server.webservices.views import serializers
 
 
 @patch('pulp.server.db.model.UnsafeRetry')
@@ -563,6 +564,57 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(repo_obj.notes['leave'], 2)
         self.assertEqual(repo_obj.notes['modify'], 4)
         self.assertEqual(repo_obj.notes['add'], 5)
+
+
+class TestImporter(unittest.TestCase):
+    """
+    Tests for the importer class.
+    """
+    def test_model_superclass(self):
+        """
+        Ensure that the class is a Mongoengine Document.
+        """
+        sample_model = model.Importer()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        """
+        Ensure the attributes are the correct type and they have the correct values.
+        """
+        self.assertTrue(isinstance(model.Importer.repo_id, StringField))
+        self.assertTrue(model.Importer.repo_id.required)
+        self.assertTrue(isinstance(model.Importer.importer_type_id, StringField))
+        self.assertTrue(model.Importer.importer_type_id.required)
+        self.assertTrue(isinstance(model.Importer.config, DictField))
+        self.assertFalse(model.Importer.config.required)
+        self.assertTrue(isinstance(model.Importer._ns, StringField))
+        self.assertEquals(model.Importer._ns.default, 'repo_importers')
+
+    def test_serializer(self):
+        """
+        Ensure that the serializer is set.
+        """
+        self.assertEqual(model.Importer.serializer, serializers.ImporterSerializer)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.Importer._meta['collection'], 'repo_importers')
+
+    def test_meta_allow_inheritance(self):
+        """
+        Ensure that inheritance is not allowed.
+        """
+        self.assertEquals(model.Importer._meta['allow_inheritance'], False)
+
+    def test_meta_allow_indexes(self):
+        """
+        Test that the indexes are set correctly.
+        """
+        indexes = model.Importer._meta['indexes']
+        self.assertDictEqual(
+            indexes[0], {'fields': ['-repo_id', '-importer_type_id'], 'unique': True})
 
 
 class TestCeleryBeatLock(unittest.TestCase):

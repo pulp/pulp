@@ -6,6 +6,7 @@ from django.views.generic import View
 from pulp.common import constants, dateutils, tags
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
+from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
@@ -13,7 +14,6 @@ from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
-from pulp.server.managers.repo import importer as repo_importer_manager
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.webservices.views import search, serializers
@@ -49,12 +49,17 @@ def _merge_related_objects(name, manager, repos):
     for repo in repos:
         repo[name] = []
 
-    for item in manager.find_by_repo_list(repo_ids):
-        if name == 'importers':
-            serializer = serializers.ImporterSerializer(item)
-            repo_dict[item['repo_id']][name].append(serializer.data)
-        else:
+    # Should be removed upon completion of the https://pulp.plan.io/issues/780
+    if hasattr(manager, 'find_by_repo_list'):
+        all_items = manager.find_by_repo_list(repo_ids)
+        for item in all_items:
             repo_dict[item['repo_id']][name].append(item)
+    else:
+        # Collection has been converted to mongoengine
+        all_items = manager.objects(repo_id__in=repo_ids)
+        for item in all_items:
+            serializer = model.Importer.serializer(item)
+            repo_dict[item['repo_id']][name].append(serializer.data)
 
 
 def _process_repos(repo_objs, details, importers, distributors):
@@ -83,37 +88,11 @@ def _process_repos(repo_objs, details, importers, distributors):
     if details:
         importers = distributors = True
     if importers:
-        _merge_related_objects('importers', manager_factory.repo_importer_manager(), repos)
+        _merge_related_objects('importers', model.Importer, repos)
     if distributors:
         _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), repos)
 
     return repos
-
-
-def _get_valid_importer(repo_id, importer_id):
-    """
-    Validates if the specified repo_id and importer_id are valid.
-    If not MissingResource exception is raised.
-
-    :param repo_id: id of the repo
-    :type repo_id: str
-    :param importer_id: id of the importer
-    :type importer_id: str
-
-    :return: key-value pairs describing the importer in use
-    :rtype:  dict
-    :raises pulp_exceptions.MissingResource: if repo or importer cannot be found
-    """
-
-    model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    importer_manager = manager_factory.repo_importer_manager()
-    try:
-        importer = importer_manager.get_importer(repo_id)
-        if importer['id'] != importer_id:
-            raise pulp_exceptions.MissingResource(importer_id=importer_id)
-    except pulp_exceptions.MissingResource:
-            raise pulp_exceptions.MissingResource(importer_id=importer_id)
-    return importer
 
 
 class ReposView(View):
@@ -199,7 +178,7 @@ class RepoResourceView(View):
         details = request.GET.get('details', 'false').lower() == 'true'
         if request.GET.get('importers', 'false').lower() == 'true' or details:
             _merge_related_objects(
-                'importers', manager_factory.repo_importer_manager(), (repo,))
+                'importers', model.Importer, (repo,))
         if request.GET.get('distributors', 'false').lower() == 'true' or details:
             _merge_related_objects(
                 'distributors', manager_factory.repo_distributor_manager(), (repo,))
@@ -342,11 +321,9 @@ class RepoImportersView(View):
         :rtype : django.http.HttpResponse
         """
 
-        importer_manager = manager_factory.repo_importer_manager()
-        importers = importer_manager.get_importers(repo_id)
-        serializer = serializers.ImporterSerializer(importers, multiple=True)
-
-        return generate_json_response_with_pulp_encoder(serializer.data)
+        importers = model.Importer.objects(repo_id=repo_id)
+        serialized_importers = model.Importer.serializer(importers, multiple=True).data
+        return generate_json_response_with_pulp_encoder(serialized_importers)
 
     @auth_required(authorization.CREATE)
     @json_body_required
@@ -367,19 +344,11 @@ class RepoImportersView(View):
 
         :raises pulp_exceptions.OperationPostponed: dispatch a task
         """
-
         importer_type = request.body_as_json.get('importer_type_id', None)
         config = request.body_as_json.get('importer_config', None)
-
-        # Validation occurs within the manager
-        importer_manager = manager_factory.repo_importer_manager()
-        importer_manager.validate_importer_config(repo_id, importer_type, config)
-
-        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-                     tags.action_tag('add_importer')]
-        async_result = repo_importer_manager.set_importer.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, importer_type],
-            {'repo_plugin_config': config}, tags=task_tags)
+        importer_controller.validate_importer_config(repo_id, importer_type, config)
+        repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        async_result = importer_controller.queue_set_importer(repo, importer_type, config)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
@@ -404,14 +373,14 @@ class RepoImporterResourceView(View):
         :rtype : django.http.HttpResponse
         :raises pulp_exceptions.MissingResource: if importer_id does not match importer for repo
         """
-        importer = _get_valid_importer(repo_id, importer_id)
-        serializer = serializers.ImporterSerializer(importer)
-        return generate_json_response_with_pulp_encoder(serializer.data)
+        importer = importer_controller.get_valid_importer(repo_id, importer_id)
+        serialized_importer = model.Importer.serializer(importer).data
+        return generate_json_response_with_pulp_encoder(serialized_importer)
 
     @auth_required(authorization.DELETE)
     def delete(self, request, repo_id, importer_id):
         """
-        Remove an importer from a repository.
+        Dispatch a task to remove an importer from a repository.
 
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
@@ -420,15 +389,10 @@ class RepoImporterResourceView(View):
         :param importer_id: The id of the importer to remove from the given repository
         :type  importer_id: str
 
-        :raises pulp_exceptions.MissingResource: if importer cannot be found for this repo
         :raises pulp_exceptions.OperationPostponed: to dispatch a task to delete the importer
         """
-        _get_valid_importer(repo_id, importer_id)
-        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-                     tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
-                     tags.action_tag('delete_importer')]
-        async_result = repo_importer_manager.remove_importer.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id], tags=task_tags)
+        importer_controller.get_valid_importer(repo_id, importer_id)
+        async_result = importer_controller.queue_remove_importer(repo_id, importer_id)
         raise pulp_exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
@@ -449,18 +413,14 @@ class RepoImporterResourceView(View):
         :raises pulp_exceptions.OperationPostponed: dispatch a task
         """
 
-        _get_valid_importer(repo_id, importer_id)
+        importer_controller.get_valid_importer(repo_id, importer_id)
         importer_config = request.body_as_json.get('importer_config', None)
 
         if importer_config is None:
             raise pulp_exceptions.MissingValue(['importer_config'])
 
-        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-                     tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
-                     tags.action_tag('update_importer')]
-        async_result = repo_importer_manager.update_importer_config.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE,
-            repo_id, [repo_id], {'importer_config': importer_config}, tags=task_tags)
+        async_result = importer_controller.queue_update_importer_config(repo_id, importer_id,
+                                                                        importer_config)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
