@@ -1,23 +1,10 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import re
-from StringIO import StringIO
 import unittest
 from mock import patch
+from StringIO import StringIO
 
-from pulp.common.config import *
+from pulp.common.config import (ANY, BOOL, Config, NUMBER, OPTIONAL, parse_bool, read_json_config,
+                                REQUIRED, ValidationException, Validator)
 
 
 SCHEMA = (
@@ -26,15 +13,13 @@ SCHEMA = (
             ('name', REQUIRED, ANY),
             ('url', REQUIRED, 'http://.+'),
             ('port', REQUIRED, NUMBER),
-        )
-    ),
+        )),
     ('limits', OPTIONAL,
         (
             ('threads', OPTIONAL, NUMBER),
             ('posix', OPTIONAL, BOOL),
             ('mode', REQUIRED, '(AUTO$|MANUAL$)'),
-        )
-    ),
+        )),
 )
 
 VALID = """
@@ -153,6 +138,7 @@ length=44
 wood=oak
 """
 
+
 class TestConfigValidator(unittest.TestCase):
 
     def test_valid(self):
@@ -175,7 +161,7 @@ class TestConfigValidator(unittest.TestCase):
 
     def test_extras(self):
         cfg = self.read(EXTRA_SECTIONS_AND_PROPERTIES)
-        s,p = cfg.validate(SCHEMA)
+        s, p = cfg.validate(SCHEMA)
         self.assertEqual(len(s), 1)
         self.assertEqual(s, ['wtf'])
         self.assertEqual(sorted(p), sorted(['limits.cpu', 'limits.color']))
@@ -189,6 +175,7 @@ class TestConfigValidator(unittest.TestCase):
     def test_section_filtering(self):
         # load using Config.read()
         self.__test_section_filtering(self.read)
+
         # load using Config.update()
         def fn(s, filter):
             fp = StringIO(s)
@@ -216,10 +203,11 @@ class TestConfigValidator(unittest.TestCase):
         self.assertEquals(len(cfg), 1)
         self.assertTrue('abcdef' in cfg)
         # tuple filter
-        cfg = read(RANDOM_1, ('abcdef','my_b'))
+        cfg = read(RANDOM_1, ('abcdef', 'my_b'))
         self.assertEquals(len(cfg), 2)
         self.assertTrue('abcdef' in cfg)
         self.assertTrue('my_b' in cfg)
+
         # callable filter
         def fn(s):
             return s in ('my_a', 'my_b')
@@ -295,7 +283,6 @@ class TestReadJsonConfig(unittest.TestCase):
 
         self.assertEqual(config, {'foo': 'bar'})
 
-
     @patch('os.path.exists', autospec=True)
     @patch('__builtin__.open', autospec=True)
     def test_read_json_config_prepended_slash_in_path(self, mock_open, exists):
@@ -307,6 +294,3 @@ class TestReadJsonConfig(unittest.TestCase):
     def test_read_json_config_non_existent_file(self):
         config = read_json_config("bad/file/name")
         self.assertEqual(config, {})
-
-
-

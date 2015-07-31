@@ -17,9 +17,11 @@ PLP0000 = Error("PLP0000",
                 "%(message)s", ['message'])
 PLP0001 = Error("PLP0001",
                 _("A general pulp exception occurred"), [])
-PLP0002 = Error("PLP0002",
-                _("Errors occurred updating bindings on consumers for repo %(repo_id)s and "
-                "distributor %(distributor_id)s"), ['repo_id', 'distributor_id'])
+PLP0002 = Error(
+    "PLP0002",
+    _("Errors occurred updating bindings on consumers for repo %(repo_id)s and distributor "
+      "%(distributor_id)s"),
+    ['repo_id', 'distributor_id'])
 PLP0003 = Error("PLP0003",
                 _("Errors occurred removing bindings on consumers while deleting a distributor for "
                   "repo %(repo_id)s and distributor %(distributor_id)s"),
@@ -72,22 +74,36 @@ PLP0024 = Error("PLP0024",
                   "celerybeat service is also running."),
                 [])
 PLP0025 = Error("PLP0025", _("Authentication failed."), [])
-PLP0026 = Error("PLP0026", _("Permission denied: user %(user)s cannot perform %(operation)s."), ['user', 'operation'])
-PLP0027 = Error("PLP0027", _("Authentication with username %(user)s failed: invalid SSL certificate."), ['user'])
-PLP0028 = Error("PLP0028", _("Authentication with username %(user)s failed: invalid oauth credentials."), ['user'])
-PLP0029 = Error("PLP0029",
-                _("Authentication with username %(user)s failed: preauthenticated remote user is missing."), ['user'])
-PLP0030 = Error("PLP0030", _("Authentication with username %(user)s failed: invalid username or password"), ['user'])
+PLP0026 = Error(
+    "PLP0026", _("Permission denied: user %(user)s cannot perform %(operation)s."),
+    ['user', 'operation'])
+PLP0027 = Error(
+    "PLP0027", _("Authentication with username %(user)s failed: invalid SSL certificate."),
+    ['user'])
+PLP0028 = Error(
+    "PLP0028", _("Authentication with username %(user)s failed: invalid oauth credentials."),
+    ['user'])
+PLP0029 = Error(
+    "PLP0029",
+    _("Authentication with username %(user)s failed: preauthenticated remote user is missing."),
+    ['user'])
+PLP0030 = Error(
+    "PLP0030",
+    _("Authentication with username %(user)s failed: invalid username or password"), ['user'])
 PLP0031 = Error("PLP0031", _("Content source %(id)s could not be found at %(url)s"), ['id', 'url'])
-PLP0032 = Error("PLP0032", _("Task %(task_id)s encountered one or more failures during execution."), ['task_id'])
+PLP0032 = Error(
+    "PLP0032", _("Task %(task_id)s encountered one or more failures during execution."),
+    ['task_id'])
 PLP0033 = Error("PLP0033", _("Working Directory requested outside of asynchronous task. "), [])
 PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
                              "publishing repository %(repository_id)s."),
                 ['distributor_id', 'repository_id'])
 PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed to define the "
                              "attribute unit_key_fields"), ['class_name'])
-PLP0036 = Error("PLP0036", _("The source_location: %(source_location)s specified for the content unit is invalid."),
-                ['source_location'])
+PLP0036 = Error(
+    "PLP0036",
+    _("The source_location: %(source_location)s specified for the content unit is invalid."),
+    ['source_location'])
 PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
                              "%(model_class)s failed to register. Another model has already "
                              "been registered with the same id."), ['model_id', 'model_class'])
@@ -102,11 +118,19 @@ PLP0040 = Error("PLP0040", _("This request is forbidden."), [])
 PLP1000 = Error("PLP1000", _("A validation error occurred."), [])
 PLP1001 = Error("PLP1001", _("The consumer %(consumer_id)s does not exist."), ['consumer_id'])
 PLP1002 = Error("PLP1002", _("The field %(field)s must have a value specified."), ['field'])
-PLP1003 = Error("PLP1003", _("The value specified for the field %(field)s must be made up of letters"
-                             ", numbers, underscores, or hyphens with no spaces."), ['field'])
-PLP1004 = Error("PLP1004", _("An object of type %(type)s already exists in the database with an id of %(object_id)s"), ['type', 'object_id'])
+PLP1003 = Error(
+    "PLP1003",
+    _("The value specified for the field %(field)s must be made up of letters, numbers, "
+      "underscores, or hyphens with no spaces."),
+    ['field'])
+PLP1004 = Error(
+    "PLP1004",
+    _("An object of type %(type)s already exists in the database with an id of %(object_id)s"),
+    ['type', 'object_id'])
 PLP1005 = Error("PLP1005", _("The checksum type %(checksum_type)s is unknown."), ['checksum_type'])
-PLP1006 = Error("PLP1006", _("The value specified for the field %(field)s may not start with %(value)s."), ['field', 'value'])
+PLP1006 = Error(
+    "PLP1006", _("The value specified for the field %(field)s may not start with %(value)s."),
+    ['field', 'value'])
 PLP1007 = Error("PLP1007", _("The relative path specified must not point outside of the parent"
                              " directory:  %(path)s"), ['path'])
 PLP1008 = Error("PLP1008", _("The importer type %(importer_type_id)s does not exist"),

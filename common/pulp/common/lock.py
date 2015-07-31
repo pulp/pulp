@@ -1,4 +1,3 @@
-
 """
 Contains locking classes.
 """
@@ -46,7 +45,7 @@ class LockFile:
         fp = open(self.path, 'w')
         if not blocking:
             try:
-                fcntl.flock(fp.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+                fcntl.flock(fp.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError:
                 fp.close()
                 raise LockFailed(self.path)
@@ -63,7 +62,7 @@ class LockFile:
         try:
             if self.__fp.closed:
                 return
-            fd = self.__fp.fileno()
+            self.__fp.fileno()
             self.__fp.close()
         except:
             pass

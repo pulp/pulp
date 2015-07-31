@@ -1,29 +1,16 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 The tests in this module test the pulp.common.progress module.
 """
 
-from datetime import datetime
 import unittest
+from datetime import datetime
 
 import mock
-from pulp.plugins.model import PublishReport
-from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.common.plugins import progress
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.plugins.model import PublishReport
 
 
 class TestProgressReport(unittest.TestCase):
@@ -44,8 +31,8 @@ class TestProgressReport(unittest.TestCase):
         self.assertEqual(report.conduit, None)
         self.assertEqual(report._state, progress.ProgressReport.STATE_NOT_STARTED)
 
-        # The state_times attribute should be a dictionary with only the time the not started state was
-        # entered
+        # The state_times attribute should be a dictionary with only the time the not started state
+        # was entered
         self.assertTrue(isinstance(report.state_times, dict))
         self.assertEqual(len(report.state_times), 1)
         self.assertTrue(isinstance(report.state_times[progress.ProgressReport.STATE_NOT_STARTED],
@@ -84,8 +71,10 @@ class TestProgressReport(unittest.TestCase):
 
         # The success report call should not have been made
         self.assertEqual(self.conduit.build_success_report.call_count, 0)
-        # We should have called the failure report once with the serialized progress report as the summary
-        self.conduit.build_failure_report.assert_called_once_with(report.build_progress_report(), None)
+        # We should have called the failure report once with the serialized progress report as the
+        # summary
+        self.conduit.build_failure_report.assert_called_once_with(report.build_progress_report(),
+                                                                  None)
 
         # Inspect the conduit report
         self.assertEqual(conduit_report.success_flag, False)
@@ -103,8 +92,10 @@ class TestProgressReport(unittest.TestCase):
 
         # The failure report call should not have been made
         self.assertEqual(self.conduit.build_failure_report.call_count, 0)
-        # We should have called the success report once with the serialized progress report as the summary
-        self.conduit.build_success_report.assert_called_once_with(report.build_progress_report(), None)
+        # We should have called the success report once with the serialized progress report as the
+        # summary
+        self.conduit.build_success_report.assert_called_once_with(report.build_progress_report(),
+                                                                  None)
 
         # Inspect the conduit report
         self.assertEqual(conduit_report.success_flag, True)
@@ -118,7 +109,7 @@ class TestProgressReport(unittest.TestCase):
         cancelled, we should report it as a success
         """
         report = progress.ProgressReport(self.conduit,
-                                            state=progress.ProgressReport.STATE_CANCELED)
+                                         state=progress.ProgressReport.STATE_CANCELED)
 
         conduit_report = report.build_final_report()
 
@@ -160,8 +151,8 @@ class TestProgressReport(unittest.TestCase):
 
     def test_from_progress_report(self):
         """
-        Test that building an ProgressReport from the output of build_progress_report() makes an equivalent
-        ProgressReport.
+        Test that building an ProgressReport from the output of build_progress_report() makes an
+        equivalent ProgressReport.
         """
         state = progress.ProgressReport.STATE_FAILED
         state_times = {progress.ProgressReport.STATE_FAILED: datetime(2013, 5, 3, 20, 11, 3)}
@@ -174,8 +165,8 @@ class TestProgressReport(unittest.TestCase):
 
         report = progress.ProgressReport.from_progress_report(serial_report)
 
-        # All of the values that we had set in the initial report should be identical on this one, except that
-        # the conduit should be None
+        # All of the values that we had set in the initial report should be identical on this one,
+        # except that the conduit should be None
         self.assertEqual(report.conduit, None)
         self.assertEqual(report._state, original_report.state)
         self.assertEqual(report.state_times, original_report.state_times)
@@ -207,8 +198,8 @@ class TestProgressReport(unittest.TestCase):
 
         self.assertEqual(report.state, progress.ProgressReport.STATE_COMPLETE)
 
-    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for this
-    # test
+    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for
+    # this test
     @mock.patch('pulp.common.plugins.progress.ProgressReport.ALLOWED_STATE_TRANSITIONS',
                 {'state_1': ['state_2']}, create=True)
     def test__set_state_allowed_transition(self):
@@ -225,8 +216,8 @@ class TestProgressReport(unittest.TestCase):
         self.assertTrue(isinstance(report.state_times[report._state], datetime))
         self.conduit.set_progress.assert_called_once_with(report.build_progress_report())
 
-    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for this
-    # test
+    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for
+    # this test
     @mock.patch('pulp.common.plugins.progress.ProgressReport.ALLOWED_STATE_TRANSITIONS',
                 {'state_1': ['state_2']}, create=True)
     def test__set_state_disallowed_transition(self):
@@ -247,8 +238,8 @@ class TestProgressReport(unittest.TestCase):
         self.assertEqual(report.state, 'state_1')
         self.assertTrue('state_3' not in report.state_times)
 
-    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for this
-    # test
+    # Normally, the ProgressReport doesn't have ALLOWED_STATE_TRANSITIONS, so let's give it one for
+    # this test
     @mock.patch('pulp.common.plugins.progress.ProgressReport.ALLOWED_STATE_TRANSITIONS',
                 {'state_1': ['state_2']}, create=True)
     def test__set_state_same_state(self):
@@ -263,48 +254,15 @@ class TestProgressReport(unittest.TestCase):
         self.assertEqual(report.state, 'state_1')
 
 
-
 def get_mock_conduit(type_id=None, existing_units=None, pkg_dir=None):
     def build_failure_report(summary, details):
         return PublishReport(False, summary, details)
 
     def build_success_report(summary, details):
         return PublishReport(True, summary, details)
-    """
-    def side_effect(type_id, key, metadata, rel_path):
-        if rel_path and pkg_dir:
-            rel_path = os.path.join(pkg_dir, rel_path)
-            if not os.path.exists(os.path.dirname(rel_path)):
-                os.makedirs(os.path.dirname(rel_path))
-        unit = Unit(type_id, key, metadata, rel_path)
-        return unit
-
-    def get_units(criteria=None):
-        ret_val = []
-        if existing_units:
-            for u in existing_units:
-                if criteria:
-                    if u.type_id in criteria.type_ids:
-                        ret_val.append(u)
-                else:
-                    ret_val.append(u)
-        return ret_val
-
-    def search_all_units(type_id, criteria):
-        ret_val = []
-        if existing_units:
-            for u in existing_units:
-                if u.type_id == type_id:
-                    if u.unit_key['id'] == criteria['filters']['id']:
-                        ret_val.append(u)
-        return ret_val
-    """
 
     sync_conduit = mock.Mock(spec=RepoSyncConduit)
-    #sync_conduit.init_unit.side_effect = side_effect
-    #sync_conduit.get_units.side_effect = get_units
     sync_conduit.save_unit = mock.Mock()
-    #sync_conduit.search_all_units.side_effect = search_all_units
     sync_conduit.build_failure_report = mock.MagicMock(side_effect=build_failure_report)
     sync_conduit.build_success_report = mock.MagicMock(side_effect=build_success_report)
     sync_conduit.set_progress = mock.MagicMock()

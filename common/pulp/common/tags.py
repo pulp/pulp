@@ -1,18 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-# -- constants ----------------------------------------------------------------
-
 _NAMESPACE_DELIMITER = ':'
 _PULP_NAMESPACE = 'pulp'
 _ACTION_NAMESPACE = 'action'
@@ -50,7 +35,6 @@ ACTION_UPDATE_DISTRIBUTOR = 'update_distributor'
 ACTION_REFRESH_CONTENT_SOURCE = 'refresh_content_source'
 ACTION_REFRESH_ALL_CONTENT_SOURCES = 'refresh_all_content_sources'
 
-# -- public -------------------------------------------------------------------
 
 def action_tag(action_name):
     """
@@ -62,6 +46,7 @@ def action_tag(action_name):
     """
     return _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, _ACTION_NAMESPACE, action_name))
 
+
 def is_action_tag(tag):
     """
     Indicates if a tag represents an action tag.
@@ -71,6 +56,7 @@ def is_action_tag(tag):
     """
     indicator = _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, _ACTION_NAMESPACE))
     return tag.startswith(indicator)
+
 
 def resource_tag(resource_type, resource_id):
     """
@@ -84,6 +70,7 @@ def resource_tag(resource_type, resource_id):
     """
     return _NAMESPACE_DELIMITER.join((_PULP_NAMESPACE, resource_type, resource_id))
 
+
 def is_resource_tag(tag):
     """
     Indicates if a tag represents a resource tag.
@@ -95,6 +82,7 @@ def is_resource_tag(tag):
     # add a third tag type.
     return not is_action_tag(tag)
 
+
 def parse_value(tag):
     """
     Strips off the namespace information from the tag and returns its value.
@@ -105,6 +93,7 @@ def parse_value(tag):
     """
     pieces = tag.split(_NAMESPACE_DELIMITER, 2)
     return pieces[2]
+
 
 def parse_resource_tag(tag):
     """
