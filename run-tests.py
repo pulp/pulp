@@ -15,9 +15,7 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 paths_to_check = [
     'agent',
     'bindings',
-    'client_admin/pulp/client/admin/tasks.py',
-    'client_admin/test/unit/test_config.py',
-    'client_admin/test/unit/test_event.py',
+    'client_admin/',
     'client_consumer',
     'client_lib',
     'devel/',
