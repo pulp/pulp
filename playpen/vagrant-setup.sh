@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Let's add p{start,stop,restart,status} to the .bashrc
 if ! grep pstart ~/.bashrc; then

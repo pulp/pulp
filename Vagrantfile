@@ -31,6 +31,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         domain.cpus   = 4
     end
 
-    dev.vm.provision "shell", inline: "sudo -u vagrant bash -e /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
+    dev.vm.provision "shell", inline: "sudo -u vagrant bash /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
  end
 end
