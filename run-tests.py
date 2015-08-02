@@ -21,6 +21,8 @@ paths_to_check = [
     'client_consumer',
     'client_lib',
     'devel/',
+    'nodes/child/pulp_node/handlers/',
+    'nodes/child/pulp_node/importers/reports.py',
     'oid_validation/',
     'repoauth/',
     'server/']

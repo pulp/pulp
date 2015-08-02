@@ -9,23 +9,19 @@ the responsibility of the nodes importers.
 """
 
 import httplib
-
 from logging import getLogger
 
+from pulp.bindings.exceptions import NotFoundException
 from pulp.common.bundle import Bundle
 from pulp.common.plugins import importer_constants
-from pulp.bindings.exceptions import NotFoundException
 
-from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
-from pulp_node.poller import TaskPoller
 from pulp_node import constants
 from pulp_node import resources
+from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
+from pulp_node.poller import TaskPoller
 
 
 log = getLogger(__name__)
-
-
-# --- utils -----------------------------------------------------------------------------
 
 
 def subdict(adict, *keylist):
@@ -39,9 +35,6 @@ def subdict(adict, *keylist):
     :rtype: dict.
     """
     return dict([t for t in adict.items() if t[0] in keylist])
-
-
-# --- model objects ---------------------------------------------------------------------
 
 
 class Entity(object):
@@ -128,7 +121,8 @@ class Repository(Entity):
         :return: A dict of basic properties.
         :rtype: dict
         """
-        return subdict(self.details['repository'], 'display_name', 'description', 'notes', 'scratchpad')
+        return subdict(self.details['repository'], 'display_name', 'description', 'notes',
+                       'scratchpad')
 
     @property
     def distributors(self):

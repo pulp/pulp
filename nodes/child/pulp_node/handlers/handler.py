@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 from logging import getLogger
 
 from pulp.agent.lib.handler import ContentHandler
@@ -19,15 +6,12 @@ from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node import resources
 from pulp_node.error import GetBindingsError
-from pulp_node.handlers.strategies import find_strategy, Request
-from pulp_node.handlers.reports import HandlerProgress, SummaryReport
 from pulp_node.handlers.model import RepositoryBinding
+from pulp_node.handlers.reports import HandlerProgress, SummaryReport
+from pulp_node.handlers.strategies import find_strategy, Request
 
 
 log = getLogger(__name__)
-
-
-# --- utils ------------------------------------------------------------------
 
 
 def parent_bindings(options):
@@ -42,9 +26,6 @@ def parent_bindings(options):
     host = settings[constants.HOST]
     port = settings[constants.PORT]
     return resources.parent_bindings(host, port)
-
-
-# --- handlers ---------------------------------------------------------------
 
 
 class NodeHandler(ContentHandler):
