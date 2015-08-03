@@ -80,6 +80,58 @@ occur very frequently and as result the database can grow to an unreasonable siz
 The ``monthly`` task is run every 30 days to clean up data referencing any repositories that no
 longer exist.
 
+
+Purging
+-------
+
+To purge the completed tasks on the server at any given time, the **pulp-admin**
+command line client provides the ``tasks`` section and the ``purge`` command.
+
+By giving a ``--all`` flag, the tasks in ``successful``, ``failed`` and ``skipped`` state
+will be purged.
+
+By giving a ``--state`` flag, specific states can be passed as an argument and all the
+tasks belonging to these states will be purged. These states must be from the completed
+state list(except ``canceled``) or the command will result in error message.
+
+::
+
+ $ pulp-admin tasks purge
+ +----------------------------------------------------------------------+
+                          Purge Completed Tasks
+ +----------------------------------------------------------------------+
+
+ Command: purge
+ Description: purge tasks in one or more completed states
+
+ Available Arguments:
+
+   --all, -a   - if specified, all tasks in "successful, skipped and failed states
+                 will be purged
+   --state, -s - comma-separated list of tasks states desired to be purged.
+                 Example: "successful,failed". Do not include spaces.
+
+ $ pulp-admin tasks purge --all
+ +----------------------------------------------------------------------+
+                          Purge Completed Tasks
+ +----------------------------------------------------------------------+
+
+ Task purging is successfully initiated.
+
+ $ pulp-admin tasks purge -s successful,failed
+ +----------------------------------------------------------------------+
+                          Purge Completed Tasks
+ +----------------------------------------------------------------------+
+
+ Task purging is successfully initiated.
+
+ $ pulp-admin tasks purge -s canceled
+ +----------------------------------------------------------------------+
+                          Purge Completed Tasks
+ +----------------------------------------------------------------------+
+
+ Invalid task state passed to parameters list: canceled.
+
 Canceling a Task
 ----------------
 

@@ -17,6 +17,8 @@ Deprecation
 Client Changes
 --------------
 
+* Tasks with complete states (except `canceled` state) can now be deleted. This can be done
+  using `pulp-admin tasks purge` command.
 
 Agent Changes
 -------------

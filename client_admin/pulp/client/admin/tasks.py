@@ -1,15 +1,20 @@
 from gettext import gettext as _
 
+from okaara.cli import CommandUsage
+
 import pulp.common.tags as tag_utils
 from pulp.bindings.exceptions import PulpServerException
 from pulp.client import parsers
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliFlag, PulpCliOption
+from pulp.common.constants import CALL_COMPLETE_STATES, CALL_CANCELED_STATE
 
 
 # Guidance for render_document_list on how to display task info
 TASK_DETAILS_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time',
                           'result', 'task_id']
 TASK_LIST_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'task_id']
+# This constant set is used for purging the completed tasks from the collection.
+VALID_STATES = set(filter(lambda state: state != CALL_CANCELED_STATE, CALL_COMPLETE_STATES))
 
 
 def initialize(context):
@@ -36,7 +41,7 @@ class BaseTasksSection(PulpCliSection):
     state_option = PulpCliOption('--state',
                                  _('comma-separated list of tasks states desired to be '
                                    'shown. Example: "running,waiting,canceled,successful,failed". '
-                                   'Do not include spaces'), aliases=['-s'], required=False,
+                                   'Do not include spaces.'), aliases=['-s'], required=False,
                                  parse_func=parsers.csv)
 
     def __init__(self, context, name, description):
@@ -244,12 +249,26 @@ class BaseTasksSection(PulpCliSection):
 class AllTasksSection(BaseTasksSection):
     FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
 
+    # Flags for purge command
+    purge_all = PulpCliFlag('--all', _('if specified, all tasks in "successful, '
+                                       'skipped and failed" states will be purged'),
+                            aliases=['-a'])
+    purge_state = PulpCliOption('--state', _('comma-separated list of tasks states desired to be '
+                                'purged. Example: "successful,failed". Do not include spaces.'),
+                                aliases=['-s'], required=False, parse_func=parsers.csv)
+
     def __init__(self, context, name, description):
         BaseTasksSection.__init__(self, context, name, description)
 
         self.list_command.add_option(self.all_flag)
 
         self.list_command.add_option(self.state_option)
+
+        self.purge_command = self.create_command('purge', _(
+            'purge tasks in one or more completed states'), self.purge)
+
+        self.purge_command.add_option(self.purge_all)
+        self.purge_command.add_option(self.purge_state)
 
     def retrieve_tasks(self, **kwargs):
         """
@@ -270,6 +289,34 @@ class AllTasksSection(BaseTasksSection):
             tasks = self.context.server.tasks_search.search(
                 filters={'state': {'$in': ['running', 'waiting']}}, fields=self.FIELDS)
         return tasks
+
+    def purge(self, **kwargs):
+        """
+        Attempts to purge completed tasks with states successful, failed and/or skipped.
+        If a state does not support purging, message will be raised from the server.
+        Otherwise a success message is displayed and nothing is returned from the server.
+        If no valid flag is mentioned, it raises the CommandUsage Exception.
+
+        :raises CommandUsage Exception when incorrect arguments given to command line
+        """
+
+        self.context.prompt.render_title('Purge Completed Tasks')
+
+        if kwargs.get(self.purge_all.keyword) and kwargs.get(self.purge_state.keyword):
+            msg = _('These arguments cannot be used together')
+            self.context.prompt.render_failure_message(msg)
+            return
+
+        if kwargs.get(self.purge_state.keyword):
+            states = kwargs[self.purge_state.keyword]
+        elif kwargs.get(self.purge_all.keyword):
+            states = VALID_STATES
+        else:
+            raise CommandUsage
+        states = self.translate_state_discrepancy(states)
+
+        self.context.server.tasks.purge_tasks(states=states)
+        self.context.prompt.render_success_message(_('Task purging is successfully initiated.'))
 
     @staticmethod
     def translate_state_discrepancy(states):

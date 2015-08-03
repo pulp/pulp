@@ -76,6 +76,16 @@ class TestGetAllTasks(unittest.TestCase):
             self.assertTrue(isinstance(task, responses.Task))
 
 
+class TestPurgeTasks(unittest.TestCase):
+    def setUp(self):
+        self.server = mock.MagicMock()
+        self.api = tasks.TasksAPI(self.server)
+
+    def test_default(self):
+        states = ['finished', 'error', 'skipped']
+        self.api.purge_tasks(states=states)
+        self.server.DELETE.assert_called_once()
+
 TASKS = [
     {
         'exception': None,

@@ -1,11 +1,13 @@
 import copy
 
 import mock
+from okaara.cli import CommandUsage
 
 import base_builtins
 
 from pulp.bindings.exceptions import NotFoundException, PulpServerException
 from pulp.client.admin import tasks
+from pulp.client.admin.tasks import VALID_STATES
 
 
 EXAMPLE_CALL_REPORT = {
@@ -149,6 +151,62 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
         # Test
         self.all_tasks_section.list(**data)
+
+        # Verify
+        self.assertTrue('These arguments cannot be used together\n' in self.recorder.lines)
+
+    @mock.patch('pulp.bindings.tasks.TasksAPI.purge_tasks')
+    def test_purge_default(self, mock_purge):
+        # Setup
+        data = {
+            'all': False,
+            'state': None
+        }
+
+        # Verify
+        self.assertRaises(CommandUsage, self.all_tasks_section.purge)
+
+    @mock.patch('pulp.bindings.tasks.TasksAPI.purge_tasks')
+    @mock.patch('pulp.client.admin.tasks.AllTasksSection.translate_state_discrepancy')
+    def test_purge_state(self, mock_translate, mock_purge):
+        # Setup
+        data = {
+            'all': False,
+            'state': 'successful,failed'
+        }
+        mock_translate.return_value = 'finished,error'
+
+        # Test
+        self.all_tasks_section.purge(**data)
+
+        # Verify
+        mock_translate.assert_called_once_with('successful,failed')
+        mock_purge.assert_called_once_with(states='finished,error')
+
+    @mock.patch('pulp.bindings.tasks.TasksAPI.purge_tasks')
+    def test_purge_all(self, mock_purge):
+        # Setup
+        data = {
+            'all': True,
+            'state': None
+        }
+
+        # Test
+        self.all_tasks_section.purge(**data)
+        states = VALID_STATES
+
+        # Verify
+        mock_purge.assert_called_once_with(states=states)
+
+    def test_purge_all_state(self):
+        # Setup
+        data = {
+            'all': True,
+            'state': 'finished,error'
+        }
+
+        # Test
+        self.all_tasks_section.purge(**data)
 
         # Verify
         self.assertTrue('These arguments cannot be used together\n' in self.recorder.lines)
