@@ -1,0 +1,58 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+
+# Set up virtualenvwrapper
+export WORKON_HOME=$HOME/.virtualenvs
+export PIP_VIRTUALENV_BASE=$WORKON_HOME
+export VIRTUALENV_USE_DISTRIBUTE=true
+export PIP_RESPECT_VIRTUALENV=true
+source /usr/bin/virtualenvwrapper.sh
+
+pstart() {
+    _paction start
+}
+
+pstop() {
+    _paction stop
+}
+
+prestart() {
+    _paction restart
+}
+
+pstatus() {
+    _paction status
+}
+
+ptests() {
+    pushd /home/vagrant/devel;
+    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
+        if [ -d $r ]; then
+            pushd $r;
+            workon $r;
+            ./run-tests.py -x --enable-coverage;
+            deactivate;
+            popd;
+        fi
+    done;
+    popd;
+}
+
+_paction() {
+
+    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
+        sudo systemctl $1 $s;
+    done;
+}
+
+export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings
+export CRANE_CONFIG_PATH=/home/vagrant/devel/crane/crane.conf

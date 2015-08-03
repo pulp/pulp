@@ -32,4 +32,4 @@
   when: pulp_27_beta_repo_enabled == false
 
 - name: Install custom ~/.bashrc
-  template: src=bashrc dest=/home/vagrant/.bashrc
+  copy: src=bashrc dest=/home/vagrant/.bashrc

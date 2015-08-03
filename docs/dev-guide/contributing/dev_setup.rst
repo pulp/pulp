@@ -18,7 +18,7 @@ Vagrant
 `Vagrant <https://docs.vagrantup.com/>`_ is a tool to aid developers in quickly deploying
 development environments. Pulp has provided a ``Vagrantfile`` in the platform git repository. This
 is the easiest way to get started on developing with Pulp if you aren't sure which method you
-prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
+prefer. Vagrant is available in Fedora. Follow these steps:
 
 #. Install vagrant and ansible::
    
@@ -62,18 +62,20 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
       $ sudo firewall-cmd --reload
 
 #. You are now prepared to check out the Pulp code into your preferred location. Change directories
-   to that location, and check out at least the platform and the RPM plugins. The RPM plugins are
-   needed as the provisioning script configures and synchronizes an example repository::
+   to that location, and check out the platform::
 
       $ cd $HOME/devel  # Season to taste
-      $ git clone git@github.com:pulp/pulp.git && git clone git@github.com:pulp/pulp_rpm.git
+      $ git clone git@github.com:pulp/pulp.git
 
-#. Optionally, check out some of our other plugins as well::
+#. Check out the plugins you wish to develop or use as well::
 
-      $ git clone git@github.com:pulp/pulp_docker
-      $ git clone git@github.com:pulp/pulp_python
-      $ git clone git@github.com:pulp/pulp_puppet
-      $ git clone git@github.com:pulp/pulp_ostree
+      $ git clone git@github.com:pulp/pulp_deb.git
+      $ git clone git@github.com:pulp/pulp_docker.git
+      $ git clone git@github.com:pulp/pulp_openstack.git
+      $ git clone git@github.com:pulp/pulp_ostree.git
+      $ git clone git@github.com:pulp/pulp_puppet.git
+      $ git clone git@github.com:pulp/pulp_python.git
+      $ git clone git@github.com:pulp/pulp_rpm.git
 
    .. note::
 
@@ -139,18 +141,17 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
 
-#. Next, cd into the pulp directory and begin provisioning your Vagrant environment. A possible
-   failure point is during provisioning when mongod is building its initial files. This sometimes
-   takes longer than systemd allows and can fail. If that happens, simply run ``vagrant provision``.
+#. Next, cd into the pulp directory and begin provisioning your Vagrant environment.
    We will finish by running ``vagrant reload``. This allows the machine to reboot after
    provisioning.::
 
       $ cd pulp
-      $ vagrant up  # mongod may fail when this runs. vagrant provision will fix it.
+      $ vagrant up
       $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
 
 Once you have followed the steps above, you should have a running deployed Pulp development machine.
-You can ssh into the environment with ``vagrant ssh``. All of the code is mounted in
+You can ssh into the environment with ``vagrant ssh``. You will be greeted by a message of the day
+that gives you some helpful hints. All of the code is mounted in
 /home/vagrant/devel. Your development environment has been configured for
 `virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/>`_. If you would like to
 activate a virtualenv, you can simply type ``workon <repo_dir>`` to work on any particular Pulp
