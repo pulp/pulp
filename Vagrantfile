@@ -27,8 +27,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     dev.vm.synced_folder "..", "/home/vagrant/devel", type: "nfs", nfs_version: 4, nfs_udp: false
 
     dev.vm.provider :libvirt do |domain|
+        domain.cpus = 4
+        domain.graphics_type = "spice"
         domain.memory = 2048
-        domain.cpus   = 4
+        domain.video_type = "qxl"
     end
 
     dev.vm.provision "shell", inline: "sudo -u vagrant bash /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
