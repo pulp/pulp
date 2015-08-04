@@ -84,6 +84,7 @@ commented lines for clarity.
     # cacert: /etc/pki/pulp/qpid/ca.crt
     # keyfile: /etc/pki/pulp/qpid/client.crt
     # certfile: /etc/pki/pulp/qpid/client.crt
+    # login_method:
 
 The default settings of a Pulp Consumer Agent are found in ``/etc/pulp/consumer/consumer.conf`` and
 assume Qpid is running on localhost at the default port (5672) without SSL and without
@@ -214,11 +215,29 @@ update ``<host>`` in the ``broker_url`` setting and the absolute path of the ``c
     cacert: /etc/pki/pulp/qpid/ca.crt
     keyfile: /etc/pki/pulp/qpid/client.crt
     certfile: /etc/pki/pulp/qpid/client.crt
+    # login_method:
 
 
 The Pulp Server <--> Pulp Worker communication allows the client key and client certificate to be
 stored in the same or different files. If the key and certificate are in the same file, set the
 same absolute path for both ``keyfile`` and ``certfile``.
+
+.. note::
+
+     If your Qpid broker requires authentication with ``auth=yes`` and requires SSL client
+     authentication with ``ssl-require-client-authentication=yes`` then you may want to have Pulp
+     authenticate using the ``EXTERNAL`` method. To configure this you will need to:
+
+          1. Set ``login_method`` to ``EXTERNAL``
+
+          2. Ensure that the broker string contains a username that is identical to the ``CN``
+             contained in the client certificate specified in the ``certfile`` setting of the
+             ``[tasks]`` section.
+
+     For example, if the ``cacert`` has ``CN=mypulpuser`` and connects to ``example.com`` on port
+     5671, then ``broker_url`` should be set to:
+
+          broker_url: qpid://mypulpuser@example.com:5671/
 
 
 Using Pulp with RabbitMQ
@@ -271,7 +290,9 @@ the adjustment to the ``transport`` setting in ``[messaging]`` and the protocol 
 ``broker_url`` in ``[tasks]``. Both of these sections are contained on the Pulp Server in
 ``/etc/pulp/server.conf``.
 
+If RabbitMQ is using strict SSL client certificate checking, you will need to set ``login_method``
+to ``EXTERNAL``. See :redmine:`1168` for more details.
+
 The ``/etc/pulp/consumer/consumer.conf`` file on each Pulp Consumer also needs to be updated to
 correspond with this change. Refer to the inline documentation in
 ``/etc/pulp/consumer/consumer.conf`` to set the configuration correctly.
-

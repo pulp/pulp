@@ -141,38 +141,33 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
             mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
 
     @mock.patch('pulp.server.async.celery_instance.celery')
-    @mock.patch('pulp.server.async.celery_instance.config.getboolean')
-    def test_configure_SSL_when_broker_login_method_present(self, mock_getboolean, mock_celery):
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_login_method_gets_tasks_setting(self, mock_get, mock_celery):
         """
-        Make sure that the Celery config has BROKER_LOGIN_METHOD set if given in the configuration.
+        Ensure login_method is checked when configure_login_method is called.
         """
-        mock_getboolean.return_value = True
-        mock_cacert = mock.Mock()
-        mock_keyfile = mock.Mock()
-        mock_certfile = mock.Mock()
+        celery_instance.configure_login_method()
+        mock_get.assert_called_once_with('tasks', 'login_method')
 
-        CONFIG_OVERRIDE = {
-            'tasks': {
-                'cacert': mock_cacert,
-                'keyfile': mock_keyfile,
-                'certfile': mock_certfile,
-                'cert_reqs': ssl.CERT_REQUIRED,
-                'broker_login_method': 'EXTERNAL'}
-        }
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_broker_login_method_if_settings_default(self, mock_get, mock_celery):
+        """
+        Celery config should not have BROKER_LOGIN_METHOD set if login_method is unset in settings
+        """
+        mock_get.return_value = ''
+        celery_instance.configure_login_method()
+        self.assertFalse(mock_celery.conf.update.called)
 
-        EXPECTED_BROKER_USE_SSL = {
-            'ca_certs': mock_cacert,
-            'keyfile': mock_keyfile,
-            'certfile': mock_certfile,
-            'cert_reqs': ssl.CERT_REQUIRED,
-        }
-
-        custom_fake_get = partial(fake_get, CONFIG_OVERRIDE)
-
-        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
-            celery_instance.configure_SSL()
-            mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
-            mock_celery.conf.update.assert_called_once_with(BROKER_LOGIN_METHOD='EXTERNAL')
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_broker_login_method_if_settings_not_default(self, mock_get, mock_celery):
+        """
+        Celery config should have BROKER_LOGIN_METHOD set if login_method is set in settings
+        """
+        mock_get.return_value = 'EXTERNAL'
+        celery_instance.configure_login_method()
+        mock_celery.conf.update.assert_called_once_with(BROKER_LOGIN_METHOD=mock_get.return_value)
 
 
 class TestMongoBackendConfig(unittest.TestCase):
