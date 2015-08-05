@@ -147,7 +147,7 @@ class NodesHttpDistributor(Distributor):
         repo_publish_dir = self._get_publish_dir(repo.id, config)
         return HttpPublisher(base_url, alias, repo.id, repo_publish_dir)
 
-    def cancel_publish_repo(self, call_report, call_request):
+    def cancel_publish_repo(self):
         pass
 
     def create_consumer_payload(self, repo, config, binding_config):
