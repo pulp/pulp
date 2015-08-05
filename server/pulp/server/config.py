@@ -86,6 +86,7 @@ _default_values = {
         'cacert': '/etc/pki/pulp/qpid/ca.crt',
         'keyfile': '/etc/pki/pulp/qpid/client.crt',
         'certfile': '/etc/pki/pulp/qpid/client.crt',
+        'login_method': '',
     },
 }
 
