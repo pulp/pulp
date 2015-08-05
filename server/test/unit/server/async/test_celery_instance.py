@@ -140,6 +140,35 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
             celery_instance.configure_SSL()
             mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
 
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_login_method_gets_tasks_setting(self, mock_get, mock_celery):
+        """
+        Ensure login_method is checked when configure_login_method is called.
+        """
+        celery_instance.configure_login_method()
+        mock_get.assert_called_once_with('tasks', 'login_method')
+
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_broker_login_method_if_settings_default(self, mock_get, mock_celery):
+        """
+        Celery config should not have BROKER_LOGIN_METHOD set if login_method is unset in settings
+        """
+        mock_get.return_value = ''
+        celery_instance.configure_login_method()
+        self.assertFalse(mock_celery.conf.update.called)
+
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.get')
+    def test_configure_broker_login_method_if_settings_not_default(self, mock_get, mock_celery):
+        """
+        Celery config should have BROKER_LOGIN_METHOD set if login_method is set in settings
+        """
+        mock_get.return_value = 'EXTERNAL'
+        celery_instance.configure_login_method()
+        mock_celery.conf.update.assert_called_once_with(BROKER_LOGIN_METHOD=mock_get.return_value)
+
 
 class TestMongoBackendConfig(unittest.TestCase):
 

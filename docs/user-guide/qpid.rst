@@ -144,6 +144,7 @@ The following is an example of running the script:
   cacert: /etc/pki/pulp/qpid/ca.crt
   keyfile: /etc/pki/pulp/qpid/client.crt
   certfile: /etc/pki/pulp/qpid/client.crt
+  # login_method:
 
 
   Recommended properties in /etc/pulp/consumer/consumer.conf:
