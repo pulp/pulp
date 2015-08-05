@@ -77,6 +77,15 @@ celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
 celery.conf.update(CELERY_WORKER_DIRECT=True)
 
 
+def configure_login_method():
+    """
+    Configures the celery object with BROKER_LOGIN_METHOD if not default.
+    """
+    login_method = config.get('tasks', 'login_method')
+    if login_method is not '':
+        celery.conf.update(BROKER_LOGIN_METHOD=login_method)
+
+
 def configure_SSL():
     """
     Configures the celery object with BROKER_USE_SSL options
@@ -90,5 +99,5 @@ def configure_SSL():
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
 
-
 configure_SSL()
+configure_login_method()
