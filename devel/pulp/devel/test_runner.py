@@ -13,7 +13,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
 
 def run_tests(packages, tests_all_platforms, tests_non_rhel5,
-              flake8_paths=None):
+              flake8_paths=None, flake8_exclude=None):
     """
     Method used by each of the pulp projects to execute their unit & coverage tests
     This method ensures that the arguments that are used by all of them are consistent.
@@ -28,6 +28,8 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
     :type tests_non_rhel5: list of str
     :param flake8_paths: paths that should be checked with flake8
     :type flake8_paths: list of str
+    :param flake8_exclude: list of paths that should be ignored during the flake8 check
+    :type  flake8_exclude: list
     :return: the exit code from nosetests
     :rtype:  integer
     """
@@ -73,8 +75,12 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
         # Check the files for coding conventions
         if flake8_paths:
             # Ignore E401: multiple imports on one line
-            flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401',
-                              '--exclude=.ropeproject,docs,playpen,pulp-dev.py,*/build/*']
+            flake8_default_exclude = '--exclude=.ropeproject,docs,playpen,pulp-dev.py,*/build/*'
+            if flake8_exclude:
+                flake8_exclude = flake8_default_exclude + ',%s' % ','.join(flake8_exclude)
+            else:
+                flake8_exclude = flake8_default_exclude
+            flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401', flake8_exclude]
             flake8_command.extend(flake8_paths)
             print "Running flake8"
             flake8_exit_code = subprocess.call(flake8_command)

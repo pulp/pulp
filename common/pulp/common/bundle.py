@@ -1,14 +1,3 @@
-# Copyright (c) 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import re
 from logging import getLogger
@@ -16,13 +5,12 @@ from logging import getLogger
 from M2Crypto import X509
 
 
-EXMSG = \
-"""
+EXMSG = """
 A bundle must contain both the private key and
 certificate PEM text.  The [%s] PEM text was not found.
 """
-EXMSG_AT_PATH = \
-"""
+
+EXMSG_AT_PATH = """
 The bundle at: %s
 must contain both the private key and certificate
 PEM text.  The [%s] PEM text was not found.
@@ -60,7 +48,7 @@ class Bundle:
     KEY_END = re.compile(r'[\-]{5}END( RSA| DSA)? PRIVATE KEY[\-]{5}')
     CRT_BEGIN = re.compile(r'[\n]*[\-]{5}BEGIN CERTIFICATE[\-]{5}')
     CRT_END = re.compile(r'[\-]{5}END CERTIFICATE[\-]{5}')
-    
+
     @classmethod
     def haskey(cls, bundle):
         """
@@ -71,7 +59,7 @@ class Bundle:
         @rtype: bool
         """
         m = cls.KEY_BEGIN.search(bundle)
-        return ( m is not None )
+        return m is not None
 
     @classmethod
     def hascrt(cls, bundle):
@@ -83,7 +71,7 @@ class Bundle:
         @rtype: bool
         """
         m = cls.CRT_BEGIN.search(bundle)
-        return ( m is not None )
+        return m is not None
 
     @classmethod
     def hasboth(cls, bundle):
@@ -95,8 +83,8 @@ class Bundle:
         @return: True if contains a key & cert.
         @rtype: bool
         """
-        return ( cls.haskey(bundle) and cls.hascrt(bundle) )
-    
+        return cls.haskey(bundle) and cls.hascrt(bundle)
+
     @classmethod
     def assertvalid(cls, bundle, path=None):
         """
@@ -124,7 +112,7 @@ class Bundle:
         begin = cls.KEY_BEGIN.search(bundle)
         end = cls.KEY_END.search(bundle)
         if not (begin and end):
-            raise Exception, '%s, not valid' % bundle
+            raise Exception('{}, not valid'.format(bundle))
         begin = begin.start(0)
         end = end.end(0)
         key = bundle[begin:end]
@@ -132,10 +120,10 @@ class Bundle:
         begin = cls.CRT_BEGIN.search(bundle)
         end = cls.CRT_END.search(bundle)
         if not (begin and end):
-            raise Exception, '%s, not valid' % bundle
+            raise Exception('{}, not valid'.format(bundle))
         begin = begin.start(0)
         end = end.end(0)
-        crt= bundle[begin:end]
+        crt = bundle[begin:end]
         return (key.strip(), crt.strip())
 
     @classmethod
@@ -152,7 +140,7 @@ class Bundle:
         key = key.strip()
         crt = crt.strip()
         return '\n'.join((key, crt))
-    
+
     def __init__(self, path):
         """
         @param path: The absolute path to the bundle represented.

@@ -1,18 +1,3 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-
 import os
 import shutil
 import unittest
@@ -20,6 +5,7 @@ import unittest
 from mock import patch
 
 from pulp.common.bundle import Bundle
+
 
 KEY = """
 -----BEGIN RSA PRIVATE KEY-----
@@ -122,7 +108,7 @@ WbBc3t8IYtnwwimoMf6USrxatrukx5j/aT3HBJld7zOPrFGArw3s9SIXHGFCZQ==
 -----END CERTIFICATE-----
 """
 
-BUNDLE = ''.join((KEY,CERTIFICATE))
+BUNDLE = ''.join((KEY, CERTIFICATE))
 BUNDLE_ROOT = '/tmp/pulp/bundle-testing/test.crt'
 CRTFILE = os.path.join(BUNDLE_ROOT, 'test.crt')
 
@@ -136,18 +122,18 @@ class TestBundles(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(BUNDLE_ROOT):
             shutil.rmtree(BUNDLE_ROOT)
-            
+
     def testSplit(self):
         key, crt = Bundle.split(BUNDLE)
         self.assertEqual(key.strip(), KEY.strip())
         self.assertEqual(crt.strip(), CERTIFICATE.strip())
-        
+
     def testJoin(self):
         bundle = Bundle.join(KEY, CERTIFICATE)
         print bundle
         self.assertTrue(KEY.strip() in bundle)
         self.assertTrue(CERTIFICATE.strip() in bundle)
-        
+
     def testVerify(self):
         self.assertTrue(Bundle.haskey(KEY))
         self.assertTrue(Bundle.haskey(KEY2))
@@ -216,7 +202,7 @@ class TestBundles(unittest.TestCase):
         s = f.read()
         f.close()
         self.assertEqual(BUNDLE.strip(), s.strip())
-        
+
     def testRead(self):
         b = Bundle(CRTFILE)
         b.write(BUNDLE)

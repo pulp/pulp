@@ -1,14 +1,3 @@
-# Copyright (c) 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Wrapper for all configuration access in Pulp, including server, client,
 and agent handlers.
@@ -56,15 +45,14 @@ cfg = Config('base.conf')
 cfg.validate(schema)
 """
 
-import re
 import collections
 import os
-from threading import RLock
+import re
 from iniparse import INIConfig
+from threading import RLock
 
 from pulp.common.compat import json
 
-# -- constants ----------------------------------------------------------------
 
 # Schema Constants
 REQUIRED = 1
@@ -76,7 +64,6 @@ BOOL = '(^YES$|^TRUE$|^1$|^NO$|^FALSE$|^0$)', re.I
 # Regular expression to test if a value is a valid boolean type
 BOOL_RE = re.compile(*BOOL)
 
-# -- exceptions ---------------------------------------------------------------
 
 class ValidationException(Exception):
 
@@ -92,6 +79,7 @@ class ValidationException(Exception):
             msg = '%s in: %s' % (msg, self.path)
         return msg
 
+
 class SectionNotFound(ValidationException):
 
     def __str__(self):
@@ -99,8 +87,10 @@ class SectionNotFound(ValidationException):
             'Required section [%s], not found',
             self.name)
 
+
 class PropertyException(ValidationException):
     pass
+
 
 class PropertyNotFound(PropertyException):
 
@@ -149,7 +139,7 @@ def parse_bool(value):
     if not BOOL_RE.match(value):
         raise Unparsable()
 
-    return value.upper() in ('YES','TRUE','1')
+    return value.upper() in ('YES', 'TRUE', '1')
 
 
 class Config(dict):
@@ -261,7 +251,7 @@ class Config(dict):
         @type other: dict
         """
         filter = Filter(filter)
-        for k,v in other.items():
+        for k, v in other.items():
             if not filter.match(k):
                 continue
             if k in self and isinstance(v, dict):
@@ -331,7 +321,6 @@ class Config(dict):
         else:
             raise ValueError('must be <dict>')
 
-# -- private ------------------------------------------------------------------
 
 class Validator:
     """
@@ -371,13 +360,13 @@ class Validator:
         @return: Two lists: sections, properties
         @rtype: tuple
         """
-        extras = ([],[])
+        extras = ([], [])
         expected = {}
         for section in [s for s in self.schema]:
             properties = set()
             expected[section[0]] = properties
             for pn in section[2]:
-               properties.add(pn[0])
+                properties.add(pn[0])
         for sn in cfg:
             session = expected.get(sn)
             if not session:
@@ -385,7 +374,7 @@ class Validator:
                 continue
             for pn in cfg[sn]:
                 if pn not in session:
-                    pn = '.'.join((sn,pn))
+                    pn = '.'.join((sn, pn))
                     extras[1].append(pn)
         return extras
 
@@ -593,9 +582,8 @@ class Graph:
     Provides access using object attribute (.) dot notation.
     @ivar __dict: The wrapped config.
     @type __dict: dict
-    @ivar __strict: Indicates that KeyError should be raised when
-        undefined sections are accessed.  When false, undefined 
-        sections are returned as empty dict
+    @ivar __strict: Indicates that KeyError should be raised when undefined sections are accessed.
+                    When false, undefined sections are returned as empty dict
     @type __strict: bool
     """
 
@@ -603,9 +591,8 @@ class Graph:
         """
         @param dict: The wrapped config.
         @type dict: dict
-        @param strict: Indicates that KeyError should be raised when
-            undefined sections are accessed.  When false, undefined 
-            sections are returned as empty dict.
+        @param strict: Indicates that KeyError should be raised when undefined sections are
+                       accessed. When false, undefined sections are returned as empty dict.
         @type strict: bool
         """
         self.__dict = dict
@@ -626,9 +613,8 @@ class GraphSection:
     An object graph representation of a section.
     @ivar __dict: The wrapped section.
     @type __dict: dict
-    @ivar __strict: Indicates that KeyError should be raised when
-        undefined properties are accessed.  When false, undefined 
-        properties are returned as (None).
+    @ivar __strict: Indicates that KeyError should be raised when undefined properties are accessed.
+                    When false, undefined properties are returned as (None).
     @type __strict: bool
     """
 
@@ -636,11 +622,10 @@ class GraphSection:
         """
         @param dict: The wrapped section.
         @type dict: dict
-        @param strict: Indicates that KeyError should be raised when
-            undefined properties are accessed.  When false, undefined 
-            properties are returned as (None).
+        @param strict: Indicates that KeyError should be raised when undefined properties are
+                       accessed. When false, undefined properties are returned as (None).
         @type strict: bool
-        """        
+        """
         self.__dict = dict
         self.__strict = strict
 

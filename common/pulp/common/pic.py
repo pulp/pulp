@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Pulp Interactive Client
 This module is meant to be imported to talk to pulp webservices interactively
@@ -26,24 +13,24 @@ import sys
 import types
 import urllib
 
+
 HOST = 'localhost'
 PORT = 443
 PATH_PREFIX = '/pulp/api'
-AUTH_SCHEME = 'basic' # can also be 'oauth' (XXX not really)
+AUTH_SCHEME = 'basic'  # can also be 'oauth' (XXX not really)
 USER = 'admin'
 PASSWORD = 'admin'
 
 LOG_BODIES = True
 
-# connection management -------------------------------------------------------
 
 _CONNECTION = None
+
 
 def connect():
     global _CONNECTION
     _CONNECTION = httplib.HTTPSConnection(HOST, PORT)
 
-# auth credentials ------------------------------------------------------------
 
 def set_basic_auth_credentials(user, password):
     global AUTH_SCHEME, USER, PASSWORD
@@ -51,15 +38,6 @@ def set_basic_auth_credentials(user, password):
     USER = user
     PASSWORD = password
 
-
-# XXX misspelled as well as incorrect
-#def set_oauth_credentials(user):
-#    global _auth_scheme, _user, _password
-#    _auth_scheme = 'oauth'
-#    _user = user
-#    _password = ''
-
-# requests --------------------------------------------------------------------
 
 class RequestError(Exception):
     pass
@@ -70,8 +48,10 @@ def _auth_header():
         raw = ':'.join((USER, PASSWORD))
         encoded = base64.encodestring(raw)[:-1]
         return {'Authorization': 'Basic %s' % encoded}
+
     def _oauth_header():
         return {}
+
     if AUTH_SCHEME == 'basic':
         return _basic_auth_header()
     if AUTH_SCHEME == 'oauth':
@@ -136,7 +116,6 @@ def POST(path, body=None):
 def DELETE(path):
     return _request('DELETE', path)
 
-# repo management -------------------------------------------------------------
 
 def list_repos():
     return GET('/repositories/')
@@ -182,7 +161,7 @@ def regenerate_content_applicability_for_consumers(consumer_criteria):
     """
     Regenerate content applicability data for given consumers
     """
-    options = {"consumer_criteria":consumer_criteria}
+    options = {"consumer_criteria": consumer_criteria}
     return POST('/pulp/api/v2/consumers/actions/content/regenerate_applicability/', options)
 
 
@@ -190,31 +169,32 @@ def regenerate_content_applicability_for_repos(repo_criteria):
     """
     Regenerate content applicability data for all consumers affected by given repositories
     """
-    options = {"repo_criteria":repo_criteria}
+    options = {"repo_criteria": repo_criteria}
     return POST('/pulp/api/v2/repositories/actions/content/regenerate_applicability/', options)
 
 
 def register_consumer(consumer_id):
-    options = {"id":consumer_id}
+    options = {"id": consumer_id}
     return POST('/pulp/api/v2/consumers/', options)
 
 
 def query_applicability(consumer_criteria, content_types):
-    options = {'criteria':consumer_criteria,
-               'content_types':content_types}
+    options = {'criteria': consumer_criteria,
+               'content_types': content_types}
     return POST('/pulp/api/v2/consumers/content/applicability/', options)
 
 
 def create_consumer_profile(consumer_id, content_type, profile):
-    options = {'content_type':content_type,
-               'profile':profile}
+    options = {'content_type': content_type,
+               'profile': profile}
     return POST('/pulp/api/v2/consumers/%s/profiles/' % consumer_id, options)
 
 
 def replace_consumer_profile(consumer_id, content_type, profile):
-    options = {'profile':profile}
+    options = {'profile': profile}
     return PUT('/pulp/api/v2/consumers/%s/profiles/%s/' % (consumer_id, content_type),
-                options)
+               options)
+
 
 def get_consumer_profiles(consumer_id):
     return GET('/v2/consumers/%s/profiles/' % consumer_id)

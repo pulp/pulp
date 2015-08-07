@@ -18,10 +18,13 @@ paths_to_check = [
     'client_admin/',
     'client_consumer',
     'client_lib',
+    'common',
     'devel/',
     'oid_validation/',
     'repoauth/',
     'server/']
+
+paths_to_ignore = ['common/pulp/common/backports/pkgutil.py']
 
 PACKAGES = [
     os.path.dirname(__file__),
@@ -51,6 +54,6 @@ dir_safe_all_platforms = [os.path.join(os.path.dirname(__file__), x) for x in TE
 dir_safe_non_rhel5 = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_NON_RHEL5]
 
 tests_exit_code = run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5,
-                            flake8_paths=paths_to_check)
+                            flake8_paths=paths_to_check, flake8_exclude=paths_to_ignore)
 
 sys.exit(tests_exit_code)

@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Common utilities for date and time representation for Pulp.
 """
@@ -25,7 +12,6 @@ from gettext import gettext as _
 import isodate
 from isodate.duration import fquotmod, max_days_in_month
 
-# common globals ---------------------------------------------------------------
 
 _iso8601_delimiter = re.compile(r'(--|/)')
 _iso8601_recurrences = re.compile(r'^R(?P<num>\d+)$')
@@ -34,7 +20,6 @@ _VALID_DELTA_KEYS = ('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'se
 
 SECONDS_IN_A_DAY = 86400
 
-# timezone functions -----------------------------------------------------------
 
 def local_tz():
     """
@@ -253,7 +238,8 @@ def parse_iso8601_interval(interval_str):
     # internal Duration class instead of timedelta
     # pulp cannot handle Duration instances if a start_time is not provided
     if isinstance(interval, isodate.Duration) and start_time is None:
-        raise isodate.ISO8601Error('Intervals with year and month values are not valid without a start time')
+        raise isodate.ISO8601Error('Intervals with year and month values are not valid without a '
+                                   'start time')
     return (interval, start_time, recurrences)
 
 
@@ -324,7 +310,6 @@ def format_iso8601_utc_timestamp(timestamp):
     dt = datetime.datetime.utcfromtimestamp(timestamp).replace(tzinfo=utc_tz())
     return format_iso8601_datetime(dt)
 
-# timestamp functions ----------------------------------------------------------
 
 def datetime_to_utc_timestamp(dt):
     """
@@ -347,7 +332,6 @@ def now_utc_timestamp():
     now = datetime.datetime.now(tz=utc_tz())
     return datetime_to_utc_timestamp(now)
 
-# datetime math ----------------------------------------------------------------
 
 def add_interval_to_datetime(interval, dt):
     """
@@ -375,7 +359,6 @@ def add_interval_to_datetime(interval, dt):
     new_dt = dt.replace(year=int(new_year), month=int(new_month), day=int(new_day))
     return interval.tdelta + new_dt
 
-# time delta methods -----------------------------------------------------------
 
 def delta_from_key_value_pairs(key_value_pairs):
     """
