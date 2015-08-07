@@ -1,35 +1,18 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-
 from gettext import gettext as _
 from logging import getLogger
 from operator import itemgetter
 
 from pulp_node import constants
-from pulp_node.handlers.model import *
-from pulp_node.handlers.validation import Validator
 from pulp_node.error import NodeError, CaughtException
-from pulp_node.handlers.reports import SummaryReport, HandlerProgress, RepositoryReport
+from pulp_node.handlers import model
+from pulp_node.handlers.validation import Validator
+from pulp_node.handlers.reports import RepositoryReport
 
 
 log = getLogger(__name__)
 
 
-# --- i18n ------------------------------------------------------------------------------
-
 STRATEGY_UNSUPPORTED = _('Handler strategy "%(s)s" not supported')
-
-
-# --- request  --------------------------------------------------------------------------
 
 
 class Request(object):
@@ -122,7 +105,7 @@ class HandlerStrategy(object):
 
             # purge orphans
             if request.options.get(constants.PURGE_ORPHANS_KEYWORD):
-                Repository.purge_orphans()
+                model.Repository.purge_orphans()
         except NodeError, ne:
             request.summary.errors.append(ne)
         except Exception, e:
@@ -140,8 +123,6 @@ class HandlerStrategy(object):
         """
         raise NotImplementedError()
 
-    # --- protected ---------------------------------------------------------------------
-
     def _merge_repositories(self, request):
         """
         Add or update repositories based on bindings.
@@ -157,15 +138,15 @@ class HandlerStrategy(object):
                 if request.cancelled():
                     request.summary[repo_id].action = RepositoryReport.CANCELLED
                     continue
-                parent = Repository(repo_id, details)
-                child = Repository.fetch(repo_id)
+                parent = model.Repository(repo_id, details)
+                child = model.Repository.fetch(repo_id)
                 progress = request.progress.find_report(repo_id)
                 progress.begin_merging()
                 if child:
                     request.summary[repo_id].action = RepositoryReport.MERGED
                     child.merge(parent)
                 else:
-                    child = Repository(repo_id, parent.details)
+                    child = model.Repository(repo_id, parent.details)
                     request.summary[repo_id].action = RepositoryReport.ADDED
                     child.add()
                 self._synchronize_repository(request, repo_id)
@@ -189,7 +170,7 @@ class HandlerStrategy(object):
         if skip:
             progress.finished()
             return
-        repo = Repository(repo_id)
+        repo = model.Repository(repo_id)
         importer_report = repo.run_synchronization(progress, request.cancelled, request.options)
         if request.cancelled():
             request.summary[repo_id].action = RepositoryReport.CANCELLED
@@ -213,7 +194,7 @@ class HandlerStrategy(object):
         :type request: SyncRequest
         """
         repositories_on_parent = [b['repo_id'] for b in request.bindings]
-        repositories_on_child = [r.repo_id for r in Repository.fetch_all()]
+        repositories_on_child = [r.repo_id for r in model.Repository.fetch_all()]
         for repo_id in sorted(repositories_on_child):
             if request.cancelled():
                 request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.CANCELLED)
@@ -221,7 +202,7 @@ class HandlerStrategy(object):
             try:
                 if repo_id not in repositories_on_parent:
                     request.summary[repo_id] = RepositoryReport(repo_id, RepositoryReport.DELETED)
-                    repo = Repository(repo_id)
+                    repo = model.Repository(repo_id)
                     repo.delete()
             except NodeError, ne:
                 request.summary.errors.append(ne)
@@ -229,9 +210,6 @@ class HandlerStrategy(object):
                 log.exception(repo_id)
                 error = CaughtException(e, repo_id)
                 request.summary.errors.append(error)
-
-
-# --- strategies ------------------------------------------------------------------------
 
 
 class Mirror(HandlerStrategy):
@@ -261,9 +239,6 @@ class Additive(HandlerStrategy):
         :type request: SyncRequest
         """
         self._merge_repositories(request)
-
-
-# --- factory ---------------------------------------------------------------------------
 
 
 STRATEGIES = {
