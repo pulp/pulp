@@ -1,52 +1,5 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-# Let's add p{start,stop,restart,status} to the .bashrc
-if ! grep pstart ~/.bashrc; then
-    cat << EOF >> ~/.bashrc
-
-pstart() {
-    _paction start
-}
-
-pstop() {
-    _paction stop
-}
-
-prestart() {
-    _paction restart
-}
-
-pstatus() {
-    _paction status
-}
-
-ptests() {
-    pushd /home/vagrant/devel;
-    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
-        if [ -d \$r ]; then
-            pushd \$r;
-            workon \$r;
-            ./run-tests.py -x --enable-coverage;
-            deactivate;
-            popd;
-        fi
-    done;
-    popd;
-}
-
-_paction() {
-
-    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
-        sudo systemctl \$1 \$s;
-    done;
-}
-EOF
-fi
-if ! grep DJANGO_SETTINGS_MODULE ~/.bashrc; then
-    echo -e "\nexport DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings" >> ~/.bashrc
-fi
-# We always need to source those variables from the bashrc, in case the user is running this for the
-# first time, or invoking the script directly with bash.
 . ~/.bashrc
 
 # install rpms, then remove pulp*
@@ -57,7 +10,6 @@ sudo dnf install -y git python-gofer-qpid python-qpid python-qpid-qmf \
 echo "Starting qpidd"
 sudo systemctl enable qpidd
 sudo systemctl start qpidd
-
 
 
 pushd devel
@@ -98,9 +50,6 @@ EOF
     mkdir -p metadata
     sudo ln -s /home/vagrant/devel/crane/metadata/ /var/lib/pulp/published/docker/app
 
-    if ! grep CRANE_CONFIG_PATH ~/.bashrc; then
-        echo "export CRANE_CONFIG_PATH=/home/vagrant/devel/crane/crane.conf" >> /home/vagrant/.bashrc
-    fi
     deactivate
     popd
 fi
@@ -133,10 +82,12 @@ if [ ! -f /home/vagrant/.pulp/user-cert.pem ]; then
     pulp-admin login -u admin -p admin
 fi
 
-if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
-    echo "Creating the example zoo repository"
-    pulp-admin rpm repo create --repo-id zoo --feed \
-        https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/ --relative-url zoo
+if [ -d /home/vagrant/devel/pulp_rpm ]; then
+    if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
+        echo "Creating the example zoo repository"
+        pulp-admin rpm repo create --repo-id zoo --feed \
+            https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/ --relative-url zoo
+    fi
 fi
 
 # Give the user some use instructions
