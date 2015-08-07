@@ -11,11 +11,16 @@
       line: "StrictModes no"
   notify: restart sshd
 
-- name: Install Fedora packages
+- name: Install packages
   dnf: name={{ item }} state=present
   with_items:
+      - dstat
+      - fpaste
+      - iotop
+      - jnettop
       - koji
       - python-django-bash-completion
+      - python-ipdb
       - python-virtualenvwrapper
       - redhat-lsb-core
       - rpm-build
