@@ -5,12 +5,14 @@ import stat
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
+
 def initialize(context):
-    # Add login/logout to the root of the CLI, not in a specific section
+    """
+    Add login/logout to the root of the CLI, not in a specific section
+    """
     context.cli.add_command(LoginCommand(context))
     context.cli.add_command(LogoutCommand(context))
 
-# -- commands -----------------------------------------------------------------
 
 class LoginCommand(PulpCliCommand):
     """
@@ -25,8 +27,10 @@ class LoginCommand(PulpCliCommand):
 
         self.context = context
 
-        self.create_option('--username', _('server account username'), aliases=['-u'], required=True)
-        self.create_option('--password', _('server account password'), aliases=['-p'], required=False)
+        self.create_option('--username', _('server account username'), aliases=['-u'],
+                           required=True)
+        self.create_option('--password', _('server account password'), aliases=['-p'],
+                           required=False)
 
     def login(self, **kwargs):
         # Query the server
@@ -56,7 +60,7 @@ class LoginCommand(PulpCliCommand):
 
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
 
-        #Create the certificate file with user access only permissions 0600
+        # Create the certificate file with user access only permissions 0600
         mode = stat.S_IRUSR | stat.S_IWUSR
         f = os.fdopen(os.open(cert_filename, os.O_WRONLY | os.O_CREAT, mode), 'w')
         try:
@@ -77,9 +81,10 @@ class LoginCommand(PulpCliCommand):
         msg = _('Successfully logged in.')
         if expiration_date is not None:
             msg += _(' Session certificate will expire at %(e)s.')
-            msg = msg % {'e' : expiration_date}
+            msg = msg % {'e': expiration_date}
 
         self.context.prompt.render_success_message(msg)
+
 
 class LogoutCommand(PulpCliCommand):
     """
@@ -100,7 +105,7 @@ class LogoutCommand(PulpCliCommand):
 
         if os.path.exists(cert_filename):
             os.remove(cert_filename)
-            msg  = _('Session certificate successfully removed.')
+            msg = _('Session certificate successfully removed.')
             self.context.prompt.render_success_message(msg)
         else:
             msg = _('No session certificate found, nothing to do.')

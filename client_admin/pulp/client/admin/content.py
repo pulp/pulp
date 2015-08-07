@@ -1,8 +1,6 @@
 from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption
 from pulp.client.commands import options, polling
-from pulp.client.commands.repo.sync_publish import StatusRenderer
-from pulp.common.plugins import reporting_constants
 from pulp.client.commands.repo.status import PublishStepStatusRenderer
 
 

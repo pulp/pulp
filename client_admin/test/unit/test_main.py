@@ -21,5 +21,6 @@ class TestMain(TestCase):
 
         # validation
         fake_read.assert_called_with()
-        fake_launcher.main.assert_called_with(fake_read(), exception_handler_class=AdminExceptionHandler)
+        fake_launcher.main.assert_called_with(fake_read(),
+                                              exception_handler_class=AdminExceptionHandler)
         fake_exit.assert_called_with(exit_code)

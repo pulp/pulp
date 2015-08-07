@@ -2,7 +2,8 @@ from gettext import gettext as _
 import os
 import socket
 
-from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL, OPTIONAL
+from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL
+
 
 DEFAULT = {
     'server': {

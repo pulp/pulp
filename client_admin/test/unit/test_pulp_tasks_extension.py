@@ -157,12 +157,6 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
     @mock.patch('pulp.bindings.tasks.TasksAPI.purge_tasks')
     def test_purge_default(self, mock_purge):
-        # Setup
-        data = {
-            'all': False,
-            'state': None
-        }
-
         # Verify
         self.assertRaises(CommandUsage, self.all_tasks_section.purge)
 
