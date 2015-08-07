@@ -2,10 +2,9 @@
 - name: Gathering Pulp facts
   pulp_facts:
 
-- name: Install dnf and deltarpm
+- name: Install deltarpm
   yum: name={{ item }} state=present
   with_items:
-      - dnf
       - deltarpm
 
 - name: System update
@@ -16,10 +15,3 @@
   with_items:
       - bash-completion
       - vim-enhanced
-
-- name: Allow admins to sudo as any user
-  lineinfile:
-      backrefs: yes
-      dest: /etc/sudoers
-      regexp: "%admin ALL=NOPASSWD: ALL"
-      line: "%admin ALL=(ALL) NOPASSWD: ALL"
