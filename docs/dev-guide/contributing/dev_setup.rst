@@ -16,25 +16,14 @@ Vagrant
 ^^^^^^^
 
 `Vagrant <https://docs.vagrantup.com/>`_ is a tool to aid developers in quickly deploying
-development environments. Pulp has provided a ``Vagrantfile`` in the platform git repository. This
-is the easiest way to get started on developing with Pulp if you aren't sure which method you
-prefer. Vagrant is available in Fedora. Follow these steps:
+development environments. Pulp has provided an example ``Vagrantfile`` in the platform git
+repository called Vagrantfile.example. This is the easiest way to get started on developing with
+Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora. Follow these steps:
 
-#. Install vagrant and ansible::
+#. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
+   deployed virtual machine::
    
-      $ sudo yum install ansible vagrant-libvirt
-
-#. Optionally, install `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_. It will cache
-   the packages that are downloaded during provisioning on your host so that the next time you
-   provision you will save some time and bandwidth. You will need to install some development
-   libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
-
-      $ sudo yum install gcc-c++ libvirt-devel ruby-devel
-      $ vagrant plugin install vagrant-cachier
-
-#. Install NFS. NFS will be used to share your code directory with the deployed virtual machine::
-   
-      $ sudo yum install nfs-utils
+      $ sudo yum install ansible nfs-utils vagrant-libvirt
 
 #. You will need to grant the nfsnobody user rx access to the folder that you check out your code
    under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
@@ -83,8 +72,50 @@ prefer. Vagrant is available in Fedora. Follow these steps:
       If you followed the instructions above, you have checked out master on all repositories which
       should be compatible.
 
-#. Optionally, configure your system policy to allow your user to manage libvirt without needing
-   root privileges. Create ``/etc/polkit-1/localauthority/50-local.d/libvirt.pkla`` with the
+#. Next, cd into the pulp directory. The Pulp project provides an example Vagrantfile that you can
+   use as a starting point by copying it. After you've done that, you can begin provisioning your
+   Vagrant environment. We will finish by running ``vagrant reload``. This allows the machine to
+   reboot after provisioning.::
+
+      $ cd pulp
+      $ cp Vagrantfile.example Vagrantfile
+      $ vagrant up
+      $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
+
+#. Once you have followed the steps above, you should have a running deployed Pulp development
+   machine. ssh into your Vagrant environment::
+
+      $ vagrant ssh
+
+Whenever you connect to your Vagrant environment, you will be greeted by a message of the day
+that gives you some helpful hints. All of the code is mounted in
+/home/vagrant/devel. Your development environment has been configured for
+`virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/>`_. If you would like to
+activate a virtualenv, you can simply type ``workon <repo_dir>`` to work on any particular Pulp
+repo. For example, ``workon pulp`` will activate the Pulp platform virtualenv and cd into the code
+directory for you. You can type ``workon pulp_rpm`` for pulp_rpm, ``workon pulp_python`` for
+pulp_python, and so forth. Any plugins in folders that start with ``pulp_`` that you had checked out
+in your host machine's code folder alongside the Pulp platform repository should have been installed
+and configured for virtualenv.
+
+
+Advanced Vagrant
+^^^^^^^^^^^^^^^^
+
+The following steps are all optional, so feel free to pick and choose which you would like to
+follow.
+
+#. `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_ can cache packages that are
+   downloaded during provisioning on your host so that the next time you provision you will save
+   some time and bandwidth. To install it, you will need to install some development
+   libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
+
+      $ sudo yum install gcc-c++ libvirt-devel ruby-devel
+      $ vagrant plugin install vagrant-cachier
+
+#. When using Vagrant, you probably have noticed that you are frequently prompted for passwords to
+   manage libvirt. You can configure your system policy to allow your user to manage libvirt without
+   needing root privileges. Create ``/etc/polkit-1/localauthority/50-local.d/libvirt.pkla`` with the
    following contents, substituting with your user id::
 
     [Allow your_user_id_here libvirt management permissions]
@@ -94,10 +125,13 @@ prefer. Vagrant is available in Fedora. Follow these steps:
     ResultInactive=yes
     ResultActive=yes
 
-#. Optionally, configure your Vagrant environment to use
+#. You can configure your Vagrant environment to use
    `kvm's unsafe cache mode <http://libvirt.org/formatdomain.html#elementsDisks>`_. If you do this,
    you will trade data integrity on your development environment's filesystem for a noticeable speed
-   boost. You can configure Vagrant to use the unsafe cache for all Vagrant guests on your system by
+   boost. In your Vagrantfile, there is a commented line ``domain.volume_cache = "unsafe"``. To use
+   the unsafe cache mode, simply uncomment this line.
+
+   You can also configure Vagrant to use the unsafe cache for all Vagrant guests on your system by
    creating ``~/.vagrant.d/Vagrantfile`` with the following contents::
 
     # -*- mode: ruby -*-
@@ -114,52 +148,12 @@ prefer. Vagrant is available in Fedora. Follow these steps:
         end
     end
 
-   It is also possible to target a single Vagrant guest by defining a code block for it by name. For
-   example, the Pulp Vagrantfile defines the development vm as "dev". You can define "dev"'s cache
-   mode as unsafe with the following in your ``~/.vagrant.d/Vagrantfile``::
-
-    # -*- mode: ruby -*-
-    # vi: set ft=ruby :
-
-
-    Vagrant.configure(2) do |config|
-        config.vm.define "dev" do |dev|
-            dev.vm.provider :libvirt do |domain|
-                # Configure the unsafe cache mode in which the host will ignore fsync requests from
-                # the guest, speeding up disk I/O. Since our development environment is ephemeral,
-                # this is OK. You can read about libvirt's cache modes here:
-                # http://libvirt.org/formatdomain.html#elementsDisks
-                domain.volume_cache = "unsafe"
-            end
-        end
-    end
-
    .. warning::
 
     This is dangerous! However, the development environment is intended to be "throw away", so
     if you end up with a corrupted environment you will need to destroy and recreate it.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
-
-#. Next, cd into the pulp directory and begin provisioning your Vagrant environment.
-   We will finish by running ``vagrant reload``. This allows the machine to reboot after
-   provisioning.::
-
-      $ cd pulp
-      $ vagrant up
-      $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
-
-Once you have followed the steps above, you should have a running deployed Pulp development machine.
-You can ssh into the environment with ``vagrant ssh``. You will be greeted by a message of the day
-that gives you some helpful hints. All of the code is mounted in
-/home/vagrant/devel. Your development environment has been configured for
-`virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/>`_. If you would like to
-activate a virtualenv, you can simply type ``workon <repo_dir>`` to work on any particular Pulp
-repo. For example, ``workon pulp`` will activate the Pulp platform virtualenv and cd into the code
-directory for you. You can type ``workon pulp_rpm`` for pulp_rpm, ``workon pulp_python`` for
-pulp_python, and so forth. Any plugins in folders that start with ``pulp_`` that you had checked out
-in your host machine's code folder alongside the Pulp platform repository should have been installed
-and configured for virtualenv.
 
 
 Provisioning Script

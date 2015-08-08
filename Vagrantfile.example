@@ -9,6 +9,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
+ # Uncomment this line if you would like the guest VM to be automatically updated
+ #
+ # dev.vm.provision "shell", inline: "sudo dnf upgrade -y"
+
  config.vm.provision "ansible" do |ansible|
      ansible.playbook = "playpen/ansible/vagrant-playbook.yml"
  end
@@ -31,6 +35,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         domain.graphics_type = "spice"
         domain.memory = 2048
         domain.video_type = "qxl"
+
+        # Uncomment the following line if you would like to enable libvirt's unsafe cache
+        # mode. It is called unsafe for a reason, as it causes the virtual host to ignore all
+        # fsync() calls from the guest. Only do this if you are comfortable with the possibility of
+        # your development guest becoming corrupted (in which case you should only need to do a
+        # vagrant destroy and vagrant up to get a new one).
+        #
+        # domain.volume_cache = "unsafe"
     end
 
     dev.vm.provision "shell", inline: "sudo -u vagrant bash /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"

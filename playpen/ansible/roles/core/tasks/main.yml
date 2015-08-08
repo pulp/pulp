@@ -2,14 +2,6 @@
 - name: Gathering Pulp facts
   pulp_facts:
 
-- name: Install deltarpm
-  dnf: name={{ item }} state=present
-  with_items:
-      - deltarpm
-
-- name: System update
-  dnf: name=* state=latest
-
 - name: Install packages
   dnf: name={{ item }} state=present
   with_items:
