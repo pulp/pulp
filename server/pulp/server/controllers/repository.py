@@ -14,6 +14,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
+from pulp.plugins.util import misc
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
@@ -144,6 +145,22 @@ def associate_single_unit(repository, unit):
         set_on_insert__created=formatted_datetime,
         set__updated=formatted_datetime,
         upsert=True)
+
+
+def disassociate_units(repository, unit_iterable):
+    """
+    Disassociate all units in the iterable from the repository
+
+    :param repository: The repository to update.
+    :type repository: pulp.server.db.model.Repository
+    :param unit_iterable: The units to disassociate from the repository.
+    :type unit_iterable: iterable of pulp.server.db.model.ContentUnit
+    """
+    for unit_group in misc.paginate(unit_iterable):
+        unit_id_list = [unit.id for unit in unit_group]
+        qs = model.RepositoryContentUnit.objects(
+            repo_id=repository.repo_id, unit_id__in=unit_id_list)
+        qs.delete()
 
 
 def create_repo(repo_id, display_name=None, description=None, notes=None, importer_type_id=None,
