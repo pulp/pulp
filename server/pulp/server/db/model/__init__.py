@@ -9,10 +9,11 @@ from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntFi
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
+from pulp.common.util import encode_unicode
 
+from pulp.plugins.model import Repository as plugin_repo
 from pulp.server import exceptions
 from pulp.server.content.storage import FileStorage, SharedStorage
-from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
@@ -473,7 +474,7 @@ class ContentUnit(Document):
         """
         The unit key represented as a string ordered by unit key fields alphabetically
         """
-        return str(sorted([getattr(self, key) for key in self.unit_key_fields]))
+        return str(sorted([encode_unicode(getattr(self, key)) for key in self.unit_key_fields]))
 
     @property
     def unit_key_as_named_tuple(self):
