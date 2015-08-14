@@ -190,6 +190,21 @@ class AssociateSingleUnitTests(unittest.TestCase):
             upsert=True)
 
 
+class TestDisassociateUnits(unittest.TestCase):
+
+    @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+    def test_disaccociate_units(self, m_rcu_objects):
+        """"
+        Test that multiple objects are all deleted
+        """
+        test_unit1 = DemoModel(id='bar', key_field='baz')
+        test_unit2 = DemoModel(id='baz', key_field='baz')
+        repo = MagicMock(repo_id='foo')
+        repo_controller.disassociate_units(repo, [test_unit1, test_unit2])
+        m_rcu_objects.assert_called_once_with(repo_id='foo', unit_id__in=['bar', 'baz'])
+        m_rcu_objects.return_value.delete.assert_called_once()
+
+
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 @mock.patch('pulp.server.controllers.repository.model.Repository')
 class TestCreateRepo(unittest.TestCase):
