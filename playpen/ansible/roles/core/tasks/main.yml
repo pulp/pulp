@@ -3,7 +3,7 @@
   pulp_facts:
 
 - name: Install deltarpm
-  yum: name={{ item }} state=present
+  dnf: name={{ item }} state=present
   with_items:
       - deltarpm
 

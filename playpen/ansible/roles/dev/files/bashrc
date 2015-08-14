@@ -34,7 +34,7 @@ pstatus() {
 }
 
 ptests() {
-    pushd /home/vagrant/devel;
+    pushd $HOME/devel;
     for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
         if [ -d $r ]; then
             pushd $r;
@@ -55,4 +55,4 @@ _paction() {
 }
 
 export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings
-export CRANE_CONFIG_PATH=/home/vagrant/devel/crane/crane.conf
+export CRANE_CONFIG_PATH=$HOME/devel/crane/crane.conf
