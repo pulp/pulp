@@ -48,6 +48,7 @@ and :term:`distributors <distributor>` associated with it.
     }
   ],
   "notes": {},
+  "scratchpad": {},
   "content_unit_counts": {},
   "last_unit_added": "2012-01-25T15:26:32Z",
   "last_unit_removed": "2012-01-25T15:26:32Z",
@@ -119,6 +120,7 @@ where there are no repositories.
       }
     ],
     "notes": {},
+    "scratchpad": {},
     "content_unit_counts": {},
     "importers": [
       {
@@ -188,6 +190,7 @@ array is returned in the case where there are no repositories.
       }
     ],
     "notes": {},
+    "scratchpad": {},
     "content_unit_counts": {},
     "last_unit_added": null,
     "last_unit_removed": null,
@@ -260,6 +263,7 @@ filter expressions may not be serializable as query parameters.
       }
     ],
     "notes": {},
+    "scratchpad": {},
     "content_unit_counts": {},
     "last_unit_added": null,
     "last_unit_removed": null,

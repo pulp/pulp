@@ -355,6 +355,7 @@ class ListRepositoriesCommand(PulpCliCommand):
         query_params = {}
         if kwargs['details']:
             filters.append('notes')
+            filters.append('scratchpad')
             for p in ('importers', 'distributors'):
                 query_params[p] = True
                 filters.append(p)
