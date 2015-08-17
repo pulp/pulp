@@ -169,7 +169,7 @@ These instructions will create a developer install of Pulp on a dedicated pre-in
 instance. It is recommended not to use this machine for any other purpose, as the script will
 disable SELinux and install items as root outside of the system package manager.
 
-* Start a RHEL 7 or Fedora 20/21 x86_64 instance that will be dedicated for Pulp development with
+* Fedora 22 x86_64 instance that will be dedicated for Pulp development with
   at least 2GB of memory and 10GB of disk space. More disk space is needed if
   you plan on syncing larger repos for test purposes.
 

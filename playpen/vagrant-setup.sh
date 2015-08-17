@@ -40,15 +40,15 @@ if [ -d crane ]; then
     sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' python-crane.spec | grep -v "/.*" | uniq)
     pip install -r test-requirements.txt
 
-    cat << EOF > /home/vagrant/devel/crane/crane.conf
+    cat << EOF > $HOME/devel/crane/crane.conf
 [general]
-data_dir: /home/vagrant/devel/crane/metadata
+data_dir: $HOME/devel/crane/metadata
 debug: true
 endpoint: pulp-devel:5001
 EOF
 
     mkdir -p metadata
-    sudo ln -s /home/vagrant/devel/crane/metadata/ /var/lib/pulp/published/docker/app
+    sudo ln -s $HOME/devel/crane/metadata/ /var/lib/pulp/published/docker/app
 
     deactivate
     popd
@@ -57,12 +57,12 @@ popd
 
 
 # If there is no .vimrc, give them a basic one
-if [ ! -f /home/vagrant/.vimrc ]; then
-    echo -e "set expandtab\nset tabstop=4\nset shiftwidth=4\n" > /home/vagrant/.vimrc
+if [ ! -f $HOME/.vimrc ]; then
+    echo -e "set expandtab\nset tabstop=4\nset shiftwidth=4\n" > $HOME/.vimrc
 fi
 
 echo "Adjusting facls for apache"
-setfacl -m user:apache:rwx /home/vagrant
+setfacl -m user:apache:rwx $HOME
 
 echo "populating mongodb"
 sudo -u apache pulp-manage-db
@@ -77,12 +77,12 @@ pstart
 echo "Disabling SSL verification on dev setup"
 sudo sed -i 's/# verify_ssl: True/verify_ssl: False/' /etc/pulp/admin/admin.conf
 
-if [ ! -f /home/vagrant/.pulp/user-cert.pem ]; then
+if [ ! -f $HOME/.pulp/user-cert.pem ]; then
     echo "Logging in"
     pulp-admin login -u admin -p admin
 fi
 
-if [ -d /home/vagrant/devel/pulp_rpm ]; then
+if [ -d $HOME/devel/pulp_rpm ]; then
     if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
         echo "Creating the example zoo repository"
         pulp-admin rpm repo create --repo-id zoo --feed \
@@ -91,5 +91,7 @@ if [ -d /home/vagrant/devel/pulp_rpm ]; then
 fi
 
 # Give the user some use instructions
-sudo cp /home/vagrant/devel/pulp/playpen/vagrant-motd.txt /etc/motd
-echo -e '\n\nDone. You can ssh into your development environment with vagrant ssh.\n'
+sudo cp $HOME/devel/pulp/playpen/vagrant-motd.txt /etc/motd
+if [ $USER = "vagrant" ]; then
+    echo -e '\n\nDone. You can ssh into your development environment with vagrant ssh.\n'
+fi

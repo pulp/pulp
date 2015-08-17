@@ -10,7 +10,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
  config.vm.provision "ansible" do |ansible|
-     ansible.playbook = "playpen/ansible/playbook.yml"
+     ansible.playbook = "playpen/ansible/vagrant-playbook.yml"
  end
 
  if Vagrant.has_plugin?("vagrant-cachier")
