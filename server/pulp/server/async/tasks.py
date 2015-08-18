@@ -10,7 +10,7 @@ from celery.app import control, defaults
 from celery.result import AsyncResult
 from celery.signals import worker_init
 
-from pulp.common import constants, dateutils
+from pulp.common import constants, dateutils, tags
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.async.task_status_manager import TaskStatusManager
@@ -19,7 +19,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource, Worker
 from pulp.server.exceptions import NoWorkers
-from pulp.server.managers import resources
+from pulp.server.managers import resources, factory as managers
 
 
 controller = control.Control(app=celery)
@@ -247,11 +247,11 @@ class ReservedTaskMixin(object):
         resource_id = ":".join((resource_type, resource_id))
         inner_task_id = str(uuid.uuid4())
         task_name = self.name
-        tags = kwargs.get('tags', [])
+        tag_list = kwargs.get('tags', [])
 
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
-                                 state=constants.CALL_WAITING_STATE, tags=tags)
+                                 state=constants.CALL_WAITING_STATE, tags=tag_list)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
@@ -285,15 +285,15 @@ class Task(CeleryTask, ReservedTaskMixin):
         """
         routing_key = kwargs.get('routing_key',
                                  defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
-        tags = kwargs.pop('tags', [])
+        tag_list = kwargs.pop('tags', [])
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
-        async_result.tags = tags
+        async_result.tags = tag_list
 
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
-            state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tags)
+            state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tag_list)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
@@ -409,12 +409,24 @@ def cancel(task_id):
     task_status = TaskStatusManager.find_by_task_id(task_id)
     if task_status is None:
         raise MissingResource(task_id)
+
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
         # If the task is already done, just stop
         msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
         logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
-    controller.revoke(task_id, terminate=True)
+
+    if task_status.get('worker_name') == 'agent':
+        tag_dict = dict(
+            [
+                tags.parse_resource_tag(t) for t in task_status['tags'] if tags.is_resource_tag(t)
+            ])
+        agent_manager = managers.consumer_agent_manager()
+        consumer_id = tag_dict.get(tags.RESOURCE_CONSUMER_TYPE)
+        agent_manager.cancel_request(consumer_id, task_id)
+    else:
+        controller.revoke(task_id, terminate=True)
+
     TaskStatus.get_collection().find_and_modify(
         {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
         {'$set': {'state': constants.CALL_CANCELED_STATE}})

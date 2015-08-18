@@ -288,7 +288,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
         # validation
         select = {
-            'task_id': task_id
+            'task_id': task_id,
+            'state': {'$ne': constants.CALL_CANCELED_STATE}
         }
         update = {
             '$set': {
@@ -313,7 +314,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
         # validation
         select = {
-            'task_id': task_id
+            'task_id': task_id,
+            'state': {'$ne': constants.CALL_CANCELED_STATE}
         }
         update = {
             '$set': {
