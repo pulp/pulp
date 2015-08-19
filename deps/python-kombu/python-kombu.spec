@@ -21,6 +21,7 @@ URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
 Patch0:         1212200.patch
 Patch1:         qpid_fixes.patch
+Patch2:         1168.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -118,6 +119,7 @@ This subpackage is for python3
 %endif
 
 %patch1 -p1
+%patch2 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
