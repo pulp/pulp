@@ -14,7 +14,7 @@ import mock
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
-from pulp.common.tags import action_tag
+from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import tasks
 from pulp.server.db.model import Worker, ReservedResource, TaskStatus
@@ -655,6 +655,28 @@ class TestCancel(PulpServerTests):
         revoke.assert_called_once_with(task_id, terminate=True)
         self.assertEqual(_logger.info.call_count, 1)
         log_msg = _logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('Task canceled' in log_msg)
+        task_status = TaskStatus.objects(task_id=task_id).first()
+        self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
+
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.cancel_request', autospec=True)
+    @mock.patch('pulp.server.async.tasks._logger', autospec=True)
+    def test_agent_cancel(self, logger, cancel, revoke):
+        task_id = '1234abcd'
+        consumer_id = '18d'
+        tags = [
+            action_tag('UNUSED'),
+            resource_tag(RESOURCE_CONSUMER_TYPE, consumer_id)
+        ]
+        TaskStatus(task_id, tags=tags, worker_name='agent').save()
+        tasks.cancel(task_id)
+
+        cancel.assert_called_once_with(mock.ANY, consumer_id, task_id)
+        self.assertFalse(revoke.called)
+        self.assertEqual(logger.info.call_count, 1)
+        log_msg = logger.info.mock_calls[0][1][0]
         self.assertTrue(task_id in log_msg)
         self.assertTrue('Task canceled' in log_msg)
         task_status = TaskStatus.objects(task_id=task_id).first()
