@@ -180,9 +180,9 @@ class TestDistributorUpdate(PulpCeleryTaskTests):
 class TestRepositoryPublish(PulpCeleryTaskTests):
     @patch('pulp.server.managers.repo.publish.RepoPublishManager.queue_publish')
     def test_pass_through_to_manager(self, mock_queue_publish):
-        result = repository.publish('foo', 'dist1', {})
+        result = repository.publish('foo', 'dist1', {}, None)
         # make sure the args get passed through
-        mock_queue_publish.assert_called_once_with('foo', 'dist1', {})
+        mock_queue_publish.assert_called_once_with('foo', 'dist1', {}, None)
         # make sure the return value is passed through
         self.assertTrue(result is mock_queue_publish.return_value)
 
@@ -190,8 +190,8 @@ class TestRepositoryPublish(PulpCeleryTaskTests):
 class TestRepositorySync(unittest.TestCase):
     @patch('pulp.server.managers.repo.sync.RepoSyncManager.queue_sync_with_auto_publish')
     def test_pass_through_to_manager(self, mock_queue_sync):
-        result = repository.sync_with_auto_publish('foo', {})
+        result = repository.sync_with_auto_publish('foo', {}, None)
         # make sure the args get passed through
-        mock_queue_sync.assert_called_once_with('foo', {})
+        mock_queue_sync.assert_called_once_with('foo', {}, None)
         # make sure the return value is passed through
         self.assertTrue(result is mock_queue_sync.return_value)

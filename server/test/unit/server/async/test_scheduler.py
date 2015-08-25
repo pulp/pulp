@@ -16,90 +16,9 @@ from pulp.server.managers.factory import initialize
 initialize()
 
 
-class TestFailureWatcherLen(unittest.TestCase):
-    def test_empty(self):
-        watcher = scheduler.FailureWatcher()
-
-        self.assertEqual(len(watcher), 0)
-
-    def test_increments(self):
-        watcher = scheduler.FailureWatcher()
-
-        for i in range(1, 10):
-            watcher.add('task-%d' % i, 'schedule-%d' % i, False)
-            self.assertEqual(len(watcher), i)
-
-
-class TestFailureWatcherTrim(unittest.TestCase):
-    def test_removes_old(self):
-        watcher = scheduler.FailureWatcher()
-        watcher._watches['some_task'] = watcher.WatchedTask(int(time.time()) - watcher.ttl - 1,
-                                                            'some_schedule', False)
-
-        watcher.trim()
-
-        self.assertEqual(len(watcher), 0)
-
-    def test_keeps_new(self):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('some_task', 'some_schedule', False)
-
-        watcher.trim()
-
-        self.assertEqual(len(watcher), 1)
-
-
-class TestFailureWatcherAdd(unittest.TestCase):
-    def test_can_retrieve(self):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('some_task', 'some_schedule', False)
-
-        schedule_id, has_failure = watcher.pop('some_task')
-
-        self.assertEqual(schedule_id, 'some_schedule')
-        self.assertFalse(has_failure)
-
-    def test_time(self):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('some_task', 'some_schedule', False)
-
-        watched_task = watcher._watches['some_task']
-
-        self.assertTrue(time.time() - watched_task.timestamp < 1)
-
-
-class TestFailureWatcherPop(unittest.TestCase):
-    def test_can_retrieve(self):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('some_task', 'some_schedule', False)
-
-        schedule_id, has_failure = watcher.pop('some_task')
-
-        self.assertEqual(schedule_id, 'some_schedule')
-        self.assertFalse(has_failure)
-
-    def test_removes(self):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('some_task', 'some_schedule', False)
-
-        schedule_id, has_failure = watcher.pop('some_task')
-
-        self.assertEqual(len(watcher), 0)
-
-
-class TestEventMonitorInit(unittest.TestCase):
-    @mock.patch('threading.Thread.__init__')
-    def test_event_monitor__init__(self, mock_thread__init__):
-        failure_watcher = scheduler.FailureWatcher()
-        event_monitor = scheduler.EventMonitor(failure_watcher)
-        mock_thread__init__.assert_called_once_with()
-        self.assertTrue(failure_watcher is event_monitor._failure_watcher)
-
-
 class TestEventMonitorEvents(unittest.TestCase):
     def setUp(self):
-        self.failure_watcher = scheduler.FailureWatcher()
-        self.event_monitor = scheduler.EventMonitor(self.failure_watcher)
+        self.event_monitor = scheduler.EventMonitor()
 
     @mock.patch('pulp.server.async.scheduler.app.events.Receiver')
     def test_handlers_declared(self, mock_receiver):
@@ -109,8 +28,6 @@ class TestEventMonitorEvents(unittest.TestCase):
         self.assertEqual(mock_receiver.return_value.capture.call_count, 1)
         handlers = mock_receiver.call_args[1]['handlers']
 
-        self.assertTrue('task-failed' in handlers)
-        self.assertTrue('task-succeeded' in handlers)
         self.assertTrue('worker-heartbeat' in handlers)
         self.assertTrue('worker-offline' in handlers)
 
@@ -122,79 +39,6 @@ class TestEventMonitorEvents(unittest.TestCase):
                         mock_connection.return_value.__enter__.return_value)
         capture = mock_receiver.return_value.capture
         capture.assert_called_once_with(limit=None, timeout=None, wakeup=True)
-
-
-class TestHandleSucceededTask(unittest.TestCase):
-    def setUp(self):
-        self.event = {'uuid': 'task_1'}
-
-    @mock.patch('celery.result.AsyncResult')
-    def test_not_found(self, mock_result):
-        watcher = scheduler.FailureWatcher()
-
-        watcher.handle_succeeded_task(self.event)
-
-        # did not try to fetch a result
-        self.assertEqual(mock_result.call_count, 0)
-
-    @mock.patch.object(scheduler.FailureWatcher, 'add')
-    @mock.patch('pulp.server.async.scheduler.AsyncResult')
-    def test_rewatch(self, mock_result, mock_add):
-        """
-        if a task's return value is an AsyncResult, that means it queued another
-        task that we should now watch.
-        """
-        mock_result.return_value.result.id = 'task_1'
-
-        # this seems to be the only way to mock isinstance
-        scheduler.isinstance = mock.MagicMock(return_value=True)
-        try:
-            watcher = scheduler.FailureWatcher()
-            watcher._watches['task_1'] = watcher.WatchedTask(int(time.time()), 'some_schedule', False)
-
-            watcher.handle_succeeded_task(self.event)
-
-            mock_add.assert_called_once_with('task_1', 'some_schedule', False)
-        finally:
-            del scheduler.isinstance
-
-    @mock.patch('pulp.server.managers.schedule.utils.reset_failure_count')
-    @mock.patch('pulp.server.async.scheduler.AsyncResult')
-    def test_has_failure(self, mock_result, mock_reset):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('task_1', 'some_schedule', True)
-
-        # this seems to be the only way to mock isinstance
-        scheduler.isinstance = mock.MagicMock(return_value=False)
-        try:
-            watcher.handle_succeeded_task(self.event)
-
-            mock_reset.assert_called_once_with('some_schedule')
-        finally:
-            del scheduler.isinstance
-
-
-class TestHandleFailedTask(unittest.TestCase):
-    def setUp(self):
-        self.event = {'uuid': 'task_1'}
-
-    @mock.patch('pulp.server.managers.schedule.utils.increment_failure_count')
-    def test_not_found(self, mock_increment):
-        watcher = scheduler.FailureWatcher()
-
-        watcher.handle_failed_task(self.event)
-
-        # did not try to fetch a result
-        self.assertEqual(mock_increment.call_count, 0)
-
-    @mock.patch('pulp.server.managers.schedule.utils.increment_failure_count')
-    def test_found(self, mock_increment):
-        watcher = scheduler.FailureWatcher()
-        watcher.add('task_1', 'some_schedule', True)
-
-        watcher.handle_failed_task(self.event)
-
-        mock_increment.assert_called_once_with('some_schedule')
 
 
 class TestSchedulerInit(unittest.TestCase):
@@ -210,7 +54,6 @@ class TestSchedulerInit(unittest.TestCase):
         my_scheduler = scheduler.Scheduler(arg1, arg2, kwarg1=kwarg1, kwarg2=kwarg2)
 
         self.assertTrue(my_scheduler._schedule is None)
-        self.assertTrue(isinstance(my_scheduler._failure_watcher, scheduler.FailureWatcher))
         self.assertTrue(my_scheduler._loaded_from_db_count == 0)
         self.assertTrue(not mock_spawn_pulp_monitor_threads.called)
         self.assertTrue(scheduler.Scheduler._mongo_initialized is False)
@@ -243,7 +86,7 @@ class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
 
         my_scheduler.spawn_pulp_monitor_threads()
 
-        mock_event_monitor.assert_called_once_with(my_scheduler._failure_watcher)
+        mock_event_monitor.assert_called_once_with()
         self.assertTrue(mock_event_monitor.return_value.daemon)
         mock_event_monitor.return_value.start.assert_called_once()
 
@@ -261,16 +104,6 @@ class TestSchedulerTick(unittest.TestCase):
         sched_instance.tick()
 
         mock_tick.assert_called_once_with()
-
-    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
-    @mock.patch.object(scheduler.FailureWatcher, 'trim')
-    @mock.patch('celery.beat.Scheduler.tick')
-    def test_calls_trim(self, mock_tick, mock_trim):
-        sched_instance = scheduler.Scheduler()
-
-        sched_instance.tick()
-
-        mock_trim.assert_called_once_with()
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
@@ -427,68 +260,6 @@ class TestSchedulerAdd(unittest.TestCase):
         self.assertRaises(NotImplementedError, sched_instance.add)
 
 
-class TestSchedulerApplyAsync(unittest.TestCase):
-    @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    @mock.patch('celery.beat.Scheduler.apply_async')
-    def test_not_custom_entry(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler()
-        mock_entry = mock.MagicMock()
-
-        ret = sched_instance.apply_async(mock_entry)
-
-        self.assertTrue(ret is mock_apply_async.return_value)
-        self.assertEqual(len(sched_instance._failure_watcher), 0)
-
-    @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    @mock.patch('celery.beat.Scheduler.apply_async')
-    def test_celery_entry(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler()
-        call = dispatch.ScheduledCall('PT1H', 'fake.task')
-        entry = call.as_schedule_entry()
-
-        sched_instance.apply_async(entry)
-
-        self.assertEqual(len(sched_instance._failure_watcher), 0)
-
-    @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    @mock.patch('celery.beat.Scheduler.apply_async')
-    def test_returns_superclass_value(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler()
-        mock_entry = mock.MagicMock()
-
-        ret = sched_instance.apply_async(mock_entry)
-
-        self.assertTrue(ret is mock_apply_async.return_value)
-
-    @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    @mock.patch('celery.beat.Scheduler.apply_async')
-    def test_no_failure_threshold(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler()
-        entry = dispatch.ScheduledCall.from_db(SCHEDULES[1]).as_schedule_entry()
-
-        sched_instance.apply_async(entry)
-
-        # make sure the entry wasn't added, because it does not have a
-        # failure threshold
-        self.assertEqual(len(sched_instance._failure_watcher), 0)
-
-    @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    @mock.patch('celery.beat.Scheduler.apply_async')
-    def test_failure_threshold(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler()
-        entry = dispatch.ScheduledCall.from_db(SCHEDULES[0]).as_schedule_entry()
-
-        sched_instance.apply_async(entry)
-
-        # make sure the entry was added, because it has a failure threshold
-        self.assertEqual(len(sched_instance._failure_watcher), 1)
-
-
 class TestEventMonitorRun(unittest.TestCase):
     class SleepException(Exception):
         pass
@@ -500,7 +271,7 @@ class TestEventMonitorRun(unittest.TestCase):
         # infinite loop
         mock_sleep.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
 
         # verify the frequency
         mock_sleep.assert_called_once_with(10)
@@ -515,7 +286,7 @@ class TestEventMonitorRun(unittest.TestCase):
         mock_monitor_events.side_effect = self.SleepException
         mock_log_error.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
 
         mock_monitor_events.assert_called_once_with()
 
@@ -529,7 +300,7 @@ class TestEventMonitorRun(unittest.TestCase):
         mock_monitor_events.side_effect = self.SleepException
         mock_log_error.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
 
         self.assertEqual(mock_log_error.call_count, 1)
 
