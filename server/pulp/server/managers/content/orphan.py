@@ -7,9 +7,12 @@ import shutil
 from celery import task
 
 from pulp.plugins.types import database as content_types_db
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.util import misc as plugin_misc
 from pulp.server import config as pulp_config, exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import RepoContentUnit
+from pulp.server.db import model
 
 
 _logger = logging.getLogger(__name__)
@@ -44,6 +47,8 @@ class OrphanManager(object):
         """
         summary = {}
         for content_type_id in content_types_db.all_type_ids():
+            summary[content_type_id] = self.orphans_count_by_type(content_type_id)
+        for content_type_id in plugin_api.list_unit_models():
             summary[content_type_id] = self.orphans_count_by_type(content_type_id)
         return summary
 
@@ -175,6 +180,9 @@ class OrphanManager(object):
         for content_type_id in content_types_db.all_type_ids():
             OrphanManager.delete_orphans_by_type(content_type_id)
 
+        for content_type_id in plugin_api.list_unit_models():
+            OrphanManager.delete_orphan_content_units_by_type(content_type_id)
+
     @staticmethod
     def delete_orphans_by_id(content_unit_list):
         """
@@ -229,6 +237,42 @@ class OrphanManager(object):
             storage_path = content_unit.get('_storage_path', None)
             if storage_path is not None:
                 OrphanManager.delete_orphaned_file(storage_path)
+
+    @staticmethod
+    def delete_orphan_content_units_by_type(type_id):
+        """
+        Delete the orphaned content units for the given content type.
+        This method only applies to new style content units that are loaded via entry points
+
+        NOTE: this method deletes the content unit's bits from disk, if applicable.
+
+        :param type_id: id of the content type
+        :type type_id: basestring
+        """
+        # get the model matching the type
+        content_model = plugin_api.get_unit_model_by_id(type_id)
+        content_units = content_model.objects().only('id', 'storage_path')
+
+        # Paginate the content units
+        for units_group in plugin_misc.paginate(content_units):
+            # Build the list of ids to search for an easier way to access units in the group by id
+            unit_dict = dict()
+            for unit in units_group:
+                unit_dict[unit.id] = unit
+
+            id_list = list(unit_dict.iterkeys())
+
+            # Clear the units that are currently associated from unit_dict
+            non_orphan = model.RepositoryContentUnit.objects(unit_id__in=id_list)\
+                .distinct('unit_id')
+            for non_orphan_id in non_orphan:
+                unit_dict.pop(non_orphan_id)
+
+            # Remove the unit and any references on disk
+            for unit_to_delete in unit_dict.itervalues():
+                unit_to_delete.delete()
+                if unit_to_delete.storage_path:
+                    OrphanManager.delete_orphaned_file(unit_to_delete.storage_path)
 
     @staticmethod
     def delete_orphaned_file(path):
