@@ -87,7 +87,7 @@ class Repository(Document):
         r = plugin_repo(self.repo_id, self.display_name, self.description, self.notes,
                         content_unit_counts=self.content_unit_counts,
                         last_unit_added=self.last_unit_added,
-                        last_unit_removed=self.last_unit_removed)
+                        last_unit_removed=self.last_unit_removed, repo_obj=self)
         return r
 
     def update_from_delta(self, repo_delta):
