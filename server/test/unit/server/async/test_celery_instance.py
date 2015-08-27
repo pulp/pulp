@@ -3,6 +3,7 @@ This module contains tests for the pulp.server.async.celery_instance module.
 """
 from datetime import timedelta
 from functools import partial
+import os
 import ssl
 import unittest
 
@@ -10,6 +11,7 @@ import mock
 
 from pulp.server.async import celery_instance
 from pulp.server.config import config, _default_values
+from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
@@ -90,6 +92,14 @@ def _get_database_test_config():
             'password': 'letmein'}
     }
     return config
+
+
+class TestCeleryInstanceDjango(unittest.TestCase):
+    """
+    Assert that the DJANGO_SETTINGS_MODULE environment variable is set.
+    """
+    def test_django_env_variable(self):
+        self.assertEqual(os.getenv('DJANGO_SETTINGS_MODULE'), PULP_DJANGO_SETTINGS_MODULE)
 
 
 class TestCeleryInstanceSSLConfig(unittest.TestCase):

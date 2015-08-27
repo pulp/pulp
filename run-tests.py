@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 from pulp.devel.test_runner import run_tests
+from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
 
 # Find and eradicate any existing .pyc files, so they do not eradicate us!
 PROJECT_DIR = os.path.dirname(__file__)
@@ -50,7 +51,7 @@ paths_to_check = [
     'server/test/unit/plugins/',
     'server/test/unit/server/']
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = PULP_DJANGO_SETTINGS_MODULE
 
 PACKAGES = [
     os.path.dirname(__file__),
