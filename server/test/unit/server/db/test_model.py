@@ -501,6 +501,7 @@ class TestRepository(unittest.TestCase):
         self.assertEquals({'units': 1}, repo.content_unit_counts)
         self.assertEquals(dt, repo.last_unit_added)
         self.assertEquals(dt, repo.last_unit_removed)
+        self.assertEquals(repo_obj, repo.repo_obj)
 
     def test_update_from_delta(self):
         """
