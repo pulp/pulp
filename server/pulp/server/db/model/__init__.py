@@ -482,6 +482,33 @@ class ContentUnit(Document):
         """
         return self.NAMED_TUPLE(**self.unit_key)
 
+    def to_id_dict(self):
+        """
+        Returns identity info as a dict.
+
+        Returns a dict with the identity information (type ID and unit key) for this unit. The
+        primary intention of this method is as a means to convert these units into a JSON
+        serializable format.
+
+        :return: Identity information (type ID and unit key)
+        :rtype: dict
+        """
+
+        return {'type_id': self.unit_type_id, 'unit_key': self.unit_key}
+
+    @property
+    def type_id(self):
+        """
+        Backwards compatible interface for unit_type_id
+
+        The pre-mongoengine units used type_id to track what is stored in unit_type_id. This
+        provides internal backwards compatibility allowing code to not be updated until all models
+        are converted to mongoengine and able to use the new name exclusively.
+
+        This should be removed once the old, non-mongoengine code paths are removed.
+        """
+        return self.unit_type_id
+
     def __hash__(self):
         """
         This should provide a consistent and unique hash where units of the same

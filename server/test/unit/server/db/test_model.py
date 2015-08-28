@@ -152,6 +152,23 @@ class TestContentUnit(unittest.TestCase):
 
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
 
+    def test_id_to_dict(self):
+        class ContentUnitHelper(model.ContentUnit):
+            apple = StringField()
+            pear = StringField()
+            unit_key_fields = ('apple', 'pear')
+            unit_type_id = StringField(default='bar')
+        my_unit = ContentUnitHelper(apple='apple', pear='pear')
+        ret = my_unit.to_id_dict()
+        expected_dict = {'unit_key': {'pear': u'pear', 'apple': u'apple'}, 'type_id': 'bar'}
+        self.assertEqual(ret, expected_dict)
+
+    def test_type_id(self):
+        class ContentUnitHelper(model.ContentUnit):
+            unit_type_id = StringField()
+        my_unit = ContentUnitHelper(unit_type_id='apple')
+        self.assertEqual(my_unit.type_id, 'apple')
+
 
 class TestFileContentUnit(unittest.TestCase):
 
