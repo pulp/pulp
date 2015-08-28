@@ -43,11 +43,13 @@ class RepoSyncManagerTests(base.PulpServerTests):
         repo_id = 'foo'
         distributor_id = 'bar'
         overrides = {'baz': 1}
-        self.publish_manager.queue_publish(repo_id, distributor_id, overrides)
+        scheduled_call_id = '123'
+        self.publish_manager.queue_publish(repo_id, distributor_id, overrides, scheduled_call_id)
         kwargs = {
             'repo_id': repo_id,
             'distributor_id': distributor_id,
-            'publish_config_override': overrides
+            'publish_config_override': overrides,
+            'scheduled_call_id': scheduled_call_id
         }
         tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('publish')]
         mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
