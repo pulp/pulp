@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 class RepoPublishManager(object):
 
     @staticmethod
-    def publish(repo_id, distributor_id, publish_config_override=None):
+    def publish(repo_id, distributor_id, publish_config_override=None, scheduled_call_id=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -51,6 +51,9 @@ class RepoPublishManager(object):
         @param publish_config_override: optional config values to use for this
                                         publish call only
         @type  publish_config_override: dict, None
+
+        @param scheduled_call_id: id of scheduled call that dispatched this task
+        @type  scheduled_call_id: str
 
         :return: report of the details of the publish
         :rtype: pulp.server.db.model.repository.RepoPublishResult
@@ -333,7 +336,7 @@ class RepoPublishManager(object):
         return auto_distributors
 
     @staticmethod
-    def queue_publish(repo_id, distributor_id, overrides=None):
+    def queue_publish(repo_id, distributor_id, overrides=None, scheduled_call_id=None):
         """
         Create an itinerary for repo publish.
         :param repo_id: id of the repo to publish
@@ -342,13 +345,16 @@ class RepoPublishManager(object):
         :type distributor_id: str
         :param overrides: dictionary of options to pass to the publish manager
         :type overrides: dict or None
+        :param scheduled_call_id: id of scheduled call that dispatched this task
+        :type scheduled_call_id: str
         :return: task result object
         :rtype: pulp.server.async.tasks.TaskResult
         """
         kwargs = {
             'repo_id': repo_id,
             'distributor_id': distributor_id,
-            'publish_config_override': overrides
+            'publish_config_override': overrides,
+            'scheduled_call_id': scheduled_call_id
         }
 
         tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),

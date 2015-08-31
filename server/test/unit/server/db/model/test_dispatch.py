@@ -551,6 +551,10 @@ class TestScheduledCallInit(unittest.TestCase):
         self.assertEqual(call.next_run, mock_calc.return_value)
         mock_calc.assert_called_once_with()
 
+    def test_id_added_to_kwargs(self):
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+        self.assertEqual(call.kwargs['scheduled_call_id'], call.id)
+
 
 class TestScheduledCallFromDB(unittest.TestCase):
     def setUp(self):
