@@ -56,6 +56,9 @@ Deprecation
 
 * The ``archived_calls`` collection is dropped from the database with a migration.
 
+* MongoDB is no longer used as the celery result backend. The 'celery_taskmeta' collection will be
+  removed with a migration in a future release.
+
 
 Upgrade Instructions for 2.6.x --> 2.7.0
 -----------------------------------------

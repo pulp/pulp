@@ -993,8 +993,10 @@ class TestQueuePublish(unittest.TestCase):
         Ensure that the correct args are passed to the dispatched publish task.
         """
         mock_tags = [mock_r_tag.return_value, mock_a_tag.return_value]
-        mock_kwargs = {'repo_id': 'repo', 'dist_id': 'dist', 'publish_config_override': 'over'}
-        result = repo_controller.queue_publish('repo', 'dist', overrides='over')
+        mock_kwargs = {'repo_id': 'repo', 'dist_id': 'dist', 'scheduled_call_id': '123',
+                       'publish_config_override': 'over'}
+        result = repo_controller.queue_publish('repo', 'dist', overrides='over',
+                                               scheduled_call_id='123')
         mock_r_tag.assert_called_once_with(repo_controller.RESOURCE_REPOSITORY_TYPE, 'repo')
         mock_a_tag.assert_called_once_with('publish')
         mock_publish.apply_async_with_reservation.assert_called_once_with(
@@ -1110,9 +1112,10 @@ class TestSpawnAutoPublishTasks(unittest.TestCase):
         Assert that tasks are spawned for each distributor with auto publish enabled.
         """
         mock_auto_dists.return_value = [{'id': 'mock_dist'}]
-        result = repo_controller._queue_auto_publish_tasks('mock_repo')
+        result = repo_controller._queue_auto_publish_tasks('mock_repo', 'mock_schedule')
         mock_auto_dists.assert_called_once_with('mock_repo')
-        mock_queue.assert_called_once_with('mock_repo', 'mock_dist')
+        mock_queue.assert_called_once_with('mock_repo', 'mock_dist',
+                                           scheduled_call_id='mock_schedule')
         self.assertEqual(result, [mock_queue().task_id])
 
 
@@ -1129,12 +1132,12 @@ class TestQueueSyncWithAutoPublish(unittest.TestCase):
         """
         Ensure that the sync task is queued with the correct arguments.
         """
-        result = repo_controller.queue_sync_with_auto_publish('repo')
+        result = repo_controller.queue_sync_with_auto_publish('repo', scheduled_call_id='123')
         mock_r_tag.assert_called_once_with(mock_repo_type, 'repo')
         mock_a_tag.assert_called_once_with('sync')
         mock_sync_task.apply_async_with_reservation.assert_called_once_with(
             mock_repo_type, 'repo', tags=[mock_r_tag(), mock_a_tag()],
-            kwargs={'repo_id': 'repo', 'sync_config_override': None}
+            kwargs={'repo_id': 'repo', 'sync_config_override': None, 'scheduled_call_id': '123'}
         )
         self.assertTrue(result is mock_sync_task.apply_async_with_reservation.return_value)
 
