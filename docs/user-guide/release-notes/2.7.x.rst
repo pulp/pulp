@@ -110,6 +110,10 @@ Client Changes
 * The `pulp-admin` command now supports obtaining detailed information for just
   one repo via the :ref:`details <admin-client-list-repos>` flag.
 
+* `pulp-admin tasks list` command is adjusted to only display tasks in 'waiting' or 'running' state.
+  Previously all tasks were shown regardless of state. The `--all` flag can be passed in to
+  retrieve a list of tasks in all states.
+
 Agent Changes
 -------------
 
