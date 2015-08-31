@@ -1,4 +1,3 @@
-from collections import namedtuple
 from datetime import datetime, timedelta
 from gettext import gettext as _
 import itertools
@@ -8,7 +7,6 @@ import threading
 import time
 
 from celery import beat
-from celery.result import AsyncResult
 import mongoengine
 
 from pulp.common.constants import (CELERYBEAT_WAIT_SECONDS, RESOURCE_MANAGER_WORKER_NAME,
@@ -31,116 +29,13 @@ import pulp.server.logs  # noqa
 _logger = logging.getLogger(__name__)
 
 
-class FailureWatcher(object):
-    _default_pop = (None, None, None)
-    WatchedTask = namedtuple('WatchedTask', ['timestamp', 'schedule_id', 'has_failure'])
-    # how long we will track a task from the time it gets queued.
-    ttl = 60 * 60 * 4  # 4 hours
-
-    def __init__(self):
-        self._watches = {}
-
-    def trim(self):
-        """
-        Removes tasks from our collections of tasks that are being watched for
-        failure by looking for tasks that have been in the collection for more
-        than self.ttl seconds.
-        """
-        oldest_allowed = int(time.time()) - self.ttl
-        for task_id in (task_id for task_id, watch in self._watches.items()
-                        if watch.timestamp < oldest_allowed):
-            self._watches.pop(task_id, None)
-
-    def add(self, task_id, schedule_id, has_failure):
-        """
-        Add a task to our collection of tasks to watch.
-
-        :param task_id:     UUID of the task that was just queued
-        :type  task_id:     basestring
-        :param schedule_id: ID of the schedule that caused the task to be queued
-        :type  schedule_id: basestring
-        :param has_failure: True iff the schedule in question has at least one
-                            consecutive failure currently recorded. If True, the
-                            success handler can ignore this task.
-        :type  has_failure: bool
-        """
-        self._watches[task_id] = self.WatchedTask(int(time.time()), schedule_id, has_failure)
-
-    def pop(self, task_id):
-        """
-        removes the entry for the requested task_id and returns its schedule_id
-        and has_failure attributes
-
-        :param task_id:     UUID of a task
-        :type  task_id:     basestring
-        :return:            2-item list of [schedule_id, has_failure], where
-                            schedule_id and has_failure will be None if the
-                            task_id is not found.
-        :rtype:             [basestring, bool]
-        """
-        return self._watches.pop(task_id, self._default_pop)[1:]
-
-    def handle_succeeded_task(self, event):
-        """
-        Celery event handler for succeeded tasks. This will check if we are
-        watching the task for failure, and if so, ensure that the corresponding
-        schedule's failure count either already was 0 when the task was queued
-        or that it gets reset to 0.
-
-        :param event:   dictionary of poorly-documented data about a celery task.
-                        At a minimum, this method depends on the key 'uuid'
-                        being present and representing the task's ID.
-        :type event:    dict
-        """
-        event_id = event['uuid']
-        schedule_id, has_failure = self.pop(event_id)
-        if schedule_id:
-            return_value = AsyncResult(event_id, app=app).result
-            if isinstance(return_value, AsyncResult):
-                msg = _('watching child event %(id)s for failure') % {'id': return_value.id}
-                _logger.debug(msg)
-                self.add(return_value.id, schedule_id, has_failure)
-            elif has_failure:
-                _logger.info(_('resetting consecutive failure count for schedule %(id)s')
-                             % {'id': schedule_id})
-                utils.reset_failure_count(schedule_id)
-
-    def handle_failed_task(self, event):
-        """
-        Celery event handler for failed tasks. This will check if we are
-        watching the task for failure, and if so, increments the corresponding
-        schedule's failure count. If it has met or exceeded its failure
-        threshold, the schedule will be disabled.
-
-        :param event:   dictionary of poorly-documented data about a celery task.
-                        At a minimum, this method depends on the key 'uuid'
-                        being present and representing the task's ID.
-        :type event:    dict
-        """
-        schedule_id, has_failure = self.pop(event['uuid'])
-        if schedule_id:
-            msg = _('incrementing consecutive failure count for schedule %s') % schedule_id
-            _logger.info(msg)
-            utils.increment_failure_count(schedule_id)
-
-    def __len__(self):
-        return len(self._watches)
-
-
 class EventMonitor(threading.Thread):
     """
-    A thread dedicated to processing Celery events.
-
-    This object has two primary concerns: worker discovery/departure and task status monitoring.
-
-    :param _failure_watcher: The FailureWatcher that will also be used by the Scheduler. The
-                             callback handlers to be called need to be on the instantiated object.
-    :type _failure_watcher: FailureWatcher
+    The EventMonitor is a thread dedicated to handling worker discovery/departure.
     """
 
-    def __init__(self, _failure_watcher):
+    def __init__(self):
         super(EventMonitor, self).__init__()
-        self._failure_watcher = _failure_watcher
 
     def run(self):
         """
@@ -176,8 +71,6 @@ class EventMonitor(threading.Thread):
         """
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={
-                'task-failed': self._failure_watcher.handle_failed_task,
-                'task-succeeded': self._failure_watcher.handle_succeeded_task,
                 'worker-heartbeat': worker_watcher.handle_worker_heartbeat,
                 'worker-offline': worker_watcher.handle_worker_offline,
                 'worker-online': worker_watcher.handle_worker_heartbeat,
@@ -296,7 +189,6 @@ class Scheduler(beat.Scheduler):
         and should create the necessary pulp helper threads using spawn_pulp_monitor_threads().
         """
         self._schedule = None
-        self._failure_watcher = FailureWatcher()
         self._loaded_from_db_count = 0
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
@@ -323,7 +215,7 @@ class Scheduler(beat.Scheduler):
         more details.
         """
         # start monitoring events in a thread
-        event_monitor = EventMonitor(self._failure_watcher)
+        event_monitor = EventMonitor()
         event_monitor.daemon = True
         event_monitor.start()
         # start monitoring workers who may timeout
@@ -340,18 +232,14 @@ class Scheduler(beat.Scheduler):
 
     def tick(self):
         """
-        Superclass runs a tick, that is one iteration of the scheduler. Executes
-        all due tasks.
+        Superclass runs a tick, that is one iteration of the scheduler. Executes all due tasks.
 
-        This method adds a call to trim the failure watcher and updates the
-        last heartbeat time of the scheduler. We do not actually send a
+        This method updates the last heartbeat time of the scheduler. We do not actually send a
         heartbeat message since it would just get read again by this class.
 
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
-        self._failure_watcher.trim()
-
         # Setting the celerybeat name
         celerybeat_name = SCHEDULER_WORKER_NAME + "@" + platform.node()
 
@@ -475,22 +363,3 @@ class Scheduler(beat.Scheduler):
         entries to the database, and they will be picked up automatically.
         """
         raise NotImplementedError
-
-    def apply_async(self, entry, publisher=None, **kwargs):
-        """
-        The superclass calls apply_async on the task that is referenced by the
-        entry. This method also adds the queued task to our list of tasks to
-        watch for failure if the task has a failure threshold.
-
-        :param entry:       schedule entry whose task should be queued.
-        :type  entry:       celery.beat.ScheduleEntry
-        :param publisher:   unknown. used by celery but not documented
-        :type kwargs:       dict
-        :return:
-        """
-        result = super(Scheduler, self).apply_async(entry, publisher, **kwargs)
-        if isinstance(entry, ScheduleEntry) and entry._scheduled_call.failure_threshold:
-            has_failure = bool(entry._scheduled_call.consecutive_failures)
-            self._failure_watcher.add(result.id, entry.name, has_failure)
-            _logger.debug(_('watching task %s') % {'id': result.id})
-        return result

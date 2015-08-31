@@ -479,7 +479,7 @@ def update_last_unit_removed(repo_id):
 
 
 @celery.task()
-def queue_sync_with_auto_publish(repo_id, overrides=None):
+def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
     """
     Sync a repository and upon successful completion, publish any distributors that are configured
     for auto publish.
@@ -488,11 +488,14 @@ def queue_sync_with_auto_publish(repo_id, overrides=None):
     :type repo_id:  str
     :param overrides: dictionary of configuration overrides for this sync
     :type overrides:  dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type  scheduled_call_id: str
 
     :return: result containing the details of the task executed and any spawned tasks
     :rtype:  pulp.server.async.tasks.TaskResult
     """
-    kwargs = {'repo_id': repo_id, 'sync_config_override': overrides}
+    kwargs = {'repo_id': repo_id, 'sync_config_override': overrides,
+              'scheduled_call_id': scheduled_call_id}
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]
     result = sync.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
                                                kwargs=kwargs)
@@ -500,7 +503,7 @@ def queue_sync_with_auto_publish(repo_id, overrides=None):
 
 
 @celery.task(base=Task, name='pulp.server.managers.repo.sync.sync')
-def sync(repo_id, sync_config_override=None):
+def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     """
     Performs a synchronize operation on the given repository and triggers publishs for distributors
     with autopublish enabled.
@@ -513,6 +516,8 @@ def sync(repo_id, sync_config_override=None):
     :type  repo_id: str
     :param sync_config_override: optional config containing values to use for this sync only
     :type  sync_config_override: dict
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type  scheduled_call_id: str
 
     :return: TaskResult containing sync results and a list of spawned tasks
     :rtype:  pulp.server.async.tasks.TaskResult
@@ -601,21 +606,24 @@ def sync(repo_id, sync_config_override=None):
     if sync_result.result == RepoSyncResult.RESULT_FAILED:
         raise pulp_exceptions.PulpExecutionException(_('Importer indicated a failed response'))
 
-    spawned_tasks = _queue_auto_publish_tasks(repo_obj.repo_id)
+    spawned_tasks = _queue_auto_publish_tasks(repo_obj.repo_id, scheduled_call_id=scheduled_call_id)
     return TaskResult(sync_result, spawned_tasks=spawned_tasks)
 
 
-def _queue_auto_publish_tasks(repo_id):
+def _queue_auto_publish_tasks(repo_id, scheduled_call_id=None):
     """
     Queue publish tasks for all distributors of the specified repo that have auto publish enabled.
 
     :param repo_id: identifies a repository
     :type  repo_id: repo_id
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type  scheduled_call_id: str
 
     :return: list of task_ids for the queued publish tasks
     :rtype:  list
     """
-    return [queue_publish(repo_id, dist['id']).task_id for dist in auto_distributors(repo_id)]
+    return [queue_publish(repo_id, dist['id'], scheduled_call_id=scheduled_call_id).task_id for
+            dist in auto_distributors(repo_id)]
 
 
 def sync_history(start_date, end_date, repo_id):
@@ -649,7 +657,7 @@ def sync_history(start_date, end_date, repo_id):
 
 
 @celery.task()
-def queue_publish(repo_id, distributor_id, overrides=None):
+def queue_publish(repo_id, distributor_id, overrides=None, scheduled_call_id=None):
     """
     Queue a repo publish task.
 
@@ -659,11 +667,14 @@ def queue_publish(repo_id, distributor_id, overrides=None):
     :type  distributor_id: str
     :param overrides: dictionary of options to pass to the publish task
     :type  overrides: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type  scheduled_call_id: str
 
     :return: task result object
     :rtype: pulp.server.async.tasks.TaskResult
     """
-    kwargs = {'repo_id': repo_id, 'dist_id': distributor_id, 'publish_config_override': overrides}
+    kwargs = {'repo_id': repo_id, 'dist_id': distributor_id, 'publish_config_override': overrides,
+              'scheduled_call_id': scheduled_call_id}
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
     return publish.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
@@ -671,7 +682,7 @@ def queue_publish(repo_id, distributor_id, overrides=None):
 
 
 @celery.task(base=Task, name='pulp.server.managers.repo.publish.publish')
-def publish(repo_id, dist_id, publish_config_override=None):
+def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=None):
     """
     Uses the given distributor to publish the repository.
 
@@ -685,6 +696,8 @@ def publish(repo_id, dist_id, publish_config_override=None):
     :type  dist_id: str
     :param publish_config_override: optional config values to use for this publish call only
     :type  publish_config_override: dict, None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type  scheduled_call_id: str
 
     :return: report of the details of the publish
     :rtype:  pulp.server.db.model.repository.RepoPublishResult
