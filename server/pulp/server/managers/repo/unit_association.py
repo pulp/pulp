@@ -7,8 +7,10 @@ import logging
 import sys
 
 from celery import task
+import mongoengine
 import pymongo
 
+from pulp.common import error_codes
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
@@ -163,7 +165,7 @@ class RepoUnitAssociationManager(object):
         :type  dest_repo_id:           str
         :param criteria:               optional; if specified, will filter the units retrieved from
                                        the source repository
-        :type  criteria:               UnitAssociationCriteria
+        :type  criteria:               pulp.server.db.model.criteria.UnitAssociationCriteria
         :param import_config_override: optional config containing values to use for this import only
         :type  import_config_override: dict
         :return:                       dict with key 'units_successful' whose
@@ -183,32 +185,45 @@ class RepoUnitAssociationManager(object):
 
         # The docs are incorrect on the list_importer_types call; it actually
         # returns a dict with the types under key "types" for some reason.
-        supported_type_ids = plugin_api.list_importer_types(
-            dest_repo_importer['importer_type_id'])['types']
+        supported_type_ids = set(plugin_api.list_importer_types(
+            dest_repo_importer['importer_type_id'])['types'])
 
-        # If criteria is specified, retrieve the list of units now
-        associate_us = None
-        if criteria is not None:
-            associate_us = load_associated_units(source_repo_id, criteria)
-
-            # If units were supposed to be filtered but none matched, we're done
-            if len(associate_us) == 0:
-                # Return an empty list to indicate nothing was copied
-                return {'units_successful': []}
+        # Get the unit types from the repo source repo
+        source_repo_unit_types = set(source_repo.content_unit_counts.keys())
 
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
-        associated_unit_type_ids = calculate_associated_type_ids(source_repo_id, associate_us)
-        unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
+        if not source_repo_unit_types.issubset(supported_type_ids):
+            raise exceptions.PulpCodedException(
+                error_code=error_codes.PLP0000,
+                message='The the target importer does not support the types from the source')
 
-        if len(unsupported_types) > 0:
-            raise exceptions.InvalidValue(['types'])
-
-        # Convert all of the units into the plugin standard representation if
-        # a filter was specified
         transfer_units = None
-        if associate_us is not None:
-            transfer_units = create_transfer_units(associate_us, associated_unit_type_ids)
+        # If criteria is specified, retrieve the list of units now
+        if criteria is not None:
+            # if all source types have been converted to mongo - search via new style
+            if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
+                association_q = mongoengine.Q(__raw__=criteria.association_spec)
+                unit_q = mongoengine.Q(__raw__=criteria.unit_spec)
+                transfer_units = repo_controller.find_repo_content_units(
+                    repository=source_repo,
+                    repo_content_unit_q=association_q,
+                    units_q=unit_q,
+                    yield_content_unit=True)
+            else:
+                # else, search via old style
+                associate_us = load_associated_units(source_repo_id, criteria)
+                # If units were supposed to be filtered but none matched, we're done
+                if len(associate_us) == 0:
+                    # Return an empty list to indicate nothing was copied
+                    return {'units_successful': []}
+                # Convert all of the units into the plugin standard representation if
+                # a filter was specified
+                transfer_units = None
+                if associate_us is not None:
+                    associated_unit_type_ids = calculate_associated_type_ids(source_repo_id,
+                                                                             associate_us)
+                    transfer_units = create_transfer_units(associate_us, associated_unit_type_ids)
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = dest_repo.to_transfer_repo()
@@ -227,13 +242,13 @@ class RepoUnitAssociationManager(object):
             copied_units = importer_instance.import_units(
                 transfer_source_repo, transfer_dest_repo, conduit, call_config,
                 units=transfer_units)
+
             unit_ids = [u.to_id_dict() for u in copied_units]
             return {'units_successful': unit_ids}
-
         except Exception:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')
-            msg = msg % {'i': dest_repo_importer['importer_type_id'], 'r': dest_repo_id}
-            logger.exception(msg)
+            msg_dict = {'i': dest_repo_importer['importer_type_id'], 'r': dest_repo_id}
+            logger.exception(msg % msg_dict)
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, notify_plugins=True):
