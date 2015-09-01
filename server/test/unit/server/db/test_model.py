@@ -51,34 +51,22 @@ class TestContentUnit(unittest.TestCase):
 
         ContentUnitHelper.attach_signals()
 
-        mock_signals.post_init.connect.assert_called_once_with(ContentUnitHelper.post_init_signal,
-                                                               sender=ContentUnitHelper)
         mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
                                                               sender=ContentUnitHelper)
 
         self.assertEquals('foo', ContentUnitHelper.NAMED_TUPLE.__name__)
         self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
 
-    def test_post_init_signal_with_unit_key_fields_defined(self):
-        """
-        Test the init signal handler that validates the existence of the
-        unit_key_fields list
-        """
+    def test_attach_signals_without_unit_key_fields_defined(self):
         class ContentUnitHelper(model.ContentUnit):
-            unit_key_fields = ['id']
+            unit_type_id = StringField(default='foo')
 
-        model.ContentUnit.post_init_signal({}, ContentUnitHelper())
-
-    def test_post_init_signal_without_unit_key_fields_defined(self):
-        """
-        Test the init signal handler that raises an exception if the unit_key_fields list
-        has not been defined.
-        """
         try:
-            model.ContentUnit.post_init_signal({}, {})
+            ContentUnitHelper.attach_signals()
             self.fail("Previous call should have raised a PulpCodedException")
         except PulpCodedException, raised_error:
             self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            self.assertEqual(raised_error.error_data, {'class_name': 'ContentUnitHelper'})
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
