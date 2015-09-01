@@ -253,7 +253,7 @@ class Repository(ModelSerializer):
         """
         Contains information that the base serializer needs to properly handle a Repository object.
         """
-        exclude_fields = ['scratchpad']
+        exclude_fields = []
         remapped_fields = {'repo_id': 'id', 'id': '_id'}
 
     def get_href(self, instance):

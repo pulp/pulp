@@ -387,7 +387,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         render_kwargs = mock_call.call_args[1]
         expected = ['id', 'display_name', 'description', 'content_unit_counts',
-                    'notes', 'importers', 'distributors']
+                    'notes', 'scratchpad', 'importers', 'distributors']
         self.assertEqual(render_kwargs['filters'], expected)
         self.assertEqual(render_kwargs['order'], expected)
 
@@ -418,7 +418,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         render_kwargs = mock_call.call_args[1]
         expected = ['id', 'display_name', 'description', 'content_unit_counts',
-                    'notes', 'importers', 'distributors']
+                    'notes', 'scratchpad', 'importers', 'distributors']
         self.assertEqual(render_kwargs['filters'], expected)
         self.assertEqual(render_kwargs['order'], expected)
 

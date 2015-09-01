@@ -288,7 +288,7 @@ class TestRepository(unittest.TestCase):
         """
         Make sure that scratchpad is excluded.
         """
-        self.assertEquals(serializers.Repository.Meta.exclude_fields, ['scratchpad'])
+        self.assertEquals(serializers.Repository.Meta.exclude_fields, [])
         self.assertDictEqual(serializers.Repository.Meta.remapped_fields,
                              {'repo_id': 'id', 'id': '_id'})
 
