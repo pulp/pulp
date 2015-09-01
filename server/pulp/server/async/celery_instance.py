@@ -6,12 +6,15 @@ the factory ends up importing tasks.py when it imports all the managers.
 Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
 from datetime import timedelta
+import os
 import ssl
 
 from celery import Celery
 
 from pulp.server.config import config
+from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", PULP_DJANGO_SETTINGS_MODULE)
 
 broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', broker=broker_url)

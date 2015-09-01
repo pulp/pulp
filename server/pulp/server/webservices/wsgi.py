@@ -8,7 +8,10 @@ https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/
 """
 
 import os
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pulp.server.webservices.settings")
+
+from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", PULP_DJANGO_SETTINGS_MODULE)
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
