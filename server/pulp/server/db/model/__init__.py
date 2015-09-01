@@ -412,27 +412,15 @@ class ContentUnit(Document):
         This is provided as a class method so it can be called on subclasses
         and all the correct signals will be applied.
         """
-        signals.post_init.connect(cls.post_init_signal, sender=cls)
         signals.pre_save.connect(cls.pre_save_signal, sender=cls)
+
+        # Validate that the minimal set of fields has been defined
+        if not hasattr(cls, 'unit_key_fields'):
+            class_name = cls.__name__
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=class_name)
+
         # Create the named tuple here so it happens during server startup
         cls.NAMED_TUPLE = namedtuple(cls.unit_type_id.default, cls.unit_key_fields)
-
-    @classmethod
-    def post_init_signal(cls, sender, document):
-        """
-        The signal that is triggered before a unit is initialized
-
-        This is used to validate that the unit_key_fields attribute is set properly
-
-        :param sender: sender class
-        :type sender: object
-        :param document: Document that sent the signal
-        :type document: ContentUnit
-        :raises: PLP0035 if the unit_key_fields attribute has not been defined
-        """
-        if not hasattr(document, 'unit_key_fields'):
-            class_name = type(document).__name__
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=class_name)
 
     @classmethod
     def pre_save_signal(cls, sender, document, **kwargs):
