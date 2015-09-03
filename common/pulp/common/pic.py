@@ -9,6 +9,7 @@ import base64
 import httplib
 import json
 import os
+import ssl
 import sys
 import types
 import urllib
@@ -27,9 +28,13 @@ LOG_BODIES = True
 _CONNECTION = None
 
 
-def connect():
+def connect(verify_ssl=True):
     global _CONNECTION
-    _CONNECTION = httplib.HTTPSConnection(HOST, PORT)
+    if verify_ssl:
+        _CONNECTION = httplib.HTTPSConnection(HOST, PORT)
+    else:
+        insecure_context = ssl._create_unverified_context()
+        _CONNECTION = httplib.HTTPSConnection(HOST, PORT, context=insecure_context)
 
 
 def set_basic_auth_credentials(user, password):
