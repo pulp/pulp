@@ -189,38 +189,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for i, unit_id in enumerate(self.units['delta']):
             make_association('repo-2', 'delta', unit_id, i)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.repo_controller.update_last_unit_added')
-    def test_get_unit_ids(self, mock_update_last):
-
-        # Setup
-        repo_id = 'repo-1'
-        units = {'type-1': ['1-1', '1-2', '1-3'],
-                 'type-2': ['2-1', '2-2', '2-3']}
-
-        for type_id, unit_ids in units.items():
-            self.association_manager.associate_all_by_ids(repo_id, type_id, unit_ids)
-
-        # Test - No Type
-        all_units = self.manager.get_unit_ids(repo_id)
-
-        # Verify - No Type
-        self.assertTrue('type-1' in all_units)
-        self.assertTrue('type-2' in all_units)
-        self.assertEqual(3, len(all_units['type-1']))
-        self.assertEqual(3, len(all_units['type-2']))
-
-        # Test - By Type
-        type_1_units = self.manager.get_unit_ids(repo_id, 'type-1')
-
-        # Verify - By Type
-        self.assertTrue('type-1' in type_1_units)
-        self.assertFalse('type-2' in type_1_units)
-        for id in units['type-1']:
-            self.assertTrue(id in type_1_units['type-1'],
-                            '%s not in %s' % (id, ','.join(type_1_units['type-1'])))
-        for id in type_1_units['type-1']:
-            self.assertTrue(id in units['type-1'])
-
     @mock.patch('pulp.server.db.connection.PulpCollection.query')
     def test_find_by_criteria(self, mock_query):
         criteria = Criteria()
