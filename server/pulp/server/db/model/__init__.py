@@ -387,7 +387,11 @@ class ContentUnit(Document):
     :type _ns: mongoengine.StringField
     :ivar unit_type_id: content unit type
     :type unit_type_id: mongoengine.StringField
+    :ivar unit_key_fields: required fields for the unit key. This must be defined by each subclass
+    :type unit_key_fields: tuple
     """
+
+    unit_key_fields = tuple()
 
     id = StringField(primary_key=True)
     last_updated = IntField(db_field='_last_updated', required=True)
@@ -415,7 +419,7 @@ class ContentUnit(Document):
         signals.pre_save.connect(cls.pre_save_signal, sender=cls)
 
         # Validate that the minimal set of fields has been defined
-        if not hasattr(cls, 'unit_key_fields'):
+        if len(cls.unit_key_fields) == 0:
             class_name = cls.__name__
             raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=class_name)
 
