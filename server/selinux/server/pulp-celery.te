@@ -101,6 +101,7 @@ corecmd_exec_shell(celery_t)
 corecmd_read_bin_symlinks(celery_t)
 dev_read_urand(celery_t)
 files_rw_pid_dirs(celery_t)
+gpg_exec(celery_t) # needed for ostree
 kernel_read_system_state(celery_t)
 libs_exec_ldconfig(celery_t)
 logging_send_syslog_msg(celery_t)
