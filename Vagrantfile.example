@@ -9,9 +9,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
- # Uncomment this line if you would like the guest VM to be automatically updated
- #
- # dev.vm.provision "shell", inline: "sudo dnf upgrade -y"
+ # Comment this line if you would like to disable the automatic update during provisioning
+ dev.vm.provision "shell", inline: "sudo dnf upgrade -y"
 
  config.vm.provision "ansible" do |ansible|
      ansible.playbook = "playpen/ansible/vagrant-playbook.yml"
