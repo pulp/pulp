@@ -24,57 +24,6 @@ _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
 class RepoUnitAssociationQueryManager(object):
 
-    def get_unit_ids(self, repo_id, unit_type_id=None):
-        """
-        Get the ids of the content units associated with the repo. If more
-        than one association exists between a unit and the repository, the
-        unit ID will only be listed once.
-
-        DEPRECATED: the get_units calls should be used, limiting the returned
-          fields to just the IDs.
-
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @param unit_type_id: optional; if specified only unit ids of the
-                             specified type are returned
-
-        @return: dict of unit type id: list of content unit ids
-        @rtype:  dict of str: list of str
-        """
-        unit_ids = {}
-        collection = RepoContentUnit.get_collection()
-
-        # This used to be one query and splitting out the results by unit
-        # type in memory. The problem is that we need to add in the distinct
-        # clause to eliminate the potential of multiple associations to the
-        # same unit. I don't think distinct will operate on two keys. I don't
-        # anticipate there will be a tremendous amount of unit types passed in
-        # so I'm not too worried about making one call per unit type.
-        # jdob - Dec 9, 2011
-
-        if unit_type_id is None:
-            unit_type_ids = []
-
-            # Get a list of all unit types that have at least one unit associated.
-            cursor = collection.find(spec={'repo_id': repo_id}, fields=['unit_type_id'])
-            for t in cursor.distinct('unit_type_id'):
-                unit_type_ids.append(t)
-        else:
-            unit_type_ids = [unit_type_id]
-
-        for type_id in unit_type_ids:
-
-            spec_doc = {'repo_id': repo_id,
-                        'unit_type_id': type_id}
-            cursor = collection.find(spec_doc)
-
-            for unit_id in cursor.distinct('unit_id'):
-                ids = unit_ids.setdefault(type_id, [])
-                ids.append(unit_id)
-
-        return unit_ids
-
     @staticmethod
     def find_by_criteria(criteria):
         """
