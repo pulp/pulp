@@ -569,9 +569,21 @@ class SharedContentUnit(ContentUnit):
     }
 
     @property
+    def storage_provider(self):
+        """
+        The storage provider.
+        This defines the storage mechanism and qualifies the storage_id.
+
+        :return: The storage provider.
+        :rtype: str
+        """
+        raise NotImplementedError()
+
+    @property
     def storage_id(self):
         """
         The identifier for the shared storage location.
+
         :return: An identifier for shared storage.
         :rtype: str
         """
@@ -589,7 +601,7 @@ class SharedContentUnit(ContentUnit):
         :type document: SharedContentUnit
         """
         super(SharedContentUnit, cls).pre_save_signal(sender, document, **kwargs)
-        with SharedStorage(document.storage_id) as storage:
+        with SharedStorage(document.storage_provider, document.storage_id) as storage:
             storage.link(document)
 
 

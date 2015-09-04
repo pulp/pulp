@@ -111,17 +111,18 @@ class TestSharedStorage(TestCase):
 
     @patch('pulp.server.content.storage.sha256')
     def test_init(self, sha256):
+        provider = 'git'
         storage_id = '1234'
-        storage = SharedStorage(storage_id)
+        storage = SharedStorage(provider, storage_id)
         sha256.assert_called_once_with(storage_id)
         self.assertEqual(storage.storage_id, sha256.return_value.hexdigest.return_value)
+        self.assertEqual(storage.provider, provider)
 
     @patch('pulp.server.content.storage.mkdir')
     @patch('pulp.server.content.storage.SharedStorage.content_dir', 'abcd/')
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_open(self, _mkdir):
-        storage_id = '1234'
-        storage = SharedStorage(storage_id)
+        storage = SharedStorage('git', '1234')
         storage.open()
         self.assertEqual(
             _mkdir.call_args_list,
@@ -134,34 +135,34 @@ class TestSharedStorage(TestCase):
     def test_shared_dir(self, config):
         storage_dir = '/tmp/storage'
         config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         self.assertEqual(
             storage.shared_dir,
-            os.path.join(storage_dir, 'content', 'shared', storage.storage_id))
+            os.path.join(storage_dir, 'content', 'shared', storage.provider, storage.storage_id))
 
     @patch('pulp.server.content.storage.SharedStorage.shared_dir', 'abcd/')
     def test_content_dir(self):
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         self.assertEqual(
             storage.content_dir,
             os.path.join(storage.shared_dir, 'content'))
 
     @patch('pulp.server.content.storage.SharedStorage.shared_dir', 'abcd/')
     def test_links_dir(self):
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         self.assertEqual(
             storage.links_dir,
             os.path.join(storage.shared_dir, 'links'))
 
     def test_put(self):
         unit = Mock()
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         storage.link = Mock()
         storage.put(unit)
         storage.link.assert_called_once_with(unit)
 
     def test_get(self):
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         storage.get(None)  # just for coverage
 
     @patch('os.symlink')
@@ -169,7 +170,7 @@ class TestSharedStorage(TestCase):
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_link(self, symlink):
         unit = Mock(id='0123456789')
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
 
         # test
         storage.link(unit)
@@ -186,7 +187,7 @@ class TestSharedStorage(TestCase):
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_duplicate_link(self, islink, readlink, symlink):
         unit = Mock(id='0123456789')
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
 
         islink.return_value = True
         symlink.side_effect = OSError()
@@ -209,7 +210,7 @@ class TestSharedStorage(TestCase):
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_duplicate_nonlink(self, islink, readlink, symlink):
         unit = Mock(id='0123456789')
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
 
         islink.return_value = False  # not a link
         symlink.side_effect = OSError()
@@ -230,7 +231,7 @@ class TestSharedStorage(TestCase):
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_different_link_target(self, islink, readlink, symlink):
         unit = Mock(id='0123456789')
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
 
         islink.return_value = True
         symlink.side_effect = OSError()
@@ -249,7 +250,7 @@ class TestSharedStorage(TestCase):
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_link_failed(self, symlink):
         unit = Mock(id='0123456789')
-        storage = SharedStorage('1234')
+        storage = SharedStorage('git', '1234')
         symlink.side_effect = OSError()
         symlink.side_effect.errno = EPERM
         self.assertRaises(OSError, storage.link, unit)

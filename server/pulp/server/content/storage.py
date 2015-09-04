@@ -116,17 +116,24 @@ class SharedStorage(ContentStorage):
     """
     Direct shared storage.
 
+    :ivar provider: A storage provider.
+        This defines the storage mechanism and qualifies the storage_id.
+    :type provider: str
     :ivar storage_id: A shared storage identifier.
     :ivar storage_id: str
     """
 
-    def __init__(self, storage_id):
+    def __init__(self, provider, storage_id):
         """
+        :param provider: A storage provider.
+            This defines the storage mechanism and qualifies the storage_id.
+        :type provider: str
         :param storage_id: A shared storage identifier.
         :ivar storage_id: str
         """
         super(SharedStorage, self).__init__()
         self.storage_id = sha256(storage_id).hexdigest()
+        self.provider = provider
 
     def put(self, unit, path=None):
         """
@@ -168,12 +175,12 @@ class SharedStorage(ContentStorage):
         :return: The absolute path to the shared storage.
         :rtype: str
         """
-        storage_dir = os.path.join(
+        return os.path.join(
             config.get('server', 'storage_dir'),
             'content',
-            'shared')
-        path = os.path.join(storage_dir, self.storage_id)
-        return path
+            'shared',
+            self.provider,
+            self.storage_id)
 
     @property
     def content_dir(self):

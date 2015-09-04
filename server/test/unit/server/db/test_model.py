@@ -236,15 +236,13 @@ class TestSharedContentUnit(unittest.TestCase):
 
     def test_abstract(self):
         unit = TestSharedContentUnit.TestUnit()
-        try:
-            unit.storage_id
-            self.fail('NotImplementedError expected and not raised')
-        except NotImplementedError:
-            pass
+        self.assertRaises(NotImplementedError, getattr, unit, 'storage_provider')
+        self.assertRaises(NotImplementedError, getattr, unit, 'storage_id')
 
     @patch('pulp.server.db.model.SharedStorage.link')
     @patch('pulp.server.db.model.SharedStorage.open')
     @patch('pulp.server.db.model.SharedStorage.close')
+    @patch('pulp.server.db.model.SharedContentUnit.storage_provider', 'git')
     @patch('pulp.server.db.model.SharedContentUnit.storage_id', '1234')
     def test_pre_save_signal(self, close, _open, link):
         sender = Mock()
