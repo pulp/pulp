@@ -705,7 +705,9 @@ def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
         # Transfer object generator.
         def _transfer_object_generator():
             for u in units:
-                yield common_utils.to_plugin_associated_unit(u, type_defs[u['unit_type_id']])
+                type_id = u['unit_type_id']
+                type_def = type_defs[type_id]
+                yield common_utils.to_plugin_associated_unit(u, type_id, type_def['unit_key'])
 
         if as_generator:
             return _transfer_object_generator()

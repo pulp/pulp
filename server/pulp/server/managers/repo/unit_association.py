@@ -414,15 +414,21 @@ def calculate_associated_type_ids(source_repo_id, associated_units):
 
 
 def create_transfer_units(associate_units, associated_unit_type_ids):
-    type_defs = {}
-    for def_id in associated_unit_type_ids:
-        type_def = types_db.type_definition(def_id)
-        type_defs[def_id] = type_def
+    unit_key_fields = {}
+    for unit_type_id in associated_unit_type_ids:
+        type_def = types_db.type_definition(unit_type_id)
+        if type_def is not None:
+            # this is an "old style" model
+            unit_key_fields[unit_type_id] = type_def['unit_key']
+        else:
+            # this must be a mongoengine model
+            unit_model = plugin_api.get_unit_model_by_id(unit_type_id)
+            unit_key_fields[unit_type_id] = unit_model.unit_key_fields
 
     transfer_units = []
     for unit in associate_units:
         type_id = unit['unit_type_id']
-        u = conduit_common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
+        u = conduit_common_utils.to_plugin_associated_unit(unit, type_id, unit_key_fields[type_id])
         transfer_units.append(u)
 
     return transfer_units
