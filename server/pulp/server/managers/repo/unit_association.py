@@ -16,11 +16,11 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
 from pulp.server.controllers import repository as repo_controller
+from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.conduits._common as conduit_common_utils
-import pulp.plugins.types.database as types_db
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 
@@ -416,14 +416,7 @@ def calculate_associated_type_ids(source_repo_id, associated_units):
 def create_transfer_units(associate_units, associated_unit_type_ids):
     unit_key_fields = {}
     for unit_type_id in associated_unit_type_ids:
-        type_def = types_db.type_definition(unit_type_id)
-        if type_def is not None:
-            # this is an "old style" model
-            unit_key_fields[unit_type_id] = type_def['unit_key']
-        else:
-            # this must be a mongoengine model
-            unit_model = plugin_api.get_unit_model_by_id(unit_type_id)
-            unit_key_fields[unit_type_id] = unit_model.unit_key_fields
+        unit_key_fields[unit_type_id] = units_controller.get_unit_key_fields_for_type(unit_type_id)
 
     transfer_units = []
     for unit in associate_units:

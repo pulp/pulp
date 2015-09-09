@@ -8,7 +8,7 @@ from pulp.server.db import model
 
 class DemoModel(model.ContentUnit):
     key_field = mongoengine.StringField()
-    unit_key_fields = ['key_field']
+    unit_key_fields = ('key_field',)
     unit_type_id = 'demo_model'
     objects = MagicMock()
     save = MagicMock()
@@ -57,3 +57,38 @@ class FindUnitsTests(unittest.TestCase):
         # turn into list so the generator will be evaluated
         result = list(units_controller.find_units(units_iterable))
         self.assertEqual(result, [model_2_defined])
+
+
+@patch('pulp.plugins.loader.api.get_unit_model_by_id', spec_set=True)
+@patch('pulp.plugins.types.database.type_definition', spec_set=True)
+class TestGetUnitKeyFieldsForType(unittest.TestCase):
+    def test_returns_from_model(self, mock_type_def, mock_get_model):
+        """
+        test when the requested type is a mongoengine model
+        """
+        mock_get_model.return_value = DemoModel
+        mock_type_def.return_value = None
+
+        ret = units_controller.get_unit_key_fields_for_type(DemoModel.type_id)
+
+        self.assertEqual(ret, DemoModel.unit_key_fields)
+
+    def test_returns_from_typedb(self, mock_type_def, mock_get_model):
+        """
+        test when the requested type is defined the old way
+        """
+        mock_get_model.return_value = None
+        mock_type_def.return_value = {'unit_key': ['id']}
+
+        ret = units_controller.get_unit_key_fields_for_type('faketype')
+
+        self.assertEqual(ret, ('id',))
+
+    def test_not_found(self, mock_type_def, mock_get_model):
+        """
+        test when the requested type is not found
+        """
+        mock_get_model.return_value = None
+        mock_type_def.return_value = None
+
+        self.assertRaises(ValueError, units_controller.get_unit_key_fields_for_type, 'faketype')

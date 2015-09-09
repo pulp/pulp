@@ -137,13 +137,14 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.content.factory.content_orphan_manager')
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
-    def test_delete_orphan_type_subcollection(self, mock_orphan_manager, mock_type):
+    def test_delete_orphan_type_subcollection(self, mock_orphan_manager, mock_get_unit_key_fields):
         """
         Delete orphans should be called with the correct arguments and OperationPostponed is raised.
         """
         request = mock.MagicMock()
+        mock_get_unit_key_fields.return_value = ('id',)
 
         orphan_type_subcollection = OrphanTypeSubCollectionView()
         self.assertRaises(OperationPostponed, orphan_type_subcollection.delete,
@@ -152,7 +153,16 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         mock_orphan_manager.delete_orphans_by_type.apply_async.assert_called_once_with(
             ('mock_type',), tags=['pulp:content_unit:orphans']
         )
-        mock_type.return_value.validate_type.assert_called_once_with('mock_type')
+        mock_get_unit_key_fields.assert_called_once_with('mock_type')
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_DELETE())
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
+    def test_delete_unknown_type(self, mock_get_unit_key_fields):
+        mock_get_unit_key_fields.side_effect = ValueError
+        request = mock.MagicMock()
+
+        orphan_type_subcollection = OrphanTypeSubCollectionView()
+        self.assertRaises(MissingResource, orphan_type_subcollection.delete, request, 'mock_type')
 
 
 class TestOrphanResourceView(unittest.TestCase):
