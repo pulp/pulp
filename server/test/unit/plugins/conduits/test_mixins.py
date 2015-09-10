@@ -305,19 +305,16 @@ class SearchUnitsMixinTests(unittest.TestCase):
 
         self.mixin = mixins.SearchUnitsMixin(mixins.ImporterConduitException)
 
-    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.find_by_criteria')
-    def test_search_all_units(self, mock_query_call, mock_type_def_call):
+    def test_search_all_units(self, mock_query_call, mock_get_unit_key_fields):
         # Setup
         mock_query_call.return_value = [
             {'m': 'm1', 'k1': 'v1'},
             {'m': 'm1', 'k1': 'v2'},
         ]
 
-        mock_type_def_call.return_value = {
-            'id': 'mock-type-def',
-            'unit_key': ['k1']
-        }
+        mock_get_unit_key_fields.return_value = ('k1',)
 
         # Test
         units = self.mixin.search_all_units('type-1', 'fake-criteria')
@@ -338,19 +335,16 @@ class SearchUnitsMixinTests(unittest.TestCase):
         self.assertRaises(mixins.ImporterConduitException, self.mixin.search_all_units,
                           't', 'fake-criteria')
 
-    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
                 'get_content_unit_by_keys_dict')
-    def test_find_unit_by_unit_key(self, mock_get_unit, mock_type_def):
+    def test_find_unit_by_unit_key(self, mock_get_unit, mock_get_unit_key_fields):
         # Setup
         pulp_unit = {'id': 'fake-unit-id', 'another-unit-key-field': 'fake',
                      'other_field': '1234'}
         mock_get_unit.return_value = pulp_unit
 
-        mock_type_def.return_value = {
-            'id': 'mock-type-def',
-            'unit_key': ['id', 'another-unit-key-field']
-        }
+        mock_get_unit_key_fields.return_value = ('id', 'another-unit-key-field')
 
         # Test
         unit = self.mixin.find_unit_by_unit_key('type-1', {'id': 'not-used-for-mock'})

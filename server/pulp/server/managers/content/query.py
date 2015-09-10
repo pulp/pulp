@@ -22,11 +22,6 @@ class ContentQueryManager(object):
         """
         return content_types_db.all_type_ids()
 
-    def get_content_type(self, type_id):
-        """
-        """
-        return content_types_db.type_definition(type_id)
-
     @classmethod
     def find_by_criteria(cls, type_id, criteria):
         """
