@@ -224,20 +224,17 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.repo_id = 'sr-repo'
         self.mixin = mixins.SingleRepoUnitsMixin(self.repo_id, mixins.DistributorConduitException)
 
-    @mock.patch('pulp.plugins.types.database.all_type_definitions')
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
     @mock.patch('pulp.server.managers.repo.unit_association_query.'
                 'RepoUnitAssociationQueryManager.get_units')
-    def test_get_units(self, mock_query_call, mock_type_def_call):
+    def test_get_units(self, mock_query_call, mock_get_unit_key_fields):
         # Setup
         mock_query_call.return_value = [
             {'unit_type_id': 'type-1', 'metadata': {'m': 'm1', 'k1': 'v1'}},
             {'unit_type_id': 'type-2', 'metadata': {'m': 'm1', 'k1': 'v2'}},
         ]
 
-        mock_type_def_call.return_value = [
-            {'id': 'type-1', 'unit_key': ['k1']},
-            {'id': 'type-2', 'unit_key': ['k1']},
-        ]
+        mock_get_unit_key_fields.return_value = ('k1',)
 
         fake_criteria = 'fake-criteria'
 
@@ -267,20 +264,17 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
 
         self.mixin = mixins.MultipleRepoUnitsMixin(mixins.ImporterConduitException)
 
-    @mock.patch('pulp.plugins.types.database.all_type_definitions')
+    @mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
     @mock.patch('pulp.server.managers.repo.unit_association_query.'
                 'RepoUnitAssociationQueryManager.get_units')
-    def test_get_units(self, mock_query_call, mock_type_def_call):
+    def test_get_units(self, mock_query_call, mock_get_unit_key_fields):
         # Setup
         mock_query_call.return_value = [
             {'unit_type_id': 'type-1', 'metadata': {'m': 'm1', 'k1': 'v1'}},
             {'unit_type_id': 'type-2', 'metadata': {'m': 'm1', 'k1': 'v2'}},
         ]
 
-        mock_type_def_call.return_value = [
-            {'id': 'type-1', 'unit_key': ['k1']},
-            {'id': 'type-2', 'unit_key': ['k1']},
-        ]
+        mock_get_unit_key_fields.return_value = ('k1',)
 
         fake_criteria = 'fake-criteria'
 

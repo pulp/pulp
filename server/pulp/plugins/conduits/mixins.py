@@ -7,6 +7,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
 from pulp.server.async.tasks import get_current_task_id
+from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
 from pulp.server import exceptions as pulp_exceptions
@@ -699,15 +700,17 @@ def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
         # Use a get_units as_generator here and cast to a list later, if necessary.
         units = association_query_manager.get_units(repo_id, criteria=criteria, as_generator=True)
 
-        # Load all type definitions so we don't hammer the database.
-        type_defs = dict((t['id'], t) for t in types_db.all_type_definitions())
-
         # Transfer object generator.
         def _transfer_object_generator():
+            unit_key_fields_cache = {}
             for u in units:
                 type_id = u['unit_type_id']
-                type_def = type_defs[type_id]
-                yield common_utils.to_plugin_associated_unit(u, type_id, type_def['unit_key'])
+                if type_id not in unit_key_fields_cache:
+                    fields = units_controller.get_unit_key_fields_for_type(type_id)
+                    unit_key_fields_cache[type_id] = fields
+
+                yield common_utils.to_plugin_associated_unit(u, type_id,
+                                                             unit_key_fields_cache[type_id])
 
         if as_generator:
             return _transfer_object_generator()
