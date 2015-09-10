@@ -12,6 +12,7 @@ from pulp.server import constants
 from pulp.server.auth import authorization
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.controllers import content
+from pulp.server.controllers import units
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.managers import factory
@@ -129,9 +130,14 @@ class OrphanTypeSubCollectionView(View):
         :type  content_type: str
 
         :raises: OperationPostponed when an async operation is performed
+        :raises: MissingResource when the content type does not exist
         """
-        orphan_manager = factory.content_orphan_manager()
-        orphan_manager.validate_type(content_type)
+        try:
+            # this tests if the type exists
+            units.get_unit_key_fields_for_type(content_type)
+        except ValueError:
+            raise MissingResource(content_type_id=content_type)
+
         task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = content_orphan.delete_orphans_by_type.apply_async(
             (content_type,), tags=task_tags

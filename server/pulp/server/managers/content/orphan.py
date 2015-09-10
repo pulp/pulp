@@ -11,31 +11,16 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.util import misc as plugin_misc
 from pulp.server import config as pulp_config, exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
+from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db import model
+from pulp.server.exceptions import MissingResource
 
 
 _logger = logging.getLogger(__name__)
 
 
 class OrphanManager(object):
-
-    @staticmethod
-    def validate_type(content_type_id):
-        """
-        Validate the provided content type id.
-
-        :param content_type_id: unique id of the content type
-        :type content_type_id: str
-        :raises MissingResource: if there is no such content type id
-
-        :return: content type definition
-        :rtype: dict
-        """
-        content_type_definition = content_types_db.type_definition(content_type_id)
-        if content_type_definition is None:
-            raise pulp_exceptions.MissingResource(content_type_id=content_type_id)
-        return content_type_definition
 
     def orphans_summary(self):
         """
@@ -140,9 +125,12 @@ class OrphanManager(object):
         :return: generator of orphaned content units for the given content type
         :rtype: generator
         """
-        content_type_definition = OrphanManager.validate_type(content_type_id)
+        try:
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
+        except ValueError:
+            raise MissingResource(content_type_id=content_type_id)
         fields = ['_id', '_content_type_id']
-        fields.extend(content_type_definition['unit_key'])
+        fields.extend(unit_key_fields)
 
         for content_unit in OrphanManager.generate_orphans_by_type(content_type_id, fields):
             yield content_unit

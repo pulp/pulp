@@ -1,5 +1,7 @@
 import mongoengine
 
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.types import database as types_db
 from pulp.plugins.util import misc
 
 
@@ -37,3 +39,30 @@ def find_units(units, pagination_size=50):
 
         for found_unit in query:
             yield found_unit
+
+
+def get_unit_key_fields_for_type(type_id):
+    """
+    Based on a unit type ID, determine the fields that compose that type's unit key.
+
+    This supports both the new mongoengine models and the old "types_def" collection, so the caller
+    need not worry about whether a type has been converted to use mongoengine or not.
+
+    :param type_id: unique ID for a unit type
+    :type  type_id: str
+
+    :return:    tuple containing the name of each field in the unit key
+    :rtype:     tuple
+
+    :raises ValueError: if the type ID is not found
+    """
+    model_class = plugin_api.get_unit_model_by_id(type_id)
+    if model_class is not None:
+        return model_class.unit_key_fields
+
+    type_def = types_db.type_definition(type_id)
+    if type_def is not None:
+        # this is an "old style" model
+        return tuple(type_def['unit_key'])
+
+    raise ValueError

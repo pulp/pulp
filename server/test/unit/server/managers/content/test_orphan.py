@@ -153,28 +153,26 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         orphans_2 = list(self.orphan_manager.generate_orphans_by_type(PHONY_TYPE_2.id))
         self.assertEqual(len(orphans_2), 1)
 
-    def test_generate_orphans_by_type_with_unit_keys_invalid_type(self):
+    @patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
+    def test_generate_orphans_by_type_with_unit_keys_invalid_type(self, mock_get_unit_key_fields):
         """
         Assert that when an invalid content type is passed to
         generate_orphans_by_type_with_unit_keys a MissingResource exception is raised.
         """
+        # simulate the type not being found
+        mock_get_unit_key_fields.side_effect = ValueError
+
         self.assertRaises(
             pulp_exceptions.MissingResource,
             OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next)
 
-    def test_validate_type_valid_type(self):
-        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        content_type_definition = self.orphan_manager.validate_type(PHONY_TYPE_1.id)
-        self.assertEqual(content_type_definition['id'], unit_1['_content_type_id'])
-
-    def test_validate_type_wrong_type(self):
-        self.assertRaises(
-            pulp_exceptions.MissingResource, OrphanManager.validate_type, 'foo')
-
-    def test_generate_orphans_by_type_with_unit_keys(self):
+    @patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
+    def test_generate_orphans_by_type_with_unit_keys(self, mock_get_unit_key_fields):
         """
         Assert that orphans are retrieved by type with unit keys correctly
         """
+        mock_get_unit_key_fields.return_value = ('id',)
+
         # Add two content units of different types
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         gen_content_unit(PHONY_TYPE_2.id, self.content_root)
