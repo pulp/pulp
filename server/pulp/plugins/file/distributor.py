@@ -107,6 +107,7 @@ class FileDistributor(Distributor):
             progress_report.state = progress_report.STATE_COMPLETE
             return progress_report.build_final_report()
         except Exception, e:
+            _logger.exception(e)
             # Something failed. Let's put an error message on the report
             progress_report.error_message = str(e)
             progress_report.traceback = traceback.format_exc()
