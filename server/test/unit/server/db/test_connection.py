@@ -1,7 +1,8 @@
 from ConfigParser import NoOptionError
 import unittest
 
-from mock import patch, Mock, call
+from mock import call, patch, MagicMock, Mock
+from pymongo.errors import AutoReconnect
 
 from pulp.server import config
 from pulp.server.db import connection
@@ -508,3 +509,75 @@ class TestGetConnectionFunction(unittest.TestCase):
     @patch('pulp.server.db.connection._CONNECTION')
     def test_get_connection(self, mock__CONNECTION):
         self.assertEqual(mock__CONNECTION, connection.get_connection())
+
+
+@patch('pulp.server.db.connection.config.config')
+class TestUnsafeRetry(unittest.TestCase):
+    """
+    Tests for the unsafe retry feature.
+    """
+
+    @patch('pulp.server.db.connection.UnsafeRetry.retry_decorator')
+    def test_decorate_instance_retry_off(self, m_retry, m_config):
+        """
+        Database calls should not be wrapped if the feature has not been turned on.
+        """
+        m_config.getboolean.return_value = False
+        m_instance = MagicMock()
+        connection.UnsafeRetry().decorate_instance(m_instance, 'test_collection')
+        self.assertFalse(m_retry.called)
+
+    @patch('pulp.server.db.connection.UnsafeRetry.retry_decorator')
+    def test_decorate_instance_retry_on(self, m_retry, m_config):
+        """
+        Database calls should be wrapped if the feature has been turned on.
+        """
+        m_config.getboolean.return_value = True
+        connection.UnsafeRetry._decorated_methods = ('one', 'two')
+        m_instance = MagicMock()
+        connection.UnsafeRetry().decorate_instance(m_instance, 'test_collection')
+        self.assertTrue(m_instance.one is m_retry.return_value.return_value)
+        self.assertTrue(m_instance.two is m_retry.return_value.return_value)
+
+    @patch('pulp.server.db.connection.UnsafeRetry.retry_decorator')
+    def test_decorate_instance_retry_on_incomplete_attrs(self, m_retry, m_config):
+        """
+        Instances without all decorated methods should still be wrapped.
+        """
+        m_config.getboolean.return_value = True
+        connection.UnsafeRetry._decorated_methods = ('one', 'two')
+        m_instance = MagicMock()
+        del m_instance.one
+        connection.UnsafeRetry().decorate_instance(m_instance, 'test_collection')
+        self.assertTrue(m_instance.two is m_retry.return_value.return_value)
+        self.assertRaises(AttributeError, getattr, m_instance, 'one')
+
+    @patch('pulp.server.db.connection._logger')
+    def test_retry_decorator(self, m_logger, m_config):
+        """
+        Raise AutoReconnect once (simulate no connection to db), hijack the logger to fix the mock
+        so it is not an infinite loop.
+        """
+        mock_r = MagicMock()
+        mock_r.side_effect = AutoReconnect
+
+        def restart_mongo(*args):
+            """
+            Simulate turning Mongo back on.
+            """
+            mock_r.side_effect = None
+            mock_r.return_value = 'final'
+
+        @connection.UnsafeRetry.retry_decorator(full_name='mock_coll')
+        def mock_func():
+            """
+            Simple function to decorate.
+            """
+            return mock_r()
+
+        m_config.getboolean.return_value = True
+        m_logger.error.side_effect = restart_mongo
+
+        final_answer = mock_func()
+        m_logger.error.assert_called_once_with('mock_func operation failed on mock_coll')
+        self.assertTrue(final_answer is 'final')
