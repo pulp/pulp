@@ -4,12 +4,13 @@ import errno
 import logging
 import os
 import shutil
-import sys
 import traceback
 
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
-from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
+from pulp.plugins.file.distributor import FilePublishProgressReport
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.managers.repo import _common as common_utils
 
 
 BUILD_DIRNAME = 'build'
@@ -45,7 +46,7 @@ class FileDistributor(Distributor):
         Please also see the superclass method definition for more documentation on this method.
 
         :param repo: metadata describing the repository
-        :type  repo: pulp.plugins.model.Repository
+        :type  repo: pulp.server.db.model.Repository
 
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
@@ -72,12 +73,12 @@ class FileDistributor(Distributor):
 
         try:
             progress_report.state = progress_report.STATE_IN_PROGRESS
-            units = publish_conduit.get_units()
+            repo_model = repo.repo_obj
+            units = repo_controller.find_repo_content_units(repo_model, yield_content_unit=True)
 
             # Set up an empty build_dir
-            build_dir = os.path.join(repo.working_dir, BUILD_DIRNAME)
-            # Let's erase the path at build_dir so we can be sure it's a clean directory
-            self._rmtree_if_exists(build_dir)
+            working_dir = common_utils.get_working_directory()
+            build_dir = os.path.join(working_dir, BUILD_DIRNAME)
             os.makedirs(build_dir)
 
             self.initialize_metadata(build_dir)
@@ -95,21 +96,17 @@ class FileDistributor(Distributor):
             # Let's unpublish, and then republish
             self.unpublish_repo(repo, config)
 
-            hosting_locations = self.get_hosting_locations(repo, config)
+            hosting_locations = self.get_hosting_locations(repo_model, config)
             for location in hosting_locations:
                 shutil.copytree(build_dir, location, symlinks=True)
 
-            self.post_repo_publish(repo, config)
-
-            # Clean up our build_dir
-            self._rmtree_if_exists(build_dir)
+            self.post_repo_publish(repo_model, config)
 
             # Report that we are done
             progress_report.state = progress_report.STATE_COMPLETE
             return progress_report.build_final_report()
         except Exception, e:
-            _logger.error(str(e))
-            _logger.error(''.join(traceback.format_exception(*sys.exc_info())))
+            _logger.exception(e)
             # Something failed. Let's put an error message on the report
             progress_report.error_message = str(e)
             progress_report.traceback = traceback.format_exc()
@@ -123,13 +120,15 @@ class FileDistributor(Distributor):
 
         Please also see the superclass method definition for more documentation on this method.
 
-        :param repo: metadata describing the repository
+        :param repo: Repository model object
         :type  repo: pulp.plugins.model.Repository
 
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
         """
-        hosting_locations = self.get_hosting_locations(repo, config)
+        repo_model = repo.repo_obj
+
+        hosting_locations = self.get_hosting_locations(repo_model, config)
         for location in hosting_locations:
             self._rmtree_if_exists(location)
 
@@ -152,7 +151,7 @@ class FileDistributor(Distributor):
         This should be writing to open file handles from the initialize_metadata call
 
         :param unit: the unit for which metadata needs to be generated
-        :type unit: pulp.plugins.model.AssociatedUnit
+        :type unit: pulp.server.db.model.ContentUnit
         """
         self.metadata_csv_writer.writerow([unit.unit_key['name'], unit.unit_key['checksum'],
                                            unit.unit_key['size']])
@@ -169,7 +168,7 @@ class FileDistributor(Distributor):
         Get the paths within a target directory where this unit should be linked to
 
         :param unit: The unit for which we want to return target paths
-        :type unit: pulp.plugins.model.AssociatedUnit
+        :type unit: pulp.server.db.model.ContentUnit
         :return: a list of paths the unit should be linked to
         :rtype: list of str
         """
@@ -179,8 +178,8 @@ class FileDistributor(Distributor):
         """
         Get the paths on the filesystem where the build directory should be copied
 
-        :param repo: The repository that is going to be hosted
-        :type repo: pulp.plugins.model.Repository
+        :param repo: Repository model object
+        :type  repo: pulp.server.db.model.Repository
         :param config:    plugin configuration
         :type  config:    pulp.plugins.config.PluginConfiguration
         :return : list of paths on the filesystem where the build directory should be copied
@@ -193,8 +192,8 @@ class FileDistributor(Distributor):
         API method that is called after the contents of a published repo have
         been moved into place on the filesystem
 
-        :param repo: The repository that is going to be hosted
-        :type repo: pulp.plugins.model.Repository
+        :param repo: Repository model object
+        :type  repo: pulp.server.db.model.Repository
         :param config: the configuration for the repository
         :type  config: pulp.plugins.config.PluginCallConfiguration
         """
@@ -208,12 +207,11 @@ class FileDistributor(Distributor):
                           This path should already exist.
         :type  build_dir: basestring
         :param unit:     The unit to be symlinked
-        :type  unit:     pulp.plugins.model.AssociatedUnit
+        :type unit:      pulp.server.db.model.ContentUnit
         :param target_paths: The list of paths the unit should be symlinked to.
         :type  target_paths: list of L{str}
         """
         for target_path in target_paths:
-            # symlink_filename = os.path.join(build_dir, unit.unit_key['name'])
             symlink_filename = os.path.join(build_dir, target_path)
             if os.path.exists(symlink_filename) or os.path.islink(symlink_filename):
                 # There's already something there with the desired symlink filename. Let's try and
@@ -228,7 +226,7 @@ class FileDistributor(Distributor):
                     os.remove(symlink_filename)
                 except OSError, e:
                     # This will happen if we attempt to call readlink() on a file that wasn't a
-                    # symlink.  We should remove the file and add the symlink. There error code
+                    # symlink. We should remove the file and add the symlink. The error code
                     # should be EINVAL.  If it isn't, something else is wrong and we should raise.
                     if e.errno != errno.EINVAL:
                         raise e

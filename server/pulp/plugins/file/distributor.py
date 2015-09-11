@@ -18,6 +18,8 @@ _logger = logging.getLogger(__name__)
 
 class FileDistributor(Distributor):
     """
+    DEPRECATED: please use the model_distributor.FileDistributor
+
     Distribute files on the filesystem.
     """
 
