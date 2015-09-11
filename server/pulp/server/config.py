@@ -33,6 +33,7 @@ _default_values = {
         'ssl_certfile': '',
         'verify_ssl': 'true',
         'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+        'unsafe_autoretry': 'false',
     },
     'email': {
         'host': 'localhost',

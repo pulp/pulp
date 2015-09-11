@@ -13,7 +13,7 @@ from pulp.server.async import worker_watcher
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
 from pulp.server.db import connection as db_connection
-from pulp.server.db.connection import retry_decorator
+from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
 from pulp.server.db.model import Worker
 from pulp.server.managers.schedule import utils
@@ -276,7 +276,7 @@ class Scheduler(beat.Scheduler):
         self._most_recent_timestamp = max(update_timestamps)
 
     @property
-    @retry_decorator()
+    @UnsafeRetry.retry_decorator()
     def schedule_changed(self):
         """
         Looks at the update timestamps in the database to determine if there
