@@ -4,7 +4,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
- config.vm.box = "https://download.gluster.org/pub/gluster/purpleidea/vagrant/fedora-22/fedora-22.box"
+ config.vm.box = "https://dl.fedoraproject.org/pub/alt/purpleidea/vagrant/fedora-22/fedora-22.box"
  # By default, Vagrant wants to mount the code in /vagrant with NFSv3, which will fail. Let's
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
