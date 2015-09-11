@@ -5,7 +5,6 @@ import sys
 from pymongo.errors import DuplicateKeyError
 
 from pulp.plugins.model import Unit, PublishReport
-from pulp.plugins.types import database as types_db
 from pulp.server.async.tasks import get_current_task_id
 from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
@@ -219,11 +218,11 @@ class SearchUnitsMixin(object):
         try:
             query_manager = manager_factory.content_query_manager()
             units = query_manager.find_by_criteria(type_id, criteria)
-            type_def = types_db.type_definition(type_id)
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(type_id)
 
             transfer_units = []
             for pulp_unit in units:
-                u = common_utils.to_plugin_unit(pulp_unit, type_def)
+                u = common_utils.to_plugin_unit(pulp_unit, type_id, unit_key_fields)
                 transfer_units.append(u)
 
             return transfer_units
@@ -249,8 +248,8 @@ class SearchUnitsMixin(object):
         try:
             # this call returns a unit or raises MissingResource
             existing_unit = content_query_manager.get_content_unit_by_keys_dict(type_id, unit_key)
-            type_def = types_db.type_definition(type_id)
-            plugin_unit = common_utils.to_plugin_unit(existing_unit, type_def)
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(type_id)
+            plugin_unit = common_utils.to_plugin_unit(existing_unit, type_id, unit_key_fields)
             return plugin_unit
         except pulp_exceptions.MissingResource:
             return None

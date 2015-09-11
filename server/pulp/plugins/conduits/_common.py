@@ -20,34 +20,33 @@ def to_pulp_unit(plugin_unit):
     return pulp_unit
 
 
-def to_plugin_unit(pulp_unit, type_def):
+def to_plugin_unit(pulp_unit, unit_type_id, unit_key_fields):
     """
     Parses the raw dictionary of a content unit into its plugin representation.
 
-    @param pulp_unit: raw dictionary of unit metadata
-    @type  pulp_unit: dict
+    :param pulp_unit: raw dictionary of unit metadata
+    :type  pulp_unit: dict
+    :param unit_type_id: unique identifier for the type of unit
+    :type  unit_type_id: str
+    :param unit_key_fields: collection of keys required for the type's unit key
+    :type  unit_key_fields: list or tuple
 
-    @param type_def: Pulp stored definition for the unit type
-    @type  type_def: pulp.server.db.model.content.ContentType
-
-    @return: plugin unit representation of the given unit
-    @rtype:  pulp.plugins.model.Unit
+    :return: plugin unit representation of the given unit
+    :rtype:  pulp.plugins.model.Unit
     """
 
     # Copy so we don't mangle the original unit
     pulp_unit = dict(pulp_unit)
 
-    key_list = type_def['unit_key']
-
     unit_key = {}
 
-    for k in key_list:
+    for k in unit_key_fields:
         unit_key[k] = pulp_unit.pop(k)
 
     storage_path = pulp_unit.pop('_storage_path', None)
     unit_id = pulp_unit.pop('_id', None)
 
-    u = Unit(type_def['id'], unit_key, pulp_unit, storage_path)
+    u = Unit(unit_type_id, unit_key, pulp_unit, storage_path)
     u.id = unit_id
 
     return u

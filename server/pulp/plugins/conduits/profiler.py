@@ -7,7 +7,7 @@ import sys
 
 from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException
 from pulp.plugins.model import Unit
-from pulp.plugins.types import database as types_db
+from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.managers import factory as managers
 
@@ -34,7 +34,7 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
 
-    def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=[]):
+    def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=None):
         """
         Searches for units in the given repository with given content type
         and returns a plugin unit containing unit id, unit key and any additional
@@ -53,16 +53,15 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         :return: list of unit instances
         :rtype:  list of pulp.plugins.model.Unit
         """
+        additional_unit_fields = additional_unit_fields or []
         try:
-            # Get type definition and unit_key for given content type
-            type_def = types_db.type_definition(content_type_id)
-            unit_key_fields = type_def['unit_key']
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
 
             # Query repo association manager to get all units of given type
             # associated with given repo. Limit data by requesting only the fields
             # that are needed.
             query_manager = managers.repo_unit_association_query_manager()
-            unit_fields = list(set(unit_key_fields + additional_unit_fields))
+            unit_fields = list(unit_key_fields) + list(additional_unit_fields)
             criteria = UnitAssociationCriteria(association_fields=['unit_id'],
                                                unit_fields=unit_fields)
             units = query_manager.get_units_by_type(repo_id, content_type_id, criteria)
