@@ -97,7 +97,8 @@ class FileDistributorTest(unittest.TestCase):
             self.assertEquals(row[1], self.unit.unit_key['checksum'])
             self.assertEquals(row[2], str(self.unit.unit_key['size']))
 
-    def test_repo_publish_handles_errors(self):
+    @patch('pulp.plugins.file.distributor._logger')
+    def test_repo_publish_handles_errors(self, mock_logger):
         """
         Make sure that publish() does the right thing with the report when there is an error.
         """
@@ -105,6 +106,8 @@ class FileDistributorTest(unittest.TestCase):
 
         distributor.post_repo_publish.side_effect = Exception('Rawr!')
         report = distributor.publish_repo(self.repo, self.publish_conduit, {})
+
+        self.assertTrue(mock_logger.exception.called)
 
         self.assertFalse(report.success_flag)
         self.assertEqual(report.summary['state'], FilePublishProgressReport.STATE_FAILED)
