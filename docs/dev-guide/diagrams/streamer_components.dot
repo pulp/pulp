@@ -1,0 +1,47 @@
+@startuml
+
+title Lazy Host Components
+
+
+[Upstream Repo] as upstream_repo
+[Content Client] as client
+
+node "Lazy Streamer Host" as lazy {
+  [Content Streamer] as lazy_streamer
+  [Squid Cache] as lazy_squid
+  [Apache Reverse Proxy] as lazy_apache
+  note right of lazy_streamer
+  streamer_port: 8751
+  streamer_interface: lo
+  streamer_cache_timeout: 86400
+  end note
+
+  note right of lazy_squid
+    http_port 3128 accel ...
+    cache_peer localhost parent 8751 ...
+  end note
+
+  note right of lazy_apache
+    <VirtualHost *:80>
+      <Location /streamer/>
+        ProxyPass http://localhost:3128/
+        ProxyPassReverse http://localhost:3128
+      </Location>
+    </VirtualHost>
+  end note
+
+  lazy_squid .r.> lazy_streamer : localhost:8751
+  lazy_apache .r.> lazy_squid : localhost:3128
+}
+
+client -[#orange]u-> lazy_apache : streamer.example.com/streamer/:{80,443}
+lazy_streamer -[#green]u-> upstream_repo : upstream.example.com:{80,443}
+
+
+legend right
+  (Green) -> TLS with upstream client certificate
+  (Orange) -> TLS Optional, Pulp-signed URL
+  (Red) -> Plaintext communication
+endlegend
+
+@enduml
