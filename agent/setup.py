@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-agent',
-    version='2.7.0b4',
+    version='2.7.0b5',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
