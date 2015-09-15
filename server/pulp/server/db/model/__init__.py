@@ -14,6 +14,7 @@ from pulp.server import exceptions
 from pulp.server.content.storage import FileStorage, SharedStorage
 from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
+from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
@@ -23,7 +24,23 @@ from pulp.server.webservices.views.serializers import Repository as RepoSerializ
 _logger = logging.getLogger(__name__)
 
 
-class Repository(Document):
+class AutoRetryDocument(Document):
+    """
+    Base class for mongoengine documents, includes auto retry functionality,
+    if unsafe_autoretry is set to true in the server config.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize a document and decorate the appropriate methods with the retry_decorator.
+        """
+        super(AutoRetryDocument, self).__init__(*args, **kwargs)
+        UnsafeRetry.decorate_instance(instance=self, full_name=type(self))
+
+    meta = {'abstract': True}
+
+
+class Repository(AutoRetryDocument):
     """
     Defines schema for a pulp repository in the `repos` collection.
 
@@ -112,7 +129,7 @@ class Repository(Document):
         [setattr(self, key, value) for key, value in repo_delta.items() if key not in prohibited]
 
 
-class RepositoryContentUnit(Document):
+class RepositoryContentUnit(AutoRetryDocument):
     """
     Represents the link between a repository and the units associated with it.
 
@@ -167,7 +184,7 @@ class RepositoryContentUnit(Document):
             ]}
 
 
-class ReservedResource(Document):
+class ReservedResource(AutoRetryDocument):
     """
     Instances of this class represent resources that have been reserved.
 
@@ -193,7 +210,7 @@ class ReservedResource(Document):
             'allow_inheritance': False}
 
 
-class Worker(Document):
+class Worker(AutoRetryDocument):
     """
     Represents a worker.
 
@@ -228,7 +245,7 @@ class Worker(Document):
         return "%(name)s.dq" % {'name': self.name}
 
 
-class MigrationTracker(Document):
+class MigrationTracker(AutoRetryDocument):
     """
     This is used to track state about our migrations package. There will be one object for each
     migration package in pulp.server.db.migrations, and we will track which migration version each
@@ -252,7 +269,7 @@ class MigrationTracker(Document):
             'allow_inheritance': False}
 
 
-class TaskStatus(Document, ReaperMixin):
+class TaskStatus(AutoRetryDocument, ReaperMixin):
     """
     Represents a task.
     This inherits from mongoengine.Document and defines the schema for the documents
@@ -367,7 +384,7 @@ class TaskStatus(Document, ReaperMixin):
 signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)
 
 
-class ContentUnit(Document):
+class ContentUnit(AutoRetryDocument):
     """
     The base class for all content units.
 
