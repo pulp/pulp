@@ -9,6 +9,7 @@ Developer Guide
    conventions/index
    policies/index
    newtypesupport/index
+   design/lazy
    contentauth
    integration/index
    glossary
