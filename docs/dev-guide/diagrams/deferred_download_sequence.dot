@@ -1,0 +1,62 @@
+@startuml
+autonumber
+
+title Deferred Download Sequence Diagram
+
+participant Client
+
+box "Pulp Core Services"
+participant "Pulp Apache"
+participant "Pulp Worker"
+participant "Content WSGI App"
+participant MongoDB
+end box
+
+box "Pulp Deferred Download Services"
+participant "Apache Reverse Proxy"
+participant "Squid Cache"
+participant "Pulp Streamer"
+end box
+
+
+
+' Request content
+Client [#orange]-> "Pulp Apache" : pulp.example.com/pulp/repos/zoo/pig.rpm
+
+' Push the request to the Content WSGI app
+"Pulp Apache" [#red]-> "Content WSGI App" : mod_rewrite to /pulp/content/<publish_path>
+"Content WSGI App" [#red]-> "Pulp Apache" : x_sendfile, signed 302, 403, or 404
+
+' Serve response to client
+"Pulp Apache" [#red]-> Client : 200, signed 302, 403, or 404
+
+
+' Client fetches content from the deferred download services if 302.
+Client [#orange]-> "Apache Reverse Proxy" : signed 302 URL
+
+' Lazy components
+"Apache Reverse Proxy" [#red]-> "Squid Cache" : URL stripped of signature
+"Squid Cache" [#red]-> "Pulp Streamer" : URL stripped of signature
+"Pulp Streamer" [#cyan]-> MongoDB : Upstream repo settings
+"Pulp Streamer" [#green]-> "Upstream Repo" : upstream.com/zoo/pig.rpm
+"Squid Cache" <-[#red] "Pulp Streamer" : pig.rpm
+"Apache Reverse Proxy" <-[#red] "Squid Cache" : pig.rpm
+Client <-[#orange] "Apache Reverse Proxy" : pig.rpm
+
+' The streamer makes note of the cached download
+"Pulp Streamer" [#cyan]-> "MongoDB" : deferred_download entry
+"Pulp Worker" [#cyan]-> "MongoDB" : Get list of requested content units (deferred_download)
+"Pulp Worker" [#cyan]-> "Apache Reverse Proxy" : lazy.example.com/zoo/pig.rpm
+"Apache Reverse Proxy" [#red]-> "Squid Cache" : lazy.example.com/zoo/pig.rpm
+"Apache Reverse Proxy" <-[#red] "Squid Cache" : pig.rpm
+"Pulp Worker" <-[#orange] "Apache Reverse Proxy" : Save pig.rpm to serve via x_sendfile on \
+further requests
+
+legend right
+  (Green) -> TLS with upstream client certificate
+  (Orange) -> TLS with Pulp client certificate
+  (Cyan) -> TLS with no client certificate
+  (Red) -> no TLS
+endlegend
+
+@enduml

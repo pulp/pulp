@@ -41,6 +41,29 @@ Glossary
     based on the desired approach of the distributor. A repository may have
     more than one distributor associated with it at a given time.
 
+  download policy
+    The method used to retrieve content for a repository. There are three
+    possible policies: The :term:`immediate download policy`,
+    :term:`background download policy`, and :term:`on-demand download policy`.
+    Both the :term:`background download policy` and the
+    :term:`on-demand download policy` are :term:`deferred download policies`.
+
+  immediate download policy
+    The default download policy for :term:`repositories <repository>`. When
+    using this policy, all content is downloaded before publishing the repository.
+
+  background download policy
+    A download policy that actively retrieves :term:`content units <content unit>`
+    in the background after a publish has been performed.
+
+  on-demand download policy
+    A download policy that only saves a :term:`content unit <content unit>`
+    locally after a client has requested that content unit.
+
+  deferred download policies
+    Download policies that do not require all :term:`content units <content unit>`
+    to be downloaded locally to publish the :term:`repository <repository>`.
+
   extension
     Client-side component that augments the CLI with new functionality. While
     all functionality in the client is provided through extensions, this term

@@ -18,6 +18,7 @@ Contents:
    consumer-client/index
    nodes
    content-sources
+   deferred-download
    general-reference
    glossary
    troubleshooting
