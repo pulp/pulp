@@ -22,6 +22,31 @@ from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet
 
 
+@patch('pulp.server.db.model.UnsafeRetry')
+class TestAutoRetryDocument(unittest.TestCase):
+    """
+    Test base class for pulp docs.
+    """
+
+    def test_decorate_on_init(self, m_retry):
+        """
+        Ensure that subclass's of AutoRetryDocuments are decorated on init.
+        """
+
+        class MockDoc(model.AutoRetryDocument):
+            pass
+
+        doc = MockDoc()
+        m_retry.return_value.decorate_instance.assert_called_once_with(instance=doc,
+                                                                       full_name=type(doc))
+
+    def test_abstact(self, m_retry):
+        """
+        Ensure that AutoRetryDocument is an abstract document.
+        """
+        self.assertDictEqual(model.AutoRetryDocument._meta, {'abstract': True})
+
+
 class TestContentUnit(unittest.TestCase):
     """
     Test ContentUnit model

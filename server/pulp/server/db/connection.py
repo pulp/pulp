@@ -149,33 +149,63 @@ class PulpCollectionFailure(PulpException):
     """
 
 
-def retry_decorator(full_name=None):
+class UnsafeRetry(object):
     """
-    Collection instance method decorator providing retry support for pymongo
-    AutoReconnect exceptions
-
-    :param full_name: the full name of the database collection
-    :type  full_name: str
+    Class that decorates a model instance to retry in the event of AutoReconnect exceptions.
     """
 
-    def _decorator(method):
+    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options',
+                          'unset_lasterror_options', 'insert', 'save', 'update', 'remove', 'drop',
+                          'find', 'find_one', 'count', 'create_index', 'ensure_index',
+                          'drop_index', 'drop_indexes', 'reindex', 'index_information', 'options',
+                          'group', 'rename', 'distinct', 'map_reduce', 'inline_map_reduce',
+                          'find_and_modify')
 
-        @wraps(method)
-        def retry(*args, **kwargs):
-            while True:
+    def decorate_instance(self, instance, full_name):
+        """
+        Decorate the pymongo methods on the instance.
+
+        :param instance: instance of a class that implements pymongo methods.
+        :type  instance: pulp.server.db.PulpCollection or pulp.server.db.model.AutoRetryDocument
+        :param full_name: Collection of the class, used for logging
+        :type  full_name: str
+        """
+
+        unsafe_autoretry = config.config.getboolean('database', 'unsafe_autoretry')
+        if unsafe_autoretry:
+            for m in self._decorated_methods:
                 try:
-                    return method(*args, **kwargs)
+                    setattr(instance, m, self.retry_decorator(full_name)(getattr(instance, m)))
+                except AttributeError:
+                    pass
 
-                except AutoReconnect:
-                    msg = _('%(method)s operation failed on %(name)s') % {'method': method.__name__,
-                                                                          'name': full_name}
-                    _logger.error(msg)
+    @staticmethod
+    def retry_decorator(full_name=None):
+        """
+        Recorator providing retry support for pymongo AutoReconnect exceptions.
 
-                    time.sleep(0.3)
+        :param full_name: the full name of the database collection
+        :type  full_name: str
+        """
 
-        return retry
+        def _decorator(method):
 
-    return _decorator
+            @wraps(method)
+            def retry(*args, **kwargs):
+                while True:
+                    try:
+                        return method(*args, **kwargs)
+
+                    except AutoReconnect:
+                        msg = _('%(method)s operation failed on %(name)s') % {
+                            'method': method.__name__, 'name': full_name}
+                        _logger.error(msg)
+
+                        time.sleep(0.3)
+
+            return retry
+
+        return _decorator
 
 
 class PulpCollection(Collection):
@@ -186,18 +216,9 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options',
-                          'unset_lasterror_options', 'insert', 'save', 'update', 'remove', 'drop',
-                          'find', 'find_one', 'count', 'create_index', 'ensure_index',
-                          'drop_index', 'drop_indexes', 'reindex', 'index_information', 'options',
-                          'group', 'rename', 'distinct', 'map_reduce', 'inline_map_reduce',
-                          'find_and_modify')
-
     def __init__(self, database, name, create=False, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
-
-        for m in self._decorated_methods:
-            setattr(self, m, retry_decorator(self.full_name)(getattr(self, m)))
+        UnsafeRetry().decorate_instance(instance=self, full_name=self.full_name)
 
     def __getstate__(self):
         return {'name': self.name}
