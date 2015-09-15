@@ -46,6 +46,9 @@ New Features
 * The ``$date`` operator added to support queries on fields stored in the database
   as *ISODate*. See :ref:`search_criteria` for details.
 
+* A new setting named ``unsafe_autoretry`` is introduced in the ``[database]`` section of
+  `/etc/pulp/server.conf`. See the docs in server.conf for more details.
+
 
 Deprecation
 -----------

@@ -56,16 +56,16 @@ The diagram below shows an example default deployment.
 .. This section is still TODO.
 .. Sizing Considerations
 .. ^^^^^^^^^^^^^^^^^^^^^
-.. 
+..
 .. * Storage Considerations
-.. 
+..
 ..   * How much disk should someone allocate to a Pulp install, and which dirs
 ..     should be mapped backed-up storage? Which dirs should be on local disk?
-.. 
+..
 ..   * When should they grow their volume?
-.. 
+..
 ..   * How do you recover if a volume does indeed fill up?
-.. 
+..
 
 Choosing What to Scale
 ----------------------
@@ -243,6 +243,16 @@ should be set, at a minimum, for correct Pulp clustering operation.
 | [tasks]     | broker_url   | Update with the hostname and port of your     |
 |             |              | network accessible AMQP bus installation.     |
 +-------------+--------------+-----------------------------------------------+
+
+
+MongoDB Automatic Retry
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Pulp can be configured to automatically retry calls to the database if there is a connection error
+between the server and the database. The setting, ``unsafe_autoretry`` is located in the
+``[database]`` section of ``/etc/pupl/server.conf``.
+
+.. warning:: This feature can result in duplicate records, use with caution.
 
 
 Load Balancing Requirements
