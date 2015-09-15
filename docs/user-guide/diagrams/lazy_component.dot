@@ -1,0 +1,41 @@
+@startuml
+
+title Lazy Sync Component Diagram
+
+
+[Upstream Repo] as upstream_repo
+[Content Client] as client
+
+node "Pulp Core Services" as pulp {
+  node "Apache" {
+    [Django] as django
+  }
+  [pulp_* processes] as pulp_processes
+}
+
+node "Pulp Lazy Sync Services" as lazy {
+  [Content Streamer] as lazy_streamer
+  [Squid Cache] as lazy_squid
+  [Apache Reverse Proxy] as lazy_apache
+
+  lazy_squid .r.> lazy_streamer : One Request
+  lazy_apache .r.> lazy_squid : Many Requests
+}
+
+'Inter-component communication
+client -[#orange]u-> Apache : Metadata and Content
+client -[#orange]u-> lazy_apache : Content
+lazy_streamer -[#green]u-> upstream_repo : Content
+pulp -[#green]u-> upstream_repo : Metadata
+
+lazy_streamer -[#cyan]-> pulp_processes : Inform of Cached Content
+pulp_processes -[#orange]l-> lazy_apache : Fetch Content
+
+legend right
+  (Green) -> TLS with upstream client certificate
+  (Orange) -> TLS with Pulp client certificate
+  (Cyan) -> TLS with no client certificate
+  (Red) -> no TLS
+endlegend
+
+@enduml
