@@ -148,7 +148,7 @@ class PulpCodedForbiddenException(PulpCodedException):
 
     http_status_code = httplib.FORBIDDEN
 
-    def __init__(self, error_code=error_codes.PLP0040, **kwargs):
+    def __init__(self, error_code=error_codes.PLP0042, **kwargs):
         super(PulpCodedForbiddenException, self).__init__(error_code=error_code, **kwargs)
 
 
