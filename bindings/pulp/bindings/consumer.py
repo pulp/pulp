@@ -111,7 +111,7 @@ class ConsumerContentSchedulesAPI(PulpAPI):
     def get_schedule(self, action, consumer_id, schedule_id):
         url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         return self.server.GET(url)
-
+    
     def add_schedule(self, action, consumer_id, schedule, units, failure_threshold=UNSPECIFIED,
                      enabled=UNSPECIFIED, options=UNSPECIFIED):
         url = self.base_path % consumer_id + action + '/'
@@ -125,7 +125,7 @@ class ConsumerContentSchedulesAPI(PulpAPI):
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
         return self.server.POST(url, body)
-
+ 
     def delete_schedule(self, action, consumer_id, schedule_id):
         url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         return self.server.DELETE(url)
@@ -156,7 +156,7 @@ class BindingsAPI(PulpAPI):
         if repo_id:
             path += '%s/' % repo_id
         return self.server.GET(path)
-
+    
     def bind(self, consumer_id, repo_id, distributor_id, notify_agent=True, binding_config=None):
         path = self.BASE_PATH % consumer_id
         data = {
@@ -166,7 +166,7 @@ class BindingsAPI(PulpAPI):
             'binding_config': binding_config or {}
         }
         return self.server.POST(path, data)
-
+    
     def unbind(self, consumer_id, repo_id, distributor_id, force=False):
         path = self.BASE_PATH % consumer_id + "%s/" % repo_id + "%s/" % distributor_id
         body = dict(force=force)
