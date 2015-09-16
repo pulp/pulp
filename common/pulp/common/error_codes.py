@@ -110,7 +110,12 @@ PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
 PLP0039 = Error("PLP0039", _("The unit model with the id %(model_id)s failed to register. The "
                              "class %(model_class)s is not a subclass of ContentUnit."),
                 ['model_id', 'model_class'])
-PLP0040 = Error("PLP0040", _("This request is forbidden."), [])
+PLP0040 = Error("PLP0040", _("Database 'seeds' config must include at least one hostname:port "
+                             "value. Refer to /etc/pulp/server.conf for proper use."), [])
+PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified when more than one "
+                             "seed is provided. Refer to /etc/pulp/server.conf for proper use."),
+                [])
+PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
