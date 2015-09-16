@@ -76,7 +76,7 @@ class ConsumerManager(object):
 
         # Creation
         consumer = Consumer(consumer_id, display_name, description, notes, capabilities, rsa_pub)
-        _id = collection.save(consumer, safe=True)
+        _id = collection.save(consumer)
 
         # Generate certificate
         cert_gen_manager = factory.cert_generation_manager()
@@ -126,7 +126,7 @@ class ConsumerManager(object):
 
         # Database Updates
         try:
-            Consumer.get_collection().remove({'id': consumer_id}, safe=True)
+            Consumer.get_collection().remove({'id': consumer_id})
         except Exception:
             _logger.exception(
                 'Error updating database collection while removing consumer [%s]' % consumer_id)
@@ -177,7 +177,7 @@ class ConsumerManager(object):
             if key in delta:
                 consumer[key] = delta[key]
 
-        Consumer.get_collection().save(consumer, safe=True)
+        Consumer.get_collection().save(consumer)
 
         return consumer
 
@@ -214,8 +214,7 @@ class ConsumerManager(object):
         cls._validate_scheduled_operation(operation)
         Consumer.get_collection().update(
             {'_id': consumer_id},
-            {'$addToSet': {'schedules.%s' % operation: schedule_id}},
-            safe=True)
+            {'$addToSet': {'schedules.%s' % operation: schedule_id}})
 
     @classmethod
     def remove_schedule(cls, operation, consumer_id, schedule_id):
@@ -228,8 +227,7 @@ class ConsumerManager(object):
         cls._validate_scheduled_operation(operation)
         Consumer.get_collection().update(
             {'_id': consumer_id},
-            {'$pull': {'schedules.%s' % operation: schedule_id}},
-            safe=True)
+            {'$pull': {'schedules.%s' % operation: schedule_id}})
 
     @classmethod
     def list_schedules(cls, operation, consumer_id):

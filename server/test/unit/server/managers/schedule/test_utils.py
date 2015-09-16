@@ -232,7 +232,7 @@ class TestDeleteByResource(unittest.TestCase):
 
         utils.delete_by_resource('resource1')
 
-        mock_remove.assert_called_once_with({'resource': 'resource1'}, safe=True)
+        mock_remove.assert_called_once_with({'resource': 'resource1'})
 
 
 class TestUpdate(unittest.TestCase):

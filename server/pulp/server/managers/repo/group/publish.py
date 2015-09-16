@@ -82,7 +82,7 @@ class RepoGroupPublishManager(object):
             result = RepoGroupPublishResult.error_result(
                 group_id, distributor_id, distributor['distributor_type_id'],
                 publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
-            publish_result_coll.save(result, safe=True)
+            publish_result_coll.save(result)
 
             raise
 
@@ -115,7 +115,7 @@ class RepoGroupPublishManager(object):
                 group_id, distributor_id, distributor['distributor_type_id'],
                 publish_start_timestamp, publish_end_timestamp, summary, details)
 
-        publish_result_coll.save(result, safe=True)
+        publish_result_coll.save(result)
         return result
 
     def last_publish(self, group_id, distributor_id):

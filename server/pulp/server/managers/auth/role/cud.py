@@ -54,7 +54,7 @@ class RoleManager(object):
 
         # Creation
         create_me = Role(id=role_id, display_name=display_name, description=description)
-        Role.get_collection().save(create_me, safe=True)
+        Role.get_collection().save(create_me)
 
         # Retrieve the role to return the SON object
         created = Role.get_collection().find_one({'id': role_id})
@@ -93,7 +93,7 @@ class RoleManager(object):
             # unsupported
             raise PulpDataException(_("Update Keyword [%s] is not supported" % key))
 
-        Role.get_collection().save(role, safe=True)
+        Role.get_collection().save(role)
 
         # Retrieve the user to return the SON object
         updated = Role.get_collection().find_one({'id': role_id})
@@ -139,7 +139,7 @@ class RoleManager(object):
             user['roles'].remove(role_id)
             factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
 
-        Role.get_collection().remove({'id': role_id}, safe=True)
+        Role.get_collection().remove({'id': role_id})
 
     @staticmethod
     def add_permissions_to_role(role_id, resource, operations):
@@ -184,7 +184,7 @@ class RoleManager(object):
         for user in users:
             factory.permission_manager().grant(resource, user['login'], operations)
 
-        Role.get_collection().save(role, safe=True)
+        Role.get_collection().save(role)
 
     @staticmethod
     def remove_permissions_from_role(role_id, resource, operations):
@@ -233,7 +233,7 @@ class RoleManager(object):
         if not current_ops:
             role['permissions'].remove(resource_permission)
 
-        Role.get_collection().save(role, safe=True)
+        Role.get_collection().save(role)
 
     @staticmethod
     def add_user_to_role(role_id, login):
@@ -260,7 +260,7 @@ class RoleManager(object):
             return
 
         user['roles'].append(role_id)
-        User.get_collection().save(user, safe=True)
+        User.get_collection().save(user)
 
         for item in role['permissions']:
             factory.permission_manager().grant(item['resource'], login,
@@ -296,7 +296,7 @@ class RoleManager(object):
             return
 
         user['roles'].remove(role_id)
-        User.get_collection().save(user, safe=True)
+        User.get_collection().save(user)
 
         for item in role['permissions']:
             other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
@@ -315,7 +315,7 @@ class RoleManager(object):
                                     'Role indicates users with admin privileges')
             role['permissions'] = [{'resource': '/',
                                     'permission': [CREATE, READ, UPDATE, DELETE, EXECUTE]}]
-            Role.get_collection().save(role, safe=True)
+            Role.get_collection().save(role)
 
     @staticmethod
     def get_role(role):

@@ -666,7 +666,7 @@ class TestScheduledCallSave(unittest.TestCase):
 
         expected = call.as_dict()
         expected['_id'] = bson.ObjectId(expected['_id'])
-        mock_insert.assert_called_once_with(expected, safe=True)
+        mock_insert.assert_called_once_with(expected)
         self.assertFalse(call._new)
 
 

@@ -71,7 +71,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         try:
             bind = Bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
-            collection.save(bind, safe=True)
+            collection.save(bind)
         except DuplicateKeyError:
             BindManager._update_binding(consumer_id, repo_id, distributor_id, notify_agent,
                                         binding_config)
@@ -99,7 +99,7 @@ class BindManager(object):
         binding = collection.find_one(query)
         binding['notify_agent'] = notify_agent
         binding['binding_config'] = binding_config
-        collection.save(binding, safe=True)
+        collection.save(binding)
 
     @staticmethod
     def _reset_bind(consumer_id, repo_id, distributor_id):
@@ -118,7 +118,7 @@ class BindManager(object):
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         query['deleted'] = True
         update = {'$set': {'deleted': False, 'consumer_actions': []}}
-        collection.update(query, update, safe=True)
+        collection.update(query, update)
 
     @staticmethod
     def unbind(consumer_id, repo_id, distributor_id):
@@ -289,7 +289,7 @@ class BindManager(object):
         # update document
         collection = Bind.get_collection()
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
-        collection.update(query, {'$set': {'deleted': True}}, safe=True)
+        collection.update(query, {'$set': {'deleted': True}})
 
     @staticmethod
     def delete(consumer_id, repo_id, distributor_id, force=False):
@@ -318,7 +318,7 @@ class BindManager(object):
                 raise Exception('outstanding actions, not deleted')
         if not force:
             bind_id['deleted'] = True
-        collection.remove(bind_id, safe=True)
+        collection.remove(bind_id)
 
     def action_pending(self, consumer_id, repo_id, distributor_id, action, action_id):
         """
@@ -344,7 +344,7 @@ class BindManager(object):
             action=action,
             status=Bind.Status.PENDING)
         update = {'$push': {'consumer_actions': entry}}
-        collection.update(bind_id, update, safe=True)
+        collection.update(bind_id, update)
 
     def action_succeeded(self, consumer_id, repo_id, distributor_id, action_id):
         """
@@ -368,10 +368,10 @@ class BindManager(object):
             return
         # delete the action
         update = {'$pull': {'consumer_actions': {'id': action_id}}}
-        collection.update(bind_id, update, safe=True)
+        collection.update(bind_id, update)
         # purge all previous actions
         update = {'$pull': {'consumer_actions': {'timestamp': {'$lt': action['timestamp']}}}}
-        collection.update(bind_id, update, safe=True)
+        collection.update(bind_id, update)
 
     def action_failed(self, consumer_id, repo_id, distributor_id, action_id):
         """
@@ -389,7 +389,7 @@ class BindManager(object):
         query = self.bind_id(consumer_id, repo_id, distributor_id)
         query['consumer_actions.id'] = action_id
         update = {'$set': {'consumer_actions.$.status': Bind.Status.FAILED}}
-        collection.update(query, update, safe=True)
+        collection.update(query, update)
 
     def find_action(self, action_id):
         """

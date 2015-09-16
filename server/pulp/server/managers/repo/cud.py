@@ -72,7 +72,7 @@ class RepoManager(object):
 
         # Creation
         create_me = Repo(repo_id, display_name, description, notes)
-        Repo.get_collection().save(create_me, safe=True)
+        Repo.get_collection().save(create_me)
 
         # Retrieve the repo to return the SON object
         created = Repo.get_collection().find_one({'id': repo_id})
@@ -231,20 +231,20 @@ class RepoManager(object):
 
         # Database Updates
         try:
-            Repo.get_collection().remove({'id': repo_id}, safe=True)
+            Repo.get_collection().remove({'id': repo_id})
 
             # Remove all importers and distributors from the repo.
             # This is likely already done by the calls to other methods in
             # this manager, but in case those failed we still want to attempt
             # to keep the database clean.
-            RepoDistributor.get_collection().remove({'repo_id': repo_id}, safe=True)
-            RepoImporter.get_collection().remove({'repo_id': repo_id}, safe=True)
+            RepoDistributor.get_collection().remove({'repo_id': repo_id})
+            RepoImporter.get_collection().remove({'repo_id': repo_id})
 
-            RepoSyncResult.get_collection().remove({'repo_id': repo_id}, safe=True)
-            RepoPublishResult.get_collection().remove({'repo_id': repo_id}, safe=True)
+            RepoSyncResult.get_collection().remove({'repo_id': repo_id})
+            RepoPublishResult.get_collection().remove({'repo_id': repo_id})
 
             # Remove all associations from the repo
-            RepoContentUnit.get_collection().remove({'repo_id': repo_id}, safe=True)
+            RepoContentUnit.get_collection().remove({'repo_id': repo_id})
         except Exception, e:
             msg = _('Error updating one or more database collections while removing repo [%(r)s]')
             msg = msg % {'r': repo_id}
@@ -310,7 +310,7 @@ class RepoManager(object):
 
             repo['notes'] = existing_notes
 
-        repo_coll.save(repo, safe=True)
+        repo_coll.save(repo)
 
         return repo
 
@@ -339,7 +339,7 @@ class RepoManager(object):
 
         if delta:
             try:
-                repo_coll.update(spec, operation, safe=True)
+                repo_coll.update(spec, operation)
             except pymongo.errors.OperationFailure:
                 message = 'There was a problem updating repository %s' % repo_id
                 raise PulpExecutionException(message), None, sys.exc_info()[2]
@@ -381,7 +381,7 @@ class RepoManager(object):
         spec = {'id': repo_id}
         operation = {'$set': {field_name: dateutils.now_utc_datetime_with_tzinfo()}}
         repo_coll = Repo.get_collection()
-        repo_coll.update(spec, operation, safe=True)
+        repo_coll.update(spec, operation)
 
     @staticmethod
     def update_repo_and_plugins(repo_id, repo_delta, importer_config,
@@ -489,7 +489,7 @@ class RepoManager(object):
         if not isinstance(scratchpad, dict):
             raise ValueError('scratchpad must be a dict')
         collection = Repo.get_collection()
-        result = collection.update({'id': repo_id}, {'$set': {'scratchpad': scratchpad}}, safe=True)
+        result = collection.update({'id': repo_id}, {'$set': {'scratchpad': scratchpad}})
         if result['n'] == 0:
             raise MissingResource(repo_id=repo_id)
 
@@ -518,7 +518,7 @@ class RepoManager(object):
             key = 'scratchpad.%s' % k
             properties[key] = v
         collection = Repo.get_collection()
-        result = collection.update({'id': repo_id}, {'$set': properties}, safe=True)
+        result = collection.update({'id': repo_id}, {'$set': properties})
         if result['n'] == 0:
             raise MissingResource(repo_id=repo_id)
 
@@ -556,8 +556,7 @@ class RepoManager(object):
             for type_id in type_ids:
                 spec = {'repo_id': repo_id, 'unit_type_id': type_id}
                 counts[type_id] = association_collection.find(spec).count()
-            repo_collection.update({'id': repo_id}, {'$set': {'content_unit_counts': counts}},
-                                   safe=True)
+            repo_collection.update({'id': repo_id}, {'$set': {'content_unit_counts': counts}})
 
 
 create_and_configure_repo = task(RepoManager.create_and_configure_repo, base=Task)

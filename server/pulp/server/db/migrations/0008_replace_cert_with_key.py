@@ -26,5 +26,5 @@ def migrate(*args, **kwargs):
     - Remove the certificate.
     """
     collection = Consumer.get_collection()
-    collection.update(KEY_QUERY, KEY_UPDATE, multi=True, safe=True)
-    collection.update(CRT_QUERY, CRT_UPDATE, multi=True, safe=True)
+    collection.update(KEY_QUERY, KEY_UPDATE, multi=True)
+    collection.update(CRT_QUERY, CRT_UPDATE, multi=True)

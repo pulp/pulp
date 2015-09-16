@@ -486,7 +486,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoPublishResult.expected_result(
                 'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
-            RepoPublishResult.get_collection().insert(r, safe=True)
+            RepoPublishResult.get_collection().insert(r)
 
         # Test that returned entries are in ascending order by time
         entries = self.publish_manager.publish_history('test_sort', 'test_dist',
@@ -512,7 +512,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoPublishResult.expected_result(
                 'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
-            RepoPublishResult.get_collection().insert(r, safe=True)
+            RepoPublishResult.get_collection().insert(r)
 
         # Test that returned entries are in descending order by time
         entries = self.publish_manager.publish_history('test_sort', 'test_dist',
@@ -547,7 +547,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoPublishResult.expected_result(
                 'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
-            RepoPublishResult.get_collection().insert(r, safe=True)
+            RepoPublishResult.get_collection().insert(r)
 
         # Verify
         self.assertEqual(3, len(self.publish_manager.publish_history('test_date', 'test_dist')))
@@ -573,7 +573,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoPublishResult.expected_result(
                 'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
-            RepoPublishResult.get_collection().insert(r, safe=True)
+            RepoPublishResult.get_collection().insert(r)
 
         # Verify that all entries retrieved have dates prior to the given end date
         end_date = '2013-06-01T12:00:03Z'
@@ -721,4 +721,4 @@ def add_result(repo_id, dist_id, offset):
         repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started),
         dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details',
         RepoPublishResult.RESULT_SUCCESS)
-    RepoPublishResult.get_collection().insert(r, safe=True)
+    RepoPublishResult.get_collection().insert(r)

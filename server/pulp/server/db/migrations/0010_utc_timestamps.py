@@ -43,4 +43,4 @@ def update_time_to_utc_on_collection(collection_name, field_name):
         if time.tzinfo != dateutils.utc_tz():
             time_utc = dateutils.to_utc_datetime(time)
             distributor[field_name] = dateutils.format_iso8601_datetime(time_utc)
-            collection.save(distributor, safe=True)
+            collection.save(distributor)

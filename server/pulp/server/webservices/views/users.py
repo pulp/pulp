@@ -155,7 +155,7 @@ class UserResourceView(View):
         link = {'_href': reverse('user_resource',
                 kwargs={'login': login})}
         if Permission.get_collection().find_one({'resource': link['_href']}):
-            Permission.get_collection().remove({'resource': link}, safe=True)
+            Permission.get_collection().remove({'resource': link})
 
         return generate_json_response(result)
 

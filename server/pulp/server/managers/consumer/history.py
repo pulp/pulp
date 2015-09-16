@@ -85,7 +85,7 @@ class ConsumerHistoryManager(object):
             raise InvalidValue(invalid_values)
 
         event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, event_details)
-        ConsumerHistoryEvent.get_collection().save(event, safe=True)
+        ConsumerHistoryEvent.get_collection().save(event)
 
     def query(self, consumer_id=None, event_type=None, limit=None, sort='descending',
               start_date=None, end_date=None):
