@@ -1016,7 +1016,11 @@ class HistoryView(View):
         :return: sorted, limited list of entries
         :rtype:  list
         """
-        cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
+
+        # Sort the results by the ObjectId field, which will effectively sort based on the start
+        # time of the event. This way of sorting is preferred because for a sufficiently large data
+        # set, the sort field must be an indexed field.
+        cursor.sort('_id', direction=constants.SORT_DIRECTION[sort])
         if limit is not None:
             cursor.limit(limit)
         return list(cursor)

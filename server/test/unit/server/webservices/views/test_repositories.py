@@ -1767,7 +1767,7 @@ class TestHistoryView(unittest.TestCase):
         mock_cursor = mock.MagicMock()
         history = HistoryView()
         result = history._process_entries(mock_cursor, constants.SORT_DESCENDING, 3)
-        mock_cursor.sort.assert_called_once_with('started', direction=-1)
+        mock_cursor.sort.assert_called_once_with('_id', direction=-1)
         mock_cursor.limit.assert_called_once_with(3)
         self.assertTrue(isinstance(result, list))
 
