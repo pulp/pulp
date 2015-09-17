@@ -21,7 +21,7 @@ class TestMigration(unittest.TestCase):
 
         mock_connection.get_collection.assert_called_once_with('foo')
         self.assertEquals(unit['bar'], utc_value)
-        collection.save.assert_called_once_with(unit, safe=True)
+        collection.save.assert_called_once_with(unit)
 
     @mock.patch('pulp.server.db.migrations.0010_utc_timestamps.connection')
     def test_time_to_utc_on_collection_skips_utc(self, mock_connection):

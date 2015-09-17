@@ -61,7 +61,6 @@ class RepoManagerTests(base.ResourceReservationTests):
         repo_col.update.assert_called_once_with(
             {'id': 'repo1'},
             {'$set': {'content_unit_counts': {'rpm': 6, 'srpm': 6}}},
-            safe=True
         )
 
     @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
@@ -537,7 +536,7 @@ class RepoManagerTests(base.ResourceReservationTests):
 
         self.manager.update_unit_count(*ARGS)
         mock_update.assert_called_once_with({'id': 'repo-123'},
-                                            {'$inc': {'content_unit_counts.rpm': 7}}, safe=True)
+                                            {'$inc': {'content_unit_counts.rpm': 7}})
 
     def test_update_unit_count_with_db(self):
         """

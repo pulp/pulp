@@ -27,7 +27,7 @@ def add_field_with_default_value(objectdb, field, default=None):
     for model in objectdb.find():
         if field not in model:
             model[field] = default
-            objectdb.save(model, safe=True)
+            objectdb.save(model)
 
 
 def change_field_type_with_default_value(objectdb, field, new_type, default_value):
@@ -46,7 +46,7 @@ def change_field_type_with_default_value(objectdb, field, new_type, default_valu
     for model in objectdb.find():
             if not isinstance(model[field], new_type):
                 model[field] = default_value
-                objectdb.save(model, safe=True)
+                objectdb.save(model)
 
 
 def add_field_with_calculated_value(objectdb, field, callback=lambda m: None):
@@ -65,7 +65,7 @@ def add_field_with_calculated_value(objectdb, field, callback=lambda m: None):
     for model in objectdb.find():
         if field not in model:
             model[field] = callback(model)
-            objectdb.save(model, safe=True)
+            objectdb.save(model)
 
 
 def delete_field(objectdb, field):
@@ -80,7 +80,7 @@ def delete_field(objectdb, field):
         if field not in model:
             continue
         del model[field]
-        objectdb.save(model, safe=True)
+        objectdb.save(model)
 
 
 def migrate_field(objectdb,
@@ -108,4 +108,4 @@ def migrate_field(objectdb,
         model[to_field] = callback(model[from_field])
         if delete_from:
             del model[from_field]
-        objectdb.save(model, safe=True)
+        objectdb.save(model)

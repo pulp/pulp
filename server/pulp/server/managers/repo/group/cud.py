@@ -42,7 +42,7 @@ class RepoGroupManager(object):
         collection = RepoGroup.get_collection()
         repo_group = RepoGroup(group_id, display_name, description, repo_ids, notes)
         try:
-            collection.insert(repo_group, safe=True)
+            collection.insert(repo_group)
         except DuplicateKeyError:
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
         group = collection.find_one({'id': group_id})
@@ -142,10 +142,10 @@ class RepoGroupManager(object):
                     unset_dict[newkey] = value
 
             if unset_dict:
-                collection.update({'id': group_id}, {'$unset': unset_dict}, safe=True)
+                collection.update({'id': group_id}, {'$unset': unset_dict})
 
         if updates:
-            collection.update({'id': group_id}, {'$set': updates}, safe=True)
+            collection.update({'id': group_id}, {'$set': updates})
         group = collection.find_one({'id': group_id})
         return group
 
@@ -164,7 +164,7 @@ class RepoGroupManager(object):
             RepoGroupDistributorManager.remove_distributor(group_id, distributor['id'])
 
         # Delete from the database
-        collection.remove({'id': group_id}, safe=True)
+        collection.remove({'id': group_id})
 
     def remove_repo_from_groups(self, repo_id, group_ids=None):
         """
@@ -181,7 +181,7 @@ class RepoGroupManager(object):
         if group_ids is not None:
             spec = {'id': {'$in': group_ids}}
         collection = RepoGroup.get_collection()
-        collection.update(spec, {'$pull': {'repo_ids': repo_id}}, multi=True, safe=True)
+        collection.update(spec, {'$pull': {'repo_ids': repo_id}}, multi=True)
 
     @staticmethod
     def associate(group_id, criteria):
@@ -199,8 +199,7 @@ class RepoGroupManager(object):
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
-                                {'$addToSet': {'repo_ids': {'$each': repo_ids}}},
-                                safe=True)
+                                {'$addToSet': {'repo_ids': {'$each': repo_ids}}})
 
     @staticmethod
     def unassociate(group_id, criteria):
@@ -218,8 +217,7 @@ class RepoGroupManager(object):
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
-                                {'$pullAll': {'repo_ids': repo_ids}},
-                                safe=True)
+                                {'$pullAll': {'repo_ids': repo_ids}})
 
     def add_notes(self, group_id, notes):
         """
@@ -232,7 +230,7 @@ class RepoGroupManager(object):
         group_collection = validate_existing_repo_group(group_id)
         set_doc = dict(('notes.' + k, v) for k, v in notes.items())
         if set_doc:
-            group_collection.update({'id': group_id}, {'$set': set_doc}, safe=True)
+            group_collection.update({'id': group_id}, {'$set': set_doc})
 
     def remove_notes(self, group_id, keys):
         """
@@ -244,7 +242,7 @@ class RepoGroupManager(object):
         """
         group_collection = validate_existing_repo_group(group_id)
         unset_doc = dict(('notes.' + k, 1) for k in keys)
-        group_collection.update({'id': group_id}, {'$unset': unset_doc}, safe=True)
+        group_collection.update({'id': group_id}, {'$unset': unset_doc})
 
     def set_note(self, group_id, key, value):
         """

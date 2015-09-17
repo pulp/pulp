@@ -215,7 +215,6 @@ if (not skipcreate):
         {'$set': {
             'packages': r.packages,
         }},
-        safe=True
     )
 
     last_desc = None

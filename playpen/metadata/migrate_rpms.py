@@ -38,7 +38,7 @@ def _migrate_rpm_unit_repodata():
             rpm_unit["repodata"] = get_package_xml(rpm_unit['_storage_path'])
             modified = True
         if modified:
-            collection.save(rpm_unit, safe=True)
+            collection.save(rpm_unit)
 
 
 def get_package_xml(pkg_path):

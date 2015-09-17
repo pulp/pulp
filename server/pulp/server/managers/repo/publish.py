@@ -125,13 +125,13 @@ class RepoPublishManager(object):
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one(
                 {'repo_id': repo_id, 'id': distributor_id})
-            distributor_coll.save(repo_distributor, safe=True)
+            distributor_coll.save(repo_distributor)
 
             # Add a publish history entry for the run
             result = RepoPublishResult.error_result(
                 repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
                 publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
-            publish_result_coll.save(result, safe=True)
+            publish_result_coll.save(result)
 
             _logger.exception(
                 _('Exception caught from plugin during publish for repo [%(r)s]' % {'r': repo_id}))
@@ -142,7 +142,7 @@ class RepoPublishManager(object):
         # Reload the distributor in case the scratchpad is set by the plugin
         repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         repo_distributor['last_publish'] = datetime.utcnow()
-        distributor_coll.save(repo_distributor, safe=True)
+        distributor_coll.save(repo_distributor)
 
         # Add a publish entry
         if publish_report is not None and isinstance(publish_report, PublishReport):
@@ -170,7 +170,7 @@ class RepoPublishManager(object):
         result = RepoPublishResult.expected_result(
             repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
             publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
-        publish_result_coll.save(result, safe=True)
+        publish_result_coll.save(result)
         return result
 
     def auto_publish_for_repo(self, repo_id):

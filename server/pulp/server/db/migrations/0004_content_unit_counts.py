@@ -24,4 +24,4 @@ def migrate(*args, **kwargs):
     """
     RepoManager().rebuild_content_unit_counts()
     repo_collection = Repo.get_collection()
-    repo_collection.update({}, {'$unset': {'content_unit_count': 1}}, safe=True)
+    repo_collection.update({}, {'$unset': {'content_unit_count': 1}})

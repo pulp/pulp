@@ -13,4 +13,4 @@ def migrate(*args, **kwargs):
                 new_permission = dict(username=username, permissions=user_permission)
                 updated_permissions.append(new_permission)
             permission['users'] = updated_permissions
-            collection.save(permission, safe=True)
+            collection.save(permission)

@@ -247,7 +247,7 @@ class ScheduledCall(Model):
         if self._new:
             as_dict = self.as_dict()
             as_dict['_id'] = ObjectId(as_dict['_id'])
-            self.get_collection().insert(as_dict, safe=True)
+            self.get_collection().insert(as_dict)
             self._new = False
         else:
             as_dict = self.as_dict()

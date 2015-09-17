@@ -455,7 +455,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoSyncResult.expected_result('test_sort', 'foo', 'bar', date_string % str(i),
                                                date_string % str(i + 1), 1, 1, 1, '', '',
                                                RepoSyncResult.RESULT_SUCCESS)
-            RepoSyncResult.get_collection().save(r, safe=True)
+            RepoSyncResult.get_collection().save(r)
 
         # Test sort by ascending start date
         entries = self.sync_manager.sync_history(repo_id='test_sort', sort=constants.SORT_ASCENDING)
@@ -476,7 +476,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoSyncResult.expected_result('test_sort', 'foo', 'bar', date_string % str(i),
                                                date_string % str(i + 1), 1, 1, 1, '', '',
                                                RepoSyncResult.RESULT_SUCCESS)
-            RepoSyncResult.get_collection().save(r, safe=True)
+            RepoSyncResult.get_collection().save(r)
 
         # Test sort by descending start date
         entries = self.sync_manager.sync_history(repo_id='test_sort',
@@ -513,7 +513,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoSyncResult.expected_result('test_repo', 'foo', 'bar', date_string % str(i),
                                                date_string % str(i + 1), 1, 1, 1, '', '',
                                                RepoSyncResult.RESULT_SUCCESS)
-            RepoSyncResult.get_collection().save(r, safe=True)
+            RepoSyncResult.get_collection().save(r)
 
         # Verify three entries in test_repo
         self.assertEqual(3, len(self.sync_manager.sync_history('test_repo')))
@@ -541,7 +541,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             r = RepoSyncResult.expected_result('test_repo', 'foo', 'bar', date_string % str(i),
                                                date_string % str(i + 1), 1, 1, 1, '', '',
                                                RepoSyncResult.RESULT_SUCCESS)
-            RepoSyncResult.get_collection().save(r, safe=True)
+            RepoSyncResult.get_collection().save(r)
 
         # Verify three entries in test_repo
         self.assertEqual(3, len(self.sync_manager.sync_history('test_repo')))
@@ -660,4 +660,4 @@ def add_result(repo_id, offset):
         repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
         dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
         RepoSyncResult.RESULT_SUCCESS)
-    RepoSyncResult.get_collection().save(r, safe=True)
+    RepoSyncResult.get_collection().save(r)

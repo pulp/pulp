@@ -19,4 +19,4 @@ def migrate(*args, **kwargs):
                 bind[key] = value
                 dirty = True
         if dirty:
-            collection.save(bind, safe=True)
+            collection.save(bind)

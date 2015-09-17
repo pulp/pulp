@@ -58,7 +58,7 @@ class ContentCatalogManager(object):
         """
         collection = ContentCatalog.get_collection()
         entry = ContentCatalog(source_id, expires, type_id, unit_key, url)
-        collection.insert(entry, safe=True)
+        collection.insert(entry)
 
     def delete_entry(self, source_id, type_id, unit_key):
         """
@@ -73,7 +73,7 @@ class ContentCatalogManager(object):
         collection = ContentCatalog.get_collection()
         locator = ContentCatalog.get_locator(type_id, unit_key)
         query = {'source_id': source_id, 'locator': locator}
-        collection.remove(query, safe=True)
+        collection.remove(query)
 
     def purge(self, source_id):
         """
@@ -86,7 +86,7 @@ class ContentCatalogManager(object):
         """
         collection = ContentCatalog.get_collection()
         query = {'source_id': source_id}
-        result = collection.remove(query, safe=True)
+        result = collection.remove(query)
         return result['n']
 
     def purge_expired(self, grace_period=GRACE_PERIOD):
@@ -104,7 +104,7 @@ class ContentCatalogManager(object):
         now = ContentCatalog.get_expiration(0)
         timestamp = now - grace_period
         query = {'expiration': {'$lt': timestamp}}
-        result = collection.remove(query, safe=True)
+        result = collection.remove(query)
         return result['n']
 
     def purge_orphans(self, valid_ids):

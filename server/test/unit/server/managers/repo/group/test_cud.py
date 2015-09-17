@@ -39,9 +39,9 @@ class RepoGroupTests(PulpServerTests):
     def tearDown(self):
         super(RepoGroupTests, self).tearDown()
         self.manager = None
-        Repo.get_collection().remove(safe=True)
-        RepoGroup.get_collection().remove(safe=True)
-        RepoGroupDistributor.get_collection().remove(safe=True)
+        Repo.get_collection().remove()
+        RepoGroup.get_collection().remove()
+        RepoGroupDistributor.get_collection().remove()
 
     def _create_repo(self, repo_id):
         manager = managers_factory.repo_manager()

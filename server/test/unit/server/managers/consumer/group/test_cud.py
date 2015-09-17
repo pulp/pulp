@@ -40,8 +40,8 @@ class ConsumerGroupTests(base.PulpServerTests):
     def tearDown(self):
         super(ConsumerGroupTests, self).tearDown()
         self.manager = None
-        Consumer.get_collection().remove(safe=True)
-        ConsumerGroup.get_collection().remove(safe=True)
+        Consumer.get_collection().remove()
+        ConsumerGroup.get_collection().remove()
 
     def _create_consumer(self, consumer_id):
         manager = managers_factory.consumer_manager()

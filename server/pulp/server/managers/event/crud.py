@@ -56,7 +56,7 @@ class EventListenerManager(object):
         # Create the database entry
         el = EventListener(notifier_type_id, notifier_config, event_types)
         collection = EventListener.get_collection()
-        created_id = collection.save(el, safe=True)
+        created_id = collection.save(el)
         created = collection.find_one(created_id)
 
         return created
@@ -152,7 +152,7 @@ class EventListenerManager(object):
             existing['event_types'] = event_types
 
         # Update the database
-        collection.save(existing, safe=True)
+        collection.save(existing)
 
         # Reload to return
         existing = collection.find_one({'_id': ObjectId(event_listener_id)})

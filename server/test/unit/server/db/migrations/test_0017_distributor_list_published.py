@@ -46,6 +46,6 @@ class TestMigration(TestCase):
         self.assertEqual(
             collection.save.call_args_list,
             [
-                call({LAST_PUBLISH: parsed[0]}, safe=True),
-                call({LAST_PUBLISH: parsed[1]}, safe=True)
+                call({LAST_PUBLISH: parsed[0]}),
+                call({LAST_PUBLISH: parsed[1]})
             ])
