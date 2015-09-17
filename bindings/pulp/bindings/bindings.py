@@ -3,6 +3,7 @@ from pulp.bindings.actions import ActionsAPI
 from pulp.bindings.content import OrphanContentAPI, ContentSourceAPI, ContentCatalogAPI
 from pulp.bindings.event_listeners import EventListenerAPI
 from pulp.bindings.server_info import ServerInfoAPI, ServerStatusAPI
+from pulp.bindings.static import StaticRequest
 from pulp.bindings.tasks import TasksAPI, TaskSearchAPI
 from pulp.bindings.upload import UploadAPI
 
@@ -51,6 +52,7 @@ class Bindings(object):
         self.role = auth.RoleAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.server_status = ServerStatusAPI(pulp_connection)
+        self.static = StaticRequest(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
         self.tasks_search = TaskSearchAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)
