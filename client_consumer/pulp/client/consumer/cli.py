@@ -1,6 +1,5 @@
 import errno
 import os
-import urllib2
 from gettext import gettext as _
 
 from M2Crypto import RSA
