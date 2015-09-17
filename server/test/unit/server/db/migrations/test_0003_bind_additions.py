@@ -21,7 +21,7 @@ class BindAdditionMigrationTests(base.PulpServerTests):
                 'distributor_id': 'distributor_%s' % counter,
             }
 
-            coll.insert(bind_dict, safe=True)
+            coll.insert(bind_dict)
 
         # Test
         module = MigrationModule('pulp.server.db.migrations.0003_bind_additions')._module
@@ -51,7 +51,7 @@ class BindAdditionMigrationTests(base.PulpServerTests):
                 'distributor_id': 'distributor_%s' % counter,
             }
 
-            coll.insert(bind_dict, safe=True)
+            coll.insert(bind_dict)
 
         # Test
         module = MigrationModule('pulp.server.db.migrations.0003_bind_additions')._module

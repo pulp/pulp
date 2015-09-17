@@ -227,7 +227,7 @@ class RepoGroupDistributorManager(object):
                 raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Clean up the database
-        distributor_coll.remove(distributor, safe=True)
+        distributor_coll.remove(distributor)
 
     @staticmethod
     def update_distributor_config(repo_group_id, distributor_id, distributor_config):
@@ -281,7 +281,7 @@ class RepoGroupDistributorManager(object):
 
         # If we got this far, the merged_config is valid
         distributor['config'] = merged_config
-        RepoGroupDistributor.get_collection().save(distributor, safe=True)
+        RepoGroupDistributor.get_collection().save(distributor)
 
         return distributor
 
@@ -312,7 +312,7 @@ class RepoGroupDistributorManager(object):
 
         distributor = RepoGroupDistributorManager.get_distributor(repo_group_id, distributor_id)
         distributor['scratchpad'] = contents
-        RepoGroupDistributor.get_collection().save(distributor, safe=True)
+        RepoGroupDistributor.get_collection().save(distributor)
 
 
 add_distributor = task(RepoGroupDistributorManager.add_distributor, base=Task)

@@ -31,4 +31,4 @@ def migrate(*args, **kwargs):
         collection = connection.get_collection(name)
         for unit in collection.find(QUERY):
             unit[LAST_UPDATED] = NEVER
-            collection.save(unit, safe=True)
+            collection.save(unit)

@@ -61,7 +61,7 @@ class ProfileManager(object):
         except MissingResource:
             p = UnitProfile(consumer_id, content_type, profile)
         collection = UnitProfile.get_collection()
-        collection.save(p, safe=True)
+        collection.save(p)
         history_manager = factory.consumer_history_manager()
         history_manager.record_event(
             consumer_id,
@@ -80,7 +80,7 @@ class ProfileManager(object):
         """
         profile = ProfileManager.get_profile(consumer_id, content_type)
         collection = UnitProfile.get_collection()
-        collection.remove(profile, safe=True)
+        collection.remove(profile)
 
     def consumer_deleted(self, id):
         """

@@ -195,10 +195,9 @@ class RepoSyncManager(object):
 
         finally:
             # Do an update instead of a save in case the importer has changed the scratchpad
-            importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}},
-                                 safe=True)
+            importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}})
             # Add a sync history entry for this run
-            sync_result_coll.save(result, safe=True)
+            sync_result_coll.save(result)
 
         return result
 

@@ -196,7 +196,7 @@ class PluginTestBase(ServerTests):
 
     def define_plugins(self):
         collection = ContentType.get_collection()
-        collection.save(dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY.keys()), safe=True)
+        collection.save(dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY.keys()))
 
     def populate(self):
         # make content/ dir.
@@ -912,7 +912,7 @@ class ImporterTest(PluginTestBase):
         unit = collection.find_one({'N': 0})
         unit['age'] = 84
         unit['_last_updated'] -= 1
-        collection.update({'N': 0}, unit, safe=True)
+        collection.update({'N': 0}, unit)
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)

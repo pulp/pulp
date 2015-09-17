@@ -216,7 +216,7 @@ class RepoProfileApplicability(Model):
         """
         Delete this RepoProfileApplicability object from the database.
         """
-        self.get_collection().remove({'_id': self._id}, safe=True)
+        self.get_collection().remove({'_id': self._id})
 
     def save(self):
         """
@@ -228,10 +228,10 @@ class RepoProfileApplicability(Model):
         new_document = {'profile_hash': self.profile_hash, 'repo_id': self.repo_id,
                         'profile': self.profile, 'applicability': self.applicability}
         if self._id is not None:
-            self.get_collection().update({'_id': self._id}, new_document, safe=True)
+            self.get_collection().update({'_id': self._id}, new_document)
         else:
             # Let's set the _id attribute to the newly created document
-            self._id = self.get_collection().insert(new_document, safe=True)
+            self._id = self.get_collection().insert(new_document)
 
 
 class UnitProfile(Model):

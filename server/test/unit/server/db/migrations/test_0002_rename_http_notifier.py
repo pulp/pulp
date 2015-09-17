@@ -24,7 +24,7 @@ class TestMigration0002(base.PulpServerTests):
             'notifier_type_id': 'rest-api',
             'event_types': ['*'],
             'notifier_config': {},
-        }, safe=True))
+        }))
         event_listener_factory = managers.factory.event_listener_manager()
 
         module = MigrationModule('pulp.server.db.migrations.0002_rename_http_notifier')._module

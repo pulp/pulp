@@ -13,4 +13,4 @@ def migrate(*args, **kwargs):
                 resource_permission = dict(resource=resource, permission=permission)
                 updated_permissions.append(resource_permission)
             role['permissions'] = updated_permissions
-            collection.save(role, safe=True)
+            collection.save(role)

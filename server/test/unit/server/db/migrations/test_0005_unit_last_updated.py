@@ -38,7 +38,7 @@ class TestMigration_0005(PulpServerTests):
         super(TestMigration_0005, self).setUp()
         for collection in [connection.get_collection(n, True) for n in TEST_COLLECTIONS]:
             for unit in TEST_UNITS:
-                collection.save(unit, safe=True)
+                collection.save(unit)
 
     def tearDown(self):
         super(TestMigration_0005, self).tearDown()

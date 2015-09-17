@@ -91,7 +91,7 @@ class RepoUnitAssociationManager(object):
 
         # Create the database entry
         association = RepoContentUnit(repo_id, unit_id, unit_type_id)
-        RepoContentUnit.get_collection().save(association, safe=True)
+        RepoContentUnit.get_collection().save(association)
 
         manager = manager_factory.repo_manager()
 
@@ -328,7 +328,7 @@ class RepoUnitAssociationManager(object):
                     'unit_type_id': unit_type_id,
                     'unit_id': {'$in': unit_ids}
                     }
-            collection.remove(spec, safe=True)
+            collection.remove(spec)
 
             unique_count = sum(
                 1 for unit_id in unit_ids if not RepoUnitAssociationManager.association_exists(
