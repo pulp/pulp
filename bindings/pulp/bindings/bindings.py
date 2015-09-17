@@ -6,6 +6,7 @@ from pulp.bindings.repository import *
 from pulp.bindings.consumer_groups import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI, ServerStatusAPI
+from pulp.bindings.static import StaticRequest
 from pulp.bindings.tasks import TasksAPI, TaskSearchAPI
 from pulp.bindings.upload import UploadAPI
 from pulp.bindings.auth import *
@@ -55,6 +56,7 @@ class Bindings(object):
         self.role = RoleAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.server_status = ServerStatusAPI(pulp_connection)
+        self.static = StaticRequest(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
         self.tasks_search = TaskSearchAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)
