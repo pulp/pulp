@@ -88,6 +88,9 @@ _default_values = {
         'certfile': '/etc/pki/pulp/qpid/client.crt',
         'login_method': '',
     },
+    'lazy': {
+        'redirect_url': '',
+    },
 }
 
 # to add a default configuration file, list the full path here

@@ -1,7 +1,10 @@
+import os
+
 from gettext import gettext as _
+from urlparse import urljoin
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.common import tags
@@ -10,6 +13,7 @@ from pulp.common.tags import (ACTION_REFRESH_ALL_CONTENT_SOURCES,
                               RESOURCE_CONTENT_SOURCE)
 from pulp.server import constants
 from pulp.server.auth import authorization
+from pulp.server.config import config as pulp_conf
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.controllers import content
 from pulp.server.controllers import units
@@ -644,3 +648,112 @@ class ContentSourceResourceActionView(View):
         task_result = content.refresh_content_source.apply_async(
             tags=task_tags, kwargs={'content_source_id': content_source_id})
         raise OperationPostponed(task_result)
+
+
+class AliasTable(object):
+    """
+    Represents a collection of Apache *Alias* directives.
+
+    :ivar table: A table of alias => path mappings.
+    :type table: dict
+    """
+
+    def __init__(self):
+        self.table = {}
+
+    def load(self):
+        """
+        Load the alias table.
+        Read .conf files in /etc/httpd/conf.d/ and build the table
+        using *Alias* directives.
+        """
+        root = '/etc/httpd/conf.d'
+        for path in [os.path.join(root, f) for f in os.listdir(root)]:
+            if not path.endswith('.conf'):
+                continue
+            with open(path) as fp:
+                while True:
+                    line = fp.readline()
+                    if not line:
+                        break
+                    if not line.startswith('Alias'):
+                        # Not an Alias
+                        continue
+                    parts = line.split(' ')
+                    if len(parts) != 3:
+                        # Malformed
+                        continue
+                    self.table[parts[1].strip()] = parts[2].strip()
+
+    def translate(self, path):
+        """
+        Translate the specified *path* component of a URL by
+        replacing the matched alias with the path mapped to the alias.
+        The original *path* is returned when it cannot be translated.
+
+        :param path: The *path* component of a URL.
+        :type path: str
+        :return: A translated path.
+        :rtype: str
+        """
+        translated = None
+        for alias, real in sorted(self.table.items()):
+            if path.startswith(alias):
+                real = os.path.realpath(real)
+                translated = path.replace(alias, real)
+                break
+        if translated:
+            return os.path.normpath(translated)
+        else:
+            return os.path.realpath(path)
+
+
+class RedirectView(View):
+    """
+    The content redirect view redirects unsatisfied content
+    requests to the lazy streamer.
+
+    :ivar alias: An apache alias table.
+    :type alias: AliasTable
+    """
+
+    @staticmethod
+    def urljoin(base, path):
+        """
+        Join a base URL and path component.
+
+        :param base: A base URL.
+        :type base: str
+        :param path: A URL path component.
+        :type path: str
+        :return: The joined URL.
+        :rtype: str
+        """
+        if not base.endswith('/'):
+            base += '/'
+        while path.startswith('/'):
+            path = path[1:]
+        return urljoin(base, path)
+
+    def __init__(self, **kwargs):
+        super(RedirectView, self).__init__(**kwargs)
+        self.alias = AliasTable()
+        self.alias.load()
+
+    def get(self, request):
+        """
+        Redirected GET request.
+
+        :param request: The WSGI request object.
+        :type request: django.core.handlers.wsgi.WSGIRequest
+        :return: A redirect or not-found response.
+        :rtype: django.http.HttpResponse
+        """
+        path = request.environ['REDIRECT_URL']
+        base_url = pulp_conf.get('lazy', 'redirect_url')
+        if base_url:
+            translated = self.alias.translate(path)
+            redirect = self.urljoin(base_url, translated)
+            return HttpResponseRedirect(redirect)
+        else:
+            return HttpResponseNotFound(path)
