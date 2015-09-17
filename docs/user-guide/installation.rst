@@ -81,12 +81,12 @@ Repositories
 
 1. Download the appropriate repo definition file from the Pulp repository:
 
- * Fedora: http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
- * RHEL: http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+ * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+ * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
 .. note::
    If you would like to install the RHEL 5 Client for Pulp, please use the
-   `RHEL 5 repository <http://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
+   `RHEL 5 repository <https://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
 
 2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
    appropriate repositories for RHEL6 and RHEL7 respectively:
