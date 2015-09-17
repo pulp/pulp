@@ -26,4 +26,4 @@ def migrate(*args, **kwargs):
     a binding_config of None.
     """
     collection = Bind.get_collection()
-    collection.update(QUERY, UPDATE, multi=True, safe=True)
+    collection.update(QUERY, UPDATE, multi=True)

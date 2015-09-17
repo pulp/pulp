@@ -79,7 +79,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
     def clean(self):
         super(UnitAssociationQueryTests, self).clean()
         database.clean()
-        RepoContentUnit.get_collection().remove(safe=True)
+        RepoContentUnit.get_collection().remove()
 
     def setUp(self):
         super(UnitAssociationQueryTests, self).setUp()
@@ -168,7 +168,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
                                                  'unit_id': unit_id})
             a['created'] = self.timestamps[index]
             a['updated'] = self.timestamps[index]
-            association_collection.save(a, safe=True)
+            association_collection.save(a)
 
         #   Alpha
         for i, unit_id in enumerate(self.units['alpha']):

@@ -105,7 +105,7 @@ class TestReapExpiredDocuments(base.PulpServerTests):
     def test_leave_unexpired_entries(self, getfloat):
         chec = ConsumerHistoryEvent.get_collection()
         event = ConsumerHistoryEvent('consumer', 'originator', 'consumer_registered', {})
-        chec.insert(event, safe=True)
+        chec.insert(event)
         self.assertTrue(chec.find({'_id': event['_id']}).count() == 1)
         # Let's mock getfloat to pretend that the user said they want to reap things that are a day
         # old. This means that the event should not get reaped.
@@ -120,7 +120,7 @@ class TestReapExpiredDocuments(base.PulpServerTests):
     def test_remove_expired_entries(self, getfloat):
         chec = ConsumerHistoryEvent.get_collection()
         event = ConsumerHistoryEvent('consumer', 'originator', 'consumer_registered', {})
-        chec.insert(event, safe=True)
+        chec.insert(event)
         self.assertTrue(chec.find({'_id': event['_id']}).count() == 1)
         # Let's mock getfloat to pretend that the user said they want to reap things from the
         # future, which should make the event we just created look old enough to delete

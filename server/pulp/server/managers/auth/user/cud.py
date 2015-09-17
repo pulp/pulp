@@ -73,7 +73,7 @@ class UserManager(object):
 
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
-        User.get_collection().save(create_me, safe=True)
+        User.get_collection().save(create_me)
 
         # Grant permissions
         permission_manager = factory.permission_manager()
@@ -146,7 +146,7 @@ class UserManager(object):
         if delta:
             raise InvalidValue(delta.keys())
 
-        User.get_collection().save(user, safe=True)
+        User.get_collection().save(user)
 
         # Retrieve the user to return the SON object
         updated = User.get_collection().find_one({'login': login})
@@ -183,7 +183,7 @@ class UserManager(object):
         permission_manager = factory.permission_manager()
         permission_manager.revoke_all_permissions_from_user(login)
 
-        User.get_collection().remove({'login': login}, safe=True)
+        User.get_collection().remove({'login': login})
 
     def ensure_admin(self):
         """

@@ -183,7 +183,7 @@ class ContainerTest(TestCase):
             entry = ContentCatalog(source_id, EXPIRES, TYPE_ID, unit_key, url)
             entry_list.append(entry)
         for entry in entry_list:
-            collection.insert(entry, safe=True)
+            collection.insert(entry)
         return _dir, entry_list
 
 

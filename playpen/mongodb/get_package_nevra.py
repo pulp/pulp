@@ -40,7 +40,7 @@ def load_data(db, count=10000, blob_size=16*1024):
         obj["extra8"] = blob
         obj["extra9"] = blob
         obj["extra10"] = blob
-        db.packages.save(obj, safe=True)
+        db.packages.save(obj)
 
 def run_query(db, count=1):
     q = []

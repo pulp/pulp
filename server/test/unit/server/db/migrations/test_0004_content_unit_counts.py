@@ -20,7 +20,6 @@ class TestMigrationContentUnitCount(base.PulpServerTests):
         mock_update = mock_get_collection.return_value.update
         self.assertEqual(mock_update.call_count, 1)
 
-        self.assertTrue(mock_update.call_args[1].get('safe') is True)
         self.assertEqual(mock_update.call_args[0][0], {})
         self.assertEqual(mock_update.call_args[0][1], {'$unset': {'content_unit_count': 1}})
 

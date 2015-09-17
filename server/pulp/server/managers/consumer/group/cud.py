@@ -65,7 +65,7 @@ class ConsumerGroupManager(object):
         collection = ConsumerGroup.get_collection()
         consumer_group = ConsumerGroup(group_id, display_name, description, consumer_ids, notes)
         try:
-            collection.insert(consumer_group, safe=True)
+            collection.insert(consumer_group)
         except DuplicateKeyError:
             raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
 
@@ -111,11 +111,10 @@ class ConsumerGroupManager(object):
                     unset_dict[newkey] = value
 
             if unset_dict:
-                collection.update({'id': group_id}, {'$unset': unset_dict},
-                                  safe=True)
+                collection.update({'id': group_id}, {'$unset': unset_dict})
 
         if updates:
-            collection.update({'id': group_id}, {'$set': updates}, safe=True)
+            collection.update({'id': group_id}, {'$set': updates})
         group = collection.find_one({'id': group_id})
         return group
 
@@ -128,7 +127,7 @@ class ConsumerGroupManager(object):
         """
         collection = validate_existing_consumer_group(group_id)
         # Delete from the database
-        collection.remove({'id': group_id}, safe=True)
+        collection.remove({'id': group_id})
 
     def remove_consumer_from_groups(self, consumer_id, group_ids=None):
         """
@@ -145,7 +144,7 @@ class ConsumerGroupManager(object):
         if group_ids is not None:
             spec = {'id': {'$in': group_ids}}
         collection = ConsumerGroup.get_collection()
-        collection.update(spec, {'$pull': {'consumer_ids': consumer_id}}, multi=True, safe=True)
+        collection.update(spec, {'$pull': {'consumer_ids': consumer_id}}, multi=True)
 
     @staticmethod
     def associate(group_id, criteria):
@@ -163,8 +162,7 @@ class ConsumerGroupManager(object):
         if consumer_ids:
             group_collection.update(
                 {'id': group_id},
-                {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
-                safe=True)
+                {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}})
         details = {'group_id': group_id}
         for consumer_id in consumer_ids:
             manager_factory.consumer_history_manager().record_event(consumer_id,
@@ -186,8 +184,7 @@ class ConsumerGroupManager(object):
         if consumer_ids:
             group_collection.update(
                 {'id': group_id},
-                {'$pullAll': {'consumer_ids': consumer_ids}},
-                safe=True)
+                {'$pullAll': {'consumer_ids': consumer_ids}})
         details = {'group_id': group_id}
         for consumer_id in consumer_ids:
             manager_factory.consumer_history_manager().record_event(consumer_id,
@@ -204,7 +201,7 @@ class ConsumerGroupManager(object):
         group_collection = validate_existing_consumer_group(group_id)
         set_doc = dict(('notes.' + k, v) for k, v in notes.items())
         if set_doc:
-            group_collection.update({'id': group_id}, {'$set': set_doc}, safe=True)
+            group_collection.update({'id': group_id}, {'$set': set_doc})
 
     def remove_notes(self, group_id, keys):
         """
@@ -216,7 +213,7 @@ class ConsumerGroupManager(object):
         """
         group_collection = validate_existing_consumer_group(group_id)
         unset_doc = dict(('notes.' + k, 1) for k in keys)
-        group_collection.update({'id': group_id}, {'$unset': unset_doc}, safe=True)
+        group_collection.update({'id': group_id}, {'$unset': unset_doc})
 
     def set_note(self, group_id, key, value):
         """

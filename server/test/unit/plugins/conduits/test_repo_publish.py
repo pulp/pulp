@@ -59,7 +59,7 @@ class RepoPublishConduitTests(base.PulpServerTests):
         last_publish = datetime.datetime(2015, 4, 29, 20, 23, 56, 0)
         repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1'})
         repo_dist['last_publish'] = last_publish
-        RepoDistributor.get_collection().save(repo_dist, safe=True)
+        RepoDistributor.get_collection().save(repo_dist)
 
         # Test - Last publish
         found = self.conduit.last_publish()
@@ -115,7 +115,7 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         repo_group_dist = self.distributor_manager.get_distributor(self.group_id,
                                                                    self.distributor_id)
         repo_group_dist['last_publish'] = dateutils.format_iso8601_datetime(last_publish)
-        RepoGroupDistributor.get_collection().save(repo_group_dist, safe=True)
+        RepoGroupDistributor.get_collection().save(repo_group_dist)
 
         # Test
         found = self.conduit.last_publish()

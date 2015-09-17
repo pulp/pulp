@@ -41,8 +41,8 @@ class RepoGroupTests(PulpServerTests):
         super(RepoGroupTests, self).tearDown()
         self.manager = None
         model.Repository.drop_collection()
-        RepoGroup.get_collection().remove(safe=True)
-        RepoGroupDistributor.get_collection().remove(safe=True)
+        RepoGroup.get_collection().remove()
+        RepoGroupDistributor.get_collection().remove()
 
     def _create_repo(self, repo_id):
         return repo_controller.create_repo(repo_id)

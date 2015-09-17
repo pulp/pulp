@@ -43,7 +43,7 @@ class TestMigration_0006(PulpServerTests):
                 BINDING_CONFIG: conf,
                 NOTIFY_AGENT: True,
             }
-            collection.save(binding, safe=True)
+            collection.save(binding)
         # migrate
         module = MigrationModule(MIGRATION)._module
         module.migrate()

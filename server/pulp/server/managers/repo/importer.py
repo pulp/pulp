@@ -125,7 +125,7 @@ class RepoImporterManager(object):
         importer_id = importer_type_id  # use the importer name as its repo ID
 
         importer = RepoImporter(repo_id, importer_id, importer_type_id, clean_config)
-        importer_coll.save(importer, safe=True)
+        importer_coll.save(importer)
 
         return importer
 
@@ -209,7 +209,7 @@ class RepoImporterManager(object):
         importer_instance.importer_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
-        importer_coll.remove({'repo_id': repo_id}, safe=True)
+        importer_coll.remove({'repo_id': repo_id})
 
     @staticmethod
     def update_importer_config(repo_id, importer_config):
@@ -281,7 +281,7 @@ class RepoImporterManager(object):
 
         # If we got this far, the new config is valid, so update the database
         repo_importer['config'] = merged_config
-        importer_coll.save(repo_importer, safe=True)
+        importer_coll.save(repo_importer)
 
         serializer = serializers.ImporterSerializer(repo_importer)
         return serializer.data
@@ -332,7 +332,7 @@ class RepoImporterManager(object):
 
         # Update
         repo_importer['scratchpad'] = contents
-        importer_coll.save(repo_importer, safe=True)
+        importer_coll.save(repo_importer)
 
 
 remove_importer = task(RepoImporterManager.remove_importer, base=Task, ignore_result=True)

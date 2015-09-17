@@ -14,4 +14,4 @@ def migrate(*args, **kwargs):
             # already migrated
             continue
         distributor[key] = parse_iso8601_datetime(last_publish)
-        collection.save(distributor, safe=True)
+        collection.save(distributor)

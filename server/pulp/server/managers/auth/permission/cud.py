@@ -40,7 +40,7 @@ class PermissionManager(object):
 
         # Creation
         create_me = Permission(resource=resource_uri)
-        Permission.get_collection().save(create_me, safe=True)
+        Permission.get_collection().save(create_me)
 
         # Retrieve the permission to return the SON object
         created = Permission.get_collection().find_one({'resource': resource_uri})
@@ -75,7 +75,7 @@ class PermissionManager(object):
             # unsupported
             raise PulpDataException(_("Update Keyword [%s] is not supported" % key))
 
-        Permission.get_collection().save(found, safe=True)
+        Permission.get_collection().save(found)
 
     @staticmethod
     def delete_permission(resource_uri):
@@ -97,7 +97,7 @@ class PermissionManager(object):
         if found is None:
             raise MissingResource(resource_uri)
 
-        Permission.get_collection().remove({'resource': resource_uri}, safe=True)
+        Permission.get_collection().remove({'resource': resource_uri})
 
     @staticmethod
     def grant(resource, login, operations):
@@ -138,7 +138,7 @@ class PermissionManager(object):
                 continue
             current_ops.append(o)
 
-        Permission.get_collection().save(permission, safe=True)
+        Permission.get_collection().save(permission)
 
     @staticmethod
     def revoke(resource, login, operations):
@@ -185,7 +185,7 @@ class PermissionManager(object):
             PermissionManager.delete_permission(resource)
             return
 
-        Permission.get_collection().save(permission, safe=True)
+        Permission.get_collection().save(permission)
 
     def grant_automatic_permissions_for_resource(self, resource):
         """
@@ -250,10 +250,10 @@ class PermissionManager(object):
                 continue
             permission_query_manager.delete_user_permission(permission, login)
             if len(permission['users']) > 0:
-                Permission.get_collection().save(permission, safe=True)
+                Permission.get_collection().save(permission)
             else:
                 # Delete entire permission if there are no more users
-                Permission.get_collection().remove({'resource': permission['resource']}, safe=True)
+                Permission.get_collection().remove({'resource': permission['resource']})
 
     def operation_name_to_value(self, name):
         """

@@ -98,7 +98,7 @@ class QueryTests(ServerTests):
     def define_plugins(self):
         collection = ContentType.get_collection()
         for type_id in ALL_TYPES:
-            collection.save(dict(id=type_id, unit_key=UNIT_METADATA.keys()), safe=True)
+            collection.save(dict(id=type_id, unit_key=UNIT_METADATA.keys()))
 
     def test_query(self):
         num_units = 5

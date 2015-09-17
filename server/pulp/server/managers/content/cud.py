@@ -32,7 +32,7 @@ class ContentManager(object):
             '_last_updated': dateutils.now_utc_timestamp()
         }
         unit_doc.update(unit_metadata)
-        collection.insert(unit_doc, safe=True)
+        collection.insert(unit_doc)
         return unit_id
 
     def update_content_unit(self, content_type, unit_id, unit_metadata_delta):
@@ -47,7 +47,7 @@ class ContentManager(object):
         """
         unit_metadata_delta['_last_updated'] = dateutils.now_utc_timestamp()
         collection = content_types_db.type_units_collection(content_type)
-        collection.update({'_id': unit_id}, {'$set': unit_metadata_delta}, safe=True)
+        collection.update({'_id': unit_id}, {'$set': unit_metadata_delta})
 
     def remove_content_unit(self, content_type, unit_id):
         """
@@ -59,7 +59,7 @@ class ContentManager(object):
         @type unit_id: str
         """
         collection = content_types_db.type_units_collection(content_type)
-        collection.remove({'_id': unit_id}, safe=True)
+        collection.remove({'_id': unit_id})
 
     def link_referenced_content_units(self, from_type, from_id, to_type, to_ids):
         """
@@ -85,7 +85,7 @@ class ContentManager(object):
             if id_ in children:
                 continue
             children.append(id_)
-        collection.update({'_id': from_id}, parent, safe=True)
+        collection.update({'_id': from_id}, parent)
 
     def unlink_referenced_content_units(self, from_type, from_id, to_type, to_ids):
         """
@@ -106,4 +106,4 @@ class ContentManager(object):
         key = '_%s_references' % to_type
         children = set(parent.get(key, []))
         parent[key] = list(children.difference(to_ids))
-        collection.update({'_id': from_id}, parent, safe=True)
+        collection.update({'_id': from_id}, parent)

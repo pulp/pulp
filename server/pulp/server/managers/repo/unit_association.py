@@ -94,7 +94,7 @@ class RepoUnitAssociationManager(object):
 
         # Create the database entry
         association = RepoContentUnit(repo_id, unit_id, unit_type_id)
-        RepoContentUnit.get_collection().save(association, safe=True)
+        RepoContentUnit.get_collection().save(association)
 
         # update the count and times of associated units on the repo object
         if update_repo_metadata and not similar_exists:
@@ -333,7 +333,7 @@ class RepoUnitAssociationManager(object):
                     'unit_type_id': unit_type_id,
                     'unit_id': {'$in': unit_ids}
                     }
-            collection.remove(spec, safe=True)
+            collection.remove(spec)
 
             unique_count = sum(
                 1 for unit_id in unit_ids if not RepoUnitAssociationManager.association_exists(

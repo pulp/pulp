@@ -66,13 +66,13 @@ def associate_content_unit_with_repo(content_unit):
                                         content_unit['_id'],
                                         content_unit['_content_type_id'])
     collection = RepoContentUnit.get_collection()
-    collection.insert(repo_content_unit, safe=True)
+    collection.insert(repo_content_unit)
 
 
 def unassociate_content_unit_from_repo(content_unit):
     spec = {'unit_id': content_unit['_id']}
     collection = RepoContentUnit.get_collection()
-    collection.remove(spec, safe=True)
+    collection.remove(spec)
 
 
 class OrphanManagerInstantiationTests(base.PulpServerTests):
@@ -100,7 +100,7 @@ class OrphanManagerTests(base.PulpServerTests):
 
     def tearDown(self):
         super(OrphanManagerTests, self).tearDown()
-        RepoContentUnit.get_collection().remove(safe=True)
+        RepoContentUnit.get_collection().remove()
         content_type_db.clean()
         if os.path.exists(self.content_root):  # can be removed by delete operations
             shutil.rmtree(self.content_root)

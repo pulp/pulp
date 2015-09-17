@@ -139,7 +139,7 @@ def clean():
 
     # Purge the types collection of all entries
     type_collection = ContentType.get_collection()
-    type_collection.remove(safe=True)
+    type_collection.remove()
 
 
 def type_units_collection(type_id):
@@ -270,7 +270,7 @@ def _create_or_update_type(type_def):
     if existing_type is not None:
         content_type._id = existing_type['_id']
     # XXX this still causes a potential race condition when 2 users are updating the same type
-    content_type_collection.save(content_type, safe=True)
+    content_type_collection.save(content_type)
 
 
 def _update_indexes(type_def, unique):

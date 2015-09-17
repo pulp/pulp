@@ -103,7 +103,7 @@ def delete(schedule_id):
         raise exceptions.MissingResource(schedule_id=schedule_id)
 
     schedule = ScheduledCall.get_collection().find_and_modify(
-        query=spec, remove=True, safe=True)
+        query=spec, remove=True)
     if schedule is None:
         raise exceptions.MissingResource(schedule_id=schedule_id)
 
@@ -115,7 +115,7 @@ def delete_by_resource(resource):
     :param resource:    string indicating a unique resource
     :type  resource:    basestring
     """
-    ScheduledCall.get_collection().remove({'resource': resource}, safe=True)
+    ScheduledCall.get_collection().remove({'resource': resource})
 
 
 def update(schedule_id, delta):
@@ -158,7 +158,7 @@ def update(schedule_id, delta):
         # schedule_id is invalid object_id.
         raise exceptions.MissingResource(schedule_id=schedule_id)
     schedule = ScheduledCall.get_collection().find_and_modify(
-        query=spec, update={'$set': delta}, safe=True, new=True)
+        query=spec, update={'$set': delta}, new=True)
     if schedule is None:
         raise exceptions.MissingResource(schedule_id=schedule_id)
     return ScheduledCall.from_db(schedule)

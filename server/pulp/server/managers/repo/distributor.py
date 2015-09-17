@@ -189,7 +189,7 @@ class RepoDistributorManager(object):
         # Database Update
         distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config,
                                       auto_publish)
-        distributor_coll.save(distributor, safe=True)
+        distributor_coll.save(distributor)
 
         return distributor
 
@@ -228,7 +228,7 @@ class RepoDistributorManager(object):
         distributor_instance.distributor_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
-        distributor_coll.remove({'_id': repo_distributor['_id']}, safe=True)
+        distributor_coll.remove({'_id': repo_distributor['_id']})
 
     @staticmethod
     def update_distributor_config(repo_id, distributor_id, distributor_config, auto_publish=None):
@@ -309,7 +309,7 @@ class RepoDistributorManager(object):
 
         # If we got this far, the new config is valid, so update the database
         repo_distributor['config'] = merged_config
-        distributor_coll.save(repo_distributor, safe=True)
+        distributor_coll.save(repo_distributor)
 
         return repo_distributor
 
@@ -408,7 +408,7 @@ class RepoDistributorManager(object):
 
         # Update
         repo_distributor['scratchpad'] = contents
-        distributor_coll.save(repo_distributor, safe=True)
+        distributor_coll.save(repo_distributor)
 
     def add_publish_schedule(self, repo_id, distributor_id, schedule_id):
         """
@@ -424,8 +424,7 @@ class RepoDistributorManager(object):
         if schedule_id in distributor['scheduled_publishes']:
             return
         collection.update({'_id': distributor['_id']},
-                          {'$push': {'scheduled_publishes': schedule_id}},
-                          safe=True)
+                          {'$push': {'scheduled_publishes': schedule_id}})
 
     def remove_publish_schedule(self, repo_id, distributor_id, schedule_id):
         """
@@ -441,8 +440,7 @@ class RepoDistributorManager(object):
         if schedule_id not in distributor['scheduled_publishes']:
             return
         collection.update({'_id': distributor['_id']},
-                          {'$pull': {'scheduled_publishes': schedule_id}},
-                          safe=True)
+                          {'$pull': {'scheduled_publishes': schedule_id}})
 
     def list_publish_schedules(self, repo_id, distributor_id):
         """
