@@ -1,6 +1,7 @@
 """
 Contains the manager class for performing queries for repo-unit associations.
 """
+import itertools
 
 import pymongo
 
@@ -122,7 +123,7 @@ class RepoUnitAssociationQueryManager(object):
             units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
             units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
 
-        units_generator = self._units_from_chained_cursors(units_cursors)
+        units_generator = itertools.chain(*units_cursors)
 
         if criteria.association_sort:
             # Use the ordered associations we created to properly order the results.
@@ -434,19 +435,6 @@ class RepoUnitAssociationQueryManager(object):
             else:  # cursor.count() + generated_elements <= limit
                 generated_elements += cursor.count()
                 yield cursor
-
-    @staticmethod
-    def _units_from_chained_cursors(cursors):
-        """
-        Yield the individual elements from a iterator of db cursors.
-
-        :type cursors: generator of pymongo.cursor.Cursor
-        :rtype: generator
-        """
-
-        for cursor in cursors:
-            for element in cursor:
-                yield element
 
     @staticmethod
     def _association_ordered_units(associated_unit_ids, associated_units):
