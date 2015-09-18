@@ -23,7 +23,7 @@ Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
 #. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
    deployed virtual machine::
    
-      $ sudo yum install ansible nfs-utils vagrant-libvirt
+      $ sudo dnf install ansible nfs-utils vagrant-libvirt
 
 #. You will need to grant the nfsnobody user rx access to the folder that you check out your code
    under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
@@ -110,7 +110,7 @@ follow.
    some time and bandwidth. To install it, you will need to install some development
    libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
 
-      $ sudo yum install gcc-c++ libvirt-devel ruby-devel
+      $ sudo dnf install gcc-c++ libvirt-devel ruby-devel
       $ vagrant plugin install vagrant-cachier
 
 #. When using Vagrant, you probably have noticed that you are frequently prompted for passwords to
