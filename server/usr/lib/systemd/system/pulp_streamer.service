@@ -1,0 +1,10 @@
+[Unit]
+Description=The Pulp lazy content loading streamer
+After=network.target
+
+[Service]
+User=apache
+ExecStart=/usr/bin/twistd --nodaemon --syslog --prefix=pulp_streamer --pidfile= --python /srv/pulp/streamer.tac
+
+[Install]
+WantedBy=multi-user.target
