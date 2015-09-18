@@ -156,6 +156,8 @@ class RepoUnitAssociationQueryManager(object):
 
     def get_units_across_types(self, repo_id, criteria=None, as_generator=False):
         """
+        DEPRECATED: please use get_units()
+
         Retrieves data describing units associated with the given repository
         along with information on the association itself.
 
