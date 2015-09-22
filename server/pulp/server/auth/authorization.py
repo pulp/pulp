@@ -29,7 +29,7 @@ def _operations_not_granted_by_roles(resource, operations, roles):
     @param resource: pulp resource
     @type operations: list or tuple of int's
     @param operations: operations pertaining to the resource
-    @type roles: list or tuple of L{pulp.server.db.model.Role} instances
+    @type roles: list or tuple of L{pulp.server.db.models.Role} instances
     @param roles: list of roles
 
     @rtype: list of int's

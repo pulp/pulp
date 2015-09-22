@@ -5,7 +5,7 @@ from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
@@ -25,10 +25,10 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoContentUnit.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.importer.models.Repository.objects')
     def setUp(self, mock_repo_qs):
         super(RepoSyncConduitTests, self).setUp()
         mock_plugins.install()
@@ -55,7 +55,7 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
         str(self.conduit)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_get_remove_unit(self, mock_repo_qs):
         """
         Tests retrieving units through the conduit and removing them.
@@ -86,7 +86,7 @@ class RepoSyncConduitTests(base.PulpServerTests):
         db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
         self.assertTrue(db_unit is not None)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository')
     def test_build_reports(self, mock_repo_qs):
         """
         Tests that the conduit correctly inserts the count values into the report.

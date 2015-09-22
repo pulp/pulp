@@ -13,7 +13,7 @@ from pulp.server import config as pulp_config, exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
 from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.repository import RepoContentUnit
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.exceptions import MissingResource
 
 
@@ -251,7 +251,7 @@ class OrphanManager(object):
             id_list = list(unit_dict.iterkeys())
 
             # Clear the units that are currently associated from unit_dict
-            non_orphan = model.RepositoryContentUnit.objects(unit_id__in=id_list)\
+            non_orphan = models.RepositoryContentUnit.objects(unit_id__in=id_list)\
                 .distinct('unit_id')
             for non_orphan_id in non_orphan:
                 unit_dict.pop(non_orphan_id)

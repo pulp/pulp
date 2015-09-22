@@ -6,7 +6,7 @@ from pkg_resources import get_distribution
 
 from pulp.server.async.celery_instance import celery
 from pulp.server.db import connection
-from pulp.server.db.model import Worker
+from pulp.server.db.models import Worker
 
 
 def get_version():

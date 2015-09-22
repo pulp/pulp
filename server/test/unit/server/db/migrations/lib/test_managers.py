@@ -3,9 +3,9 @@ import mock
 from ..... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoImporter, RepoDistributor
-from pulp.server.db.model import TaskStatus
+from pulp.server.db.models import TaskStatus
 from pulp.server.db.migrations.lib import managers
 
 
@@ -32,7 +32,7 @@ class RepoManagerTests(base.ResourceReservationTests):
     def clean(self):
         super(RepoManagerTests, self).clean()
 
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
         TaskStatus.objects().delete()
@@ -78,7 +78,7 @@ class RepoManagerTests(base.ResourceReservationTests):
 
 
 @mock.patch('pulp.server.db.migrations.lib.managers.serializers.Repository')
-@mock.patch('pulp.server.db.migrations.lib.managers.model.Repository.objects')
+@mock.patch('pulp.server.db.migrations.lib.managers.models.Repository.objects')
 @mock.patch('pulp.server.db.migrations.lib.managers.RepoImporter.get_collection')
 class TestRepoMangerFindWithImporterType(base.PulpServerTests):
     """

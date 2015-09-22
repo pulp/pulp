@@ -488,7 +488,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
-    @mock.patch('pulp.server.webservices.views.consumers.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.consumers.models.Repository.objects')
     def test_get_consumer_bindings_by_repoid(self, mock_repo_qs, mock_factory, mock_resp,
                                              mock_serial):
         """

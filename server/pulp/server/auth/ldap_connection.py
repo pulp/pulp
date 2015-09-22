@@ -125,7 +125,7 @@ class LDAPConnection:
         @param userdata: tuple of user data as returned by lookup_user
 
         Adds a user to the pulp user database with no password and
-        returns a pulp.server.db.model.User object
+        returns a pulp.server.db.models.User object
         """
         user = User.get_collection().find_one({'login': username})
         if user is None:

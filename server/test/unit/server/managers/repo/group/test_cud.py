@@ -8,7 +8,7 @@ from pulp.common.plugins import distributor_constants
 from pulp.devel import mock_plugins
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.controllers import repository as repo_controller
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.managers import factory as managers_factory
@@ -40,7 +40,7 @@ class RepoGroupTests(PulpServerTests):
     def tearDown(self):
         super(RepoGroupTests, self).tearDown()
         self.manager = None
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 

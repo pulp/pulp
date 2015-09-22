@@ -28,7 +28,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
 from pulp.server import config as pulp_conf
 from pulp.server.db import connection
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
@@ -190,7 +190,7 @@ class PluginTestBase(ServerTests):
         shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -498,7 +498,7 @@ class TestDistributor(PluginTestBase):
         self.assertFalse(report[0])
         self.assertFalse(report[1] is None)
 
-    @patch('pulp_node.distributors.http.distributor.model.Repository')
+    @patch('pulp_node.distributors.http.distributor.models.Repository')
     def test_payload(self, mock_repo_model):
         mock_repo = mock_repo_model.objects.get_repo_or_missing_resource.return_value
         self.populate()
@@ -658,7 +658,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -700,7 +700,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -743,7 +743,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -784,7 +784,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -829,7 +829,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -873,7 +873,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
+            models.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()

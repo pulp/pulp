@@ -8,7 +8,7 @@ from gofer.rmi.async import ReplyConsumer, Listener
 from pulp.common import constants, dateutils
 from pulp.server.agent.auth import Authenticator
 from pulp.server.agent.connector import add_connector, get_url
-from pulp.server.db.model import TaskStatus
+from pulp.server.db.models import TaskStatus
 from pulp.server.managers import factory as managers
 
 

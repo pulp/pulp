@@ -6,7 +6,7 @@ from pulp.common import tags
 from pulp.server.async.tasks import TaskResult
 from pulp.server.auth import authorization
 from pulp.server.controllers import consumer as consumer_controller
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
                                     OperationPostponed, UnsupportedValue)
@@ -362,7 +362,7 @@ class ConsumerBindingsView(View):
         # Check to make sure the resources exist
         missing_resources = {}
         if repo_id is not None:
-            repo = model.Repository.objects(repo_id).first()
+            repo = models.Repository.objects(repo_id).first()
             if repo is None:
                 missing_resources['repo_id'] = repo_id
 

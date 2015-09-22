@@ -17,7 +17,7 @@ from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import tasks
-from pulp.server.db.model import Worker, ReservedResource, TaskStatus
+from pulp.server.db.models import Worker, ReservedResource, TaskStatus
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance

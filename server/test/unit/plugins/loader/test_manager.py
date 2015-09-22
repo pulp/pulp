@@ -7,7 +7,7 @@ from pulp.common import error_codes
 from pulp.common.compat import unittest
 from pulp.plugins.loader import manager
 from pulp.server import exceptions
-from pulp.server.db.model import ContentUnit
+from pulp.server.db.models import ContentUnit
 
 
 class ContentUnitHelper(ContentUnit):

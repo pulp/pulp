@@ -81,7 +81,7 @@ class RepoQuerySet(CriteriaQuerySet):
         :type  repo_id: str
 
         :return: repository object
-        :rtype:  pulp.server.db.model.Repository
+        :rtype:  pulp.server.db.models.Repository
 
         :raises pulp_exceptions.MissingResource if repository is not found
         """

@@ -68,7 +68,7 @@ class TestReplyHandler(TestCase):
         handler.consumer.start.assert_called_with(handler)
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_agent_succeeded(self, mock_task_objects, mock_date):
         dispatch_report = dict(succeeded=True)
         task_id = 'task_1'
@@ -97,7 +97,7 @@ class TestReplyHandler(TestCase):
                                                         set__state=constants.CALL_FINISHED_STATE,
                                                         set__result=dispatch_report)
 
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_accepted(self, mock_task_objects):
         task_id = 'task_1'
         call_context = {
@@ -117,7 +117,7 @@ class TestReplyHandler(TestCase):
             set__state=constants.CALL_ACCEPTED_STATE)
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_rejected(self, mock_task_objects, mock_date):
         task_id = 'task_1'
         call_context = {
@@ -137,7 +137,7 @@ class TestReplyHandler(TestCase):
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
                                                         set__state=constants.CALL_ERROR_STATE)
 
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_started(self, mock_task_objects):
         task_id = 'task_1'
         call_context = {
@@ -156,7 +156,7 @@ class TestReplyHandler(TestCase):
                                                         constants.CALL_ACCEPTED_STATE])
         mock_returned_tasks.update_one.assert_called_with(set__state=constants.CALL_RUNNING_STATE)
 
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_progress_reported(self, mock_task_objects):
         task_id = 'task_1'
         call_context = {'task_id': task_id}
@@ -173,7 +173,7 @@ class TestReplyHandler(TestCase):
         test_task_documents.update_one.assert_called_with(set__progress_report=progress_report)
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_agent_raised_exception(self, mock_task_objects, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -286,7 +286,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_succeeded')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_bind_succeeded(self, mock_task_objects, mock_bind_succeeded, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -320,7 +320,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_bind_succeeded_with_error_report(self, mock_task_objects, mock_bind_failed, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -354,7 +354,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_succeeded')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_unbind_succeeded(self, mock_task_objects, mock_unbind_succeeded, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -388,7 +388,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_unbind_succeeded_with_error_report(self, mock_task_objects, mock_unbind_failed,
                                                 mock_date):
         task_id = 'task_1'
@@ -423,7 +423,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_bind_failed(self, mock_task_objects, mock_bind_failed, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -463,7 +463,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_bind_rejected(self, mock_task_objects, mock_bind_failed, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -494,7 +494,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_unbind_failed(self, mock_task_objects, mock_unbind_failed, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -534,7 +534,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.common.dateutils.format_iso8601_datetime')
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_failed')
-    @patch('pulp.server.db.model.TaskStatus.objects')
+    @patch('pulp.server.db.models.TaskStatus.objects')
     def test_unbind_rejected(self, mock_task_objects, mock_unbind_failed, mock_date):
         task_id = 'task_1'
         consumer_id = 'consumer_1'

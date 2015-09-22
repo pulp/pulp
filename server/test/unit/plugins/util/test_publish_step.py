@@ -20,7 +20,7 @@ from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
 from pulp.plugins.util import publish_step
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.managers import factory
 
 
@@ -1044,7 +1044,7 @@ class DownloadStepTests(unittest.TestCase):
 @patch('pulp.plugins.util.publish_step.units_controller.find_units')
 class TestGetLocalUnitsStep(unittest.TestCase):
 
-    class DemoModel(model.ContentUnit):
+    class DemoModel(models.ContentUnit):
         key_field = mongoengine.StringField()
         unit_key_fields = ['key_field']
 

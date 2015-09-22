@@ -303,7 +303,7 @@ def get_unit_model_by_id(model_id):
     :type model_id: str
 
     :return: the Model class or None
-    :rtype: pulp.server.db.model.ContentUnit
+    :rtype: pulp.server.db.models.ContentUnit
     """
     assert _is_initialized()
     return _MANAGER.unit_models.get(model_id)

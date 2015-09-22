@@ -17,7 +17,7 @@ from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
     PulpCodedException
-from pulp.server.db.model import Worker, ReservedResource, TaskStatus
+from pulp.server.db.models import Worker, ReservedResource, TaskStatus
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers import factory as managers

@@ -6,7 +6,7 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoDistributor, RepoContentUnit
@@ -39,7 +39,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def tearDown(self):
         super(BaseProfilerConduitTests, self).tearDown()
         Consumer.get_collection().remove()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -49,7 +49,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         mock_plugins.reset()
 
     def populate(self, additional_key=None):
-        with mock.patch('pulp.server.db.model.Repository.objects'):
+        with mock.patch('pulp.server.db.models.Repository.objects'):
             self.populate_consumer()
             self.populate_repository()
             self.populate_bindings()

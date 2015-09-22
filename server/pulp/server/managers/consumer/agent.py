@@ -19,7 +19,7 @@ from pulp.server.agent.context import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
-from pulp.server.db.model import TaskStatus
+from pulp.server.db.models import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
 

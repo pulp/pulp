@@ -8,7 +8,7 @@ from mongoengine.queryset import DoesNotExist
 from .base import assert_auth_DELETE, assert_auth_READ
 from pulp.common.compat import unittest
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views import util
 from pulp.server.webservices.views.tasks import (TaskCollectionView, TaskResourceView,
@@ -46,7 +46,7 @@ class TestTaskSearchView(unittest.TestCase):
         """
         self.assertEqual(TaskSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
-        self.assertEqual(TaskSearchView.model, model.TaskStatus)
+        self.assertEqual(TaskSearchView.model, models.TaskStatus)
         self.assertEqual(TaskSearchView.serializer, task_serializer)
 
 

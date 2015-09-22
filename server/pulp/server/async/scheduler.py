@@ -17,7 +17,7 @@ from pulp.server.async.tasks import _delete_worker
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
-from pulp.server.db.model import Worker, CeleryBeatLock
+from pulp.server.db.models import Worker, CeleryBeatLock
 from pulp.server.managers.schedule import utils
 
 # The import below is not used in this module, but it needs to be kept here. This module is the

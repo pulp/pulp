@@ -6,7 +6,7 @@ import pkg_resources
 
 from pulp.common import error_codes
 from pulp.plugins.loader import exceptions as loader_exceptions
-from pulp.server.db.model import ContentUnit
+from pulp.server.db.models import ContentUnit
 from pulp.server.exceptions import PulpCodedException
 
 

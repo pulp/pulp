@@ -3,10 +3,10 @@ import mongoengine
 
 from pulp.common.compat import unittest
 from pulp.server.controllers import units as units_controller
-from pulp.server.db import model
+from pulp.server.db import models
 
 
-class DemoModel(model.ContentUnit):
+class DemoModel(models.ContentUnit):
     key_field = mongoengine.StringField()
     unit_key_fields = ('key_field',)
     unit_type_id = 'demo_model'

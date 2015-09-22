@@ -3,13 +3,13 @@ import mock
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoDistributor
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.distributor as distributor_manager
 
 
-@mock.patch('pulp.server.managers.repo.distributor.model.Repository.objects')
+@mock.patch('pulp.server.managers.repo.distributor.models.Repository.objects')
 class RepoDistributorManagerTests(base.PulpServerTests):
 
     def setUp(self):
@@ -27,7 +27,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         super(RepoDistributorManagerTests, self).clean()
 
         mock_plugins.MOCK_DISTRIBUTOR.reset_mock()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
 
     def test_add_distributor(self, mock_repo_qs):

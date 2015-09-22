@@ -17,7 +17,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import units as units_controller
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.conduits._common as conduit_common_utils
@@ -175,8 +175,8 @@ class RepoUnitAssociationManager(object):
         :raise MissingResource:        if either of the specified repositories don't exist
         """
         importer_manager = manager_factory.repo_importer_manager()
-        source_repo = model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
-        dest_repo = model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
+        source_repo = models.Repository.objects.get_repo_or_missing_resource(source_repo_id)
+        dest_repo = models.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
 
         # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
@@ -428,7 +428,7 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 
 
 def remove_from_importer(repo_id, transfer_units):
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     transfer_repo = repo_obj.to_transfer_repo()
 
     importer_manager = manager_factory.repo_importer_manager()

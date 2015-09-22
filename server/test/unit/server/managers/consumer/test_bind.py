@@ -3,7 +3,7 @@ from mock import patch
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import RepoDistributor
@@ -11,7 +11,7 @@ from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
 
-@patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+@patch('pulp.server.managers.consumer.bind.models.Repository.objects')
 class BindManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -45,7 +45,7 @@ class BindManagerTests(base.PulpServerTests):
     def tearDown(self):
         super(BindManagerTests, self).tearDown()
         Consumer.get_collection().remove()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()

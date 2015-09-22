@@ -13,7 +13,7 @@ from .... import base
 from pulp.plugins.types import database as content_type_db
 from pulp.plugins.types.model import TypeDefinition
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager
@@ -270,12 +270,12 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         self.assertEqual(self.number_of_files_in_content_root(), 0)
 
     @patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphaned_file')
-    @patch('pulp.server.managers.content.orphan.model.RepositoryContentUnit.objects')
+    @patch('pulp.server.managers.content.orphan.models.RepositoryContentUnit.objects')
     @patch('pulp.server.managers.content.orphan.plugin_api.get_unit_model_by_id')
     def test_delete_content_unit_by_type(
             self, m_get_model, m_rcu_objects, m_del_orphan):
 
-        class TestUnit(model.FileContentUnit):
+        class TestUnit(models.FileContentUnit):
             pass
         orphan = TestUnit(storage_path='test_foo_path', id='orphan')
         non_orphan = TestUnit(storage_path='test_foo_path', id='non_orphan')

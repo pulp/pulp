@@ -273,7 +273,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.consumer_groups.models.Repository.objects')
     def test_verify_group_resources_repo(self, mock_repo_qs, mock_factory):
         """
         Test verify group resources with repo missing.
@@ -296,7 +296,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.consumer_groups.models.Repository.objects')
     def test_verify_group_resources_distributor(self, mock_repo_qs, mock_f):
         """
         Test verify group resources with distributor missing.
@@ -318,7 +318,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.consumer_groups.models.Repository.objects')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_verify_group_resources_group(self, mock_f, mock_repo_qs):
         """

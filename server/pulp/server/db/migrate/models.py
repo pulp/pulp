@@ -8,7 +8,7 @@ import pkg_resources
 from mongoengine.queryset import DoesNotExist
 
 from pulp.common.compat import iter_modules
-from pulp.server.db.model import MigrationTracker
+from pulp.server.db.models import MigrationTracker
 import pulp.server.db.migrations
 
 

@@ -12,12 +12,12 @@ def find_units(units, pagination_size=50):
     This requires that all the ContentUnit objects are of the same content type.
 
     :param units: Iterable of content units with the unit key fields specified.
-    :type units: iterable of pulp.server.db.model.ContentUnit
+    :type units: iterable of pulp.server.db.models.ContentUnit
     :param pagination_size: How large a page size to use when querying units.
     :type pagination_size: int (default 50)
 
     :returns: unit models that pulp already knows about.
-    :rtype: Generator of pulp.server.db.model.ContentUnit
+    :rtype: Generator of pulp.server.db.models.ContentUnit
     """
     # get the class from the first unit
     model_class = None
