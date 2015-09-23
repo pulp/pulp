@@ -221,9 +221,7 @@ class RepoUnitAssociationManager(object):
                 # a filter was specified
                 transfer_units = None
                 if associate_us is not None:
-                    associated_unit_type_ids = calculate_associated_type_ids(source_repo_id,
-                                                                             associate_us)
-                    transfer_units = create_transfer_units(associate_us, associated_unit_type_ids)
+                    transfer_units = create_transfer_units(associate_us)
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = dest_repo.to_transfer_repo()
@@ -347,8 +345,7 @@ class RepoUnitAssociationManager(object):
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,
-        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
-        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
+        transfer_units = create_transfer_units(unassociate_units)
 
         if notify_plugins:
             remove_from_importer(repo_id, transfer_units)
@@ -404,23 +401,14 @@ def load_associated_units(source_repo_id, criteria):
     return associate_us
 
 
-def calculate_associated_type_ids(source_repo_id, associated_units):
-    if associated_units is not None:
-        associated_unit_type_ids = set([u['unit_type_id'] for u in associated_units])
-    else:
-        association_query_manager = manager_factory.repo_unit_association_query_manager()
-        associated_unit_type_ids = association_query_manager.unit_type_ids_for_repo(source_repo_id)
-    return associated_unit_type_ids
-
-
-def create_transfer_units(associate_units, associated_unit_type_ids):
+def create_transfer_units(associate_units):
     unit_key_fields = {}
-    for unit_type_id in associated_unit_type_ids:
-        unit_key_fields[unit_type_id] = units_controller.get_unit_key_fields_for_type(unit_type_id)
 
     transfer_units = []
     for unit in associate_units:
         type_id = unit['unit_type_id']
+        if type_id not in unit_key_fields:
+            unit_key_fields[type_id] = units_controller.get_unit_key_fields_for_type(type_id)
         u = conduit_common_utils.to_plugin_associated_unit(unit, type_id, unit_key_fields[type_id])
         transfer_units.append(u)
 
