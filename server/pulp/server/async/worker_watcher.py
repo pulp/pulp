@@ -17,7 +17,6 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
-from pulp.server.async.tasks import _delete_worker
 from pulp.server.db.model import Worker
 
 
@@ -104,4 +103,3 @@ def handle_worker_offline(event):
 
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
-    _delete_worker(event_info['worker_name'], normal_shutdown=True)

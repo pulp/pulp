@@ -90,17 +90,17 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
 
 class TestHandleWorkerOffline(unittest.TestCase):
     @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher._delete_worker')
     @mock.patch('pulp.server.async.worker_watcher._')
     @mock.patch('pulp.server.async.worker_watcher._logger')
-    def test_handle_worker_offline(self, mock__logger, mock_gettext, mock__delete_worker,
-                                   mock__parse_and_log_event):
+    def test_handle_worker_offline(self, mock__logger, mock_gettext, mock__parse_and_log_event):
+        """
+        Ensure that if a worker is offline, that information is logged.
+        """
+
         mock_event = mock.Mock()
 
         worker_watcher.handle_worker_offline(mock_event)
 
-        event_info = mock__parse_and_log_event.return_value
         mock__parse_and_log_event.assert_called_once_with(mock_event)
         mock_gettext.assert_called_once_with("Worker '%(worker_name)s' shutdown")
         mock__logger.info.assert_called_once()
-        mock__delete_worker.assert_called_once_with(event_info['worker_name'], normal_shutdown=True)
