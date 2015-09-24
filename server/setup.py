@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-server',
-    version='2.6.4b2',
+    version='2.6.4',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
