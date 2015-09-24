@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.6.4
+Version: 2.6.5
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -266,6 +266,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Thu Sep 24 2015 Jeff Ortel <jortel@redhat.com> 2.6.5-1
+- Improved handling of malformed AMQP messages. (jortel@redhat.com)
+
 * Fri Sep 11 2015 Jeff Ortel <jortel@redhat.com> 2.6.4-1
 - proton adapter enable amqp heartbeat. (jortel@redhat.com)
 
