@@ -20,7 +20,8 @@ This is a minor release which contains bug fixes for :fixedbugs:`these issues <2
 Pulp 2.6.4
 ==========
 
-Pulp 2.6.4 is an important security update.
+Pulp 2.6.4 is an important security update. It fixes
+:fixedbugs:`one issue <2.6.4>`.
 
 A security flaw (CVE-2015-5263) was discovered in Pulp's consumer
 management system. When the pulp-consumer CLI is used to register to the
