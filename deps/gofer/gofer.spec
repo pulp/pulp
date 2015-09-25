@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.6.2
+Version: 2.6.6
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -177,7 +177,7 @@ Summary: Gofer Qpid proton messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} = %{version}
-Requires: python-qpid-proton >= 0.9-1.20150219
+Requires: python-qpid-proton >= 0.9-5
 
 %description -n python-%{name}-proton
 Provides the gofer qpid proton messaging adapter package.
@@ -266,6 +266,18 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Fri Sep 25 2015 Jeff Ortel <jortel@redhat.com> 2.6.6-1
+- 2.4 compat - Exception not a new-style class until 2.5. (jortel@redhat.com)
+
+* Thu Sep 24 2015 Jeff Ortel <jortel@redhat.com> 2.6.5-1
+- Improved handling of malformed AMQP messages. (jortel@redhat.com)
+
+* Fri Sep 11 2015 Jeff Ortel <jortel@redhat.com> 2.6.4-1
+- proton adapter enable amqp heartbeat. (jortel@redhat.com)
+
+* Fri Jul 17 2015 Jeff Ortel <jortel@redhat.com> 2.6.3-1
+- backport builtin improved. (jortel@redhat.com)
+
 * Fri Jun 05 2015 Jeff Ortel <jortel@redhat.com> 2.6.2-1
 - 1228791 - python 2.4 compat Thread.isAlive() (jortel@redhat.com)
 * Wed Mar 11 2015 Jeff Ortel <jortel@redhat.com> 2.6.1-1
