@@ -11,7 +11,7 @@ Pulp has a well-documented REST API and command line interface for management.
 
 Pulp is completely free and open-source, and we invite you to join us on GitHub_!
 
-.. _GitHub: http://github.com/pulp
+.. _GitHub: https://github.com/pulp
 
 What Pulp Can Do
 ----------------
