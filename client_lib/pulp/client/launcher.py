@@ -192,7 +192,7 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
         cert_filename = None
 
     api_logger = None
-    if verbose and verbose > 1:
+    if verbose and verbose >= 1:
         api_log_handler = logging.StreamHandler(sys.stderr)
         api_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
