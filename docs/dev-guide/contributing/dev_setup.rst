@@ -183,7 +183,7 @@ disable SELinux and install items as root outside of the system package manager.
 Source Code
 -----------
 
-Pulp's code is stored on `GitHub <http://www.github.com/pulp>`_. The repositories should be forked
+Pulp's code is stored on `GitHub <https://www.github.com/pulp>`_. The repositories should be forked
 into your personal GitHub account where all work will be done. Changes are
 submitted to the Pulp team through the pull request process outlined in :doc:`merging`.
 
@@ -199,7 +199,7 @@ Dependencies
 The easiest way to download the other dependencies is to install Pulp through yum, which will pull in
 the latest dependencies according to the spec file.
 
-#. Download the appropriate repository to at: http://repos.fedorapeople.org/repos/pulp/pulp/
+#. Download the appropriate repository from https://repos.fedorapeople.org/repos/pulp/pulp/
 
    Example for Fedora::
 
