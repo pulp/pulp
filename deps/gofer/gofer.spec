@@ -266,6 +266,8 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Fri Sep 25 2015 Dennis Kliban <dkliban@redhat.com> 2.6.6-1
+- Updated gofer to 2.6.6
 * Fri Sep 25 2015 Jeff Ortel <jortel@redhat.com> 2.6.6-1
 - 2.4 compat - Exception not a new-style class until 2.5. (jortel@redhat.com)
 
