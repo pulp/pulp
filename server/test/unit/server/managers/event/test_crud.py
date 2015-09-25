@@ -182,8 +182,9 @@ class EventTests(base.PulpServerTests):
 
         self.assertEqual(fake_task_status, event.call_report)
 
+    @mock.patch('pulp.server.event.data.task_serializer')
     @mock.patch('celery.current_task')
-    def test_data_call(self, mock_current_task):
+    def test_data_call(self, mock_current_task, mock_task_serializer):
         mock_current_task.request.id = 'fake_id'
         fake_task_status = TaskStatus('fake_id')
         fake_task_status.save()
@@ -193,7 +194,9 @@ class EventTests(base.PulpServerTests):
 
         event = event_data.Event(data['event_type'], data['payload'])
 
-        self.assertEqual(data, event.data())
+        data['call_report'] = mock_task_serializer.return_value
+        self.assertDictEqual(data, event.data())
+        mock_task_serializer.assert_called_once_with(fake_task_status)
 
     def test_no_current_task(self):
         event = event_data.Event('fake_type', {})

@@ -6,6 +6,7 @@ from mongoengine.queryset import DoesNotExist
 import celery
 
 from pulp.server.db.model import TaskStatus
+from pulp.server.webservices.views.tasks import task_serializer
 
 
 # These types are used to form AMQP message topic names, so they must be
@@ -45,5 +46,5 @@ class Event(object):
         """
         d = {'event_type': self.event_type,
              'payload': self.payload,
-             'call_report': self.call_report}
+             'call_report': task_serializer(self.call_report)}
         return d
