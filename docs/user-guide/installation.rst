@@ -218,8 +218,6 @@ Server
    * **tasks** if your message broker for asynchronous tasks is on a different host or if you want
      to use SSL. For more information on this section refer to the
      :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
-   * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use
-     Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
 #. Initialize Pulp's database. It is important that the broker is running before initializing
