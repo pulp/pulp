@@ -1,5 +1,13 @@
 import sys
 
+from gettext import gettext as _
+from urlparse import urlparse
+
+from nectar.downloaders.local import LocalFileDownloader
+from nectar.downloaders.threaded import HTTPThreadedDownloader
+
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+
 
 class Importer(object):
     """
@@ -7,6 +15,29 @@ class Importer(object):
     must subclass this class in order for Pulp to identify it as a valid
     importer during discovery.
     """
+
+    @staticmethod
+    def get_downloader(config, url, **options):
+        """
+        Get a configured downloader.
+
+        :param config: A plugin configuration.
+        :type config: pulp.plugins.config.PluginCallConfiguration
+        :param url: A URL.
+        :type url: str
+        :param options: Extended configuration.
+        :type options: dict
+        :return: A configured downloader.
+        :rtype: nectar.downloaders.base.Downloader
+        :raise ValueError: when the URL scheme is not supported.
+        """
+        url = urlparse(url)
+        nectar_config = importer_config_to_nectar_config(config.flatten())
+        if url.scheme == 'file':
+            return LocalFileDownloader(nectar_config)
+        if url.scheme in ('http', 'https'):
+            return HTTPThreadedDownloader(nectar_config)
+        raise ValueError(_('Scheme "{s}" not supported').format(s=url.scheme))
 
     # -- plugin lifecycle -----------------------------------------------------
 
