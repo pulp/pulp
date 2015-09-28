@@ -107,8 +107,14 @@ follow.
 
 #. `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_ can cache packages that are
    downloaded during provisioning on your host so that the next time you provision you will save
-   some time and bandwidth. To install it, you will need to install some development
-   libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
+   some time and bandwidth. If you are using Fedora 23 or newer, you can install
+   it with dnf::
+
+      $ sudo dnf install vagrant-cachier
+
+   If you are on an older Fedora release, you will need to install some development
+   libraries so that the ``vagrant plugin install`` command has its dependencies available
+   and use vagrant plugin install::
 
       $ sudo dnf install gcc-c++ libvirt-devel ruby-devel
       $ vagrant plugin install vagrant-cachier
