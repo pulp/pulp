@@ -93,16 +93,22 @@ class SearchView(generic.View):
         :raises InvalidValue: if filters is passed but is not valid JSON
         """
         query, options = self._parse_args(request.GET)
-        filters = request.GET.get('filters')
-        if filters:
-            try:
-                query['filters'] = json.loads(filters)
-            except ValueError:
-                raise exceptions.InvalidValue('filters')
-
         fields = query.pop('field', '')
         if fields:
             query['fields'] = fields
+        filters = request.GET.get('filters')
+        if filters:
+            query['filters'] = filters
+
+        # Load query data structures from json
+        json_criteria_fields = ['filters', 'fields', 'sort']
+        for field in json_criteria_fields:
+            value = query.get(field)
+            if value:
+                try:
+                    query[field] = json.loads(value)
+                except ValueError:
+                    raise exceptions.InvalidValue(field)
 
         return self._generate_response(query, options, *args, **kwargs)
 
