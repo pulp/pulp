@@ -183,9 +183,6 @@ def _delete_worker(name, normal_shutdown=False):
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
 
-    # Delete working directory
-    common_utils.delete_worker_working_directory(name)
-
 
 @task
 def _release_resource(task_id):
@@ -607,4 +604,5 @@ def cleanup_old_worker(*args, **kwargs):
     name = kwargs['sender'].hostname
     _delete_worker(name, normal_shutdown=True)
     # Recreate a new working directory for worker that is starting now
+    common_utils.delete_worker_working_directory(name)
     common_utils.create_worker_working_directory(name)
