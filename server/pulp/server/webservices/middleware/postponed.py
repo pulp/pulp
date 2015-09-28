@@ -28,6 +28,11 @@ class PostponedOperationMiddleware(object):
             href_obj = dispatch.task_result_href(task)
             task.update(href_obj)
 
+        # Use the object's serializer if it is a Mongoengine Document.
+        result = serialized_call_report.get('result')
+        if hasattr(result, 'serializer'):
+            serialized_call_report['result'] = result.serializer(result).data
+
         return json.dumps(serialized_call_report, default=json_util.default)
 
     def process_exception(self, request, exception):
