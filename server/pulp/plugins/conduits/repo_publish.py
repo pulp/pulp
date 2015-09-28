@@ -6,6 +6,7 @@ interacting with the Pulp server during a repo publish.
 import logging
 import sys
 
+from pulp.common import dateutils
 from pulp.plugins.conduits.mixins import (
     DistributorConduitException, RepoScratchPadMixin, RepoScratchpadReadMixin,
     DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
@@ -62,7 +63,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         try:
             repo_publish_manager = manager_factory.repo_publish_manager()
             last = repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
-            return last
+            return dateutils.ensure_tz(last)
         except Exception, e:
             _logger.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]

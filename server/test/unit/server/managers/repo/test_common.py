@@ -1,12 +1,11 @@
-import datetime
 import unittest
 
 import mock
 
 from pulp.common import dateutils
-from pulp.server.managers.repo._common import to_transfer_repo, _ensure_tz_specified,\
-    get_working_directory, delete_working_directory, create_worker_working_directory,\
-    delete_worker_working_directory
+from pulp.server.managers.repo._common import (
+    to_transfer_repo, get_working_directory, delete_working_directory,
+    create_worker_working_directory, delete_worker_working_directory)
 
 
 class TestToTransferRepo(unittest.TestCase):
@@ -45,24 +44,6 @@ class TestToTransferRepo(unittest.TestCase):
         repo = to_transfer_repo(data)
         self.assertEquals(None, repo.last_unit_added)
         self.assertEquals(None, repo.last_unit_removed)
-
-
-class TestEnsureTzSpecified(unittest.TestCase):
-
-    def test_tz_not_specified(self):
-        dt = datetime.datetime.utcnow()
-        new_date = _ensure_tz_specified(dt)
-        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
-
-    def test_none_object(self):
-        dt = None
-        new_date = _ensure_tz_specified(dt)
-        self.assertEquals(new_date, None)
-
-    def test_tz_specified(self):
-        dt = datetime.datetime.now(dateutils.local_tz())
-        new_date = _ensure_tz_specified(dt)
-        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
 
 
 class TestWorkingDirectory(unittest.TestCase):

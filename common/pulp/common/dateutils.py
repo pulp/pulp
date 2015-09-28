@@ -148,6 +148,22 @@ def now_utc_datetime_with_tzinfo():
     return datetime.datetime.now(tz=utc_tz())
 
 
+def ensure_tz(time_stamp):
+    """
+    Check a datetime that came from the database to ensure it has a timezone specified in UTC
+    Mongo doesn't include the TZ info so if no TZ is set this assumes UTC.
+
+    :param time_stamp: a datetime object to ensure has UTC tzinfo specified
+    :type time_stamp: datetime.datetime
+    :return: The time_stamp with a timezone specified
+    :rtype: datetime.datetime
+    """
+    if time_stamp:
+        time_stamp = to_utc_datetime(time_stamp, no_tz_equals_local_tz=False)
+
+    return time_stamp
+
+
 # iso8601 functions ------------------------------------------------------------
 
 def parse_iso8601_date(date_str):
