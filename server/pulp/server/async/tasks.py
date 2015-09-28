@@ -182,9 +182,6 @@ def _delete_worker(name, normal_shutdown=False):
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
 
-    # Delete working directory
-    common_utils.delete_worker_working_directory(name)
-
 
 @task
 def _release_resource(task_id):
