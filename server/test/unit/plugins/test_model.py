@@ -1,13 +1,11 @@
 """
 This module contains tests for pulp.plugins.model.
 """
-import datetime
 import functools
 import unittest
 
 import mock
 
-from pulp.common import dateutils
 from pulp.plugins.model import Unit, Repository
 from pulp.server import constants
 
@@ -131,7 +129,7 @@ class TestRepository(unittest.TestCase):
         self.assertEquals(None, repo.last_unit_added)
         self.assertEquals(None, repo.last_unit_removed)
 
-    @mock.patch('pulp.plugins.model.Repository._ensure_tz_specified')
+    @mock.patch('pulp.plugins.model.dateutils.ensure_tz')
     def test_init_with_values(self, mock_tz):
         """
         Make sure that the repo contains the appropriate values following initialization.
@@ -154,30 +152,6 @@ class TestRepository(unittest.TestCase):
         self.assertTrue(repo.last_unit_added is mock_tz.return_value)
         self.assertTrue(repo.last_unit_removed is mock_tz.return_value)
         mock_tz.assert_has_calls([mock.call(1), mock.call(2)])
-
-    def test_ensure_tz_not_specified(self):
-        """
-        Make sure that a date without a timezone is given one.
-        """
-        dt = datetime.datetime.utcnow()
-        new_date = Repository._ensure_tz_specified(dt)
-        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
-
-    def test_ensure_tz_none_object(self):
-        """
-        Test _ensure_tz_specified with None.
-        """
-        dt = None
-        new_date = Repository._ensure_tz_specified(dt)
-        self.assertEquals(new_date, None)
-
-    def test_ensure_tz_specified(self):
-        """
-        If the timezone is specified, the result should be the same.
-        """
-        dt = datetime.datetime.now(dateutils.local_tz())
-        new_date = Repository._ensure_tz_specified(dt)
-        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
 
     def test_str(self):
         repo = Repository('foo')
