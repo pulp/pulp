@@ -78,3 +78,13 @@ KEY_UNITS_REMOVE_MISSING = 'remove_missing'
 
 # Number of non-latest versions of a unit to leave in a repository
 KEY_UNITS_RETAIN_OLD_COUNT = 'retain_old_count'
+
+
+# Lazy
+# DISABLED - Content is downloaded immediately.
+# ACTIVE   - Content is downloaded in the background.
+# PASSIVE  - Content is downloaded on demand.
+LAZY_DISABLED = None
+LAZY_ACTIVE = 'active'
+LAZY_PASSIVE = 'passive'
+LAZY_MODE = 'lazy_mode'
