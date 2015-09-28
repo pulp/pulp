@@ -31,28 +31,34 @@ class ExceptionHandlerMiddleware(object):
         :return: Response containing processed exception
         :rtype: django.http.HttpResponseServerError
         """
-        if isinstance(exception, PulpException):
-            status = exception.http_status_code
-            response = error.http_error_obj(status, str(exception))
-            response.update(exception.data_dict())
-            response['error'] = exception.to_dict()
-            logger.info(str(exception))
-            response_obj = HttpResponse(json.dumps(response), status=status,
-                                        content_type="application/json; charset=utf-8")
-        else:
-            status = httplib.INTERNAL_SERVER_ERROR
-            response = error.http_error_obj(status, str(exception))
-            msg = _('Unhandled Exception')
-            logger.error(msg)
 
-        if status == httplib.INTERNAL_SERVER_ERROR:
-            logger.exception(str(exception))
-            e_type, e_value, trace = sys.exc_info()
-            response['exception'] = traceback.format_exception_only(e_type, e_value)
-            response['traceback'] = traceback.format_tb(trace)
-            response_obj = HttpResponseServerError(json.dumps(response),
-                                                   content_type="application/json; charset=utf-8")
-        else:
-            logger.info(str(exception))
+        try:
+            if isinstance(exception, PulpException):
+                status = exception.http_status_code
+                response = error.http_error_obj(status, str(exception))
+                response.update(exception.data_dict())
+                response['error'] = exception.to_dict()
+                logger.info(str(exception))
+                response_obj = HttpResponse(json.dumps(response), status=status,
+                                            content_type="application/json; charset=utf-8")
+            else:
+                status = httplib.INTERNAL_SERVER_ERROR
+                response = error.http_error_obj(status, str(exception))
+                msg = _('Unhandled Exception')
+                logger.error(msg)
 
-        return response_obj
+            if status == httplib.INTERNAL_SERVER_ERROR:
+                logger.exception(str(exception))
+                e_type, e_value, trace = sys.exc_info()
+                response['exception'] = traceback.format_exception_only(e_type, e_value)
+                response['traceback'] = traceback.format_tb(trace)
+                response_obj = HttpResponseServerError(
+                    json.dumps(response), content_type="application/json; charset=utf-8")
+
+            response_obj['Content-Encoding'] = 'utf-8'
+            return response_obj
+        # Because this defines our own exception handling, if something goes wrong we need to make
+        # sure that it gets logged.
+        except Exception, e:
+            logger.exception(e)
+            raise
