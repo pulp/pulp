@@ -21,8 +21,11 @@ paths_to_check = [
     'client_lib',
     'common',
     'devel/',
-    'nodes/child/pulp_node/handlers/',
-    'nodes/child/pulp_node/importers/reports.py',
+    'nodes/child/',
+    'nodes/common/',
+    'nodes/extensions/',
+    'nodes/parent/',
+    'nodes/test/nodes_tests/mocks/',
     'oid_validation/',
     'repoauth/',
     'server/']

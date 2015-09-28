@@ -3,11 +3,8 @@ from operator import itemgetter
 
 from pulp.common.constants import PRIMARY_ID
 
-from pulp_node.error import *
+from pulp_node import error
 from pulp_node.reports import RepositoryProgress, RepositoryReport
-
-
-# --- constants --------------------------------------------------------------
 
 
 REPOSITORY_FIELD = _('(%(n)d/%(t)d) Repository: %(id)s')
@@ -32,19 +29,19 @@ ACTIONS = {
 }
 
 NODE_ERRORS = {
-    CaughtException.ERROR_ID: CaughtException.DESCRIPTION,
-    PurgeOrphansError.ERROR_ID: PurgeOrphansError.DESCRIPTION,
-    RepoSyncRestError.ERROR_ID: RepoSyncRestError.DESCRIPTION,
-    GetBindingsError.ERROR_ID: GetBindingsError.DESCRIPTION,
-    GetChildUnitsError.ERROR_ID: GetChildUnitsError.DESCRIPTION,
-    GetParentUnitsError.ERROR_ID: GetParentUnitsError.DESCRIPTION,
-    ImporterNotInstalled.ERROR_ID: ImporterNotInstalled.DESCRIPTION,
-    DistributorNotInstalled.ERROR_ID: DistributorNotInstalled.DESCRIPTION,
-    ManifestDownloadError.ERROR_ID: ManifestDownloadError.DESCRIPTION,
-    UnitDownloadError.ERROR_ID: UnitDownloadError.DESCRIPTION,
-    AddUnitError.ERROR_ID: AddUnitError.DESCRIPTION,
-    DeleteUnitError.ERROR_ID: DeleteUnitError.DESCRIPTION,
-    InvalidManifestError.ERROR_ID: InvalidManifestError.DESCRIPTION,
+    error.CaughtException.ERROR_ID: error.CaughtException.DESCRIPTION,
+    error.PurgeOrphansError.ERROR_ID: error.PurgeOrphansError.DESCRIPTION,
+    error.RepoSyncRestError.ERROR_ID: error.RepoSyncRestError.DESCRIPTION,
+    error.GetBindingsError.ERROR_ID: error.GetBindingsError.DESCRIPTION,
+    error.GetChildUnitsError.ERROR_ID: error.GetChildUnitsError.DESCRIPTION,
+    error.GetParentUnitsError.ERROR_ID: error.GetParentUnitsError.DESCRIPTION,
+    error.ImporterNotInstalled.ERROR_ID: error.ImporterNotInstalled.DESCRIPTION,
+    error.DistributorNotInstalled.ERROR_ID: error.DistributorNotInstalled.DESCRIPTION,
+    error.ManifestDownloadError.ERROR_ID: error.ManifestDownloadError.DESCRIPTION,
+    error.UnitDownloadError.ERROR_ID: error.UnitDownloadError.DESCRIPTION,
+    error.AddUnitError.ERROR_ID: error.AddUnitError.DESCRIPTION,
+    error.DeleteUnitError.ERROR_ID: error.DeleteUnitError.DESCRIPTION,
+    error.InvalidManifestError.ERROR_ID: error.InvalidManifestError.DESCRIPTION,
 }
 
 SYNC_TITLE = _('Child Node Synchronization')
@@ -54,8 +51,6 @@ REPORTED_ERRORS = _('The following [%(n)d] errors were reported')
 REPOSITORIES_FAILED = _('The following repositories had errors')
 
 PARENT_NODE = _('Parent Node')
-
-# --- rendering --------------------------------------------------------------
 
 
 class ProgressTracker:
@@ -260,8 +255,8 @@ class UpdateRenderer(object):
 
     def failed_repositories(self):
         failed = set()
-        for error in self.errors:
-            repo_id = error['details'].get('repo_id')
+        for e in self.errors:
+            repo_id = e['details'].get('repo_id')
             if repo_id:
                 failed.add(repo_id)
         return sorted(failed)

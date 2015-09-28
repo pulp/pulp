@@ -19,14 +19,19 @@ docs/_build
 *,cover
 tags
 
+# KDevelop
+.kdev4/
+*.kdev4
+
 # Ninja IDE
 *.nja
 
 # Sublime
 .codeintel
 
-#Rope
+# Rope
 .ropeproject
 
+# Vagrant
 .vagrant
 Vagrantfile
