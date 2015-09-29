@@ -267,7 +267,7 @@ On the child Pulp server:
 
 ::
 
- $ sudo pulp-consumer node activate
+ $ sudo pulp-admin node activate --consumer-id <id> --strategy mirror
 
 
 .. _node_binding:
