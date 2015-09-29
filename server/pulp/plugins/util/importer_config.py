@@ -363,6 +363,25 @@ def validate_retain_old_count(config):
         raise ValueError(msg)
 
 
+def validate_lazy_mode(config):
+    """
+    Validate lazy content modes.
+
+    :param config: A configuration.
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    :raise ValueError: on failed.
+    """
+    key = importer_constants.LAZY_MODE
+    lazy = config.get(key)
+    modes = [
+        importer_constants.LAZY_DISABLED,
+        importer_constants.LAZY_ACTIVE,
+        importer_constants.LAZY_PASSIVE
+    ]
+    if lazy not in modes:
+        raise ValueError(_('{k} must be: {m}').format(k=key, m=modes))
+
+
 def _cast_to_int_without_allowing_floats(value):
     """
     Attempt to return an int of the value, without allowing any floating point values. This is
@@ -426,4 +445,5 @@ VALIDATIONS = (
     validate_validate_downloads,
     validate_remove_missing,
     validate_retain_old_count,
+    validate_lazy_mode,
 )
