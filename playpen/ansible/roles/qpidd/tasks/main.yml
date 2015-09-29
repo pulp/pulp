@@ -1,0 +1,11 @@
+---
+- name: Install packages
+  dnf: name={{ item }} state=present
+  with_items:
+    - qpid-cpp-server
+    - qpid-cpp-server-store
+
+- name: Start and enable services
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+    - qpidd

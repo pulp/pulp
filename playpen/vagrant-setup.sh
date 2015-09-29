@@ -2,16 +2,6 @@
 
 . ~/.bashrc
 
-# install rpms, then remove pulp*
-echo "installing RPMs"
-sudo dnf install -y git python-gofer-qpid python-qpid python-qpid-qmf \
-                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
-
-echo "Starting qpidd"
-sudo systemctl enable qpidd
-sudo systemctl start qpidd
-
-
 pushd devel
 for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
   if [ -d $r ]; then

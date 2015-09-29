@@ -10,4 +10,5 @@
   vars:
   roles:
     - db
+    - qpidd
     - dev
