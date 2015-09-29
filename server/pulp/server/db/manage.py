@@ -13,7 +13,7 @@ from pulp.plugins.loader.manager import PluginManager
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
-from pulp.server.db import model
+from pulp.server.db import models as model  # Left as model to avoid collision with line above
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 from pulp.server.managers.auth.user.cud import UserManager

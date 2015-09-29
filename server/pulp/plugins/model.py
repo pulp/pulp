@@ -40,7 +40,7 @@ class Repository(object):
     :param last_unit_removed: UTC datetime of the last time a unit was removed from the repository
     :param last_unit_removed: datetime.datetime with tzinfo
     :param repo_obj: repository object as defined by the mongoengine document
-    :type  repo_obj: pulp.server.db.model.Repository
+    :type  repo_obj: pulp.server.db.models.Repository
     """
 
     def __init__(self, id, display_name=None, description=None, notes=None,

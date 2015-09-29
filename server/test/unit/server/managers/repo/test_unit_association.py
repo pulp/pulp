@@ -6,7 +6,7 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Unit
 from pulp.plugins.types import database, model
-from pulp.server.db import model as me_model
+from pulp.server.db import models as me_model
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit, RepoImporter
@@ -52,7 +52,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Set up a valid configured repo for the tests
         self.repo_id = 'associate-repo'
-        with mock.patch('pulp.server.managers.repo.importer.model.Repository.objects'):
+        with mock.patch('pulp.server.managers.repo.importer.models.Repository.objects'):
             self.importer_manager.set_importer(self.repo_id, 'mock-importer', {})
 
         # Create units that can be associated to a repo
@@ -66,7 +66,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.unit_key_2 = {'key-1': 'test-unit-2'}
         self.content_manager.add_content_unit(self.unit_type_id, self.unit_id_2, self.unit_key_2)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_by_id(self, mock_repo_qs):
         """
         Tests creating a new association by content unit ID.
@@ -80,7 +80,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertTrue('unit-1' in unit_ids)
         self.assertTrue('unit-2' in unit_ids)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_by_id_existing(self, mock_ctrl, mock_repo_qs):
         """
@@ -96,7 +96,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_by_id_other_owner(self, mock_repo_qs):
         """
         Tests making a second association using a different owner.
@@ -107,7 +107,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_all(self, mock_ctrl, mock_repo_qs):
         """
@@ -124,7 +124,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         for unit in repo_units:
             self.assertTrue(unit['unit_id'] in ids)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_unassociate_by_id(self, mock_ctrl, mock_repo_qs):
         """
@@ -146,7 +146,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_no_criteria(self, mock_repo_qs):
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -193,7 +193,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Clean Up
         manager_factory.principal_manager().set_principal(principal=None)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_dest_has_no_importer(self, mock_repo_qs):
         self.assertRaises(
             exceptions.MissingResource,
@@ -202,7 +202,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             'repo-with-no-importer'
         )
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_dest_unsupported_types(self, mock_repo_qs):
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -211,7 +211,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertRaises(exceptions.MissingResource,
                           self.manager.associate_from_repo, source_repo_id, dest_repo_id)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_importer_error(self, mock_repo_qs):
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -234,7 +234,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.import_units.side_effect = None
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_no_matching_units(self, mock_repo_qs):
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -248,7 +248,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.import_units.call_count)
         self.assertEqual(ret.get('units_successful'), [])
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_missing_source(self, mock_repo_qs):
         dest_repo_id = 'dest-repo'
         self.importer_manager.set_importer(dest_repo_id, 'mock-importer', {})
@@ -259,7 +259,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repository'])
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_associate_from_repo_missing_destination(self, mock_repo_qs):
         source_repo_id = 'source-repo'
         self.importer_manager.set_importer(source_repo_id, 'mock-importer', {})
@@ -270,13 +270,13 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repository'])
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_by_id_calls_update_unit_count(self, mock_ctrl, mock_repo_qs):
         self.manager.associate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
         mock_ctrl.update_unit_count.assert_called_once_with(self.repo_id, 'type-1', 1)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_by_id_calls_update_last_unit_added(self, mock_ctrl, mock_repo_qs):
         self.manager.associate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
@@ -291,7 +291,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.repo_id, 'type-1', 'unit-1', False)
         self.assertFalse(mock_call.called)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_non_unique_by_id(self, mock_ctrl, mock_repo_qs):
         """
@@ -304,20 +304,20 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
         self.assertEqual(mock_ctrl.update_unit_count.call_count, 1)  # only from first associate
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_all_by_ids_calls_update_unit_count(self, mock_ctrl, mock_repo_qs):
         IDS = ('foo', 'bar', 'baz')
         self.manager.associate_all_by_ids(self.repo_id, 'type-1', IDS)
         mock_ctrl.update_unit_count.assert_called_once_with(self.repo_id, 'type-1', len(IDS))
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_all_by_id_calls_update_last_unit_added(self, mock_ctrl, mock_repo_qs):
         self.manager.associate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
         mock_ctrl.update_last_unit_added.assert_called_once_with(self.repo_id)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_associate_all_non_unique(self, mock_ctrl, mock_repo_qs):
         """
@@ -329,7 +329,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.associate_all_by_ids(self.repo_id, 'type-1', IDS)
         mock_ctrl.update_unit_count.assert_called_once_with(self.repo_id, 'type-1', 2)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_unassociate_all(self, mock_ctrl, mock_repo_qs):
         """
@@ -365,7 +365,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertTrue(unit_coll.find_one({'repo_id': self.repo_id, 'unit_type_id': 'type-2',
                                             'unit_id': 'unit-2'}) is not None)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
     def test_unassociate_by_id_calls_update_unit_count(self, mock_ctrl, mock_repo_qs):
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id)
@@ -399,7 +399,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(mock_count.call_count, 1)
 
     @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.unit_association.models.Repository.objects')
     def test_unassociate_via_criteria(self, mock_repo_qs, mock_ctrl):
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id)
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id_2)

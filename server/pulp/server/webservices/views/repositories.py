@@ -8,7 +8,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import distributor as dist_controller
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
@@ -66,7 +66,7 @@ def _process_repos(repo_objs, details, importers, distributors):
     the object link and optionally adds related importers and distributors.
 
     :param repo_objs: collection of repository objects
-    :type  repo_objs: list or tuple of pulp.server.db.model.Repository objects
+    :type  repo_objs: list or tuple of pulp.server.db.models.Repository objects
     :type  repos: list, tuple
     :param details: if True, sets both "importers" and "distributors" to True regardless of any
                     value that may have been passed in.
@@ -105,7 +105,7 @@ def _get_valid_importer(repo_id, importer_id):
     :raises pulp_exceptions.MissingResource: if repo or importer cannot be found
     """
 
-    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    models.Repository.objects.get_repo_or_missing_resource(repo_id)
     importer_manager = manager_factory.repo_importer_manager()
     try:
         importer = importer_manager.get_importer(repo_id)
@@ -136,7 +136,7 @@ class ReposView(View):
         include_importers = request.GET.get('importers', 'false').lower() == 'true'
         include_distributors = request.GET.get('distributors', 'false').lower() == 'true'
 
-        processed_repos = _process_repos(model.Repository.objects(), details, include_importers,
+        processed_repos = _process_repos(models.Repository.objects(), details, include_importers,
                                          include_distributors)
         return generate_json_response_with_pulp_encoder(processed_repos)
 
@@ -192,7 +192,7 @@ class RepoResourceView(View):
         :raises pulp_exceptions.MissingResource: if repo cannot be found
         """
 
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
         repo = serializers.Repository(repo_obj).data
 
         # Add importers and distributors to the dicts if requested.
@@ -220,7 +220,7 @@ class RepoResourceView(View):
         :raises pulp_exceptions.MissingResource: if repo does not exist
         :raises pulp_exceptions.OperationPostponed: dispatch a task to delete the provided repo
         """
-        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = repo_controller.queue_delete(repo_id)
         raise pulp_exceptions.OperationPostponed(async_result)
 
@@ -246,7 +246,7 @@ class RepoResourceView(View):
         importer_config = request.body_as_json.get('importer_config', None)
         distributor_configs = request.body_as_json.get('distributor_configs', None)
 
-        repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo = models.Repository.objects.get_repo_or_missing_resource(repo_id)
         task_result = repo_controller.update_repo_and_plugins(repo, delta, importer_config,
                                                               distributor_configs)
 
@@ -263,7 +263,7 @@ class RepoSearch(search.SearchView):
     """
     Adds GET and POST searching for repositories.
     """
-    model = model.Repository
+    model = models.Repository
     optional_bool_fields = ('details', 'importers', 'distributors')
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
@@ -312,7 +312,7 @@ class RepoUnitSearch(search.SearchView):
         :rtype:       django.http.HttpResponse
         """
         repo_id = kwargs.get('repo_id')
-        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(repo_id)
         criteria = UnitAssociationCriteria.from_client_input(query)
         manager = manager_factory.repo_unit_association_query_manager()
         if criteria.type_ids is not None and len(criteria.type_ids) == 1:
@@ -1115,7 +1115,7 @@ class RepoSync(View):
         """
 
         overrides = request.body_as_json.get('override_config', None)
-        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = repo_controller.queue_sync_with_auto_publish(repo_id, overrides)
         raise pulp_exceptions.OperationPostponed(async_result)
 
@@ -1140,7 +1140,7 @@ class RepoPublish(View):
         :raises pulp_exceptions.MissingValue: if required param id is not passed
         :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
         """
-        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(repo_id)
         distributor_id = request.body_as_json.get('id', None)
         if distributor_id is None:
             raise pulp_exceptions.MissingValue('id')
@@ -1170,7 +1170,7 @@ class RepoAssociate(View):
                                               params cannot be parsed
         :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
         """
-        model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
         criteria_body = request.body_as_json.get('criteria', None)
         overrides = request.body_as_json.get('override_config', None)
         source_repo_id = request.body_as_json.get('source_repo_id', None)
@@ -1179,7 +1179,7 @@ class RepoAssociate(View):
 
         # Catch MissingResource because this is body data, raise 400 rather than 404
         try:
-            model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
+            models.Repository.objects.get_repo_or_missing_resource(source_repo_id)
         except pulp_exceptions.MissingResource:
             raise pulp_exceptions.InvalidValue(['source_repo_id'])
 

@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
 
@@ -33,7 +33,7 @@ class RepoGroupManager(object):
         :rtype: bson.SON
         """
         # Check if ids in repo_ids belong to existing repositories
-        existing_repos = model.Repository.objects(repo_id__in=repo_ids)
+        existing_repos = models.Repository.objects(repo_id__in=repo_ids)
         if repo_ids and existing_repos.count() != len(repo_ids):
             existing_repo_ids = set([repo.repo_id for repo in existing_repos])
             non_existing_repo_ids = list(set(repo_ids) - existing_repo_ids)
@@ -194,7 +194,7 @@ class RepoGroupManager(object):
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
         """
         group_collection = validate_existing_repo_group(group_id)
-        cursor = model.Repository.objects.find_by_criteria(criteria)
+        cursor = models.Repository.objects.find_by_criteria(criteria)
         repo_ids = [r.repo_id for r in cursor]
         if not repo_ids:
             return
@@ -211,7 +211,7 @@ class RepoGroupManager(object):
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
         """
         group_collection = validate_existing_repo_group(group_id)
-        cursor = model.Repository.objects.find_by_criteria(criteria)
+        cursor = models.Repository.objects.find_by_criteria(criteria)
         repo_ids = [r.repo_id for r in cursor]
         if not repo_ids:
             return

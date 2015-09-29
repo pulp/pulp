@@ -30,7 +30,7 @@ def task_status(task):
     Return serialized version of given TaskStatus document.
 
     :param task_status: Task status document object
-    :type  task_status: pulp.server.db.model.TaskStatus
+    :type  task_status: pulp.server.db.models.TaskStatus
 
     :return: serialized task status
     :rtype:  dict

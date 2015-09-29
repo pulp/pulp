@@ -5,7 +5,7 @@ from logging import getLogger
 import os
 
 from pulp.plugins.distributor import Distributor
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from pulp.server.compat import json
@@ -204,7 +204,7 @@ class NodesHttpDistributor(Distributor):
         :param payload: The repository payload
         :type payload: dict
         """
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
         # Pseudo serialize the repository object so that it can be used by a node.
         payload['repository'] = {'id': repo_obj.repo_id, 'display_name': repo_obj.display_name,
                                  'description': repo_obj.description, 'notes': repo_obj.notes,

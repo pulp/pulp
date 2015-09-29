@@ -19,7 +19,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
-from pulp.server.db import connection, model
+from pulp.server.db import connection, models
 from pulp.server.db.model.repository import (RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
 from pulp.server.managers import factory as manager_factory
@@ -42,7 +42,7 @@ def find_repo_content_units(
     of the RepoContentUnit.
 
     :param repository: The repository to search.
-    :type repository: pulp.server.db.model.Repository
+    :type repository: pulp.server.db.models.Repository
     :param repo_content_unit_q: Any query filters to apply to the RepoContentUnits.
     :type repo_content_unit_q: mongoengine.Q
     :param units_q: Any query filters to apply to the ContentUnits.
@@ -58,13 +58,13 @@ def find_repo_content_units(
     :type yield_content_unit: bool
 
     :return: Content unit assoociations matching the query.
-    :rtype: generator of pulp.server.db.model.ContentUnit or
-        pulp.server.db.model.RepositoryContentUnit
+    :rtype: generator of pulp.server.db.models.ContentUnit or
+        pulp.server.db.models.RepositoryContentUnit
 
     """
 
-    qs = model.RepositoryContentUnit.objects(q_obj=repo_content_unit_q,
-                                             repo_id=repository.repo_id)
+    qs = models.RepositoryContentUnit.objects(q_obj=repo_content_unit_q,
+                                              repo_id=repository.repo_id)
 
     type_map = {}
     content_units = {}
@@ -108,7 +108,7 @@ def rebuild_content_unit_counts(repository):
     Update the content_unit_counts field on a Repository.
 
     :param repository: The repository to update
-    :type repository: pulp.server.db.model.Repository
+    :type repository: pulp.server.db.models.Repository
     """
     db = connection.get_database()
 
@@ -131,13 +131,13 @@ def associate_single_unit(repository, unit):
     Associate a single unit to a repository.
 
     :param repository: The repository to update.
-    :type repository: pulp.server.db.model.Repository
+    :type repository: pulp.server.db.models.Repository
     :param unit: The unit to associate to the repository.
-    :type unit: pulp.server.db.model.ContentUnit
+    :type unit: pulp.server.db.models.ContentUnit
     """
     current_timestamp = dateutils.now_utc_timestamp()
     formatted_datetime = dateutils.format_iso8601_utc_timestamp(current_timestamp)
-    qs = model.RepositoryContentUnit.objects(
+    qs = models.RepositoryContentUnit.objects(
         repo_id=repository.repo_id,
         unit_id=unit.id,
         unit_type_id=unit.unit_type_id)
@@ -152,13 +152,13 @@ def disassociate_units(repository, unit_iterable):
     Disassociate all units in the iterable from the repository
 
     :param repository: The repository to update.
-    :type repository: pulp.server.db.model.Repository
+    :type repository: pulp.server.db.models.Repository
     :param unit_iterable: The units to disassociate from the repository.
-    :type unit_iterable: iterable of pulp.server.db.model.ContentUnit
+    :type unit_iterable: iterable of pulp.server.db.modesl.ContentUnit
     """
     for unit_group in misc.paginate(unit_iterable):
         unit_id_list = [unit.id for unit in unit_group]
-        qs = model.RepositoryContentUnit.objects(
+        qs = models.RepositoryContentUnit.objects(
             repo_id=repository.repo_id, unit_id__in=unit_id_list)
         qs.delete()
 
@@ -198,7 +198,7 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
     :raises InvalidValue: if any of the fields are invalid
 
     :return: created repository object
-    :rtype:  pulp.server.db.model.Repository
+    :rtype:  pulp.server.db.models.Repository
     """
 
     # Prevalidation.
@@ -207,8 +207,8 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
 
     # Note: the repo must be saved before the importer and distributor managers can be called
     #       because the first thing that they do is validate that the repo exists.
-    repo = model.Repository(repo_id=repo_id, display_name=display_name, description=description,
-                            notes=notes)
+    repo = models.Repository(repo_id=repo_id, display_name=display_name, description=description,
+                             notes=notes)
     try:
         repo.save()
     except NotUniqueError:
@@ -319,7 +319,7 @@ def delete(repo_id):
             error_tuples.append(e)
 
     # Database Updates
-    repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo.delete()
 
     try:
@@ -385,7 +385,7 @@ def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_confi
     update. Repository and importer updates are done synchronously.
 
     :param repo: repository object
-    :type  repo: pulp.server.db.model.Repository
+    :type  repo: pulp.server.db.models.Repository
     :param repo_delta: list of attributes to change and their new values; if None, no attempt to
                        update the repository object will be made
     :type  repo_delta: dict, None
@@ -448,7 +448,7 @@ def update_unit_count(repo_id, unit_type_id, delta):
     atomic_inc_key = 'inc__content_unit_counts__{unit_type_id}'.format(unit_type_id=unit_type_id)
     if delta:
         try:
-            model.Repository.objects(repo_id=repo_id).update_one(**{atomic_inc_key: delta})
+            models.Repository.objects(repo_id=repo_id).update_one(**{atomic_inc_key: delta})
         except OperationError:
             message = 'There was a problem updating repository %s' % repo_id
             raise pulp_exceptions.PulpExecutionException(message), None, sys.exc_info()[2]
@@ -461,7 +461,7 @@ def update_last_unit_added(repo_id):
     :param repo_id: identifies the repo
     :type  repo_id: str
     """
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo_obj.last_unit_added = dateutils.now_utc_datetime_with_tzinfo()
     repo_obj.save()
 
@@ -473,7 +473,7 @@ def update_last_unit_removed(repo_id):
     :param repo_id: identifies the repo
     :type  repo_id: str
     """
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo_obj.last_unit_removed = dateutils.now_utc_datetime_with_tzinfo()
     repo_obj.save()
 
@@ -527,7 +527,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     :raise pulp_exceptions.PulpExecutionException: if the task fails.
     """
 
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     transfer_repo = repo_obj.to_transfer_repo()
 
     importer_collection = RepoImporter.get_collection()
@@ -644,7 +644,7 @@ def sync_history(start_date, end_date, repo_id):
 
     :raise MissingResource: if repo_id does not reference a valid repo
     """
-    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    models.Repository.objects.get_repo_or_missing_resource(repo_id)
     search_params = {'repo_id': repo_id}
     date_range = {}
     if start_date:
@@ -705,7 +705,7 @@ def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=No
     :raises pulp_exceptions.MissingResource: if distributor/repo pair does not exist
     """
     distributor_coll = RepoDistributor.get_collection()
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': dist_id})
     if repo_distributor is None:
         raise pulp_exceptions.MissingResource(repository=repo_id, distributor=dist_id)
@@ -751,13 +751,13 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     Publish the repository using the given distributor.
 
     :param repo_obj: repository object
-    :type  repo_obj: pulp.server.db.model.Repository
+    :type  repo_obj: pulp.server.db.models.Repository
     :param dist_id: identifies the distributor
     :type  dist_id: str
     :param dist_inst: instance of the distributor
     :type  dist_inst: dict
     :param transfer_repo: dict representation of a repo for the plugins to use
-    :type  transfer_repo: pulp.plugins.model.Repository
+    :type  transfer_repo: pulp.plugins.models.Repository
     :param conduit: allows the plugin to interact with core pulp
     :type  conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
     :param call_config: allows the plugin to retrieve values
@@ -841,7 +841,7 @@ def publish_history(start_date, end_date, repo_id, distributor_id):
 
     :raise pulp_exceptions.MissingResource: if repo/distributor pair is invalid
     """
-    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    models.Repository.objects.get_repo_or_missing_resource(repo_id)
     dist = RepoDistributor.get_collection().find_one({'repo_id': repo_id, 'id': distributor_id})
     if dist is None:
         raise pulp_exceptions.MissingResource(distributor_id)

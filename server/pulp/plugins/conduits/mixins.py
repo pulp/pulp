@@ -7,8 +7,8 @@ from pymongo.errors import DuplicateKeyError
 from pulp.plugins.model import Unit, PublishReport
 from pulp.server.async.tasks import get_current_task_id
 from pulp.server.controllers import units as units_controller
-from pulp.server.db import model
-from pulp.server.db.model import TaskStatus
+from pulp.server.db import models
+from pulp.server.db.models import TaskStatus
 from pulp.server import exceptions as pulp_exceptions
 import pulp.plugins.conduits._common as common_utils
 import pulp.server.managers.factory as manager_factory
@@ -66,7 +66,7 @@ class RepoScratchPadMixin(object):
 
         """
         try:
-            return model.Repository.objects.get_repo_or_missing_resource(self.repo_id).scratchpad
+            return models.Repository.objects.get_repo_or_missing_resource(self.repo_id).scratchpad
         except pulp_exceptions.MissingResource, e:
             _logger.exception(
                 _('Error getting repository scratchpad for repo [%(r)s]') % {'r': self.repo_id})
@@ -86,7 +86,7 @@ class RepoScratchPadMixin(object):
                                       exception_class defined at class initialization
         """
         try:
-            repo_obj = model.Repository.objects.get_repo_or_missing_resource(self.repo_id)
+            repo_obj = models.Repository.objects.get_repo_or_missing_resource(self.repo_id)
             repo_obj.scratchpad = value
             repo_obj.save()
         except Exception, e:
@@ -108,7 +108,7 @@ class RepoScratchPadMixin(object):
         if not scratchpad:
             return
         try:
-            repo_obj = model.Repository.objects.get_repo_or_missing_resource(self.repo_id)
+            repo_obj = models.Repository.objects.get_repo_or_missing_resource(self.repo_id)
             for key, value in scratchpad.items():
                 repo_obj.scratchpad[key] = value
             repo_obj.save()
@@ -142,7 +142,7 @@ class RepoScratchpadReadMixin(object):
                                       exception_class defined at class initialization
         """
         try:
-            return model.Repository.objects.get_repo_or_missing_resource(repo_id).scratchpad
+            return models.Repository.objects.get_repo_or_missing_resource(repo_id).scratchpad
         except pulp_exceptions.MissingResource, e:
             _logger.exception(
                 _('Error getting repository scratchpad for repo [%(r)s]') % {'r': repo_id})

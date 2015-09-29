@@ -46,7 +46,7 @@ class FileDistributor(Distributor):
         Please also see the superclass method definition for more documentation on this method.
 
         :param repo: metadata describing the repository
-        :type  repo: pulp.server.db.model.Repository
+        :type  repo: pulp.server.db.models.Repository
 
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
@@ -151,7 +151,7 @@ class FileDistributor(Distributor):
         This should be writing to open file handles from the initialize_metadata call
 
         :param unit: the unit for which metadata needs to be generated
-        :type unit: pulp.server.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         """
         self.metadata_csv_writer.writerow([unit.unit_key['name'], unit.unit_key['checksum'],
                                            unit.unit_key['size']])
@@ -168,7 +168,7 @@ class FileDistributor(Distributor):
         Get the paths within a target directory where this unit should be linked to
 
         :param unit: The unit for which we want to return target paths
-        :type unit: pulp.server.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         :return: a list of paths the unit should be linked to
         :rtype: list of str
         """
@@ -179,7 +179,7 @@ class FileDistributor(Distributor):
         Get the paths on the filesystem where the build directory should be copied
 
         :param repo: Repository model object
-        :type  repo: pulp.server.db.model.Repository
+        :type  repo: pulp.server.db.models.Repository
         :param config:    plugin configuration
         :type  config:    pulp.plugins.config.PluginConfiguration
         :return : list of paths on the filesystem where the build directory should be copied
@@ -193,7 +193,7 @@ class FileDistributor(Distributor):
         been moved into place on the filesystem
 
         :param repo: Repository model object
-        :type  repo: pulp.server.db.model.Repository
+        :type  repo: pulp.server.db.models.Repository
         :param config: the configuration for the repository
         :type  config: pulp.plugins.config.PluginCallConfiguration
         """
@@ -207,7 +207,7 @@ class FileDistributor(Distributor):
                           This path should already exist.
         :type  build_dir: basestring
         :param unit:     The unit to be symlinked
-        :type unit:      pulp.server.db.model.ContentUnit
+        :type unit:      pulp.server.db.models.ContentUnit
         :param target_paths: The list of paths the unit should be symlinked to.
         :type  target_paths: list of L{str}
         """

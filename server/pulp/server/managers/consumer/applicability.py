@@ -12,7 +12,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
 from pulp.server.async.tasks import Task
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers
@@ -116,7 +116,7 @@ class ApplicabilityRegenerationManager(object):
 
         # Process repo criteria
         repo_criteria.fields = ['id']
-        repo_ids = [r.repo_id for r in model.Repository.objects.find_by_criteria(repo_criteria)]
+        repo_ids = [r.repo_id for r in models.Repository.objects.find_by_criteria(repo_criteria)]
 
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id. Setting batch size of 5 ensures
@@ -223,7 +223,7 @@ class ApplicabilityRegenerationManager(object):
         :return:        A list of content type ids that have unit counts greater than 0
         :rtype:         list
         """
-        repo_obj = model.Repository.objects.first(repo_id)
+        repo_obj = models.Repository.objects.first(repo_id)
         if not repo_obj:
             return []
 
@@ -371,7 +371,7 @@ class RepoProfileApplicabilityManager(object):
         rpa_repo_ids = rpa_collection.distinct('repo_id')
 
         # Find all of the repo_ids that exist in Pulp
-        repo_ids = model.Repository.objects.distinct('repo_id')
+        repo_ids = models.Repository.objects.distinct('repo_id')
 
         # Find rpa_repo_ids that aren't part of repo_ids
         missing_repo_ids = list(set(rpa_repo_ids) - set(repo_ids))

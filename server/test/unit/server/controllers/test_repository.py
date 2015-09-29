@@ -7,7 +7,7 @@ from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
 from pulp.server.controllers import repository as repo_controller
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db import model
+from pulp.server.db import models
 
 
 class MockException(Exception):
@@ -15,13 +15,13 @@ class MockException(Exception):
     pass
 
 
-class DemoModel(model.ContentUnit):
+class DemoModel(models.ContentUnit):
     key_field = mongoengine.StringField()
     unit_key_fields = ['key_field']
     unit_type_id = 'demo_model'
 
 
-@patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+@patch('pulp.server.controllers.repository.models.RepositoryContentUnit.objects')
 class FindRepoContentUnitsTest(unittest.TestCase):
 
     def test_repo_content_units_query(self, mock_rcu_objects):
@@ -42,9 +42,9 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         """
         repo = MagicMock(repo_id='foo')
         test_unit = DemoModel(id='bar', key_field='baz')
-        test_rcu = model.RepositoryContentUnit(repo_id='foo',
-                                               unit_type_id='demo_model',
-                                               unit_id='bar')
+        test_rcu = models.RepositoryContentUnit(repo_id='foo',
+                                                unit_type_id='demo_model',
+                                                unit_id='bar')
         mock_rcu_objects.return_value = [test_rcu]
 
         u_filter = mongoengine.Q(key_field='baz')
@@ -69,9 +69,9 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         """
         repo = MagicMock(repo_id='foo')
         test_unit = DemoModel(id='bar', key_field='baz')
-        test_rcu = model.RepositoryContentUnit(repo_id='foo',
-                                               unit_type_id='demo_model',
-                                               unit_id='bar')
+        test_rcu = models.RepositoryContentUnit(repo_id='foo',
+                                                unit_type_id='demo_model',
+                                                unit_id='bar')
         mock_rcu_objects.return_value = [test_rcu]
 
         u_filter = mongoengine.Q(key_field='baz')
@@ -99,9 +99,9 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         for i in range(10):
             unit_id = 'bar_%i' % i
             unit_key = 'key_%i' % i
-            rcu = model.RepositoryContentUnit(repo_id='foo',
-                                              unit_type_id='demo_model',
-                                              unit_id=unit_id)
+            rcu = models.RepositoryContentUnit(repo_id='foo',
+                                               unit_type_id='demo_model',
+                                               unit_id=unit_id)
             rcu_list.append(rcu)
             unit_list.append(DemoModel(id=unit_id, key_field=unit_key))
 
@@ -127,9 +127,9 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         for i in range(10):
             unit_id = 'bar_%i' % i
             unit_key = 'key_%i' % i
-            rcu = model.RepositoryContentUnit(repo_id='foo',
-                                              unit_type_id='demo_model',
-                                              unit_id=unit_id)
+            rcu = models.RepositoryContentUnit(repo_id='foo',
+                                               unit_type_id='demo_model',
+                                               unit_id=unit_id)
             rcu_list.append(rcu)
             unit_list.append(DemoModel(id=unit_id, key_field=unit_key))
 
@@ -146,7 +146,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
 
 class UpdateRepoUnitCountsTests(unittest.TestCase):
 
-    @patch('pulp.server.controllers.repository.model.Repository.objects')
+    @patch('pulp.server.controllers.repository.models.Repository.objects')
     @patch('pulp.server.controllers.repository.connection.get_database')
     def test_calculate_counts(self, mock_get_db, mock_repo_objects):
         """
@@ -172,7 +172,7 @@ class UpdateRepoUnitCountsTests(unittest.TestCase):
 
 class AssociateSingleUnitTests(unittest.TestCase):
 
-    @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+    @patch('pulp.server.controllers.repository.models.RepositoryContentUnit.objects')
     @patch('pulp.server.controllers.repository.dateutils.format_iso8601_utc_timestamp')
     def test_unit_association(self, mock_get_timestamp, mock_rcu_objects):
         mock_get_timestamp.return_value = 'foo_tstamp'
@@ -192,7 +192,7 @@ class AssociateSingleUnitTests(unittest.TestCase):
 
 class TestDisassociateUnits(unittest.TestCase):
 
-    @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+    @patch('pulp.server.controllers.repository.models.RepositoryContentUnit.objects')
     def test_disaccociate_units(self, m_rcu_objects):
         """"
         Test that multiple objects are all deleted
@@ -206,7 +206,7 @@ class TestDisassociateUnits(unittest.TestCase):
 
 
 @mock.patch('pulp.server.controllers.repository.manager_factory')
-@mock.patch('pulp.server.controllers.repository.model.Repository')
+@mock.patch('pulp.server.controllers.repository.models.Repository')
 class TestCreateRepo(unittest.TestCase):
     """
     Tests for repo creation.
@@ -338,7 +338,7 @@ class TestQueueDelete(unittest.TestCase):
 @mock.patch('pulp.server.controllers.repository.RepoSyncResult')
 @mock.patch('pulp.server.controllers.repository.RepoPublishResult')
 @mock.patch('pulp.server.controllers.repository.RepoContentUnit')
-@mock.patch('pulp.server.controllers.repository.model.Repository')
+@mock.patch('pulp.server.controllers.repository.models.Repository')
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 class TestDelete(unittest.TestCase):
     """
@@ -617,7 +617,7 @@ class TestUpdateLastUnitAdded(unittest.TestCase):
     Tests for update last unit added.
     """
 
-    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.models.Repository.objects')
     @mock.patch('pulp.server.controllers.repository.dateutils')
     def test_update_last_unit_added(self, mock_date, mock_repo_qs):
         """
@@ -634,7 +634,7 @@ class TestUpdateLastUnitRemoved(unittest.TestCase):
     Tests for update last unit removed.
     """
 
-    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.models.Repository.objects')
     @mock.patch('pulp.server.controllers.repository.dateutils')
     def test_update_last_unit_removed(self, mock_date, mock_repo_qs):
         """
@@ -656,7 +656,7 @@ class TestUpdateLastUnitRemoved(unittest.TestCase):
 @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
 @mock.patch('pulp.server.controllers.repository.plugin_api')
 @mock.patch('pulp.server.controllers.repository.RepoImporter')
-@mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+@mock.patch('pulp.server.controllers.repository.models.Repository.objects')
 class TestSync(unittest.TestCase):
     """
     Tests for syncing a repository.
@@ -850,7 +850,7 @@ class TestSync(unittest.TestCase):
 
 
 @mock.patch('pulp.server.controllers.repository.RepoDistributor')
-@mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+@mock.patch('pulp.server.controllers.repository.models.Repository.objects')
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 class TestPublish(unittest.TestCase):
     """
@@ -1020,7 +1020,7 @@ class TestAutoDistributors(unittest.TestCase):
         self.assertTrue(isinstance(result, list))
 
 
-@mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+@mock.patch('pulp.server.controllers.repository.models.Repository.objects')
 @mock.patch('pulp.server.controllers.repository.RepoSyncResult')
 class TestSyncHistory(unittest.TestCase):
     """
@@ -1046,7 +1046,7 @@ class TestSyncHistory(unittest.TestCase):
 
 
 @mock.patch('pulp.server.controllers.repository.RepoDistributor')
-@mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+@mock.patch('pulp.server.controllers.repository.models.Repository.objects')
 @mock.patch('pulp.server.controllers.repository.RepoPublishResult')
 class TestPublishHistory(unittest.TestCase):
     """
@@ -1147,7 +1147,7 @@ class TestUpdateUnitCount(unittest.TestCase):
     Tests for updating the unit count of a repository.
     """
 
-    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.models.Repository.objects')
     def test_update_unit_count(self, mock_repo_qs):
         """
         Make sure the correct mongoengine key is used.
@@ -1156,7 +1156,7 @@ class TestUpdateUnitCount(unittest.TestCase):
         expected_key = 'inc__content_unit_counts__mock_type'
         mock_repo_qs().update_one.assert_called_once_with(**{expected_key: 2})
 
-    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.models.Repository.objects')
     def test_update_unit_count_errror(self, mock_repo_qs):
         """
         If update throws an error, catch it an reraise a PulpExecutionException.

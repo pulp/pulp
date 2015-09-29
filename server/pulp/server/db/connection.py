@@ -198,7 +198,7 @@ class UnsafeRetry(object):
         Decorate the PyMongo methods on instance.
 
         :param instance: instance of a class that implements PyMongo methods.
-        :type  instance: pulp.server.db.PulpCollection or pulp.server.db.model.AutoRetryDocument
+        :type  instance: pulp.server.db.PulpCollection or pulp.server.db.models.AutoRetryDocument
         :param full_name: Collection of the class, used for logging
         :type  full_name: str
         """

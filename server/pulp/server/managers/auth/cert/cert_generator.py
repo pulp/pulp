@@ -22,7 +22,7 @@ class CertGenerationManager(object):
         Generates a x509 certificate for an admin user.
 
         @param user: identification the certificate will be created for; may not be None
-        @type  user: pulp.server.db.model.User
+        @type  user: pulp.server.db.models.User
 
         @return: tuple of PEM encoded private key and certificate
         @rtype:  (str, str)
@@ -124,7 +124,7 @@ class CertGenerationManager(object):
         This is intended to be the identity used in admin certificates.
 
         @param user: admin user; may not be None
-        @type user:  pulp.server.db.model.User
+        @type user:  pulp.server.db.models.User
 
         @return: single line identification of the admin user safe for public visibility;
                  any sensitive information is hashed

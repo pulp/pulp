@@ -12,7 +12,7 @@ from pulp.common.constants import CALL_CANCELED_STATE, CALL_COMPLETE_STATES
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async import tasks
 from pulp.server.auth import authorization
-from pulp.server.db.model import Worker, TaskStatus
+from pulp.server.db.models import Worker, TaskStatus
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required

@@ -9,7 +9,8 @@ from mongoengine import NotUniqueError
 from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.model import dispatch, Worker
+from pulp.server.db.model import dispatch
+from pulp.server.db.models import Worker
 from pulp.server.managers.factory import initialize
 
 

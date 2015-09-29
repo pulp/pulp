@@ -5,14 +5,14 @@ from pulp.devel import mock_plugins
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.importer import Importer
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import RepoImporter
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.importer as importer_manager
 
 
-@mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+@mock.patch('pulp.server.managers.repo.importer.models.Repository.objects')
 class RepoManagerTests(base.PulpServerTests):
 
     def setUp(self):
@@ -26,7 +26,7 @@ class RepoManagerTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoManagerTests, self).clean()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoImporter.get_collection().remove()
 
     def test_set_importer(self, mock_repo_qs):

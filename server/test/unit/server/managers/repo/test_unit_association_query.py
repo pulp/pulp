@@ -93,7 +93,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         super(UnitAssociationQueryTests, self).tearDown()
         manager_factory.reset()
 
-    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.models.Repository.objects')
     def _populate(self, _):
         """
         Populates the database with units and associations with the

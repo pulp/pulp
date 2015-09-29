@@ -10,7 +10,7 @@ from pulp.devel.mock_distributor import get_publish_conduit
 from pulp.plugins.file.distributor import FilePublishProgressReport
 from pulp.plugins.file.model_distributor import FileDistributor, BUILD_DIRNAME
 from pulp.plugins.model import Repository as OldRepoModel
-from pulp.server.db.model import Repository
+from pulp.server.db.models import Repository
 
 
 DATA_DIR = os.path.realpath("../../../data/")

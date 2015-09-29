@@ -17,7 +17,7 @@ import mock
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.managers import factory as managers
 from pulp.plugins.types import database as unit_db
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.content import ContentType
 
@@ -91,7 +91,7 @@ class QueryTests(ServerTests):
 
     def tearDown(self):
         super(QueryTests, self).tearDown()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 

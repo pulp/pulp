@@ -34,7 +34,7 @@ class ContentStorage(object):
         The file (or directory) at the specified *path* is transferred into storage.
 
         :param unit: The content unit to be stored.
-        :type unit: pulp.sever.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         :param path: The absolute path to the file (or directory) to be stored.
         :type path: str
         """
@@ -83,7 +83,7 @@ class FileStorage(ContentStorage):
         The file (or directory) at the specified *path* is transferred into storage.
 
         :param unit: The content unit to be stored.
-        :type unit: pulp.sever.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         :param path: The absolute path to the file (or directory) to be stored.
         :type path: str
         """
@@ -141,7 +141,7 @@ class SharedStorage(ContentStorage):
         The file (or directory) at the specified *path* is transferred into storage.
 
         :param unit: The content unit to be stored.
-        :type unit: pulp.sever.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         :param path: The absolute path to the file (or directory) to be stored.
         :type path: str
         """
@@ -211,7 +211,7 @@ class SharedStorage(ContentStorage):
         Link the specified content unit (by id) to the shared content.
 
         :param unit: The content unit to be linked.
-        :type unit: pulp.sever.db.model.ContentUnit
+        :type unit: pulp.server.db.models.ContentUnit
         """
         target = self.content_dir
         link = os.path.join(self.links_dir, unit.id)

@@ -261,7 +261,7 @@ class Repository(ModelSerializer):
         Build the href for a repository.
 
         :param instance: repository being serialized
-        :type  instance: pulp.server.db.model.Repository
+        :type  instance: pulp.server.db.models.Repository
 
         :return: REST href for the given repository instance
         :rtype:  str

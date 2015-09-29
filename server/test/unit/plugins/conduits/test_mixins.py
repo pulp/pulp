@@ -10,7 +10,7 @@ from pulp.plugins.conduits import mixins
 from pulp.plugins.model import Unit, PublishReport
 from pulp.server import constants
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
@@ -51,7 +51,7 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
     def clean(self):
         super(DistributorScratchpadMixinTests, self).clean()
         types_database.clean()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -60,7 +60,7 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
         mock_plugins.install()
         self.distributor_manager = RepoDistributorManager()
         repo_id = 'repo-1'
-        with mock.patch('pulp.server.managers.repo.distributor.model.Repository'):
+        with mock.patch('pulp.server.managers.repo.distributor.models.Repository'):
             self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True,
                                                      distributor_id='test-distributor')
 
@@ -110,7 +110,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         self.repo_id = 'sp-repo'
         self.mixin = mixins.RepoScratchPadMixin(self.repo_id, mixins.ImporterConduitException)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_get_repo_scratchpad(self, mock_repo_qs):
         """
         Test getting a scratchpad from an existing repository.
@@ -119,7 +119,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         scratchpad = self.mixin.get_repo_scratchpad()
         self.assertTrue(scratchpad is mock_repo.scratchpad)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_get_repo_scratchpad_missing_repo(self, mock_repo_qs):
         """
         Test getting a scratchpad from a repository that does not exist.
@@ -127,7 +127,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         mock_repo_qs.get_repo_or_missing_resource.side_effect = pulp_exceptions.MissingResource
         self.assertRaises(mixins.ImporterConduitException, self.mixin.get_repo_scratchpad)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_set_repo_scratchpad(self, mock_repo_qs):
         """
         Test setting a scratchpad on a repository.
@@ -139,7 +139,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         self.assertEqual(mock_repo.scratchpad, scratchpad)
         mock_repo.save.assert_called_once_with()
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_set_repo_scratchpad_non_dict(self, mock_repo_qs):
         """
         Test setting an invalid scratchpad.
@@ -152,7 +152,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with(self.repo_id)
         mock_repo.save.assert_called_once_with()
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_update_repo_scratchpad_no_scratchpad(self, mock_repo_qs):
         """
         If the scratchpad is empty, should return before anything else can happen.
@@ -160,7 +160,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         self.mixin.update_repo_scratchpad({})
         self.assertFalse(mock_repo_qs.get_repo_or_missing_resource.called)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_update_repo_scratchpad(self, mock_repo_qs):
         """
         Test updating a repository scratchpad.
@@ -172,7 +172,7 @@ class RepoScratchPadMixinTests(unittest.TestCase):
         expected_scratchpad = {'modify': 1, 'new': 2, 'leave': 3}
         self.assertEqual(mock_repo.scratchpad, expected_scratchpad)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_update_repo_scratchpad__error(self, mock_repo_qs):
         """
         If there is an issue updating a scratchpad, reraise as the class's exception.
@@ -196,7 +196,7 @@ class RepoScratchPadReadMixinTests(unittest.TestCase):
         manager_factory.initialize()
         self.mixin = mixins.RepoScratchpadReadMixin(mixins.ImporterConduitException)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_get_repo_scratchpad(self, mock_repo_qs):
         """
         Test getting a scratchpad from an existing repository.
@@ -206,7 +206,7 @@ class RepoScratchPadReadMixinTests(unittest.TestCase):
         mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('repo')
         self.assertTrue(scratchpad is mock_repo.scratchpad)
 
-    @mock.patch('pulp.plugins.conduits.mixins.model.Repository.objects')
+    @mock.patch('pulp.plugins.conduits.mixins.models.Repository.objects')
     def test_get_repo_scratchpad_missing_repo(self, mock_repo_qs):
         """
         Test getting a scratchpad from a repository that does not exist.
@@ -387,14 +387,14 @@ class ImporterScratchPadMixinTests(base.PulpServerTests):
     def clean(self):
         super(ImporterScratchPadMixinTests, self).clean()
         types_database.clean()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
 
     def tearDown(self):
         super(ImporterScratchPadMixinTests, self).tearDown()
         manager_factory.reset()
         mock_plugins.reset()
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository')
+    @mock.patch('pulp.server.managers.repo.importer.models.Repository')
     def test_get_set_scratchpad(self, mock_repo_qs):
         """
         Tests scratchpad calls.
@@ -803,7 +803,7 @@ class StatusMixinTests(unittest.TestCase):
     def setUp(self):
         manager_factory.initialize()
 
-    @mock.patch('pulp.server.db.model.TaskStatus.objects')
+    @mock.patch('pulp.server.db.models.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
     def test_set_progress(self, mock_get_task_id, mock_task_status_objects):
         # Setup
@@ -824,7 +824,7 @@ class StatusMixinTests(unittest.TestCase):
         test_task_documents.update_one.assert_called_with(
             set__progress_report={'test-report': 'status'})
 
-    @mock.patch('pulp.server.db.model.TaskStatus.objects')
+    @mock.patch('pulp.server.db.models.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
     def test_set_progress_no_task(self, mock_get_task_id, mock_task_status_objects):
         # Setup
@@ -838,7 +838,7 @@ class StatusMixinTests(unittest.TestCase):
         # Verify
         self.assertFalse(mock_task_status_objects.called)
 
-    @mock.patch('pulp.server.db.model.TaskStatus.objects')
+    @mock.patch('pulp.server.db.models.TaskStatus.objects')
     def test_set_progress_with_exception(self, mock_call):
         # Setup
         self.report_id = 'test-report'

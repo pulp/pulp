@@ -12,7 +12,7 @@ from ... import base
 from pulp.common.compat import all, json
 from pulp.server.db import manage
 from pulp.server.db.migrate import models
-from pulp.server.db.model import MigrationTracker
+from pulp.server.db.models import MigrationTracker
 import pulp.plugins.types.database as types_db
 import migration_packages.a
 import migration_packages.b

@@ -7,7 +7,7 @@ from pulp.common import dateutils
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import DistributorConduitException
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit, RepoGroupPublishConduit
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers import factory as manager_factory
@@ -19,10 +19,10 @@ class RepoPublishConduitTests(base.PulpServerTests):
         super(RepoPublishConduitTests, self).clean()
 
         mock_plugins.reset()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.managers.repo.importer.models.Repository.objects')
     def setUp(self, mock_repo_qs):
         super(RepoPublishConduitTests, self).setUp()
         mock_plugins.install()

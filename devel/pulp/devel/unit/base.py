@@ -75,7 +75,7 @@ class PulpCeleryTaskTests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.patch1 = mock.patch('pulp.server.db.model.TaskStatus')
+        self.patch1 = mock.patch('pulp.server.db.models.TaskStatus')
         self.patch1.start()
 
     def tearDown(self):

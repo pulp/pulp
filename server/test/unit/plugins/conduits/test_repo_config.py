@@ -5,7 +5,7 @@ import mock
 from ... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers import factory as manager_factory
 
@@ -19,7 +19,7 @@ class RepoConfigConduitTests(base.PulpServerTests):
 
         self.distributor_manager = manager_factory.repo_distributor_manager()
 
-        with mock.patch('pulp.server.managers.repo.distributor.model.Repository.objects'):
+        with mock.patch('pulp.server.managers.repo.distributor.models.Repository.objects'):
             # Populate the database with a repo with units
             self.distributor_manager.add_distributor(
                 'repo-1', 'mock-distributor', {"relative_url": "/a/bc/d"}, True,
@@ -52,7 +52,7 @@ class RepoConfigConduitTests(base.PulpServerTests):
         super(RepoConfigConduitTests, self).clean()
 
         mock_plugins.MOCK_DISTRIBUTOR.reset_mock()
-        model.Repository.drop_collection()
+        models.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
 
     def test_get_distributors_by_relative_url_with_same_url(self):

@@ -446,7 +446,7 @@ class PluginStep(Step):
         Return the repo associated with the step
 
         :returns: the repository for this action
-        :rtype: pulp.server.db.model.Repository
+        :rtype: pulp.server.db.models.Repository
         """
         if self.repo:
             return self.repo

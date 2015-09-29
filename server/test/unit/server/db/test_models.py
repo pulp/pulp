@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Tests for the pulp.server.db.model module.
+Tests for the pulp.server.db.models module.
 """
 
 from mock import patch, Mock
@@ -11,12 +11,12 @@ from mongoengine import ValidationError, DateTimeField, DictField, Document, Int
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
 from pulp.server.exceptions import PulpCodedException
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet
 
 
-@patch('pulp.server.db.model.UnsafeRetry')
+@patch('pulp.server.db.models.UnsafeRetry')
 class TestAutoRetryDocument(unittest.TestCase):
     """
     Test base class for pulp docs.
@@ -27,7 +27,7 @@ class TestAutoRetryDocument(unittest.TestCase):
         Ensure that subclass's of AutoRetryDocuments are decorated on init.
         """
 
-        class MockDoc(model.AutoRetryDocument):
+        class MockDoc(models.AutoRetryDocument):
             pass
 
         doc = MockDoc()
@@ -37,7 +37,7 @@ class TestAutoRetryDocument(unittest.TestCase):
         """
         Ensure that AutoRetryDocument is an abstract document.
         """
-        self.assertDictEqual(model.AutoRetryDocument._meta, {'abstract': True})
+        self.assertDictEqual(models.AutoRetryDocument._meta, {'abstract': True})
 
 
 class TestContentUnit(unittest.TestCase):
@@ -46,30 +46,30 @@ class TestContentUnit(unittest.TestCase):
     """
 
     def test_model_fields(self):
-        self.assertTrue(isinstance(model.ContentUnit.id, StringField))
-        self.assertTrue(model.ContentUnit.id.primary_key)
+        self.assertTrue(isinstance(models.ContentUnit.id, StringField))
+        self.assertTrue(models.ContentUnit.id.primary_key)
 
-        self.assertTrue(isinstance(model.ContentUnit.last_updated, IntField))
-        self.assertTrue(model.ContentUnit.last_updated.required)
-        self.assertEquals(model.ContentUnit.last_updated.db_field, '_last_updated')
+        self.assertTrue(isinstance(models.ContentUnit.last_updated, IntField))
+        self.assertTrue(models.ContentUnit.last_updated.required)
+        self.assertEquals(models.ContentUnit.last_updated.db_field, '_last_updated')
 
-        self.assertTrue(isinstance(model.ContentUnit.user_metadata, DictField))
-        self.assertEquals(model.ContentUnit.user_metadata.db_field, 'pulp_user_metadata')
+        self.assertTrue(isinstance(models.ContentUnit.user_metadata, DictField))
+        self.assertEquals(models.ContentUnit.user_metadata.db_field, 'pulp_user_metadata')
 
-        self.assertTrue(isinstance(model.ContentUnit.storage_path, StringField))
-        self.assertEquals(model.ContentUnit.storage_path.db_field, '_storage_path')
+        self.assertTrue(isinstance(models.ContentUnit.storage_path, StringField))
+        self.assertEquals(models.ContentUnit.storage_path.db_field, '_storage_path')
 
-        self.assertTrue(isinstance(model.ContentUnit._ns, StringField))
-        self.assertTrue(model.ContentUnit._ns)
-        self.assertTrue(isinstance(model.ContentUnit.unit_type_id, StringField))
-        self.assertTrue(model.ContentUnit.unit_type_id)
+        self.assertTrue(isinstance(models.ContentUnit._ns, StringField))
+        self.assertTrue(models.ContentUnit._ns)
+        self.assertTrue(isinstance(models.ContentUnit.unit_type_id, StringField))
+        self.assertTrue(models.ContentUnit.unit_type_id)
 
     def test_meta_abstract(self):
-        self.assertEquals(model.ContentUnit._meta['abstract'], True)
+        self.assertEquals(models.ContentUnit._meta['abstract'], True)
 
-    @patch('pulp.server.db.model.signals')
+    @patch('pulp.server.db.models.signals')
     def test_attach_signals(self, mock_signals):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             unit_type_id = StringField(default='foo')
             unit_key_fields = ['apple', 'pear']
 
@@ -82,7 +82,7 @@ class TestContentUnit(unittest.TestCase):
         self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
 
     def test_attach_signals_without_unit_key_fields_defined(self):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             unit_type_id = StringField(default='foo')
 
         try:
@@ -92,12 +92,12 @@ class TestContentUnit(unittest.TestCase):
             self.assertEquals(raised_error.error_code, error_codes.PLP0035)
             self.assertEqual(raised_error.error_data, {'class_name': 'ContentUnitHelper'})
 
-    @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
+    @patch('pulp.server.db.models.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
         """
         Test the pre_save signal handler
         """
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             id = None
             last_updated = None
 
@@ -105,7 +105,7 @@ class TestContentUnit(unittest.TestCase):
         helper = ContentUnitHelper()
         helper.last_updated = 50
 
-        model.ContentUnit.pre_save_signal({}, helper)
+        models.ContentUnit.pre_save_signal({}, helper)
 
         self.assertIsNotNone(helper.id)
 
@@ -116,26 +116,26 @@ class TestContentUnit(unittest.TestCase):
         """
         Test the pre_save signal handler leaves an existing id on an object in place
         """
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             id = None
             last_updated = None
 
         helper = ContentUnitHelper()
         helper.id = "foo"
 
-        model.ContentUnit.pre_save_signal({}, helper)
+        models.ContentUnit.pre_save_signal({}, helper)
 
         # make sure the id wasn't replaced
         self.assertEquals(helper.id, 'foo')
 
-    @patch('pulp.server.db.model.Repository.objects')
-    @patch('pulp.server.db.model.RepositoryContentUnit.objects')
+    @patch('pulp.server.db.models.Repository.objects')
+    @patch('pulp.server.db.models.RepositoryContentUnit.objects')
     def test_get_repositories(self, mock_rcu_query, mock_repository_query):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             pass
 
-        c1 = model.RepositoryContentUnit(repo_id='repo1')
-        c2 = model.RepositoryContentUnit(repo_id='repo2')
+        c1 = models.RepositoryContentUnit(repo_id='repo1')
+        c2 = models.RepositoryContentUnit(repo_id='repo2')
 
         mock_rcu_query.return_value = [c1, c2]
         mock_repository_query.return_value = ['apples']
@@ -147,9 +147,9 @@ class TestContentUnit(unittest.TestCase):
         mock_rcu_query.assert_called_once_with(unit_id='foo_id')
         mock_repository_query.assert_called_once_with(repo_id__in=['repo1', 'repo2'])
 
-    @patch('pulp.server.db.model.signals')
+    @patch('pulp.server.db.models.signals')
     def test_as_named_tuple(self, m_signal):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             apple = StringField()
             pear = StringField()
             unit_key_fields = ('apple', 'pear')
@@ -165,7 +165,7 @@ class TestContentUnit(unittest.TestCase):
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
 
     def test_id_to_dict(self):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             apple = StringField()
             pear = StringField()
             unit_key_fields = ('apple', 'pear')
@@ -176,7 +176,7 @@ class TestContentUnit(unittest.TestCase):
         self.assertEqual(ret, expected_dict)
 
     def test_type_id(self):
-        class ContentUnitHelper(model.ContentUnit):
+        class ContentUnitHelper(models.ContentUnit):
             unit_type_id = StringField()
         my_unit = ContentUnitHelper(unit_type_id='apple')
         self.assertEqual(my_unit.type_id, 'apple')
@@ -184,7 +184,7 @@ class TestContentUnit(unittest.TestCase):
 
 class TestFileContentUnit(unittest.TestCase):
 
-    class TestUnit(model.FileContentUnit):
+    class TestUnit(models.FileContentUnit):
         pass
 
     def test_init(self):
@@ -214,9 +214,9 @@ class TestFileContentUnit(unittest.TestCase):
         except PulpCodedException as raised_error:
             self.assertEquals(raised_error.error_code, error_codes.PLP0036)
 
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
+    @patch('pulp.server.db.models.FileStorage.put')
+    @patch('pulp.server.db.models.FileStorage.open')
+    @patch('pulp.server.db.models.FileStorage.close')
     def test_pre_save_signal(self, close, _open, put):
         sender = Mock()
         kwargs = {'a': 1, 'b': 2}
@@ -224,7 +224,7 @@ class TestFileContentUnit(unittest.TestCase):
         # test
         unit = TestFileContentUnit.TestUnit()
         unit._source_location = '1234'
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+        with patch('pulp.server.db.models.ContentUnit.pre_save_signal') as base:
             unit.pre_save_signal(sender, unit, **kwargs)
 
         # validation
@@ -233,9 +233,9 @@ class TestFileContentUnit(unittest.TestCase):
         close.assert_called_once_with()
         put.assert_called_once_with(unit, unit._source_location)
 
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
+    @patch('pulp.server.db.models.FileStorage.put')
+    @patch('pulp.server.db.models.FileStorage.open')
+    @patch('pulp.server.db.models.FileStorage.close')
     def test_pre_save_signal_no_content(self, close, _open, put):
         sender = Mock()
         kwargs = {'a': 1, 'b': 2}
@@ -243,7 +243,7 @@ class TestFileContentUnit(unittest.TestCase):
         # test
         unit = TestFileContentUnit.TestUnit()
         unit._source_location = None
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+        with patch('pulp.server.db.models.ContentUnit.pre_save_signal') as base:
             unit.pre_save_signal(sender, unit, **kwargs)
 
         # validation
@@ -255,7 +255,7 @@ class TestFileContentUnit(unittest.TestCase):
 
 class TestSharedContentUnit(unittest.TestCase):
 
-    class TestUnit(model.SharedContentUnit):
+    class TestUnit(models.SharedContentUnit):
         pass
 
     def test_abstract(self):
@@ -263,18 +263,18 @@ class TestSharedContentUnit(unittest.TestCase):
         self.assertRaises(NotImplementedError, getattr, unit, 'storage_provider')
         self.assertRaises(NotImplementedError, getattr, unit, 'storage_id')
 
-    @patch('pulp.server.db.model.SharedStorage.link')
-    @patch('pulp.server.db.model.SharedStorage.open')
-    @patch('pulp.server.db.model.SharedStorage.close')
-    @patch('pulp.server.db.model.SharedContentUnit.storage_provider', 'git')
-    @patch('pulp.server.db.model.SharedContentUnit.storage_id', '1234')
+    @patch('pulp.server.db.models.SharedStorage.link')
+    @patch('pulp.server.db.models.SharedStorage.open')
+    @patch('pulp.server.db.models.SharedStorage.close')
+    @patch('pulp.server.db.models.SharedContentUnit.storage_provider', 'git')
+    @patch('pulp.server.db.models.SharedContentUnit.storage_id', '1234')
     def test_pre_save_signal(self, close, _open, link):
         sender = Mock()
         kwargs = {'a': 1, 'b': 2}
 
         # test
         unit = TestSharedContentUnit.TestUnit()
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
+        with patch('pulp.server.db.models.ContentUnit.pre_save_signal') as base:
             unit.pre_save_signal(sender, unit, **kwargs)
 
         # validation
@@ -290,36 +290,36 @@ class TestRepositoryContentUnit(unittest.TestCase):
     """
 
     def test_model_superclass(self):
-        sample_model = model.RepositoryContentUnit()
+        sample_model = models.RepositoryContentUnit()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_model_fields(self):
-        self.assertTrue(isinstance(model.RepositoryContentUnit.repo_id, StringField))
-        self.assertTrue(model.RepositoryContentUnit.repo_id.required)
+        self.assertTrue(isinstance(models.RepositoryContentUnit.repo_id, StringField))
+        self.assertTrue(models.RepositoryContentUnit.repo_id.required)
 
-        self.assertTrue(isinstance(model.RepositoryContentUnit.unit_id, StringField))
-        self.assertTrue(model.RepositoryContentUnit.unit_id.required)
+        self.assertTrue(isinstance(models.RepositoryContentUnit.unit_id, StringField))
+        self.assertTrue(models.RepositoryContentUnit.unit_id.required)
 
-        self.assertTrue(isinstance(model.RepositoryContentUnit.unit_type_id, StringField))
-        self.assertTrue(model.RepositoryContentUnit.unit_type_id.required)
+        self.assertTrue(isinstance(models.RepositoryContentUnit.unit_type_id, StringField))
+        self.assertTrue(models.RepositoryContentUnit.unit_type_id.required)
 
-        self.assertTrue(isinstance(model.RepositoryContentUnit.created, ISO8601StringField))
-        self.assertTrue(model.RepositoryContentUnit.created.required)
+        self.assertTrue(isinstance(models.RepositoryContentUnit.created, ISO8601StringField))
+        self.assertTrue(models.RepositoryContentUnit.created.required)
 
-        self.assertTrue(isinstance(model.RepositoryContentUnit.updated, ISO8601StringField))
-        self.assertTrue(model.RepositoryContentUnit.updated.required)
+        self.assertTrue(isinstance(models.RepositoryContentUnit.updated, ISO8601StringField))
+        self.assertTrue(models.RepositoryContentUnit.updated.required)
 
-        self.assertTrue(isinstance(model.RepositoryContentUnit._ns, StringField))
-        self.assertEquals(model.RepositoryContentUnit._ns.default, 'repo_content_units')
+        self.assertTrue(isinstance(models.RepositoryContentUnit._ns, StringField))
+        self.assertEquals(models.RepositoryContentUnit._ns.default, 'repo_content_units')
 
     def test_meta_collection(self):
-        self.assertEquals(model.RepositoryContentUnit._meta['collection'], 'repo_content_units')
+        self.assertEquals(models.RepositoryContentUnit._meta['collection'], 'repo_content_units')
 
     def test_meta_allow_inheritance(self):
-        self.assertEquals(model.RepositoryContentUnit._meta['allow_inheritance'], False)
+        self.assertEquals(models.RepositoryContentUnit._meta['allow_inheritance'], False)
 
     def test_meta_allow_indexes(self):
-        indexes = model.RepositoryContentUnit._meta['indexes']
+        indexes = models.RepositoryContentUnit._meta['indexes']
         self.assertDictEqual(indexes[0], {'fields': ['repo_id', 'unit_type_id', 'unit_id'],
                                           'unique': True})
         self.assertDictEqual(indexes[1], {'fields': ['unit_id']})
@@ -331,32 +331,32 @@ class TestReservedResource(unittest.TestCase):
     """
 
     def test_model_superclass(self):
-        sample_model = model.ReservedResource()
+        sample_model = models.ReservedResource()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_attributes(self):
-        self.assertTrue(isinstance(model.ReservedResource.task_id, StringField))
-        self.assertTrue(model.ReservedResource.task_id.primary_key)
-        self.assertEqual(model.ReservedResource.task_id.db_field, '_id')
+        self.assertTrue(isinstance(models.ReservedResource.task_id, StringField))
+        self.assertTrue(models.ReservedResource.task_id.primary_key)
+        self.assertEqual(models.ReservedResource.task_id.db_field, '_id')
 
-        self.assertTrue(isinstance(model.ReservedResource.worker_name, StringField))
-        self.assertTrue(isinstance(model.ReservedResource.resource_id, StringField))
+        self.assertTrue(isinstance(models.ReservedResource.worker_name, StringField))
+        self.assertTrue(isinstance(models.ReservedResource.resource_id, StringField))
 
-        self.assertTrue(isinstance(model.ReservedResource._ns, StringField))
-        self.assertEqual(model.ReservedResource._ns.default, 'reserved_resources')
+        self.assertTrue(isinstance(models.ReservedResource._ns, StringField))
+        self.assertEqual(models.ReservedResource._ns.default, 'reserved_resources')
 
-        self.assertFalse('_id' in model.ReservedResource._fields)
-        self.assertFalse('id' in model.ReservedResource._fields)
+        self.assertFalse('_id' in models.ReservedResource._fields)
+        self.assertFalse('id' in models.ReservedResource._fields)
 
     def test_indexes(self):
-        self.assertEqual(model.ReservedResource._meta['indexes'],
+        self.assertEqual(models.ReservedResource._meta['indexes'],
                          ['-worker_name', '-resource_id'])
 
     def test_meta_collection(self):
-        self.assertEqual(model.ReservedResource._meta['collection'], 'reserved_resources')
+        self.assertEqual(models.ReservedResource._meta['collection'], 'reserved_resources')
 
     def test_meta_inheritance(self):
-        self.assertEqual(model.ReservedResource._meta['allow_inheritance'], False)
+        self.assertEqual(models.ReservedResource._meta['allow_inheritance'], False)
 
 
 class TestWorkerModel(unittest.TestCase):
@@ -365,33 +365,33 @@ class TestWorkerModel(unittest.TestCase):
     """
 
     def test_model_superclass(self):
-        sample_model = model.Worker()
+        sample_model = models.Worker()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_queue_name(self):
-        worker = model.Worker()
+        worker = models.Worker()
         worker.name = "fake-worker"
         self.assertEquals(worker.queue_name, 'fake-worker.dq')
 
     def test_attributes(self):
-        self.assertTrue(isinstance(model.Worker.name, StringField))
-        self.assertTrue(model.Worker.name.primary_key)
+        self.assertTrue(isinstance(models.Worker.name, StringField))
+        self.assertTrue(models.Worker.name.primary_key)
 
-        self.assertTrue(isinstance(model.Worker.last_heartbeat, DateTimeField))
+        self.assertTrue(isinstance(models.Worker.last_heartbeat, DateTimeField))
 
-        self.assertTrue('_ns' in model.Worker._fields)
+        self.assertTrue('_ns' in models.Worker._fields)
 
     def test_indexes(self):
-        self.assertEqual(model.Worker._meta['indexes'], [])
+        self.assertEqual(models.Worker._meta['indexes'], [])
 
     def test_meta_collection(self):
-        self.assertEqual(model.Worker._meta['collection'], 'workers')
+        self.assertEqual(models.Worker._meta['collection'], 'workers')
 
     def test_meta_inheritance(self):
-        self.assertEqual(model.Worker._meta['allow_inheritance'], False)
+        self.assertEqual(models.Worker._meta['allow_inheritance'], False)
 
     def test_meta_queryset(self):
-        self.assertEqual(model.Worker._meta['queryset_class'], CriteriaQuerySet)
+        self.assertEqual(models.Worker._meta['queryset_class'], CriteriaQuerySet)
 
 
 class TestMigrationTracker(unittest.TestCase):
@@ -400,28 +400,28 @@ class TestMigrationTracker(unittest.TestCase):
     """
 
     def test_model_superclass(self):
-        sample_model = model.MigrationTracker()
+        sample_model = models.MigrationTracker()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_attributes(self):
-        self.assertTrue(isinstance(model.MigrationTracker.name, StringField))
-        self.assertTrue(model.MigrationTracker.name.unique)
-        self.assertTrue(model.MigrationTracker.name.required)
+        self.assertTrue(isinstance(models.MigrationTracker.name, StringField))
+        self.assertTrue(models.MigrationTracker.name.unique)
+        self.assertTrue(models.MigrationTracker.name.required)
 
-        self.assertTrue(isinstance(model.MigrationTracker.version, IntField))
-        self.assertEqual(model.MigrationTracker.version.default, 0)
+        self.assertTrue(isinstance(models.MigrationTracker.version, IntField))
+        self.assertEqual(models.MigrationTracker.version.default, 0)
 
-        self.assertTrue(isinstance(model.MigrationTracker._ns, StringField))
-        self.assertEqual(model.MigrationTracker._ns.default, 'migration_trackers')
+        self.assertTrue(isinstance(models.MigrationTracker._ns, StringField))
+        self.assertEqual(models.MigrationTracker._ns.default, 'migration_trackers')
 
     def test_indexes(self):
-        self.assertEqual(model.MigrationTracker._meta['indexes'], [])
+        self.assertEqual(models.MigrationTracker._meta['indexes'], [])
 
     def test_meta_collection(self):
-        self.assertEqual(model.MigrationTracker._meta['collection'], 'migration_trackers')
+        self.assertEqual(models.MigrationTracker._meta['collection'], 'migration_trackers')
 
     def test_meta_inheritance(self):
-        self.assertEqual(model.ReservedResource._meta['allow_inheritance'], False)
+        self.assertEqual(models.ReservedResource._meta['allow_inheritance'], False)
 
 
 class TestRepository(unittest.TestCase):
@@ -434,65 +434,65 @@ class TestRepository(unittest.TestCase):
         """
         Ensure that the Repository model is a subclass of Mongoengine's Document class.
         """
-        sample_model = model.Repository()
+        sample_model = models.Repository()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_model_fields(self):
         """
         Assert that each field has the correct type and `required` status.
         """
-        self.assertTrue(isinstance(model.Repository.repo_id, StringField))
-        self.assertTrue(model.Repository.repo_id.required)
-        self.assertEqual(model.Repository.repo_id.db_field, 'repo_id')
+        self.assertTrue(isinstance(models.Repository.repo_id, StringField))
+        self.assertTrue(models.Repository.repo_id.required)
+        self.assertEqual(models.Repository.repo_id.db_field, 'repo_id')
 
-        self.assertTrue(isinstance(model.Repository.display_name, StringField))
-        self.assertFalse(model.Repository.display_name.required)
+        self.assertTrue(isinstance(models.Repository.display_name, StringField))
+        self.assertFalse(models.Repository.display_name.required)
 
-        self.assertTrue(isinstance(model.Repository.description, StringField))
-        self.assertFalse(model.Repository.description.required)
+        self.assertTrue(isinstance(models.Repository.description, StringField))
+        self.assertFalse(models.Repository.description.required)
 
-        self.assertTrue(isinstance(model.Repository.notes, DictField))
-        self.assertFalse(model.Repository.notes.required)
+        self.assertTrue(isinstance(models.Repository.notes, DictField))
+        self.assertFalse(models.Repository.notes.required)
 
-        self.assertTrue(isinstance(model.Repository.scratchpad, DictField))
-        self.assertFalse(model.Repository.scratchpad.required)
+        self.assertTrue(isinstance(models.Repository.scratchpad, DictField))
+        self.assertFalse(models.Repository.scratchpad.required)
 
-        self.assertTrue(isinstance(model.Repository.content_unit_counts, DictField))
-        self.assertFalse(model.Repository.content_unit_counts.required)
+        self.assertTrue(isinstance(models.Repository.content_unit_counts, DictField))
+        self.assertFalse(models.Repository.content_unit_counts.required)
 
-        self.assertTrue(isinstance(model.Repository.last_unit_added, DateTimeField))
-        self.assertFalse(model.Repository.last_unit_added.required)
+        self.assertTrue(isinstance(models.Repository.last_unit_added, DateTimeField))
+        self.assertFalse(models.Repository.last_unit_added.required)
 
-        self.assertTrue(isinstance(model.Repository.last_unit_removed, DateTimeField))
-        self.assertFalse(model.Repository.last_unit_removed.required)
+        self.assertTrue(isinstance(models.Repository.last_unit_removed, DateTimeField))
+        self.assertFalse(models.Repository.last_unit_removed.required)
 
-        self.assertTrue(isinstance(model.Repository._ns, StringField))
-        self.assertEquals(model.Repository._ns.default, 'repos')
+        self.assertTrue(isinstance(models.Repository._ns, StringField))
+        self.assertEquals(models.Repository._ns.default, 'repos')
 
     def test_meta_collection(self):
         """
         Assert that the collection name is correct.
         """
-        self.assertEquals(model.Repository._meta['collection'], 'repos')
+        self.assertEquals(models.Repository._meta['collection'], 'repos')
 
     def test_meta_allow_inheritance(self):
         """
         Ensure that inheritance is not allowed.
         """
-        self.assertEquals(model.Repository._meta['allow_inheritance'], False)
+        self.assertEquals(models.Repository._meta['allow_inheritance'], False)
 
     def test_meta_allow_indexes(self):
         """
         Test that the indexes are set correctly.
         """
-        indexes = model.Repository._meta['indexes']
+        indexes = models.Repository._meta['indexes']
         self.assertDictEqual(indexes[0], {'fields': ['-repo_id'], 'unique': True})
 
     def test_invalid_repo_id(self):
         """
         Ensure that validation raises as expected when invalid characters are present.
         """
-        repo_obj = model.Repository('invalid_char%')
+        repo_obj = models.Repository('invalid_char%')
         self.assertRaises(ValidationError, repo_obj.validate)
 
     def test_create_i18n(self):
@@ -500,7 +500,7 @@ class TestRepository(unittest.TestCase):
         Test use of international text for fields that are not repo_id.
         """
         i18n_text = 'Brasília'
-        repo_obj = model.Repository('limited_characters', i18n_text, i18n_text)
+        repo_obj = models.Repository('limited_characters', i18n_text, i18n_text)
         repo_obj.validate()
 
     def test_to_transfer_repo(self):
@@ -517,7 +517,7 @@ class TestRepository(unittest.TestCase):
             'last_unit_added': dt,
             'last_unit_removed': dt
         }
-        repo_obj = model.Repository(**data)
+        repo_obj = models.Repository(**data)
         repo = repo_obj.to_transfer_repo()
 
         self.assertEquals('foo', repo.id)
@@ -534,7 +534,7 @@ class TestRepository(unittest.TestCase):
         """
         Update repository information from a delta dictionary.
         """
-        repo_obj = model.Repository('mock_repo')
+        repo_obj = models.Repository('mock_repo')
         repo_obj.update_from_delta({'display_name': 'dn_updated', 'description': 'd_update'})
         self.assertEqual(repo_obj.display_name, 'dn_updated')
         self.assertEqual(repo_obj.description, 'd_update')
@@ -543,7 +543,7 @@ class TestRepository(unittest.TestCase):
         """
         Attempt to update a prohibited field. Make sure it is ignored.
         """
-        repo_obj = model.Repository('mock_repo')
+        repo_obj = models.Repository('mock_repo')
         repo_obj.update_from_delta({'repo_id': 'id_updated'})
         self.assertEqual(repo_obj.repo_id, 'mock_repo')
 
@@ -554,7 +554,7 @@ class TestRepository(unittest.TestCase):
         Make sure new fields are added, fields changed to `None` are removed, and existing fields
         are modified.
         """
-        repo_obj = model.Repository('mock_repo', notes={'remove': 1, 'leave': 2, 'modify': 3})
+        repo_obj = models.Repository('mock_repo', notes={'remove': 1, 'leave': 2, 'modify': 3})
         repo_obj.update_from_delta({'notes': {'remove': None, 'modify': 4, 'add': 5}})
         self.assertEqual(repo_obj.repo_id, 'mock_repo')
         self.assertFalse('remove' in repo_obj.notes)
@@ -568,25 +568,25 @@ class TestCeleryBeatLock(unittest.TestCase):
     Test the CeleryBeatLock class.
     """
     def test_model_superclass(self):
-        sample_model = model.CeleryBeatLock()
+        sample_model = models.CeleryBeatLock()
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_attributes(self):
-        self.assertTrue(isinstance(model.CeleryBeatLock.celerybeat_name, StringField))
-        self.assertTrue(model.CeleryBeatLock.celerybeat_name.required)
+        self.assertTrue(isinstance(models.CeleryBeatLock.celerybeat_name, StringField))
+        self.assertTrue(models.CeleryBeatLock.celerybeat_name.required)
 
-        self.assertTrue(isinstance(model.CeleryBeatLock.timestamp, DateTimeField))
-        self.assertTrue(model.CeleryBeatLock.timestamp.required)
+        self.assertTrue(isinstance(models.CeleryBeatLock.timestamp, DateTimeField))
+        self.assertTrue(models.CeleryBeatLock.timestamp.required)
 
-        self.assertTrue(isinstance(model.CeleryBeatLock.lock, StringField))
-        self.assertTrue(model.CeleryBeatLock.lock.required)
-        self.assertTrue(model.CeleryBeatLock.lock.default, 'locked')
-        self.assertTrue(model.CeleryBeatLock.lock.unique)
+        self.assertTrue(isinstance(models.CeleryBeatLock.lock, StringField))
+        self.assertTrue(models.CeleryBeatLock.lock.required)
+        self.assertTrue(models.CeleryBeatLock.lock.default, 'locked')
+        self.assertTrue(models.CeleryBeatLock.lock.unique)
 
-        self.assertTrue('_ns' in model.CeleryBeatLock._fields)
+        self.assertTrue('_ns' in models.CeleryBeatLock._fields)
 
     def test_meta_collection(self):
         """
         Assert that the collection name is correct.
         """
-        self.assertEquals(model.CeleryBeatLock._meta['collection'], 'celery_beat_lock')
+        self.assertEquals(models.CeleryBeatLock._meta['collection'], 'celery_beat_lock')

@@ -104,7 +104,7 @@ class ConsumerScheduleManager(object):
                                 scheduler. Defaults to True.
         :type  enabled:         bool
         :return:    instance of the new ScheduledCal
-        :rtype:     pulp.server.db.models.dispatch.ScheduledCall
+        :rtype:     pulp.server.db.model.dispatch.ScheduledCall
 
         :raise:     pulp.server.exceptions.MissingValue
         """
@@ -146,7 +146,7 @@ class ConsumerScheduleManager(object):
                                 be in ScheduledCall.USER_UPDATE_FIELDS
 
         :return:    instance of ScheduledCall representing the post-update state
-        :rtype:     pulp.server.db.models.dispatch.ScheduledCall
+        :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
         ConsumerScheduleManager._validate_consumer(consumer_id)
         schedule_updates = copy.copy(schedule_data) or {}

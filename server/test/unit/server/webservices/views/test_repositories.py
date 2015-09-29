@@ -12,7 +12,7 @@ from base import (
 from pulp.common import constants, error_codes
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.controllers import repository as repo_controller
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.managers.repo import distributor
 from pulp.server.webservices.views import repositories, util, search
 from pulp.server.webservices.views.repositories import(
@@ -104,7 +104,7 @@ class TestValidateRepoImporterExistance(unittest.TestCase):
     Tests validation of provided repo id and importer id.
     """
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test__get_valid_importer(self, mock_factory, mock_repo_qs):
         """
@@ -120,7 +120,7 @@ class TestValidateRepoImporterExistance(unittest.TestCase):
         mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('some_repo')
         mock_imp_manager.get_importer.assert_called_once_with('some_repo')
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test__get_valid_importer_invalid_repo(self, mock_repo_qs):
         """
         Test validation when provided repo is invalid.
@@ -139,7 +139,7 @@ class TestValidateRepoImporterExistance(unittest.TestCase):
         self.assertTrue(response.error_code is error_codes.PLP0009)
         mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('invalid_repo')
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test__get_valid_importer_no_importer(self, mock_factory, mock_repo_qs):
         """
@@ -163,7 +163,7 @@ class TestValidateRepoImporterExistance(unittest.TestCase):
         mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('some_repo')
         mock_imp_manager.get_importer.assert_called_once_with('some_repo')
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test__get_valid_importer_invalid_importer(self, mock_factory, mock_repo_qs):
         """
@@ -231,7 +231,7 @@ class TestReposView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_get_repos_no_options(self, mock_model, mock_process, mock_serial, mock_resp):
         """
         Get repos without passing options.
@@ -252,7 +252,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_details(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with the details shortcut.
@@ -271,7 +271,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_false(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with by passing an optional get parameter 'details=false'
@@ -294,7 +294,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_lowercase_boolean(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with lowercase true as a get parameter.
@@ -313,7 +313,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_invalid_boolean(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with invalid details get parameter, default to False
@@ -333,7 +333,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_importers(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with importer information.
@@ -352,7 +352,7 @@ class TestReposView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._process_repos')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_get_repos_with_distributors(self, mock_repo_qs, mock_process, mock_resp):
         """
         Get repos with distributor information.
@@ -439,7 +439,7 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_get_existing_repo(self, mock_model, mock_resp, mock_serialize):
         """
         Retrieve an existing repository.
@@ -459,7 +459,7 @@ class TestRepoResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_get_nonexisting_repo(self, mock_model):
         """
         Retrieve a nonexisting repository.
@@ -486,7 +486,7 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test_get_existing_repo_with_details(self, mock_factory, mock_model, mock_serialize,
                                             mock_merge, mock_resp):
@@ -520,7 +520,7 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_get_existing_repo_with_details_false(self, mock_model, mock_serialize, mock_merge,
                                                   mock_resp):
         """
@@ -546,7 +546,7 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     def test_get_existing_repo_with_importers(self, mock_serial, mock_factory, mock_model,
@@ -577,7 +577,7 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_get_existing_repo_with_distributors(self, mock_model, mock_factory, mock_serialize,
                                                  mock_merge, mock_resp):
         """
@@ -602,7 +602,7 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_delete_existing_repo(self, mock_model, mock_ctrl):
         """
         Dispatch a delete task to remove an existing repository.
@@ -628,7 +628,7 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_put_existing_repo_no_delta(self, mock_model, mock_ctrl, mock_serialize, mock_resp):
         """
         Test update without any data.
@@ -656,7 +656,7 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_put_existing_repo_with_delta(self, mock_model, mock_ctrl, mock_serialize, mock_resp):
         """
         Test update with delta data.
@@ -688,7 +688,7 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_put_existing_repo_with_importer(self, mock_model, mock_ctrl, mock_serial, mock_resp):
         """
         Test update with importer config update.
@@ -712,7 +712,7 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model')
+    @mock.patch('pulp.server.webservices.views.repositories.models')
     def test_put_existing_repo_with_distributor(self, mock_model, mock_ctrl):
         """
         Test update with importer config update.
@@ -745,7 +745,7 @@ class TestRepoSearch(unittest.TestCase):
         Ensure that class attributes are set correctly.
         """
         repo_search = RepoSearch()
-        self.assertEqual(repo_search.model, model.Repository)
+        self.assertEqual(repo_search.model, models.Repository)
         self.assertEqual(repo_search.optional_bool_fields, ('details', 'importers', 'distributors'))
         self.assertEqual(repo_search.response_builder,
                          util.generate_json_response_with_pulp_encoder)
@@ -774,7 +774,7 @@ class TestRepoUnitSearch(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory.'
                 'repo_unit_association_query_manager')
     @mock.patch('pulp.server.webservices.views.repositories.UnitAssociationCriteria')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test__generate_response_one_type(self, mock_repo_qs, mock_crit, mock_uqm, mock_resp):
         """
         Test that responses are created using `get_units_by_type` if there is only one type.
@@ -794,7 +794,7 @@ class TestRepoUnitSearch(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory.'
                 'repo_unit_association_query_manager')
     @mock.patch('pulp.server.webservices.views.repositories.UnitAssociationCriteria')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test__generate_response_multiple_types(self, mock_repo_qs, mock_crit, mock_uqm, mock_resp):
         """
         Test that responses are created using `get_units_across_types` if there are multiple types.
@@ -1873,7 +1873,7 @@ class TestRepoSync(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
     def test_post_sync_repo(self, mock_repo_ctrl, mock_repo_qs):
         """
@@ -1906,7 +1906,7 @@ class TestRepoPublish(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_publish_repo(self, mock_repo_qs, mock_repo_ctrl):
         """
         Test that a repo publish task is dispatched.
@@ -1930,7 +1930,7 @@ class TestRepoPublish(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_publish_repo_missing_distributor(self, mock_repo_qs, mock_factory):
         """
         Test that a repo publish requires distributor id in body.
@@ -1962,7 +1962,7 @@ class TestRepoAssociate(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.associate_from_repo')
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_minimal(self, mock_repo_qs, mock_get_repo, mock_associate, mock_tags):
         """
         Test that a task is created with the minimal body params.
@@ -1990,7 +1990,7 @@ class TestRepoAssociate(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_missing_source_repo(self, mock_repo_qs):
         """
         Test that a 400 is thrown when the source repo is not passed.
@@ -2012,7 +2012,7 @@ class TestRepoAssociate(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_invalid_source_repo(self, mock_repo_qs):
         """
         Test that a 400 is thrown when the source repo does not exist.
@@ -2046,7 +2046,7 @@ class TestRepoAssociate(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repositories.UnitAssociationCriteria')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.models.Repository.objects')
     def test_post_unparsable_criteria(self, mock_repo_qs, mock_crit):
         """
         Test that a helpful exception is raised when criteria passed in body is unparsable.

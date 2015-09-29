@@ -8,7 +8,7 @@ import mock
 
 from ... import base
 from pulp.server.compat import ObjectId
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db import reaper
 from pulp.server.db.model import celery_result, consumer, repo_group, repository
 from pulp.server.db.model.consumer import ConsumerHistoryEvent
@@ -23,7 +23,7 @@ class TestReaperCollectionConfig(unittest.TestCase):
         """
         Test that the expected key-value pairs exist in the reaper collection to timedelta mapping.
         """
-        collections_to_reap = [model.TaskStatus,
+        collections_to_reap = [models.TaskStatus,
                                consumer.ConsumerHistoryEvent,
                                repository.RepoSyncResult,
                                repository.RepoPublishResult,
@@ -32,7 +32,7 @@ class TestReaperCollectionConfig(unittest.TestCase):
         for key in collections_to_reap:
             self.assertTrue(key in reaper._COLLECTION_TIMEDELTAS)
         # Also check the values.
-        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[model.TaskStatus], 'task_status_history')
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[models.TaskStatus], 'task_status_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[consumer.ConsumerHistoryEvent],
                          'consumer_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoSyncResult],

@@ -8,7 +8,7 @@ from pulp.common import error_codes
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
-from pulp.server.db import model
+from pulp.server.db import models
 from pulp.server.db.model.repository import RepoImporter
 from pulp.server.exceptions import (MissingResource, PulpExecutionException,
                                     PulpDataException, PulpCodedValidationException)
@@ -48,7 +48,7 @@ class RepoImporterManager(object):
         @raise MissingResource: if the given repo doesn't exist
         """
 
-        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        models.Repository.objects.get_repo_or_missing_resource(repo_id)
         importers = RepoImporter.get_collection().find({'repo_id': repo_id})
         return list(importers)
 
@@ -93,7 +93,7 @@ class RepoImporterManager(object):
         RepoImporterManager.validate_importer_config(repo_id, importer_type_id, repo_plugin_config)
         importer_coll = RepoImporter.get_collection()
 
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
         importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
@@ -143,7 +143,7 @@ class RepoImporterManager(object):
         :param importer_config:     configuration values for the importer; may be None
         :type  importer_config:     dict
         """
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         if not plugin_api.is_valid_importer(importer_type_id):
             raise PulpCodedValidationException(error_code=error_codes.PLP1008,
@@ -188,7 +188,7 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Validation
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         repo_importer = importer_coll.find_one({'repo_id': repo_id})
 
@@ -231,7 +231,7 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Input Validation
-        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo_obj = models.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         repo_importer = importer_coll.find_one({'repo_id': repo_id})
         if repo_importer is None:
