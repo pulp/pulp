@@ -487,7 +487,24 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         TaskStatus(task_id).save()
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
-        mock_reset_failure.assertCalledOnceWith('12345')
+        mock_reset_failure.assert_called_once_with('12345')
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    @mock.patch('pulp.server.managers.schedule.utils.reset_failure_count')
+    def test_with_scheduled_call_none(self, mock_reset_failure, mock_request):
+        """
+        Ensure that if scheduled_call_id  exists but is `None`, do not fail.
+        """
+        retval = 'random_return_value'
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2,
+                  'scheduled_call_id': None}
+        mock_request.called_directly = False
+        TaskStatus(task_id).save()
+        task = tasks.Task()
+        task.on_success(retval, task_id, args, kwargs)
+        self.assertFalse(mock_reset_failure.called)
 
 
 class TestTaskOnFailureHandler(ResourceReservationTests):
@@ -546,7 +563,30 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         TaskStatus(task_id).save()
         task = tasks.Task()
         task.on_failure(exc, task_id, args, kwargs, einfo)
-        mock_increment_failure.assertCalledOnceWith('12345')
+        mock_increment_failure.assert_called_once_with('12345')
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    @mock.patch('pulp.server.managers.schedule.utils.increment_failure_count')
+    def test_with_scheduled_call_none(self, mock_increment_failure, mock_request):
+        exc = Exception()
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'scheduled_call_id': None}
+
+        class EInfo(object):
+            """
+            on_failure handler expects an instance of celery's ExceptionInfo class
+            as one of the attributes. It stores string representation of traceback
+            in it's traceback instance variable. This is a stub to imitate that behavior.
+            """
+            def __init__(self):
+                self.traceback = "string_repr_of_traceback"
+        einfo = EInfo()
+        mock_request.called_directly = False
+        TaskStatus(task_id).save()
+        task = tasks.Task()
+        task.on_failure(exc, task_id, args, kwargs, einfo)
+        self.assertFalse(mock_increment_failure.called)
 
 
 class TestTaskApplyAsync(ResourceReservationTests):
