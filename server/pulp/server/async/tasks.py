@@ -405,7 +405,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         """
         _logger.debug("Task successful : [%s]" % task_id)
-        if 'scheduled_call_id' in kwargs:
+        if kwargs.get('scheduled_call_id') is not None:
             if not isinstance(retval, AsyncResult):
                 _logger.info(_('resetting consecutive failure count for schedule %(id)s')
                              % {'id': kwargs['scheduled_call_id']})
@@ -460,7 +460,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         else:
             _logger.info(_('Task failed : [%s]') % task_id)
             # celery will log the traceback
-        if 'scheduled_call_id' in kwargs:
+        if kwargs.get('scheduled_call_id') is not None:
             utils.increment_failure_count(kwargs['scheduled_call_id'])
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
