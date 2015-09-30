@@ -12,8 +12,9 @@ MODULE = 'pulp.server.webservices.views.lazy'
 class TestRedirectView(TestCase):
 
     @patch(MODULE + '.pulp_conf')
+    @patch(MODULE + '.Key.load')
     @patch(MODULE + '.AliasTable.load')
-    def test_init(self, load, pulp_conf):
+    def test_init(self, alias_load, key_load, pulp_conf):
         key_path = '/tmp/rsa.key'
         conf = {
             'authentication': {
@@ -28,7 +29,8 @@ class TestRedirectView(TestCase):
 
         # validation
         self.assertTrue(isinstance(view.alias, AliasTable))
-        load.assert_called_once_with()
+        alias_load.assert_called_once_with()
+        key_load.assert_called_once_with(key_path)
 
     @patch(MODULE + '.Key.load', Mock())
     @patch(MODULE + '.AliasTable.load', Mock())
@@ -128,4 +130,12 @@ class TestRedirectView(TestCase):
         # validation
         self.assertFalse(url.called)
         http_not_found.assert_called_once_with(path)
+        self.assertEqual(reply, http_not_found.return_value)
+
+    @patch(MODULE + '.HttpResponseNotFound')
+    @patch(MODULE + '.Key.load', Mock())
+    @patch(MODULE + '.AliasTable.load', Mock())
+    def test_get_no_redirect(self, http_not_found):
+        reply = RedirectView().get(Mock(environ={}))
+        http_not_found.assert_called_once_with()
         self.assertEqual(reply, http_not_found.return_value)
