@@ -94,12 +94,14 @@ class TestHandleEvent(unittest.TestCase):
         self.assertEqual(message.get('From', None), config.get('email', 'from'))
         self.assertTrue(message.get('To', None) in self.notifier_config['addresses'])
 
+    @mock.patch('pulp.server.event.data.task_serializer')
     # tests bz 1099945
     @mock.patch('threading.Thread', new=dummy_threading.Thread)
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
     @mock.patch('smtplib.SMTP')
-    def test_email_serialize_objid(self, mock_smtp, mock_getbool):
+    def test_email_serialize_objid(self, mock_smtp, mock_getbool, mock_task_ser):
         event_with_id = data.Event('test-1', {'foo': _test_objid()})
+        mock_task_ser.return_value = 'serialized task'
         # no TypeError = success
         mail.handle_event(self.notifier_config, event_with_id)
 
@@ -118,6 +120,7 @@ class TestSystem(unittest.TestCase):
             'notifier_config': self.notifier_config,
         }
 
+    @mock.patch('pulp.server.event.data.task_serializer')
     # don't actually spawn a thread
     @mock.patch('threading.Thread', new=dummy_threading.Thread)
     # mock qpid, because it freaks out over dummy_threading
@@ -128,12 +131,13 @@ class TestSystem(unittest.TestCase):
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
     # inject fake results from the database query
     @mock.patch('pulp.server.db.model.event.EventListener.get_collection')
-    def test_fire(self, mock_get_collection, mock_getbool, mock_smtp, mock_publish):
+    def test_fire(self, mock_get_collection, mock_getbool, mock_smtp, mock_publish, mock_task_ser):
         # verify that the event system will trigger listeners of this type
         mock_get_collection.return_value.find.return_value = [self.event_doc]
+        mock_task_ser.return_value = 'serialized task'
         event = data.Event(data.TYPE_REPO_SYNC_FINISHED, 'stuff')
         factory.initialize()
         factory.event_fire_manager()._do_fire(event)
 
         # verify that the mail event handler was called and processed something
-        self.assertTrue(mock_smtp.return_value.sendmail.call_count, 2)
+        self.assertEqual(mock_smtp.return_value.sendmail.call_count, 2)
