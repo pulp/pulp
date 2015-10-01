@@ -73,7 +73,12 @@ class RedirectView(View):
         :return: A redirect or not-found response.
         :rtype: django.http.HttpResponse
         """
-        path = request.environ['REDIRECT_URL']
+        try:
+            path = request.environ['REDIRECT_URL']
+        except KeyError:
+            # Not redirected by ErrorDocument
+            return HttpResponseNotFound()
+
         query = request.environ.get('REDIRECT_QUERY_STRING', '')
         scheme = request.environ['REQUEST_SCHEME']
         host = request.environ['SERVER_NAME']
