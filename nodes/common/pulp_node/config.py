@@ -21,24 +21,15 @@ DEFAULT = {
 
 SCHEMA = (
     ('main', REQUIRED,
-        (
-            ('ca_path', REQUIRED, ANY),
-            ('node_certificate', REQUIRED, ANY),
-            ('verify_ssl', REQUIRED, BOOL),
-        )
-    ),
+     (('ca_path', REQUIRED, ANY),
+      ('node_certificate', REQUIRED, ANY),
+      ('verify_ssl', REQUIRED, BOOL))),
     ('oauth', REQUIRED,
-        (
-            ('user_id', REQUIRED, ANY),
-        )
-    ),
+     (('user_id', REQUIRED, ANY),)),
     ('parent_oauth', REQUIRED,
-        (
-            ('key', REQUIRED, ANY),
-            ('secret', REQUIRED, ANY),
-            ('user_id', REQUIRED, ANY),
-        )
-    ),
+     (('key', REQUIRED, ANY),
+      ('secret', REQUIRED, ANY),
+      ('user_id', REQUIRED, ANY),)),
 )
 
 

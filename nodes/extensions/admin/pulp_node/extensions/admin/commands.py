@@ -1,14 +1,3 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 
 from gettext import gettext as _
@@ -23,20 +12,18 @@ from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
-from pulp_node.extension import missing_resources, node_activated, repository_enabled, ensure_node_section
+from pulp_node.extension import (missing_resources, node_activated, repository_enabled,
+                                 ensure_node_section)
 from pulp_node.extensions.admin import sync_schedules
-from pulp_node.extensions.admin.options import NODE_ID_OPTION, MAX_BANDWIDTH_OPTION, MAX_CONCURRENCY_OPTION
+from pulp_node.extensions.admin.options import (NODE_ID_OPTION, MAX_BANDWIDTH_OPTION,
+                                                MAX_CONCURRENCY_OPTION)
 from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
 
-
-# --- resources --------------------------------------------------------------
 
 NODE = _('Node')
 CONSUMER = _('Consumer')
 REPOSITORY = _('Repository')
 
-
-# --- names ------------------------------------------------------------------
 
 REPO_NAME = 'repo'
 ACTIVATE_NAME = 'activate'
@@ -50,8 +37,6 @@ UNBIND_NAME = 'unbind'
 UPDATE_NAME = 'run'
 SCHEDULES_NAME = 'schedules'
 
-
-# --- descriptions -----------------------------------------------------------
 
 NODE_LIST_DESC = _('list child nodes')
 REPO_LIST_DESC = _('list node enabled repositories')
@@ -71,15 +56,12 @@ STRATEGY_DESC = _('synchronization strategy (mirror|additive) default is additiv
 SCHEDULES_DESC = _('manage node sync schedules')
 
 
-# --- titles -----------------------------------------------------------------
-
 NODE_LIST_TITLE = _('Child Nodes')
 REPO_LIST_TITLE = _('Enabled Repositories')
 
 
-# --- options ----------------------------------------------------------------
-
-AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False, default='true')
+AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, required=False,
+                                    default='true')
 
 STRATEGY_OPTION = \
     PulpCliOption('--strategy', STRATEGY_DESC, required=False, default=constants.ADDITIVE_STRATEGY)
@@ -97,7 +79,8 @@ UNBIND_SUCCEEDED = _('Node unbind succeeded')
 ALREADY_ENABLED = _('Repository already enabled. Nothing done.')
 FAILED_NOT_ENABLED = _('Repository not enabled. See: the \'node repo enable\' command.')
 NOT_BOUND_NOTHING_DONE = _('Node not bound to repository. No action performed.')
-NOT_ACTIVATED_ERROR = _('%(t)s [ %(id)s ] not activated as a node. See: the \'node activate\' command.')
+NOT_ACTIVATED_ERROR = _(
+    '%(t)s [ %(id)s ] not activated as a node. See: the \'node activate\' command.')
 NOT_ACTIVATED_NOTHING_DONE = _('%(t)s is not activated as a node. No action performed.')
 NOT_ENABLED_NOTHING_DONE = _('%(t)s not enabled. No action performed.')
 STRATEGY_NOT_SUPPORTED = _('Strategy [ %(n)s ] not supported. Must be one of: %(s)s')
@@ -390,8 +373,6 @@ class NodeRepoDisableCommand(PulpCliCommand):
             return os.EX_DATAERR
 
 
-# --- bind -------------------------------------------------------------------
-
 class BindingCommand(PulpCliCommand):
 
     def missing_resources(self, prompt, exception):
@@ -487,8 +468,6 @@ class NodeUnbindCommand(BindingCommand):
             return os.EX_DATAERR
 
 
-# --- synchronization --------------------------------------------------------
-
 class NodeUpdateCommand(PollingCommand):
 
     def __init__(self, context):
@@ -514,7 +493,8 @@ class NodeUpdateCommand(PollingCommand):
             return os.EX_USAGE
 
         try:
-            http = self.context.server.consumer_content.update(node_id, units=units, options=options)
+            http = self.context.server.consumer_content.update(node_id, units=units,
+                                                               options=options)
             task = http.response_body
             self.poll([task], kwargs)
         except NotFoundException, e:
