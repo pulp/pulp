@@ -851,7 +851,7 @@ class SaveTarFilePublishStep(PublishStep):
         publish_dir_parent = os.path.dirname(self.publish_file)
         if not os.path.exists(publish_dir_parent):
             os.makedirs(publish_dir_parent, 0750)
-        shutil.move(os.path.join(self.source_dir, tar_file_name), self.publish_file)
+        shutil.copy(os.path.join(self.source_dir, tar_file_name), self.publish_file)
 
 
 class CreatePulpManifestStep(Step):
