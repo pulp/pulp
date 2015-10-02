@@ -202,8 +202,8 @@ pull requests into the Pulp repositories as described in :doc:`merging`.
 Dependencies
 ------------
 
-The easiest way to download the other dependencies is to install Pulp through yum, which will pull in
-the latest dependencies according to the spec file.
+The easiest way to download the other dependencies is to install Pulp through yum or dnf, which
+pulls in the latest dependencies according to the spec file.
 
 #. Download the appropriate repository from https://repos.fedorapeople.org/repos/pulp/pulp/
 
@@ -213,9 +213,14 @@ the latest dependencies according to the spec file.
        $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 
 #. Edit the repo and enable the most recent testing repository.
-#. Install the main Pulp groups to get all of the dependencies.
+
+#. When using dnf, install the dependencies with this command.
+   ``$ sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)``
+
+#. When using yum, install the main Pulp groups to get all of the dependencies.
    ``$ sudo yum install @pulp-server-qpid @pulp-admin @pulp-consumer``
-#. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked
+
+#. When using yum, remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 #. Install some additional dependencies for development::
