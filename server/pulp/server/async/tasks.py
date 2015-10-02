@@ -6,6 +6,9 @@ import time
 import traceback
 import uuid
 
+from bson.json_util import dumps as bson_dumps
+from bson.json_util import loads as bson_loads
+from bson import ObjectId
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
@@ -28,7 +31,98 @@ controller = control.Control(app=celery)
 _logger = logging.getLogger(__name__)
 
 
-@task(acks_late=True)
+class PulpTask(CeleryTask):
+    """
+    This is a custom Pulp subclass of the Celery Task object. It allows us to check if the
+    parameters are valid or not and call Celery's method if they are valid.
+    Otherwise raise an exception.
+    """
+
+    @classmethod
+    def _json_validator(cls, value):
+        """
+            Checks if the value is an allowed type or not. It also transforms the
+            ObjectId's to str type and vice versa.
+
+            Accepted types are ObjectId, bool, int, long, float or basestring.
+            This function is recursively called for dict, list or tuples.
+
+            Any ObjectId types present are serialized to a str.
+            The same str is converted back to an ObjectId while de-serializing.
+
+            This function is called from apply_async and __call__ methods of this class.
+            A TypeError is raised if value is not a Python primitive or ObjectId.
+
+            :param value: the args or kwargs to be checked
+            :type  value: Object
+
+            :returns: ars or kwargs value with updated id field
+            :rtype: Object
+            :raise TypeError: if value is not a Python primitive or ObjectId
+        """
+
+        if value is None or isinstance(value, (bool, int, long, float, basestring)):
+            return value
+
+        # Encoding ObjectId to str
+        if isinstance(value, ObjectId):
+            return bson_dumps(value)
+
+        # Recursive checks inside dict
+        if isinstance(value, dict):
+            if len(value) == 0:
+                return value
+            # Decoding '$oid' back to ObjectId
+            if '$oid' in value.keys():
+                return bson_loads(value)
+
+            return {cls._json_validator(k): cls._json_validator(v) for k, v in value.iteritems()}
+
+        # Recursive checks inside a list
+        if isinstance(value, list):
+            if len(value) == 0:
+                return value
+            for i, val in enumerate(value):
+                value[i] = cls._json_validator(val)
+            return value
+
+        # Recursive checks inside a tuple
+        if isinstance(value, tuple):
+            if len(value) == 0:
+                return value
+            return tuple([cls._json_validator(val) for val in value])
+
+        raise TypeError("%s is of type %s. The Pulp tasking system only allows Python primitives "
+                        "and PyMongo ObjectId types as arguments." % (repr(value), type(value)))
+
+    def apply_async(self, *args, **kwargs):
+        """
+        A wrapper around the Celery apply_async method.
+
+        It calls the _json_checker with args and kwargs to check if they are valid
+        or not. If they are valid, the methods calls the Celery apply_async methods,
+        if not, a TypeError is expected to be raised.
+
+        :return:            An AsyncResult instance as returned by Celery's apply_async
+        :rtype:             celery.result.AsyncResult
+        """
+
+        args = self._json_validator(args)
+        kwargs = self._json_validator(kwargs)
+        return super(PulpTask, self).apply_async(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        """
+        This overrides Celery's __call__() method. We use this method
+        for task state tracking of Pulp tasks.
+        """
+
+        args = self._json_validator(args)
+        kwargs = self._json_validator(kwargs)
+        return super(PulpTask, self).__call__(*args, **kwargs)
+
+
+@task(base=PulpTask, acks_late=True)
 def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
@@ -183,7 +277,7 @@ def _delete_worker(name, normal_shutdown=False):
         cancel(task_status['task_id'])
 
 
-@task
+@task(base=PulpTask)
 def _release_resource(task_id):
     """
     Do not queue this task yourself. It will be used automatically when your task is dispatched by
@@ -321,15 +415,14 @@ class ReservedTaskMixin(object):
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
         task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
-
         _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
                                          queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)
 
 
-class Task(CeleryTask, ReservedTaskMixin):
+class Task(PulpTask, ReservedTaskMixin):
     """
-    This is a custom Pulp subclass of the Celery Task object. It allows us to inject some custom
+    This is a custom Pulp subclass of the PulpTask class. It allows us to inject some custom
     behavior into each Pulp task, including management of resource locking.
     """
     # this tells celery to not automatically log tracebacks for these exceptions
@@ -337,7 +430,7 @@ class Task(CeleryTask, ReservedTaskMixin):
 
     def apply_async(self, *args, **kwargs):
         """
-        A wrapper around the Celery apply_async method. It allows us to accept a few more
+        A wrapper around the PulpTask apply_async method. It allows us to accept a few more
         parameters than Celery does for our own purposes, listed below. It also allows us
         to create and update task status which can be used to track status of this task
         during it's lifetime.
@@ -357,7 +450,6 @@ class Task(CeleryTask, ReservedTaskMixin):
                                  defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tag_list = kwargs.pop('tags', [])
         group_id = kwargs.pop('group_id', None)
-
         async_result = super(Task, self).apply_async(*args, **kwargs)
         async_result.tags = tag_list
 
@@ -374,7 +466,7 @@ class Task(CeleryTask, ReservedTaskMixin):
 
     def __call__(self, *args, **kwargs):
         """
-        This overrides CeleryTask's __call__() method. We use this method
+        This overrides PulpTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
         # Check task status and skip running the task if task state is 'canceled'.

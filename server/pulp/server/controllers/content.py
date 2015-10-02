@@ -9,7 +9,7 @@ from pulp.common.plugins import reporting_constants
 from pulp.plugins.conduits.mixins import (ContentSourcesConduitException, StatusMixin,
                                           PublishReportMixin)
 from pulp.plugins.util.publish_step import Step
-from pulp.server.async.tasks import Task
+from pulp.server.async.tasks import PulpTask, Task
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.exceptions import PulpCodedTaskException
 

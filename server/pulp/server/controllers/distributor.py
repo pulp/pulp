@@ -2,9 +2,9 @@ import logging
 
 import celery
 
-from pulp.common.error_codes import PLP0002, PLP0003
-from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.controllers import consumer
+from pulp.common.error_codes import PLP0002, PLP0003
+from pulp.server.async.tasks import PulpTask, Task, TaskResult
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.managers import factory as managers
 
@@ -107,3 +107,35 @@ def update(repo_id, distributor_id, config, delta):
         bind_error = PulpCodedException(PLP0002, repo_id=repo_id, distributor_id=distributor_id)
         bind_error.child_exceptions = bind_errors
     return TaskResult(distributor, bind_error, additional_tasks)
+
+
+@celery.task(base=PulpTask)
+def publish(repo_id, distributor_id, overrides=None):
+    """
+    Create an itinerary for repo publish.
+    :param repo_id: id of the repo to publish
+    :type repo_id: str
+    :param distributor_id: id of the distributor to use for the repo publish
+    :type distributor_id: str
+    :param overrides: dictionary of options to pass to the publish manager
+    :type overrides: dict or None
+    :return: list of call requests
+    :rtype: list
+    """
+    return managers.repo_publish_manager().queue_publish(repo_id, distributor_id, overrides)
+
+
+@celery.task(base=PulpTask)
+def sync_with_auto_publish(repo_id, overrides=None):
+    """
+    Sync a repository and upon successful completion, publish
+    any distributors that are configured for auto publish.
+
+    :param repo_id: id of the repository to create a sync call request list for
+    :type repo_id: str
+    :param overrides: dictionary of configuration overrides for this sync
+    :type overrides: dict or None
+    :return: A task result containing the details of the task executed and any spawned tasks
+    :rtype: TaskResult
+    """
+    return managers.repo_sync_manager().queue_sync_with_auto_publish(repo_id, overrides)

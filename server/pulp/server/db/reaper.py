@@ -5,8 +5,8 @@ from celery import task
 
 from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
+from pulp.server.async.tasks import PulpTask, Task
 from pulp.server.db.model import celery_result, consumer, repo_group, repository
 
 
@@ -27,7 +27,7 @@ _COLLECTION_TIMEDELTAS = {
 _logger = logging.getLogger(__name__)
 
 
-@task
+@task(base=PulpTask)
 def queue_reap_expired_documents():
     """
     Create an itinerary for reaper task

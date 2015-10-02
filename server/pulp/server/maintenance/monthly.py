@@ -1,11 +1,11 @@
 from celery import task
 
 from pulp.common.tags import action_tag
-from pulp.server.async.tasks import Task
+from pulp.server.async.tasks import PulpTask, Task
 from pulp.server.managers.consumer.applicability import RepoProfileApplicabilityManager
 
 
-@task
+@task(base=PulpTask)
 def queue_monthly_maintenance():
     """
     Create an itinerary for monthly task
