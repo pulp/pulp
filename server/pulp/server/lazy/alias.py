@@ -47,13 +47,9 @@ class AliasTable(object):
         :return: A translated path.
         :rtype: str
         """
-        translated = None
+        translated = path
         for alias, real in sorted(self.table.items()):
             if path.startswith(alias):
-                real = os.path.realpath(real)
                 translated = path.replace(alias, real)
                 break
-        if translated:
-            return os.path.normpath(translated)
-        else:
-            return os.path.realpath(path)
+        return os.path.realpath(translated)
