@@ -1,11 +1,12 @@
 import copy
+import hashlib
 import logging
 import os
 import uuid
 from collections import namedtuple
 
-from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
-                         ListField, StringField)
+from mongoengine import (DateTimeField, DictField, Document, DynamicField, EmbeddedDocument,
+                         EmbeddedDocumentField, IntField, ListField, StringField)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -15,7 +16,7 @@ from pulp.server.content.storage import FileStorage, SharedStorage
 from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.connection import UnsafeRetry
-from pulp.server.db.fields import ISO8601StringField, ChecksumField
+from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
 from pulp.server.webservices.views.serializers import Repository as RepoSerializer
@@ -647,6 +648,36 @@ class CeleryBeatLock(Document):
     _ns = StringField(default='celery_beat_lock')
 
 
+class Digest(EmbeddedDocument):
+    """
+    Embedded digest (checksum) document.
+
+    :ivar algorithm: The digest algorithm.
+    :type algorighm: str
+    :ivar value: The digest value.
+    :type value: str
+    """
+    ALG_REGEX = r'(md5|sha1|sha224|sha256|sha384|sha512)'
+
+    # Fields
+    algorithm = StringField(required=True, regex=ALG_REGEX)
+    value = StringField(required=True)
+
+
+class UnitLocator(EmbeddedDocument):
+    """
+    An embedded unit locator document.
+    To fetch a content unit, both the ID and type is needed.
+
+    :ivar type_id: The content type ID.
+    :type type_id: str
+    :ivar unit_id: The unit ID.
+    :type unit_id: str
+    """
+    type_id = StringField(required=True)
+    unit_id = StringField(required=True)
+
+
 class LazyCatalogEntry(Document):
     """
     A catalog of content that can be downloaded by the specified plugin.
@@ -656,13 +687,12 @@ class LazyCatalogEntry(Document):
     :ivar plugin_id: The ID of the plugin that contributed the catalog entry.
         This plugin participates in the downloading of content when requested by the streamer.
     :type plugin_id: str
-    :ivar unit_id: The associated content unit ID.
-    :type unit_id: str
+    :ivar unit_locator: The associated content unit ID.
+    :type unit_locator: UnitLocator
     :ivar url: The *real* download URL.
     :type url: str
-    :ivar checksum: The checksum used to validate the downloaded file.
-        The value is encoded as: <algorithm>:<digest>.
-    :type checksum: str
+    :ivar checksum: A digest document.
+    :type checksum: Digest
     :ivar data: Arbitrary information stored with the entry.
         Managed by the plugin.
     :type data: dict
@@ -672,7 +702,6 @@ class LazyCatalogEntry(Document):
         'collection': 'lazy_content_catalog',
         'allow_inheritance': False,
         'indexes': [
-            'unit_id',
             'plugin_id',
             {
                 'fields': [
@@ -691,7 +720,7 @@ class LazyCatalogEntry(Document):
     relative_path = StringField(required=True)
     plugin_id = StringField(required=True)
     # Fields
-    unit_id = StringField(required=True)
+    unit_locator = EmbeddedDocumentField(UnitLocator, required=True)
     url = StringField(required=True)
-    checksum = ChecksumField()
+    checksum = EmbeddedDocumentField(Digest)
     data = DictField()
