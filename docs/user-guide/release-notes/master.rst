@@ -11,8 +11,18 @@ New Features
 * Multiple instances of ``pulp_celerybeat`` can now run simultaneously.
   If one of them goes down, another instance will dispatch scheduled tasks as usual.
 
+* When downloading content, Pulp now uses the system certificate authority trust
+  store rather than the certificate authority trust store bundled with
+  ``python-requests``.
+
 Deprecation
 -----------
+
+Supported Platforms Changes
+---------------------------
+
+* If run on CentOS or Red Hat Enterprise Linux, the Pulp server now requires either
+  version 7.1+ or 6.7+.
 
 Client Changes
 --------------
