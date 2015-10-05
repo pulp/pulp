@@ -2080,7 +2080,8 @@ class TestRepoUnunassociate(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_minimal(self, mock_factory, mock_crit, mock_unassociate, mock_tags):
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    def test_post_minimal(self, mock_repo_qs, mock_factory, mock_crit, mock_unassociate, mock_tags):
         """
         Test that a task is created with the minimal body params.
         """

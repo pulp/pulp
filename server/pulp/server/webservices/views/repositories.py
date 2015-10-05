@@ -1235,6 +1235,7 @@ class RepoUnassociate(View):
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.action_tag('unassociate')]
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = unassociate_by_criteria.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id, criteria], tags=task_tags)
