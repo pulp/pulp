@@ -23,8 +23,6 @@ from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.managers.repo._common import get_working_directory
 
 
-
-
 _logger = getLogger(__name__)
 
 
@@ -160,7 +158,7 @@ def _download(plugin_id, unit_locator, url, options):
     downloader.event_listener = listener
 
     # Download and store the unit
-    downloader.download_one(request)
+    downloader.download_one(request, events=True)
     if listener.succeeded_reports:
         _logger.info(_('Download {url}, succeeded').format(url=url))
         unit.set_content(destination)
@@ -191,8 +189,5 @@ def queue_download(plugin_id, unit_locator, url, options):
     _download.apply_async_with_reservation(
         RESOURCE_CONTENT_UNIT_TYPE,
         unit_locator.unit_id,
-        plugin_id,
-        unit_locator,
-        url,
-        options,
+        [plugin_id, unit_locator, url, options],
         tags=tags)
