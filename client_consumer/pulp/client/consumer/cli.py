@@ -316,8 +316,10 @@ class UnregisterCommand(PulpCliCommand):
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
         id_cert_name = self.context.config['filesystem']['id_cert_filename']
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
-        if os.path.exists(cert_filename):
-            os.remove(cert_filename)
+        server_rsa = self.context.config['server']['rsa_pub']
+        for filename in [cert_filename, server_rsa]:
+            if os.path.exists(filename):
+                os.remove(filename)
 
 
 class HistoryCommand(PulpCliCommand):
