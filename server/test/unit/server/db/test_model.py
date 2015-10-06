@@ -231,7 +231,8 @@ class TestFileContentUnit(unittest.TestCase):
         base.assert_called_once_with(sender, unit, **kwargs)
         _open.assert_called_once_with()
         close.assert_called_once_with()
-        put.assert_called_once_with(unit, unit._source_location)
+        put.assert_called_once_with(unit, '1234')
+        self.assertEqual(unit._source_location, None)
 
     @patch('pulp.server.db.model.FileStorage.put')
     @patch('pulp.server.db.model.FileStorage.open')

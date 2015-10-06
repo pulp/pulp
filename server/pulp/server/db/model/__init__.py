@@ -562,6 +562,7 @@ class FileContentUnit(ContentUnit):
             return
         with FileStorage() as storage:
             storage.put(document, document._source_location)
+            document._source_location = None
 
     def set_content(self, source_location):
         """
