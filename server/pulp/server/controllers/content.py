@@ -23,8 +23,6 @@ from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.managers.repo._common import get_working_directory
 
 
-
-
 _logger = getLogger(__name__)
 
 

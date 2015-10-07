@@ -321,6 +321,7 @@ Requires: python-gofer >= %{gofer_version}
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
+Requires: mod_xsendfile >= 0.12-10
 Requires: m2crypto
 Requires: genisoimage
 # RHEL6 ONLY
