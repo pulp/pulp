@@ -1,11 +1,9 @@
-
 from unittest import TestCase
 
 from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
-from pulp_node.error import ErrorList
+from pulp_node.error import ErrorList, NodeError
 from pulp_node.importers.reports import SummaryReport
-from pulp_node.error import NodeError
 
 
 class TestSummaryReport(TestCase):

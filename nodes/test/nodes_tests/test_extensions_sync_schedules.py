@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
@@ -18,7 +6,8 @@ from pulp.client.commands.schedule import CreateScheduleCommand, ListScheduleCom
 
 from pulp_node import constants
 from pulp_node.extensions.admin import sync_schedules
-from pulp_node.extensions.admin.options import NODE_ID_OPTION, MAX_BANDWIDTH_OPTION, MAX_CONCURRENCY_OPTION
+from pulp_node.extensions.admin.options import (NODE_ID_OPTION, MAX_BANDWIDTH_OPTION,
+                                                MAX_CONCURRENCY_OPTION)
 
 
 NODE_ID = 'node-1'
@@ -110,7 +99,7 @@ class NodeSyncScheduleStrategyTests(unittest.TestCase):
     def test_delete(self):
         # Test
         schedule_id = 'abcdef'
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword: NODE_ID}
         self.strategy.delete_schedule(schedule_id, kwargs)
 
         # Verify
@@ -119,7 +108,7 @@ class NodeSyncScheduleStrategyTests(unittest.TestCase):
 
     def test_retrieve(self):
         # Test
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword: NODE_ID}
         self.strategy.retrieve_schedules(kwargs)
 
         # Verify
@@ -128,10 +117,10 @@ class NodeSyncScheduleStrategyTests(unittest.TestCase):
     def test_update(self):
         # Test
         schedule_id = 'abcdef'
-        kwargs = {sync_schedules.NODE_ID_OPTION.keyword : NODE_ID, 'extra' : 'e'}
+        kwargs = {sync_schedules.NODE_ID_OPTION.keyword: NODE_ID, 'extra': 'e'}
         self.strategy.update_schedule(schedule_id, **kwargs)
 
         # Verify
         self.api.update_schedule.assert_called_once_with(sync_schedules.SYNC_OPERATION,
                                                          NODE_ID, schedule_id,
-                                                         **{'extra' : 'e'})
+                                                         **{'extra': 'e'})

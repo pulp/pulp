@@ -75,14 +75,17 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
         # Check the files for coding conventions
         if flake8_paths:
             # Ignore E401: multiple imports on one line
-            flake8_default_exclude = '--exclude=.ropeproject,docs,playpen,pulp-dev.py,*/build/*'
+            flake8_default_exclude = '--exclude=.ropeproject,docs,playpen,*/build/*'
             if flake8_exclude:
                 flake8_exclude = flake8_default_exclude + ',%s' % ','.join(flake8_exclude)
             else:
                 flake8_exclude = flake8_default_exclude
             flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401', flake8_exclude]
             flake8_command.extend(flake8_paths)
-            print "Running flake8"
+            if arguments.verbose:
+                print 'Running {flake8}'.format(flake8=' '.join(flake8_command))
+            else:
+                print 'Running flake8'
             flake8_exit_code = subprocess.call(flake8_command)
 
     else:
@@ -102,6 +105,9 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
     if arguments.xunit_file:
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
-    print "Running Unit Tests"
+    if arguments.verbose:
+        print 'Running {tests}'.format(tests=' '.join(args))
+    else:
+        print "Running Unit Tests"
     # Call the test process, and return its exit code
     return subprocess.call(args) or flake8_exit_code
