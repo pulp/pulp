@@ -18,14 +18,16 @@ from pulp.server import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpCodedException, PulpException
 
+import semantic_version
+
 
 _CONNECTION = None
 _DATABASE = None
 _DEFAULT_MAX_POOL_SIZE = 10
 # please keep this in X.Y.Z format, with only integers.
 # see version.cpp in mongo source code for version format info.
-MONGO_MINIMUM_VERSION = "2.4.0"
-
+MONGO_MINIMUM_VERSION = semantic_version.Version("2.4.0")
+MONGO_WRITE_CONCERN_VERSION = semantic_version.Version("2.6.0")
 
 _logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
 
         if seeds is None:
             seeds = config.config.get('database', 'seeds')
+        seeds_list = seeds.split(',')
 
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
@@ -60,6 +63,12 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
 
         if replica_set is not None:
             connection_kwargs['replicaSet'] = replica_set
+
+        write_concern = config.config.get('database', 'write_concern')
+        if write_concern not in ['majority', 'all']:
+            raise PulpCodedException(error_code=error_codes.PLP0043)
+        elif write_concern == 'all':
+            write_concern = len(seeds_list)
 
         # Process SSL settings
         if config.config.getboolean('database', 'ssl'):
@@ -91,12 +100,24 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
                                                                 itertools.repeat(32))
 
         if seeds != '':
-            seeds_list = seeds.split(',')
             if len(seeds_list) > 1 and not replica_set:
                 raise PulpCodedException(error_code=error_codes.PLP0041)
             while True:
                 _CONNECTION = _connect_to_one_of_seeds(connection_kwargs, seeds_list, name)
                 if _CONNECTION:
+                    db_version = semantic_version.Version(_CONNECTION.server_info()['version'])
+                    if db_version < MONGO_MINIMUM_VERSION:
+                        raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting"
+                                             "version %s") % (MONGO_MINIMUM_VERSION,
+                                                              db_version))
+                    elif db_version >= MONGO_WRITE_CONCERN_VERSION or replica_set:
+                        # Write concern of 'majority' only works with a replica set or when using
+                        # MongoDB >= 2.6.0
+                        _CONNECTION.write_concern['w'] = write_concern
+                    else:
+                        _CONNECTION.write_concern['w'] = 1
+                    _logger.info(_("Write concern for Mongo connection: %s") %
+                                 _CONNECTION.write_concern)
                     break
                 else:
                     next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
@@ -120,16 +141,6 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         # Query the collection names to ensure that we are authenticated properly
         _logger.debug(_('Querying the database to validate the connection.'))
         _DATABASE.collection_names()
-
-        db_version = _CONNECTION.server_info()['version']
-        _logger.info(_("Mongo database for connection is version %s") % db_version)
-
-        db_version_tuple = tuple(db_version.split("."))
-        db_min_version_tuple = tuple(MONGO_MINIMUM_VERSION.split("."))
-        if db_version_tuple < db_min_version_tuple:
-            raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting version %s") %
-                               (MONGO_MINIMUM_VERSION, db_version))
-
     except Exception, e:
         _logger.critical(_('Database initialization failed: %s') % str(e))
         _CONNECTION = None
