@@ -95,7 +95,11 @@ if sys.version_info >= (2, 6):
     LINKS.extend([
         # Server Web Configuration
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+        ('server/srv/pulp/content.wsgi', '/srv/pulp/content.wsgi'),
         ('server/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
+
+        # Apache
+        ('server/etc/httpd/conf.d/pulp_content.conf', '/etc/httpd/conf.d/pulp_content.conf'),
 
         # Pulp Nodes
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),

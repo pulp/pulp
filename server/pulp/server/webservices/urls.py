@@ -52,9 +52,6 @@ from pulp.server.webservices.views.content import (
 
 from pulp.server.webservices.views.events import (EventResourceView, EventView)
 
-
-from pulp.server.webservices.views.lazy import RedirectView
-
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
                                                        PermissionView, RevokeFromRoleView,
                                                        RevokeFromUserView)
@@ -150,7 +147,6 @@ urlpatterns = patterns(
         name='content_orphan_type_subcollection'),
     url(r'^v2/content/orphans/(?P<content_type>[^/]+)/(?P<unit_id>[^/]+)/$',
         OrphanResourceView.as_view(), name='content_orphan_resource'),
-    url(r'^v2/content/redirect/$', RedirectView.as_view(), name='redirect'),
     url(r'^v2/content/sources/$',
         ContentSourceCollectionView.as_view(),
         name='content_sources'),
