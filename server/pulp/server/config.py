@@ -95,6 +95,11 @@ _default_values = {
         'redirect_port': '',
         'redirect_path': '',
     },
+    'streamer': {
+        'port': '8751',
+        'interfaces': 'localhost',
+        'cache_timeout': '86400',
+    },
 }
 
 # to add a default configuration file, list the full path here

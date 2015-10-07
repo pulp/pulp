@@ -101,6 +101,10 @@ if sys.version_info >= (2, 6):
         # Apache
         ('server/etc/httpd/conf.d/pulp_content.conf', '/etc/httpd/conf.d/pulp_content.conf'),
 
+        # Lazy Streamer components
+        ('server/srv/pulp/streamer.tac', '/srv/pulp/streamer.tac'),
+        ('server/srv/pulp/streamer_auth.wsgi', '/srv/pulp/streamer_auth.wsgi'),
+
         # Pulp Nodes
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
         ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
@@ -247,6 +251,9 @@ def get_paths_to_copy():
                       'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
         paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
                       'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_streamer.service',
+                      'destination': '/etc/systemd/system/pulp_streamer.service', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': True})
         paths.append({'source': 'server/usr/lib/tmpfiles.d/pulp.conf',
                       'destination': '/etc/tmpfiles.d/pulp.conf', 'owner': 'root',
