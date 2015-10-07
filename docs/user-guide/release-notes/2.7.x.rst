@@ -52,6 +52,10 @@ New Features
 * Pulp properly connects to MongoDB replica sets. The `replica_set` setting in `database` section
   of `/etc/pulp/server.conf` must be provided for Pulp to connect to a replica set.
 
+* Pulp allows users to specify the write concern for MongoDB connection. The two options are
+  'majority' and 'all'. When 'all' is specified, the number of seeds listed will be used as the value
+  for 'w'. For installations without replica sets, all writes to the database will be acknowledged.
+
 
 Deprecation
 -----------
