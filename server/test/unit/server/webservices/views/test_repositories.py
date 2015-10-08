@@ -797,7 +797,7 @@ class TestRepoUnitSearch(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
     def test__generate_response_multiple_types(self, mock_repo_qs, mock_crit, mock_uqm, mock_resp):
         """
-        Test that responses are created using `get_units_across_types` if there are multiple types.
+        Test that responses are created using `get_units` if there are multiple types.
         """
         mock_repo_qs.get_repo_or_missing_resource.return_value = 'exists'
         criteria = mock_crit.from_client_input.return_value
@@ -805,8 +805,8 @@ class TestRepoUnitSearch(unittest.TestCase):
         repo_unit_search = RepoUnitSearch()
         repo_unit_search._generate_response('mock_q', {}, repo_id='mock_repo')
         mock_crit.from_client_input.assert_called_once_with('mock_q')
-        mock_uqm().get_units_across_types.assert_called_once_with('mock_repo', criteria=criteria)
-        mock_resp.assert_called_once_with(mock_uqm().get_units_across_types.return_value)
+        mock_uqm().get_units.assert_called_once_with('mock_repo', criteria=criteria)
+        mock_resp.assert_called_once_with(mock_uqm().get_units.return_value)
 
 
 class TestRepoImportersView(unittest.TestCase):
