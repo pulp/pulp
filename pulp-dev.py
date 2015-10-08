@@ -104,6 +104,7 @@ if sys.version_info >= (2, 6):
         # Lazy Streamer components
         ('server/srv/pulp/streamer.tac', '/srv/pulp/streamer.tac'),
         ('server/srv/pulp/streamer_auth.wsgi', '/srv/pulp/streamer_auth.wsgi'),
+        ('server/etc/httpd/conf.d/pulp_streamer.conf', '/etc/httpd/conf.d/pulp_streamer.conf'),
 
         # Pulp Nodes
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
