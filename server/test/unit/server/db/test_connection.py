@@ -62,7 +62,8 @@ class TestDatabaseSeeds(unittest2.TestCase):
                                                                             'secondhost:5678'],
                                               database)
 
-    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678',
+                                     'replica_set': 'fakeReplica'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -70,10 +71,7 @@ class TestDatabaseSeeds(unittest2.TestCase):
     def test_seeds_from_config(self, mock_connect_seeds, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
-        seeds = "firsthost:1234,secondhost:5678"
         replica_set = 'fakeReplica'
-        config.config.set('database', 'seeds', seeds)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -84,28 +82,27 @@ class TestDatabaseSeeds(unittest2.TestCase):
                                                                             'secondhost:5678'],
                                               database)
 
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
+    @patch('pulp.server.db.connection._CONNECTION', None)
+    @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
     @patch('pulp.server.db.connection._connect_to_one_of_seeds')
     def test_multiple_seeds_no_replica_set(self, mock_connect_seeds, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
-        seeds = "firsthost:1234,secondhost:5678"
-        config.config.set('database', 'write_concern', 'majority')
-        config.config.set('database', 'seeds', seeds)
         with self.assertRaises(PulpCodedException) as connection_error:
             connection.initialize()
         self.assertEqual(connection_error.exception.error_code.message, error_codes.PLP0041.message)
 
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678',
+                                     'replica_set': 'fakeReplica', 'write_concern': 'blah'}})
+    @patch('pulp.server.db.connection._CONNECTION', None)
+    @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
     @patch('pulp.server.db.connection._connect_to_one_of_seeds')
     def test_invalid_write_concern(self, mock_connect_seeds, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
-        seeds = "firsthost:1234,secondhost:5678"
-        replica_set = 'fakeReplica'
-        config.config.set('database', 'write_concern', 'blah')
-        config.config.set('database', 'seeds', seeds)
-        config.config.set('database', 'replica_set', replica_set)
         with self.assertRaises(PulpCodedException) as connection_error:
             connection.initialize()
         self.assertEqual(connection_error.exception.error_code.message, error_codes.PLP0043.message)
