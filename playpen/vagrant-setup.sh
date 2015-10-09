@@ -55,6 +55,29 @@ EOF
     deactivate
     popd
 fi
+# If pulp-smash is present, set it up
+if [ -d pulp-smash ]; then
+    echo "installing pulp-smash and its dependencies"
+    pushd pulp-smash
+    ! mkvirtualenv --system-site-packages pulp-smash
+    workon pulp-smash
+    setvirtualenvproject
+    # Install dependencies
+    pip install -r requirements.txt -r requirements-dev.txt
+    python setup.py develop
+    mkdir -p $HOME/.config/pulp_smash/
+    cat << EOF > $HOME/.config/pulp_smash/settings.json
+{
+    "default": {
+        "base_url": "https://dev.example.com",
+        "auth": ["admin", "admin"],
+        "verify": false
+    }
+}
+EOF
+    deactivate
+    popd
+fi
 popd
 
 
