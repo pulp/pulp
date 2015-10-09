@@ -700,4 +700,3 @@ class LazyCatalogEntry(Document):
     checksum = StringField()
     checksum_algorithm = StringField(regex=ALG_REGEX)
     data = DictField()
-
