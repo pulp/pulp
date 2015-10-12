@@ -11,6 +11,7 @@ from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
 
 from pulp.server.config import config as pulp_config
+from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import content as content_controller
@@ -102,50 +103,63 @@ class Streamer(resource.Resource):
         :param request: the request to process.
         :type  request: twisted.web.server.Request
         """
-        reactor.callInThread(self._download, request)
+        reactor.callInThread(self._handle_get, request)
         return NOT_DONE_YET
 
-    def _download(self, request):
+    @staticmethod
+    def _handle_get(request):
         """
-        Download the requested content using the content unit catalog. This method also
-        dispatches a celery task that causes Pulp to download the newly cached unit.
+        Download the requested content using the content unit catalog and dispatch
+        a celery task that causes Pulp to download the newly cached unit.
 
         :param request: The content request.
         :type  request: twisted.web.server.Request
         """
-        relative_path = urlparse(request.uri).path.lstrip('/')
+        catalog_path = urlparse(request.uri).path
         with Responder(request) as responder:
             try:
                 catalog_entry = model.LazyCatalogEntry.objects(
-                    relative_path=relative_path).order_by('-plugin_id').first()
+                    path=catalog_path).order_by('importer_id').first()
                 if not catalog_entry:
                     raise DoesNotExist()
+                Streamer._download(catalog_entry, request, responder)
 
-                importer, config = repo_controller.get_importer_by_id(catalog_entry.plugin_id)
-
-                download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
-                downloader = importer.get_downloader(config, catalog_entry.url,
-                                                     **catalog_entry.data)
-                downloader.event_listener = StreamerListener(request)
-                downloader.download_one(download_request, events=True)
-
-                # Dispatch the Pulp task to download the unit.
-                content_controller.queue_download(catalog_entry.plugin_id,
-                                                  catalog_entry.unit_locator,
-                                                  catalog_entry.url,
-                                                  catalog_entry.data)
+                # Only dispatch the task if the request didn't originate from Pulp.
+                if not request.getHeader(PULP_STREAM_REQUEST_HEADER):
+                    content_controller.queue_download_one(catalog_entry)
             except DoesNotExist:
-                logger.debug(_('Failed to find a catalog entry with relative path'
-                               ' "{rel}".'.format(rel=relative_path)))
+                logger.debug(_('Failed to find a catalog entry with path'
+                               ' "{rel}".'.format(rel=catalog_path)))
                 request.setResponseCode(NOT_FOUND)
             except PluginNotFound:
-                logger.error(_('Catalog entry for {rel} references a plugin id, {id}, '
-                               'which is not a valid id.'.format(rel=relative_path,
-                                                                 id=catalog_entry.plugin_id)))
+                msg = _('Catalog entry for {rel} references a plugin id'
+                        ' which is not a valid.')
+                logger.error(msg.format(rel=catalog_path))
                 request.setResponseCode(INTERNAL_SERVER_ERROR)
             except Exception:
                 logger.exception(_('An unexpected error occurred while handling the request.'))
                 request.setResponseCode(INTERNAL_SERVER_ERROR)
+
+    @staticmethod
+    def _download(catalog_entry, request, responder):
+        """
+        Build a nectar downloader and download the content from the catalog entry.
+
+        :param catalog_entry:   The catalog entry to download.
+        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
+        :param request:         The client content request.
+        :type  request:         twisted.web.server.Request
+        :param responder:       The file-like object that nectar should write to.
+        :type  responder:       Responder
+        """
+
+        importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
+
+        download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
+        downloader = importer.get_downloader(config, catalog_entry.url,
+                                             **catalog_entry.data)
+        downloader.event_listener = StreamerListener(request)
+        downloader.download_one(download_request, events=True)
 
 
 class Responder(object):

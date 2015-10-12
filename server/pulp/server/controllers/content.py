@@ -5,6 +5,7 @@ import os
 import threading
 
 import celery
+from mongoengine import DoesNotExist
 from nectar.request import DownloadRequest
 from nectar.listener import AggregatingEventListener
 
@@ -17,13 +18,30 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.plugins.util.publish_step import Step
 from pulp.server.async.tasks import Task
+from pulp.server.config import config as pulp_conf
+from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.controllers import repository
 from pulp.server.content.sources.container import ContentContainer
+from pulp.server.content.web.views import ContentView
 from pulp.server.exceptions import PulpCodedTaskException
+from pulp.server.lazy import URL, Key
 from pulp.server.managers.repo._common import get_working_directory
 
 
 _logger = getLogger(__name__)
+
+URL_SIGNING_KEY = Key.load(pulp_conf.get('authentication', 'rsa_pub'))
+
+
+class ModelNotFound(Exception):
+    """
+    Raised when a content unit Model was not found.
+    """
+    def __init__(self, model_type):
+        self.model_type = model_type
+
+    def __str__(self):
+        return _('Model type "{type}" not found.').format(type=self.model_type)
 
 
 class ContentSourcesConduit(StatusMixin, PublishReportMixin):
@@ -111,83 +129,111 @@ def refresh_content_source(content_source_id=None):
 
 
 @celery.task(base=Task)
-def _download(plugin_id, unit_locator, url, options):
+def _download_one(catalog_entry):
     """
-    Download the specified content unit.
+    Download the content unit specified by the catalog entry.
 
-    :param plugin_id: A repository-importer database object ID.
-    :type plugin_id: str
-    :param unit_locator: A unit locator.
-    :type unit_locator: pulp.server.db.model.UnitLocator
-    :param url: The download URL.
-    :type url: str
-    :param options: Passed to the Importer.get_downloader().
-    :type options: dict
+    :param catalog_entry: The catalog entry to download content for.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
     """
-    _logger.info(_('Downloading: {url}').format(url=url))
-
-    # Find the plugin
+    _logger.info(_('Downloading {url} via the Pulp streamer').format(url=catalog_entry.url))
     try:
-        importer, cfg = repository.get_importer_by_id(plugin_id)
+        if os.path.exists(catalog_entry.path):
+            # Already downloaded
+            return
+
+        _download_catalog_entry(catalog_entry)
     except PluginNotFound:
-        _logger.info(_('Download {url}, failed - plugin not found').format(url=url))
-        return
-
-    # Find the model
-    model = plugin_api.get_unit_model_by_id(unit_locator.type_id)
-    if model is None:
-        _logger.info(_('Download {url}, failed - model not found').format(url=url))
-        return
-
-    # Fetch the unit
-    unit = model.objects(id=unit_locator.unit_id).get()
-    if unit is None:
-        _logger.info(_('Download {url}, failed - unit not found').format(url=url))
-        return
-
-    if os.path.exists(unit.storage_path):
-        # Already downloaded
-        return
-
-    # Prepare the download
-    working_dir = get_working_directory()
-    destination = os.path.join(working_dir, unit_locator.unit_id)
-    request = DownloadRequest(url, destination)
-    listener = AggregatingEventListener()
-    downloader = importer.get_downloader(cfg, url, **options)
-    downloader.event_listener = listener
-
-    # Download and store the unit
-    downloader.download_one(request, events=True)
-    if listener.succeeded_reports:
-        _logger.info(_('Download {url}, succeeded').format(url=url))
-        unit.set_content(destination)
-        unit.save()
-    else:
-        report = listener.failed_reports[0]
-        _logger.info(
-            _('Download {url}, failed: {reason}').format(url=url, reason=report.error_msg))
+        msg = _('Download of {url} failed - plugin not found')
+        _logger.info(msg.format(url=catalog_entry.url))
+    except DoesNotExist:
+        msg = _('Download of {url} failed - unit not found')
+        _logger.info(msg.format(url=catalog_entry.url))
+    except ModelNotFound, e:
+        msg = _('Download {url}, failed - {reason}')
+        _logger.info(msg.format(url=catalog_entry.url, reason=str(e)))
 
 
-def queue_download(plugin_id, unit_locator, url, options):
+def _download_catalog_entry(catalog_entry):
     """
-    Queue task to download the specified content unit.
+    Download a catalog entry.
 
-    :param plugin_id: A repository-importer database object ID.
-    :type plugin_id: str
-    :param unit_locator: A unit locator.
-    :type unit_locator: pulp.server.db.model.UnitLocator
-    :param url: The download URL.
-    :type url: str
-    :param options: Passed to the Importer.get_downloader().
-    :type options: dict
+    :param catalog_entry: The catalog entry associated with the content unit.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
+    """
+    content_unit = _get_content_unit(catalog_entry)
+    working_dir = get_working_directory()
+    destination = os.path.join(working_dir, content_unit.id)
+    streamer_url = _get_streamer_url(catalog_entry)
+    pulp_header = {PULP_STREAM_REQUEST_HEADER: 'true'}
+    request = DownloadRequest(streamer_url, destination, headers=pulp_header)
+
+    importer, importer_config = repository.get_importer_by_id(catalog_entry.importer_id)
+    downloader = importer.get_downloader(importer_config, streamer_url, **catalog_entry.data)
+    downloader.event_listener = AggregatingEventListener()
+
+    downloader.download_one(request, events=True)
+    if downloader.event_listener.succeeded_reports:
+        _logger.info(_('Download {url} via {streamer_url} succeeded').format(
+            url=catalog_entry.url, streamer_url=request.url))
+        content_unit.set_content(request.destination)
+        content_unit.save()
+    else:
+        report = downloader.event_listener.failed_reports[0]
+        _logger.info(_('Download {url} via {streamer_url} failed: {reason}').format(
+            url=catalog_entry.url, streamer_url=request.url, reason=report.error_msg))
+
+
+def _get_content_unit(catalog_entry):
+    """
+    Given a catalog entry, retrieve the content unit associated with it.
+
+    :param catalog_entry: The catalog entry to download content for.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
+
+    :return: The content unit referenced in the catalog entry.
+    :rtype:  pulp.server.db.model.ContentUnit
+    """
+    model = plugin_api.get_unit_model_by_id(catalog_entry.unit_type_id)
+    if model is None:
+        raise ModelNotFound(catalog_entry.unit_type_id)
+
+    return model.objects(id=catalog_entry.unit_id).get()
+
+
+def _get_streamer_url(catalog_entry):
+    """
+    Translate a content unit into a URL where the content unit is cached.
+
+    :param catalog_entry: The catalog entry to get the URL for.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
+
+    :return: The signed streamer URL which corresponds to the content unit.
+    :rtype:  str
+    """
+    scheme = 'https'
+    host = pulp_conf.get('lazy', 'redirect_host')
+    port = pulp_conf.get('lazy', 'redirect_port')
+    path_prefix = pulp_conf.get('lazy', 'redirect_path')
+    unsigned_url = ContentView.urljoin(scheme, host, port, path_prefix,
+                                       catalog_entry.path, '')
+    # Sign the URL for a year to avoid the URL expiring before the task completes
+    return str(URL(unsigned_url).sign(URL_SIGNING_KEY, expiration=31536000))
+
+
+def queue_download_one(catalog_entry):
+    """
+    Queue task to download the specified catalog entry.
+
+    :param catalog_entry: The catalog entry to queue a download task for.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
     """
     tags = [
-        resource_tag(RESOURCE_CONTENT_UNIT_TYPE, unit_locator.unit_id),
+        resource_tag(RESOURCE_CONTENT_UNIT_TYPE, catalog_entry.unit_id),
         action_tag('download')
     ]
-    _download.apply_async_with_reservation(
+    _download_one.apply_async_with_reservation(
         RESOURCE_CONTENT_UNIT_TYPE,
-        unit_locator.unit_id,
-        [plugin_id, unit_locator, url, options],
+        catalog_entry.unit_id,
+        [catalog_entry],
         tags=tags)
