@@ -23,5 +23,10 @@
         "name": "qpid-qmf",
         "version": "0.26-2",
         "platform": ["el6"]
+    },
+    {
+        "name": "gofer",
+        "version": "2.6.6-2",
+        "platform": ["el5", "el6", "el7", "fc21", "fc22"]
     }
 ]
