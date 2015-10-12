@@ -73,7 +73,8 @@ class TestTaskCollection(unittest.TestCase):
         task_collection = TaskCollectionView()
         response = task_collection.get(mock_request)
 
-        mock_task_status.objects.assert_called_once_with(tags__all=['mock_tag_1', 'mock_tag_2'])
+        mock_task_status.objects.assert_called_once_with(group_id=None, tags__all=['mock_tag_1',
+                                                                                   'mock_tag_2'])
         mock_resp.assert_called_once_with(['mock_1', 'mock_2'])
         mock_task_serializer.assert_has_calls([mock.call('mock_1'), mock.call('mock_2')])
         self.assertTrue(response is mock_resp.return_value)
@@ -96,7 +97,7 @@ class TestTaskCollection(unittest.TestCase):
         task_collection = TaskCollectionView()
         response = task_collection.get(mock_request)
 
-        mock_task_status.objects.assert_called_once_with()
+        mock_task_status.objects.assert_called_once_with(group_id=None)
         mock_resp.assert_called_once_with(['mock_1', 'mock_2'])
         mock_task_serializer.assert_has_calls([mock.call('mock_1'), mock.call('mock_2')])
         self.assertTrue(response is mock_resp.return_value)

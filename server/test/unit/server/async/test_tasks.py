@@ -11,6 +11,8 @@ from celery.result import AsyncResult
 import celery
 import mock
 
+from mongoengine import ValidationError
+
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
@@ -346,7 +348,8 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
     def test_task_status_created_and_saved(self):
         self.mock_task_status.assert_called_once_with(
             state=self.mock_constants.CALL_WAITING_STATE, task_type=self.task.name,
-            task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
+            task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'],
+            group_id=None)
         save_with_set_on_insert = self.mock_task_status.return_value.save_with_set_on_insert
         save_with_set_on_insert.assert_called_once_with(
             fields_to_set_on_insert=['state', 'start_time'])
@@ -604,6 +607,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertIsNone(new_task_status['group_id'])
         self.assertEqual(new_task_status['worker_name'], WORKER_1)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
@@ -616,9 +620,58 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(new_task_status['result'], None)
 
     @mock.patch('celery.Task.apply_async')
+    def test_creates_task_status_with_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        group_id = uuid.uuid4()
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
+                  'group_id': group_id}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        task_statuses = TaskStatus.objects()
+        self.assertEqual(len(task_statuses), 1)
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['group_id'], group_id)
+        self.assertEqual(new_task_status['worker_name'], WORKER_1)
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
+        self.assertEqual(new_task_status['error'], None)
+        self.assertEqual(new_task_status['spawned_tasks'], [])
+        self.assertEqual(new_task_status['progress_report'], {})
+        self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
+        self.assertEqual(new_task_status['start_time'], None)
+        self.assertEqual(new_task_status['finish_time'], None)
+        self.assertEqual(new_task_status['result'], None)
+
+    @mock.patch('celery.Task.apply_async')
+    def test_exception_task_status_with_bad_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
+                  'group_id': 'string-id'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        self.assertRaises(ValidationError, task.apply_async, *args, **kwargs)
+
+    @mock.patch('celery.Task.apply_async')
     def test_calls_parent_apply_async(self, apply_async):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        apply_async.assert_called_once_with(1, 'b', 'iii', a='for the money', routing_key='asdf')
+
+    @mock.patch('celery.Task.apply_async')
+    def test_calls_parent_apply_async_with_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf',
+                  'group_id': uuid.uuid4()}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 
