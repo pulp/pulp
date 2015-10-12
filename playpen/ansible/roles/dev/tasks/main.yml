@@ -14,13 +14,20 @@
 - name: Install packages
   dnf: name={{ item }} state=present
   with_items:
+      - git
       - dstat
       - fpaste
+      - gcc
       - iotop
       - jnettop
       - koji
       - python-django-bash-completion
+      - python-gofer-qpid
       - python-ipdb
+      - python-qpid
+      - python-qpid-qmf
+      - python-setuptools
+      - python-sphinx
       - python-virtualenvwrapper
       - redhat-lsb-core
       - rpm-build
