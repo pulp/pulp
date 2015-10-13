@@ -5,7 +5,7 @@ import uuid
 from collections import namedtuple
 
 from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
-                         ListField, StringField)
+                         ListField, StringField, UUIDField)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -296,6 +296,8 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     :type start_time:  basestring
     :ivar finish_time: ISO8601 representation of the time the task completed
     :type finish_time: basestring
+    :ivar group_id:    The id used to identify which  group of tasks a task belongs to
+    :type group_id:    uuid.UUID
     :ivar result:      return value of the callable, if any
     :type result:      any
     :ivar exception:   Deprecated. This is always None.
@@ -315,6 +317,7 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     start_time = ISO8601StringField()
     finish_time = ISO8601StringField()
     result = DynamicField()
+    group_id = UUIDField(default=None)
 
     # These are deprecated, and will always be None
     exception = StringField()
@@ -324,7 +327,7 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     _ns = StringField(default='task_status')
 
     meta = {'collection': 'task_status',
-            'indexes': ['-tags', '-state', {'fields': ['-task_id'], 'unique': True}],
+            'indexes': ['-tags', '-state', {'fields': ['-task_id'], 'unique': True}, '-group_id'],
             'allow_inheritance': False,
             'queryset_class': CriteriaQuerySet}
 
