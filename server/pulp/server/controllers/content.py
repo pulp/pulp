@@ -23,6 +23,7 @@ from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.controllers import repository
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.content.web.views import ContentView
+from pulp.server.db.model import LazyCatalogEntry
 from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers.repo._common import get_working_directory
@@ -176,12 +177,28 @@ def _download_catalog_entry(catalog_entry):
     if downloader.event_listener.succeeded_reports:
         _logger.info(_('Download {url} via {streamer_url} succeeded').format(
             url=catalog_entry.url, streamer_url=request.url))
-        content_unit.set_content(request.destination)
+        content_unit.set_content(request.destination, downloaded=False)
         content_unit.save()
+        _update_content_unit_downloaded(content_unit)
     else:
         report = downloader.event_listener.failed_reports[0]
         _logger.info(_('Download {url} via {streamer_url} failed: {reason}').format(
             url=catalog_entry.url, streamer_url=request.url, reason=report.error_msg))
+
+
+def _update_content_unit_downloaded(content_unit):
+    """
+    Handle updating a content unit. This method ensures the 'downloaded' flag is
+    set correctly.
+
+    :param content_unit: The content unit to update.
+    :type  content_unit: pulp.server.db.model.FileContentUnit
+    """
+    entries = LazyCatalogEntry.objects(unit_id=content_unit.id).only('path')
+    unit_files = set([entry.path for entry in entries])
+    if all([os.path.exists(f) for f in unit_files]):
+        content_unit.downloaded = True
+        content_unit.save()
 
 
 def _get_content_unit(catalog_entry):
@@ -192,7 +209,7 @@ def _get_content_unit(catalog_entry):
     :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
 
     :return: The content unit referenced in the catalog entry.
-    :rtype:  pulp.server.db.model.ContentUnit
+    :rtype:  pulp.server.db.model.FileContentUnit
     """
     model = plugin_api.get_unit_model_by_id(catalog_entry.unit_type_id)
     if model is None:

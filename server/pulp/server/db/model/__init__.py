@@ -5,7 +5,7 @@ import uuid
 from collections import namedtuple
 
 from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField, ListField,
-                         StringField)
+                         StringField, BooleanField)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -399,6 +399,8 @@ class ContentUnit(AutoRetryDocument):
     :type user_metadata: mongoengine.DictField
     :ivar storage_path: Location on disk where the content associated with this unit lives
     :type storage_path: mongoengine.StringField
+    :ivar downloaded: Set to True if all files for the ContentUnit have been downloaded.
+    :type downloaded: mongoengine.BooleanField
 
     :ivar _ns: (Deprecated), Contains the name of the collection this model represents
     :type _ns: mongoengine.StringField
@@ -414,6 +416,7 @@ class ContentUnit(AutoRetryDocument):
     last_updated = IntField(db_field='_last_updated', required=True)
     user_metadata = DictField(db_field='pulp_user_metadata')
     storage_path = StringField(db_field='_storage_path')
+    downloaded = BooleanField(default=False)
 
     # For backward compatibility
     _ns = StringField(required=True)
@@ -563,13 +566,15 @@ class FileContentUnit(ContentUnit):
         with FileStorage() as storage:
             storage.put(document, document._source_location)
 
-    def set_content(self, source_location):
+    def set_content(self, source_location, downloaded=True):
         """
         Store the source of the content for the unit and the relative path
         where it should be stored within the plugin content directory.
 
         :param source_location: The absolute path to the content in the plugin working directory.
-        :type source_location: str
+        :type  source_location: str
+        :param downloaded:      Set to True if all files for the ContentUnit are downloaded.
+        :type  downloaded:      bool
 
         :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
         """
@@ -577,6 +582,7 @@ class FileContentUnit(ContentUnit):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
                                                 source_location=source_location)
         self._source_location = source_location
+        self.downloaded = downloaded
 
 
 class SharedContentUnit(ContentUnit):
