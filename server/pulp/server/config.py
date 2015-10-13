@@ -130,14 +130,12 @@ _default_values = {
     },
     'lazy': {
         'enabled': 'false',
-        'redirect_host': '',
+        'redirect_host': socket.getfqdn(),
         'redirect_port': '',
         'redirect_path': '/streamer/',
-    },
-    'streamer': {
-        'port': '8751',
-        'interfaces': 'localhost',
-        'cache_timeout': '86400',
+        'https_retrieval': 'true',
+        'download_interval': '30',
+        'download_concurrency': '5'
     },
 }
 

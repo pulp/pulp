@@ -80,6 +80,26 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         if 'response_code' in report.error_report:
             self.request.setResponseCode(report.error_report['response_code'])
 
+    def download_succeeded(self, report):
+        """
+        If the download was successful, add a deferred download entry.
+
+        :param report: The download report for this request.
+        :type  report: nectar.report.DownloadReport
+        """
+        catalog_entry = report.data['catalog_entry']
+        pulp_request = report.data['client_request'].getHeader(PULP_STREAM_REQUEST_HEADER)
+        if not pulp_request:
+            try:
+                download = model.DeferredDownload(
+                    unit_id=catalog_entry.unit_id,
+                    unit_type_id=catalog_entry.unit_type_id
+                )
+                download.save()
+            except NotUniqueError:
+                # There's already an entry for this unit.
+                pass
+
 
 class Streamer(resource.Resource):
     """
@@ -136,7 +156,6 @@ class Streamer(resource.Resource):
                 if not catalog_entry:
                     raise DoesNotExist()
                 self._download(catalog_entry, request, responder)
-                self._add_deferred_download_entry(request, catalog_entry)
             except DoesNotExist:
                 logger.debug(_('Failed to find a catalog entry with path'
                                ' "{rel}".'.format(rel=catalog_path)))
@@ -164,31 +183,13 @@ class Streamer(resource.Resource):
         :type  responder:       Responder
         """
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
-        download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
+        data = {'catalog_entry': catalog_entry, 'client_request': request}
+        download_request = nectar_request.DownloadRequest(catalog_entry.url, responder, data=data)
         downloader = importer.get_downloader(config, catalog_entry.url,
                                              **catalog_entry.data)
         downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
         downloader.config.finalize()
-
-    @staticmethod
-    def _add_deferred_download_entry(request, catalog_entry):
-        """
-        Add a DeferredDownload document if the request didn't originate from Pulp.
-
-        :param request:         The content request.
-        :type  request:         twisted.web.server.Request
-        :param catalog_entry:   The catalog entry to make an entry for.
-        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
-        """
-        if not request.getHeader(PULP_STREAM_REQUEST_HEADER):
-            try:
-                download = model.DeferredDownload(unit_id=catalog_entry.unit_id,
-                                                  unit_type_id=catalog_entry.unit_type_id)
-                download.save()
-            except NotUniqueError:
-                # There's already an entry for this unit.
-                pass
 
 
 class Responder(object):

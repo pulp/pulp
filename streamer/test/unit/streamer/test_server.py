@@ -6,7 +6,6 @@ from twisted.web.server import Request
 
 from pulp.common.compat import unittest
 from pulp.plugins.loader.exceptions import PluginNotFound
-from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.streamer import Responder, StreamerListener, Streamer
 
 
@@ -50,6 +49,56 @@ class TestStreamerListener(unittest.TestCase):
                          listener.request.setHeader.call_args_list[1][0])
         listener.request.setResponseCode.assert_called_once_with('418')
 
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_download_succeeded(self, mock_deferred_download):
+        """Assert a deferred download entry is made."""
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = None
+        mock_catalog_entry = Mock()
+        mock_catalog_entry.unit_id = 'abc'
+        mock_catalog_entry.unit_type_id = '123'
+        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
+        mock_report = Mock(data=mock_data)
+        listener = StreamerListener(Mock(), Mock())
+
+        # Test
+        listener.download_succeeded(mock_report)
+        mock_deferred_download.assert_called_once_with(unit_id='abc', unit_type_id='123')
+        mock_deferred_download.return_value.save.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_download_succeeded_entry_not_unique(self, mock_deferred_download):
+        """Assert NotUniqueError exceptions are ignored."""
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = None
+        mock_catalog_entry = Mock()
+        mock_deferred_download.return_value.save.side_effect = NotUniqueError()
+        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
+        mock_report = Mock(data=mock_data)
+        listener = StreamerListener(Mock(), Mock())
+
+        # Test
+        listener.download_succeeded(mock_report)
+        mock_deferred_download.return_value.save.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_download_succeeded_pulp_request(self, mock_deferred_download):
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = 'True'
+        mock_catalog_entry = Mock()
+        mock_catalog_entry.unit_id = 'abc'
+        mock_catalog_entry.unit_type_id = '123'
+        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
+        mock_report = Mock(data=mock_data)
+        listener = StreamerListener(Mock(), Mock())
+
+        # Test
+        listener.download_succeeded(mock_report)
+        self.assertEqual(0, mock_deferred_download.call_count)
+
 
 class TestStreamer(unittest.TestCase):
 
@@ -92,8 +141,6 @@ class TestStreamer(unittest.TestCase):
         self.assertEqual(1, query_set.order_by('importer_id').first.call_count)
         mock_download.assert_called_once_with(mock_catalog, self.request,
                                               mock_enter.return_value)
-        self.streamer._add_deferred_download_entry.assert_called_once_with(self.request,
-                                                                           mock_catalog)
 
     @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
     @patch(MODULE_PREFIX + 'model', Mock())
@@ -147,6 +194,7 @@ class TestStreamer(unittest.TestCase):
         mock_catalog.url = 'http://dev.null/'
         mock_catalog.data = {'k': 'v'}
         mock_request = Mock()
+        mock_data = {'catalog_entry': mock_catalog, 'client_request': mock_request}
         mock_responder = Mock()
         mock_importer = Mock()
         mock_importer_config = Mock()
@@ -157,7 +205,7 @@ class TestStreamer(unittest.TestCase):
         # Test
         self.streamer._download(mock_catalog, mock_request, mock_responder)
         mock_repo_controller.get_importer_by_id.assert_called_once_with(mock_catalog.importer_id)
-        mock_dl_request.assert_called_once_with(mock_catalog.url, mock_responder)
+        mock_dl_request.assert_called_once_with(mock_catalog.url, mock_responder, data=mock_data)
         mock_importer.get_downloader.assert_called_once_with(
             mock_importer_config, mock_catalog.url, **mock_catalog.data)
         self.assertEqual(mock_request, mock_downloader.event_listener.request)
@@ -165,44 +213,6 @@ class TestStreamer(unittest.TestCase):
         mock_downloader.download_one.assert_called_once_with(mock_dl_request.return_value,
                                                              events=True)
         mock_downloader.config.finalize.assert_called_once_with()
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
-    def test_add_deferred_download_entry(self, mock_deferred_download):
-        # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = None
-        mock_catalog_entry = Mock()
-        mock_catalog_entry.unit_id = 'abc'
-        mock_catalog_entry.unit_type_id = '123'
-
-        # Test
-        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
-        mock_request.getHeader.assert_called_once_with(PULP_STREAM_REQUEST_HEADER)
-        mock_deferred_download.assert_called_once_with(unit_id='abc', unit_type_id='123')
-        mock_deferred_download.return_value.save.assert_called_once_with()
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
-    def test_add_deferred_download_entry_not_unique(self, mock_deferred_download):
-        # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = None
-        mock_catalog_entry = Mock()
-        mock_deferred_download.return_value.save.side_effect = NotUniqueError()
-
-        # Test
-        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
-        mock_deferred_download.return_value.save.assert_called_once_with()
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
-    def test_add_deferred_download_entry_pulp_request(self, mock_deferred_download):
-        # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = 'something'
-        mock_catalog_entry = Mock()
-
-        # Test
-        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
-        self.assertEqual(0, mock_deferred_download.return_value.save.call_count)
 
 
 class TestResponder(unittest.TestCase):

@@ -45,6 +45,13 @@ class ContentSourcesConduitException(Exception):
     pass
 
 
+class LazyStatusConduitException(Exception):
+    """
+    General exception that wraps any exception coming out of the Pulp server.
+    """
+    pass
+
+
 class RepoScratchPadMixin(object):
 
     def __init__(self, repo_id, exception_class):

@@ -34,6 +34,8 @@ ACTION_AGENT_UNIT_UNINSTALL = 'unit_uninstall'
 ACTION_UPDATE_DISTRIBUTOR = 'update_distributor'
 ACTION_REFRESH_CONTENT_SOURCE = 'refresh_content_source'
 ACTION_REFRESH_ALL_CONTENT_SOURCES = 'refresh_all_content_sources'
+ACTION_DOWNLOAD_TYPE = 'download'
+ACTION_DEFERRED_DOWNLOADS_TYPE = 'deferred_download'
 
 
 def action_tag(action_name):

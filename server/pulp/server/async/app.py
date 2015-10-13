@@ -14,6 +14,7 @@ from pulp.server.async import tasks
 # This import is here so that Celery will find our application instance
 from pulp.server.async.celery_instance import celery  # noqa
 from pulp.server.managers.repo import _common as common_utils
+import pulp.server.tasks  # noqa
 
 
 @celeryd_after_setup.connect
