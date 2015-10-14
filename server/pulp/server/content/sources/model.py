@@ -284,12 +284,10 @@ class ContentSource(object):
         plugin = self.get_cataloger()
         return plugin.get_downloader(conduit, self.descriptor, self.base_url)
 
-    def refresh(self, cancel_event):
+    def refresh(self):
         """
         Refresh the content catalog using the cataloger plugin as
         defined by the "type" descriptor property.
-        :param cancel_event: An event that indicates the refresh has been canceled.
-        :type cancel_event: threading.Event
         :return: The list of refresh reports.
         :rtype: list of: RefreshReport
         """
@@ -297,8 +295,6 @@ class ContentSource(object):
         conduit = self.get_conduit()
         plugin = self.get_cataloger()
         for url in self.urls:
-            if cancel_event.isSet():
-                break
             conduit.reset()
             report = RefreshReport(self.id, url)
             log.info(REFRESHING, self.id, url)
@@ -379,7 +375,7 @@ class PrimarySource(ContentSource):
         """
         return self._downloader
 
-    def refresh(self, cancel_event):
+    def refresh(self):
         """
         Does not support refresh.
         """
