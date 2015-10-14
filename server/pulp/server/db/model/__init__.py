@@ -398,8 +398,8 @@ class ContentUnit(AutoRetryDocument):
     :type id: mongoengine.StringField
     :ivar last_updated: last time this unit was updated (since epoch, zulu time)
     :type last_updated: mongoengine.IntField
-    :ivar user_metadata: Bag of User supplied data to go along with this unit
-    :type user_metadata: mongoengine.DictField
+    :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
+    :type pulp_user_metadata: mongoengine.DictField
     :ivar storage_path: Location on disk where the content associated with this unit lives
     :type storage_path: mongoengine.StringField
 
@@ -415,7 +415,7 @@ class ContentUnit(AutoRetryDocument):
 
     id = StringField(primary_key=True)
     last_updated = IntField(db_field='_last_updated', required=True)
-    user_metadata = DictField(db_field='pulp_user_metadata')
+    pulp_user_metadata = DictField()
     storage_path = StringField(db_field='_storage_path')
 
     # For backward compatibility

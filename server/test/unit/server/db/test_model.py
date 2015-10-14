@@ -53,8 +53,7 @@ class TestContentUnit(unittest.TestCase):
         self.assertTrue(model.ContentUnit.last_updated.required)
         self.assertEquals(model.ContentUnit.last_updated.db_field, '_last_updated')
 
-        self.assertTrue(isinstance(model.ContentUnit.user_metadata, DictField))
-        self.assertEquals(model.ContentUnit.user_metadata.db_field, 'pulp_user_metadata')
+        self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
         self.assertTrue(isinstance(model.ContentUnit.storage_path, StringField))
         self.assertEquals(model.ContentUnit.storage_path.db_field, '_storage_path')
