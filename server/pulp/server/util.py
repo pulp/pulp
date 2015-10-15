@@ -14,6 +14,9 @@
 # XXX this is not a dumping grounds for any random code. It is a place to put
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
+import os
+from shutil import copy
+
 from gettext import gettext as _
 
 from pulp.server.exceptions import PulpExecutionException
@@ -182,3 +185,61 @@ class Delta(dict):
         for k,v in obj.items():
             if k in filter:
                 self[k] = v
+
+def copytree(src, dst, symlinks=False, ignore=None):
+    """
+    Copies src tree to dst
+
+    shutil.copytree method uses copy2() and copystat() to perform the recursive copy of a
+    directory. Both of these methods copy the attributes associated with the files. When copying
+    files from /var/cache/pulp to /var/lib/pulp, we don't want to copy the SELinux security context
+    labels.
+
+    :param src: Source directory rooted at src
+    :type  src: basestring
+    :param dst: Destination directory, a new directory and any parent directories are created if
+                any are missing
+    :type  dst: basestring
+    :param symlinks: If true, symlinks are copied as symlinks and metadata of original links is not
+                     copied. If false, the contents and metadata of symlinks is copied to the new
+                     tree.
+    :type  symlinks: boolean
+    :param ignore: If provided, it receives as its arguments the directory being visited by
+                   copytree and the content of directory as returned by os.listdir(). The callable
+                   must return a sequence of directory and file names relative to the current
+                   directory (i.e. a subset of the items in its second argument); these names will
+                   then be ignored in the copy process.
+    :type  ignore: Callable
+    """
+
+    names = os.listdir(src)
+    if ignore is not None:
+        ignored_names = ignore(src, names)
+    else:
+        ignored_names = set()
+
+    os.makedirs(dst)
+    errors = []
+    for name in names:
+        if name in ignored_names:
+            continue
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if symlinks and os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                copytree(srcname, dstname, symlinks, ignore)
+            else:
+                # Don't need to copy attributes
+                copy(srcname, dstname)
+            # XXX What about devices, sockets etc.?
+        except (IOError, os.error) as why:
+            errors.append((srcname, dstname, str(why)))
+        # catch the Error from the recursive copytree so that we can
+        # continue with other files
+        except Error as err:
+            errors.extend(err.args[0])
+    if errors:
+        raise Error(errors)

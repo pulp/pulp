@@ -22,6 +22,7 @@ from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 import pulp.server.managers.factory as manager_factory
+from pulp.server.util import copytree
 
 
 _logger = logging.getLogger(__name__)
@@ -746,7 +747,7 @@ class AtomicDirectoryPublishStep(PublishStep):
         # for items where http & https are published to a separate directory
 
         _logger.debug('Copying tree from %s to %s' % (self.source_dir, timestamp_master_dir))
-        shutil.copytree(self.source_dir, timestamp_master_dir, symlinks=True)
+        copytree(self.source_dir, timestamp_master_dir, symlinks=True)
 
         for source_relative_location, publish_location in self.publish_locations:
             if source_relative_location.startswith('/'):
@@ -886,7 +887,7 @@ class CopyDirectoryStep(PublishStep):
         """
         if self.delete_before_copy:
             shutil.rmtree(self.target_dir, ignore_errors=True)
-        shutil.copytree(self.source_dir, self.target_dir, symlinks=self.preserve_symlinks)
+        copytree(self.source_dir, self.target_dir, symlinks=self.preserve_symlinks)
 
 
 class PluginStepIterativeProcessingMixin(object):

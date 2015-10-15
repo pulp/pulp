@@ -16,6 +16,7 @@ from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet
+from pulp.server.util import copytree
 
 
 _logger = logging.getLogger(__name__)
@@ -426,7 +427,7 @@ class ContentUnit(AutoRetryDocument):
             target_location = os.path.join(platform_storage_dir, document._relative_path)
             # Make if source is a directory, recursively copy it, otherwise copy the file
             if os.path.isdir(document._source_location):
-                shutil.copytree(document._source_location, target_location)
+                copytree(document._source_location, target_location)
             else:
                 check_dir = os.path.dirname(target_location)
                 try:
