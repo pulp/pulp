@@ -396,8 +396,8 @@ class ContentUnit(AutoRetryDocument):
 
     :ivar id: content unit id
     :type id: mongoengine.StringField
-    :ivar last_updated: last time this unit was updated (since epoch, zulu time)
-    :type last_updated: mongoengine.IntField
+    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
+    :type _last_updated: mongoengine.IntField
     :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
     :type pulp_user_metadata: mongoengine.DictField
     :ivar storage_path: Location on disk where the content associated with this unit lives
@@ -414,7 +414,7 @@ class ContentUnit(AutoRetryDocument):
     unit_key_fields = tuple()
 
     id = StringField(primary_key=True)
-    last_updated = IntField(db_field='_last_updated', required=True)
+    _last_updated = IntField(required=True)
     pulp_user_metadata = DictField()
     storage_path = StringField(db_field='_storage_path')
 
@@ -451,7 +451,7 @@ class ContentUnit(AutoRetryDocument):
         """
         The signal that is triggered before a unit is saved, this is used to
         support the legacy behavior of generating the unit id and setting
-        the last_updated timestamp
+        the _last_updated timestamp
 
         :param sender: sender class
         :type sender: object
@@ -460,7 +460,7 @@ class ContentUnit(AutoRetryDocument):
         """
         if not document.id:
             document.id = str(uuid.uuid4())
-        document.last_updated = dateutils.now_utc_timestamp()
+        document._last_updated = dateutils.now_utc_timestamp()
 
     def get_repositories(self):
         """
@@ -551,8 +551,7 @@ class FileContentUnit(ContentUnit):
     def pre_save_signal(cls, sender, document, **kwargs):
         """
         The signal that is triggered before a unit is saved, this is used to
-        support the legacy behavior of generating the unit id and setting
-        the last_updated timestamp
+        move the unit file or directory into place.
 
         :param sender: sender class
         :type sender: object
