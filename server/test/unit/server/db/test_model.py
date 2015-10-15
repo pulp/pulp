@@ -49,9 +49,8 @@ class TestContentUnit(unittest.TestCase):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
         self.assertTrue(model.ContentUnit.id.primary_key)
 
-        self.assertTrue(isinstance(model.ContentUnit.last_updated, IntField))
-        self.assertTrue(model.ContentUnit.last_updated.required)
-        self.assertEquals(model.ContentUnit.last_updated.db_field, '_last_updated')
+        self.assertTrue(isinstance(model.ContentUnit._last_updated, IntField))
+        self.assertTrue(model.ContentUnit._last_updated.required)
 
         self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
@@ -102,14 +101,14 @@ class TestContentUnit(unittest.TestCase):
 
         mock_now_utc.return_value = 'foo'
         helper = ContentUnitHelper()
-        helper.last_updated = 50
+        helper._last_updated = 50
 
         model.ContentUnit.pre_save_signal({}, helper)
 
         self.assertIsNotNone(helper.id)
 
         # make sure the last updated time has been updated
-        self.assertEquals(helper.last_updated, 'foo')
+        self.assertEquals(helper._last_updated, 'foo')
 
     def test_pre_save_signal_leaves_existing_id(self):
         """
