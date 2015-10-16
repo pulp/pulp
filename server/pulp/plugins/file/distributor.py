@@ -9,7 +9,7 @@ import traceback
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
-
+from pulp.server.util import copytree
 
 BUILD_DIRNAME = 'build'
 
@@ -96,7 +96,7 @@ class FileDistributor(Distributor):
 
             hosting_locations = self.get_hosting_locations(repo, config)
             for location in hosting_locations:
-                shutil.copytree(build_dir, location, symlinks=True)
+                copytree(build_dir, location, symlinks=True)
 
             self.post_repo_publish(repo, config)
 
