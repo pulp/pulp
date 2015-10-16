@@ -1,14 +1,3 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 
 from gettext import gettext as _
@@ -21,7 +10,7 @@ from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.consumer_utils import load_consumer_id
 
 from pulp_node import constants
-from pulp_node.extension import ensure_node_section, node_activated
+from pulp_node.extension import ensure_node_section, node_activated, repository_enabled
 from pulp_node.extension import missing_resources
 
 
@@ -192,30 +181,25 @@ class NodeBindCommand(BindingCommand):
             self.context.prompt.render_failure_message(msg)
             return os.EX_USAGE
 
+        if not repository_enabled(self.context, repo_id):
+            msg = BIND_FAILED_NOT_ENABLED
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_USAGE
+
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
             self.context.prompt.render_failure_message(msg)
             return os.EX_DATAERR
 
-        try:
-            self.context.server.bind.bind(
-                node_id,
-                repo_id,
-                dist_id,
-                notify_agent=False,
-                binding_config=binding_config)
-            self.context.prompt.render_success_message(BIND_SUCCEEDED)
-            warning = BIND_WARNING % dict(r=repo_id)
-            self.context.prompt.render_warning_message(warning)
-        except NotFoundException, e:
-            unhandled = self.missing_resources(self.context.prompt, e)
-            for _id, _type in unhandled:
-                if _type == 'distributor':
-                    msg = BIND_FAILED_NOT_ENABLED
-                    self.context.prompt.render_failure_message(msg)
-                else:
-                    raise
-            return os.EX_DATAERR
+        self.context.server.bind.bind(
+            node_id,
+            repo_id,
+            dist_id,
+            notify_agent=False,
+            binding_config=binding_config)
+        self.context.prompt.render_success_message(BIND_SUCCEEDED)
+        warning = BIND_WARNING % dict(r=repo_id)
+        self.context.prompt.render_warning_message(warning)
 
 
 class NodeUnbindCommand(BindingCommand):
@@ -241,7 +225,7 @@ class NodeUnbindCommand(BindingCommand):
             for _id, _type in unhandled:
                 if _type == 'bind_id':
                     msg = NOT_BOUND_NOTHING_DONE
-                    self.context.prompt.render_success_message(msg)
+                    self.context.prompt.render_failure_message(msg)
                 else:
                     raise
             return os.EX_DATAERR
