@@ -2,7 +2,7 @@
 This module contains utility code to be used by pulp.server.
 """
 import os
-from shutil import copy
+from shutil import copy, Error
 
 from gettext import gettext as _
 
