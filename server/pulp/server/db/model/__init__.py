@@ -19,6 +19,7 @@ from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
 from pulp.server.webservices.views.serializers import Repository as RepoSerializer
+from pulp.server.util import copytree
 
 
 _logger = logging.getLogger(__name__)
