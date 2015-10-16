@@ -9,6 +9,7 @@
 %define pulp_admin 1
 %define pulp_client_oauth 1
 %define pulp_server 1
+%define pulp_streamer 1
 %endif
 
 %if %{pulp_server}
@@ -93,6 +94,13 @@ sed -i "s/policy_module(pulp-server, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-se
 sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-celery, %{version})/" pulp-celery.te
 ./build.sh ${distver}
 cd -
+%endif # end of the pulp-server build block
+
+# Build the pulp-streamer if enabled.
+%if %{pulp_streamer}
+pushd streamer
+%{__python} setup.py build
+popd
 %endif
 
 # build man pages if we are able
@@ -136,6 +144,38 @@ mkdir -p %{buildroot}/%{_bindir}
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
 mkdir -p %{buildroot}/%{_mandir}/man1
 %endif
+
+
+# pulp-streamer installation
+%if %{pulp_streamer}
+pushd streamer
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+
+mkdir -p %{buildroot}/%{_var}/www/streamer/
+mkdir -p %{buildroot}/%{_sysconfdir}/default/
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
+mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+mkdir -p %{buildroot}/srv/%{name}/
+
+cp streamer/etc/pulp/streamer.conf %{buildroot}/%{_sysconfdir}/%{name}/streamer.conf
+cp streamer/etc/httpd/conf.d/pulp_streamer.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
+cp streamer/srv/pulp/streamer.tac %{buildroot}/srv/%{name}/streamer.tac
+cp streamer/srv/pulp/streamer_auth.wsgi %{buildroot}/srv/%{name}/streamer_auth.wsgi
+
+# Server init scripts/unit files and environment files
+%if %{pulp_systemd} == 0
+cp streamer/etc/default/upstart_pulp_streamer %{buildroot}/%{_sysconfdir}/default/pulp_streamer
+cp -d streamer/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
+%else
+cp streamer/etc/default/systemd_pulp_streamer %{buildroot}/%{_sysconfdir}/default/pulp_streamer
+mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
+cp streamer/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
+%endif
+
+# End of the pulp-streamer installation block
+%endif
+
 
 # pulp-admin installation
 %if %{pulp_admin}
@@ -301,6 +341,7 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+Requires: python-%{name}-repoauth = %{pulp_version}
 Requires: python-blinker
 Requires: python-celery >= 3.1.0
 Requires: python-celery < 3.2.0
@@ -355,6 +396,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/vhosts80
 %dir /srv/%{name}
 /srv/%{name}/webservices.wsgi
+/srv/%{name}/content.wsgi
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
@@ -452,6 +494,7 @@ fi
 %postun server
 %systemd_postun
 %endif
+
 
 # ---- Nodes Common ----------------------------------------------------------------
 
@@ -578,6 +621,73 @@ Pulp nodes consumer client extensions.
 %doc
 
 %endif # End pulp_server if block
+
+
+# ---- Lazy Streamer ---------------------------------------------------------------
+
+%if %{pulp_streamer}
+%package streamer
+Summary: The pulp lazy streamer
+Group: Development/Languages
+
+Requires: httpd
+Requires: pulp-server
+Requires: python-mongoengine
+Requires: python-nectar >= 1.4.0
+%if 0%{?rhel}
+Requires: python-twisted-core
+Requires: python-twisted-web
+%endif
+%if 0%{?fedora}
+Requires: python-twisted
+%endif
+%if %{pulp_systemd} == 1
+Requires(preun): systemd
+Requires(postun): systemd
+%endif
+
+%description streamer
+The streamer component of the Pulp Lazy Sync feature.
+
+%files streamer
+%defattr(-,root,root,-)
+%{python_sitelib}/%{name}/streamer/
+%{python_sitelib}/pulp_streamer*.egg-info
+%config(noreplace) %{_sysconfdir}/%{name}/streamer.conf
+%config(noreplace) %{_sysconfdir}/default/pulp_streamer
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
+/srv/%{name}/streamer.tac
+/srv/%{name}/streamer_auth.wsgi
+
+%if %{pulp_systemd} == 0
+# Install the init scripts
+%defattr(755,root,root,-)
+%{_initddir}/pulp_streamer
+%else
+# Install the systemd unit files
+%defattr(-,root,root,-)
+%{_usr}/lib/systemd/system/pulp_streamer.service
+%endif
+# - apache:apache
+%defattr(-,apache,apache,-)
+%{_var}/www/streamer
+
+# Uninstall scriptlet
+%preun streamer
+if [ $1 -eq 0 ] ; then
+    %if %{pulp_systemd} == 1
+        /bin/systemctl stop pulp_streamer > /dev/null 2>&1
+    %else
+        /sbin/service pulp_streamer stop > /dev/null 2>&1
+    %endif
+fi
+%if %{pulp_systemd} == 1
+%postun streamer
+%systemd_postun
+%endif
+
+# End of pulp streamer if block
+%endif
 
 
 # ---- Common ------------------------------------------------------------------

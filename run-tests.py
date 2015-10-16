@@ -25,7 +25,9 @@ paths_to_check = [
     'nodes/child/pulp_node/importers/reports.py',
     'oid_validation/',
     'repoauth/',
-    'server/']
+    'server/',
+    'streamer/',
+]
 
 paths_to_ignore = ['common/pulp/common/backports/pkgutil.py']
 os.environ['DJANGO_SETTINGS_MODULE'] = PULP_DJANGO_SETTINGS_MODULE
@@ -49,6 +51,7 @@ TESTS_NON_RHEL5 = [
     'client_admin/test/unit',
     'nodes/test/nodes_tests',
     'server/test/unit',
+    'streamer/test/unit',
     'repoauth/test',
     'oid_validation/test',
     'devel/test/unit'

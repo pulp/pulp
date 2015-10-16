@@ -3,6 +3,7 @@ from gettext import gettext as _
 from logging import getLogger
 import os
 import threading
+from urlparse import urlunsplit
 
 import celery
 from mongoengine import DoesNotExist
@@ -22,7 +23,6 @@ from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.controllers import repository
 from pulp.server.content.sources.container import ContentContainer
-from pulp.server.content.web.views import ContentView
 from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers.repo._common import get_working_directory
@@ -215,8 +215,9 @@ def _get_streamer_url(catalog_entry):
     host = pulp_conf.get('lazy', 'redirect_host')
     port = pulp_conf.get('lazy', 'redirect_port')
     path_prefix = pulp_conf.get('lazy', 'redirect_path')
-    unsigned_url = ContentView.urljoin(scheme, host, port, path_prefix,
-                                       catalog_entry.path, '')
+    netloc = host + ':' + port
+    path = os.path.join(path_prefix, catalog_entry.path)
+    unsigned_url = urlunsplit((scheme, netloc, path, None, None))
     # Sign the URL for a year to avoid the URL expiring before the task completes
     return str(URL(unsigned_url).sign(URL_SIGNING_KEY, expiration=31536000))
 
