@@ -15,7 +15,7 @@
 # paradigm-changing code that allows you to get unique or more efficient behaviors
 
 import os
-from shutil import copy
+from shutil import copy, Error
 
 from gettext import gettext as _
 
