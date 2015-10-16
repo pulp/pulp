@@ -171,6 +171,7 @@ class Delta(dict):
             if k in filter:
                 self[k] = v
 
+
 def copytree(src, dst, symlinks=False, ignore=None):
     """
     Copies src tree to dst
