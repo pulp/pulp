@@ -9,7 +9,6 @@ from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.server.db import model
-from pulp.server.db.model.auth import User
 from pulp.server.db.model.repository import RepoImporter
 from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
                                     InvalidValue)
@@ -176,7 +175,7 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
         file_path = self.upload_manager._upload_file_path(upload_id)
 
-        fake_user = User('import-user', '')
+        fake_user = model.User('import-user', '')
         manager_factory.principal_manager().set_principal(principal=fake_user)
 
         response = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata,

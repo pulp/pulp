@@ -33,7 +33,6 @@ TYPE_CONTENT_QUERY = 'content-query-manager'
 TYPE_CONTENT_UPLOAD = 'content-upload-manager'
 TYPE_EVENT_FIRE = 'event-fire-manager'
 TYPE_EVENT_LISTENER = 'event-listener-manager'
-TYPE_PASSWORD = 'password-manager'
 TYPE_PERMISSION = 'permission-manager'
 TYPE_PERMISSION_QUERY = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER = 'plugin-manager'
@@ -51,8 +50,6 @@ TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
 TYPE_ROLE = 'role-manager'
 TYPE_ROLE_QUERY = 'role-query-manager'
 TYPE_TOPIC_PUBLISH = 'topic-publish-manager'
-TYPE_USER = 'user-manager'
-TYPE_USER_QUERY = 'user-query-manager'
 
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -231,13 +228,6 @@ def event_listener_manager():
     return get_manager(TYPE_EVENT_LISTENER)
 
 
-def password_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.password.PasswordManager}
-    """
-    return get_manager(TYPE_PASSWORD)
-
-
 def permission_manager():
     """
     @rtype: L{pulp.server.managers.auth.permission.cud.PermissionManager}
@@ -357,20 +347,6 @@ def topic_publish_manager():
     return get_manager(TYPE_TOPIC_PUBLISH)
 
 
-def user_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.user.cud.UserManager}
-    """
-    return get_manager(TYPE_USER)
-
-
-def user_query_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.user.query.UserQueryManager}
-    """
-    return get_manager(TYPE_USER_QUERY)
-
-
 def initialize():
     """
     Initialize the manager factory by importing and setting Pulp's builtin
@@ -381,9 +357,6 @@ def initialize():
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
     from pulp.server.managers.auth.principal import PrincipalManager
-    from pulp.server.managers.auth.user.cud import UserManager
-    from pulp.server.managers.auth.user.query import UserQueryManager
-    from pulp.server.managers.auth.password import PasswordManager
     from pulp.server.managers.auth.permission.cud import PermissionManager
     from pulp.server.managers.auth.permission.query import PermissionQueryManager
     from pulp.server.managers.auth.role.cud import RoleManager
@@ -443,7 +416,6 @@ def initialize():
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
-        TYPE_PASSWORD: PasswordManager,
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
@@ -461,8 +433,6 @@ def initialize():
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
         TYPE_TOPIC_PUBLISH: TopicPublishManager,
-        TYPE_USER: UserManager,
-        TYPE_USER_QUERY: UserQueryManager,
     }
     _CLASSES.update(builtins)
 

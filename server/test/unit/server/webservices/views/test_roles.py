@@ -18,21 +18,22 @@ class TestRolesView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
-    def test_get_all_roles(self, mock_f, mock_resp):
+    @mock.patch('pulp.server.webservices.views.roles.user_controller')
+    def test_get_all_roles(self, mock_ctrl, mock_f, mock_resp):
         """
         Test the roles retrieval.
         """
         resp = [{'id': 'test_role', 'users': [{'login': 'test'}],
                 'permissions': [{'resource': '/', 'permission': [0]}]}]
-        users = [{'login': 'test'}]
+        user = mock.MagicMock()
         mock_f.role_query_manager.return_value.find_all.return_value = resp
-        mock_f.user_query_manager.return_value.find_users_belonging_to_role.return_value = users
+        mock_ctrl.find_users_belonging_to_role.return_value = [user]
         mock_f.permission_manager.return_value.operation_value_to_name.return_value = 'READ'
 
         request = mock.MagicMock()
         roles = RolesView()
         response = roles.get(request)
-        expected_cont = [{'id': 'test_role', 'permissions': {'/': ['READ']}, 'users': ['test'],
+        expected_cont = [{'id': 'test_role', 'permissions': {'/': ['READ']}, 'users': [user.login],
                          '_href': '/v2/roles/test_role/'}]
 
         mock_resp.assert_called_once_with(expected_cont)
@@ -70,21 +71,22 @@ class TestRoleResourceView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
-    def test_get_single_role(self, mock_f, mock_resp):
+    @mock.patch('pulp.server.webservices.views.roles.user_controller')
+    def test_get_single_role(self, mock_ctrl, mock_f, mock_resp):
         """
         Test single role retrieval.
         """
         resp = {'id': 'test_role', 'users': [{'login': 'test'}],
                 'permissions': [{'resource': '/', 'permission': [0]}]}
-        users = [{'login': 'test'}]
+        user = mock.MagicMock()
         mock_f.role_query_manager.return_value.find_by_id.return_value = resp
-        mock_f.user_query_manager.return_value.find_users_belonging_to_role.return_value = users
+        mock_ctrl.find_users_belonging_to_role.return_value = [user]
         mock_f.permission_manager.return_value.operation_value_to_name.return_value = 'READ'
 
         request = mock.MagicMock()
         role = RoleResourceView()
         response = role.get(request, 'test_role')
-        expected_cont = {'id': 'test_role', 'permissions': {'/': ['READ']}, 'users': ['test'],
+        expected_cont = {'id': 'test_role', 'permissions': {'/': ['READ']}, 'users': [user.login],
                          '_href': '/v2/roles/test_role/'}
 
         mock_resp.assert_called_once_with(expected_cont)
@@ -160,14 +162,15 @@ class TestRoleUsersView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
-    def test_list_users_beloging_to_role(self, mock_fact, mock_resp):
+    @mock.patch('pulp.server.webservices.views.roles.user_controller')
+    def test_list_users_beloging_to_role(self, mock_ctrl, mock_fact, mock_resp):
         """
         Test list Users belonging to a role.
         """
         resp = {'login': 'foo', 'name': 'bar'}
         expected_cont = {'login': 'foo', 'name': 'bar'}
 
-        mock_fact.user_query_manager.return_value.find_users_belonging_to_role.return_value = resp
+        mock_ctrl.find_users_belonging_to_role.return_value = resp
         request = mock.MagicMock()
         role_users = RoleUsersView()
         response = role_users.get(request, 'test-role')

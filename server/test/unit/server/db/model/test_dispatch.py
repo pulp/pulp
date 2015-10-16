@@ -17,8 +17,8 @@ import mock
 
 from .... import base
 from pulp.common import constants, dateutils
+from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
-from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
 from pulp.server.managers.factory import initialize
@@ -486,17 +486,17 @@ class TestScheduledCallInit(unittest.TestCase):
         self.assertEqual(schedule.run_every, timedelta(minutes=1))
 
     def test_pass_in_principal(self):
-        principal = User('me', 'letmein')
+        principal = model.User('me', 'letmein')
         call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', principal=principal)
 
         self.assertEqual(call.principal, principal)
 
     def test_create_principal(self):
+        """
+        Principal, when not logged in should be the SystemUser, which is a Singleton.
+        """
         call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
-
-        # See PrincipalManager.get_principal(). It returns either a User or
-        # a dict. Not my idea.
-        self.assertTrue(isinstance(call.principal, (User, dict)))
+        self.assertTrue(call.principal is model.SystemUser())
 
     def test_no_first_run(self):
         call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')

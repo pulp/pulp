@@ -124,7 +124,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.manage.factory')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
-    @patch('pulp.server.db.manage.UserManager.ensure_admin')
+    @patch('pulp.server.db.manage.managers.UserManager.ensure_admin')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
@@ -460,7 +460,7 @@ class TestManageDB(MigrationTest):
 
     @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
-    @patch('pulp.server.db.manage.UserManager.ensure_admin')
+    @patch('pulp.server.db.manage.managers.UserManager.ensure_admin')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)

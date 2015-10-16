@@ -235,7 +235,8 @@ class ModelSerializer(BaseSerializer):
         :rtype:  pulp.server.db.model.criteria.Criteria
         """
         crit_dict = crit.as_dict()
-        crit_dict['filters'] = self._translate_filters(model, crit.filters)
+        if crit.filters:
+            crit_dict['filters'] = self._translate_filters(model, crit.filters)
         if crit.sort:
             sort = [(self._translate(model, field), direc) for field, direc in crit.sort]
             crit_dict['sort'] = sort
@@ -290,3 +291,28 @@ class ImporterSerializer(DictSerializer):
         """
         return reverse('repo_importer_resource', kwargs={'repo_id': instance['repo_id'],
                                                          'importer_id': instance['id']})
+
+
+class User(ModelSerializer):
+    """
+    Serializer for Users.
+    """
+
+    class Meta:
+        """
+        Contains information that the base serializer needs to properly handle a Repository object.
+        """
+        exclude_fields = ['password']
+        remapped_fields = {'id': '_id'}
+
+    def get_href(self, instance):
+        """
+        Build the href for a user.
+
+        :param instance: user being serialized
+        :type  instance: pulp.server.db.model.Repository
+
+        :return: REST href for the given user instance
+        :rtype:  str
+        """
+        return reverse('user_resource', kwargs={'login': instance.login})

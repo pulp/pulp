@@ -5,6 +5,7 @@ import oauth2
 
 from pulp.server.auth import ldap_connection
 from pulp.server.config import config
+from pulp.server.db import model
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.exceptions import PulpException
 from pulp.server.managers import factory
@@ -31,8 +32,7 @@ class AuthenticationManager(object):
         :rtype: L{pulp.server.db.model.auth.User} instance or None
         :return: user corresponding to the credentials
         """
-        user_query_manager = factory.user_query_manager()
-        user = user_query_manager.find_by_login(username)
+        user = model.User.objects(login=username).first()
         if user is None:
             _logger.debug(_('User [%(u)s] specified in certificate was not found in the system') %
                           {'u': username})
@@ -43,7 +43,7 @@ class AuthenticationManager(object):
             return None
 
         if password is not None:
-            if not factory.password_manager().check_password(user['password'], password):
+            if not user.check_password(password):
                 _logger.debug('Password for user [%s] was incorrect' % username)
                 return None
 

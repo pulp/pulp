@@ -75,6 +75,22 @@ class TestCriteriaQuerySet(unittest.TestCase):
         qs_skip.assert_called_once_with('skip')
         qs_limit.assert_called_once_with('limit')
 
+    def test_get_or_404_as_expected(self):
+        qs = querysets.CriteriaQuerySet(mock.MagicMock(), mock.MagicMock())
+        mock_get = mock.MagicMock()
+        qs.get = mock_get
+        result = qs.get_or_404(field='value')
+        mock_get.assert_called_once_with(field='value')
+        self.assertTrue(result is mock_get.return_value)
+
+    def test_get_or_404_missing_obj(self):
+        qs = querysets.CriteriaQuerySet(mock.MagicMock(), mock.MagicMock())
+        mock_get = mock.MagicMock()
+        qs.get = mock_get
+        mock_get.side_effect = DoesNotExist
+        self.assertRaises(pulp_exceptions.MissingResource, qs.get_or_404, field='value')
+        mock_get.assert_called_once_with(field='value')
+
 
 class TestReqoQuerySet(unittest.TestCase):
     """

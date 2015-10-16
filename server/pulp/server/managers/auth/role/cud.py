@@ -7,17 +7,18 @@ from gettext import gettext as _
 
 from celery import task
 
+from pulp.server.constants import SUPER_USER_ROLE
 from pulp.server.async.tasks import Task
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE, \
     _operations_not_granted_by_roles
-from pulp.server.db.model.auth import Role, User
+from pulp.server.controllers import user as user_controller
+from pulp.server.db import model
+from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingResource,
                                     PulpDataException)
 from pulp.server.managers import factory
-from pulp.server.util import Delta
 
 
-SUPER_USER_ROLE = 'super-users'
 _ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
@@ -126,18 +127,18 @@ class RoleManager(object):
             raise PulpDataException(_('Role %s cannot be changed') % role_id)
 
         # Remove respective roles from users
-        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
+        users_with_role = user_controller.find_users_belonging_to_role(role_id)
 
         for item in role['permissions']:
-            for user in users:
-                other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+            for user in users_with_role:
+                other_roles = factory.role_query_manager().get_other_roles(role, user.roles)
                 user_ops = _operations_not_granted_by_roles(item['resource'],
                                                             item['permission'], other_roles)
-                factory.permission_manager().revoke(item['resource'], user['login'], user_ops)
+                factory.permission_manager().revoke(item['resource'], user.login, user_ops)
 
-        for user in users:
-            user['roles'].remove(role_id)
-            factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
+        for user in users_with_role:
+            user.roles.remove(role_id)
+            user.save()
 
         Role.get_collection().remove({'id': role_id})
 
@@ -180,9 +181,9 @@ class RoleManager(object):
                 continue
             current_ops.append(o)
 
-        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
+        users = user_controller.find_users_belonging_to_role(role_id)
         for user in users:
-            factory.permission_manager().grant(resource, user['login'], operations)
+            factory.permission_manager().grant(resource, user.login, operations)
 
         Role.get_collection().save(role)
 
@@ -221,13 +222,13 @@ class RoleManager(object):
                 continue
             current_ops.remove(o)
 
-        users = factory.user_query_manager().find_users_belonging_to_role(role_id)
+        users = user_controller.find_users_belonging_to_role(role_id)
         for user in users:
-            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+            other_roles = factory.role_query_manager().get_other_roles(role, user.roles)
             user_ops = _operations_not_granted_by_roles(resource,
                                                         operations,
                                                         other_roles)
-            factory.permission_manager().revoke(resource, user['login'], user_ops)
+            factory.permission_manager().revoke(resource, user.login, user_ops)
 
         # in no more allowed operations, remove the resource
         if not current_ops:
@@ -252,16 +253,15 @@ class RoleManager(object):
         if role is None:
             raise MissingResource(role_id)
 
-        user = User.get_collection().find_one({'login': login})
+        user = model.User.objects(login=login).first()
         if user is None:
             raise InvalidValue(['login'])
 
-        if role_id in user['roles']:
+        if role_id in user.roles:
             return
 
-        user['roles'].append(role_id)
-        User.get_collection().save(user)
-
+        user.roles.append(role_id)
+        user.save()
         for item in role['permissions']:
             factory.permission_manager().grant(item['resource'], login,
                                                item.get('permission', []))
@@ -283,23 +283,21 @@ class RoleManager(object):
         if role is None:
             raise MissingResource(role_id)
 
-        user = User.get_collection().find_one({'login': login})
-        if user is None:
-            raise MissingResource(login)
+        user = model.User.objects.get_or_404(login=login)
 
-        if role_id == SUPER_USER_ROLE and factory.user_query_manager().is_last_super_user(login):
+        if role_id == SUPER_USER_ROLE and user_controller.is_last_super_user(login):
             raise PulpDataException(
                 _('%(role)s cannot be empty, and %(login)s is the last member') %
                 {'role': SUPER_USER_ROLE, 'login': login})
 
-        if role_id not in user['roles']:
+        if role_id not in user.roles:
             return
 
-        user['roles'].remove(role_id)
-        User.get_collection().save(user)
+        user.roles.remove(role_id)
+        user.save()
 
         for item in role['permissions']:
-            other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
+            other_roles = factory.role_query_manager().get_other_roles(role, user.roles)
             user_ops = _operations_not_granted_by_roles(item['resource'],
                                                         item['permission'],
                                                         other_roles)
