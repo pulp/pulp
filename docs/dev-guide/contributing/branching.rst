@@ -6,9 +6,9 @@ the platform, and then each supported content family (like "rpm" and "puppet")
 has its own repository.
 
 Pulp uses a version scheme x.y.z. Pulp's branching strategy is designed for
-bugfix development for older "x.y" release streams without interfering with
-development or contribution of new features to a future, unreleased "x" or
-"x.y" release. This strategy encourages a clear separation of bugfixes and
+bugfix development for older ``x.y`` release streams without interfering with
+development or contribution of new features to a future, unreleased ``x`` or
+``x.y`` release. This strategy encourages a clear separation of bugfixes and
 features as encouraged by `Semantic Versioning <http://semver.org/>`_.
 
 .. note::
@@ -23,47 +23,47 @@ master
 
 This is the latest bleeding-edge code. All new feature work should be done out
 of this branch. Typically this is the development branch for future, unreleased
-"x" or "x.y" release.
+``x`` or ``x.y`` release.
 
 
-Release Branches
-----------------
+Version-Specific Branches
+-------------------------
 
-A branch will be made for each x.y release stream named "x.y-release". For example,
-the 2.4 release lives in a branch named "2.4-release". Increments of "z" releases
-occur within the same release branch and are identified by tags.
-
-The HEAD of each release branch points to a tagged release version. When a new
-"z" increment version of Pulp is released, the testing branch is merged
-into the release branch and the new HEAD of the release branch is tagged.
-Development occurs on a separate development branch.
-
-Release branches are where Read The Docs builds from, so in some situations
-documentation commits may be merged into a release branch after a release has
-occurred. For example if a known issue is discovered in a release after it is
-released, it may be added to the release notes. In those situations the
-release tag will stay the same and diverge from HEAD.
+Each ``x.y`` release will have one corresponding branch called ``x.y-dev``. For
+example, all work for the 2.7.z series of releases gets merged into ``2.7-dev``.
 
 
-Testing Branches
-----------------
+Build Tags
+----------
 
-Each x.y release will also have a branch for testing builds named "x.y-testing". For example, the
-2.4 stream has a "2.4-testing" branch. This branch is made when we are ready to begin regression
-testing 2.4.1. After 2.4.0 has been released, the 2.4-dev branch will be merged into 2.4-testing,
-and this branch will be used to make beta builds. Release candidates will also be built out of this
-branch. Once we believe the 2.4-testing branch has code that is ready to be release, it will be
-merged into 2.4-release.
+Builds will be represented only as tags.
+
+.. note:: In the past, the latest beta and GA release of an x.y stream would be
+    represented additionally by branches, but that is no longer the case as of
+    pulp 2.7.
 
 
-Development Branches
---------------------
+Build Lifecycle
+---------------
 
-Development for future "z" releases are done in a corresponding branch named
-"x.y-dev". For example, assuming Pulp 2.4.0 is released on the branch
-"2.4-release" and 2.4.1 is being tested in "2.4-testing", 2.4.2 work will be developed in 2.4-dev.
-When 2.4.2 is ready to be beta tested, 2.4-dev will be merged into the "2.4-testing" branch at
-which point "2.4-dev" will be used for 2.4.3 development.
+Alpha and Beta releases will be built from the tip of an ``x.y-dev`` branch. If
+the beta fails testing, blocking issues will have fixes merged to the
+``x.y-dev`` branch like any other bug fix, and then a new build will be made.
+Other changes unrelated to the blocking issues may get merged to the
+``x.y-dev`` branch between builds, and no effort will be made to "freeze" the
+branch. Any such unrelated changes will be included in the next beta build.
+
+Release candidates will be built from the most recent beta tag. GA releases
+will be built from the most recent release candidate tag.
+
+
+Hotfix
+------
+
+When a hotfix needs to be made, a branch will be created from the most recent
+``x.y.z`` release tag. The fix will be made (via pull request from a personal
+fork to the hotfix branch), a new tag will be built from the tip of the hotfix
+branch, and the hotfix branch can be merged to ``x.y-dev``.
 
 
 Bug Fix Branches
@@ -90,12 +90,6 @@ Choosing an Upstream Branch
 When creating a bug fix or feature branch, it is very important to choose the
 right upstream branch. The general rule is to always choose the oldest upstream
 branch that will need to contain your work.
-
-After choosing your upstream branch to merge your changes into and performing
-that merge, you additionally need to merge forward your commit to all "newer"
-branches. See :ref:`Merging to Multiple Releases <merging-to-multiple-releases>`
-for more information on merging forward from an older branch.
-
 
 .. _commit_messages:
 
