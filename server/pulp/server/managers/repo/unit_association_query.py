@@ -414,7 +414,6 @@ class RepoUnitAssociationQueryManager(object):
             # sort by _id by default (better performance)
             sort = [('_id', SORT_ASCENDING)]
 
-
         cursor.sort(sort)
 
         return cursor
