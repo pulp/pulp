@@ -373,11 +373,7 @@ class RepoUnitAssociationQueryManager(object):
             except ValueError:
                 unit_key = None
 
-            if unit_key is not None:
-                sort = [(u, SORT_ASCENDING) for u in unit_key]
-
-        if sort is not None:
-            cursor.sort(sort)
+        cursor.sort(sort)
 
         return cursor
 
