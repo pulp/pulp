@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from pulp.server import exceptions
-from pulp.server import tasks  # noqa
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
+from pulp.server.db import model
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import RepoDistributor
-from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
 
 _PUBLISH_OPTION_KEYS = ('override_config',)
@@ -143,15 +141,14 @@ class RepoPublishScheduleManager(object):
 
         :param repo_id:         unique ID for a repository
         :type  repo_id:         basestring
-        :param distributor_id:  unique ID for an distributor
+        :param distributor_id:  unique ID for a distributor
         :type  distributor_id:  basestring
 
         :return:    iterator of ScheduledCall instances
         :rtype:     iterator
         """
-        cls.validate_distributor(repo_id, distributor_id)
-
-        return utils.get_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+        return utils.get_by_resource(dist.resource_tag)
 
     @classmethod
     def create(cls, repo_id, distributor_id, publish_options, schedule,
@@ -161,7 +158,7 @@ class RepoPublishScheduleManager(object):
 
         :param repo_id:         unique ID for a repository
         :type  repo_id:         basestring
-        :param distributor_id:  unique ID for an distributor
+        :param distributor_id:  unique ID for a distributor
         :type  distributor_id:  basestring
         :param publish_options: dictionary that contains the key 'override_config',
                                 whose value should be passed as the 'overrides'
@@ -178,22 +175,20 @@ class RepoPublishScheduleManager(object):
         :return:    new schedule instance
         :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
-        # validate the input
-        cls.validate_distributor(repo_id, distributor_id)
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
         task = repo_controller.queue_publish.name
         args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
-        resource = RepoDistributor.build_resource_tag(repo_id, distributor_id)
         schedule = ScheduledCall(schedule, task, args=args, kwargs=kwargs,
-                                 resource=resource, failure_threshold=failure_threshold,
+                                 resource=dist.resource_tag, failure_threshold=failure_threshold,
                                  enabled=enabled)
         schedule.save()
 
         try:
-            cls.validate_distributor(repo_id, distributor_id)
+            model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         except exceptions.MissingResource:
             # back out of this whole thing, since the distributor disappeared
             utils.delete(schedule.id)
@@ -218,8 +213,7 @@ class RepoPublishScheduleManager(object):
         :return ScheduledCall instance as it appears after the update
         :rtype  pulp.server.db.model.dispatch.ScheduledCall
         """
-
-        cls.validate_distributor(repo_id, distributor_id)
+        model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         if 'override_config' in updates:
             updates['kwargs'] = {'overrides': updates.pop('override_config')}
 
@@ -239,10 +233,7 @@ class RepoPublishScheduleManager(object):
         :param schedule_id:     unique ID for a schedule
         :type  schedule_id:     basestring
         """
-        # validate the input
-        cls.validate_distributor(repo_id, distributor_id)
-
-        # remove from the scheduler
+        model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         utils.delete(schedule_id)
 
     @staticmethod
@@ -250,22 +241,10 @@ class RepoPublishScheduleManager(object):
         """
         Delete all schedules for the specified repo and distributor.
 
-        :param distributor_id:  unique ID for an distributor
-        :type  distributor_id:  basestring
-        """
-        utils.delete_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
-
-    @staticmethod
-    def validate_distributor(repo_id, distributor_id):
-        """
-        Validate that the distributor exists for the specified repo
-
-        :param repo_id:         unique ID for a repository
-        :type  repo_id:         basestring
+        :param repo_id:  unique ID for a repository
+        :type  repo_id:  basestring
         :param distributor_id:  unique ID for a distributor
         :type  distributor_id:  basestring
-
-        :raise: pulp.server.exceptions.MissingResource
         """
-        distributor_manager = managers_factory.repo_distributor_manager()
-        distributor_manager.get_distributor(repo_id, distributor_id)
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+        utils.delete_by_resource(dist.resource_tag)

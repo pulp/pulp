@@ -1,4 +1,3 @@
-from datetime import datetime
 from gettext import gettext as _
 import logging
 import sys
@@ -21,8 +20,8 @@ from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import connection, model
-from pulp.server.db.model.repository import (RepoDistributor, RepoContentUnit,
-                                             RepoSyncResult, RepoPublishResult)
+from pulp.server.db.model.repository import (
+    RepoContentUnit, RepoSyncResult, RepoPublishResult)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
@@ -259,7 +258,7 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
     if not all(isinstance(distributor, dict) for distributor in distributor_list or []):
         raise pulp_exceptions.InvalidValue(['distributor_list'])
 
-    # Note: the repo must be saved before the importer and distributor managers can be called
+    # Note: the repo must be saved before the importer and distributor controllers can be called
     #       because the first thing that they do is validate that the repo exists.
     repo = model.Repository(repo_id=repo_id, display_name=display_name, description=description,
                             notes=notes)
@@ -281,16 +280,14 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
             raise
 
     # Add the distributors. Delete the repository if this fails.
-    distributor_manager = manager_factory.repo_distributor_manager()
     for distributor in distributor_list or []:
+        type_id = distributor.get('distributor_type_id')
+        plugin_config = distributor.get('distributor_config')
+        auto_publish = distributor.get('auto_publish', False)
+        dist_id = distributor.get('distributor_id')
+
         try:
-            # Validation will occur in distributor manager.
-            type_id = distributor.get('distributor_type_id')
-            plugin_config = distributor.get('distributor_config')
-            auto_publish = distributor.get('auto_publish', False)
-            distributor_id = distributor.get('distributor_id')
-            distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish,
-                                                distributor_id)
+            dist_controller.add_distributor(repo_id, type_id, plugin_config, auto_publish, dist_id)
         except Exception:
             _logger.exception('Exception adding distributor to repo [%s]; the repo will be '
                               'deleted' % repo_id)
@@ -342,8 +339,6 @@ def delete(repo_id):
     # the server logs for more information.
     error_tuples = []  # tuple of failed step and exception arguments
 
-    distributor_manager = manager_factory.repo_distributor_manager()
-
     # Inform the importer
     repo_importer = model.Importer.objects(repo_id=repo_id).first()
     if repo_importer is not None:
@@ -351,18 +346,16 @@ def delete(repo_id):
             importer_controller.remove_importer(repo_id)
         except Exception, e:
             _logger.exception('Error received removing importer [%s] from repo [%s]' % (
-                repo_importer['importer_type_id'], repo_id))
+                repo_importer.importer_type_id, repo_id))
             error_tuples.append(e)
 
     # Inform all distributors
-    distributor_coll = RepoDistributor.get_collection()
-    repo_distributors = list(distributor_coll.find({'repo_id': repo_id}))
-    for repo_distributor in repo_distributors:
+    for distributor in model.Distributor.objects(repo_id=repo_id):
         try:
-            distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
+            dist_controller.delete(distributor)
         except Exception, e:
             _logger.exception('Error received removing distributor [%s] from repo [%s]' % (
-                repo_distributor['id'], repo_id))
+                distributor.id, repo_id))
             error_tuples.append(e)
 
     # Database Updates
@@ -373,7 +366,7 @@ def delete(repo_id):
         # Remove all importers and distributors from the repo. This is likely already done by the
         # calls to other methods in this manager, but in case those failed we still want to attempt
         # to keep the database clean.
-        RepoDistributor.get_collection().remove({'repo_id': repo_id}, safe=True)
+        model.Distributor.objects(repo_id=repo_id).delete()
         model.Importer.objects(repo_id=repo_id).delete()
         RepoSyncResult.get_collection().remove({'repo_id': repo_id}, safe=True)
         RepoPublishResult.get_collection().remove({'repo_id': repo_id}, safe=True)
@@ -663,8 +656,8 @@ def _queue_auto_publish_tasks(repo_id, scheduled_call_id=None):
     :return: list of task_ids for the queued publish tasks
     :rtype:  list
     """
-    return [queue_publish(repo_id, dist['id'], scheduled_call_id=scheduled_call_id).task_id for
-            dist in auto_distributors(repo_id)]
+    return [queue_publish(repo_id, dist.distributor_id, scheduled_call_id=scheduled_call_id).task_id
+            for dist in model.Distributor.objects(repo_id=repo_id, auto_publish=True)]
 
 
 def sync_history(start_date, end_date, repo_id):
@@ -745,18 +738,13 @@ def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=No
 
     :raises pulp_exceptions.MissingResource: if distributor/repo pair does not exist
     """
-    distributor_coll = RepoDistributor.get_collection()
     repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': dist_id})
-    if repo_distributor is None:
-        raise pulp_exceptions.MissingResource(repository=repo_id, distributor=dist_id)
-
+    dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=dist_id)
     dist_inst, dist_conf = _get_distributor_instance_and_config(repo_id, dist_id)
 
     # Assemble the data needed for the publish
     conduit = RepoPublishConduit(repo_id, dist_id)
-    call_config = PluginCallConfiguration(dist_conf, repo_distributor['config'],
-                                          publish_config_override)
+    call_config = PluginCallConfiguration(dist_conf, dist.config, publish_config_override)
     transfer_repo = repo_obj.to_transfer_repo()
     transfer_repo.working_dir = common_utils.get_working_directory()
 
@@ -781,9 +769,8 @@ def _get_distributor_instance_and_config(repo_id, distributor_id):
     :return: distributor instance and config
     :rtype:  tuple
     """
-    repo_distributor_manager = manager_factory.repo_distributor_manager()
-    repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-    distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
+    dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+    distributor, config = plugin_api.get_distributor_by_id(dist.distributor_type_id)
     return distributor, config
 
 
@@ -809,7 +796,6 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
 
     :raises pulp_exceptions.PulpCodedException: if the publish report's success flag is falsey
     """
-    distributor_coll = RepoDistributor.get_collection()
     publish_result_coll = RepoPublishResult.get_collection()
     publish_start_timestamp = _now_timestamp()
     try:
@@ -827,17 +813,15 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
             )
 
     except Exception, e:
-        publish_end_timestamp = _now_timestamp()
+        exception_timestamp = _now_timestamp()
 
         # Reload the distributor in case the scratchpad is set by the plugin
-        repo_distributor = distributor_coll.find_one(
-            {'repo_id': repo_obj.repo_id, 'id': dist_id})
-        distributor_coll.save(repo_distributor, safe=True)
-
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
+                                                    distributor_id=dist_id)
         # Add a publish history entry for the run
         result = RepoPublishResult.error_result(
-            repo_obj.repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-            publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
+            repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
+            publish_start_timestamp, exception_timestamp, e, sys.exc_info()[2])
         publish_result_coll.save(result, safe=True)
 
         _logger.exception(
@@ -848,9 +832,9 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     publish_end_timestamp = _now_timestamp()
 
     # Reload the distributor in case the scratchpad is set by the plugin
-    repo_distributor = distributor_coll.find_one({'repo_id': repo_obj.repo_id, 'id': dist_id})
-    repo_distributor['last_publish'] = datetime.utcnow()
-    distributor_coll.save(repo_distributor, safe=True)
+    dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id, distributor_id=dist_id)
+    dist.last_publish = publish_end_timestamp
+    dist.save()
 
     # Add a publish entry
     summary = publish_report.summary
@@ -859,7 +843,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
                   repo_obj.repo_id, dist_id))
     result_code = RepoPublishResult.RESULT_SUCCESS
     result = RepoPublishResult.expected_result(
-        repo_obj.repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+        repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
         publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
     publish_result_coll.save(result, safe=True)
     return result
@@ -884,9 +868,7 @@ def publish_history(start_date, end_date, repo_id, distributor_id):
     :raise pulp_exceptions.MissingResource: if repo/distributor pair is invalid
     """
     model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    dist = RepoDistributor.get_collection().find_one({'repo_id': repo_id, 'id': distributor_id})
-    if dist is None:
-        raise pulp_exceptions.MissingResource(distributor_id)
+    model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
 
     search_params = {'repo_id': repo_id, 'distributor_id': distributor_id}
     date_range = {}
@@ -897,21 +879,6 @@ def publish_history(start_date, end_date, repo_id, distributor_id):
     if len(date_range) > 0:
         search_params['started'] = date_range
     return RepoPublishResult.get_collection().find(search_params)
-
-
-def auto_distributors(repo_id):
-    """
-    Returns all distributors for the given repo that are configured automatic publishing.
-
-    :param repo_id: limit distributors to this repo
-    :type  repo_id: str
-
-    :return: list of distributors for specified repo that have autopublish enabled
-    :rtype:  list of dicts
-    """
-    dist_coll = RepoDistributor.get_collection()
-    auto_distributors = list(dist_coll.find({'repo_id': repo_id, 'auto_publish': True}))
-    return auto_distributors
 
 
 def _now_timestamp():

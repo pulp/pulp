@@ -10,10 +10,10 @@ from pulp.plugins.conduits import mixins
 from pulp.plugins.model import Unit, PublishReport
 from pulp.server import constants
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.repo.distributor import RepoDistributorManager
 import pulp.plugins.types.database as types_database
 
 
@@ -45,23 +45,23 @@ def _create_mock_side_effect(items):
     return _side_effect
 
 
+@mock.patch('pulp.plugins.conduits.mixins.model.Distributor.objects')
 class DistributorScratchpadMixinTests(base.PulpServerTests):
 
     def clean(self):
         super(DistributorScratchpadMixinTests, self).clean()
         types_database.clean()
-        model.Repository.drop_collection()
+        model.Repository.objects.delete()
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def setUp(self, mock_get_working_directory):
         super(DistributorScratchpadMixinTests, self).setUp()
         mock_plugins.install()
-        self.distributor_manager = RepoDistributorManager()
         repo_id = 'repo-1'
-        with mock.patch('pulp.server.managers.repo.distributor.model.Repository'):
-            self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True,
-                                                     distributor_id='test-distributor')
+        with mock.patch('pulp.server.controllers.distributor.model.Repository'):
+            dist_controller.add_distributor(repo_id, 'mock-distributor', {}, True,
+                                            distributor_id='test-distributor')
 
         self.conduit = mixins.DistributorScratchPadMixin(repo_id, 'test-distributor')
 
@@ -70,13 +70,13 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
         manager_factory.reset()
         mock_plugins.reset()
 
-    def test_get_set_scratchpad(self):
+    def test_get_set_scratchpad(self, m_dist_qs):
         """
         Tests scratchpad calls.
         """
 
         # Test - get no scratchpad
-        self.assertTrue(self.conduit.get_scratchpad() is None)
+        self.assertTrue(self.conduit.get_scratchpad() is m_dist_qs.get_or_404().scratchpad)
 
         # Test - set scrathpad
         value = 'dragon'
@@ -85,15 +85,8 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
         # Test - get updated value
         self.assertEqual(value, self.conduit.get_scratchpad())
 
-    def test_scratchpad_with_error(self):
-        # Setup
-        mock_distributor_manager = mock.Mock()
-        mock_distributor_manager.get_distributor_scratchpad.side_effect = Exception()
-        mock_distributor_manager.set_distributor_scratchpad.side_effect = Exception()
-
-        manager_factory._INSTANCES[manager_factory.TYPE_REPO_DISTRIBUTOR] = mock_distributor_manager
-
-        # Test
+    def test_scratchpad_with_error(self, m_dist_qs):
+        m_dist_qs.get_or_404.side_effect = MissingResource
         self.assertRaises(mixins.DistributorConduitException, self.conduit.get_scratchpad)
         self.assertRaises(mixins.DistributorConduitException, self.conduit.set_scratchpad, 'foo')
 
@@ -396,59 +389,6 @@ class ImporterScratchPadMixinTests(unittest.TestCase):
     def test_set_scratchpad_server_error(self, mock_importer_qs):
         mock_importer_qs.get.side_effect = Exception()
         self.assertRaises(mixins.ImporterConduitException, self.mixin.set_scratchpad, 'foo')
-
-
-class DistributorScratchPadMixinTests(unittest.TestCase):
-
-    def setUp(self):
-        manager_factory.initialize()
-
-        self.repo_id = 'dsp-repo'
-        self.distributor_id = 'dsp-distributor'
-        self.mixin = mixins.DistributorScratchPadMixin(self.repo_id, self.distributor_id)
-
-    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.'
-                'get_distributor_scratchpad')
-    def test_get_scratchpad(self, mock_call):
-        # Setup
-        mock_call.return_value = 'sp'
-
-        # Test
-        sp = self.mixin.get_scratchpad()
-
-        # Verify
-        self.assertEqual(sp, 'sp')
-        self.assertEqual(1, mock_call.call_count)
-
-    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.'
-                'get_distributor_scratchpad')
-    def test_get_scratchpad_server_error(self, mock_call):
-        # Setup
-        mock_call.side_effect = Exception()
-
-        # Test
-        self.assertRaises(mixins.DistributorConduitException, self.mixin.get_scratchpad)
-
-    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.'
-                'set_distributor_scratchpad')
-    def test_set_scratchpad(self, mock_call):
-        # Test
-        self.mixin.set_scratchpad('foo')
-
-        # Verify
-        self.assertEqual(1, mock_call.call_count)
-        self.assertEqual(mock_call.call_args[0][0], self.repo_id)
-        self.assertEqual(mock_call.call_args[0][1], self.distributor_id)
-        self.assertEqual(mock_call.call_args[0][2], 'foo')
-
-    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.'
-                'set_distributor_scratchpad')
-    def test_set_scratchpad_server_error(self, mock_call):
-        # Setup
-        mock_call.side_effect = Exception()
-
-        # Test
-        self.assertRaises(mixins.DistributorConduitException, self.mixin.set_scratchpad, 'foo')
 
 
 class RepoGroupDistributorScratchPadMixinTests(unittest.TestCase):

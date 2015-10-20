@@ -159,6 +159,7 @@ def ensure_database_indexes():
     model.TaskStatus.ensure_indexes()
     model.Worker.ensure_indexes()
     model.CeleryBeatLock.ensure_indexes()
+    model.Distributor.ensure_indexes()
 
     # Load all the model classes that the server knows about and ensure their inexes as well
     plugin_manager = PluginManager()

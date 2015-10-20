@@ -4,8 +4,9 @@ Module for binding serialization.
 
 import link
 
-from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource
+from pulp.server.controllers import distributor as dist_controller
+from pulp.server.db import model
 from pulp.server.webservices import http
 
 
@@ -40,23 +41,18 @@ def serialize(bind, include_details=True):
     href = link.link_obj(href_url)
     serialized.update(href)
 
-    repo_distributor_manager = manager_factory.repo_distributor_manager()
-
-    # type_id
     try:
-        distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
     except MissingResource:
         if include_details:
             raise
 
     else:
-        serialized['type_id'] = distributor['distributor_type_id']
+        serialized['type_id'] = dist.distributor_type_id
 
-    # details
     if include_details:
-        details = repo_distributor_manager.create_bind_payload(repo_id, distributor_id,
-                                                               bind['binding_config'])
+        details = dist_controller.create_bind_payload(repo_id, distributor_id,
+                                                      bind['binding_config'])
         serialized['details'] = details
 
     return serialized

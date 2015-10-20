@@ -55,8 +55,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         super(RepoUnitAssociationManagerTests, self).clean()
         database.clean()
         RepoContentUnit.get_collection().remove()
-        me_model.Repository.drop_collection()
-        me_model.Importer.drop_collection()
+        me_model.Repository.objects.delete()
+        me_model.Importer.objects.delete()
 
     def tearDown(self):
         super(RepoUnitAssociationManagerTests, self).tearDown()

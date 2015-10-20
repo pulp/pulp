@@ -10,6 +10,7 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db import model
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
 from pulp.server.managers.consumer.agent import AgentManager, Units
@@ -437,16 +438,13 @@ class TestAgentManager(TestCase):
         self.assertEqual(profiled.id, consumer_id)
         self.assertEqual(profiled.profiles, {type_id: profile})
 
-    @patch('pulp.server.managers.consumer.agent.managers')
-    def test_get_agent_bindings(self, mock_factory):
+    @patch('pulp.server.managers.consumer.agent.dist_controller')
+    @patch('pulp.server.managers.consumer.agent.model')
+    def test_get_agent_bindings(self, m_model, m_dist_cont):
         bind_payload = {'a': 1, 'b': 2}
-        distributor = {'distributor_type_id': '3838'}
-        mock_distributor_manager = Mock()
-        mock_distributor_manager.get_distributor = Mock(return_value=distributor)
-        mock_distributor_manager.create_bind_payload = Mock(return_value=bind_payload)
-        mock_factory.repo_distributor_manager = Mock(return_value=mock_distributor_manager)
-
-        # test manager
+        distributor = model.Distributor(distributor_type_id='3838')
+        m_model.Distributor.objects.get_or_404.return_value = distributor
+        m_dist_cont.create_bind_payload = Mock(return_value=bind_payload)
 
         bindings = [
             {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
@@ -454,12 +452,10 @@ class TestAgentManager(TestCase):
         ]
         agent_bindings = AgentManager._bindings(bindings)
 
-        # validation
-
         for binding in bindings:
-            mock_distributor_manager.get_distributor.assert_any_call(
-                binding['repo_id'], binding['distributor_id'])
-            mock_distributor_manager.create_bind_payload.assert_any_call(
+            m_model.Distributor.objects.get_or_404.assert_any_call(
+                repo_id=binding['repo_id'], distributor_id=binding['distributor_id'])
+            m_dist_cont.create_bind_payload.assert_any_call(
                 binding['repo_id'], binding['distributor_id'], binding['binding_config'])
 
         self.assertEqual(len(agent_bindings), 2)
@@ -468,14 +464,10 @@ class TestAgentManager(TestCase):
             self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
             self.assertEqual(bind_payload, agent_binding['details'])
 
-    @patch('pulp.server.managers.consumer.agent.managers')
-    def test_get_agent_unbindings(self, mock_factory):
-        distributor = {'distributor_type_id': '3838'}
-        mock_distributor_manager = Mock()
-        mock_distributor_manager.get_distributor = Mock(return_value=distributor)
-        mock_factory.repo_distributor_manager = Mock(return_value=mock_distributor_manager)
-
-        # test manager
+    @patch('pulp.server.managers.consumer.agent.model')
+    def test_get_agent_unbindings(self, m_model):
+        distributor = model.Distributor(distributor_type_id='3838')
+        m_model.Distributor.objects.get_or_404.return_value = distributor
 
         bindings = [
             {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
@@ -483,27 +475,22 @@ class TestAgentManager(TestCase):
         ]
         agent_bindings = AgentManager._unbindings(bindings)
 
-        # validation
-
         for binding in bindings:
-            mock_distributor_manager.get_distributor.assert_any_call(
-                binding['repo_id'], binding['distributor_id'])
+            m_model.Distributor.objects.get_or_404.assert_any_call(
+                repo_id=binding['repo_id'], distributor_id=binding['distributor_id'])
 
         self.assertEqual(len(agent_bindings), 2)
         for binding, agent_binding in itertools.izip(bindings, agent_bindings):
             self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
             self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
 
-    @patch('pulp.server.managers.consumer.agent.managers')
-    def test_get_agent_unbindings_distributor_deleted(self, mock_managers):
-        # Test that AgentManager._unbindings does not raise an exception
-        # when the distributor is deleted and returns None as the distributor_type_id.
-        class MockedRepoDistributorManager:
-            def get_distributor(*args):
-                raise MissingResource()
-        mock_managers.repo_distributor_manager = Mock(return_value=MockedRepoDistributorManager())
-
-        # test
+    @patch('pulp.server.managers.consumer.agent.model')
+    def test_get_agent_unbindings_distributor_deleted(self, m_model):
+        """
+        Test that AgentManager._unbindings does not raise an exception when the distributor is
+        deleted and returns None as the distributor_type_id.
+        """
+        m_model.Distributor.objects.get_or_404.side_effect = MissingResource
         bindings = [
             {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
             {'consumer_id': '40', 'repo_id': '50', 'distributor_id': '60', 'binding_config': {}},
@@ -511,6 +498,7 @@ class TestAgentManager(TestCase):
         agent_bindings = AgentManager._unbindings(bindings)
 
         # validation
+        self.assertTrue(m_model.Distributor.objects.get_or_404.called)
         self.assertEqual(len(agent_bindings), 2)
         for binding, agent_binding in itertools.izip(bindings, agent_bindings):
             self.assertEqual(binding['repo_id'], agent_binding['repo_id'])

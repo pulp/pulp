@@ -341,6 +341,29 @@ class ImporterSerializer(ModelSerializer):
         return representation
 
 
+class Distributor(ModelSerializer):
+    """
+    Serializer for Distributors.
+    """
+
+    class Meta:
+        """
+        Specifies to the base serializer how to properly handle a Distributor Document.
+        """
+        remapped_fields = {'distributor_id': 'id', 'id': '_id'}
+
+    def get_href(self, instance):
+        """
+        Build the href for the distributor instance.
+        """
+        href = reverse(
+            'repo_distributor_resource',
+            kwargs={'repo_id': instance['repo_id'],
+                    'distributor_id': instance['distributor_id']}
+        )
+        return href
+
+
 class User(ModelSerializer):
     """
     Serializer for Users.

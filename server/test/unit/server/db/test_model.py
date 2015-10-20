@@ -6,8 +6,8 @@ Tests for the pulp.server.db.model module.
 
 from mock import patch, Mock
 
-from mongoengine import (ValidationError, DateTimeField, DictField, Document, IntField, ListField,
-                         StringField, QuerySetNoCache)
+from mongoengine import (BooleanField, DateTimeField, DictField, Document, IntField, ListField,
+                         StringField, QuerySetNoCache, ValidationError)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
@@ -802,6 +802,65 @@ class TestImporter(unittest.TestCase):
         indexes = model.Importer._meta['indexes']
         self.assertDictEqual(
             indexes[0], {'fields': ['-repo_id', '-importer_type_id'], 'unique': True})
+
+
+class TestDistributor(unittest.TestCase):
+    """
+    Tests for the distributor model.
+    """
+    def test_model_superclass(self):
+        """
+        Ensure that the class is a Mongoengine Document.
+        """
+        sample_model = model.Distributor()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        """
+        Ensure the attributes are the correct type and they have the correct values.
+        """
+        self.assertTrue(isinstance(model.Distributor.repo_id, StringField))
+        self.assertTrue(model.Distributor.repo_id.required)
+        self.assertTrue(isinstance(model.Distributor.distributor_id, StringField))
+        self.assertTrue(model.Distributor.distributor_id.required)
+        self.assertTrue(isinstance(model.Distributor.distributor_type_id, StringField))
+        self.assertTrue(model.Distributor.distributor_type_id.required)
+        self.assertTrue(isinstance(model.Distributor.config, DictField))
+        self.assertFalse(model.Distributor.config.required)
+        self.assertTrue(isinstance(model.Distributor.auto_publish, BooleanField))
+        self.assertEqual(model.Distributor.auto_publish.default, False)
+        self.assertTrue(isinstance(model.Distributor.last_publish, DateTimeField))
+        self.assertFalse(model.Distributor.last_publish.required)
+        self.assertTrue(isinstance(model.Distributor._ns, StringField))
+        self.assertEqual(model.Distributor._ns.default, 'repo_distributors')
+        self.assertTrue(isinstance(model.Distributor.scratchpad, DictField))
+        self.assertFalse(model.Distributor.scratchpad.required)
+
+    def test_serializer(self):
+        """
+        Ensure that the serializer is set.
+        """
+        self.assertEqual(model.Distributor.serializer, serializers.Distributor)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.Distributor._meta['collection'], 'repo_distributors')
+
+    def test_meta_allow_inheritance(self):
+        """
+        Ensure that inheritance is not allowed.
+        """
+        self.assertEquals(model.Distributor._meta['allow_inheritance'], False)
+
+    def test_meta_indexes(self):
+        """
+        Test that the indexes are set correctly.
+        """
+        indexes = model.Distributor._meta['indexes']
+        self.assertDictEqual(
+            indexes[0], {'fields': ['-repo_id', '-distributor_id'], 'unique': True})
 
 
 class TestCeleryBeatLock(unittest.TestCase):

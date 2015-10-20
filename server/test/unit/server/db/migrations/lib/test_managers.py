@@ -8,7 +8,6 @@ from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
 from pulp.server.db import model
-from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.db.model import TaskStatus
 from pulp.server.db.migrations.lib import managers
 
@@ -36,9 +35,9 @@ class RepoManagerTests(base.ResourceReservationTests):
     def clean(self):
         super(RepoManagerTests, self).clean()
 
-        model.Repository.drop_collection()
-        model.Importer.drop_collection()
-        RepoDistributor.get_collection().remove()
+        model.Repository.objects.delete()
+        model.Importer.objects.delete()
+        model.Distributor.objects.delete()
         TaskStatus.objects().delete()
 
     def test_rebuild_content_unit_counts(self, mock_get_assoc_col, mock_get_repo_col):

@@ -25,8 +25,8 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
-        model.Repository.drop_collection()
-        model.Importer.drop_collection()
+        model.Repository.objects.delete()
+        model.Importer.objects.delete()
         RepoContentUnit.get_collection().remove()
 
     @mock.patch('pulp.server.controllers.importer.remove_importer')
