@@ -1,7 +1,7 @@
 import os
 import tarfile
 
-from pulp.server.content.sources.container import Listener
+from pulp.server.content.sources.event import Listener
 from pulp.server.content.sources.model import Request
 from pulp_node import constants
 from pulp_node import pathlib
@@ -78,7 +78,7 @@ class ContentDownloadListener(Listener):
         self.request = request
         self.error_list = []
 
-    def download_succeeded(self, request):
+    def on_succeeded(self, request):
         """
         A specific download (request) has succeeded.
           1. Fetch the content unit using the reference.
@@ -96,7 +96,7 @@ class ContentDownloadListener(Listener):
         if unit.get(constants.TARBALL_PATH):
             untar_dir(request.destination, storage_path)
 
-    def download_failed(self, request):
+    def on_failed(self, request):
         """
         A specific download (request) has failed.
         Append download request errors to our list of errors.

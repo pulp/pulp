@@ -5,8 +5,6 @@ from unittest import TestCase
 from uuid import uuid4
 
 from mock import Mock, patch
-from pulp.plugins.model import Unit
-from pulp.server.config import config as pulp_conf
 
 from pulp_node.importers.strategies import *
 from pulp_node.importers.inventory import UnitInventory

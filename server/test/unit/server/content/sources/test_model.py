@@ -167,7 +167,7 @@ class TestContentSource(TestCase):
     @patch('pulp.server.content.sources.model.ContentSource.is_valid')
     def test_load_all(self, fake_valid, fake_enabled, fake_parser, fake_listdir, fake_isfile):
         conf_d = '/fake/conf_d'
-        files = ['one.conf', 'other']
+        files = ['one.conf', 'two.conf.swp', 'dir.conf']
         fake_listdir.return_value = files
 
         fake_valid.side_effect = [
@@ -382,8 +382,6 @@ class TestContentSource(TestCase):
         urls = ['url-1', 'url-2']
         fake_urls.__get__ = Mock(return_value=urls)
 
-        canceled = Mock()
-        canceled.isSet = Mock(return_value=False)
         conduit = Mock()
         cataloger = Mock()
         cataloger.refresh.side_effect = FakeRefresh()
@@ -394,11 +392,10 @@ class TestContentSource(TestCase):
 
         # test
 
-        report = source.refresh(canceled)
+        report = source.refresh()
 
         # validation
 
-        self.assertEqual(canceled.isSet.call_count, len(urls))
         self.assertEqual(conduit.reset.call_count, len(urls))
         self.assertEqual(cataloger.refresh.call_count, len(urls))
 
@@ -418,40 +415,11 @@ class TestContentSource(TestCase):
             n += 1
 
     @patch('pulp.server.content.sources.model.ContentSource.urls')
-    def test_refresh_canceled(self, fake_urls):
-        url = 'http://xyz.com'
-        urls = ['url-1', 'url-2']
-
-        fake_urls.__get__ = Mock(return_value=urls)
-
-        canceled = Mock()
-        canceled.isSet = Mock(return_value=True)
-        conduit = Mock()
-        cataloger = Mock()
-
-        source = ContentSource('s-1', {constants.BASE_URL: url})
-        source.get_conduit = Mock(return_value=conduit)
-        source.get_cataloger = Mock(return_value=cataloger)
-
-        # test
-
-        report = source.refresh(canceled)
-
-        # validation
-
-        self.assertEqual(canceled.isSet.call_count, 1)
-        self.assertEqual(conduit.reset.call_count, 0)
-        self.assertEqual(cataloger.refresh.call_count, 0)
-        self.assertEqual(report, [])
-
-    @patch('pulp.server.content.sources.model.ContentSource.urls')
     def test_refresh_raised(self, fake_urls):
         url = 'http://xyz.com'
         urls = ['url-1', 'url-2']
         fake_urls.__get__ = Mock(return_value=urls)
 
-        canceled = Mock()
-        canceled.isSet = Mock(return_value=False)
         conduit = Mock()
         cataloger = Mock()
         cataloger.refresh.side_effect = ValueError('just failed')
@@ -462,11 +430,10 @@ class TestContentSource(TestCase):
 
         # test
 
-        report = source.refresh(canceled)
+        report = source.refresh()
 
         # validation
 
-        self.assertEqual(canceled.isSet.call_count, len(urls))
         self.assertEqual(conduit.reset.call_count, len(urls))
         self.assertEqual(cataloger.refresh.call_count, len(urls))
 
@@ -542,7 +509,7 @@ class TestPrimarySource(TestCase):
     def test_refresh(self):
         # just added for coverage
         primary = PrimarySource(None)
-        primary.refresh(None)
+        primary.refresh()
 
     def test_priority(self):
         primary = PrimarySource(None)
