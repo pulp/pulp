@@ -10,6 +10,11 @@
         "platform": ["el5"]
     },
     {
+        "name": "saslwrapper",
+        "version": "0.10-8",
+        "platform": ["el5"]
+    },
+    {
         "name": "qpid-cpp",
         "version": "0.26-9",
         "platform": ["el6"]
