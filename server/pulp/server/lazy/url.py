@@ -70,6 +70,17 @@ class ResourceNotMatched(NotValid):
         super(ResourceNotMatched, self).__init__(self.DESCRIPTION)
 
 
+class ExtensionNotMatched(NotValid):
+    """
+    The URL and policy *resource* not matched.
+    """
+
+    DESCRIPTION = _('The {x} extension not matched.')
+
+    def __init__(self, extension):
+        super(ExtensionNotMatched, self).__init__(self.DESCRIPTION.format(x=extension))
+
+
 class PolicyMalformed(NotValid):
     """
     The policy is malformed.
@@ -177,7 +188,7 @@ class JSON(object):
 class Policy(object):
     """
     A signed URL policy.
-    The *policy* is: {resource: <resource>, expiration: <expiration>}
+    The *policy* is: {resource: <resource>, expiration: <seconds>, extensions: <ext>}
     The *resource* is the path?query in the original URL.
     The *expiration* is: seconds since epoch.
 
@@ -185,10 +196,13 @@ class Policy(object):
     :type resource: str
     :ivar expiration: The policy expiration (seconds since epoch).
     :type expiration: int
+    :ivar extensions: Optional policy extensions.
+    :type extensions: dict
     """
 
     RESOURCE = 'resource'
     EXPIRATION = 'expiration'
+    EXTENSIONS = 'extensions'
 
     @staticmethod
     def digest(policy):
@@ -230,8 +244,14 @@ class Policy(object):
         expiration = policy.get(Policy.EXPIRATION)
         if not isinstance(expiration, int):
             raise PolicyMalformed(_('Expiration must be integer'))
+        # Extensions Dictionary
+        extensions = policy.get(Policy.EXTENSIONS)
+        if not isinstance(extensions, dict):
+            raise PolicyMalformed(_('Extensions must be dictionary'))
         # Done
-        return Policy(resource, int(expiration))
+        policy = Policy(resource, int(expiration))
+        policy.extensions = extensions
+        return policy
 
     @staticmethod
     def decode(encoded):
@@ -249,7 +269,7 @@ class Policy(object):
         return policy
 
     @staticmethod
-    def validate(key, encoded, signature):
+    def validate(key, encoded, signature, **extensions):
         """
         Decode and validate a policy.
 
@@ -284,6 +304,7 @@ class Policy(object):
         """
         self.resource = resource
         self.expiration = expiration
+        self.extensions = {}
 
     def encode(self):
         """
@@ -295,7 +316,8 @@ class Policy(object):
         """
         policy = {
             Policy.RESOURCE: self.resource,
-            Policy.EXPIRATION: self.expiration
+            Policy.EXPIRATION: self.expiration,
+            Policy.EXTENSIONS: self.extensions
         }
         policy = JSON.encode(policy)
         policy = Base64.encode(policy)
@@ -465,11 +487,11 @@ class URL(object):
         ]
         return ''.join(resource)
 
-    def sign(self, key, expiration=10):
+    def sign(self, key, expiration=90, **extensions):
         """
         Sign the URL using the specified private RSA key.
         Has the format of: <url>?policy=<policy>;signature=<signature>.
-        The *policy* is: {resource: <resource>, expiration: <expiration>}
+        The *policy* is: {resource: <resource>, expiration: <seconds>, extensions: <ext>}
         The *resource* is the path?query in the original URL.
         The *expiration* is: seconds since epoch.
         The *signature* is RSA signature of the SHA256 digest of the
@@ -479,11 +501,14 @@ class URL(object):
         :type key: RSA.RSA
         :param expiration: The signature expiration in seconds.
         :type expiration: int
+        :param extensions: Optional policy extensions.
+        :type extensions: dict
         :return: The signed URL.
         :rtype: SignedURL
         """
         expiration = int(time() + expiration)
         policy = Policy(self.resource, expiration)
+        policy.extensions = extensions
         policy, signature = policy.sign(key)
         query = Query.decode(self.query)
         query[URL.SIGNATURE] = signature
@@ -542,15 +567,18 @@ class SignedURL(URL):
         except KeyError:
             raise NotSigned()
 
-    def validate(self, key):
+    def validate(self, key, **extensions):
         """
         Validate the URL *content* using the RSA signature and the
         public key specified by *key*.  The policy is validated.
         Then, the resource in the policy is matched against the resource
-        specified in the URL.
+        specified in the URL.  Last, the policy extensions are matched
+        against the specified extensions.
 
         :param key: A public RSA key.
         :type key: RSA.RSA
+        :param extensions: Optional policy extensions.
+        :type extensions: dict
         :return: The resource specified in the policy.
         :rtype: str
         :raise NotValid: if the signature and policy digest cannot be
@@ -560,4 +588,7 @@ class SignedURL(URL):
         policy = Policy.validate(key, policy, signature)
         if self.resource != policy.resource:
             raise ResourceNotMatched()
+        for k, v in policy.extensions.items():
+            if extensions.get(k) != v:
+                raise ExtensionNotMatched(k)
         return policy.resource

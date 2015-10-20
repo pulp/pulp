@@ -28,8 +28,9 @@ def allow_access(environ, host):
     :rtype:  bool
     """
     url = SignedURL(environ['REQUEST_URI'])
+    remote_ip = environ['REMOTE_ADDR']
     try:
-        url.validate(key)
+        url.validate(key, remote_ip=remote_ip)
         return True
     except NotValid, le:
         log.info(str(le))
