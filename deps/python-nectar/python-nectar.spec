@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.3.3
+Version:        1.4.1
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,15 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Wed Oct 21 2015 Ina Panova <ipanova@redhat.com> 1.4.1-1
+- 1229-Json config file values must be url encoded. (ipanova@redhat.com)
+
+* Wed Sep 16 2015 Ina Panova <ipanova@redhat.com> 1.4.0-1
+- As a developer I can receive headers while using download_one()
+  (ipanova@redhat.com)
+- 1033 - Error during build_session does not propagate to importer.
+  (ipanova@redhat.com)
+
 * Mon Aug 31 2015 Ina Panova <ipanova@redhat.com> 1.3.3-1
 - Issue#1210 ConnectionError - BadStatusLine during repo sync. (ipanova@redhat.com)
 
