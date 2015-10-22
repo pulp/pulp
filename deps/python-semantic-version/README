@@ -6,5 +6,4 @@ This is not currently in epel <= 7 or fedora <= 20.
 
 There are no known restrictions on what version to use.
 
-The plan is to get this into Fedora and EPEL. mhrivnak got it to build successfully
-on the fedora koji and will continue on that path.
+The plan is to get this into Fedora and EPEL. Review request: https://bugzilla.redhat.com/show_bug.cgi?id=1077030
