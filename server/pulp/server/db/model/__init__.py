@@ -5,7 +5,7 @@ import uuid
 from collections import namedtuple
 
 from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField, ListField,
-                         StringField)
+                         StringField, BooleanField)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -382,6 +382,34 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
 
 
 signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)
+
+
+class UnitFile(AutoRetryDocument):
+    """
+    A file associated with a content unit.
+
+    :ivar path: The absolute path to the file.
+    :type path: str
+    :ivar unit_id: A unit ID.
+    :type unit_id: str
+    :ivar unit_type_id: The unit type.
+    :type unit_type_id: str
+    :ivar downloaded: Indicates the file has been downloaded.
+    :type downloaded: bool
+    """
+
+    meta = {
+        'collection': 'unit_files',
+        'indexes': [
+            {'fields': ['path'], 'unique': True},
+            ('unit_id', 'unit_type_id')
+        ]
+    }
+
+    path = StringField(required=True)
+    unit_id = StringField(required=True)
+    unit_type_id = StringField(required=True)
+    downloaded = BooleanField(required=True, default=False)
 
 
 class ContentUnit(AutoRetryDocument):

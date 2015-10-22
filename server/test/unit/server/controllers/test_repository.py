@@ -145,6 +145,78 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         self.assertEquals(result[4].unit_id, 'bar_9')
 
 
+class TestFindNotDownloaded(unittest.TestCase):
+
+    @patch('pulp.server.db.model.UnitFile')
+    @patch('pulp.server.controllers.repository.find_repo_content_units')
+    def test_find(self, find, unit_file):
+        repository = MagicMock()
+        units = [
+            MagicMock(id=1, type_id='dog'),
+            MagicMock(id=2, type_id='dog'),
+            MagicMock(id=3, type_id='dog'),
+            MagicMock(id=4, type_id='dog'),
+        ]
+        find.return_value = units
+        q_set = MagicMock()
+        q_set.count.side_effect = [0, 2, 4, 0]
+        unit_file.objects.return_value = q_set
+
+        # test
+        found = list(repo_controller.find_units_not_downloaded(repository))
+
+        # validation
+        find.assert_called_once_with(repository, yield_content_unit=True)
+        self.assertEqual(found, units[1:3])
+
+
+class TestHasUnitsDownloaded(unittest.TestCase):
+
+    @patch('pulp.server.db.model.UnitFile')
+    @patch('pulp.server.db.model.RepositoryContentUnit')
+    def test_has_all(self, repo_unit, unit_file):
+        repository = MagicMock(repo_id='1234')
+        units = [
+            MagicMock(unit_id=1, type_id='dog'),
+            MagicMock(unit_id=2, type_id='dog'),
+            MagicMock(unit_id=3, type_id='dog'),
+            MagicMock(unit_id=4, type_id='dog'),
+        ]
+        repo_unit.objects.return_value = units
+        q_set = MagicMock()
+        q_set.count.return_value = 0
+        unit_file.objects.return_value = q_set
+
+        # test
+        has_all = repo_controller.has_all_units_downloaded(repository)
+
+        # validation
+        repo_unit.objects.assert_called_once_with(repo_id=repository.repo_id)
+        self.assertTrue(has_all)
+
+    @patch('pulp.server.db.model.UnitFile')
+    @patch('pulp.server.db.model.RepositoryContentUnit')
+    def test_not_has_all(self, repo_unit, unit_file):
+        repository = MagicMock(repo_id='1234')
+        units = [
+            MagicMock(unit_id=1, type_id='dog'),
+            MagicMock(unit_id=2, type_id='dog'),
+            MagicMock(unit_id=3, type_id='dog'),
+            MagicMock(unit_id=4, type_id='dog'),
+        ]
+        repo_unit.objects.return_value = units
+        q_set = MagicMock()
+        q_set.count.return_value = 3
+        unit_file.objects.return_value = q_set
+
+        # test
+        has_all = repo_controller.has_all_units_downloaded(repository)
+
+        # validation
+        repo_unit.objects.assert_called_once_with(repo_id=repository.repo_id)
+        self.assertFalse(has_all)
+
+
 class UpdateRepoUnitCountsTests(unittest.TestCase):
 
     @patch('pulp.server.controllers.repository.model.Repository.objects')

@@ -6,7 +6,8 @@ Tests for the pulp.server.db.model module.
 
 from mock import patch, Mock
 
-from mongoengine import ValidationError, DateTimeField, DictField, Document, IntField, StringField
+from mongoengine import (
+    ValidationError, DateTimeField, DictField, Document, IntField, StringField, BooleanField)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
@@ -180,6 +181,16 @@ class TestContentUnit(unittest.TestCase):
             unit_type_id = StringField()
         my_unit = ContentUnitHelper(unit_type_id='apple')
         self.assertEqual(my_unit.type_id, 'apple')
+
+
+class TestUnitFile(unittest.TestCase):
+
+    def test_init(self):
+        model.UnitFile()
+        self.assertTrue(isinstance(model.UnitFile.path, StringField))
+        self.assertTrue(isinstance(model.UnitFile.unit_id, StringField))
+        self.assertTrue(isinstance(model.UnitFile.unit_type_id, StringField))
+        self.assertTrue(isinstance(model.UnitFile.downloaded, BooleanField))
 
 
 class TestFileContentUnit(unittest.TestCase):
