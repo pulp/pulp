@@ -67,6 +67,7 @@ class TestContentView(TestCase):
     @patch(MODULE + '.pulp_conf')
     @patch(MODULE + '.HttpResponseRedirect')
     def test_redirect(self, redirect, pulp_conf, url):
+        remote_ip = '172.10.08.20'
         scheme = 'http'
         host = 'localhost'
         port = 80
@@ -90,7 +91,8 @@ class TestContentView(TestCase):
             'SERVER_NAME': host,
             'SERVER_PORT': port,
             'REDIRECT_URL': redirect_path,
-            'QUERY_STRING': query
+            'QUERY_STRING': query,
+            'REMOTE_ADDR': remote_ip
         }
         request = Mock(environ=environ, path=path)
         key = Mock()
@@ -101,7 +103,7 @@ class TestContentView(TestCase):
         # validation
         url.assert_called_once_with(ContentView.urljoin(
             scheme, host, port, redirect_path, path, query))
-        url.return_value.sign.assert_called_once_with(key)
+        url.return_value.sign.assert_called_once_with(key, remote_ip=remote_ip)
         redirect.assert_called_once_with(str(url.return_value.sign.return_value))
         self.assertEqual(reply, redirect.return_value)
 

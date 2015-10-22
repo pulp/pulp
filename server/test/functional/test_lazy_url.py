@@ -131,3 +131,11 @@ class TestSigning(TestCase):
         content = str(url)
         url = SignedURL(content.replace('signature=', 'age='))
         self.assertRaises(NotSigned, url.validate, PUB)
+
+    def test_signing_and_validation_with_extensions(self):
+        uri = '/content/jit.rpm'
+        extensions = dict(remote_ip='10.2.3.4')
+        url = URL('http://redhat.com{r}'.format(r=uri))
+        url = url.sign(KEY, **extensions)
+        resource = url.validate(PUB, **extensions)
+        self.assertEqual(resource, uri)
