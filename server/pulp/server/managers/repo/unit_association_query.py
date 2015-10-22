@@ -6,7 +6,6 @@ import itertools
 import pymongo
 
 from pulp.plugins.types import database as types_db
-from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 
@@ -368,10 +367,7 @@ class RepoUnitAssociationQueryManager(object):
         sort = criteria.unit_sort
 
         if sort is None:
-            try:
-                unit_key = units_controller.get_unit_key_fields_for_type(unit_type_id)
-            except ValueError:
-                unit_key = None
+            sort = [('_id', SORT_ASCENDING)]
 
         cursor.sort(sort)
 
