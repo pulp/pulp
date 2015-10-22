@@ -1,4 +1,0 @@
-Team owner: rbarlow
-
-celery-3.1.11 requires billiard>=3.3.0.17,<3.4, and a new-enough version is not available in
-Fedora <= 20 or EPEL <= 7.

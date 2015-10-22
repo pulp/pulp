@@ -1,3 +1,0 @@
-Team owner: rbarlow
-
-Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL <= 7.
