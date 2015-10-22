@@ -2,10 +2,11 @@ import os
 
 from errno import EEXIST, EPERM
 from unittest import TestCase
+from subprocess import PIPE
 
 from mock import Mock, patch
 
-from pulp.server.content.storage import mkdir, ContentStorage, FileStorage, SharedStorage
+from pulp.server.content.storage import mkdir, cpdir, ContentStorage, FileStorage, SharedStorage
 
 
 class TestMkdir(TestCase):
@@ -29,6 +30,55 @@ class TestMkdir(TestCase):
         mkdir(path)
         _mkdir.side_effect = OSError(EPERM, path)
         self.assertRaises(OSError, mkdir, path)
+
+
+class TestCpDir(TestCase):
+
+    @patch('os.environ')
+    @patch('os.listdir')
+    @patch('pulp.server.content.storage.Popen')
+    def test_succeeded(self, popen, listdir, environ):
+        popen.return_value.wait.return_value = os.EX_OK
+        listdir.return_value = ['dpgs', 'cats']
+        environ.copy.return_value = {'A': 1}
+        source = '/tmp/source'
+        destination = '/tmp/destination'
+
+        # test
+        cpdir(source, destination)
+
+        # validation
+        listdir.assert_called_once_with(source)
+        content = [os.path.join(source, f) for f in listdir.return_value]
+        popen.assert_called_once_with(
+            [
+                'cp',
+                '-r',
+            ] + content + [destination],
+            stderr=PIPE,
+            env=environ.copy.return_value)
+
+    @patch('os.environ')
+    @patch('os.listdir')
+    @patch('pulp.server.content.storage.Popen')
+    def test_failed(self, popen, listdir, environ):
+        popen.return_value.wait.return_value = -1
+        listdir.return_value = ['dpgs', 'cats']
+        environ.copy.return_value = {'A': 1}
+        source = '/tmp/source'
+        destination = '/tmp/destination'
+
+        # test
+        self.assertRaises(OSError, cpdir, source, destination)
+
+    @patch('os.listdir')
+    @patch('pulp.server.content.storage.Popen')
+    def test_empty(self, popen, listdir):
+        listdir.return_value = []
+        source = '/tmp/source'
+        destination = '/tmp/destination'
+        cpdir(source, destination)
+        self.assertFalse(popen.called)
 
 
 class TestContentStorage(TestCase):
@@ -62,10 +112,10 @@ class TestContentStorage(TestCase):
 
 class TestFileStorage(TestCase):
 
-    @patch('pulp.server.content.storage.shutil')
+    @patch('pulp.server.content.storage.cpdir')
     @patch('pulp.server.content.storage.config')
     @patch('os.path.isdir', Mock(return_value=True))
-    def test_put_dir(self, config, shutil):
+    def test_put_dir(self, config, cpdir):
         path_in = '/tmp/test/'
         storage_dir = '/tmp/storage'
         unit = Mock(id='0123456789', unit_type_id='ABC')
@@ -79,7 +129,7 @@ class TestFileStorage(TestCase):
         destination = os.path.join(
             os.path.join(storage_dir, 'content', 'units', unit.unit_type_id),
             unit.id[0:4], unit.id)
-        shutil.copytree.assert_called_once_with(path_in, destination)
+        cpdir.assert_called_once_with(path_in, destination)
         self.assertEqual(unit.storage_path, destination)
 
     @patch('pulp.server.content.storage.shutil')
