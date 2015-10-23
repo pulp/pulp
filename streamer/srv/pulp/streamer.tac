@@ -8,9 +8,8 @@ from twisted.application import internet, service
 from twisted.web import server
 
 from pulp.server.logs import CompliantSysLogHandler
-from pulp.server.config import config as pulp_config
 from pulp.server.db.connection import initialize as mongo_initialize
-from pulp.server.lazy.streamer import Streamer
+from pulp.streamer import Streamer, load_configuration, DEFAULT_CONFIG_FILES
 from pulp.plugins.loader import api as plugin_api
 
 
@@ -19,13 +18,13 @@ LOG_FORMAT_STRING = 'pulp_streamer: %(name)s:%(levelname)s: %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
 
 
-def start_logging():
+def start_logging(config):
     """
     Configure the Pulp streamer syslog handler for the configured log level.
     """
     # Get and set up the root logger with our configured log level
     try:
-        log_level = pulp_config.get('server', 'log_level')
+        log_level = config.get('streamer', 'log_level')
         log_level = getattr(logging, log_level.upper())
     except (ConfigParser.NoOptionError, AttributeError):
         # If the user didn't provide a log level, or if they provided an
@@ -46,17 +45,20 @@ def start_logging():
     root_logger.handlers = []
     root_logger.addHandler(handler)
 
-start_logging()
 
+# Initialization of application dependencies.
+streamer_config = load_configuration(DEFAULT_CONFIG_FILES)
+start_logging(streamer_config)
 mongo_initialize()
 mongoengine.connect('pulp_database')
 plugin_api.initialize()
 
+# Configure the twisted application itself.
 application = service.Application('Pulp Streamer')
-site = server.Site(Streamer())
+site = server.Site(Streamer(streamer_config))
 service_collection = service.IServiceCollection(application)
-port = pulp_config.get('streamer', 'port')
-interfaces = pulp_config.get('streamer', 'interfaces')
+port = streamer_config.get('streamer', 'port')
+interfaces = streamer_config.get('streamer', 'interfaces')
 if interfaces:
     for interface in interfaces.split(','):
         i = internet.TCPServer(int(port), site, interface=interface.strip())

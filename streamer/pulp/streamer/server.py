@@ -10,7 +10,6 @@ from twisted.internet import reactor
 from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
 
-from pulp.server.config import config as pulp_config
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
@@ -28,7 +27,7 @@ class StreamerListener(nectar_listener.DownloadEventListener):
     Pulp server.conf.
     """
 
-    def __init__(self, request):
+    def __init__(self, request, streamer_config):
         """
         Initialize a StreamerNectarListener.
 
@@ -37,6 +36,9 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         """
         super(StreamerListener, self).__init__()
         self.request = request
+        self.streamer_config = streamer_config
+        logger.debug(_('Using {timeout} as the cache timeout value.'.format(
+            timeout=streamer_config.get('streamer', 'cache_timeout'))))
 
     def download_headers(self, report):
         """
@@ -50,7 +52,7 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         for header_key, header_value in report.headers.items():
             self.request.setHeader(header_key, header_value)
 
-        max_age = {'max_age': pulp_config.get('streamer', 'cache_timeout')}
+        max_age = {'max_age': self.streamer_config.get('streamer', 'cache_timeout')}
         cache_header = 'public, s-maxage=%(max_age)s, max-age=%(max_age)s' % max_age
         self.request.setHeader('cache-control', cache_header)
 
@@ -82,9 +84,16 @@ class Streamer(resource.Resource):
     """
     Define the web resource that streams content from the upstream repository
     to the client.
+
+    :ivar config: The configuration for this streamer instance.
+    :type config: ConfigParser.SafeConfigParser
     """
     # Ensure self.getChild isn't called as this has no child resources
     isLeaf = True
+
+    def __init__(self, config):
+        resource.Resource.__init__(self)
+        self.config = config
 
     def render_GET(self, request):
         """
@@ -106,8 +115,7 @@ class Streamer(resource.Resource):
         reactor.callInThread(self._handle_get, request)
         return NOT_DONE_YET
 
-    @staticmethod
-    def _handle_get(request):
+    def _handle_get(self, request):
         """
         Download the requested content using the content unit catalog and dispatch
         a celery task that causes Pulp to download the newly cached unit.
@@ -122,7 +130,7 @@ class Streamer(resource.Resource):
                     path=catalog_path).order_by('importer_id').first()
                 if not catalog_entry:
                     raise DoesNotExist()
-                Streamer._download(catalog_entry, request, responder)
+                self._download(catalog_entry, request, responder)
 
                 # Only dispatch the task if the request didn't originate from Pulp.
                 if not request.getHeader(PULP_STREAM_REQUEST_HEADER):
@@ -140,8 +148,7 @@ class Streamer(resource.Resource):
                 logger.exception(_('An unexpected error occurred while handling the request.'))
                 request.setResponseCode(INTERNAL_SERVER_ERROR)
 
-    @staticmethod
-    def _download(catalog_entry, request, responder):
+    def _download(self, catalog_entry, request, responder):
         """
         Build a nectar downloader and download the content from the catalog entry.
 
@@ -152,13 +159,11 @@ class Streamer(resource.Resource):
         :param responder:       The file-like object that nectar should write to.
         :type  responder:       Responder
         """
-
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
-
         download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
         downloader = importer.get_downloader(config, catalog_entry.url,
                                              **catalog_entry.data)
-        downloader.event_listener = StreamerListener(request)
+        downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
 
 

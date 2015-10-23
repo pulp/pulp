@@ -1,0 +1,4 @@
+# Configuration file for Pulp's Lazy content streamer
+
+# Configure Python's encoding for writing all logs, stdout and stderr
+PYTHONIOENCODING="UTF-8"

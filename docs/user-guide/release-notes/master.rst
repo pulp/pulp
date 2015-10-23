@@ -11,6 +11,9 @@ New Features
 * Multiple instances of ``pulp_celerybeat`` can now run simultaneously.
   If one of them goes down, another instance will dispatch scheduled tasks as usual.
 
+* Pulp now supports lazy content loading. As part of this support a new package,
+  ``pulp-streamer``, is now available.
+
 Deprecation
 -----------
 
