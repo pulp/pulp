@@ -1,0 +1,9 @@
+[Unit]
+Description=Real-time monitor and web admin for Celery distributed task queue
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/flower --port=5555 --broker=qpid://localhost/
+
+[Install]
+WantedBy=multi-user.target
