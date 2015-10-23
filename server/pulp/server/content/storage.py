@@ -3,6 +3,7 @@ import errno
 import shutil
 
 from hashlib import sha256
+from subprocess import Popen, PIPE
 
 from pulp.server.config import config
 
@@ -21,6 +22,33 @@ def mkdir(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+def cpdir(source, destination):
+    """
+    Recursively copy the content of a directory.
+    Efficiently supports copying of sparse trees and copying of trees
+    into populated destinations.  This is needed for the incremental
+    copy of directories.
+
+    :param source: An absolute *source* path.
+    :type source: str
+    :param destination: An absolute *destination* path.
+    :type destination: str
+    """
+    env = dict(os.environ)
+    env['LC_ALL'] = 'C'
+    paths = [os.path.join(source, f) for f in os.listdir(source)]
+    if not paths:
+        return
+    command = ['cp', '-r']
+    command.extend(paths)
+    command.append(destination)
+    p = Popen(command, stderr=PIPE, env=env)
+    status = p.wait()
+    if status != os.EX_OK:
+        details = p.stderr.read()
+        raise OSError(details)
 
 
 class ContentStorage(object):
@@ -94,7 +122,7 @@ class FileStorage(ContentStorage):
         destination = os.path.join(storage_dir, unit.unit_type_id, unit.id[0:4], unit.id)
         mkdir(os.path.dirname(destination))
         if os.path.isdir(path):
-            shutil.copytree(path, destination)
+            cpdir(path, destination)
         else:
             shutil.copy(path, destination)
         unit.storage_path = destination
