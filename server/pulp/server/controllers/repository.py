@@ -104,6 +104,45 @@ def find_repo_content_units(
             yield_count += 1
 
 
+def find_units_not_downloaded(repository):
+    """
+    Find content units that have not been fully downloaded.
+
+    :param repository: A repository.
+    :type repository: model.Repository
+    :return: The requested units.
+    :rtype: generator
+    """
+    for unit in find_repo_content_units(repository, yield_content_unit=True):
+        query = dict(
+            unit_id=unit.id,
+            unit_type_id=unit.type_id,
+            downloaded=False)
+        q_set = model.UnitFile.objects(**query)
+        if q_set.count():
+            yield unit
+
+
+def has_all_units_downloaded(repository):
+    """
+    Get whether a repository contains units that have all been downloaded.
+
+    :param repository: A repository.
+    :type repository: model.Repository
+    :return: True if completely downloaded
+    :rtype: generator
+    """
+    for unit in model.RepositoryContentUnit.objects(repo_id=repository.repo_id):
+        query = dict(
+            unit_id=unit.id,
+            unit_type_id=unit.unit_type_id,
+            downloaded=False)
+        q_set = model.UnitFile.objects(**query)
+        if q_set.count():
+            return False
+    return True
+
+
 def rebuild_content_unit_counts(repository):
     """
     Update the content_unit_counts field on a Repository.
