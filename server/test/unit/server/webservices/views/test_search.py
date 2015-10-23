@@ -5,6 +5,7 @@ import unittest
 
 import mock
 from django import http
+from pymongo.errors import OperationFailure
 
 from base import assert_auth_READ
 from pulp.server import exceptions
@@ -273,6 +274,17 @@ class TestSearchView(unittest.TestCase):
             {'money': {'$gt': 1000000}})
         self.assertEqual([c[1][0] for c in FakeSearchView.serializer.mock_calls],
                          ['big money', 'bigger money'])
+
+    def test__generate_response_with_invalid_criteria(self):
+        """
+        Test that a pymongo exception is handled correctly.
+        """
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+
+        query = {'filters': {'money': {'$gt': 1000000}}}
+        FakeSearchView.model.objects.find_by_criteria.side_effect = OperationFailure('dang')
+        self.assertRaises(exceptions.InvalidValue, FakeSearchView._generate_response, query, {})
 
 
 class TestParseArgs(unittest.TestCase):
