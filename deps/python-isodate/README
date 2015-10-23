@@ -1,5 +1,0 @@
-Team owner: jcline
-
-This appears to be unmaintained upstream, and there is no knowledge of why we have
-a patch. This version is newer than what is in Fedora <= 20 and EPEL <= 7, so we should
-consider using a different library.

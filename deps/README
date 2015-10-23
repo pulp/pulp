@@ -6,6 +6,24 @@ This README tracks Pulp dependencies. For each dependency it includes the follow
 * What platforms the necessary dependency is not available on
 
 
+createrepo
+----------
+
+Team owner: jcline
+
+Note: createrepo-0.9.9 is available in EL7.
+
+
+mod_wsgi
+--------
+
+Team owner: dkliban
+
+pulp requires 3.4, which is not available in EPEL 6.
+
+TODO: why does pulp need 3.4?
+
+
 python-amqp
 -----------
 
@@ -33,6 +51,16 @@ python-celery
 Team owner: bmbouter
 
 Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL <= 7.
+
+
+python-iso-date
+---------------
+
+Team owner: jcline
+
+This appears to be unmaintained upstream, and there is no knowledge of why we have
+a patch. This version is newer than what is in Fedora <= 20 and EPEL <= 7, so we should
+consider using a different library.
 
 
 python-kombu
@@ -92,6 +120,16 @@ python-mongoengine-0.8.4-3.el7.src.rpm [0].
 [0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=612617
 
 
+python-nectar
+-------------
+
+Team owner: ipanova
+
+This is required by pulp and authored by the pulp team. Once pulp building is
+moved into koji, this can probably be removed as a dep and build through normal
+koji means.
+
+
 python-pymongo
 --------------
 
@@ -107,3 +145,26 @@ python-pymongo-2.5.2-7.fc23.src.rpm [0]. Thanks also to dgoodwin
 and Dominic in #tito for the spec file help.
 
 [0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=659860
+
+
+python-rhsm
+-----------
+
+Team owner: asmacdo
+
+pulp requires python-rhsm, which is not available in CentOS 6 or 7. We do not currently carry
+the most recent version of python-rhsm. If it is found that we need to, we can update.
+
+
+python-sematic-version
+----------------------
+
+Team owner: mhrivnak
+
+This is required for pulp-puppet-plugins.
+
+This is not currently in epel <= 7 or fedora <= 20.
+
+There are no known restrictions on what version to use.
+
+The plan is to get this into Fedora and EPEL. Review request: https://bugzilla.redhat.com/show_bug.cgi?id=1077030

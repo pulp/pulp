@@ -1,5 +1,0 @@
-Team owner: dkliban
-
-pulp requires 3.4, which is not available in EPEL 6.
-
-TODO: why does pulp need 3.4?
