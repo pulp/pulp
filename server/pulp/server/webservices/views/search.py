@@ -5,6 +5,7 @@ search view for a specific model.
 import json
 
 from django.views import generic
+from pymongo.errors import OperationFailure
 
 from pulp.server import exceptions
 from pulp.server.auth import authorization
@@ -145,6 +146,8 @@ class SearchView(generic.View):
         :type  options: dict
         :return:      The serialized search results in an HttpReponse
         :rtype:       django.http.HttpResponse
+
+        :raises exceptions.InvalidValue: if pymongo is unable to use the criteria object
         """
         query = criteria.Criteria.from_client_input(query)
         if query.fields:
@@ -162,7 +165,16 @@ class SearchView(generic.View):
             search_method = cls.model.objects.find_by_criteria
         else:
             search_method = cls.manager.find_by_criteria
-        return cls.response_builder(cls.get_results(query, search_method, options, *args, **kwargs))
+
+        # We do not validate all aspects of the criteria object, so if pymongo has a problem we
+        # raise an InvalidValue.
+        try:
+            return cls.response_builder(cls.get_results(query, search_method, options,
+                                                        *args, **kwargs))
+        except OperationFailure, e:
+            invalid = exceptions.InvalidValue('criteria')
+            invalid.add_child_exception(e)
+            raise invalid
 
     @classmethod
     def get_results(cls, query, search_method, options, *args, **kwargs):
