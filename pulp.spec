@@ -626,7 +626,7 @@ Pulp nodes consumer client extensions.
 # ---- Lazy Streamer ---------------------------------------------------------------
 
 %if %{pulp_streamer}
-%package streamer
+%package -n python-pulp-streamer
 Summary: The pulp lazy streamer
 Group: Development/Languages
 
@@ -646,10 +646,10 @@ Requires(preun): systemd
 Requires(postun): systemd
 %endif
 
-%description streamer
+%description -n python-pulp-streamer
 The streamer component of the Pulp Lazy Sync feature.
 
-%files streamer
+%files -n python-pulp-streamer
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/streamer/
 %{python_sitelib}/pulp_streamer*.egg-info
@@ -673,7 +673,7 @@ The streamer component of the Pulp Lazy Sync feature.
 %{_var}/www/streamer
 
 # Uninstall scriptlet
-%preun streamer
+%preun -n python-pulp-streamer
 if [ $1 -eq 0 ] ; then
     %if %{pulp_systemd} == 1
         /bin/systemctl stop pulp_streamer > /dev/null 2>&1
@@ -682,7 +682,7 @@ if [ $1 -eq 0 ] ; then
     %endif
 fi
 %if %{pulp_systemd} == 1
-%postun streamer
+%postun -n python-pulp-streamer
 %systemd_postun
 %endif
 
