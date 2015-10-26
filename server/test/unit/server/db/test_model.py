@@ -590,3 +590,29 @@ class TestCeleryBeatLock(unittest.TestCase):
         Assert that the collection name is correct.
         """
         self.assertEquals(model.CeleryBeatLock._meta['collection'], 'celery_beat_lock')
+
+
+class TestDeferredDownload(unittest.TestCase):
+    """
+    Test the DeferredDownload class.
+    """
+
+    def test_model_superclass(self):
+        sample_model = model.DeferredDownload()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.DeferredDownload.unit_id, StringField))
+        self.assertTrue(model.DeferredDownload.unit_id.required)
+
+        self.assertTrue(isinstance(model.DeferredDownload.unit_type_id, StringField))
+        self.assertTrue(model.DeferredDownload.unit_type_id.required)
+
+        self.assertTrue(isinstance(model.DeferredDownload._ns, StringField))
+        self.assertEqual('deferred_download', model.DeferredDownload._ns.default)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.DeferredDownload._meta['collection'], 'deferred_download')

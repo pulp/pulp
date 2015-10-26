@@ -700,3 +700,30 @@ class LazyCatalogEntry(Document):
     checksum = StringField()
     checksum_algorithm = StringField(regex=ALG_REGEX)
     data = DictField()
+
+
+class DeferredDownload(Document):
+    """
+    A collection of units that have been handled by the streamer in the
+    passive lazy workflow that Pulp should download.
+
+    :ivar unit_id:      The associated content unit ID.
+    :type unit_id:      str
+    :ivar unit_type_id: The associated content unit type.
+    :type unit_type_id: str
+    """
+    meta = {
+        'collection': 'deferred_download',
+        'indexes': [
+            {
+                'fields': ['unit_id', 'unit_type_id'],
+                'unique': True
+            }
+        ]
+    }
+
+    unit_id = StringField(required=True)
+    unit_type_id = StringField(required=True)
+
+    # For backward compatibility
+    _ns = StringField(default='deferred_download')
