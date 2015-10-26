@@ -39,6 +39,8 @@ EOF
 
     mkdir -p metadata/v1 metadata/v2
     sudo mkdir -p /var/lib/pulp/published/docker/v1 /var/lib/pulp/published/docker/v2
+    sudo chown apache:apache /var/lib/pulp/published/docker/v1
+    sudo chown apache:apache /var/lib/pulp/published/docker/v2
     sudo ln -s $HOME/devel/crane/metadata/v1 /var/lib/pulp/published/docker/v1/app
     sudo ln -s $HOME/devel/crane/metadata/v2 /var/lib/pulp/published/docker/v2/app
 
