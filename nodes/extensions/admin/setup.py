@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp_node_admin_extensions',
-    version='2.7.0b7',
+    version='2.7.0c8',
     license='GPLv2+',
     packages=find_packages(exclude=['test', 'test.*']),
     author='Pulp Team',
