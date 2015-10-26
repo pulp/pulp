@@ -2,6 +2,7 @@ from httplib import INTERNAL_SERVER_ERROR, NOT_FOUND
 from unittest import TestCase
 
 from mock import Mock, patch
+from mongoengine import NotUniqueError
 from twisted.web.server import Request
 
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -67,18 +68,17 @@ class TestStreamer(TestCase):
         mock_reactor.callInThread.assert_called_once_with(self.streamer._handle_get,
                                                           self.request)
 
-    @patch(MODULE_PREFIX + 'content_controller')
     @patch(MODULE_PREFIX + 'model')
     @patch(MODULE_PREFIX + 'Responder.__exit__')
     @patch(MODULE_PREFIX + 'Responder.__enter__')
     @patch(MODULE_PREFIX + 'Streamer._download')
-    def test_handle_get(self, mock_download, mock_enter, mock_exit, mock_model,
-                        mock_content_controller):
+    def test_handle_get(self, mock_download, mock_enter, mock_exit, mock_model):
         """
         When the streamer receives a request, the content is downloaded and a task
         is dispatched.
         """
         # Setup
+        self.streamer._add_deferred_download_entry = Mock()
         self.request.uri = '/a/resource?k=v'
         self.request.getHeader.return_value = None
         mock_catalog = mock_model.LazyCatalogEntry.objects.return_value.order_by(
@@ -92,25 +92,8 @@ class TestStreamer(TestCase):
         self.assertEqual(1, query_set.order_by('importer_id').first.call_count)
         mock_download.assert_called_once_with(mock_catalog, self.request,
                                               mock_enter.return_value)
-        mock_content_controller.queue_download_one.assert_called_once_with(mock_catalog)
-
-    @patch(MODULE_PREFIX + 'content_controller')
-    @patch(MODULE_PREFIX + 'model', Mock())
-    @patch(MODULE_PREFIX + 'Responder.__exit__', Mock())
-    @patch(MODULE_PREFIX + 'Responder.__enter__', Mock())
-    def test_handle_get_pulp_header(self, mock_content_controller):
-        """
-        When the streamer receives a request with the Pulp header, no task is dispatched.
-        """
-        # Setup
-        self.request.uri = '/a/resource?k=v'
-        self.request.getHeader.return_value = 'true'
-        self.streamer._download = Mock()
-
-        # Test
-        self.streamer._handle_get(self.request)
-        self.request.getHeader.assert_called_once_with(PULP_STREAM_REQUEST_HEADER)
-        self.assertEqual(0, mock_content_controller.queue_download_one.call_count)
+        self.streamer._add_deferred_download_entry.assert_called_once_with(self.request,
+                                                                           mock_catalog)
 
     @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
     @patch(MODULE_PREFIX + 'model', Mock())
@@ -181,6 +164,44 @@ class TestStreamer(TestCase):
         self.assertEqual(self.config, mock_downloader.event_listener.streamer_config)
         mock_downloader.download_one.assert_called_once_with(mock_dl_request.return_value,
                                                              events=True)
+
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_add_deferred_download_entry(self, mock_deferred_download):
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = None
+        mock_catalog_entry = Mock()
+        mock_catalog_entry.unit_id = 'abc'
+        mock_catalog_entry.unit_type_id = '123'
+
+        # Test
+        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
+        mock_request.getHeader.assert_called_once_with(PULP_STREAM_REQUEST_HEADER)
+        mock_deferred_download.assert_called_once_with(unit_id='abc', unit_type_id='123')
+        mock_deferred_download.return_value.save.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_add_deferred_download_entry_not_unique(self, mock_deferred_download):
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = None
+        mock_catalog_entry = Mock()
+        mock_deferred_download.return_value.save.side_effect = NotUniqueError()
+
+        # Test
+        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
+        mock_deferred_download.return_value.save.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
+    def test_add_deferred_download_entry_pulp_request(self, mock_deferred_download):
+        # Setup
+        mock_request = Mock()
+        mock_request.getHeader.return_value = 'something'
+        mock_catalog_entry = Mock()
+
+        # Test
+        self.streamer._add_deferred_download_entry(mock_request, mock_catalog_entry)
+        self.assertEqual(0, mock_deferred_download.return_value.save.call_count)
 
 
 class TestResponder(TestCase):
