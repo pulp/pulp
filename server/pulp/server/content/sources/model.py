@@ -9,6 +9,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
 import sys
 import os
 import re
@@ -139,7 +140,10 @@ class ContentSource(object):
             if not os.path.isfile(path):
                 continue
             cfg = ConfigParser()
-            cfg.read(path)
+            list_of_read_files = cfg.read(path)
+            if not list_of_read_files:
+                log.warn(_("Could not read content source config file at path %s"), path)
+                continue
             for section in cfg.sections():
                 descriptor = {}
                 descriptor.update(DEFAULT)
