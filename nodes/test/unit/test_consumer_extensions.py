@@ -1,15 +1,3 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-
 from mock import patch
 
 from base import ClientTests, Response
@@ -28,6 +16,7 @@ REPOSITORY_ID = 'test_repository'
 
 LOAD_CONSUMER_API = 'pulp_node.extensions.consumer.commands.load_consumer_id'
 NODE_ACTIVATED_CHECK = 'pulp_node.extensions.consumer.commands.node_activated'
+REPO_ENABLED_CHECK = 'pulp_node.extensions.consumer.commands.repository_enabled'
 
 NODE_ACTIVATE_API = 'pulp.bindings.consumer.ConsumerAPI.update'
 BIND_API = 'pulp.bindings.consumer.BindingsAPI.bind'
@@ -110,11 +99,12 @@ class TestActivationCommands(ClientTests):
         mock_activated.assert_called_with(self.context, NODE_ID)
         self.assertFalse(mock_binding.called)
 
-        
+
 class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind(self, mock_binding, *unused):
         # Test
@@ -136,6 +126,7 @@ class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind_with_strategy(self, mock_binding, *unused):
         # Test
@@ -157,8 +148,9 @@ class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=False)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(BIND_API, return_value=Response(200, {}))
-    def test_bind_not_activated(self, mock_binding, *unused):
+    def test_bind_not_activated(self, mock_binding, mock_repo, mock_node, mock_cons):
         # Test
         command = NodeBindCommand(self.context)
         keywords = {
@@ -169,6 +161,27 @@ class TestBindCommands(ClientTests):
         # Verify
         self.assertTrue(OPTION_REPO_ID in command.options)
         self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertFalse(mock_repo.called)
+        self.assertFalse(mock_binding.called)
+
+    @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch(BIND_API, return_value=Response(200, {}))
+    def test_bind_not_enabled(self, mock_binding, mock_repo, mock_node, mock_cons):
+        # Test
+        command = NodeBindCommand(self.context)
+        keywords = {
+            OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertTrue(mock_repo.called)
         self.assertFalse(mock_binding.called)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
