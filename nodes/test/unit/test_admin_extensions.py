@@ -1,20 +1,9 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import sys
 
 from mock import patch, Mock, call
 
-from base import ClientTests, Response, Task
+from base import ClientTests, Response
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
@@ -24,7 +13,7 @@ from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
 from pulp_node.extensions.admin.commands import *
 from pulp_node.extensions.admin.rendering import ProgressTracker
-from pulp_node.error import *
+from pulp_node.error import UnitDownloadError
 from pulp_node.reports import RepositoryReport
 from pulp_node.handlers.reports import SummaryReport
 
@@ -116,7 +105,7 @@ MIXED_DISTRIBUTORS = [
 UPDATE_REPORT = {
     'succeeded': True,
     'details': {
-        'errors':[],
+        'errors': [],
         'repositories': [
             RepositoryReport('repo_1', RepositoryReport.ADDED)
         ]
@@ -200,7 +189,6 @@ class TestPublishCommand(ClientTests):
         # Verify
         self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR, {})
-
 
     @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
@@ -313,7 +301,7 @@ class TestEnableCommands(ClientTests):
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(REPO_ENABLE_API, return_value=(200, {}))
-    def test_enable(self, mock_binding, *unused):
+    def test_enable_enabled_repo(self, mock_binding, *unused):
         # Test
         command = NodeRepoEnableCommand(self.context)
         keywords = {
@@ -336,11 +324,12 @@ class TestEnableCommands(ClientTests):
         # Verify
         self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR)
-        
-        
+
+
 class TestBindCommands(ClientTests):
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind(self, mock_binding, *unused):
         # Test
@@ -363,6 +352,7 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind_with_strategy(self, mock_binding, *unused):
         # Test
@@ -385,8 +375,9 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=False)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(BIND_API, return_value=Response(200, {}))
-    def test_bind_not_activated(self, mock_binding, *unused):
+    def test_bind_not_activated(self, mock_binding, mock_repo, mock_node):
         # Test
         command = NodeBindCommand(self.context)
         keywords = {
@@ -399,6 +390,28 @@ class TestBindCommands(ClientTests):
         self.assertTrue(OPTION_REPO_ID in command.options)
         self.assertTrue(NODE_ID_OPTION in command.options)
         self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertFalse(mock_repo.called)
+        self.assertFalse(mock_binding.called)
+
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch(BIND_API, return_value=Response(200, {}))
+    def test_bind_not_enabled(self, mock_binding, mock_repo, mock_node):
+        # Test
+        command = NodeBindCommand(self.context)
+        keywords = {
+            OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            NODE_ID_OPTION.keyword: NODE_ID,
+            STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertTrue(mock_repo.called)
         self.assertFalse(mock_binding.called)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
@@ -576,7 +589,8 @@ class TestProgressTracking(ClientTests):
         }
         progress_bar = Mock()
         ProgressTracker._render(report, progress_bar)
-        progress_bar.render.assert_called_with(5, 10, 'Step: Adding Units\n(5/10) Add unit: bar.unit')
+        msg = 'Step: Adding Units\n(5/10) Add unit: bar.unit'
+        progress_bar.render.assert_called_with(5, 10, msg)
 
     def test_render_not_adding_units(self):
         report = {
