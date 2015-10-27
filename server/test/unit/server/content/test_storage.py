@@ -68,7 +68,7 @@ class TestFileStorage(TestCase):
     def test_put_dir(self, config, shutil):
         path_in = '/tmp/test/'
         storage_dir = '/tmp/storage'
-        unit = Mock(id='0123456789', unit_type_id='ABC')
+        unit = Mock(id='0123456789', _content_type_id='ABC')
         config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
         storage = FileStorage()
 
@@ -77,10 +77,10 @@ class TestFileStorage(TestCase):
 
         # validation
         destination = os.path.join(
-            os.path.join(storage_dir, 'content', 'units', unit.unit_type_id),
+            os.path.join(storage_dir, 'content', 'units', unit._content_type_id),
             unit.id[0:4], unit.id)
         shutil.copytree.assert_called_once_with(path_in, destination)
-        self.assertEqual(unit.storage_path, destination)
+        self.assertEqual(unit._storage_path, destination)
 
     @patch('pulp.server.content.storage.shutil')
     @patch('pulp.server.content.storage.config')
@@ -88,7 +88,7 @@ class TestFileStorage(TestCase):
     def test_put_file(self, config, shutil):
         path_in = '/tmp/test'
         storage_dir = '/tmp/storage'
-        unit = Mock(id='0123456789', unit_type_id='ABC')
+        unit = Mock(id='0123456789', _content_type_id='ABC')
         config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
         storage = FileStorage()
 
@@ -97,10 +97,10 @@ class TestFileStorage(TestCase):
 
         # validation
         destination = os.path.join(
-            os.path.join(storage_dir, 'content', 'units', unit.unit_type_id),
+            os.path.join(storage_dir, 'content', 'units', unit._content_type_id),
             unit.id[0:4], unit.id)
         shutil.copy.assert_called_once_with(path_in, destination)
-        self.assertEqual(unit.storage_path, destination)
+        self.assertEqual(unit._storage_path, destination)
 
     def test_get(self):
         storage = FileStorage()
@@ -178,7 +178,7 @@ class TestSharedStorage(TestCase):
         # validation
         expected_path = os.path.join(storage.links_dir, unit.id)
         symlink.assert_called_once_with(storage.content_dir, expected_path)
-        self.assertEqual(unit.storage_path, expected_path)
+        self.assertEqual(unit._storage_path, expected_path)
 
     @patch('os.symlink')
     @patch('os.readlink')
@@ -201,7 +201,7 @@ class TestSharedStorage(TestCase):
         # validation
         expected_path = os.path.join(storage.links_dir, unit.id)
         symlink.assert_called_once_with(storage.content_dir, expected_path)
-        self.assertEqual(unit.storage_path, expected_path)
+        self.assertEqual(unit._storage_path, expected_path)
 
     @patch('os.symlink')
     @patch('os.readlink')

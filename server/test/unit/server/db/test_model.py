@@ -18,28 +18,60 @@ from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet
 
 
-@patch('pulp.server.db.model.UnsafeRetry')
 class TestAutoRetryDocument(unittest.TestCase):
     """
     Test base class for pulp docs.
     """
 
+    @patch('pulp.server.db.model.UnsafeRetry')
     def test_decorate_on_init(self, m_retry):
         """
         Ensure that subclass's of AutoRetryDocuments are decorated on init.
         """
-
         class MockDoc(model.AutoRetryDocument):
             pass
 
         doc = MockDoc()
         m_retry.decorate_instance.assert_called_once_with(instance=doc, full_name=type(doc))
 
-    def test_abstact(self, m_retry):
+    def test_abstact(self):
         """
         Ensure that AutoRetryDocument is an abstract document.
         """
         self.assertDictEqual(model.AutoRetryDocument._meta, {'abstract': True})
+
+    def test_clean_raises_nothing_if_properly_defined(self):
+        class MockDoc(model.AutoRetryDocument):
+            _ns = StringField(default='dummy_collection_name')
+
+        try:
+            MockDoc().clean()
+        except Exception:
+            self.fail("MockDoc is properly defined and should validate correctly")
+
+    def test__ns_is_not_defined_on_abstract_class(self):
+        self.assertFalse(hasattr(model.ContentUnit, '_ns'))
+
+
+class TestAutoRetryDocumentClean(unittest.TestCase):
+
+    def test_clean_raises_ValidationError_when__ns_field_is_not_defined(self):
+        class MockDoc(model.AutoRetryDocument):
+            pass
+
+        self.assertRaises(ValidationError, MockDoc().clean)
+
+    def test_clean_raises_ValidationError_when__ns_field_is_wrong_type(self):
+        class MockDoc(model.AutoRetryDocument):
+            _ns = IntField(default=1)
+
+        self.assertRaises(ValidationError, MockDoc().clean)
+
+    def test_clean_raises_ValidationError_when__ns_field_default_is_not_defined(self):
+        class MockDoc(model.AutoRetryDocument):
+            _ns = StringField()
+
+        self.assertRaises(ValidationError, MockDoc().clean)
 
 
 class TestContentUnit(unittest.TestCase):
@@ -56,13 +88,7 @@ class TestContentUnit(unittest.TestCase):
 
         self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
-        self.assertTrue(isinstance(model.ContentUnit.storage_path, StringField))
-        self.assertEquals(model.ContentUnit.storage_path.db_field, '_storage_path')
-
-        self.assertTrue(isinstance(model.ContentUnit._ns, StringField))
-        self.assertTrue(model.ContentUnit._ns)
-        self.assertTrue(isinstance(model.ContentUnit.unit_type_id, StringField))
-        self.assertTrue(model.ContentUnit.unit_type_id)
+        self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
 
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
@@ -70,7 +96,7 @@ class TestContentUnit(unittest.TestCase):
     @patch('pulp.server.db.model.signals')
     def test_attach_signals(self, mock_signals):
         class ContentUnitHelper(model.ContentUnit):
-            unit_type_id = StringField(default='foo')
+            _content_type_id = StringField(default='foo')
             unit_key_fields = ['apple', 'pear']
 
         ContentUnitHelper.attach_signals()
@@ -80,17 +106,6 @@ class TestContentUnit(unittest.TestCase):
 
         self.assertEquals('foo', ContentUnitHelper.NAMED_TUPLE.__name__)
         self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
-
-    def test_attach_signals_without_unit_key_fields_defined(self):
-        class ContentUnitHelper(model.ContentUnit):
-            unit_type_id = StringField(default='foo')
-
-        try:
-            ContentUnitHelper.attach_signals()
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException, raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            self.assertEqual(raised_error.error_data, {'class_name': 'ContentUnitHelper'})
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
@@ -153,7 +168,7 @@ class TestContentUnit(unittest.TestCase):
             apple = StringField()
             pear = StringField()
             unit_key_fields = ('apple', 'pear')
-            unit_type_id = StringField(default='bar')
+            _content_type_id = StringField(default='bar')
 
         # create the named tuple
         ContentUnitHelper.attach_signals()
@@ -169,7 +184,7 @@ class TestContentUnit(unittest.TestCase):
             apple = StringField()
             pear = StringField()
             unit_key_fields = ('apple', 'pear')
-            unit_type_id = StringField(default='bar')
+            _content_type_id = StringField(default='bar')
         my_unit = ContentUnitHelper(apple='apple', pear='pear')
         ret = my_unit.to_id_dict()
         expected_dict = {'unit_key': {'pear': u'pear', 'apple': u'apple'}, 'type_id': 'bar'}
@@ -177,9 +192,118 @@ class TestContentUnit(unittest.TestCase):
 
     def test_type_id(self):
         class ContentUnitHelper(model.ContentUnit):
-            unit_type_id = StringField()
-        my_unit = ContentUnitHelper(unit_type_id='apple')
+            _content_type_id = StringField()
+        my_unit = ContentUnitHelper(_content_type_id='apple')
         self.assertEqual(my_unit.type_id, 'apple')
+
+    def test__content_type_id_field_is_not_defined_on_abstract_class(self):
+        self.assertFalse(hasattr(model.ContentUnit, '_content_type_id'))
+
+    def test_unit_key_fields_is_not_defined_on_abstract_class(self):
+        self.assertFalse(hasattr(model.ContentUnit, 'unit_key_fields'))
+
+
+class TestContentUnitValidateModelDefinition(unittest.TestCase):
+
+    def test_clean_raises_nothing_if_properly_defined(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(required=True, default='rpm')
+            unit_key_fields = ('author', 'name', 'version')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except Exception:
+            self.fail("ContentUnitHelper is properly defined and should validate correctly")
+
+    def test_clean_raises_ValidationError_when__content_type_id_field_is_not_defined(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            unit_key_fields = ('author', 'name', 'version')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when__content_type_id_field_is_wrong_type(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = IntField(required=True, default=1)
+            unit_key_fields = ('author', 'name', 'version')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when__content_type_id_field_default_is_not_defined(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(required=True)
+            unit_key_fields = ('author', 'name', 'version')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when__content_type_id_field_is_not_required(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(default='rpm')
+            unit_key_fields = ('author', 'name', 'version')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when_unit_key_fields_is_not_defined(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(required=True, default='rpm')
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when_unit_key_fields_is_wrong_type(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(required=True, default='rpm')
+            unit_key_fields = ListField(default=[1, 2, 3])
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
+            self.assertEqual(raised_error.error_data, expected_dict)
+
+    def test_clean_raises_ValidationError_when_unit_key_fields_is_empty(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _ns = StringField(default='dummy_content_name')
+            _content_type_id = StringField(required=True, default='rpm')
+            unit_key_fields = ()
+
+        try:
+            ContentUnitHelper.validate_model_definition()
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
+            self.assertEqual(raised_error.error_data, expected_dict)
 
 
 class TestFileContentUnit(unittest.TestCase):

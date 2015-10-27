@@ -61,7 +61,7 @@ class PluginManager(object):
                                          model_class=class_name)
             self.unit_models[model_id] = model_class
 
-            # Attach all the signals
+            model_class.validate_model_definition()
             model_class.attach_signals()
 
         _logger.debug(_("Unit Model Loading Completed"))

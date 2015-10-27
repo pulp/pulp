@@ -1,4 +1,5 @@
 import copy
+from gettext import gettext as _
 import logging
 import os
 import random
@@ -7,7 +8,7 @@ from collections import namedtuple
 from hmac import HMAC
 
 from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
-                         ListField, StringField, UUIDField)
+                         ListField, StringField, UUIDField, ValidationError)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -38,6 +39,8 @@ class AutoRetryDocument(Document):
     """
     Base class for mongoengine documents, includes auto retry functionality,
     if unsafe_autoretry is set to true in the server config.
+
+    All classes inheriting from this class must define a _ns field.
     """
 
     def __init__(self, *args, **kwargs):
@@ -48,6 +51,25 @@ class AutoRetryDocument(Document):
         UnsafeRetry.decorate_instance(instance=self, full_name=type(self))
 
     meta = {'abstract': True}
+
+    def clean(self):
+        """
+        Provides custom validation that all Pulp mongoengine document must adhere to.
+
+        Ensure a field named `_ns` is defined and raise a ValidationError if not. For backwards
+        compatibility, each Pulp Document must have the collection name stored in the `_ns` field
+        as a StringField. This is required in the Document definition and with a default so it
+        never has to be explicitly set. For example:
+
+           _ns = StringField(default='reserved_resources')
+
+        """
+        if not hasattr(self.__class__, '_ns'):
+            raise ValidationError("Pulp Documents must define the '_ns' attribute")
+        if not isinstance(self.__class__._ns, StringField):
+            raise ValidationError("Pulp Documents must have '_ns' be a StringField")
+        if self.__class__._ns.default is None:
+            raise ValidationError("Pulp Documents must define a default value for the '_ns' field")
 
 
 class Repository(AutoRetryDocument):
@@ -143,9 +165,7 @@ class RepositoryContentUnit(AutoRetryDocument):
     """
     Represents the link between a repository and the units associated with it.
 
-    This inherits from mongoengine.Document and defines the schema for the documents
-    in repo_content_units collection.
-
+    Defines the schema for the documents in repo_content_units collection.
 
     :ivar repo_id: string representation of the repository id
     :type repo_id: mongoengine.StringField
@@ -224,8 +244,7 @@ class Worker(AutoRetryDocument):
     """
     Represents a worker.
 
-    This inherits from mongoengine.Document and defines the schema for the documents
-    in the worker collection.
+    Defines the schema for the documents in the worker collection.
 
     :ivar name:    worker name, in the form of "worker_type@hostname"
     :type name:    mongoengine.StringField
@@ -282,9 +301,9 @@ class MigrationTracker(AutoRetryDocument):
 class TaskStatus(AutoRetryDocument, ReaperMixin):
     """
     Represents a task.
-    This inherits from mongoengine.Document and defines the schema for the documents
-    in task_status collection. The documents in this collection may be reaped,
-    so it inherits from ReaperMixin.
+
+    Defines the schema for the documents in task_status collection. The documents in this
+    collection may be reaped, so it inherits from ReaperMixin.
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
@@ -401,8 +420,12 @@ class ContentUnit(AutoRetryDocument):
     """
     The base class for all content units.
 
-    All classes inheriting from this class must override the unit_type_id and _ns to ensure
-    they are populated properly.
+    All classes inheriting from this class must define a _content_type_id and unit_key_fields.
+
+    _content_type_id must be of type mongoengine.StringField and have a default value of the string
+    name of the content type.
+
+    unit_key_fields must be a tuple of strings, each of which is a valid field name of the subcalss.
 
     :ivar id: content unit id
     :type id: mongoengine.StringField
@@ -410,27 +433,14 @@ class ContentUnit(AutoRetryDocument):
     :type _last_updated: mongoengine.IntField
     :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
     :type pulp_user_metadata: mongoengine.DictField
-    :ivar storage_path: Location on disk where the content associated with this unit lives
-    :type storage_path: mongoengine.StringField
-
-    :ivar _ns: (Deprecated), Contains the name of the collection this model represents
-    :type _ns: mongoengine.StringField
-    :ivar unit_type_id: content unit type
-    :type unit_type_id: mongoengine.StringField
-    :ivar unit_key_fields: required fields for the unit key. This must be defined by each subclass
-    :type unit_key_fields: tuple
+    :ivar _storage_path: Location on disk where the content associated with this unit lives
+    :type _storage_path: mongoengine.StringField
     """
-
-    unit_key_fields = tuple()
 
     id = StringField(primary_key=True)
     _last_updated = IntField(required=True)
     pulp_user_metadata = DictField()
-    storage_path = StringField(db_field='_storage_path')
-
-    # For backward compatibility
-    _ns = StringField(required=True)
-    unit_type_id = StringField(db_field='_content_type_id', required=True)
+    _storage_path = StringField()
 
     meta = {
         'abstract': True,
@@ -448,13 +458,69 @@ class ContentUnit(AutoRetryDocument):
         """
         signals.pre_save.connect(cls.pre_save_signal, sender=cls)
 
-        # Validate that the minimal set of fields has been defined
-        if len(cls.unit_key_fields) == 0:
-            class_name = cls.__name__
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=class_name)
-
         # Create the named tuple here so it happens during server startup
-        cls.NAMED_TUPLE = namedtuple(cls.unit_type_id.default, cls.unit_key_fields)
+        cls.NAMED_TUPLE = namedtuple(cls._content_type_id.default, cls.unit_key_fields)
+
+    @classmethod
+    def validate_model_definition(cls):
+        """
+        Validate that all subclasses of ContentType define required fields correctly.
+
+        Ensure a field named `_content_type_id` is defined and raise a ValidationError if not. Each
+        subclass of ContentUnit must have the content type id stored in the `_content_type_id`
+        field as a StringField. The field must be marked as required and have a default set. For
+        example:
+
+           _content_type_id = StringField(required=True, default='rpm')
+
+        Ensure a field named `unit_key_fields` is defined and raise a ValidationError if not. Each
+        subclass of ContentUnit must have the content type id stored in the `unit_key_fields`
+        field as a tuple and must not be empty.
+
+           unit_key_fields = ('author', 'name', 'version')
+
+        :raises: PLP0035 if a field or attribute is incorrectly defined
+        """
+        # Validate the 'unit_key_fields' attribute
+
+        if not hasattr(cls, 'unit_key_fields'):
+            msg = _("The class %(class_name)s must define a 'unit_key_fields' attribute")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='unit_key_fields')
+        if not isinstance(cls.unit_key_fields, tuple):
+            msg = _("The class %(class_name)s must define 'unit_key_fields' to be a tuple")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='unit_key_fields')
+        if len(cls.unit_key_fields) == 0:
+            msg = _("The field 'unit_key_fields' on class %(class_name)s must have length > 0")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='unit_key_fields')
+
+        # Validate the '_content_type_id' field
+        if not hasattr(cls, '_content_type_id'):
+            msg = _("The class %(class_name)s must define a '_content_type_id' attribute")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='_content_type_id')
+        if not isinstance(cls._content_type_id, StringField):
+            msg = _("The class %(class_name)s must define '_content_type_id' to be a StringField")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='_content_type_id')
+        if cls._content_type_id.default is None:
+            msg = _("The class %(class_name)s must define a default value "
+                    "for the '_content_type_id' field")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='_content_type_id')
+        if cls._content_type_id.required is False:
+            msg = _("The class %(class_name)s must require the '_content_type_id' field")
+            _logger.error(msg, {'class_name': cls.__name__})
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
+                                                field_name='_content_type_id')
 
     @classmethod
     def pre_save_signal(cls, sender, document, **kwargs):
@@ -516,27 +582,27 @@ class ContentUnit(AutoRetryDocument):
         :rtype: dict
         """
 
-        return {'type_id': self.unit_type_id, 'unit_key': self.unit_key}
+        return {'type_id': self._content_type_id, 'unit_key': self.unit_key}
 
     @property
     def type_id(self):
         """
-        Backwards compatible interface for unit_type_id
+        Backwards compatible interface for _content_type_id
 
-        The pre-mongoengine units used type_id to track what is stored in unit_type_id. This
+        The pre-mongoengine units used type_id to track what is stored in _content_type_id. This
         provides internal backwards compatibility allowing code to not be updated until all models
         are converted to mongoengine and able to use the new name exclusively.
 
         This should be removed once the old, non-mongoengine code paths are removed.
         """
-        return self.unit_type_id
+        return self._content_type_id
 
     def __hash__(self):
         """
         This should provide a consistent and unique hash where units of the same
         type and the same unit key will get the same hash value.
         """
-        return hash(self.unit_type_id + self.unit_key_str)
+        return hash(self._content_type_id + self.unit_key_str)
 
 
 class FileContentUnit(ContentUnit):
@@ -627,7 +693,7 @@ class SharedContentUnit(ContentUnit):
     def pre_save_signal(cls, sender, document, **kwargs):
         """
         The signal that is triggered before a unit is saved.
-        Set the storage_path on the document and add the symbolic link.
+        Set the _storage_path on the document and add the symbolic link.
 
         :param sender: sender class
         :type sender: object
@@ -639,7 +705,7 @@ class SharedContentUnit(ContentUnit):
             storage.link(document)
 
 
-class CeleryBeatLock(Document):
+class CeleryBeatLock(AutoRetryDocument):
     """
     Single document collection which gives information about the current celerybeat lock.
 
@@ -660,7 +726,7 @@ class CeleryBeatLock(Document):
     _ns = StringField(default='celery_beat_lock')
 
 
-class User(Document):
+class User(AutoRetryDocument):
     """
     :ivar login: user's login name, must be unique for each user
     :type login: basestring
