@@ -209,7 +209,7 @@ class NodeRepoPublishCommand(PollingCommand):
 
         if not repository_enabled(self.context, repo_id):
             msg = FAILED_NOT_ENABLED
-            self.context.prompt.render_success_message(msg)
+            self.context.prompt.render_failure_message(msg)
             return
 
         try:
@@ -367,7 +367,7 @@ class NodeRepoDisableCommand(PulpCliCommand):
                     continue
                 if _type == 'distributor':
                     msg = NOT_ENABLED_NOTHING_DONE % dict(t=REPOSITORY)
-                    self.context.prompt.render_success_message(msg)
+                    self.context.prompt.render_failure_message(msg)
                     continue
                 raise
             return os.EX_DATAERR
@@ -412,30 +412,25 @@ class NodeBindCommand(BindingCommand):
             self.context.prompt.render_failure_message(msg)
             return os.EX_USAGE
 
+        if not repository_enabled(self.context, repo_id):
+            msg = FAILED_NOT_ENABLED
+            self.context.prompt.render_failure_message(msg)
+            return os.EX_USAGE
+
         if strategy not in constants.STRATEGIES:
             msg = STRATEGY_NOT_SUPPORTED % dict(n=strategy, s=constants.STRATEGIES)
             self.context.prompt.render_failure_message(msg)
             return os.EX_DATAERR
 
-        try:
-            self.context.server.bind.bind(
-                node_id,
-                repo_id,
-                dist_id,
-                notify_agent=False,
-                binding_config=binding_config)
-            self.context.prompt.render_success_message(BIND_SUCCEEDED)
-            warning = BIND_WARNING % dict(r=repo_id)
-            self.context.prompt.render_warning_message(warning)
-        except NotFoundException, e:
-            unhandled = self.missing_resources(self.context.prompt, e)
-            for _id, _type in unhandled:
-                if _type == 'distributor':
-                    msg = FAILED_NOT_ENABLED
-                    self.context.prompt.render_failure_message(msg)
-                else:
-                    raise
-            return os.EX_DATAERR
+        self.context.server.bind.bind(
+            node_id,
+            repo_id,
+            dist_id,
+            notify_agent=False,
+            binding_config=binding_config)
+        self.context.prompt.render_success_message(BIND_SUCCEEDED)
+        warning = BIND_WARNING % dict(r=repo_id)
+        self.context.prompt.render_warning_message(warning)
 
 
 class NodeUnbindCommand(BindingCommand):
@@ -462,7 +457,7 @@ class NodeUnbindCommand(BindingCommand):
             for _id, _type in unhandled:
                 if _type == 'bind_id':
                     msg = NOT_BOUND_NOTHING_DONE
-                    self.context.prompt.render_success_message(msg)
+                    self.context.prompt.render_failure_message(msg)
                 else:
                     raise
             return os.EX_DATAERR

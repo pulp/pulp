@@ -12,6 +12,7 @@ REPOSITORY_ID = 'test_repository'
 
 LOAD_CONSUMER_API = 'pulp_node.extensions.consumer.commands.load_consumer_id'
 NODE_ACTIVATED_CHECK = 'pulp_node.extensions.consumer.commands.node_activated'
+REPO_ENABLED_CHECK = 'pulp_node.extensions.consumer.commands.repository_enabled'
 
 NODE_ACTIVATE_API = 'pulp.bindings.consumer.ConsumerAPI.update'
 BIND_API = 'pulp.bindings.consumer.BindingsAPI.bind'
@@ -93,6 +94,7 @@ class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind(self, mock_binding, *unused):
         # Test
@@ -114,6 +116,7 @@ class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind_with_strategy(self, mock_binding, *unused):
         # Test
@@ -135,8 +138,9 @@ class TestBindCommands(ClientTests):
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
     @patch(NODE_ACTIVATED_CHECK, return_value=False)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(BIND_API, return_value=Response(200, {}))
-    def test_bind_not_activated(self, mock_binding, *unused):
+    def test_bind_not_activated(self, mock_binding, mock_repo, mock_node, mock_cons):
         # Test
         command = commands.NodeBindCommand(self.context)
         keywords = {
@@ -147,6 +151,27 @@ class TestBindCommands(ClientTests):
         # Verify
         self.assertTrue(commands.OPTION_REPO_ID in command.options)
         self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertFalse(mock_repo.called)
+        self.assertFalse(mock_binding.called)
+
+    @patch(LOAD_CONSUMER_API, return_value=NODE_ID)
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch(BIND_API, return_value=Response(200, {}))
+    def test_bind_not_enabled(self, mock_binding, mock_repo, mock_node, mock_cons):
+        # Test
+        command = commands.NodeBindCommand(self.context)
+        keywords = {
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertTrue(mock_repo.called)
         self.assertFalse(mock_binding.called)
 
     @patch(LOAD_CONSUMER_API, return_value=NODE_ID)

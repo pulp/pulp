@@ -1,15 +1,21 @@
+import os
+import sys
+
 from mock import patch, Mock, call
+
+from base import ClientTests, Response
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
 from pulp.common.constants import PRIMARY_ID
 from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
-from base import ClientTests, Response
 from pulp_node import constants, error
 from pulp_node.extensions.admin import commands
 from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
-from pulp_node.handlers.reports import SummaryReport
 from pulp_node.reports import RepositoryReport
+from pulp_node.handlers.reports import SummaryReport
 
 
 NODE_ID = 'test.redhat.com'
@@ -287,7 +293,7 @@ class TestEnableCommands(ClientTests):
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(REPO_ENABLE_API, return_value=(200, {}))
-    def test_enable_check_enabled(self, mock_binding, *unused):
+    def test_enable_enabled_repo(self, mock_binding, *unused):
         # Test
         command = commands.NodeRepoEnableCommand(self.context)
         keywords = {
@@ -315,6 +321,7 @@ class TestEnableCommands(ClientTests):
 class TestBindCommands(ClientTests):
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind(self, mock_binding, *unused):
         # Test
@@ -337,6 +344,7 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind_with_strategy(self, mock_binding, *unused):
         # Test
@@ -359,8 +367,9 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=False)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(BIND_API, return_value=Response(200, {}))
-    def test_bind_not_activated(self, mock_binding, *unused):
+    def test_bind_not_activated(self, mock_binding, mock_repo, mock_node):
         # Test
         command = commands.NodeBindCommand(self.context)
         keywords = {
@@ -373,6 +382,28 @@ class TestBindCommands(ClientTests):
         self.assertTrue(commands.OPTION_REPO_ID in command.options)
         self.assertTrue(commands.NODE_ID_OPTION in command.options)
         self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertFalse(mock_repo.called)
+        self.assertFalse(mock_binding.called)
+
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch(BIND_API, return_value=Response(200, {}))
+    def test_bind_not_enabled(self, mock_binding, mock_repo, mock_node):
+        # Test
+        command = commands.NodeBindCommand(self.context)
+        keywords = {
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertTrue(mock_repo.called)
         self.assertFalse(mock_binding.called)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
@@ -550,8 +581,8 @@ class TestProgressTracking(ClientTests):
         }
         progress_bar = Mock()
         ProgressTracker._render(report, progress_bar)
-        progress_bar.render.assert_called_with(5, 10,
-                                               'Step: Adding Units\n(5/10) Add unit: bar.unit')
+        msg = 'Step: Adding Units\n(5/10) Add unit: bar.unit'
+        progress_bar.render.assert_called_with(5, 10, msg)
 
     def test_render_not_adding_units(self):
         report = {
