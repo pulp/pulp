@@ -29,7 +29,7 @@ from pulp.plugins.types import database as unit_db
 from pulp.server import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db import model
-from pulp.server.db.model.repository import RepoDistributor, RepoImporter
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.content import ContentType
@@ -170,7 +170,7 @@ class PluginTestBase(ServerTests):
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         RepoDistributor.get_collection().remove()
-        RepoImporter.get_collection().remove()
+        model.Importer.drop_collection()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
         self.define_plugins()
@@ -192,7 +192,7 @@ class PluginTestBase(ServerTests):
         Bind.get_collection().remove()
         model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
-        RepoImporter.get_collection().remove()
+        model.Importer.drop_collection()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 

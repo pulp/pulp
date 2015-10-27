@@ -270,7 +270,7 @@ class Repository(ModelSerializer):
         return reverse('repo_resource', kwargs={'repo_id': instance.repo_id})
 
 
-class ImporterSerializer(DictSerializer):
+class ImporterSerializer(ModelSerializer):
     """
     Serializer for the pulp Repository Importer objects
     """
@@ -278,6 +278,7 @@ class ImporterSerializer(DictSerializer):
     class Meta:
         mask_fields = ['config__basic_auth_password',
                        'config__proxy_password']
+        remapped_fields = {'id': '_id'}
 
     def get_href(self, instance):
         """
@@ -289,8 +290,18 @@ class ImporterSerializer(DictSerializer):
         :return: The href for the object being serialized
         :rtype: str
         """
-        return reverse('repo_importer_resource', kwargs={'repo_id': instance['repo_id'],
-                                                         'importer_id': instance['id']})
+        return reverse(
+            'repo_importer_resource',
+            kwargs={'repo_id': instance['repo_id'], 'importer_id': instance['importer_type_id']}
+        )
+
+    def to_representation(self, *args):
+        """
+        `id` field has been removed from the db, but we add it back in for backwards compatibility.
+        """
+        representation = super(ImporterSerializer, self).to_representation(*args)
+        representation['id'] = representation['importer_type_id']
+        return representation
 
 
 class User(ModelSerializer):

@@ -2,9 +2,10 @@
 
 from pulp.server import exceptions
 from pulp.server import tasks  # noqa
+from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
 
@@ -27,9 +28,8 @@ class RepoSyncScheduleManager(object):
         :return:    iterator of ScheduledCall instances
         :rtype:     iterator
         """
-        cls.validate_importer(repo_id, importer_id)
-
-        return utils.get_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
+        importer_controller.get_valid_importer(repo_id, importer_id)
+        return utils.get_by_resource(importer_controller.build_resource_tag(repo_id, importer_id))
 
     @classmethod
     def create(cls, repo_id, importer_id, sync_options, schedule,
@@ -57,20 +57,20 @@ class RepoSyncScheduleManager(object):
         :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
         # validate the input
-        cls.validate_importer(repo_id, importer_id)
+        importer_controller.get_valid_importer(repo_id, importer_id)
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
         task = repo_controller.queue_sync_with_auto_publish.name
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
-        resource = RepoImporter.build_resource_tag(repo_id, importer_id)
+        resource = importer_controller.build_resource_tag(repo_id, importer_id)
         schedule = ScheduledCall(schedule, task, args=args, kwargs=kwargs,
                                  resource=resource, failure_threshold=failure_threshold,
                                  enabled=enabled)
         schedule.save()
         try:
-            cls.validate_importer(repo_id, importer_id)
+            importer_controller.get_valid_importer(repo_id, importer_id)
         except exceptions.MissingResource:
             # back out of this whole thing, since the importer disappeared
             utils.delete(schedule.id)
@@ -95,7 +95,7 @@ class RepoSyncScheduleManager(object):
         :return ScheduledCall instance as it appears after the update
         :rtype  pulp.server.db.model.dispatch.ScheduledCall
         """
-        cls.validate_importer(repo_id, importer_id)
+        importer_controller.get_valid_importer(repo_id, importer_id)
 
         # legacy logic that can't be explained
         if 'override_config' in updates:
@@ -118,7 +118,7 @@ class RepoSyncScheduleManager(object):
         :type  schedule_id:     basestring
         """
         # validate the input
-        cls.validate_importer(repo_id, importer_id)
+        importer_controller.get_valid_importer(repo_id, importer_id)
 
         # remove from the scheduler
         utils.delete(schedule_id)
@@ -131,25 +131,7 @@ class RepoSyncScheduleManager(object):
         :param importer_id:     unique ID for an importer
         :type  importer_id:     basestring
         """
-        utils.delete_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
-
-    @staticmethod
-    def validate_importer(repo_id, importer_id):
-        """
-        Validate that the importer exists for the specified repo
-
-        :param repo_id:         unique ID for a repository
-        :type  repo_id:         basestring
-        :param importer_id:     unique ID for an importer
-        :type  importer_id:     basestring
-
-        :raise: pulp.server.exceptions.MissingResource
-        """
-        # make sure the passed in importer id matches the current importer on the repo
-        importer_manager = managers_factory.repo_importer_manager()
-        importer = importer_manager.get_importer(repo_id)
-        if importer_id != importer['id']:
-            raise exceptions.MissingResource(importer=importer_id)
+        utils.delete_by_resource(importer_controller.build_resource_tag(repo_id, importer_id))
 
 
 class RepoPublishScheduleManager(object):

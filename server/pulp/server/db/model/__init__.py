@@ -194,6 +194,26 @@ class RepositoryContentUnit(AutoRetryDocument):
             ]}
 
 
+class Importer(AutoRetryDocument):
+    """
+    Defines schema for an Importer in the `repo_importers` collection.
+    """
+    repo_id = StringField(required=True)
+    importer_type_id = StringField(required=True)
+    config = DictField()
+    scratchpad = DictField(default=None)
+    last_sync = ISO8601StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='repo_importers')
+    serializer = serializers.ImporterSerializer
+
+    meta = {'collection': 'repo_importers',
+            'allow_inheritance': False,
+            'indexes': [{'fields': ['-repo_id', '-importer_type_id'], 'unique': True}],
+            'queryset_class': CriteriaQuerySet}
+
+
 class ReservedResource(AutoRetryDocument):
     """
     Instances of this class represent resources that have been reserved.

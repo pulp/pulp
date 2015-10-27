@@ -43,7 +43,6 @@ TYPE_REPO_GROUP = 'repo-group-manager'
 TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
 TYPE_REPO_GROUP_PUBLISH = 'repo-group-publish'
 TYPE_REPO_GROUP_QUERY = 'repo-group-query-manager'
-TYPE_REPO_IMPORTER = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH_SCHEDULE = 'repo-publish-schedule-manager'
 TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
@@ -284,13 +283,6 @@ def repo_group_query_manager():
     return get_manager(TYPE_REPO_GROUP_QUERY)
 
 
-def repo_importer_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.importer.RepoImporterManager}
-    """
-    return get_manager(TYPE_REPO_IMPORTER)
-
-
 def repo_distributor_manager():
     """
     @rtype: L{pulp.server.managers.repo.distributor.RepoDistributorManager}
@@ -385,7 +377,6 @@ def initialize():
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
     from pulp.server.managers.repo.group.publish import RepoGroupPublishManager
     from pulp.server.managers.repo.group.query import RepoGroupQueryManager
-    from pulp.server.managers.repo.importer import RepoImporterManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.repo import (RepoPublishScheduleManager,
@@ -427,7 +418,6 @@ def initialize():
         TYPE_REPO_GROUP_DISTRIBUTOR: RepoGroupDistributorManager,
         TYPE_REPO_GROUP_PUBLISH: RepoGroupPublishManager,
         TYPE_REPO_GROUP_QUERY: RepoGroupQueryManager,
-        TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_PUBLISH_SCHEDULE: RepoPublishScheduleManager,
         TYPE_REPO_SYNC_SCHEDULE: RepoSyncScheduleManager,
         TYPE_ROLE: RoleManager,

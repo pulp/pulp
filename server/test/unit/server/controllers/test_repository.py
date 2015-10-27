@@ -205,6 +205,7 @@ class TestDisassociateUnits(unittest.TestCase):
         m_rcu_objects.return_value.delete.assert_called_once()
 
 
+@mock.patch('pulp.server.controllers.repository.importer_controller')
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 @mock.patch('pulp.server.controllers.repository.model.Repository')
 class TestCreateRepo(unittest.TestCase):
@@ -212,7 +213,7 @@ class TestCreateRepo(unittest.TestCase):
     Tests for repo creation.
     """
 
-    def test_invalid_repo_id(self, mock_model, mock_factory):
+    def test_invalid_repo_id(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creating a repository with invalid characters.
         """
@@ -220,7 +221,7 @@ class TestCreateRepo(unittest.TestCase):
         self.assertRaises(pulp_exceptions.InvalidValue, repo_controller.create_repo,
                           'invalid_chars&')
 
-    def test_minimal_creation(self, mock_model, mock_factory):
+    def test_minimal_creation(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creating a repository with only the required parameters.
         """
@@ -230,7 +231,7 @@ class TestCreateRepo(unittest.TestCase):
         repo.save.assert_called_once_with()
         self.assertTrue(repo is mock_model.return_value)
 
-    def test_duplicate_repo(self, mock_model, mock_factory):
+    def test_duplicate_repo(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository that already exists.
         """
@@ -238,39 +239,37 @@ class TestCreateRepo(unittest.TestCase):
         self.assertRaises(pulp_exceptions.DuplicateResource, repo_controller.create_repo,
                           'mock_repo')
 
-    def test_invalid_notes(self, mock_model, mock_factory):
+    def test_invalid_notes(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository that has invalid notes.
         """
         mock_model.return_value.save.side_effect = mongoengine.ValidationError
         self.assertRaises(pulp_exceptions.InvalidValue, repo_controller.create_repo, 'mock_repo')
 
-    def test_create_with_importer_config(self, mock_model, mock_factory):
+    def test_create_with_importer_config(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository with a specified importer configuration.
         """
-        mock_importer_manager = mock_factory.repo_importer_manager.return_value
         repo = repo_controller.create_repo('mock_repo', importer_type_id='mock_type',
                                            importer_repo_plugin_config='mock_config')
-        mock_importer_manager.set_importer.assert_called_once_with('mock_repo', 'mock_type',
-                                                                   'mock_config')
+        mock_imp_ctrl.set_importer.assert_called_once_with(mock_model.return_value, 'mock_type',
+                                                           'mock_config')
         self.assertTrue(repo is mock_model.return_value)
         self.assertEqual(repo.delete.call_count, 0)
 
-    def test_create_with_importer_config_exception(self, mock_model, mock_factory):
+    def test_create_with_importer_config_exception(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository when the importer configuration fails.
         """
         repo_inst = mock_model.return_value
-        mock_importer_manager = mock_factory.repo_importer_manager.return_value
-        mock_importer_manager.set_importer.side_effect = MockException
+        mock_imp_ctrl.set_importer.side_effect = MockException
         repo_inst = mock_model.return_value
         self.assertRaises(MockException, repo_controller.create_repo, 'mock_repo',
                           importer_type_id='id', importer_repo_plugin_config='mock_config')
-        mock_importer_manager.set_importer.assert_called_once_with('mock_repo', 'id', 'mock_config')
+        mock_imp_ctrl.set_importer.assert_called_once_with(repo_inst, 'id', 'mock_config')
         self.assertEqual(repo_inst.delete.call_count, 1)
 
-    def test_create_with_distributor_list_not_list(self, mock_model, mock_factory):
+    def test_create_with_distributor_list_not_list(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository when distributor list is invalid.
         """
@@ -278,16 +277,15 @@ class TestCreateRepo(unittest.TestCase):
                           'mock_repo', distributor_list='non-list')
         self.assertEqual(mock_model.call_count, 0)
 
-    def test_create_with_invalid_dists_in_dist_list(self, mock_model, mock_factory):
+    def test_create_with_invalid_dists_in_dist_list(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository when one of the distributors is invalid.
         """
-        repo_inst = mock_model.return_value
         self.assertRaises(pulp_exceptions.InvalidValue, repo_controller.create_repo,
                           'mock_repo', distributor_list=['not_dict'])
-        repo_inst.delete.assert_called_with()
+        self.assertEqual(mock_model.call_count, 0)
 
-    def test_create_with_valid_distsributors(self, mock_model, mock_factory):
+    def test_create_with_valid_distsributors(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository and the proper configuration of distributors.
         """
@@ -300,7 +298,7 @@ class TestCreateRepo(unittest.TestCase):
             'mock_repo', 'mock_type', 'mock_conf', False, 'mock_dist'
         )
 
-    def test_create_with_distsributor_exception(self, mock_model, mock_factory):
+    def test_create_with_distsributor_exception(self, mock_model, mock_factory, mock_imp_ctrl):
         """
         Test creation of a repository when distributor configuration fails.
         """
@@ -332,13 +330,13 @@ class TestQueueDelete(unittest.TestCase):
         self.assertTrue(async_result is mock_delete.apply_async_with_reservation())
 
 
+@mock.patch('pulp.server.controllers.repository.importer_controller')
 @mock.patch('pulp.server.controllers.repository.TaskResult')
 @mock.patch('pulp.server.controllers.repository.RepoDistributor')
-@mock.patch('pulp.server.controllers.repository.RepoImporter')
 @mock.patch('pulp.server.controllers.repository.RepoSyncResult')
 @mock.patch('pulp.server.controllers.repository.RepoPublishResult')
 @mock.patch('pulp.server.controllers.repository.RepoContentUnit')
-@mock.patch('pulp.server.controllers.repository.model.Repository')
+@mock.patch('pulp.server.controllers.repository.model')
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 class TestDelete(unittest.TestCase):
     """
@@ -346,14 +344,14 @@ class TestDelete(unittest.TestCase):
     """
 
     def test_delete_no_importers_or_distributors(self, mock_factory, mock_model, mock_content,
-                                                 mock_publish, mock_sync, mock_imp, mock_dist,
-                                                 mock_task_result):
+                                                 mock_publish, mock_sync, mock_dist,
+                                                 mock_task_result, mock_imp_ctrl):
         """
         Test a simple repository delete when there are no importers or distributors.
         """
-        mock_imp.get_collection().find_one.return_value = None
+        mock_model.Importer.objects.return_value.first.return_value = None
         mock_dist.get_collection().find.return_value = []
-        mock_repo = mock_model.objects.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_group_manager = mock_factory.repo_group_manager.return_value
         mock_consumer_bind_manager = mock_factory.consumer_bind_manager.return_value
         mock_consumer_bind_manager.find_by_repo.return_value = []
@@ -364,7 +362,7 @@ class TestDelete(unittest.TestCase):
         pymongo_kwargs = {'safe': True}
 
         mock_dist.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
-        mock_imp.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
         mock_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_publish.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_content.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -374,15 +372,15 @@ class TestDelete(unittest.TestCase):
 
     @mock.patch('pulp.server.controllers.repository.consumer_controller')
     def test_delete_imforms_other_collections(self, mock_consumer_ctrl, mock_factory, mock_model,
-                                              mock_content, mock_publish, mock_sync, mock_imp,
-                                              mock_dist, mock_task_result):
+                                              mock_content, mock_publish, mock_sync,
+                                              mock_dist, mock_task_result, mock_imp_ctrl):
         """
         Test that other collections are correctly informed when a repository is deleted.
         """
-        mock_imp.get_collection().find_one.return_value = None
+        mock_model.Importer.objects.return_value.first.return_value = None
         mock_dist_manager = mock_factory.repo_distributor_manager.return_value
         mock_dist.get_collection().find.return_value = [{'id': 'mock_d'}]
-        mock_repo = mock_model.objects.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_group_manager = mock_factory.repo_group_manager.return_value
         mock_consumer_bind_manager = mock_factory.consumer_bind_manager.return_value
         mock_consumer_bind_manager.find_by_repo.return_value = [{
@@ -398,7 +396,7 @@ class TestDelete(unittest.TestCase):
         mock_dist_manager.remove_distributor.assert_called_once_with('foo-repo', 'mock_d')
 
         mock_dist.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
-        mock_imp.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
         mock_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_publish.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_content.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -408,18 +406,17 @@ class TestDelete(unittest.TestCase):
         self.assertTrue(result is mock_task_result.return_value)
 
     def test_delete_with_dist_and_imp_errors(self, mock_factory, mock_model, mock_content,
-                                             mock_publish, mock_sync, mock_imp, mock_dist,
-                                             mock_task_result):
+                                             mock_publish, mock_sync, mock_dist,
+                                             mock_task_result, mock_imp_ctrl):
         """
         Test repository delete when the other collections raise errors.
         """
-        mock_imp_manager = mock_factory.repo_importer_manager.return_value
-        mock_imp.get_collection().find_one.return_value = {'importer_type_id': 'mock'}
+        mock_model.Importer.objects.return_value.first.return_value = {'importer_type_id': 'mock'}
         mock_dist_manager = mock_factory.repo_distributor_manager.return_value
-        mock_imp_manager.remove_importer.side_effect = MockException
+        mock_imp_ctrl.remove_importer.side_effect = MockException
         mock_dist_manager.remove_distributor.side_effect = MockException
         mock_dist.get_collection().find.return_value = [{'id': 'mock_d1'}, {'id': 'mock_d2'}]
-        mock_repo = mock_model.objects.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_group_manager = mock_factory.repo_group_manager.return_value
         mock_consumer_bind_manager = mock_factory.consumer_bind_manager.return_value
 
@@ -440,7 +437,8 @@ class TestDelete(unittest.TestCase):
 
         # Direct db manipulation should still occur with distributor errors.
         mock_dist.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
-        mock_imp.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
         mock_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_publish.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_content.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -457,14 +455,14 @@ class TestDelete(unittest.TestCase):
         self.assertTrue(isinstance(e.child_exceptions[2], MockException))
 
     def test_delete_content_errors(self, mock_factory, mock_model, mock_content, mock_publish,
-                                   mock_sync, mock_imp, mock_dist, mock_task_result):
+                                   mock_sync, mock_dist, mock_task_result, mock_imp_ctrl):
         """
         Test delete repository when the content collection raises errors.
         """
 
-        mock_imp.get_collection().find_one.return_value = None
+        mock_model.Importer.objects.return_value.first.return_value = None
         mock_dist.get_collection().find.return_value = []
-        mock_repo = mock_model.objects.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_group_manager = mock_factory.repo_group_manager.return_value
         mock_consumer_bind_manager = mock_factory.consumer_bind_manager.return_value
         mock_consumer_bind_manager.find_by_repo.return_value = []
@@ -482,7 +480,7 @@ class TestDelete(unittest.TestCase):
         pymongo_kwargs = {'safe': True}
 
         mock_dist.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
-        mock_imp.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
         mock_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_publish.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_content.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -501,15 +499,14 @@ class TestDelete(unittest.TestCase):
     @mock.patch('pulp.server.controllers.repository.pulp_exceptions.PulpCodedException')
     def test_delete_consumer_bind_error(self, mock_coded_exception, mock_pulp_error,
                                         mock_consumer_ctrl, mock_factory, mock_model,
-                                        mock_content, mock_publish, mock_sync, mock_imp, mock_dist,
-                                        mock_task_result):
+                                        mock_content, mock_publish, mock_sync, mock_dist,
+                                        mock_task_result, mock_imp_ctrl):
         """
         Test repository delete when consumer bind collection raises an error.
         """
-
-        mock_imp.get_collection().find_one.return_value = None
+        mock_model.Importer.objects.return_value.first.return_value = None
         mock_dist.get_collection().find.return_value = []
-        mock_repo = mock_model.objects.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_group_manager = mock_factory.repo_group_manager.return_value
         mock_consumer_bind_manager = mock_factory.consumer_bind_manager.return_value
         mock_consumer_bind_manager.find_by_repo.return_value = [{
@@ -523,7 +520,7 @@ class TestDelete(unittest.TestCase):
         pymongo_kwargs = {'safe': True}
 
         mock_dist.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
-        mock_imp.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
+        mock_model.Importer.objects.return_value.delete.assert_called_once_with()
         mock_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_publish.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
         mock_content.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -574,17 +571,17 @@ class TestUpdateRepoAndPlugins(unittest.TestCase):
                           repo_controller.update_repo_and_plugins,
                           mock_repo, 'non-dict', None, None)
 
+    @mock.patch('pulp.server.controllers.repository.importer_controller')
     @mock.patch('pulp.server.controllers.repository.manager_factory')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
-    def test_update_with_importer(self, mock_task_result, mock_factory):
+    def test_update_with_importer(self, mock_task_result, mock_factory, mock_imp_ctrl):
         """
         Ensure that the importer manager is invoked to update the importer when specified.
         """
         mock_repo = mock.MagicMock()
-        mock_imp_manager = mock_factory.repo_importer_manager.return_value
         result = repo_controller.update_repo_and_plugins(mock_repo, None, 'imp_config', None)
-        mock_imp_manager.update_importer_config.assert_called_once_with(mock_repo.repo_id,
-                                                                        'imp_config')
+        mock_imp_ctrl.update_importer_config.assert_called_once_with(mock_repo.repo_id,
+                                                                     'imp_config')
         self.assertTrue(result is mock_task_result.return_value)
         mock_task_result.assert_called_once_with(mock_repo, None, [])
 
@@ -655,36 +652,28 @@ class TestUpdateLastUnitRemoved(unittest.TestCase):
 @mock.patch('pulp.server.controllers.repository.common_utils.get_working_directory')
 @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
 @mock.patch('pulp.server.controllers.repository.plugin_api')
-@mock.patch('pulp.server.controllers.repository.RepoImporter')
-@mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+@mock.patch('pulp.server.controllers.repository.model')
 class TestSync(unittest.TestCase):
     """
     Tests for syncing a repository.
     """
 
-    def test_sync_no_importer(self, mock_repo_qs, mock_importer, *unused):
-        """
-        Raise when sync is requested but there is no importer.
-        """
-        mock_importer.get_collection().find_one.return_value = None
-        self.assertRaises(pulp_exceptions.MissingResource, repo_controller.sync, 'mock_repo')
-
-    def test_sync_no_importer_inst(self, mock_reqo_qs, mock_imp_manager, mock_plugin_api, *unused):
+    def test_sync_no_importer_inst(self, mock_model, mock_plugin_api, *unused):
         """
         Raise when importer is not associated with a plugin.
         """
         mock_plugin_api.get_importer_by_id.side_effect = plugin_exceptions.PluginNotFound
         self.assertRaises(pulp_exceptions.MissingResource, repo_controller.sync, 'mock_repo')
 
-    def test_sync_sigterm_error(self, mock_repo_qs, mock_imp_manager, mock_plugin_api,
+    def test_sync_sigterm_error(self, mock_model, mock_plugin_api,
                                 mock_plug_conf, mock_wd, mock_conduit, mock_result, mock_factory,
                                 mock_now, mock_reg_sig, mock_sys):
         """
         An error_result should be built when there is an error with the sigterm handler.
         """
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
-        mock_imp_inst = mock_imp_manager.get_collection().find_one.return_value
+        mock_imp_inst = mock_model.Importer.objects.get_or_404.return_value
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp, 'mock_conf')
         expected_exp = MockException()
         sync_func = mock_reg_sig.return_value
@@ -700,16 +689,15 @@ class TestSync(unittest.TestCase):
 
     @mock.patch('pulp.server.controllers.repository._queue_auto_publish_tasks')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
-    def test_sync_canceled(self, mock_task_result, mock_spawn_auto_pub, mock_repo_qs,
-                           mock_imp_manager, mock_plugin_api, mock_plug_conf, mock_wd,
-                           mock_conduit, mock_result, mock_factory, mock_now, mock_reg_sig,
-                           mock_sys):
+    def test_sync_canceled(self, mock_task_result, mock_spawn_auto_pub, mock_model,
+                           mock_plugin_api, mock_plug_conf, mock_wd, mock_conduit, mock_result,
+                           mock_factory, mock_now, mock_reg_sig, mock_sys):
         """
         Test the behavior of sync when the task is canceled.
         """
         mock_spawn_auto_pub.return_value = []
         mock_fire_man = mock_factory.event_fire_manager()
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_sync_result = repo_controller.SyncReport(
             success_flag=False, added_count=1, updated_count=2, removed_count=3, summary='sum',
             details='deets')
@@ -718,9 +706,9 @@ class TestSync(unittest.TestCase):
         mock_sync_result.canceled_flag = True
 
         mock_result.RESULT_CANCELED = 'canceled'
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
-        mock_imp_inst = mock_imp_manager.get_collection().find_one.return_value
+        mock_imp_inst = mock_model.Importer.objects.get_or_404.return_value
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp, 'mock_conf')
 
         actual_result = repo_controller.sync('mock_id')
@@ -730,8 +718,7 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'canceled'
         )
-        mock_imp_manager.get_collection().update.assert_called_once_with(
-            {'repo_id': mock_repo.repo_id}, {'$set': {'last_sync': mock_now()}}, safe=True)
+        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
@@ -739,8 +726,8 @@ class TestSync(unittest.TestCase):
 
     @mock.patch('pulp.server.controllers.repository._queue_auto_publish_tasks')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
-    def test_sync_success(self, mock_task_result, mock_spawn_auto_pub, mock_repo_qs,
-                          mock_imp_manager, mock_plugin_api, mock_plug_conf, mock_wd,
+    def test_sync_success(self, mock_task_result, mock_spawn_auto_pub, mock_model,
+                          mock_plugin_api, mock_plug_conf, mock_wd,
                           mock_conduit, mock_result, mock_factory, mock_now, mock_reg_sig,
                           mock_sys):
         """
@@ -748,7 +735,7 @@ class TestSync(unittest.TestCase):
         """
         mock_spawn_auto_pub.return_value = []
         mock_fire_man = mock_factory.event_fire_manager()
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_sync_result = repo_controller.SyncReport(
             success_flag=False, added_count=1, updated_count=2, removed_count=3, summary='sum',
             details='deets')
@@ -758,9 +745,9 @@ class TestSync(unittest.TestCase):
         mock_sync_result.success_flag = True
 
         mock_result.RESULT_SUCCESS = 'success'
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
-        mock_imp_inst = mock_imp_manager.get_collection().find_one.return_value
+        mock_imp_inst = mock_model.Importer.objects.get_or_404.return_value
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp, 'mock_conf')
 
         actual_result = repo_controller.sync('mock_id')
@@ -770,22 +757,21 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'success'
         )
-        mock_imp_manager.get_collection().update.assert_called_once_with(
-            {'repo_id': mock_repo.repo_id}, {'$set': {'last_sync': mock_now()}}, safe=True)
+        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(actual_result is mock_task_result.return_value)
 
     @mock.patch('pulp.server.controllers.repository.TaskResult')
-    def test_sync_failed(self, mock_task_result, mock_repo_qs, mock_imp_manager, mock_plugin_api,
-                         mock_plug_conf, mock_wd, mock_conduit, mock_result, mock_factory, mock_now,
-                         mock_reg_sig, mock_sys):
+    def test_sync_failed(self, mock_task_result, mock_model, mock_plugin_api, mock_plug_conf,
+                         mock_wd, mock_conduit, mock_result, mock_factory, mock_now, mock_reg_sig,
+                         mock_sys):
         """
         Test repository sync when the result is failure.
         """
         mock_fire_man = mock_factory.event_fire_manager()
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_sync_result = repo_controller.SyncReport(
             success_flag=False, added_count=1, updated_count=2, removed_count=3, summary='sum',
             details='deets')
@@ -796,9 +782,9 @@ class TestSync(unittest.TestCase):
         mock_sync_result.canceled_flag = False
         mock_sync_result.success_flag = False
 
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
-        mock_imp_inst = mock_imp_manager.get_collection().find_one.return_value
+        mock_imp_inst = mock_model.Importer.objects.get_or_404.return_value
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp, 'mock_conf')
 
         self.assertRaises(pulp_exceptions.PulpExecutionException, repo_controller.sync, 'mock_id')
@@ -808,8 +794,7 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'failed'
         )
-        mock_imp_manager.get_collection().update.assert_called_once_with(
-            {'repo_id': mock_repo.repo_id}, {'$set': {'last_sync': mock_now()}}, safe=True)
+        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
@@ -819,20 +804,20 @@ class TestSync(unittest.TestCase):
     @mock.patch('pulp.server.controllers.repository._logger')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
     def test_sync_invalid_sync_report(self, mock_task_result, mock_logger, mock_gettext,
-                                      mock_spawn_auto_pub, mock_repo_qs, mock_imp_manager,
-                                      mock_plugin_api, mock_plug_conf, mock_wd, mock_conduit,
-                                      mock_result, mock_factory, mock_now, mock_reg_sig, mock_sys):
+                                      mock_spawn_auto_pub, mock_model, mock_plugin_api,
+                                      mock_plug_conf, mock_wd, mock_conduit, mock_result,
+                                      mock_factory, mock_now, mock_reg_sig, mock_sys):
         """
-        Test repository sync when the sync repoort is not valid.
+        Test repository sync when the sync report is not valid.
         """
         mock_spawn_auto_pub.return_value = []
         mock_fire_man = mock_factory.event_fire_manager()
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_result.RESULT_ERROR = 'err'
 
-        mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
-        mock_imp_inst = mock_imp_manager.get_collection().find_one.return_value
+        mock_imp_inst = mock_model.Importer.objects.get_or_404.return_value
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp, 'mock_conf')
 
         result = repo_controller.sync('mock_id')
@@ -841,8 +826,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), -1, -1, -1, mock_gettext(), mock_gettext(),
             'err'
         )
-        mock_imp_manager.get_collection().update.assert_called_once_with(
-            {'repo_id': mock_repo.repo_id}, {'$set': {'last_sync': mock_now()}}, safe=True)
+        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())

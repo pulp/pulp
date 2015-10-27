@@ -266,37 +266,32 @@ class ImporterScratchPadMixin(object):
         Returns the value set for the importer's private scratchpad for this
         repository. If no value has been set, None is returned.
 
-        @return: value saved for the repository and this importer
-        @rtype:  <serializable>
+        :return: value saved as this importer's scratchpad
+        :rtype:  dict
 
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
+        :raises ImporterConduitException: wraps any exception that may occur in the Pulp server
         """
 
         try:
-            importer_manager = manager_factory.repo_importer_manager()
-            value = importer_manager.get_importer_scratchpad(self.repo_id)
-            return value
+            return model.Importer.objects.get(repo_id=self.repo_id).scratchpad
         except Exception, e:
             _logger.exception(_('Error getting scratchpad for repo [%(r)s]') % {'r': self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
         """
-        Saves the given value to the importer's private scratchpad for this
-        repository. It can later be retrieved in subsequent importer operations
-        through get_scratchpad. The type for the given value is anything that
-        can be stored in the database (string, list, dict, etc.).
+        Saves the given value to the importer's private scratchpad for this repository.
+        If importer is not found, do nothing.
 
-        @param value: will overwrite the existing scratchpad
-        @type  value: <serializable>
+        :param value: will overwrite the existing scratchpad
+        :type  value: dict
 
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
+        :raises ImporterConduitException: wraps any exception that may occur in the Pulp server
         """
         try:
-            importer_manager = manager_factory.repo_importer_manager()
-            importer_manager.set_importer_scratchpad(self.repo_id, value)
+            importer = model.Importer.objects.get(repo_id=self.repo_id)
+            importer.scratchpad = value
+            importer.save()
         except Exception, e:
             _logger.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r': self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]

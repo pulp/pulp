@@ -117,6 +117,7 @@ def ensure_database_indexes():
     Gratuitiously create MongoEngine based models indexes if they do not already exist.
     """
 
+    model.Importer.ensure_indexes()
     model.RepositoryContentUnit.ensure_indexes()
     model.Repository.ensure_indexes()
     model.ReservedResource.ensure_indexes()

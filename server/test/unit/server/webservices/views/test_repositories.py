@@ -29,28 +29,39 @@ class TestMergeRelatedObjects(unittest.TestCase):
     Tests for merge related objects
     """
 
-    def test__merge_related_objects(self):
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer')
+    def test__merge_related_objects(self, mock_imp_model):
         """
         Test that objects are included in the appropriate repositories.
         """
+
+        def mock_serialize(data):
+            """
+            Imitate the serialzer by storing the data in .data.
+            """
+            mock_ret = mock.MagicMock()
+            mock_ret.data = data
+            return mock_ret
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
         mock_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1'},
                           {'repo_id': 'mock1', 'id': 'mock_importer2'},
                           {'repo_id': 'mock2', 'id': 'mock_importer2'}]
 
-        mock_importer_manager = mock.MagicMock()
-        mock_importer_manager.find_by_repo_list.return_value = mock_importers
-        repositories._merge_related_objects('importers', mock_importer_manager, mock_repos)
+        mock_imp_model.objects.return_value = mock_importers
 
+        # Test data is serialized, so just return it.
+        mock_imp_model.serializer.side_effect = mock_serialize
+
+        # If this is available, it will be used. Removed after https://pulp.plan.io/issues/780
+        del mock_imp_model.find_by_repo_list
+
+        repositories._merge_related_objects('importers', mock_imp_model, mock_repos)
         self.assertTrue(len(mock_repos) == 2)
         self.assertEqual(map(itemgetter('id'), mock_repos), ['mock1', 'mock2'])
-        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1',
-                                     '_href': '/v2/repositories/mock1/importers/mock_importer1/'},
-                                    {'repo_id': 'mock1', 'id': 'mock_importer2',
-                                     '_href': '/v2/repositories/mock1/importers/mock_importer2/'}]
-        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2',
-                                     '_href': '/v2/repositories/mock2/importers/mock_importer2/'}]
+        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1'},
+                                    {'repo_id': 'mock1', 'id': 'mock_importer2'}]
+        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2'}]
         mock1_importers = mock_repos[map(itemgetter('id'), mock_repos).index('mock1')]['importers']
         mock2_importers = mock_repos[map(itemgetter('id'), mock_repos).index('mock2')]['importers']
         self.assertEqual(mock1_importers, mock1_expected_importers)
@@ -99,95 +110,6 @@ class TestMergeRelatedObjects(unittest.TestCase):
         self.assertEqual(mock2_importers, [])
 
 
-class TestValidateRepoImporterExistance(unittest.TestCase):
-    """
-    Tests validation of provided repo id and importer id.
-    """
-
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test__get_valid_importer(self, mock_factory, mock_repo_qs):
-        """
-        Test validation repo importer.
-        """
-
-        mock_repo_qs.get_repo_or_missing_resource.return_value = {'mock_repo': 'some_repo'}
-        mock_imp_manager = mock_factory.repo_importer_manager.return_value
-        mock_imp_manager.get_importer.return_value = {'id': 'some_importer'}
-
-        importer = repositories._get_valid_importer('some_repo', 'some_importer')
-        self.assertEquals(importer, {'id': 'some_importer'})
-        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('some_repo')
-        mock_imp_manager.get_importer.assert_called_once_with('some_repo')
-
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
-    def test__get_valid_importer_invalid_repo(self, mock_repo_qs):
-        """
-        Test validation when provided repo is invalid.
-        """
-
-        mock_repo_qs.get_repo_or_missing_resource.return_value.return_value = None
-
-        try:
-            repositories._get_valid_importer('invalid_repo', 'some_importer')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if importer does not exist")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
-        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('invalid_repo')
-
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test__get_valid_importer_no_importer(self, mock_factory, mock_repo_qs):
-        """
-        Test validation when provided importer is invalid.
-        And repo has no importers in general.
-        """
-
-        mock_repo_qs.get_repo_or_missing_resource.return_value = {'mock_repo': 'some_repo'}
-        mock_imp_manager = mock_factory.repo_importer_manager.return_value
-        mock_imp_manager.get_importer.side_effect = pulp_exceptions.MissingResource
-
-        try:
-            repositories._get_valid_importer('some_repo', 'invalid_importer')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if importer does not exist")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
-        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('some_repo')
-        mock_imp_manager.get_importer.assert_called_once_with('some_repo')
-
-    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test__get_valid_importer_invalid_importer(self, mock_factory, mock_repo_qs):
-        """
-        Test validation when provided importer is invalid, i.e. it is different
-        from valid one.
-        """
-
-        mock_repo_qs.get_repo_or_missing_resource.return_value = {'mock_repo': 'some_repo'}
-        mock_imp_manager = mock_factory.repo_importer_manager.return_value
-        mock_imp_manager.get_importer.return_value = {'id': 'some_importer'}
-
-        try:
-            repositories._get_valid_importer('some_repo', 'different_importer')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if importer does not exist")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
-        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('some_repo')
-        mock_imp_manager.get_importer.assert_called_once_with('some_repo')
-
-
 class TestReposView(unittest.TestCase):
     """
     Tests for ReposView.
@@ -208,10 +130,11 @@ class TestReposView(unittest.TestCase):
         repositories._process_repos(mock_repos, False, False, False)
         self.assertEqual(mock_merge.call_count, 0)
 
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    def test__process_repos_with_details(self, mock_serial, mock_merge, mock_factory):
+    def test__process_repos_with_details(self, mock_serial, mock_merge, mock_factory, m_importer):
         """
         Test _process_repos with details='true', assert that processing was called for each repo.
         """
@@ -221,7 +144,7 @@ class TestReposView(unittest.TestCase):
 
         repositories._process_repos(mock_repos, True, False, False)
         mock_merge.assert_has_calls([
-            mock.call('importers', mock_factory.repo_importer_manager(), mock_serial().data),
+            mock.call('importers', m_importer, mock_serial().data),
             mock.call('distributors', mock_factory.repo_distributor_manager(), mock_serial().data)
         ])
 
@@ -508,8 +431,7 @@ class TestRepoResourceView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
         self.assertEqual(mock_merge.call_count, 2)
         mock_merge.assert_has_calls([
-            mock.call('importers', mock_factory.repo_importer_manager(),
-                      (mock_serialize().data,)),
+            mock.call('importers', mock_model.Importer, (mock_serialize().data,)),
             mock.call('distributors', mock_factory.repo_distributor_manager(),
                       (mock_serialize().data,)),
         ])
@@ -567,8 +489,7 @@ class TestRepoResourceView(unittest.TestCase):
         mock_serial.assert_called_once_with(mock_repo)
         mock_resp.assert_called_once_with(mock_serial().data)
         self.assertTrue(response is mock_resp.return_value)
-        mock_merge.assert_called_once_with('importers', mock_factory.repo_importer_manager(),
-                                           (mock_serial().data,))
+        mock_merge.assert_called_once_with('importers', mock_model.Importer, (mock_serial().data,))
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -818,32 +739,31 @@ class TestRepoImportersView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_get_importers(self, mock_factory, mock_resp):
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.serializer')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.objects')
+    def test_get_importers(self, mock_imp_qs, mock_imp_serializer, mock_resp):
         """
         Get importers for a repository.
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = [{"id": "importer", 'repo_id': 'mock_repo'}]
-        mock_factory.repo_importer_manager.return_value.get_importers.return_value = mock_importer
         repo_importers = RepoImportersView()
         response = repo_importers.get(mock_request, 'mock_repo')
-        expected_response = [{'repo_id': 'mock_repo', 'id': 'importer',
-                              '_href': '/v2/repositories/mock_repo/importers/importer/'}]
-        mock_resp.assert_called_once_with(expected_response)
+        mock_imp_serializer.assert_called_once_with(mock_imp_qs.return_value, multiple=True)
+        mock_resp.assert_called_once_with(mock_imp_serializer.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.repositories.repo_importer_manager')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    @mock.patch('pulp.server.webservices.views.repositories.importer_controller')
     @mock.patch('pulp.server.webservices.views.repositories.tags')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_importers(self, mock_factory, mock_tags, mock_importer_manager):
+    def test_post_importers(self, mock_factory, mock_tags, mock_importer_ctrl, mock_repo_qs):
         """
         Associate an importer to a repository.
         """
-
+        m_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'importer_type_id': 'mock_type', 'importer_config': 'conf'})
         repo_importers = RepoImportersView()
@@ -855,12 +775,8 @@ class TestRepoImportersView(unittest.TestCase):
         else:
             raise AssertionError("Associate importer call should raise OperationPostponed")
 
-        mock_task_tags = [mock_tags.resource_tag(), mock_tags.action_tag()]
         self.assertEqual(response.http_status_code, 202)
-        mock_importer_manager.set_importer.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo', 'mock_type'],
-            {'repo_plugin_config': 'conf'}, tags=mock_task_tags
-        )
+        mock_importer_ctrl.queue_set_importer.assert_called_once_with(m_repo, 'mock_type', 'conf')
 
 
 class TestRepoImporterResourceView(unittest.TestCase):
@@ -872,60 +788,30 @@ class TestRepoImporterResourceView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_get_importer(self, mock_validate, mock_resp):
+    @mock.patch('pulp.server.webservices.views.repositories.importer_controller.get_valid_importer')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.serializer')
+    def test_get_importer(self, mock_imp_serializer, mock_validate, mock_resp):
         """
         Get an importer for a repository.
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = {"id": "mock_importer", 'repo_id': 'mock-repo'}
-        mock_validate.return_value = mock_importer
-
         repo_importer = RepoImporterResourceView()
         response = repo_importer.get(mock_request, 'mock_repo', 'mock_importer')
-
-        expected_response = {'repo_id': 'mock-repo', 'id': 'mock_importer',
-                             '_href': '/v2/repositories/mock-repo/importers/mock_importer/'}
-        mock_resp.assert_called_once_with(expected_response)
+        mock_validate.assert_called_once_with('mock_repo', 'mock_importer')
+        mock_imp_serializer.assert_called_once_with(mock_validate.return_value)
+        mock_resp.assert_called_once_with(mock_imp_serializer.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_get_nonexisting_importer(self, mock_validate):
-        """
-        Try to get an importer that doesn't exist.
-        """
-        mock_request = mock.MagicMock()
-        mock_validate.side_effect = pulp_exceptions.MissingResource
-
-        repo_importer = RepoImporterResourceView()
-        try:
-            repo_importer.get(mock_request, 'mock_repo', 'do_not_find_this')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if importer does not exist")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.repositories.repo_importer_manager.remove_importer')
-    @mock.patch('pulp.server.webservices.views.repositories.tags')
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_delete_importer(self, mock_validate, mock_tags, mock_remove_importer):
+    @mock.patch('pulp.server.webservices.views.repositories.importer_controller')
+    def test_delete_importer(self, mock_importer_ctrl):
         """
         Disassociate an importer from a repository.
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = {"id": "mock_importer"}
-        mock_validate.return_value = mock_importer
-        mock_task = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
-
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.delete(mock_request, 'mock_repo', 'mock_importer')
@@ -935,50 +821,19 @@ class TestRepoImporterResourceView(unittest.TestCase):
             raise AssertionError("OperationPostponed should be raised for delete task")
 
         self.assertEqual(response.http_status_code, 202)
-        mock_remove_importer.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo'], tags=mock_task
-        )
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_delete_nonexisting_importer(self, mock_validate):
-        """
-        Attpempt disassociate an importer that is not associated to a repository.
-        """
-
-        mock_request = mock.MagicMock()
-        mock_validate.side_effect = pulp_exceptions.MissingResource
-
-        repo_importer = RepoImporterResourceView()
-        try:
-            repo_importer.delete(mock_request, 'mock_repo', 'not_mock_importer')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if importer is not associated "
-                                 "with the repo.")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
+        mock_importer_ctrl.queue_remove_importer.assert_called_once_with('mock_repo',
+                                                                         'mock_importer')
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.repo_importer_manager.update_importer_config')
-    @mock.patch('pulp.server.webservices.views.repositories.tags')
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_put_update_importer(self, mock_validate, mock_tags, mock_update_importer):
+    @mock.patch('pulp.server.webservices.views.repositories.importer_controller')
+    def test_put_update_importer(self, mock_imp_ctrl):
         """
         Update an importer with all required params.
         """
 
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'importer_config': 'test'})
-        mock_importer = {"id": "mock_importer"}
-        mock_validate.return_value = mock_importer
-        mock_task = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
-
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.put(mock_request, 'mock_repo', 'mock_importer')
@@ -987,49 +842,20 @@ class TestRepoImporterResourceView(unittest.TestCase):
         else:
             raise AssertionError("OperationPostponed should be raised for update importer task")
 
+        mock_imp_ctrl.queue_update_importer_config.assert_called_once_with('mock_repo',
+                                                                           'mock_importer', 'test')
         self.assertEqual(response.http_status_code, 202)
-        mock_update_importer.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo'],
-            {'importer_config': 'test'}, tags=mock_task
-        )
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_put_bad_importer_id(self, mock_validate):
-        """
-        Update an importer with invalid importer_id.
-        """
-
-        mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({'importer_config': 'test'})
-        mock_validate.side_effect = pulp_exceptions.MissingResource
-
-        repo_importer = RepoImporterResourceView()
-        try:
-            repo_importer.put(mock_request, 'mock_repo', 'not_mock_importer')
-        except pulp_exceptions.MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised if the importer for a repo "
-                                 "is not the same as the importer_id passed in")
-
-        self.assertEqual(response.http_status_code, 404)
-        self.assertTrue(response.error_code is error_codes.PLP0009)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories._get_valid_importer')
-    def test_put_no_importer_conf(self, mock_validate):
+    @mock.patch('pulp.server.webservices.views.repositories.importer_controller')
+    def test_put_no_importer_conf(self, mock_importer_ctrl):
         """
         Update an importer with the importer config missing from the request body.
         """
 
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'not_importer_config': 'will fail'})
-        mock_importer = {"id": "mock_importer"}
-        mock_validate.return_value = mock_importer
-
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.put(mock_request, 'mock_repo', 'mock_importer')

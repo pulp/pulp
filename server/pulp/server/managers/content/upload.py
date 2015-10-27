@@ -15,7 +15,6 @@ from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException)
-import pulp.server.managers.factory as manager_factory
 
 
 logger = logging.getLogger(__name__)
@@ -146,10 +145,7 @@ class ContentUploadManager(object):
         :raise MissingResource: if the repository or its importer do not exist
         """
 
-        importer_manager = manager_factory.repo_importer_manager()
-
-        # Will raise an appropriate exception if it cannot be found
-        repo_importer = importer_manager.get_importer(repo_id)
+        repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
 
         # Make sure the importer on the repo can support the indicated type
         importer_types = plugin_api.list_importer_types(repo_importer['importer_type_id'])['types']
@@ -188,9 +184,8 @@ class ContentUploadManager(object):
         """
         # If it doesn't raise an exception, it's good to go
         ContentUploadManager.is_valid_upload(repo_id, unit_type_id)
-        importer_manager = manager_factory.repo_importer_manager()
         repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-        repo_importer = importer_manager.get_importer(repo_id)
+        repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
 
         try:
             importer_instance, plugin_config = plugin_api.get_importer_by_id(

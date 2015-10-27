@@ -183,23 +183,22 @@ class TestDictSerializer(unittest.TestCase):
 class TestImporterSerializer(unittest.TestCase):
 
     def test_meta(self):
-        self.assertEquals(serializers.ImporterSerializer.Meta.mask_fields,
-                          ['config__basic_auth_password', 'config__proxy_password'])
+        self.assertEqual(serializers.ImporterSerializer.Meta.mask_fields,
+                         ['config__basic_auth_password', 'config__proxy_password'])
+        self.assertDictEqual(serializers.ImporterSerializer.Meta.remapped_fields, {'id': '_id'})
 
     @mock.patch('pulp.server.webservices.views.serializers.reverse')
     def test_get_href(self, m_reverse):
-        m_reverse.return_value = 'kiwi'
         instance = {
             'repo_id': 'apple',
-            'id': 'pear'
+            'importer_type_id': 'pear'
         }
         test_serializer = serializers.ImporterSerializer()
         result = test_serializer.get_href(instance)
 
-        self.assertEquals(result, 'kiwi')
-        m_reverse.assert_called_once_with('repo_importer_resource',
-                                          kwargs={'repo_id': 'apple',
-                                                  'importer_id': 'pear'})
+        self.assertTrue(result is m_reverse.return_value)
+        m_reverse.assert_called_once_with(
+            'repo_importer_resource', kwargs={'repo_id': 'apple', 'importer_id': 'pear'})
 
 
 class TestModelSerializer(unittest.TestCase):

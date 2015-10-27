@@ -14,7 +14,6 @@ from pulp.server.db import model
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
-from pulp.server.managers.repo.importer import RepoImporterManager
 import pulp.plugins.types.database as types_database
 
 
@@ -368,99 +367,34 @@ class SearchUnitsMixinTests(unittest.TestCase):
         self.assertEqual(unit, None)
 
 
-class ImporterScratchPadMixinTests(base.PulpServerTests):
+@mock.patch('pulp.server.controllers.importer.model.Importer.objects')
+class ImporterScratchPadMixinTests(unittest.TestCase):
 
     def setUp(self):
-        super(ImporterScratchPadMixinTests, self).setUp()
-        mock_plugins.install()
-
-        self.importer_manager = RepoImporterManager()
-
         self.repo_id = 'repo-1'
         self.conduit = mixins.ImporterScratchPadMixin(self.repo_id, 'test-importer')
-
-        manager_factory.initialize()
-
         self.importer_id = 'isp-importer'
         self.mixin = mixins.ImporterScratchPadMixin(self.repo_id, self.importer_id)
 
-    def clean(self):
-        super(ImporterScratchPadMixinTests, self).clean()
-        types_database.clean()
-        model.Repository.drop_collection()
-
-    def tearDown(self):
-        super(ImporterScratchPadMixinTests, self).tearDown()
-        manager_factory.reset()
-        mock_plugins.reset()
-
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository')
-    def test_get_set_scratchpad(self, mock_repo_qs):
-        """
-        Tests scratchpad calls.
-        """
-
-        # Setup
-        self.importer_manager.set_importer(self.repo_id, 'mock-importer', {})
-
-        # Test - get no scratchpad
-        self.assertTrue(self.conduit.get_scratchpad() is None)
-
-        # Test - set scrathpad
-        value = 'dragon'
-        self.conduit.set_scratchpad(value)
-
-        # Test - get updated value
-        self.assertEqual(value, self.conduit.get_scratchpad())
-
-    def test_scratchpad_with_error(self):
-        # Setup
-        mock_manager = mock.Mock()
-        mock_manager.get_importer_scratchpad.side_effect = Exception()
-        mock_manager.set_importer_scratchpad.side_effect = Exception()
-
-        manager_factory._INSTANCES[manager_factory.TYPE_REPO_IMPORTER] = mock_manager
-
-        # Test
+    def test_scratchpad_with_error(self, mock_importer_qs):
+        mock_importer_qs.get.side_effect = Exception()
+        mock_importer_qs.side_effect = Exception()
         self.assertRaises(mixins.ImporterConduitException, self.conduit.get_scratchpad)
         self.assertRaises(mixins.ImporterConduitException, self.conduit.set_scratchpad, 'foo')
 
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer_scratchpad')
-    def test_get_scratchpad(self, mock_call):
-        # Setup
-        mock_call.return_value = 'sp'
-
-        # Test
+    def test_get_scratchpad(self, mock_importer_qs):
         sp = self.mixin.get_scratchpad()
+        mock_importer_qs.get.assert_called_once_with(repo_id=self.repo_id)
+        self.assertTrue(sp is mock_importer_qs.get.return_value.scratchpad)
 
-        # Verify
-        self.assertEqual(sp, 'sp')
-        self.assertEqual(1, mock_call.call_count)
-
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer_scratchpad')
-    def test_get_scratchpad_server_error(self, mock_call):
-        # Setup
-        mock_call.side_effect = Exception()
-
-        # Test
-        self.assertRaises(mixins.ImporterConduitException, self.mixin.get_scratchpad)
-
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.set_importer_scratchpad')
-    def test_set_scratchpad(self, mock_call):
-        # Test
+    def test_set_scratchpad(self, mock_importer_qs):
+        mock_importer = mock_importer_qs.get.return_value
         self.mixin.set_scratchpad('foo')
+        mock_importer.save.assert_called_once_with()
+        self.assertEqual(mock_importer.scratchpad, 'foo')
 
-        # Verify
-        self.assertEqual(1, mock_call.call_count)
-        self.assertEqual(mock_call.call_args[0][0], self.repo_id)
-        self.assertEqual(mock_call.call_args[0][1], 'foo')
-
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.set_importer_scratchpad')
-    def test_set_scratchpad_server_error(self, mock_call):
-        # Setup
-        mock_call.side_effect = Exception()
-
-        # Test
+    def test_set_scratchpad_server_error(self, mock_importer_qs):
+        mock_importer_qs.get.side_effect = Exception()
         self.assertRaises(mixins.ImporterConduitException, self.mixin.set_scratchpad, 'foo')
 
 
