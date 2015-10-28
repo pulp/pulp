@@ -29,14 +29,80 @@ build that the Pulp build scripts can later assemble. The components within that
 file specify the target koji tag as well as the individual git repositories and branches that
 will be assembled as part of a build. In addition it specifies the directory within
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
-will be published.
+will be published. The file has the following format:
+::
+  koji-target-prefix: pulp-2.7
+  rsync-target-dir: 2.7/dev
+  repositories:
+    - name: pulp
+      external_deps: deps/external_deps.json
+      git_url: git@github.com:pulp/pulp.git
+      git_branch: 2.7-dev
+      version: 2.7.0-0.7.beta
 
-Because there is no way to automatically determine when a particular component needs a new version,
+``koji-target-prefix``: This target needs to exist in koji.
+
+``rsync-target-dir``: The directory inside of
+https://repos.fedorapeople.org/pulp/pulp/testing/automation/ to rsync the RPMs
+when build is complete.
+
+``repositories``: describes a list of Git repositories to include in the build.
+
+Each repository has the following fields:
+
+``name``: name of the project in repository. This should be the same as the name
+of the root directory of a project.
+
+``external_deps``: path inside root directory of repository of the json file describing external dependencies that need to be included in the RPM
+repository at the end of build process.
+
+``git_url``: URL used to clone a project
+
+``git_branch``: Branch or tag to checkout after cloning the git repository
+
+``parent_branch``: This is only used when a project is being built from a hotfix branch. This value
+specifies which branch the current branch should be merged into.
+
+``version``: The version that is being built. When building an alpha, beta, or RC the format is the
+following: X.Y.Z-0.<build_number>.<alpha,beta,rc> When building a GA version the format is
+X.Y.Z-<build_number>
+
+.. note::
+
+   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
+   will always be 0.1, and every build thereafter prior to the release will be the last release plus
+   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
+   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
+   follow the
+   `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
+
+
+Because there is no way to automatically determine when a particular component needs a new version
 or what that version should be, the build-infrastructure assumes that whatever version is specified
-in the rpm spec file is the final version that is required.  If a release build
-of that version has already been built in koji then those RPMs will be used.  Ideally, whenever
-a branch is forked, or the first commit is pushed into a branch after a release build, the version
-should be incremented.
+in the yaml file is the final version that is required.  If a release build of that version had
+already been built in koji then those RPMs will be used. If the version specified in the yaml file
+does not match the version in the spec file, the spec file will be updated and the change will be
+merged forward using the 'ours' strategy.
+
+When to build from a -dev branch, a tag or hotfix branch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All alphas and betas are built from the -dev branch of each project. As changes are added to the
+-dev branch of a project, those changes are released with the next alpha or beta. Once a beta is
+considered stable, the release candidate should be built from the tag that was generated during
+the build process of the stable beta. This guarantees that the RPMs generated will be exactly the
+same as the ones that were part of the stable beta.
+
+In some situations you want to include something extra on top of the stable beta. This could be
+documentation changes or a particular fix for an issue that was found after releasing the first
+release candidate. In these situations either a -dev branch or a hotfix branch is used to do the
+build. The -dev branch can be used only if it contains exactly the changes you'd want to have in
+the build and nothing more. If other changes have been made to the -dev branch, then the changes
+that need to be included in the next release candidate should be put on a hotfix branch that is
+created from the tag that was created when building the previous release candidate. In the
+situation where a hotfix branch is used, the yaml config should include a `parent_branch`. The
+`parent_branch` in this case should be the name of the -dev branch that was used to build the
+betas.
 
 Tools used when building
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -189,10 +255,14 @@ perform the following actions:
 
 #. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
 #. Clone all the required git repositories to the ``working/<repo_name>`` directory.
-#. Check out the appropriate branch for each git repos.
+#. Check out the appropriate branch or tag for each of git repos.
+#. If branch, check that the branch has been merged forward.
+#. Update version in main spec file to match version in yaml config provided.
+#. If on branch, merge forward the spec change using -ours strategy
 #. Find all the spec files in the repositories.
 #. Check koji to determine if the version in the spec already exists in koji.
 #. Test build all the packages that do not already exist in koji.
+#. Optionally, create tag and push it to github.
 #. Optionally release build all the packages that do not already exist in koji.
 #. Download the already existing packages from koji.
 #. Download the scratch built packages from koji.
@@ -204,57 +274,6 @@ build of the 2.6-dev release as specified in ``pulp_packaging/ci/config/releases
 where the results are not pushed to fedorapeople::
 
     $ build-all.py 2.6-dev --disable-push
-
-At this point, you may wish to ensure that the branches are all merged forward to master. This step
-is not strictly required at this point, as we will have to do it again later. However, sometimes
-developers forget to do this, and it may be advantageous to resolve potential merge conflicts before
-tagging.
-
-Here is a quick way to see if everything's been merged forward through to master. You'll likely want
-to edit the BRANCHES list so the branch you are releasing from is the first in the list::
-
-    $ BRANCHES="2.4-release 2.4-testing 2.4-dev 2.5-testing 2.5-dev"; git log origin/master | fgrep -f <(for b in $BRANCHES; do git log origin/$b | head -n1 | awk '{print $NF}' ; done)
-
-Next it is time to raise the version of the branches. This process is different depending on the
-stream you are building.
-
-.. note::
-
-   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
-   will always be 0.1, and every build thereafter prior to the release will be the last release plus
-   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
-   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
-   follow the
-   `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
-
-Checking the versions that will be built
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-You can use the ``build-all.py`` script to validate versions that will be built/downloaded.
-This can be used to double check to ensure that the correct versions have been set in the spec
-files. This command will exit immediately after displaying the versions.::
-
-    $ ./build-all.py 2.6-testing --show-versions
-
-If one of the versions is not what you expect updated it using the ``update-version.py`` script
-and push the change to GitHub.
-
-Updating Versions
-^^^^^^^^^^^^^^^^^
-The ``update-version.py`` script will scan a directory and set the versions inside according to
-your specifications.  For example, to if you have been working in the ``/tmp/pulp_build`` directory
-the following command can be used to update pulp_docker from the release candidate to the release
-build version.::
-
-   $ cd /tmp/pulp_build/pulp_packaging/ci/
-   $ ./build-all.py 2.6-testing --show-versions
-   .. Versions displayed ..
-   $ ./update-version.py --update-type stage /tmp/pulp_build/pulp_packaging
-
-At this point you can inspect the files to ensure the versions are as you expect. The changes
-will still need to be committed and pushed to GitHub before they can be used to build. You can
-rerun the ``build-all.py`` script to check the versions again after your changes have been
-pushed to GitHub.
-
 
 Submit to Koji
 ^^^^^^^^^^^^^^
@@ -270,7 +289,8 @@ see what went wrong. If the build was successful, it will automatically download
 new folder called mash that will be a peer to the ``pulp_packaging`` directory.
 
 At the end it will automatically upload the resulting build to fedorapeople in the directory
-specified in the release config file.
+specified in the release config file. You can disable the push to fedorapeople by supplying
+--disable-push flag.
 
 Now is a good time to start our Jenkins builder to run the unit tests in all the supported operating
 systems. You can configure it to run the tests in the git branch that you are building. Make sure
@@ -289,6 +309,21 @@ You may experience conflicts when you push these changes. If you do, merge your 
 upstream. Then you can ``git push <branch>:<branch>`` after you check the diff to make sure it is
 correct. Lastly, do a new git checkout elsewhere and check that ``tito build --srpm`` is tagged
 correctly and builds.
+
+
+Updating Versions
+^^^^^^^^^^^^^^^^^
+Once you have built the package successfully and merged the changelog forward, you should update
+the versions of all the projects that were just included in the build. You will want to update
+the yaml configuration file that corresponds with the jenkins job that does the nightly builds.
+Most likely it is the same file you were using to build the packages in the previous step. You can
+use ``update-version-and-merge-forward.py`` to update the versions. This script checks out all the
+projects and updates the version in the spec file and in all of the setup.py files.
+
+At this point you can inspect the files to ensure the versions are as you expect. You can rerun the
+script with ``--push`` flag to push the changes to Github.
+
+You should also push the changes in the yaml file inside of pulp_packaging to Github.
 
 Updating Docs
 -------------
@@ -445,12 +480,10 @@ typical email you can use::
 If you have published a stable build, there are a few more items to take care of:
 
 #. Update the "latest release" text on http://www.pulpproject.org/.
-#. Verify that the new documentation was published. You may need to
-   `explicitly build <https://pulp-dev-guide.readthedocs.org/en/latest/contributing/documenting.html#rtd-versions>`_
-   them if they were not automatically build.
+#. Contact Brian or Michael to update the documentation builders to use the new tag.
 #. Update the channel topic in #pulp on Freenode with the new release.
-#. Move all bugs that were in the ``VERIFIED`` state for this target release to ``CLOSED CURRENT
-   RELEASE``.
+#. Move all bugs that were in the ``MODIFIED``, ``ON_QA``, or ``VERIFIED`` state for this target
+   release to ``CLOSED CURRENTRELEASE``.
 
 After publishing a stable build, email pulp-list@redhat.com to announce the new release. Here is
 a typical email you can use::
