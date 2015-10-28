@@ -592,6 +592,47 @@ class TestCeleryBeatLock(unittest.TestCase):
         self.assertEquals(model.CeleryBeatLock._meta['collection'], 'celery_beat_lock')
 
 
+class TestLazyCatalogEntry(unittest.TestCase):
+    """
+    Test the LazyCatalogEntry class.
+    """
+    COLLECTION_NAME = 'lazy_content_catalog'
+
+    def test_model_superclass(self):
+        sample_model = model.LazyCatalogEntry()
+        self.assertTrue(isinstance(sample_model, model.AutoRetryDocument))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.LazyCatalogEntry.path, StringField))
+        self.assertTrue(model.LazyCatalogEntry.path.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.importer_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.importer_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.unit_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.unit_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.unit_type_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.unit_type_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.checksum, StringField))
+        self.assertFalse(model.LazyCatalogEntry.checksum.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.checksum_algorithm, StringField))
+        self.assertFalse(model.LazyCatalogEntry.checksum_algorithm.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry._ns, StringField))
+        self.assertEqual(self.COLLECTION_NAME, model.LazyCatalogEntry._ns.default)
+
+    def test_indexes(self):
+        expected = [[('importer_id', 1)], [('path', -1), ('importer_id', -1)], [(u'_id', 1)]]
+        result = model.LazyCatalogEntry.list_indexes()
+        self.assertEqual(expected, result)
+
+    def test_meta_collection(self):
+        self.assertEquals(model.LazyCatalogEntry._meta['collection'], self.COLLECTION_NAME)
+
+
 class TestDeferredDownload(unittest.TestCase):
     """
     Test the DeferredDownload class.
@@ -599,7 +640,7 @@ class TestDeferredDownload(unittest.TestCase):
 
     def test_model_superclass(self):
         sample_model = model.DeferredDownload()
-        self.assertTrue(isinstance(sample_model, Document))
+        self.assertTrue(isinstance(sample_model, model.AutoRetryDocument))
 
     def test_attributes(self):
         self.assertTrue(isinstance(model.DeferredDownload.unit_id, StringField))
@@ -610,6 +651,10 @@ class TestDeferredDownload(unittest.TestCase):
 
         self.assertTrue(isinstance(model.DeferredDownload._ns, StringField))
         self.assertEqual('deferred_download', model.DeferredDownload._ns.default)
+
+    def test_indexes(self):
+        result = model.DeferredDownload.list_indexes()
+        self.assertEqual([[('unit_id', 1), ('unit_type_id', 1)], [(u'_id', 1)]], result)
 
     def test_meta_collection(self):
         """
