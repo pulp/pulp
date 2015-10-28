@@ -3,7 +3,7 @@ from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR
 from urlparse import urlparse
 import logging
 
-from mongoengine import DoesNotExist
+from mongoengine import DoesNotExist, NotUniqueError
 from nectar import listener as nectar_listener
 from nectar import request as nectar_request
 from twisted.internet import reactor
@@ -13,7 +13,6 @@ from twisted.web.server import NOT_DONE_YET
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
-from pulp.server.controllers import content as content_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
 
 logger = logging.getLogger(__name__)
@@ -131,10 +130,7 @@ class Streamer(resource.Resource):
                 if not catalog_entry:
                     raise DoesNotExist()
                 self._download(catalog_entry, request, responder)
-
-                # Only dispatch the task if the request didn't originate from Pulp.
-                if not request.getHeader(PULP_STREAM_REQUEST_HEADER):
-                    content_controller.queue_download_one(catalog_entry)
+                self._add_deferred_download_entry(request, catalog_entry)
             except DoesNotExist:
                 logger.debug(_('Failed to find a catalog entry with path'
                                ' "{rel}".'.format(rel=catalog_path)))
@@ -165,6 +161,25 @@ class Streamer(resource.Resource):
                                              **catalog_entry.data)
         downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
+
+    @staticmethod
+    def _add_deferred_download_entry(request, catalog_entry):
+        """
+        Add a DeferredDownload document if the request didn't originate from Pulp.
+
+        :param request:         The content request.
+        :type  request:         twisted.web.server.Request
+        :param catalog_entry:   The catalog entry to make an entry for.
+        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
+        """
+        if not request.getHeader(PULP_STREAM_REQUEST_HEADER):
+            try:
+                download = model.DeferredDownload(unit_id=catalog_entry.unit_id,
+                                                  unit_type_id=catalog_entry.unit_type_id)
+                download.save()
+            except NotUniqueError:
+                # There's already an entry for this unit.
+                pass
 
 
 class Responder(object):
