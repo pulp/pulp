@@ -180,7 +180,7 @@ class JSON(object):
         """
         try:
             return json.loads(string)
-        except ValueError, de:
+        except (TypeError, ValueError), de:
             reason = str(de)
             raise DecodingError(reason)
 
@@ -269,7 +269,7 @@ class Policy(object):
         return policy
 
     @staticmethod
-    def validate(key, encoded, signature, **extensions):
+    def validate(key, encoded, signature):
         """
         Decode and validate a policy.
 
