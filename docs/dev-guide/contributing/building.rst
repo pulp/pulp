@@ -14,18 +14,11 @@ For example, the 2.6 releases of pulp will build into the pulp-2.6-<distribution
 You can see the full list of Pulp's Koji tags
 `here <http://koji.katello.org/koji/search?match=glob&type=tag&terms=pulp*>`_.
 
-Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
-Architecture) is built in Koji, it cannot be built again. However, it can be tagged into multiple
-Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
-``pulp-2.4-rhel7`` tag and you wish to add that exact package in the ``pulp-2.5-rhel7`` tag,
-you cannot build it again. Instead, you must tag that package for the new tag. You will see later
-on in this document that Pulp has a tool to help you do this.
-
 Pulp release and testing builds are collections of components that are versioned independently.
 For example, the core Pulp server may be at version 2.6 while pulp_docker may be at version 1.0.
 This assembly is accomplished using release definitions specified in the
-``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the detail of a
-build that the Pulp build scripts can later assemble. The components within that
+``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the details 
+of a build that the Pulp build scripts can later assemble. The components within that
 file specify the target koji tag as well as the individual git repositories and branches that
 will be assembled as part of a build. In addition it specifies the directory within
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
@@ -69,16 +62,21 @@ X.Y.Z-<build_number>
 
 .. note::
 
-   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
+   For pre-release builds, Pulp uses the build number as the release field. The first pre-release build
    will always be 0.1, and every build thereafter prior to the release will be the last release plus
    0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
    is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
    follow the
    `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
 
+Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
+Architecture) is built in Koji, it cannot be built again. However, it can be included in multiple
+Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
+``pulp-2.4-rhel7`` tag and you wish to add that exact package in the ``pulp-2.5-rhel7`` tag, you
+must indicate the build to use in the version field of the release stream's definition file, 
+``2.5-dev.yaml`` in this case.
 
-Because there is no way to automatically determine when a particular component needs a new version
-or what that version should be, the build-infrastructure assumes that whatever version is specified
+Because there is no way to automatically determine when a particular component needs to be rebuilt or what that version should be, the build-infrastructure assumes that whatever version is specified
 in the yaml file is the final version that is required.  If a release build of that version had
 already been built in koji then those RPMs will be used. If the version specified in the yaml file
 does not match the version in the spec file, the spec file will be updated and the change will be
@@ -139,6 +137,8 @@ items.
 In order to publish builds to the Pulp repository, you will need the SSH keypair used to upload
 packages to the fedorapeople.org repository. You can get this from members of the Pulp team.
 
+Additionally you will need to install ``createrepo`` on the machine you will be building from.
+
 Configuring your build environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -159,7 +159,6 @@ Katello CA certificate and your client certificate in your home folder::
 
 Here is an example $HOME/.koji/config file you can use::
 
-    ``
     [koji]
 
     ;configuration for koji cli tool
@@ -186,7 +185,6 @@ Here is an example $HOME/.koji/config file you can use::
 
     ;certificate of the CA that issued the HTTP server certificate
     serverca = ~/.katello-ca.cert
-    ``
 
 Make sure you install your Katello CA certificate and client certificate to the paths listed in the
 example above::
@@ -207,9 +205,6 @@ Next, you should install Tito::
 
 Now you are ready to begin building.
 
-
-Dependencies
-------------
 
 Building Dependencies
 ^^^^^^^^^^^^^^^^^^^^^
@@ -249,9 +244,8 @@ dependency is performed.
 Test Building Pulp and the plugins
 ----------------------------------
 
-Are you ready to build something?  If so, you should `cd` to the ``pulp_packaging/ci``
-directory.  The next step is to perform the build.  There is a helper script that will
-perform the following actions:
+Are you ready to build something? The next step is to use the ``pulp_packaging/ci/build-all.py`` 
+script which will perform the following actions:
 
 #. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
 #. Clone all the required git repositories to the ``working/<repo_name>`` directory.
@@ -262,18 +256,21 @@ perform the following actions:
 #. Find all the spec files in the repositories.
 #. Check koji to determine if the version in the spec already exists in koji.
 #. Test build all the packages that do not already exist in koji.
-#. Optionally, create tag and push it to github.
-#. Optionally release build all the packages that do not already exist in koji.
+#. Optionally (if ``--release`` is passed), create tag and push it to github.
+#. Optionally (if TODO asmacdo is passed), release build all the packages that do not already exist in koji.
 #. Download the already existing packages from koji.
 #. Download the scratch built packages from koji.
 #. Assemble the repositories for all the associated distributions.
-#. Optionally push the repositories to fedorapeople.
+#. Optionally (if ``--disable-push`` is not passed) push the repositories to fedorapeople.
 
-The ``build-all.py`` script can be used to do all of this.  For example, to perform a test
-build of the 2.6-dev release as specified in ``pulp_packaging/ci/config/releases/2.6-dev.py``
-where the results are not pushed to fedorapeople::
+For example, to perform a test build of the 2.6-dev release as specified in 
+``pulp_packaging/ci/config/releases/2.6-dev.py`` where the results are not pushed to 
+fedorapeople::
 
-    $ build-all.py 2.6-dev --disable-push
+    $ ./build-all.py 2.6-dev --disable-push
+
+Note that ``2.6-dev`` indicates to the build script to use the config values specified in 
+``pulp_pachaging/ci/config/releases/2.6-dev.yaml``.
 
 Submit to Koji
 ^^^^^^^^^^^^^^
@@ -292,13 +289,12 @@ At the end it will automatically upload the resulting build to fedorapeople in t
 specified in the release config file. You can disable the push to fedorapeople by supplying
 --disable-push flag.
 
-Now is a good time to start our Jenkins builder to run the unit tests in all the supported operating
-systems. You can configure it to run the tests in the git branch that you are building. Make sure
-these pass before publishing the build.
+If you want to start our Jenkins builder to run the unit tests in all the supported operating
+systems, you should wait until the build script is finished so that it can push the correct tag to GitHub. You can configure Jenkins to run the tests in the git branch or tag that you are building. Make sure these pass before publishing the build.
 
 After the repositories are built, the next step is to merge the tag changes you
-have made all the way forward to master. You may experience merge conflicts with this step. Be
-sure to merge forward on all of the repositories.
+have made all the way forward to master. You will experience merge conflicts with this step if
+you are building a stream that is not the newest stream. Be sure to merge forward on all of the repositories, keeping the changelog entries in chronological order. Be cautious not bring the version bumps in the spec file forward!
 
 .. warning::
    
