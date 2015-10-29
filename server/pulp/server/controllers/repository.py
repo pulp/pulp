@@ -3,7 +3,7 @@ from gettext import gettext as _
 import logging
 import sys
 
-from mongoengine import NotUniqueError, OperationError, ValidationError
+from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
 from bson.objectid import ObjectId, InvalidId
 import celery
 
@@ -282,17 +282,16 @@ def get_importer_by_id(object_id):
     :rtype: tuple
     :raise pulp.plugins.loader.exceptions.PluginNotFound: not found.
     """
-    collection = RepoImporter.get_collection()
     try:
         object_id = ObjectId(object_id)
     except InvalidId:
         raise plugin_exceptions.PluginNotFound()
-    document = collection.find_one({'_id': object_id})
-    if document is None:
+    try:
+        document = model.Importer.objects.get(id=object_id)
+    except DoesNotExist:
         raise plugin_exceptions.PluginNotFound()
-    type_id = document['importer_type_id']
-    plugin, cfg = plugin_api.get_importer_by_id(type_id)
-    call_conf = PluginCallConfiguration(cfg, document['config'])
+    plugin, cfg = plugin_api.get_importer_by_id(document.importer_type_id)
+    call_conf = PluginCallConfiguration(cfg, document.config)
     return plugin, call_conf
 
 

@@ -1158,35 +1158,30 @@ class TestGetImporterById(unittest.TestCase):
     @patch('pulp.server.controllers.repository.ObjectId')
     @patch('pulp.server.controllers.repository.plugin_api')
     @patch('pulp.server.controllers.repository.PluginCallConfiguration')
-    @patch('pulp.server.controllers.repository.RepoImporter.get_collection')
-    def test_call(self, get_collection, call_conf, plugin_api, object_id):
+    @patch('pulp.server.db.model.Importer')
+    def test_call(self, importer, call_conf, plugin_api, object_id):
         _id = '1234'
         cfg = MagicMock()
         plugin = MagicMock()
-        document = {
-            'config': MagicMock(),
-            'importer_type_id': 'dog'
-        }
-        get_collection.return_value.find_one.return_value = document
+        document = MagicMock()
+        importer.objects.get.return_value = document
         plugin_api.get_importer_by_id.return_value = (plugin, cfg)
 
         # test
         _plugin, _conf = repo_controller.get_importer_by_id(_id)
 
         # validation
-        get_collection.assert_called_once_with()
         object_id.assert_called_once_with(_id)
-        get_collection.return_value.find_one.assert_called_once_with(
-            {'_id': object_id.return_value})
-        call_conf.assert_called_once_with(cfg, document['config'])
+        importer.objects.get.assert_called_once_with(id=object_id.return_value)
+        call_conf.assert_called_once_with(cfg, document.config)
         self.assertEqual(_plugin, plugin)
         self.assertEqual(_conf, call_conf.return_value)
 
     @patch('pulp.server.controllers.repository.ObjectId', MagicMock())
-    @patch('pulp.server.controllers.repository.RepoImporter.get_collection')
-    def test_call_document_not_found(self, get_collection):
+    @patch('pulp.server.db.model.Importer')
+    def test_call_document_not_found(self, importer):
         _id = '1234'
-        get_collection.return_value.find_one.return_value = None
+        importer.objects.get.side_effect = mongoengine.DoesNotExist
         self.assertRaises(
             plugin_exceptions.PluginNotFound,
             repo_controller.get_importer_by_id, _id)
@@ -1202,14 +1197,11 @@ class TestGetImporterById(unittest.TestCase):
     @patch('pulp.server.controllers.repository.ObjectId')
     @patch('pulp.server.controllers.repository.plugin_api')
     @patch('pulp.server.controllers.repository.PluginCallConfiguration')
-    @patch('pulp.server.controllers.repository.RepoImporter.get_collection')
-    def test_call_plugin_not_found(self, get_collection, call_conf, plugin_api, object_id):
+    @patch('pulp.server.db.model.Importer')
+    def test_call_plugin_not_found(self, importer, call_conf, plugin_api, object_id):
         _id = '1234'
-        document = {
-            'config': MagicMock(),
-            'importer_type_id': 'dog'
-        }
-        get_collection.return_value.find_one.return_value = document
+        document = MagicMock()
+        importer.objects.get.return_value = document
         plugin_api.get_importer_by_id.side_effect = plugin_exceptions.PluginNotFound
 
         # test
@@ -1218,8 +1210,6 @@ class TestGetImporterById(unittest.TestCase):
             repo_controller.get_importer_by_id, _id)
 
         # validation
-        get_collection.assert_called_once_with()
         object_id.assert_called_once_with(_id)
-        get_collection.return_value.find_one.assert_called_once_with(
-            {'_id': object_id.return_value})
+        importer.objects.get.assert_called_once_with(id=object_id.return_value)
         self.assertFalse(call_conf.called)

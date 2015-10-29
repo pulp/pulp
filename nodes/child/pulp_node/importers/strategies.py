@@ -67,7 +67,7 @@ class Request(object):
         :param summary: A summary report.
         :type summary: pulp_node.importers.reports.SummaryReport
         :param repo: The repository to synchronize.
-        :type repo_id: pulp.server.plugins.model.Repository
+        :type repo: pulp.server.plugins.model.Repository
         """
         self.cancel_event = cancel_event
         self.conduit = conduit
