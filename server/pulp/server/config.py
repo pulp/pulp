@@ -34,6 +34,7 @@ _default_values = {
         'verify_ssl': 'true',
         'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
         'unsafe_autoretry': 'false',
+        'write_concern': 'majority',
     },
     'email': {
         'host': 'localhost',

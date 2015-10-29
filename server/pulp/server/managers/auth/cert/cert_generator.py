@@ -130,7 +130,7 @@ class CertGenerationManager(object):
                  any sensitive information is hashed
         @rtype:  string
         '''
-        return '%s%s%s%s' % (ADMIN_PREFIX, user['login'], ADMIN_SPLITTER, user['id'])
+        return '%s%s%s%s' % (ADMIN_PREFIX, user.login, ADMIN_SPLITTER, str(user.id))
 
     def decode_admin_user(self, encoded_string):
         '''

@@ -14,9 +14,9 @@ from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
 from pulp.server.db import model
+from pulp.server.db.migrations.lib import managers
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
-from pulp.server.managers.auth.user.cud import UserManager
 
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
@@ -117,6 +117,7 @@ def ensure_database_indexes():
     Gratuitiously create MongoEngine based models indexes if they do not already exist.
     """
 
+    model.Importer.ensure_indexes()
     model.RepositoryContentUnit.ensure_indexes()
     model.Repository.ensure_indexes()
     model.ReservedResource.ensure_indexes()
@@ -191,7 +192,7 @@ def _auto_manage_db(options):
     else:
         role_manager.ensure_super_user_role()
 
-    user_manager = UserManager()
+    user_manager = managers.UserManager()
     if options.dry_run:
         if not user_manager.get_admins():
             unperformed_migrations = True

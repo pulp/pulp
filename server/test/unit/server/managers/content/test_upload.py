@@ -8,9 +8,8 @@ import mock
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
+from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import model
-from pulp.server.db.model.auth import User
-from pulp.server.db.model.repository import RepoImporter
 from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
                                     InvalidValue)
 from pulp.server.managers.content.upload import ContentUploadManager
@@ -24,7 +23,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         mock_plugins.install()
 
         self.upload_manager = manager_factory.content_upload_manager()
-        self.importer_manager = manager_factory.repo_importer_manager()
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -36,7 +34,7 @@ class ContentUploadManagerTests(base.PulpServerTests):
     def clean(self):
         base.PulpServerTests.clean(self)
         model.Repository.drop_collection()
-        RepoImporter.get_collection().remove()
+        model.Importer.drop_collection()
 
     def test_save_data_string(self):
 
@@ -143,28 +141,28 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
     # -- import functionality -------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_is_valid_upload(self, mock_repo_qs):
-        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-u'), 'mock-importer', {})
         valid = self.upload_manager.is_valid_upload('repo-u', 'mock-type')
         self.assertTrue(valid)
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_is_valid_upload_missing_or_bad_repo(self, mock_repo_qs):
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty',
                           'mock-type')
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'fake', 'mock-type')
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_is_valid_upload_unsupported_type(self, mock_repo_qs):
-        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-u'), 'mock-importer', {})
         # Test
         self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u',
                           'fake-type')
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_import_uploaded_unit(self, mock_repo_qs):
-        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-u'), 'mock-importer', {})
 
         key = {'key': 'value'}
         metadata = {'k1': 'v1'}
@@ -176,7 +174,7 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
         file_path = self.upload_manager._upload_file_path(upload_id)
 
-        fake_user = User('import-user', '')
+        fake_user = model.User('import-user', '')
         manager_factory.principal_manager().set_principal(principal=fake_user)
 
         response = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata,
@@ -205,17 +203,17 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake',
                           'mock-type', {}, {}, 'irrelevant')
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_import_uploaded_unit_importer_error(self, mock_repo_qs):
-        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-u'), 'mock-importer', {})
         mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = Exception()
         upload_id = self.upload_manager.initialize_upload()
         self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit,
                           'repo-u', 'mock-type', {}, {}, upload_id)
 
-    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
     def test_import_uploaded_unit_importer_error_reraise_pulp_exception(self, mock_repo_qs):
-        self.importer_manager.set_importer('repo-u', 'mock-importer', {})
+        importer_controller.set_importer(mock.MagicMock(repo_id='repo-u'), 'mock-importer', {})
         mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = InvalidValue(['filename'])
         upload_id = self.upload_manager.initialize_upload()
         self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u',

@@ -23,7 +23,7 @@ Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
 #. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
    deployed virtual machine::
    
-      $ sudo yum install ansible nfs-utils vagrant-libvirt
+      $ sudo dnf install ansible nfs-utils vagrant-libvirt
 
 #. You will need to grant the nfsnobody user rx access to the folder that you check out your code
    under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
@@ -107,10 +107,16 @@ follow.
 
 #. `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_ can cache packages that are
    downloaded during provisioning on your host so that the next time you provision you will save
-   some time and bandwidth. To install it, you will need to install some development
-   libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
+   some time and bandwidth. If you are using Fedora 23 or newer, you can install
+   it with dnf::
 
-      $ sudo yum install gcc-c++ libvirt-devel ruby-devel
+      $ sudo dnf install vagrant-cachier
+
+   If you are on an older Fedora release, you will need to install some development
+   libraries so that the ``vagrant plugin install`` command has its dependencies available
+   and use vagrant plugin install::
+
+      $ sudo dnf install gcc-c++ libvirt-devel ruby-devel
       $ vagrant plugin install vagrant-cachier
 
 #. When using Vagrant, you probably have noticed that you are frequently prompted for passwords to
@@ -183,7 +189,7 @@ disable SELinux and install items as root outside of the system package manager.
 Source Code
 -----------
 
-Pulp's code is stored on `GitHub <http://www.github.com/pulp>`_. The repositories should be forked
+Pulp's code is stored on `GitHub <https://www.github.com/pulp>`_. The repositories should be forked
 into your personal GitHub account where all work will be done. Changes are
 submitted to the Pulp team through the pull request process outlined in :doc:`merging`.
 
@@ -196,10 +202,10 @@ pull requests into the Pulp repositories as described in :doc:`merging`.
 Dependencies
 ------------
 
-The easiest way to download the other dependencies is to install Pulp through yum, which will pull in
-the latest dependencies according to the spec file.
+The easiest way to download the other dependencies is to install Pulp through yum or dnf, which
+pulls in the latest dependencies according to the spec file.
 
-#. Download the appropriate repository to at: http://repos.fedorapeople.org/repos/pulp/pulp/
+#. Download the appropriate repository from https://repos.fedorapeople.org/repos/pulp/pulp/
 
    Example for Fedora::
 
@@ -207,9 +213,14 @@ the latest dependencies according to the spec file.
        $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 
 #. Edit the repo and enable the most recent testing repository.
-#. Install the main Pulp groups to get all of the dependencies.
+
+#. When using dnf, install the dependencies with this command.
+   ``$ sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)``
+
+#. When using yum, install the main Pulp groups to get all of the dependencies.
    ``$ sudo yum install @pulp-server-qpid @pulp-admin @pulp-consumer``
-#. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked
+
+#. When using yum, remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 #. Install some additional dependencies for development::

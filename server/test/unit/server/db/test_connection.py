@@ -2,6 +2,9 @@ import unittest
 
 from mock import call, patch, MagicMock, Mock
 from pymongo.errors import AutoReconnect
+import unittest2
+
+from pulp.common import error_codes
 
 from pulp.devel import mock_config
 from pulp.server import config
@@ -9,11 +12,14 @@ from pulp.server.db import connection
 from pulp.server.exceptions import PulpCodedException
 
 
+MONGO_MIN_TEST_VERSION = "2.4.0"
+
+
 class MongoEngineConnectionError(Exception):
     pass
 
 
-class TestDatabaseSeeds(unittest.TestCase):
+class TestDatabaseSeeds(unittest2.TestCase):
 
     def test_seeds_default(self):
         self.assertEqual(config._default_values['database']['seeds'], 'localhost:27017')
@@ -56,7 +62,8 @@ class TestDatabaseSeeds(unittest.TestCase):
                                                                             'secondhost:5678'],
                                               database)
 
-    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678',
+                                     'replica_set': 'fakeReplica'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -64,10 +71,7 @@ class TestDatabaseSeeds(unittest.TestCase):
     def test_seeds_from_config(self, mock_connect_seeds, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
-        seeds = "firsthost:1234,secondhost:5678"
         replica_set = 'fakeReplica'
-        config.config.set('database', 'seeds', seeds)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -77,6 +81,31 @@ class TestDatabaseSeeds(unittest.TestCase):
                                                'replicaSet': replica_set}, ['firsthost:1234',
                                                                             'secondhost:5678'],
                                               database)
+
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
+    @patch('pulp.server.db.connection._CONNECTION', None)
+    @patch('pulp.server.db.connection._DATABASE', None)
+    @patch('pulp.server.db.connection.mongoengine')
+    @patch('pulp.server.db.connection._connect_to_one_of_seeds')
+    def test_multiple_seeds_no_replica_set(self, mock_connect_seeds, mock_mongoengine):
+        mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+        mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
+        with self.assertRaises(PulpCodedException) as connection_error:
+            connection.initialize()
+        self.assertEqual(connection_error.exception.error_code.message, error_codes.PLP0041.message)
+
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678',
+                                     'replica_set': 'fakeReplica', 'write_concern': 'blah'}})
+    @patch('pulp.server.db.connection._CONNECTION', None)
+    @patch('pulp.server.db.connection._DATABASE', None)
+    @patch('pulp.server.db.connection.mongoengine')
+    @patch('pulp.server.db.connection._connect_to_one_of_seeds')
+    def test_invalid_write_concern(self, mock_connect_seeds, mock_mongoengine):
+        mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+        mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
+        with self.assertRaises(PulpCodedException) as connection_error:
+            connection.initialize()
+        self.assertEqual(connection_error.exception.error_code.message, error_codes.PLP0043.message)
 
 
 class TestDatabaseName(unittest.TestCase):
@@ -472,7 +501,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
         """
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
+                                                              MONGO_MIN_TEST_VERSION}
         config.config.set('database', 'name', 'nbachamps')
         config.config.set('database', 'username', 'larrybird')
         config.config.set('database', 'password', 'celtics1981')
@@ -498,7 +527,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
         """
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
+                                                              MONGO_MIN_TEST_VERSION}
         config.config.set('database', 'name', 'nbachamps')
         config.config.set('database', 'username', 'larrybird')
         config.config.set('database', 'password', 'celtics1981')
@@ -529,8 +558,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
         """
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
-
+                                                              MONGO_MIN_TEST_VERSION}
         connection.initialize()
 
         self.assertFalse(connection._DATABASE.authenticate.called)
@@ -545,8 +573,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
         """
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
-
+                                                              MONGO_MIN_TEST_VERSION}
         # ensure no exception is raised (redmine #708)
         connection.initialize()
 
@@ -555,8 +582,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
     def test_initialize_password_no_username(self, mock_mongoengine):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
-
+                                                              MONGO_MIN_TEST_VERSION}
         self.assertRaises(Exception, connection.initialize)
 
     @patch('pulp.server.db.connection.OperationFailure', new=MongoEngineConnectionError)
@@ -564,7 +590,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
     def test_authentication_fails_with_RuntimeError(self, mock_mongoengine):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
-                                                              connection.MONGO_MINIMUM_VERSION}
+                                                              MONGO_MIN_TEST_VERSION}
         exc = MongoEngineConnectionError()
         exc.code = 18
         mock_mongoengine.connection.get_db.side_effect = exc

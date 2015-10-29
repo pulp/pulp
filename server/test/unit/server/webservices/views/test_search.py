@@ -5,6 +5,7 @@ import unittest
 
 import mock
 from django import http
+from pymongo.errors import OperationFailure
 
 from base import assert_auth_READ
 from pulp.server import exceptions
@@ -24,10 +25,11 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         request = mock.MagicMock()
         # Simulate an empty POST body
-        request.GET = {'field': ['name', 'id'], 'filters': '{"name":"admin"}'}
+        request.GET = {'field': '["name", "id"]', 'filters': '{"name":"admin"}'}
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
@@ -54,6 +56,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         request = mock.MagicMock()
         # Simulate an empty POST body
@@ -97,6 +100,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         request = mock.MagicMock()
         # Simulate an empty POST body
@@ -136,6 +140,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -159,6 +164,8 @@ class TestSearchView(unittest.TestCase):
         class FakeSearchView(search.SearchView):
             response_builder = mock.MagicMock(return_value=42)
             model = mock.MagicMock()
+            # If the model hasattr serializer it will be used.
+            del model.serializer
 
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -202,6 +209,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash', 'id']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -225,6 +233,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
+            del model.serializer
 
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -265,6 +274,17 @@ class TestSearchView(unittest.TestCase):
             {'money': {'$gt': 1000000}})
         self.assertEqual([c[1][0] for c in FakeSearchView.serializer.mock_calls],
                          ['big money', 'bigger money'])
+
+    def test__generate_response_with_invalid_criteria(self):
+        """
+        Test that a pymongo exception is handled correctly.
+        """
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+
+        query = {'filters': {'money': {'$gt': 1000000}}}
+        FakeSearchView.model.objects.find_by_criteria.side_effect = OperationFailure('dang')
+        self.assertRaises(exceptions.InvalidValue, FakeSearchView._generate_response, query, {})
 
 
 class TestParseArgs(unittest.TestCase):

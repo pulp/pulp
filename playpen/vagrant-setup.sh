@@ -2,16 +2,6 @@
 
 . ~/.bashrc
 
-# install rpms, then remove pulp*
-echo "installing RPMs"
-sudo dnf install -y git python-gofer-qpid python-qpid python-qpid-qmf \
-                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
-
-echo "Starting qpidd"
-sudo systemctl enable qpidd
-sudo systemctl start qpidd
-
-
 pushd devel
 for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
   if [ -d $r ]; then
@@ -47,9 +37,36 @@ debug: true
 endpoint: pulp-devel:5001
 EOF
 
-    mkdir -p metadata
-    sudo ln -s $HOME/devel/crane/metadata/ /var/lib/pulp/published/docker/app
+    mkdir -p metadata/v1 metadata/v2
+    sudo mkdir -p /var/lib/pulp/published/docker/v1 /var/lib/pulp/published/docker/v2
+    sudo chown apache:apache /var/lib/pulp/published/docker/v1
+    sudo chown apache:apache /var/lib/pulp/published/docker/v2
+    sudo ln -s $HOME/devel/crane/metadata/v1 /var/lib/pulp/published/docker/v1/app
+    sudo ln -s $HOME/devel/crane/metadata/v2 /var/lib/pulp/published/docker/v2/app
 
+    deactivate
+    popd
+fi
+# If pulp-smash is present, set it up
+if [ -d pulp-smash ]; then
+    echo "installing pulp-smash and its dependencies"
+    pushd pulp-smash
+    ! mkvirtualenv --system-site-packages pulp-smash
+    workon pulp-smash
+    setvirtualenvproject
+    # Install dependencies
+    pip install -r requirements.txt -r requirements-dev.txt
+    python setup.py develop
+    mkdir -p $HOME/.config/pulp_smash/
+    cat << EOF > $HOME/.config/pulp_smash/settings.json
+{
+    "default": {
+        "base_url": "https://dev.example.com",
+        "auth": ["admin", "admin"],
+        "verify": false
+    }
+}
+EOF
     deactivate
     popd
 fi

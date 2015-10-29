@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.24
-Release:        9.pulp%{?dist}
+Release:        10.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -22,6 +22,7 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 Patch0:         1212200.patch
 Patch1:         qpid_fixes.patch
 Patch2:         1168.patch
+Patch3:         1245.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -120,6 +121,7 @@ This subpackage is for python3
 
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt

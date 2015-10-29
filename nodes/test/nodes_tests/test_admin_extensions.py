@@ -1,13 +1,19 @@
+import os
+import sys
+
 from mock import patch, Mock, call
+
+from base import ClientTests, Response
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
 from pulp.common.constants import PRIMARY_ID
 from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
-from base import ClientTests, Response
-from pulp_node.extensions.admin.commands import *
-from pulp_node.extensions.admin.rendering import ProgressTracker
-from pulp_node.error import *
+from pulp_node import constants, error
+from pulp_node.extensions.admin import commands
+from pulp_node.extensions.admin.rendering import ProgressTracker, UpdateRenderer
 from pulp_node.reports import RepositoryReport
 from pulp_node.handlers.reports import SummaryReport
 
@@ -31,7 +37,6 @@ REPO_DISABLE_API = 'pulp.bindings.repository.RepositoryDistributorAPI.delete'
 BIND_API = 'pulp.bindings.consumer.BindingsAPI.bind'
 UNBIND_API = 'pulp.bindings.consumer.BindingsAPI.unbind'
 POLLING_API = 'pulp.client.commands.polling.PollingCommand.poll'
-
 
 
 CONSUMERS_ONLY = [
@@ -94,7 +99,7 @@ MIXED_DISTRIBUTORS = [
 UPDATE_REPORT = {
     'succeeded': True,
     'details': {
-        'errors':[],
+        'errors': [],
         'repositories': [
             RepositoryReport('repo_1', RepositoryReport.ADDED)
         ]
@@ -107,7 +112,7 @@ class TestListCommands(ClientTests):
     @patch(CONSUMER_LIST_API, return_value=Response(200, CONSUMERS_ONLY))
     def test_list_nodes_no_nodes(self, mock_binding):
         # Test
-        command = NodeListCommand(self.context)
+        command = commands.NodeListCommand(self.context)
         command.run(fields=None)
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
@@ -118,48 +123,48 @@ class TestListCommands(ClientTests):
     @patch(CONSUMER_LIST_API, return_value=Response(200, CONSUMERS_AND_NODES))
     def test_list_nodes(self, mock_binding):
         # Test
-        command = NodeListCommand(self.context)
+        command = commands.NodeListCommand(self.context)
         command.run(fields=None)
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
         self.assertEqual(len(lines), 9)
-        self.assertTrue(NODE_LIST_TITLE in lines[1])
+        self.assertTrue(commands.NODE_LIST_TITLE in lines[1])
 
     @patch(CONSUMER_LIST_API, return_value=Response(200, NODES_WITH_BINDINGS))
     def test_list_nodes_with_bindings(self, mock_binding):
         # Test
-        command = NodeListCommand(self.context)
+        command = commands.NodeListCommand(self.context)
         command.run(fields=None)
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
         self.assertEqual(len(lines), 16)
-        self.assertTrue(NODE_LIST_TITLE in lines[1])
+        self.assertTrue(commands.NODE_LIST_TITLE in lines[1])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
     @patch(DISTRIBUTORS_API, return_value=Response(200, NON_NODES_DISTRIBUTORS_ONLY))
     def test_list_repos_disabled_only(self, mock_binding, *unused):
         # Test
-        command = NodeListRepositoriesCommand(self.context)
+        command = commands.NodeListRepositoriesCommand(self.context)
         command.run(details=True, summary=False)
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines
         self.assertEqual(len(lines), 4)
-        self.assertTrue(REPO_LIST_TITLE in lines[1])
+        self.assertTrue(commands.REPO_LIST_TITLE in lines[1])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
     @patch(DISTRIBUTORS_API, return_value=Response(200, MIXED_DISTRIBUTORS))
     def test_list_repos_with_enabled(self, mock_binding, *unused):
         # Test
-        command = NodeListRepositoriesCommand(self.context)
+        command = commands.NodeListRepositoriesCommand(self.context)
         command.run(details=True, summary=False)
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines
         self.assertEqual(len(lines), 9)
-        self.assertTrue(REPO_LIST_TITLE in lines[1])
+        self.assertTrue(commands.REPO_LIST_TITLE in lines[1])
 
 
 class TestPublishCommand(ClientTests):
@@ -170,13 +175,12 @@ class TestPublishCommand(ClientTests):
     @patch(PUBLISH_API, return_value=Response(200, {}))
     def test_publish(self, mock_binding, *unused):
         # Test
-        command = NodeRepoPublishCommand(self.context)
-        keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
+        command = commands.NodeRepoPublishCommand(self.context)
+        keywords = {commands.OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR, {})
-
 
     @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
@@ -184,11 +188,11 @@ class TestPublishCommand(ClientTests):
     @patch(PUBLISH_API, return_value=Response(200, {}))
     def test_publish_not_enabled(self, mock_binding, *unused):
         # Test
-        command = NodeRepoPublishCommand(self.context)
-        keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
+        command = commands.NodeRepoPublishCommand(self.context)
+        keywords = {commands.OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
         self.assertFalse(mock_binding.called)
 
 
@@ -198,10 +202,10 @@ class TestActivationCommands(ClientTests):
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
     def test_activate(self, mock_binding, *unused):
         # Test
-        command = NodeActivateCommand(self.context)
+        command = commands.NodeActivateCommand(self.context)
         keywords = {
-            OPTION_CONSUMER_ID.keyword: NODE_ID,
-            STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
+            commands.OPTION_CONSUMER_ID.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
         }
         command.run(**keywords)
         # Verify
@@ -211,17 +215,17 @@ class TestActivationCommands(ClientTests):
                 constants.STRATEGY_NOTE_KEY: constants.DEFAULT_STRATEGY
             }
         }
-        self.assertTrue(OPTION_CONSUMER_ID in command.options)
+        self.assertTrue(commands.OPTION_CONSUMER_ID in command.options)
         mock_binding.assert_called_with(NODE_ID, delta)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
     def test_activate_already_activated(self, mock_binding, *unused):
         # Setup
-        command = NodeActivateCommand(self.context)
+        command = commands.NodeActivateCommand(self.context)
         keywords = {
-            OPTION_CONSUMER_ID.keyword: NODE_ID,
-            STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
+            commands.OPTION_CONSUMER_ID.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY
         }
         command.run(**keywords)
         # Verify
@@ -231,12 +235,12 @@ class TestActivationCommands(ClientTests):
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
     def test_deactivate(self, mock_binding, mock_activated):
         # Test
-        command = NodeDeactivateCommand(self.context)
-        keywords = {NODE_ID_OPTION.keyword: NODE_ID}
+        command = commands.NodeDeactivateCommand(self.context)
+        keywords = {commands.NODE_ID_OPTION.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
         delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
-        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
         mock_activated.assert_called_with(self.context, NODE_ID)
         mock_binding.assert_called_with(NODE_ID, delta)
 
@@ -244,11 +248,11 @@ class TestActivationCommands(ClientTests):
     @patch(NODE_ACTIVATE_API, return_value=Response(200, {}))
     def test_deactivate_not_activated(self, mock_binding, mock_activated):
         # Test
-        command = NodeDeactivateCommand(self.context)
-        keywords = {NODE_ID_OPTION.keyword: NODE_ID}
+        command = commands.NodeDeactivateCommand(self.context)
+        keywords = {commands.NODE_ID_OPTION.keyword: NODE_ID}
         command.run(**keywords)
         # Verify
-        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
         mock_activated.assert_called_with(self.context, NODE_ID)
         self.assertFalse(mock_binding.called)
 
@@ -257,80 +261,81 @@ class TestEnableCommands(ClientTests):
 
     @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(REPO_ENABLE_API, return_value=(200, {}))
-    def test_enable(self, mock_binding, *unused):
+    def test_enable_check_disabled(self, mock_binding, *unused):
         # Test
-        command = NodeRepoEnableCommand(self.context)
+        command = commands.NodeRepoEnableCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            AUTO_PUBLISH_OPTION.keyword: 'true',
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.AUTO_PUBLISH_OPTION.keyword: 'true',
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
-        mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR, {},
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.AUTO_PUBLISH_OPTION in command.options)
+        mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR, {},
                                         True, constants.HTTP_DISTRIBUTOR)
 
     @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(REPO_ENABLE_API, return_value=(200, {}))
     def test_enable_no_auto_publish(self, mock_binding, *unused):
         # Test
-        command = NodeRepoEnableCommand(self.context)
+        command = commands.NodeRepoEnableCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            AUTO_PUBLISH_OPTION.keyword: 'false',
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.AUTO_PUBLISH_OPTION.keyword: 'false',
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
-        mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR, {},
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.AUTO_PUBLISH_OPTION in command.options)
+        mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR, {},
                                         False, constants.HTTP_DISTRIBUTOR)
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(REPO_ENABLE_API, return_value=(200, {}))
-    def test_enable(self, mock_binding, *unused):
+    def test_enable_enabled_repo(self, mock_binding, *unused):
         # Test
-        command = NodeRepoEnableCommand(self.context)
+        command = commands.NodeRepoEnableCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            AUTO_PUBLISH_OPTION.keyword: 'true',
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.AUTO_PUBLISH_OPTION.keyword: 'true',
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(AUTO_PUBLISH_OPTION in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.AUTO_PUBLISH_OPTION in command.options)
         self.assertFalse(mock_binding.called)
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(REPO_DISABLE_API, return_value=(200, {}))
     def test_disable(self, mock_binding, *unused):
         # Test
-        command = NodeRepoDisableCommand(self.context)
-        keywords = {OPTION_REPO_ID.keyword: REPOSITORY_ID}
+        command = commands.NodeRepoDisableCommand(self.context)
+        keywords = {commands.OPTION_REPO_ID.keyword: REPOSITORY_ID}
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        mock_binding.assert_called_with(REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)
 
 
 class TestBindCommands(ClientTests):
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind(self, mock_binding, *unused):
         # Test
-        command = NodeBindCommand(self.context)
+        command = commands.NodeBindCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            NODE_ID_OPTION.keyword: NODE_ID,
-            STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY,
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.DEFAULT_STRATEGY,
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(NODE_ID_OPTION in command.options)
-        self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -339,20 +344,21 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=True)
     @patch(BIND_API, return_value=Response(200, {}))
     def test_bind_with_strategy(self, mock_binding, *unused):
         # Test
-        command = NodeBindCommand(self.context)
+        command = commands.NodeBindCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            NODE_ID_OPTION.keyword: NODE_ID,
-            STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(NODE_ID_OPTION in command.options)
-        self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
         mock_binding.assert_called_with(
             NODE_ID,
             REPOSITORY_ID,
@@ -361,35 +367,58 @@ class TestBindCommands(ClientTests):
             binding_config={constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY})
 
     @patch(NODE_ACTIVATED_CHECK, return_value=False)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
     @patch(BIND_API, return_value=Response(200, {}))
-    def test_bind_not_activated(self, mock_binding, *unused):
+    def test_bind_not_activated(self, mock_binding, mock_repo, mock_node):
         # Test
-        command = NodeBindCommand(self.context)
+        command = commands.NodeBindCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            NODE_ID_OPTION.keyword: NODE_ID,
-            STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(NODE_ID_OPTION in command.options)
-        self.assertTrue(STRATEGY_OPTION in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertFalse(mock_repo.called)
+        self.assertFalse(mock_binding.called)
+
+    @patch(NODE_ACTIVATED_CHECK, return_value=True)
+    @patch(REPO_ENABLED_CHECK, return_value=False)
+    @patch(BIND_API, return_value=Response(200, {}))
+    def test_bind_not_enabled(self, mock_binding, mock_repo, mock_node):
+        # Test
+        command = commands.NodeBindCommand(self.context)
+        keywords = {
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.STRATEGY_OPTION.keyword: constants.MIRROR_STRATEGY,
+        }
+        command.run(**keywords)
+        # Verify
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.STRATEGY_OPTION in command.options)
+        self.assertTrue(mock_node.called)
+        self.assertTrue(mock_repo.called)
         self.assertFalse(mock_binding.called)
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)
     @patch(UNBIND_API, return_value=Response(200, {}))
     def test_unbind(self, mock_binding, *unused):
         # Test
-        command = NodeUnbindCommand(self.context)
+        command = commands.NodeUnbindCommand(self.context)
         keywords = {
-            OPTION_REPO_ID.keyword: REPOSITORY_ID,
-            NODE_ID_OPTION.keyword: NODE_ID,
+            commands.OPTION_REPO_ID.keyword: REPOSITORY_ID,
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
         }
         command.run(**keywords)
         # Verify
-        self.assertTrue(OPTION_REPO_ID in command.options)
-        self.assertTrue(NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.OPTION_REPO_ID in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
         mock_binding.assert_called_with(NODE_ID, REPOSITORY_ID, constants.HTTP_DISTRIBUTOR)
 
 
@@ -400,11 +429,11 @@ class TestUpdateCommands(ClientTests):
     @patch(NODE_UPDATE_API, return_value=Response(202, {}))
     def test_update(self, mock_update, mock_activated, *unused):
         # Test
-        command = NodeUpdateCommand(self.context)
+        command = commands.NodeUpdateCommand(self.context)
         keywords = {
-            NODE_ID_OPTION.keyword: NODE_ID,
-            MAX_BANDWIDTH_OPTION.keyword: MAX_BANDWIDTH,
-            MAX_CONCURRENCY_OPTION.keyword: MAX_CONCURRENCY
+            commands.NODE_ID_OPTION.keyword: NODE_ID,
+            commands.MAX_BANDWIDTH_OPTION.keyword: MAX_BANDWIDTH,
+            commands.MAX_CONCURRENCY_OPTION.keyword: MAX_CONCURRENCY
         }
         command.run(**keywords)
         # Verify
@@ -413,9 +442,9 @@ class TestUpdateCommands(ClientTests):
             constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD: MAX_BANDWIDTH,
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD: MAX_CONCURRENCY,
         }
-        self.assertTrue(NODE_ID_OPTION in command.options)
-        self.assertTrue(MAX_BANDWIDTH_OPTION in command.options)
-        self.assertTrue(MAX_CONCURRENCY_OPTION in command.options)
+        self.assertTrue(commands.NODE_ID_OPTION in command.options)
+        self.assertTrue(commands.MAX_BANDWIDTH_OPTION in command.options)
+        self.assertTrue(commands.MAX_CONCURRENCY_OPTION in command.options)
         mock_update.assert_called_with(NODE_ID, units=units, options=options)
         mock_activated.assert_called_with(self.context, NODE_ID)
 
@@ -446,7 +475,7 @@ class TestRenderers(ClientTests):
         for r in summary_report.repository.values():
             r.action = RepositoryReport.ADDED
         summary_report.errors.append(
-            UnitDownloadError('http://abc/x.rpm', repo_ids[0], dict(response_code=401)))
+            error.UnitDownloadError('http://abc/x.rpm', repo_ids[0], dict(response_code=401)))
         handler_report.set_failed(details=summary_report.dict())
         renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
         renderer.render()
@@ -552,7 +581,8 @@ class TestProgressTracking(ClientTests):
         }
         progress_bar = Mock()
         ProgressTracker._render(report, progress_bar)
-        progress_bar.render.assert_called_with(5, 10, 'Step: Adding Units\n(5/10) Add unit: bar.unit')
+        msg = 'Step: Adding Units\n(5/10) Add unit: bar.unit'
+        progress_bar.render.assert_called_with(5, 10, msg)
 
     def test_render_not_adding_units(self):
         report = {

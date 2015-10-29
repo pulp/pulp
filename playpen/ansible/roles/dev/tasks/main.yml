@@ -11,22 +11,6 @@
       line: "StrictModes no"
   notify: restart sshd
 
-- name: Install packages
-  dnf: name={{ item }} state=present
-  with_items:
-      - dstat
-      - fpaste
-      - iotop
-      - jnettop
-      - koji
-      - python-django-bash-completion
-      - python-ipdb
-      - python-virtualenvwrapper
-      - redhat-lsb-core
-      - rpm-build
-      - tito
-      - yum-utils
-
 - name: Install Pulp dnf repository
   get_url:
       url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
@@ -35,6 +19,29 @@
 - name: Enable Pulp 2.7 beta repository
   command: yum-config-manager --enable pulp-2.7-beta
   when: pulp_27_beta_repo_enabled == false
+
+- name: Install packages
+  dnf: name={{ item }} state=present
+  with_items:
+      - git
+      - dstat
+      - fpaste
+      - gcc
+      - iotop
+      - jnettop
+      - koji
+      - python-django-bash-completion
+      - python-gofer-qpid
+      - python-ipdb
+      - python-qpid
+      - python-qpid-qmf
+      - python-setuptools
+      - python-sphinx
+      - python-virtualenvwrapper
+      - redhat-lsb-core
+      - rpm-build
+      - tito
+      - yum-utils
 
 - name: Install custom ~/.bashrc
   copy: src=bashrc dest=/home/{{ ansible_env.SUDO_USER }}/.bashrc

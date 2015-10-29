@@ -67,6 +67,19 @@ class CriteriaQuerySet(QuerySet):
                 # if post_save() is not defined for this particular document, that's ok
                 pass
 
+    def get_or_404(self, **kwargs):
+        """
+        Generally allow querysets to raise a MissingResource exception if getting an object that
+        does not exist.
+
+        :param kwargs: keyword arguments that specify field of the document and value it should be
+        :raise pulp_exceptions.MissingResource: if no objects are found
+        """
+        try:
+            return self.get(**kwargs)
+        except DoesNotExist:
+            raise pulp_exceptions.MissingResource(**kwargs)
+
 
 class RepoQuerySet(CriteriaQuerySet):
     """

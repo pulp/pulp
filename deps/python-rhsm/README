@@ -1,4 +1,0 @@
-Team owner: rbarlow
-
-pulp requires python-rhsm, which is not available in CentOS 6 or 7. We do not currently carry
-the most recent version of python-rhsm. If it is found that we need to, we can update.

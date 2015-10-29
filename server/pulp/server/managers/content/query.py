@@ -6,6 +6,7 @@ import os
 from pulp.plugins.types import database as content_types_db
 from pulp.plugins.util.misc import paginate
 from pulp.server import config as pulp_config
+from pulp.server.controllers import units as units_controller
 from pulp.server.exceptions import InvalidValue, MissingResource
 
 
@@ -199,8 +200,9 @@ class ContentQueryManager(object):
                  the same index in each tuple corresponds to a single content unit
         @rtype: tuple of (possibly empty) tuples
         """
-        key_fields = content_types_db.type_units_unit_key(content_type)
-        if key_fields is None:
+        try:
+            key_fields = units_controller.get_unit_key_fields_for_type(content_type)
+        except ValueError:
             raise InvalidValue(['content_type'])
         all_fields = ['_id']
         _flatten_keys(all_fields, key_fields)
@@ -313,8 +315,12 @@ def _build_multi_keys_spec(content_type, unit_keys_dicts):
             fields of the collection
     """
     # keys dicts validation constants
+    try:
+        unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type)
+    except ValueError:
+        raise InvalidValue(['content_type'])
     key_fields = []
-    _flatten_keys(key_fields, content_types_db.type_units_unit_key(content_type))
+    _flatten_keys(key_fields, unit_key_fields)
     key_fields_set = set(key_fields)
     extra_keys_msg = _('keys dictionary found with superfluous keys %(a)s, valid keys are %(b)s')
     missing_keys_msg = _('keys dictionary missing keys %(a)s, required keys are %(b)s')

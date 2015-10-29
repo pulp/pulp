@@ -103,7 +103,7 @@ class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_content_unit_user_metadata_resource(self):
         """
-        Test url matching for content_unit_user_metadata_resourece.
+        Test url matching for content_unit_user_metadata_resource.
         """
         url = '/v2/content/units/mock-type/mock-unit/pulp_user_metadata/'
         url_name = 'content_unit_user_metadata_resource'

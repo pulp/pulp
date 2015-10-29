@@ -51,4 +51,5 @@ def initialize_worker(sender, instance, **kwargs):
     tasks._delete_worker(sender, normal_shutdown=True)
 
     # Create a new working directory for worker that is starting now
+    common_utils.delete_worker_working_directory(sender)
     common_utils.create_worker_working_directory(sender)

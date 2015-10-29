@@ -11,6 +11,8 @@ from celery.result import AsyncResult
 import celery
 import mock
 
+from mongoengine import ValidationError
+
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
@@ -346,7 +348,8 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
     def test_task_status_created_and_saved(self):
         self.mock_task_status.assert_called_once_with(
             state=self.mock_constants.CALL_WAITING_STATE, task_type=self.task.name,
-            task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
+            task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'],
+            group_id=None)
         save_with_set_on_insert = self.mock_task_status.return_value.save_with_set_on_insert
         save_with_set_on_insert.assert_called_once_with(
             fields_to_set_on_insert=['state', 'start_time'])
@@ -487,7 +490,24 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         TaskStatus(task_id).save()
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
-        mock_reset_failure.assertCalledOnceWith('12345')
+        mock_reset_failure.assert_called_once_with('12345')
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    @mock.patch('pulp.server.managers.schedule.utils.reset_failure_count')
+    def test_with_scheduled_call_none(self, mock_reset_failure, mock_request):
+        """
+        Ensure that if scheduled_call_id  exists but is `None`, do not fail.
+        """
+        retval = 'random_return_value'
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2,
+                  'scheduled_call_id': None}
+        mock_request.called_directly = False
+        TaskStatus(task_id).save()
+        task = tasks.Task()
+        task.on_success(retval, task_id, args, kwargs)
+        self.assertFalse(mock_reset_failure.called)
 
 
 class TestTaskOnFailureHandler(ResourceReservationTests):
@@ -546,7 +566,30 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         TaskStatus(task_id).save()
         task = tasks.Task()
         task.on_failure(exc, task_id, args, kwargs, einfo)
-        mock_increment_failure.assertCalledOnceWith('12345')
+        mock_increment_failure.assert_called_once_with('12345')
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    @mock.patch('pulp.server.managers.schedule.utils.increment_failure_count')
+    def test_with_scheduled_call_none(self, mock_increment_failure, mock_request):
+        exc = Exception()
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'scheduled_call_id': None}
+
+        class EInfo(object):
+            """
+            on_failure handler expects an instance of celery's ExceptionInfo class
+            as one of the attributes. It stores string representation of traceback
+            in it's traceback instance variable. This is a stub to imitate that behavior.
+            """
+            def __init__(self):
+                self.traceback = "string_repr_of_traceback"
+        einfo = EInfo()
+        mock_request.called_directly = False
+        TaskStatus(task_id).save()
+        task = tasks.Task()
+        task.on_failure(exc, task_id, args, kwargs, einfo)
+        self.assertFalse(mock_increment_failure.called)
 
 
 class TestTaskApplyAsync(ResourceReservationTests):
@@ -564,6 +607,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertIsNone(new_task_status['group_id'])
         self.assertEqual(new_task_status['worker_name'], WORKER_1)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
@@ -576,9 +620,58 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(new_task_status['result'], None)
 
     @mock.patch('celery.Task.apply_async')
+    def test_creates_task_status_with_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        group_id = uuid.uuid4()
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
+                  'group_id': group_id}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        task_statuses = TaskStatus.objects()
+        self.assertEqual(len(task_statuses), 1)
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['group_id'], group_id)
+        self.assertEqual(new_task_status['worker_name'], WORKER_1)
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
+        self.assertEqual(new_task_status['error'], None)
+        self.assertEqual(new_task_status['spawned_tasks'], [])
+        self.assertEqual(new_task_status['progress_report'], {})
+        self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
+        self.assertEqual(new_task_status['start_time'], None)
+        self.assertEqual(new_task_status['finish_time'], None)
+        self.assertEqual(new_task_status['result'], None)
+
+    @mock.patch('celery.Task.apply_async')
+    def test_exception_task_status_with_bad_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
+                  'group_id': 'string-id'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        self.assertRaises(ValidationError, task.apply_async, *args, **kwargs)
+
+    @mock.patch('celery.Task.apply_async')
     def test_calls_parent_apply_async(self, apply_async):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        apply_async.assert_called_once_with(1, 'b', 'iii', a='for the money', routing_key='asdf')
+
+    @mock.patch('celery.Task.apply_async')
+    def test_calls_parent_apply_async_with_group_id(self, apply_async):
+        args = [1, 'b', 'iii']
+        kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf',
+                  'group_id': uuid.uuid4()}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 

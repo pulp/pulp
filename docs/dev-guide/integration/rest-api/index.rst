@@ -16,4 +16,5 @@ REST API
    role/index
    permission/index
    status
+   server_plugins
 

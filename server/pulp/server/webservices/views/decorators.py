@@ -8,6 +8,8 @@ from pulp.common import error_codes
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE, OPERATION_NAMES
 from pulp.server.config import config
 from pulp.server.compat import wraps
+from pulp.server.controllers import user as user_controller
+from pulp.server.db import model
 from pulp.server.exceptions import PulpCodedAuthenticationException
 from pulp.server.managers import factory
 from pulp.server.webservices import http
@@ -148,11 +150,11 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
     user_authenticated = False
     for authenticate_user in registered_auth_functions:
         if authenticate_user == oauth_authentication:
-            userid, is_consumer = authenticate_user()
+            login, is_consumer = authenticate_user()
         else:
-            userid = authenticate_user()
+            login = authenticate_user()
 
-        if userid is not None:
+        if login is not None:
             user_authenticated = True
             if authenticate_user == consumer_cert_authentication:
                 is_consumer = True
@@ -164,27 +166,27 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
     # Check Authorization
 
     principal_manager = factory.principal_manager()
-    user_query_manager = factory.user_query_manager()
 
-    if super_user_only and not user_query_manager.is_superuser(userid):
-        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
+    user = model.User.objects.get_or_404(login=login)
+    if super_user_only and not user.is_superuser():
+        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=login,
                                                operation=OPERATION_NAMES[operation])
     # if the operation is None, don't check authorization
     elif operation is not None:
         if is_consumer:
-            if is_consumer_authorized(http.resource_path(), userid, operation):
+            if is_consumer_authorized(http.resource_path(), login, operation):
                 # set default principal = SYSTEM
                 principal_manager.set_principal()
             else:
                 raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                       user=userid,
+                                                       user=login,
                                                        operation=OPERATION_NAMES[operation])
-        elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
-            user = user_query_manager.find_by_login(userid)
+        elif user_controller.is_authorized(http.resource_path(), login, operation):
+            user = model.User.objects.get(login=login)
             principal_manager.set_principal(user)
         else:
             raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                   user=userid,
+                                                   user=login,
                                                    operation=OPERATION_NAMES[operation])
 
     # Authentication and authorization succeeded. Call method and then clear principal.

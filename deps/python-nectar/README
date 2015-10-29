@@ -1,3 +1,0 @@
-This is required by pulp and authored by the pulp team. Once pulp building is
-moved into koji, this can probably be removed as a dep and build through normal
-koji means.

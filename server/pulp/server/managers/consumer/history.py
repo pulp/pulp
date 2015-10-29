@@ -53,7 +53,7 @@ class ConsumerHistoryManager(object):
         @return: login of the originator value to use in the event
         @rtype:  string
         '''
-        return managers_factory.principal_manager().get_principal()['login']
+        return managers_factory.principal_manager().get_principal().login
 
     def record_event(self, consumer_id, event_type, event_details=None):
         """

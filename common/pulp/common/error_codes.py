@@ -116,6 +116,8 @@ PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified wh
                              "seed is provided. Refer to /etc/pulp/server.conf for proper use."),
                 [])
 PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
+PLP0043 = Error("PLP0043", _("Database 'write_concern' config can only be 'majority' or 'all'. "
+                             "Refer to /etc/pulp/server.conf for proper use."), [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

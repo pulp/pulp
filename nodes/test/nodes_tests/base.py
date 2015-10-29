@@ -3,12 +3,11 @@ from unittest import TestCase
 import logging
 import mock
 import os
-import unittest
 import shutil
+import unittest
 
 import okaara
 import pymongo
-
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
@@ -20,6 +19,7 @@ from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as managers
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+
 
 SerialNumber.PATH = '/tmp/sn.dat'
 
@@ -45,7 +45,7 @@ class ServerTests(unittest.TestCase):
         storage_dir = pulp_conf.get('server', 'storage_dir')
         if not os.path.exists(storage_dir):
             os.makedirs(storage_dir)
-        shutil.rmtree(storage_dir+'/*', ignore_errors=True)
+        shutil.rmtree(storage_dir + '/*', ignore_errors=True)
         managers.initialize()
 
     @classmethod

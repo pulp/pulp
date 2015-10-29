@@ -14,8 +14,19 @@ New Features
 * Pulp now supports lazy content loading. As part of this support a new package,
   ``pulp-streamer``, is now available.
 
+* When downloading content, Pulp now uses the system certificate authority trust
+  store rather than the certificate authority trust store bundled with
+  ``python-requests``.
+
+
 Deprecation
 -----------
+
+Supported Platforms Changes
+---------------------------
+
+* If run on CentOS or Red Hat Enterprise Linux, the Pulp server now requires either
+  version 7.1+ or 6.7+.
 
 Client Changes
 --------------

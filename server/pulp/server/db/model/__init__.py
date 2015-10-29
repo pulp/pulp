@@ -1,27 +1,37 @@
 import copy
 import logging
 import os
+import random
 import uuid
 from collections import namedtuple
+from hmac import HMAC
 
-from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField, ListField,
-                         StringField)
+from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
+                         ListField, StringField, UUIDField)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
 
 from pulp.server import exceptions
+from pulp.server.constants import SUPER_USER_ROLE
 from pulp.server.content.storage import FileStorage, SharedStorage
 from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.connection import UnsafeRetry
+from pulp.server.compat import digestmod
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
-from pulp.server.webservices.views.serializers import Repository as RepoSerializer
+from pulp.server.util import Singleton
+from pulp.server.webservices.views import serializers
 
 
 _logger = logging.getLogger(__name__)
+
+
+SYSTEM_ID = '00000000-0000-0000-0000-000000000000'
+SYSTEM_LOGIN = u'SYSTEM'
+PASSWORD_ITERATIONS = 5000
 
 
 class AutoRetryDocument(Document):
@@ -89,7 +99,7 @@ class Repository(AutoRetryDocument):
             'allow_inheritance': False,
             'indexes': [{'fields': ['-repo_id'], 'unique': True}],
             'queryset_class': RepoQuerySet}
-    serializer = RepoSerializer
+    serializer = serializers.Repository
 
     def to_transfer_repo(self):
         """
@@ -182,6 +192,26 @@ class RepositoryContentUnit(AutoRetryDocument):
                     'fields': ['unit_id']
                 }
             ]}
+
+
+class Importer(AutoRetryDocument):
+    """
+    Defines schema for an Importer in the `repo_importers` collection.
+    """
+    repo_id = StringField(required=True)
+    importer_type_id = StringField(required=True)
+    config = DictField()
+    scratchpad = DictField(default=None)
+    last_sync = ISO8601StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='repo_importers')
+    serializer = serializers.ImporterSerializer
+
+    meta = {'collection': 'repo_importers',
+            'allow_inheritance': False,
+            'indexes': [{'fields': ['-repo_id', '-importer_type_id'], 'unique': True}],
+            'queryset_class': CriteriaQuerySet}
 
 
 class ReservedResource(AutoRetryDocument):
@@ -296,6 +326,8 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     :type start_time:  basestring
     :ivar finish_time: ISO8601 representation of the time the task completed
     :type finish_time: basestring
+    :ivar group_id:    The id used to identify which  group of tasks a task belongs to
+    :type group_id:    uuid.UUID
     :ivar result:      return value of the callable, if any
     :type result:      any
     :ivar exception:   Deprecated. This is always None.
@@ -315,6 +347,7 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     start_time = ISO8601StringField()
     finish_time = ISO8601StringField()
     result = DynamicField()
+    group_id = UUIDField(default=None)
 
     # These are deprecated, and will always be None
     exception = StringField()
@@ -324,7 +357,7 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
     _ns = StringField(default='task_status')
 
     meta = {'collection': 'task_status',
-            'indexes': ['-tags', '-state', {'fields': ['-task_id'], 'unique': True}],
+            'indexes': ['-tags', '-state', {'fields': ['-task_id'], 'unique': True}, '-group_id'],
             'allow_inheritance': False,
             'queryset_class': CriteriaQuerySet}
 
@@ -393,10 +426,10 @@ class ContentUnit(AutoRetryDocument):
 
     :ivar id: content unit id
     :type id: mongoengine.StringField
-    :ivar last_updated: last time this unit was updated (since epoch, zulu time)
-    :type last_updated: mongoengine.IntField
-    :ivar user_metadata: Bag of User supplied data to go along with this unit
-    :type user_metadata: mongoengine.DictField
+    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
+    :type _last_updated: mongoengine.IntField
+    :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
+    :type pulp_user_metadata: mongoengine.DictField
     :ivar storage_path: Location on disk where the content associated with this unit lives
     :type storage_path: mongoengine.StringField
 
@@ -411,8 +444,8 @@ class ContentUnit(AutoRetryDocument):
     unit_key_fields = tuple()
 
     id = StringField(primary_key=True)
-    last_updated = IntField(db_field='_last_updated', required=True)
-    user_metadata = DictField(db_field='pulp_user_metadata')
+    _last_updated = IntField(required=True)
+    pulp_user_metadata = DictField()
     storage_path = StringField(db_field='_storage_path')
 
     # For backward compatibility
@@ -448,7 +481,7 @@ class ContentUnit(AutoRetryDocument):
         """
         The signal that is triggered before a unit is saved, this is used to
         support the legacy behavior of generating the unit id and setting
-        the last_updated timestamp
+        the _last_updated timestamp
 
         :param sender: sender class
         :type sender: object
@@ -457,7 +490,7 @@ class ContentUnit(AutoRetryDocument):
         """
         if not document.id:
             document.id = str(uuid.uuid4())
-        document.last_updated = dateutils.now_utc_timestamp()
+        document._last_updated = dateutils.now_utc_timestamp()
 
     def get_repositories(self):
         """
@@ -548,8 +581,7 @@ class FileContentUnit(ContentUnit):
     def pre_save_signal(cls, sender, document, **kwargs):
         """
         The signal that is triggered before a unit is saved, this is used to
-        support the legacy behavior of generating the unit id and setting
-        the last_updated timestamp
+        move the unit file or directory into place.
 
         :param sender: sender class
         :type sender: object
@@ -562,6 +594,7 @@ class FileContentUnit(ContentUnit):
             return
         with FileStorage() as storage:
             storage.put(document, document._source_location)
+            document._source_location = None
 
     def set_content(self, source_location):
         """
@@ -727,3 +760,157 @@ class DeferredDownload(AutoRetryDocument):
 
     # For backward compatibility
     _ns = StringField(default='deferred_download')
+
+
+class User(Document):
+    """
+    :ivar login: user's login name, must be unique for each user
+    :type login: basestring
+    :ivar name: user's full name
+    :type name: basestring
+    :ivar password: encrypted password for login credentials
+    :type password: basestring
+    :ivar roles: list of roles user belongs to
+    :type roles: list of str
+    :ivar _ns: (Deprecated), Contains the name of the collection this model represents
+    :type _ns: mongoengine.StringField
+    """
+
+    login = StringField(required=True, regex=r'^[.\-_A-Za-z0-9]+$')
+    name = StringField()
+    password = StringField()
+    roles = ListField(StringField())
+
+    # For backward compatibility
+    _ns = StringField(default='users')
+
+    meta = {'collection': 'users',
+            'allow_inheritance': False,
+            'indexes': ['-roles', {'fields': ['-login', '-name'], 'unique': True}],
+            'queryset_class': CriteriaQuerySet}
+
+    serializer = serializers.User
+
+    def is_superuser(self):
+        """
+        Return True if the user with given login is a super user
+
+        :return: True if the user is a super user, False otherwise
+        :rtype:  bool
+        """
+        return SUPER_USER_ROLE in self.roles
+
+    def set_password(self, plain_password):
+        """
+        Sets the user's password to a hashed version of the plain_password. This does not save the
+        object.
+
+        :param plain_password: plain password, not hashed.
+        :type  plain_password: str
+
+        :raises pulp_exceptions.InvalidValue: if password is not a string
+        """
+        if plain_password is not None and not isinstance(plain_password, basestring):
+            raise exceptions.InvalidValue('password')
+        self.password = self._hash_password(plain_password)
+
+    def check_password(self, plain_password):
+        """
+        Checks a plaintext password against the hashed password stored on the User object.
+
+        :param plain_password: plaintext password to check against the stored hashed password
+        :type  plain_password: str
+
+        :return: True if password is correct, False otherwise
+        :rtype:  bool
+        """
+        salt, hashed_password = self.password.split(",")
+        salt = salt.decode("base64")
+        hashed_password = hashed_password.decode("base64")
+        pbkdbf = self._pbkdf_sha256(plain_password, salt, PASSWORD_ITERATIONS)
+        return hashed_password == pbkdbf
+
+    def _hash_password(self, plain_password):
+        """
+        Creates a hashed password from a plaintext password.
+
+        _hash_password, check_password, _random_bytes, and _pbkdf_sha256 were taken from this
+        stackoverflow.com : http://tinyurl.com/2f6gx7s
+
+        :param plain_password: plaintext password to be hashed
+        :type  plain_password: str
+
+        :return: salt concatenated with the hashed password
+        :rtype:  str
+        """
+        salt = self._random_bytes(8)  # 64 bits
+        hashed_password = self._pbkdf_sha256(str(plain_password), salt, PASSWORD_ITERATIONS)
+        return salt.encode("base64").strip() + "," + hashed_password.encode("base64").strip()
+
+    def _random_bytes(self, num_bytes):
+        """
+        Generate a string of random characters of the specified length.
+
+        :param num_bytes: number of bytes (characters) to generate
+        :type  num_bytes: int
+
+        :return: string of random characters with length <num_bytes>
+        :rtype:  str
+        """
+        return "".join(chr(random.randrange(256)) for i in xrange(num_bytes))
+
+    def _pbkdf_sha256(self, password, salt, iterations):
+        """
+        Apply the salt to the password some number of times to increase randomness.
+
+        :param password: plaintext password
+        :type  password: str
+        :param salt: random set of characters to encode the password
+        :type  salt: str
+        :param iterations: number of times to apply the salt
+        :type  iterations: int
+
+        :return: hashed password
+        :rtype:  str
+        """
+        result = password
+        for i in xrange(iterations):
+            result = HMAC(result, salt, digestmod).digest()  # use HMAC to apply the salt
+        return result
+
+
+class SystemUser(object):
+    """
+    Singleton user class that represents the "system" user (i.e. no user).
+
+    The entire point of this singleton class is that you can generate any number of new ones, and
+    if it is initialized with the same args, then SystemUser(same_args) is SystemUser(same_args)
+    returns True.
+
+    This class cannot inherrit from the Users mongoengine document because the metaclasss
+    does not play well with the mongoengine metaclasses. Fortunately, the only functionality
+    required is access to user instance variables.
+
+    :ivar login: login of the system user
+    :type login: str
+    :ivar password: Password of the system user, is always None
+    :type password: NoneType
+    :ivar roles: roles associated with the system user, is always empty
+    :type roles: list
+    :ivar id: id of the system user
+    :type id: str
+    :ivar _id: id of the system user
+    :type _id: str
+    """
+
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        """
+        Initialize a system user.
+        """
+        self.login = SYSTEM_LOGIN
+        self.password = None
+        self.name = SYSTEM_LOGIN
+        self.roles = []
+        self._id = self.id = SYSTEM_ID

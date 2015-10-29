@@ -1,49 +1,6 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.server.db.model.base import Model
-
-# -- classes -----------------------------------------------------------------
-
-
-class User(Model):
-    """
-    Represents a user of Pulp.
-
-    @ivar login: user's login name, must be unique for each user
-    @type login: str
-
-    @ivar password: encrypted password for login credentials
-    @type password: str
-
-    @ivar name: user's full name
-    @type name: str
-
-    @ivar roles: list of roles user belongs to
-    @type roles: list of str
-    """
-
-    collection_name = 'users'
-    unique_indices = ('login',)
-    search_indices = ('name', 'roles',)
-
-    def __init__(self, login, password, name=None, roles=None):
-        super(User, self).__init__()
-
-        self.login = login
-        self.password = password
-        self.name = name or login
-        self.roles = roles or []
 
 
 class Role(Model):

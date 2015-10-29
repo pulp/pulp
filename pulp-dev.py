@@ -137,9 +137,9 @@ if LSB_VENDOR not in ('CentOS', 'Fedora', 'RedHatEnterpriseEverything', 'RedHatE
     print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
     sys.exit(1)
 LSB_VERSION = subprocess.Popen(['lsb_release', '-sr'], stdout=subprocess.PIPE).communicate()[0]
-# Fedora will report this an an integer, RHEL 6/7 and CentOS 6 will report as a float, and CentOS 7 will
-# report this as an X.Y.Z. This latter expression requires us to split off the ".Z" if it exists, so
-# that we can cast it to a float
+# Fedora will report this an an integer, RHEL 6/7 and CentOS 6 will report as a float, and CentOS 7
+# will report this as an X.Y.Z. This latter expression requires us to split off the ".Z" if it
+# exists, so that we can cast it to a float
 LSB_VERSION = float('.'.join(LSB_VERSION.split('.')[:2]))
 
 
@@ -435,7 +435,8 @@ def create_link(opts, src, dst):
                "please adjust if this is not what you intended." % dst
 
     if not os.path.exists(os.readlink(dst)):
-        environment.warning('BROKEN LINK: [%s] attempting to delete and fix it to point to %s.' % (dst, src))
+        environment.warning(
+            'BROKEN LINK: [%s] attempting to delete and fix it to point to %s.' % (dst, src))
         try:
             os.unlink(dst)
             return _create_link(opts, src, dst)

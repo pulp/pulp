@@ -1,4 +1,26 @@
 #!/bin/bash -e
+#
+# Beware that this script references distribution-specific items such as yum.
+#
+# Script summary:
+#
+# 1. Ensure script is not running as root.
+# 2. Fetch a GitHub username from the user. In most cases, the user should have a
+#    GitHub account and they should supply the name of that account.
+# 3. Permanently disable SELinux. The user may refuse to do this step, in which
+#    case the script will abort.
+# 4. Use yum to install several packages.
+# 5. Enable epel yum repositories.
+# 6. Make a ~/devel directory and clone several Git repositories into the current
+#    directory. These repositories are cloned via SSH, and they are cloned from
+#    the GitHub user named at the beginning of this script. This means that
+#    whoever is running this script should have a GitHub account with SSH keys,
+#    and they should have already forked the repositories into their own account.
+# 7. If no ansible inventory (a list of systems) exists at
+#    `/tmp/ansible_inventory`, then create an inventory pointing to localhost.
+# 8. Run `ansible-playbook`. Use the inventory file at `/tmp/ansible_inventory`
+#    and the playbook at `ansible/dev-playbook.yml`.
+# 9. Run the final configuration script, `vagrant-setup.sh`.
 
 if [[ $EUID -eq 0 ]]; then
     echo "You are running this script as root."

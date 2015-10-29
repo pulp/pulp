@@ -4,13 +4,10 @@ from pulp.server.managers import factory
 from pulp.server.managers.auth.authentication import AuthenticationManager
 from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
 from pulp.server.managers.auth.cert.certificate import CertificateManager
-from pulp.server.managers.auth.password import PasswordManager
 from pulp.server.managers.auth.permission.cud import PermissionManager
 from pulp.server.managers.auth.permission.query import PermissionQueryManager
 from pulp.server.managers.auth.role.cud import RoleManager
 from pulp.server.managers.auth.role.query import RoleQueryManager
-from pulp.server.managers.auth.user.cud import UserManager
-from pulp.server.managers.auth.user.query import UserQueryManager
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
@@ -35,13 +32,10 @@ class FactoryTests(unittest.TestCase):
         self.assertTrue(isinstance(factory.authentication_manager(), AuthenticationManager))
         self.assertTrue(isinstance(factory.cert_generation_manager(), CertGenerationManager))
         self.assertTrue(isinstance(factory.certificate_manager(), CertificateManager))
-        self.assertTrue(isinstance(factory.password_manager(), PasswordManager))
         self.assertTrue(isinstance(factory.permission_manager(), PermissionManager))
         self.assertTrue(isinstance(factory.permission_query_manager(), PermissionQueryManager))
         self.assertTrue(isinstance(factory.role_manager(), RoleManager))
         self.assertTrue(isinstance(factory.role_query_manager(), RoleQueryManager))
-        self.assertTrue(isinstance(factory.user_manager(), UserManager))
-        self.assertTrue(isinstance(factory.user_query_manager(), UserQueryManager))
         self.assertTrue(isinstance(factory.repo_unit_association_manager(),
                                    RepoUnitAssociationManager))
         self.assertTrue(isinstance(factory.content_manager(), ContentManager))

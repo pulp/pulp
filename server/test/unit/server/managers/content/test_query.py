@@ -114,7 +114,7 @@ class PulpContentQueryTests(PulpContentTests):
         mock_makedirs.assert_called_once_with('/var/lib/pulp/content/rpm/name')
 
 
-@mock.patch('pulp.plugins.types.database.type_units_unit_key', return_value=['a'])
+@mock.patch('pulp.server.controllers.units.get_unit_key_fields_for_type', spec_set=True)
 @mock.patch('pulp.plugins.types.database.type_units_collection')
 class TestGetContentUnitIDs(unittest.TestCase):
     def setUp(self):
@@ -122,6 +122,7 @@ class TestGetContentUnitIDs(unittest.TestCase):
         self.manager = ContentQueryManager()
 
     def test_returns_generator(self, mock_type_collection, mock_type_unit_key):
+        mock_type_unit_key.return_value = ('a',)
         mock_type_collection.return_value.find.return_value = []
 
         ret = self.manager.get_content_unit_ids('fake_type', [])
@@ -129,6 +130,7 @@ class TestGetContentUnitIDs(unittest.TestCase):
         self.assertTrue(inspect.isgenerator(ret))
 
     def test_returns_ids(self, mock_type_collection, mock_type_unit_key):
+        mock_type_unit_key.return_value = ('a',)
         mock_type_collection.return_value.find.return_value = [{'_id': 'abc'}, {'_id': 'def'}]
 
         ret = self.manager.get_content_unit_ids('fake_type', [{'a': 'foo'}, {'a': 'bar'}])
@@ -136,6 +138,7 @@ class TestGetContentUnitIDs(unittest.TestCase):
         self.assertEqual(list(ret), ['abc', 'def'])
 
     def test_calls_find(self, mock_type_collection, mock_type_unit_key):
+        mock_type_unit_key.return_value = ('a',)
         mock_find = mock_type_collection.return_value.find
         mock_find.return_value = [{'_id': 'abc'}, {'_id': 'def'}]
 

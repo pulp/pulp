@@ -33,7 +33,6 @@ TYPE_CONTENT_QUERY = 'content-query-manager'
 TYPE_CONTENT_UPLOAD = 'content-upload-manager'
 TYPE_EVENT_FIRE = 'event-fire-manager'
 TYPE_EVENT_LISTENER = 'event-listener-manager'
-TYPE_PASSWORD = 'password-manager'
 TYPE_PERMISSION = 'permission-manager'
 TYPE_PERMISSION_QUERY = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER = 'plugin-manager'
@@ -44,15 +43,12 @@ TYPE_REPO_GROUP = 'repo-group-manager'
 TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
 TYPE_REPO_GROUP_PUBLISH = 'repo-group-publish'
 TYPE_REPO_GROUP_QUERY = 'repo-group-query-manager'
-TYPE_REPO_IMPORTER = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH_SCHEDULE = 'repo-publish-schedule-manager'
 TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
 TYPE_ROLE = 'role-manager'
 TYPE_ROLE_QUERY = 'role-query-manager'
 TYPE_TOPIC_PUBLISH = 'topic-publish-manager'
-TYPE_USER = 'user-manager'
-TYPE_USER_QUERY = 'user-query-manager'
 
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -231,13 +227,6 @@ def event_listener_manager():
     return get_manager(TYPE_EVENT_LISTENER)
 
 
-def password_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.password.PasswordManager}
-    """
-    return get_manager(TYPE_PASSWORD)
-
-
 def permission_manager():
     """
     @rtype: L{pulp.server.managers.auth.permission.cud.PermissionManager}
@@ -292,13 +281,6 @@ def repo_group_query_manager():
     @rtype: L{pulp.server.managers.repo.group.query.RepoGroupQueryManager}
     """
     return get_manager(TYPE_REPO_GROUP_QUERY)
-
-
-def repo_importer_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.importer.RepoImporterManager}
-    """
-    return get_manager(TYPE_REPO_IMPORTER)
 
 
 def repo_distributor_manager():
@@ -357,20 +339,6 @@ def topic_publish_manager():
     return get_manager(TYPE_TOPIC_PUBLISH)
 
 
-def user_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.user.cud.UserManager}
-    """
-    return get_manager(TYPE_USER)
-
-
-def user_query_manager():
-    """
-    @rtype: L{pulp.server.managers.auth.user.query.UserQueryManager}
-    """
-    return get_manager(TYPE_USER_QUERY)
-
-
 def initialize():
     """
     Initialize the manager factory by importing and setting Pulp's builtin
@@ -381,9 +349,6 @@ def initialize():
     from pulp.server.managers.auth.cert.certificate import CertificateManager
     from pulp.server.managers.auth.cert.cert_generator import CertGenerationManager
     from pulp.server.managers.auth.principal import PrincipalManager
-    from pulp.server.managers.auth.user.cud import UserManager
-    from pulp.server.managers.auth.user.query import UserQueryManager
-    from pulp.server.managers.auth.password import PasswordManager
     from pulp.server.managers.auth.permission.cud import PermissionManager
     from pulp.server.managers.auth.permission.query import PermissionQueryManager
     from pulp.server.managers.auth.role.cud import RoleManager
@@ -412,7 +377,6 @@ def initialize():
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
     from pulp.server.managers.repo.group.publish import RepoGroupPublishManager
     from pulp.server.managers.repo.group.query import RepoGroupQueryManager
-    from pulp.server.managers.repo.importer import RepoImporterManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.repo import (RepoPublishScheduleManager,
@@ -443,7 +407,6 @@ def initialize():
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
-        TYPE_PASSWORD: PasswordManager,
         TYPE_PERMISSION: PermissionManager,
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
@@ -455,14 +418,11 @@ def initialize():
         TYPE_REPO_GROUP_DISTRIBUTOR: RepoGroupDistributorManager,
         TYPE_REPO_GROUP_PUBLISH: RepoGroupPublishManager,
         TYPE_REPO_GROUP_QUERY: RepoGroupQueryManager,
-        TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_PUBLISH_SCHEDULE: RepoPublishScheduleManager,
         TYPE_REPO_SYNC_SCHEDULE: RepoSyncScheduleManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
         TYPE_TOPIC_PUBLISH: TopicPublishManager,
-        TYPE_USER: UserManager,
-        TYPE_USER_QUERY: UserQueryManager,
     }
     _CLASSES.update(builtins)
 

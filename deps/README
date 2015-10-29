@@ -1,0 +1,170 @@
+This README tracks Pulp dependencies. For each dependency it includes the following:
+
+* Who maintains it
+* What version Pulp requires
+* If the version requires patches, and if so, what each patch performs
+* What platforms the necessary dependency is not available on
+
+
+createrepo
+----------
+
+Team owner: jcline
+
+Note: createrepo-0.9.9 is available in EL7.
+
+
+mod_wsgi
+--------
+
+Team owner: dkliban
+
+pulp requires 3.4, which is not available in EPEL 6.
+
+TODO: why does pulp need 3.4?
+
+
+python-amqp
+-----------
+
+Team owner: bmbouter
+
+kombu 3.0.24 requires amqp>=1.4.6,<2.0, which is not available in EPEL <= 7, or Fedora <= 20.
+
+This requirement may not actually be necessary if amqp becomes available on the necessary platforms [0].
+
+[0]: https://apps.fedoraproject.org/packages/python-amqp/overview/
+
+
+python-billiard
+---------------
+
+Team owner: bmbouter
+
+celery-3.1.11 requires billiard>=3.3.0.17,<3.4, and a new-enough version is not available in
+Fedora <= 20 or EPEL <= 7.
+
+
+python-celery
+-------------
+
+Team owner: bmbouter
+
+Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL <= 7.
+
+
+python-isodate
+---------------
+
+Team owner: jcline
+
+This appears to be unmaintained upstream, and there is no knowledge of why we have
+a patch. This version is newer than what is in Fedora <= 20 and EPEL <= 7, so we should
+consider using a different library.
+
+
+python-kombu
+------------
+
+Team owner: bmbouter
+
+Celery 3.1.11 requires kombu>=3.0.15,<4.0, which is not in Fedora <= 20,
+or EPEL <= 7.
+
+Pulp would like to use the Qpid transport which is available in upstream
+kombu>=3.0.24
+
+
+Permanent Patches:
+
+1212200.patch - This patch will need to continue to be with us forever as
+                it works around a permanent downstream issue whereby
+                ordereddict is installed as part of the Python system
+                library, and not in site-packages. This is not
+                contributed to upstream Kombu.
+
+
+Temporary Patches:
+
+This are contributed to upstream Kombu and will be included in a future
+release of Kombu, but until it is we include it in downstream.
+
+qpid_fixes.patch - Fixes the following issues:
+
+* Fixes close bug where the connection was not being closed.
+  This fixes https://github.com/celery/kombu/issues/455
+
+* Fixes file descriptor leak issue.
+  https://github.com/celery/kombu/issues/476
+
+* Fixes a sasl auth mechanism issue.
+  https://github.com/celery/kombu/issues/498
+
+
+python-mongoengine
+------------------
+
+Team owner: rbarlow
+
+Pulp uses a vanilla version of mongoengine 0.9.0, except for one
+patch which removes Pillow as a setuptools dependency. Not
+having Pillow installed at runtime will disable the ImageField,
+but mongoengine will operate fully otherwise. At the time I built
+mongoengine 0.9.0, Pillow is not available on EL6.
+
+python-mongoengine requires at least pymongo 2.7.1 at runtime.
+
+The spec file was originally adapted from the spec file inside of
+python-mongoengine-0.8.4-3.el7.src.rpm [0].
+
+[0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=612617
+
+
+python-nectar
+-------------
+
+Team owner: ipanova
+
+This is required by pulp and authored by the pulp team. Once pulp building is
+moved into koji, this can probably be removed as a dep and build through normal
+koji means.
+
+
+python-pymongo
+--------------
+
+Team owner: rbarlow
+
+Pulp currently uses a vanilla version of pymongo 2.7.2. That is
+the latest Z release for the pymongo 2.7 release stream.
+
+python-mongoengine requires at least pymongo 2.7.1 at runtime.
+
+The spec file was originally adapted from the spec file inside of
+python-pymongo-2.5.2-7.fc23.src.rpm [0]. Thanks also to dgoodwin
+and Dominic in #tito for the spec file help.
+
+[0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=659860
+
+
+python-rhsm
+-----------
+
+Team owner: asmacdo
+
+pulp requires python-rhsm, which is not available in CentOS 6 or 7. We do not currently carry
+the most recent version of python-rhsm. If it is found that we need to, we can update.
+
+
+python-sematic-version
+----------------------
+
+Team owner: mhrivnak
+
+This is required for pulp-puppet-plugins.
+
+This is not currently in epel <= 7 or fedora <= 20.
+
+There are no known restrictions on what version to use.
+
+The plan is to get this into Fedora and EPEL. Review request: https://bugzilla.redhat.com/show_bug.cgi?id=1077030

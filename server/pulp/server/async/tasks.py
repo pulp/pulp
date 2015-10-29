@@ -182,9 +182,6 @@ def _delete_worker(name, normal_shutdown=False):
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
 
-    # Delete working directory
-    common_utils.delete_worker_working_directory(name)
-
 
 @task
 def _release_resource(task_id):
@@ -303,6 +300,8 @@ class ReservedTaskMixin(object):
         :param tags:          A list of tags (strings) to place onto the task, used for searching
                               for tasks by tag
         :type  tags:          list
+        :param group_id:      The id to identify which group of tasks a task belongs to
+        :type  group_id:      uuid.UUID
         :return:              An AsyncResult instance as returned by Celery's apply_async
         :rtype:               celery.result.AsyncResult
         """
@@ -312,10 +311,12 @@ class ReservedTaskMixin(object):
         inner_task_id = str(uuid.uuid4())
         task_name = self.name
         tag_list = kwargs.get('tags', [])
+        group_id = kwargs.get('group_id', None)
 
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
-                                 state=constants.CALL_WAITING_STATE, tags=tag_list)
+                                 state=constants.CALL_WAITING_STATE, tags=tag_list,
+                                 group_id=group_id)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
@@ -347,12 +348,15 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
         :type  tags:        list
+        :param group_id:    The id that identifies which group of tasks a task belongs to
+        :type group_id:     uuid.UUID
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
         routing_key = kwargs.get('routing_key',
                                  defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tag_list = kwargs.pop('tags', [])
+        group_id = kwargs.pop('group_id', None)
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
         async_result.tags = tag_list
@@ -360,7 +364,8 @@ class Task(CeleryTask, ReservedTaskMixin):
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
-            state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tag_list)
+            state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tag_list,
+            group_id=group_id)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
@@ -407,7 +412,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         """
         _logger.debug("Task successful : [%s]" % task_id)
-        if 'scheduled_call_id' in kwargs:
+        if kwargs.get('scheduled_call_id') is not None:
             if not isinstance(retval, AsyncResult):
                 _logger.info(_('resetting consecutive failure count for schedule %(id)s')
                              % {'id': kwargs['scheduled_call_id']})
@@ -462,7 +467,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         else:
             _logger.info(_('Task failed : [%s]') % task_id)
             # celery will log the traceback
-        if 'scheduled_call_id' in kwargs:
+        if kwargs.get('scheduled_call_id') is not None:
             utils.increment_failure_count(kwargs['scheduled_call_id'])
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())

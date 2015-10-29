@@ -52,28 +52,12 @@ class Repository(object):
         self.notes = notes
         self.working_dir = working_dir
         self.content_unit_counts = content_unit_counts or {}
-        self.last_unit_added = self._ensure_tz_specified(last_unit_added)
-        self.last_unit_removed = self._ensure_tz_specified(last_unit_removed)
+        self.last_unit_added = dateutils.ensure_tz(last_unit_added)
+        self.last_unit_removed = dateutils.ensure_tz(last_unit_removed)
         self.repo_obj = repo_obj
 
     def __str__(self):
         return 'Repository [%s]' % self.id
-
-    @staticmethod
-    def _ensure_tz_specified(time_stamp):
-        """
-        Ensure that a datetime has a timezone specified in UTC. Mongo doesn't include the TZ info
-        so if no TZ is set this assumes UTC.
-
-        :param time_stamp: datetime object to ensure that tzinfo is specified
-        :type time_stamp:  datetime.datetime
-
-        :return: The time_stamp with a timezone specified
-        :rtype:  datetime.datetime
-        """
-        if time_stamp:
-            time_stamp = dateutils.to_utc_datetime(time_stamp, no_tz_equals_local_tz=False)
-        return time_stamp
 
 
 class RelatedRepository(Repository):

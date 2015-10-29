@@ -28,6 +28,10 @@ class RepoUnitAssociationQueryManager(object):
     @staticmethod
     def find_by_criteria(criteria):
         """
+        DEPRECATED please use pulp.server.managers.content.query.find_by_criteria
+        - this function really does not belong in this manager anyway, since it does not
+          consider associations.
+
         Return a list of RepoContentUnits that match the provided criteria.
 
         @param criteria:    A Criteria object representing a search you want
@@ -156,6 +160,8 @@ class RepoUnitAssociationQueryManager(object):
 
     def get_units_across_types(self, repo_id, criteria=None, as_generator=False):
         """
+        DEPRECATED: please use get_units()
+
         Retrieves data describing units associated with the given repository
         along with information on the association itself.
 
@@ -361,13 +367,9 @@ class RepoUnitAssociationQueryManager(object):
         sort = criteria.unit_sort
 
         if sort is None:
-            unit_key = types_db.type_units_unit_key(unit_type_id)
+            sort = [('_id', SORT_ASCENDING)]
 
-            if unit_key is not None:
-                sort = [(u, SORT_ASCENDING) for u in unit_key]
-
-        if sort is not None:
-            cursor.sort(sort)
+        cursor.sort(sort)
 
         return cursor
 

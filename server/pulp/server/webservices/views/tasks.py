@@ -68,9 +68,9 @@ class TaskCollectionView(View):
         """
         tags = request.GET.getlist('tag')
         if tags:
-            raw_tasks = TaskStatus.objects(tags__all=tags)
+            raw_tasks = TaskStatus.objects(tags__all=tags, group_id=None)
         else:
-            raw_tasks = TaskStatus.objects()
+            raw_tasks = TaskStatus.objects(group_id=None)
         serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
         return generate_json_response_with_pulp_encoder(serialized_task_statuses)
 

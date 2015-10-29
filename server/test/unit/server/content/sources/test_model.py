@@ -200,6 +200,23 @@ class TestContentSource(TestCase):
         self.assertTrue(DESCRIPTOR[0][0] in sources)
         self.assertTrue(DESCRIPTOR[2][0] in sources)
 
+    @patch('os.path.isfile', return_value=True)
+    @patch('os.listdir')
+    @patch('pulp.server.content.sources.model.ConfigParser.read', spec_set=True)
+    @patch('pulp.server.content.sources.model.log.warn', spec_set=True)
+    def test_load_all_unreadable(self, mock_warn, mock_read, mock_listdir, mock_isfile):
+        conf_d = '/mock/conf_d/'
+        mock_listdir.return_value = ['somefile.conf']
+        # this return value indicates that the read did not succeed
+        mock_read.return_value = []
+
+        sources = ContentSource.load_all(conf_d)
+
+        # make sure no sources are returned, and a message was logged with the path
+        self.assertEqual(len(sources), 0)
+        self.assertEqual(mock_warn.call_count, 1)
+        self.assertEqual(os.path.join(conf_d, 'somefile.conf'), mock_warn.call_args[0][1])
+
     def test_construction(self):
         # test
         source = ContentSource(DESCRIPTOR[0][0], DESCRIPTOR[0][1])

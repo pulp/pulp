@@ -8,7 +8,7 @@ import mock
 
 from pulp.server import exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import RepoImporter, RepoDistributor
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers.factory import initialize
 from pulp.server.managers.schedule.repo import RepoSyncScheduleManager, RepoPublishScheduleManager
 
@@ -16,53 +16,41 @@ from pulp.server.managers.schedule.repo import RepoSyncScheduleManager, RepoPubl
 initialize()
 
 
+@mock.patch('pulp.server.managers.schedule.repo.importer_controller')
 class TestSyncList(unittest.TestCase):
-    @mock.patch.object(RepoSyncScheduleManager, 'validate_importer')
+
     @mock.patch('pulp.server.managers.schedule.utils.get_by_resource')
-    def test_validate_importer(self, mock_get_by_resource, mock_validate_importer):
+    def test_validate_importer(self, mock_get_by_resource, mock_imp_ctrl):
         RepoSyncScheduleManager.list('repo1', 'importer1')
+        mock_imp_ctrl.get_valid_importer.assert_called_once_with('repo1', 'importer1')
 
-        mock_validate_importer.assert_called_once_with('repo1', 'importer1')
-
-    @mock.patch.object(RepoSyncScheduleManager, 'validate_importer', return_value=None)
     @mock.patch('pulp.server.managers.schedule.utils.get_by_resource')
-    def test_list(self, mock_get_by_resource, mock_validate_importer):
+    def test_list(self, mock_get_by_resource, mock_imp_ctrl):
         ret = RepoSyncScheduleManager.list('repo1', 'importer1')
 
-        mock_get_by_resource.assert_called_once_with(
-            RepoImporter.build_resource_tag('repo1', 'importer1'))
+        mock_get_by_resource.assert_called_once_with(mock_imp_ctrl.build_resource_tag.return_value)
         self.assertTrue(ret is mock_get_by_resource.return_value)
 
 
+@mock.patch('pulp.server.managers.schedule.repo.importer_controller.get_valid_importer')
 class TestSyncCreate(unittest.TestCase):
     repo = 'repo1'
     importer = 'importer1'
     options = {'override_config': {}}
     schedule = 'PT1M'
 
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_validate_importer(self, mock_get_importer):
-        mock_get_importer.return_value = {'id': 'foo'}
-
-        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.create,
-                          self.repo, self.importer, self.options, self.schedule)
-
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
-    @mock.patch.object(RepoSyncScheduleManager, 'validate_importer', return_value=None)
     @mock.patch('pulp.server.managers.schedule.utils.validate_initial_schedule_options')
     @mock.patch('pulp.server.managers.schedule.utils.validate_keys')
     def test_utils_validation(self, mock_validate_keys, mock_validate_options,
-                              mock_validate_importer, mock_save):
+                              mock_save, mock_valid_imp):
         RepoSyncScheduleManager.create(self.repo, self.importer, self.options, self.schedule)
 
         mock_validate_keys.assert_called_once_with(self.options, ('override_config',))
         mock_validate_options.assert_called_once_with(self.schedule, None, True)
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_save(self, mock_get_importer, mock_save):
-        mock_get_importer.return_value = {'id': 'importer1'}
-
+    def test_save(self, mock_save, *_):
         ret = RepoSyncScheduleManager.create(self.repo, self.importer, self.options,
                                              self.schedule, 3, False)
 
@@ -75,16 +63,19 @@ class TestSyncCreate(unittest.TestCase):
     @mock.patch('pulp.server.db.model.base.ObjectId', return_value='myobjectid')
     @mock.patch('pulp.server.managers.schedule.utils.delete')
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_cleanup(self, mock_get_importer, mock_save, mock_delete, mock_objectid):
-        mock_get_importer.side_effect = [{'id': 'importer1'}, {'id': 'someotherimporter'}]
+    def test_cleanup(self, mock_save, mock_delete, mock_objectid, mock_valid_imp):
 
+        def mock_valid_first_time_only(*args):
+            mock_valid_imp.side_effect = exceptions.MissingResource
+
+        mock_valid_imp.side_effect = mock_valid_first_time_only
         self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.create,
                           self.repo, self.importer, self.options, self.schedule)
 
         mock_delete.assert_called_once_with('myobjectid')
 
 
+@mock.patch('pulp.server.managers.schedule.repo.importer_controller.get_valid_importer')
 class TestSyncUpdate(unittest.TestCase):
     repo = 'repo1'
     importer = 'importer1'
@@ -92,40 +83,24 @@ class TestSyncUpdate(unittest.TestCase):
     override = {'override_config': {'foo': 'bar'}}
     updates = {'enabled': True}
 
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_validate_importer(self, mock_get_importer):
-        mock_get_importer.return_value = {'id': 'foo'}
-
-        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.update,
-                          self.repo, self.importer, self.schedule_id, self.updates)
-
     @mock.patch('pulp.server.managers.schedule.utils.update')
     @mock.patch('pulp.server.managers.schedule.utils.validate_updated_schedule_options')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_validate_options(self, mock_get_importer, mock_validate_options, mock_update):
-        mock_get_importer.return_value = {'id': self.importer}
-
+    def test_validate_options(self, mock_validate_options, mock_update, mock_valid_imp):
         RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id, self.updates)
-
         mock_validate_options.assert_called_once_with(self.updates)
 
     @mock.patch('pulp.server.managers.schedule.utils.update')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_update(self, mock_get_importer, mock_update):
-        mock_get_importer.return_value = {'id': self.importer}
-
+    def test_update(self, mock_update, mock_valid_imp):
         ret = RepoSyncScheduleManager.update(self.repo, self.importer,
                                              self.schedule_id, self.updates)
 
         mock_update.assert_called_once_with(self.schedule_id, self.updates)
+        mock_valid_imp.assert_called_once_with(self.repo, self.importer)
         # make sure it passes through the return value from utils.update
         self.assertEqual(ret, mock_update.return_value)
 
     @mock.patch('pulp.server.managers.schedule.utils.update')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_update_overrides(self, mock_get_importer, mock_update):
-        mock_get_importer.return_value = {'id': self.importer}
-
+    def test_update_overrides(self, mock_update, mock_valid_imp):
         RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id,
                                        {'override_config': {'foo': 'bar'}})
 
@@ -133,25 +108,16 @@ class TestSyncUpdate(unittest.TestCase):
                                             {'kwargs': {'overrides': {'foo': 'bar'}}})
 
 
+@mock.patch('pulp.server.managers.schedule.repo.importer_controller.get_valid_importer')
 class TestSyncDelete(unittest.TestCase):
     repo = 'repo1'
     importer = 'importer1'
     schedule_id = 'schedule1'
 
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_validate_importer(self, mock_get_importer):
-        mock_get_importer.return_value = {'id': 'foo'}
-
-        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.delete,
-                          self.repo, self.importer, self.schedule_id)
-
     @mock.patch('pulp.server.managers.schedule.utils.delete')
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_delete(self, mock_get_importer, mock_delete):
-        mock_get_importer.return_value = {'id': self.importer}
-
+    def test_delete(self, mock_delete, mock_valid_imp):
         RepoSyncScheduleManager.delete(self.repo, self.importer, self.schedule_id)
-
+        mock_valid_imp.assert_called_once_with(self.repo, self.importer)
         mock_delete.assert_called_once_with(self.schedule_id)
 
 
@@ -159,30 +125,11 @@ class TestSyncDeleteByImporterId(unittest.TestCase):
     repo = 'repo1'
     importer = 'importer1'
 
+    @mock.patch('pulp.server.managers.schedule.repo.importer_controller')
     @mock.patch('pulp.server.managers.schedule.utils.delete_by_resource')
-    def test_calls_delete_resource(self, mock_delete_by):
-        resource = RepoImporter.build_resource_tag(self.repo, self.importer)
-
+    def test_calls_delete_resource(self, mock_delete_by, mock_imp_ctrl):
         RepoSyncScheduleManager.delete_by_importer_id(self.repo, self.importer)
-
-        mock_delete_by.assert_called_once_with(resource)
-
-
-class TestValidateImporter(unittest.TestCase):
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_matching_importer(self, mock_get_importer):
-        mock_get_importer.return_value = {'id': 'importer1'}
-
-        RepoSyncScheduleManager.validate_importer('repo1', 'importer1')
-
-        mock_get_importer.assert_called_once_with('repo1')
-
-    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
-    def test_wrong_importer(self, mock_get_importer):
-        mock_get_importer.return_value = {'id': 'wrong_importer'}
-
-        self.assertRaises(exceptions.MissingResource,
-                          RepoSyncScheduleManager.validate_importer, 'repo1', 'importer1')
+        mock_delete_by.assert_called_once_with(mock_imp_ctrl.build_resource_tag.return_value)
 
 
 class TestPublishList(unittest.TestCase):

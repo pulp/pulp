@@ -9,12 +9,12 @@ from celery import task
 
 from pulp.server.async.tasks import Task
 from pulp.server.auth import authorization
-from pulp.server.db.model.auth import Permission, User
+from pulp.server.db import model
+from pulp.server.db.model.auth import Permission
 from pulp.server.exceptions import (
     DuplicateResource, InvalidValue, MissingResource, PulpDataException,
     PulpExecutionException)
 from pulp.server.managers import factory
-from pulp.server.managers.auth.user import system
 
 
 class PermissionManager(object):
@@ -114,10 +114,10 @@ class PermissionManager(object):
         :raises InvalidValue: if some params are invalid
         """
         # we don't grant permissions to the system
-        if login == system.SYSTEM_LOGIN:
+        if login == model.SYSTEM_LOGIN:
             return
 
-        user = User.get_collection().find_one({'login': login})
+        user = model.User.objects(login=login).first()
         if user is None:
             raise InvalidValue(['login'])
 
@@ -156,10 +156,10 @@ class PermissionManager(object):
         """
         permission_query_manager = factory.permission_query_manager()
         # we don't revoke permissions from the system
-        if login == system.SYSTEM_LOGIN:
+        if login == model.SYSTEM_LOGIN:
             return
 
-        user = User.get_collection().find_one({'login': login})
+        user = model.User.objects(login=login).first()
         if user is None:
             raise InvalidValue(['login'])
 
@@ -203,7 +203,7 @@ class PermissionManager(object):
                 _('Cannot grant automatic permissions for [%(user)s] on resource [%(resource)s]') %
                 {'user': user, 'resource': resource})
 
-        self.grant(resource, user['login'], authorization.OPERATION_NAMES)
+        self.grant(resource, user.login, authorization.OPERATION_NAMES)
 
     def grant_automatic_permissions_for_user(self, login):
         """

@@ -81,28 +81,23 @@ Repositories
 
 1. Download the appropriate repo definition file from the Pulp repository:
 
- * Fedora: http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
- * RHEL: http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+ * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+ * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
 .. note::
    If you would like to install the RHEL 5 Client for Pulp, please use the
-   `RHEL 5 repository <http://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
+   `RHEL 5 repository <https://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
 
 2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
    appropriate repositories for RHEL6 and RHEL7 respectively:
 
    RHEL6::
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+    $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 
    RHEL7::
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-
-.. note::
-   The above EPEL URLs change with each release of the epel-release package. If you receive a 404
-   error when attempting to install the above RPM, point your browser at the directory it is in and
-   look for the updated name of epel-release package.
+    $ sudo yum install http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
 .. note::
    EPEL requires users of RHEL 6.x to enable the ``optional`` repository,
@@ -218,8 +213,6 @@ Server
    * **tasks** if your message broker for asynchronous tasks is on a different host or if you want
      to use SSL. For more information on this section refer to the
      :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
-   * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use
-     Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
 #. Initialize Pulp's database. It is important that the broker is running before initializing

@@ -353,6 +353,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-qpid
 Requires: python-nectar >= 1.1.6
+Requires: python-semantic-version >= 2.2.0
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl

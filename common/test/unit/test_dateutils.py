@@ -184,3 +184,33 @@ class TestNowDateTimeWithTzInfo(unittest.TestCase):
         self.assertTrue(hasattr(result, 'tzinfo'))
         self.assertEquals(result.tzinfo, dateutils.utc_tz())
         self.assertTrue(result >= comparator)
+
+
+class TestEnsureTzSpecified(unittest.TestCase):
+    """
+    Tests for recreating a tz object from a datetime in UTC.
+    """
+
+    def test_tz_not_specified(self):
+        """
+        Test that if a tz is not specified, it is added.
+        """
+        dt = datetime.datetime.utcnow()
+        new_date = dateutils.ensure_tz(dt)
+        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
+
+    def test_none_object(self):
+        """
+        Ensure that if None is passed, return None.
+        """
+        dt = None
+        new_date = dateutils.ensure_tz(dt)
+        self.assertEquals(new_date, None)
+
+    def test_tz_specified(self):
+        """
+        Ensure that if the tz is already specified, it is used.
+        """
+        dt = datetime.datetime.now(dateutils.local_tz())
+        new_date = dateutils.ensure_tz(dt)
+        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())

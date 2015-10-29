@@ -174,19 +174,16 @@ class RepoUnitAssociationManager(object):
         :rtype:                        dict
         :raise MissingResource:        if either of the specified repositories don't exist
         """
-        importer_manager = manager_factory.repo_importer_manager()
         source_repo = model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
         dest_repo = model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
 
-        # This will raise MissingResource if there isn't one, which is the
-        # behavior we want this method to exhibit, so just let it bubble up.
-        dest_repo_importer = importer_manager.get_importer(dest_repo_id)
-        source_repo_importer = importer_manager.get_importer(source_repo_id)
+        dest_repo_importer = model.Importer.objects.get_or_404(repo_id=dest_repo_id)
+        source_repo_importer = model.Importer.objects.get_or_404(repo_id=source_repo_id)
 
         # The docs are incorrect on the list_importer_types call; it actually
         # returns a dict with the types under key "types" for some reason.
         supported_type_ids = set(plugin_api.list_importer_types(
-            dest_repo_importer['importer_type_id'])['types'])
+            dest_repo_importer.importer_type_id)['types'])
 
         # Get the unit types from the repo source repo
         source_repo_unit_types = set(source_repo.content_unit_counts.keys())
@@ -221,9 +218,7 @@ class RepoUnitAssociationManager(object):
                 # a filter was specified
                 transfer_units = None
                 if associate_us is not None:
-                    associated_unit_type_ids = calculate_associated_type_ids(source_repo_id,
-                                                                             associate_us)
-                    transfer_units = create_transfer_units(associate_us, associated_unit_type_ids)
+                    transfer_units = create_transfer_units(associate_us)
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = dest_repo.to_transfer_repo()
@@ -231,12 +226,13 @@ class RepoUnitAssociationManager(object):
 
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(
-            dest_repo_importer['importer_type_id'])
+            dest_repo_importer.importer_type_id)
 
-        call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'],
+        call_config = PluginCallConfiguration(plugin_config, dest_repo_importer.config,
                                               import_config_override)
         conduit = ImportUnitConduit(
-            source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
+            source_repo_id, dest_repo_id, source_repo_importer.importer_type_id,
+            dest_repo_importer.importer_type_id)
 
         try:
             copied_units = importer_instance.import_units(
@@ -247,7 +243,7 @@ class RepoUnitAssociationManager(object):
             return {'units_successful': unit_ids}
         except Exception:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')
-            msg_dict = {'i': dest_repo_importer['importer_type_id'], 'r': dest_repo_id}
+            msg_dict = {'i': dest_repo_importer.importer_type_id, 'r': dest_repo_id}
             logger.exception(msg % msg_dict)
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
@@ -347,8 +343,7 @@ class RepoUnitAssociationManager(object):
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,
-        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
-        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
+        transfer_units = create_transfer_units(unassociate_units)
 
         if notify_plugins:
             remove_from_importer(repo_id, transfer_units)
@@ -404,23 +399,14 @@ def load_associated_units(source_repo_id, criteria):
     return associate_us
 
 
-def calculate_associated_type_ids(source_repo_id, associated_units):
-    if associated_units is not None:
-        associated_unit_type_ids = set([u['unit_type_id'] for u in associated_units])
-    else:
-        association_query_manager = manager_factory.repo_unit_association_query_manager()
-        associated_unit_type_ids = association_query_manager.unit_type_ids_for_repo(source_repo_id)
-    return associated_unit_type_ids
-
-
-def create_transfer_units(associate_units, associated_unit_type_ids):
+def create_transfer_units(associate_units):
     unit_key_fields = {}
-    for unit_type_id in associated_unit_type_ids:
-        unit_key_fields[unit_type_id] = units_controller.get_unit_key_fields_for_type(unit_type_id)
 
     transfer_units = []
     for unit in associate_units:
         type_id = unit['unit_type_id']
+        if type_id not in unit_key_fields:
+            unit_key_fields[type_id] = units_controller.get_unit_key_fields_for_type(type_id)
         u = conduit_common_utils.to_plugin_associated_unit(unit, type_id, unit_key_fields[type_id])
         transfer_units.append(u)
 
@@ -430,21 +416,19 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 def remove_from_importer(repo_id, transfer_units):
     repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     transfer_repo = repo_obj.to_transfer_repo()
-
-    importer_manager = manager_factory.repo_importer_manager()
-    repo_importer = importer_manager.get_importer(repo_id)
+    repo_importer = model.Importer.objects(repo_id=repo_id).first()
 
     # Retrieve the plugin instance to invoke
     importer_instance, plugin_config = plugin_api.get_importer_by_id(
-        repo_importer['importer_type_id'])
-    call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
+        repo_importer.importer_type_id)
+    call_config = PluginCallConfiguration(plugin_config, repo_importer.config)
 
     # Invoke the importer's remove method
     try:
         importer_instance.remove_units(transfer_repo, transfer_units, call_config)
     except Exception:
         msg = _('Exception from importer [%(i)s] while removing units from repo [%(r)s]')
-        msg = msg % {'i': repo_importer['id'], 'r': repo_id}
+        msg = msg % {'i': repo_importer.importer_type_id, 'r': repo_id}
         logger.exception(msg)
 
         # Do not raise the exception; this should not block the removal and is

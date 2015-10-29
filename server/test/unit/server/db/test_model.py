@@ -6,14 +6,17 @@ Tests for the pulp.server.db.model module.
 
 from mock import patch, Mock
 
-from mongoengine import ValidationError, DateTimeField, DictField, Document, IntField, StringField
+from mongoengine import (ValidationError, DateTimeField, DictField, Document, IntField, ListField,
+                         StringField)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
+from pulp.server import exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet
+from pulp.server.webservices.views import serializers
 
 
 @patch('pulp.server.db.model.UnsafeRetry')
@@ -49,12 +52,10 @@ class TestContentUnit(unittest.TestCase):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
         self.assertTrue(model.ContentUnit.id.primary_key)
 
-        self.assertTrue(isinstance(model.ContentUnit.last_updated, IntField))
-        self.assertTrue(model.ContentUnit.last_updated.required)
-        self.assertEquals(model.ContentUnit.last_updated.db_field, '_last_updated')
+        self.assertTrue(isinstance(model.ContentUnit._last_updated, IntField))
+        self.assertTrue(model.ContentUnit._last_updated.required)
 
-        self.assertTrue(isinstance(model.ContentUnit.user_metadata, DictField))
-        self.assertEquals(model.ContentUnit.user_metadata.db_field, 'pulp_user_metadata')
+        self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
         self.assertTrue(isinstance(model.ContentUnit.storage_path, StringField))
         self.assertEquals(model.ContentUnit.storage_path.db_field, '_storage_path')
@@ -103,14 +104,14 @@ class TestContentUnit(unittest.TestCase):
 
         mock_now_utc.return_value = 'foo'
         helper = ContentUnitHelper()
-        helper.last_updated = 50
+        helper._last_updated = 50
 
         model.ContentUnit.pre_save_signal({}, helper)
 
         self.assertIsNotNone(helper.id)
 
         # make sure the last updated time has been updated
-        self.assertEquals(helper.last_updated, 'foo')
+        self.assertEquals(helper._last_updated, 'foo')
 
     def test_pre_save_signal_leaves_existing_id(self):
         """
@@ -231,7 +232,8 @@ class TestFileContentUnit(unittest.TestCase):
         base.assert_called_once_with(sender, unit, **kwargs)
         _open.assert_called_once_with()
         close.assert_called_once_with()
-        put.assert_called_once_with(unit, unit._source_location)
+        put.assert_called_once_with(unit, '1234')
+        self.assertEqual(unit._source_location, None)
 
     @patch('pulp.server.db.model.FileStorage.put')
     @patch('pulp.server.db.model.FileStorage.open')
@@ -490,6 +492,7 @@ class TestRepository(unittest.TestCase):
 
     def test_invalid_repo_id(self):
         """
+
         Ensure that validation raises as expected when invalid characters are present.
         """
         repo_obj = model.Repository('invalid_char%')
@@ -561,6 +564,57 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(repo_obj.notes['leave'], 2)
         self.assertEqual(repo_obj.notes['modify'], 4)
         self.assertEqual(repo_obj.notes['add'], 5)
+
+
+class TestImporter(unittest.TestCase):
+    """
+    Tests for the importer class.
+    """
+    def test_model_superclass(self):
+        """
+        Ensure that the class is a Mongoengine Document.
+        """
+        sample_model = model.Importer()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        """
+        Ensure the attributes are the correct type and they have the correct values.
+        """
+        self.assertTrue(isinstance(model.Importer.repo_id, StringField))
+        self.assertTrue(model.Importer.repo_id.required)
+        self.assertTrue(isinstance(model.Importer.importer_type_id, StringField))
+        self.assertTrue(model.Importer.importer_type_id.required)
+        self.assertTrue(isinstance(model.Importer.config, DictField))
+        self.assertFalse(model.Importer.config.required)
+        self.assertTrue(isinstance(model.Importer._ns, StringField))
+        self.assertEquals(model.Importer._ns.default, 'repo_importers')
+
+    def test_serializer(self):
+        """
+        Ensure that the serializer is set.
+        """
+        self.assertEqual(model.Importer.serializer, serializers.ImporterSerializer)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.Importer._meta['collection'], 'repo_importers')
+
+    def test_meta_allow_inheritance(self):
+        """
+        Ensure that inheritance is not allowed.
+        """
+        self.assertEquals(model.Importer._meta['allow_inheritance'], False)
+
+    def test_meta_allow_indexes(self):
+        """
+        Test that the indexes are set correctly.
+        """
+        indexes = model.Importer._meta['indexes']
+        self.assertDictEqual(
+            indexes[0], {'fields': ['-repo_id', '-importer_type_id'], 'unique': True})
 
 
 class TestCeleryBeatLock(unittest.TestCase):
@@ -661,3 +715,165 @@ class TestDeferredDownload(unittest.TestCase):
         Assert that the collection name is correct.
         """
         self.assertEquals(model.DeferredDownload._meta['collection'], 'deferred_download')
+
+
+class TestUser(unittest.TestCase):
+    """
+    Tests for the User model.
+    """
+
+    def test_model_superclass(self):
+        """
+        Ensure that the model inherrits from Mongoengine Document.
+        """
+        sample_model = model.CeleryBeatLock()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.User.login, StringField))
+        self.assertTrue(model.User.login.required)
+
+        self.assertTrue(isinstance(model.User.name, StringField))
+        self.assertFalse(model.User.name.required)
+
+        self.assertTrue(isinstance(model.User.password, StringField))
+        self.assertFalse(model.User.password.required)
+
+        self.assertTrue(isinstance(model.User.roles, ListField))
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.User._meta['collection'], 'users')
+
+    def test_meta_allow_inheritance(self):
+        """
+        Ensure that inheritance is not allowed.
+        """
+        self.assertEquals(model.User._meta['allow_inheritance'], False)
+
+    def test_meta_allow_indexes(self):
+        """
+        Test that the indexes are set correctly.
+        """
+        indexes = model.User._meta['indexes']
+        self.assertDictEqual(indexes[1], {'fields': ['-login', '-name'], 'unique': True})
+        self.assertEqual(indexes[0], '-roles')
+
+    def test_queryset(self):
+        """
+        Test that the model can search with criteria.
+        """
+        self.assertEqual(model.User._meta['queryset_class'], CriteriaQuerySet)
+
+
+class TestUserAuth(unittest.TestCase):
+    """
+    Test password and superuser methods of the User model.
+    """
+
+    def setUp(self):
+        """
+        Create a base User.
+        """
+        self.user = model.User(login='test', password='some password')
+
+    def test_password_integrated(self):
+        """
+        Test the password setting and checking end to end.
+        """
+        self.user.set_password('mock_password')
+        self.assertTrue(self.user.check_password('mock_password'))
+        self.user.set_password('new_password')
+        self.assertFalse(self.user.check_password('mock_password'))
+
+    def test_set_password_integrated(self):
+        """
+        Test setting password end to end.
+        """
+        password = "some password"
+        self.user.set_password(password)
+        self.assertNotEqual(self.user.password, password)
+
+    @patch('pulp.server.db.model.User._hash_password')
+    def test_set_password(self, mock_hash):
+        """
+        Test setting a password.
+        """
+        password = "some password"
+        self.user.set_password(password)
+        self.assertEqual(self.user.password, mock_hash.return_value)
+
+    @patch('pulp.server.db.model.User._hash_password')
+    def test_set_password_not_string(self, mock_hash):
+        """
+        Test setting a password.
+        """
+        password = 1
+        self.assertRaises(exceptions.InvalidValue, self.user.set_password, password)
+
+    @patch('pulp.server.db.model.User._pbkdf_sha256')
+    @patch('pulp.server.db.model.User._random_bytes')
+    def test_hash_password(self, mock_rand, mock_sha):
+        """
+        Test hashing a password.
+        """
+        password = "some password"
+        mock_rand.return_value.encode.return_value.strip.return_value = 'mock_salt'
+        mock_sha.return_value.encode.return_value.strip.return_value = 'mock_hash'
+        salted = self.user._hash_password(password)
+        self.assertEqual(salted, 'mock_salt,mock_hash')
+
+    @patch('pulp.server.db.model.random')
+    def test_rand_bytes(self, mock_rand):
+        """
+        Test building a salt.
+        """
+        mock_rand.randrange.return_value = 52  # Guaranteed random number xkcd.com/221/
+        self.assertEqual(self.user._random_bytes(4), '4444')
+
+    @patch('pulp.server.db.model.digestmod')
+    @patch('pulp.server.db.model.HMAC')
+    def test_pbkdf_sha256(self, mock_hmac, mock_digest):
+        """
+        Test use of HMAC library to do the hashing under the hood.
+        """
+        hashed = self.user._pbkdf_sha256('password', 'salt', 1)
+        self.assertTrue(hashed is mock_hmac.return_value.digest.return_value)
+        mock_hmac.assert_called_once_with('password', 'salt', mock_digest)
+
+    def test_is_superuser(self):
+        """
+        Test determining if the user is a super user.
+        """
+        self.user.roles = ['one role']
+        self.assertFalse(self.user.is_superuser())
+        self.user.roles = ['one role', model.SUPER_USER_ROLE]
+        self.assertTrue(self.user.is_superuser())
+
+
+class SystemUser(unittest.TestCase):
+    """
+    Tests for the system user (no user is logged in)
+    """
+
+    def test_init(self):
+        """
+        Make sure the SystemUser has the correct attributes.
+        """
+        sys_user = model.SystemUser()
+        self.assertEqual(sys_user.login, model.SYSTEM_LOGIN)
+        self.assertEqual(sys_user.password, None)
+        self.assertEqual(sys_user.name, model.SYSTEM_LOGIN)
+        self.assertEqual(sys_user.roles, [])
+        self.assertEqual(sys_user._id, model.SYSTEM_ID)
+        self.assertEqual(sys_user.id, model.SYSTEM_ID)
+
+    def test_singleton(self):
+        """
+        Since it is a singleton, all instances should be the same.
+        """
+        sys_u_1 = model.SystemUser()
+        sys_u_2 = model.SystemUser()
+        self.assertTrue(sys_u_1 is sys_u_2)

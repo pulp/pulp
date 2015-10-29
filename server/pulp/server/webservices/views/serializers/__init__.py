@@ -235,7 +235,8 @@ class ModelSerializer(BaseSerializer):
         :rtype:  pulp.server.db.model.criteria.Criteria
         """
         crit_dict = crit.as_dict()
-        crit_dict['filters'] = self._translate_filters(model, crit.filters)
+        if crit.filters:
+            crit_dict['filters'] = self._translate_filters(model, crit.filters)
         if crit.sort:
             sort = [(self._translate(model, field), direc) for field, direc in crit.sort]
             crit_dict['sort'] = sort
@@ -269,7 +270,7 @@ class Repository(ModelSerializer):
         return reverse('repo_resource', kwargs={'repo_id': instance.repo_id})
 
 
-class ImporterSerializer(DictSerializer):
+class ImporterSerializer(ModelSerializer):
     """
     Serializer for the pulp Repository Importer objects
     """
@@ -277,6 +278,7 @@ class ImporterSerializer(DictSerializer):
     class Meta:
         mask_fields = ['config__basic_auth_password',
                        'config__proxy_password']
+        remapped_fields = {'id': '_id'}
 
     def get_href(self, instance):
         """
@@ -288,5 +290,40 @@ class ImporterSerializer(DictSerializer):
         :return: The href for the object being serialized
         :rtype: str
         """
-        return reverse('repo_importer_resource', kwargs={'repo_id': instance['repo_id'],
-                                                         'importer_id': instance['id']})
+        return reverse(
+            'repo_importer_resource',
+            kwargs={'repo_id': instance['repo_id'], 'importer_id': instance['importer_type_id']}
+        )
+
+    def to_representation(self, *args):
+        """
+        `id` field has been removed from the db, but we add it back in for backwards compatibility.
+        """
+        representation = super(ImporterSerializer, self).to_representation(*args)
+        representation['id'] = representation['importer_type_id']
+        return representation
+
+
+class User(ModelSerializer):
+    """
+    Serializer for Users.
+    """
+
+    class Meta:
+        """
+        Contains information that the base serializer needs to properly handle a Repository object.
+        """
+        exclude_fields = ['password']
+        remapped_fields = {'id': '_id'}
+
+    def get_href(self, instance):
+        """
+        Build the href for a user.
+
+        :param instance: user being serialized
+        :type  instance: pulp.server.db.model.Repository
+
+        :return: REST href for the given user instance
+        :rtype:  str
+        """
+        return reverse('user_resource', kwargs={'login': instance.login})

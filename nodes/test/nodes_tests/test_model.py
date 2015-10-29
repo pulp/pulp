@@ -5,7 +5,7 @@ from mock import patch, Mock
 from pulp.common.bundle import Bundle
 from pulp.common.plugins import importer_constants
 
-from base import Response, ServerTests, Task, TaskResult
+from base import Response, ServerTests, TaskResult
 from pulp_node import constants
 from pulp_node.handlers.model import Repository
 
