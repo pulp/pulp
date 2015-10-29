@@ -647,7 +647,7 @@ class CeleryBeatLock(Document):
     _ns = StringField(default='celery_beat_lock')
 
 
-class LazyCatalogEntry(Document):
+class LazyCatalogEntry(AutoRetryDocument):
     """
     A catalog of content that can be downloaded by the specified plugin.
 
@@ -702,7 +702,7 @@ class LazyCatalogEntry(Document):
     data = DictField()
 
 
-class DeferredDownload(Document):
+class DeferredDownload(AutoRetryDocument):
     """
     A collection of units that have been handled by the streamer in the
     passive lazy workflow that Pulp should download.
