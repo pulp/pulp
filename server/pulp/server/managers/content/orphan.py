@@ -239,7 +239,7 @@ class OrphanManager(object):
         """
         # get the model matching the type
         content_model = plugin_api.get_unit_model_by_id(type_id)
-        content_units = content_model.objects().only('id', 'storage_path')
+        content_units = content_model.objects().only('id', '_storage_path')
 
         # Paginate the content units
         for units_group in plugin_misc.paginate(content_units):
@@ -259,8 +259,8 @@ class OrphanManager(object):
             # Remove the unit and any references on disk
             for unit_to_delete in unit_dict.itervalues():
                 unit_to_delete.delete()
-                if unit_to_delete.storage_path:
-                    OrphanManager.delete_orphaned_file(unit_to_delete.storage_path)
+                if unit_to_delete._storage_path:
+                    OrphanManager.delete_orphaned_file(unit_to_delete._storage_path)
 
     @staticmethod
     def delete_orphaned_file(path):

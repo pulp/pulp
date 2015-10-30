@@ -114,7 +114,7 @@ def ensure_database_indexes():
     """
     Ensure that the minimal required indexes have been created for all collections.
 
-    Gratuitiously create MongoEngine based models indexes if they do not already exist.
+    Gratuitously create MongoEngine based models indexes if they do not already exist.
     """
 
     model.Importer.ensure_indexes()

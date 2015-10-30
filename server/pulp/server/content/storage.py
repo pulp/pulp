@@ -91,13 +91,13 @@ class FileStorage(ContentStorage):
             config.get('server', 'storage_dir'),
             'content',
             'units')
-        destination = os.path.join(storage_dir, unit.unit_type_id, unit.id[0:4], unit.id)
+        destination = os.path.join(storage_dir, unit._content_type_id, unit.id[0:4], unit.id)
         mkdir(os.path.dirname(destination))
         if os.path.isdir(path):
             shutil.copytree(path, destination)
         else:
             shutil.copy(path, destination)
-        unit.storage_path = destination
+        unit._storage_path = destination
 
     def get(self, unit):
         """
@@ -222,4 +222,4 @@ class SharedStorage(ContentStorage):
                 pass  # identical
             else:
                 raise
-        unit.storage_path = link
+        unit._storage_path = link
