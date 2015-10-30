@@ -99,7 +99,7 @@ PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a fai
                              "publishing repository %(repository_id)s."),
                 ['distributor_id', 'repository_id'])
 PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed to define the "
-                             "attribute unit_key_fields"), ['class_name'])
+                             "attribute %(field_name)s correctly"), ['class_name', 'field_name'])
 PLP0036 = Error(
     "PLP0036",
     _("The source_location: %(source_location)s specified for the content unit is invalid."),

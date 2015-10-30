@@ -1048,7 +1048,7 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         key_field = mongoengine.StringField()
         unit_key_fields = ['key_field']
 
-        unit_type_id = 'demo_model'
+        _content_type_id = 'demo_model'
 
         objects = MagicMock()
         save = MagicMock()

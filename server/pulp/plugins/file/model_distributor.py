@@ -219,7 +219,7 @@ class FileDistributor(Distributor):
                 # it does not, we should remove what's there and add the correct symlink.
                 try:
                     existing_link_path = os.readlink(symlink_filename)
-                    if existing_link_path == unit.storage_path:
+                    if existing_link_path == unit._storage_path:
                         # We don't need to do anything more for this unit, move on to the next one
                         continue
                     # The existing symlink is incorrect, so let's remove it
@@ -234,7 +234,7 @@ class FileDistributor(Distributor):
                     os.remove(symlink_filename)
             # If we've gotten here, we've removed any existing file at the symlink_filename path,
             # so now we should recreate it.
-            os.symlink(unit.storage_path, symlink_filename)
+            os.symlink(unit._storage_path, symlink_filename)
 
     def _rmtree_if_exists(self, path):
         """

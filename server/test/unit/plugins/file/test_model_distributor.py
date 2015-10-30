@@ -34,7 +34,7 @@ class FileDistributorTest(unittest.TestCase):
         self.old_repo_model.id = "foo"
         self.unit = MagicMock(unit_type_id='RPM', name=SAMPLE_RPM, size=1, checksum='sum1',
                               unit_key={'name': SAMPLE_RPM, 'checksum': 'sum1', 'size': 1})
-        self.unit.storage_path = os.path.join(__file__, DATA_DIR, SAMPLE_RPM)
+        self.unit._storage_path = os.path.join(__file__, DATA_DIR, SAMPLE_RPM)
         self.publish_conduit = get_publish_conduit(existing_units=[self.unit, ])
 
     def tearDown(self):

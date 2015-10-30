@@ -277,8 +277,8 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
 
         class TestUnit(model.FileContentUnit):
             pass
-        orphan = TestUnit(storage_path='test_foo_path', id='orphan')
-        non_orphan = TestUnit(storage_path='test_foo_path', id='non_orphan')
+        orphan = TestUnit(_storage_path='test_foo_path', id='orphan')
+        non_orphan = TestUnit(_storage_path='test_foo_path', id='non_orphan')
 
         m_get_model.return_value.objects.return_value.only.return_value = [orphan, non_orphan]
         m_rcu_objects.return_value.distinct.return_value = ['non_orphan']

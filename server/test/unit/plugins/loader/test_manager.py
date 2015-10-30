@@ -11,7 +11,7 @@ from pulp.server.db.model import ContentUnit
 
 
 class ContentUnitHelper(ContentUnit):
-    unit_type_id = mongoengine.StringField(default='foo')
+    _content_type_id = mongoengine.StringField(default='foo', required=True)
     unit_key_fields = ('apple', 'pear')
 
 
