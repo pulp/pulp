@@ -2,6 +2,7 @@ from mock import MagicMock, patch
 import mock
 import mongoengine
 
+from pulp.common import error_codes
 from pulp.common.compat import unittest
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
@@ -948,20 +949,43 @@ class TestDoPublish(unittest.TestCase):
         """
         fake_report = PublishReport(success_flag=True, summary='summary', details='details')
         mock_sig_handler.return_value.return_value = fake_report
-        mock_repo = mock.MagicMock()
+        fake_repo = model.Repository(repo_id='repo1')
         mock_inst = mock.MagicMock()
         mock_dist = {'id': 'mock_id', 'distributor_type_id': 'mock_dist_type'}
         mock_repo_dist.get_collection().find_one.return_value = mock_dist
-        result = repo_controller._do_publish(mock_repo, 'dist', mock_inst, 'transfer', 'conduit',
+        result = repo_controller._do_publish(fake_repo, 'dist', mock_inst,
+                                             fake_repo.to_transfer_repo(), 'conduit',
                                              'conf')
         self.assertTrue(mock_dist['last_publish'] is mock_dt.utcnow.return_value)
         mock_repo_pub_result.expected_result.assert_called_once_with(
-            mock_repo.repo_id, 'mock_id', 'mock_dist_type', mock_now(), mock_now(), 'summary',
+            fake_repo.repo_id, 'mock_id', 'mock_dist_type', mock_now(), mock_now(), 'summary',
             'details', mock_repo_pub_result.RESULT_SUCCESS
         )
         mock_repo_pub_result.get_collection().save.assert_called_once_with(
             mock_repo_pub_result.expected_result(), safe=True)
         self.assertTrue(result is mock_repo_pub_result.expected_result.return_value)
+
+    def test_failed_publish(self, mock_repo_dist, mock_repo_pub_result, mock_now,
+                            mock_sig_handler, mock_log, mock_text):
+        """
+        Test publish when everything is as expected.
+        """
+        fake_report = PublishReport(success_flag=False, summary='ouch', details='details')
+        mock_sig_handler.return_value.return_value = fake_report
+        fake_repo = model.Repository(repo_id='repo1')
+        mock_inst = mock.MagicMock()
+        mock_dist = {'id': 'mock_id', 'distributor_type_id': 'mock_dist_type'}
+        mock_repo_dist.get_collection().find_one.return_value = mock_dist
+
+        with self.assertRaises(pulp_exceptions.PulpCodedException) as assertion:
+            repo_controller._do_publish(fake_repo, 'dist', mock_inst, fake_repo.to_transfer_repo(),
+                                        mock.MagicMock(), mock.MagicMock())
+
+        e = assertion.exception
+        self.assertEqual(e.error_code, error_codes.PLP0034)
+        self.assertEqual(e.error_data['distributor_id'], 'dist')
+        self.assertEqual(e.error_data['repository_id'], fake_repo.repo_id)
+        self.assertEqual(e.error_data['summary'], fake_report.summary)
 
 
 class TestQueuePublish(unittest.TestCase):
