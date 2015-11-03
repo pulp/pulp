@@ -9,6 +9,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
+ # Comment out if you don't want Vagrant to add and remove entries from /etc/hosts for each VM.
+ config.hostmanager.enabled = true
+ config.hostmanager.manage_host = true
+
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"
 
