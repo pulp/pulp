@@ -1,5 +1,5 @@
 from bson.objectid import InvalidId
-from mock import MagicMock, patch
+from mock import Mock, MagicMock, patch
 import mock
 import mongoengine
 
@@ -11,6 +11,9 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db import model
 
 
+MODULE = 'pulp.server.controllers.repository'
+
+
 class MockException(Exception):
     """Used for tracking the handling of exceptions."""
     pass
@@ -19,7 +22,7 @@ class MockException(Exception):
 class DemoModel(model.ContentUnit):
     key_field = mongoengine.StringField()
     unit_key_fields = ['key_field']
-    unit_type_id = 'demo_model'
+    _content_type_id = 'demo_model'
 
 
 @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
@@ -145,6 +148,140 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         self.assertEquals(result[4].unit_id, 'bar_9')
 
 
+class TestFindUnitsNotDownloaded(unittest.TestCase):
+
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
+    @patch(MODULE + '.model.RepositoryContentUnit')
+    def test_call(self, association, get_model):
+        associations = [
+            Mock(unit_id=1, unit_type_id='dog'),
+            Mock(unit_id=2, unit_type_id='dog'),
+            Mock(unit_id=3, unit_type_id='dog'),
+            Mock(unit_id=4, unit_type_id='cat'),
+            Mock(unit_id=5, unit_type_id='cat'),
+            Mock(unit_id=6, unit_type_id='cat'),
+        ]
+        units = [
+            Mock(id=1, downloaded=False),
+            Mock(id=2, downloaded=True),
+            Mock(id=3, downloaded=False),
+            Mock(id=4, downloaded=False),
+            Mock(id=5, downloaded=True),
+            Mock(id=6, downloaded=False),
+        ]
+        associations_q_set = Mock()
+        associations_q_set.only.return_value = associations
+        association.objects.return_value = associations_q_set
+        dog = Mock()
+        dog.objects.return_value = [u for u in units[0:3] if not u.downloaded]
+        cat = Mock()
+        cat.objects.return_value = [u for u in units[3:6] if not u.downloaded]
+        types = {
+            'dog': dog,
+            'cat': cat
+        }
+        get_model.side_effect = lambda t: types[t]
+        repository = Mock(repo_id='1234')
+
+        # test
+        found = repo_controller.find_units_not_downloaded(repository)
+        found = list(found)
+
+        # validation
+        association.objects.assert_called_once_with(repo_id=repository.repo_id)
+        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
+        dog.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[0:3]]),
+            downloaded=False)
+        cat.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[3:6]]),
+            downloaded=False)
+        self.assertEqual(
+            sorted([u.id for u in found]),
+            sorted([u.id for u in units if not u.downloaded]))
+
+
+class TestHasAllUnitsDownloaded(unittest.TestCase):
+
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
+    @patch(MODULE + '.model.RepositoryContentUnit')
+    def test_all_downloaded(self, association, get_model):
+        associations = [
+            Mock(unit_id=1, unit_type_id='dog'),
+            Mock(unit_id=2, unit_type_id='dog'),
+            Mock(unit_id=3, unit_type_id='dog'),
+            Mock(unit_id=4, unit_type_id='cat'),
+            Mock(unit_id=5, unit_type_id='cat'),
+            Mock(unit_id=6, unit_type_id='cat'),
+        ]
+        associations_q_set = Mock()
+        associations_q_set.only.return_value = associations
+        association.objects.return_value = associations_q_set
+        dog = Mock()
+        dog.objects.return_value.count.return_value = 0
+        cat = Mock()
+        cat.objects.return_value.count.return_value = 0
+        types = {
+            'dog': dog,
+            'cat': cat
+        }
+        get_model.side_effect = lambda t: types[t]
+        repository = Mock(repo_id='1234')
+
+        # test
+        result = repo_controller.has_all_units_downloaded(repository)
+
+        # validation
+        association.objects.assert_called_once_with(repo_id=repository.repo_id)
+        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
+        dog.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[0:3]]),
+            downloaded=False)
+        cat.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[3:6]]),
+            downloaded=False)
+        self.assertTrue(result)
+
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
+    @patch(MODULE + '.model.RepositoryContentUnit')
+    def test_not_all_downloaded(self, association, get_model):
+        associations = [
+            Mock(unit_id=1, unit_type_id='dog'),
+            Mock(unit_id=2, unit_type_id='dog'),
+            Mock(unit_id=3, unit_type_id='dog'),
+            Mock(unit_id=4, unit_type_id='cat'),
+            Mock(unit_id=5, unit_type_id='cat'),
+            Mock(unit_id=6, unit_type_id='cat'),
+        ]
+        associations_q_set = Mock()
+        associations_q_set.only.return_value = associations
+        association.objects.return_value = associations_q_set
+        dog = Mock()
+        dog.objects.return_value.count.return_value = 0
+        cat = Mock()
+        cat.objects.return_value.count.return_value = 3
+        types = {
+            'dog': dog,
+            'cat': cat
+        }
+        get_model.side_effect = lambda t: types[t]
+        repository = Mock(repo_id='1234')
+
+        # test
+        result = repo_controller.has_all_units_downloaded(repository)
+
+        # validation
+        association.objects.assert_called_once_with(repo_id=repository.repo_id)
+        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
+        dog.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[0:3]]),
+            downloaded=False)
+        cat.objects.assert_called_once_with(
+            id__in=tuple([a.unit_id for a in associations[3:6]]),
+            downloaded=False)
+        self.assertFalse(result)
+
+
 class UpdateRepoUnitCountsTests(unittest.TestCase):
 
     @patch('pulp.server.controllers.repository.model.Repository.objects')
@@ -183,7 +320,7 @@ class AssociateSingleUnitTests(unittest.TestCase):
         mock_rcu_objects.assert_called_once_with(
             repo_id='foo',
             unit_id='bar',
-            unit_type_id=DemoModel.unit_type_id
+            unit_type_id=DemoModel._content_type_id
         )
         mock_rcu_objects.return_value.update_one.assert_called_once_with(
             set_on_insert__created='foo_tstamp',
