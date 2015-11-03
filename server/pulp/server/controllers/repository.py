@@ -15,7 +15,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
-from pulp.plugins.util import misc
+from pulp.plugins.util.misc import paginate
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
@@ -105,6 +105,50 @@ def find_repo_content_units(
             yield_count += 1
 
 
+def find_units_not_downloaded(repository):
+    """
+    Find content units that have not been fully downloaded.
+
+    :param repository: A repository.
+    :type repository: model.Repository
+    :return: The requested units.
+    :rtype: generator
+    """
+    types = {}
+    q_set = model.RepositoryContentUnit.objects(repo_id=repository.repo_id)
+    for association in q_set.only('unit_id', 'unit_type_id'):
+        unit_ids = types.setdefault(association.unit_type_id, [])
+        unit_ids.append(association.unit_id)
+    for type_id, unit_ids in types.items():
+        _model = plugin_api.get_unit_model_by_id(type_id)
+        for page in paginate(unit_ids):
+            for unit in _model.objects(id__in=page, downloaded=False):
+                yield unit
+
+
+def has_all_units_downloaded(repository):
+    """
+    Get whether a repository contains units that have all been downloaded.
+
+    :param repository: A repository.
+    :type repository: model.Repository
+    :return: True if completely downloaded
+    :rtype: bool
+    """
+    types = {}
+    q_set = model.RepositoryContentUnit.objects(repo_id=repository.repo_id)
+    for association in q_set.only('unit_id', 'unit_type_id'):
+        unit_ids = types.setdefault(association.unit_type_id, [])
+        unit_ids.append(association.unit_id)
+    for type_id, unit_ids in types.items():
+        _model = plugin_api.get_unit_model_by_id(type_id)
+        for page in paginate(unit_ids):
+            q_set = _model.objects(id__in=page, downloaded=False)
+            if q_set.count():
+                return False
+    return True
+
+
 def rebuild_content_unit_counts(repository):
     """
     Update the content_unit_counts field on a Repository.
@@ -142,7 +186,7 @@ def associate_single_unit(repository, unit):
     qs = model.RepositoryContentUnit.objects(
         repo_id=repository.repo_id,
         unit_id=unit.id,
-        unit_type_id=unit.unit_type_id)
+        unit_type_id=unit.type_id)
     qs.update_one(
         set_on_insert__created=formatted_datetime,
         set__updated=formatted_datetime,
@@ -158,7 +202,7 @@ def disassociate_units(repository, unit_iterable):
     :param unit_iterable: The units to disassociate from the repository.
     :type unit_iterable: iterable of pulp.server.db.model.ContentUnit
     """
-    for unit_group in misc.paginate(unit_iterable):
+    for unit_group in paginate(unit_iterable):
         unit_id_list = [unit.id for unit in unit_group]
         qs = model.RepositoryContentUnit.objects(
             repo_id=repository.repo_id, unit_id__in=unit_id_list)

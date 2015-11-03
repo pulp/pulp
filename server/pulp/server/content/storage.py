@@ -28,7 +28,7 @@ class ContentStorage(object):
     Base class for content storage.
     """
 
-    def put(self, unit, path):
+    def put(self, unit, path, location=None):
         """
         Put the content (bits) associated with the specified content unit into storage.
         The file (or directory) at the specified *path* is transferred into storage.
@@ -37,6 +37,9 @@ class ContentStorage(object):
         :type unit: pulp.sever.db.model.ContentUnit
         :param path: The absolute path to the file (or directory) to be stored.
         :type path: str
+        :param location: The (optional) location within the path
+            where the content is to be stored.
+        :type location: str
         """
         raise NotImplementedError()
 
@@ -74,30 +77,47 @@ class ContentStorage(object):
 
 class FileStorage(ContentStorage):
     """
-    Direct storage for files and directories.
+    Direct file storage.
     """
 
-    def put(self, unit, path):
+    @staticmethod
+    def get_path(unit):
         """
-        Put the content defined by the content unit into storage.
-        The file (or directory) at the specified *path* is transferred into storage.
+        Get the appropriate storage path for the specified unit.
 
-        :param unit: The content unit to be stored.
-        :type unit: pulp.sever.db.model.ContentUnit
-        :param path: The absolute path to the file (or directory) to be stored.
-        :type path: str
+        :param unit: A content unit.
+        :type unit: pulp.server.db.model.FileContentUnit
+        :return: An absolute path to where associated content files will be stored.
+        :rtype: str
         """
         storage_dir = os.path.join(
             config.get('server', 'storage_dir'),
             'content',
             'units')
-        destination = os.path.join(storage_dir, unit._content_type_id, unit.id[0:4], unit.id)
+        return os.path.join(
+            storage_dir,
+            unit.type_id,
+            unit.id[0:4],
+            unit.id)
+
+    def put(self, unit, path, location=None):
+        """
+        Put the content defined by the content unit into storage.
+        The file at the specified *path* is transferred into storage.
+
+        :param unit: The content unit to be stored.
+        :type unit: pulp.sever.db.model.ContentUnit
+        :param path: The absolute path to the file (or directory) to be stored.
+        :type path: str
+        :param location: The (optional) location within the path
+            where the content is to be stored.
+        :type location: str
+        """
+        destination = unit.storage_path
+        if location:
+            destination = os.path.join(destination, location.lstrip('/'))
         mkdir(os.path.dirname(destination))
-        if os.path.isdir(path):
-            shutil.copytree(path, destination)
-        else:
-            shutil.copy(path, destination)
-        unit._storage_path = destination
+        shutil.copy(path, destination)
 
     def get(self, unit):
         """
@@ -135,7 +155,7 @@ class SharedStorage(ContentStorage):
         self.storage_id = sha256(storage_id).hexdigest()
         self.provider = provider
 
-    def put(self, unit, path=None):
+    def put(self, unit, path=None, location=None):
         """
         Put the content (bits) associated with the specified content unit into storage.
         The file (or directory) at the specified *path* is transferred into storage.
@@ -144,6 +164,9 @@ class SharedStorage(ContentStorage):
         :type unit: pulp.sever.db.model.ContentUnit
         :param path: The absolute path to the file (or directory) to be stored.
         :type path: str
+        :param location: The (optional) location within the path
+            where the content is to be stored.
+        :type location: str
         """
         self.link(unit)
 
@@ -212,6 +235,8 @@ class SharedStorage(ContentStorage):
 
         :param unit: The content unit to be linked.
         :type unit: pulp.sever.db.model.ContentUnit
+        :return: The absolute path to the link.
+        :rtype: str
         """
         target = self.content_dir
         link = os.path.join(self.links_dir, unit.id)
@@ -222,4 +247,4 @@ class SharedStorage(ContentStorage):
                 pass  # identical
             else:
                 raise
-        unit._storage_path = link
+        return link

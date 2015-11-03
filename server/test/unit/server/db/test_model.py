@@ -6,11 +6,12 @@ Tests for the pulp.server.db.model module.
 
 from mock import patch, Mock
 
-from mongoengine import (ValidationError, DateTimeField, DictField, Document, IntField, ListField,
-                         StringField)
+from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField, Document,
+                         IntField, ListField, StringField)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
+from pulp.common.error_codes import PLP0036, PLP0037
 from pulp.server import exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
@@ -83,13 +84,10 @@ class TestContentUnit(unittest.TestCase):
     def test_model_fields(self):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
         self.assertTrue(model.ContentUnit.id.primary_key)
-
         self.assertTrue(isinstance(model.ContentUnit._last_updated, IntField))
         self.assertTrue(model.ContentUnit._last_updated.required)
-
-        self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
-
         self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
+        self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
@@ -191,11 +189,17 @@ class TestContentUnit(unittest.TestCase):
         expected_dict = {'unit_key': {'pear': u'pear', 'apple': u'apple'}, 'type_id': 'bar'}
         self.assertEqual(ret, expected_dict)
 
+    def test_storage_path(self):
+        class ContentUnitHelper(model.ContentUnit):
+            _storage_path = StringField()
+        my_unit = ContentUnitHelper(_storage_path='apple')
+        self.assertEqual(my_unit.storage_path, my_unit._storage_path)
+
     def test_type_id(self):
         class ContentUnitHelper(model.ContentUnit):
             _content_type_id = StringField()
         my_unit = ContentUnitHelper(_content_type_id='apple')
-        self.assertEqual(my_unit.type_id, 'apple')
+        self.assertEqual(my_unit.type_id, my_unit._content_type_id)
 
     def test__content_type_id_field_is_not_defined_on_abstract_class(self):
         self.assertFalse(hasattr(model.ContentUnit, '_content_type_id'))
@@ -312,71 +316,87 @@ class TestFileContentUnit(unittest.TestCase):
     class TestUnit(model.FileContentUnit):
         pass
 
-    def test_init(self):
-        unit = TestFileContentUnit.TestUnit()
-        self.assertEqual(unit._source_location, None)
+    def test_fields(self):
+        self.assertTrue(isinstance(model.FileContentUnit.downloaded, BooleanField))
+        self.assertEqual(model.FileContentUnit.downloaded.default, True)
 
-    @patch('os.path.exists')
-    def test_set_content(self, exists):
-        path = '1234'
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_pre_save_signal(self, get_path):
+        document = Mock(_storage_path=None)
         unit = TestFileContentUnit.TestUnit()
-        exists.return_value = True
-        unit.set_content(path)
-        exists.assert_called_once_with(path)
-        self.assertEquals(unit._source_location, path)
+        unit.pre_save_signal(None, document)
+        get_path.assert_called_once_with(document)
+        self.assertEqual(document._storage_path, get_path.return_value)
 
-    @patch('os.path.exists')
-    def test_set_content_bad_source_location(self, exists):
-        """
-        Test that the appropriate exception is raised when set_content
-        is called with a non existent source_location
-        """
-        exists.return_value = False
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_pre_save_signal_already_has_storage_path(self, get_path):
+        document = Mock(_storage_path='123')
         unit = TestFileContentUnit.TestUnit()
+        unit.pre_save_signal(None, document)
+        self.assertFalse(get_path.called)
+        self.assertEqual(document._storage_path, '123')
+
+    @patch('os.path.isfile')
+    @patch('pulp.server.db.model.FileStorage')
+    def test_import_content(self, file_storage, isfile):
+        path = '/tmp/working/file'
+        isfile.return_value = True
+        storage = Mock()
+        storage.__enter__ = Mock(return_value=storage)
+        storage.__exit__ = Mock()
+        file_storage.return_value = storage
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._storage_path = '/tmp/content'
+        unit.import_content(path)
+
+        # validation
+        file_storage.assert_called_once_with()
+        storage.__enter__.assert_called_once_with()
+        storage.__exit__.assert_called_once_with(None, None, None)
+        storage.put.assert_called_once_with(unit, path, None)
+
+    @patch('os.path.isfile')
+    @patch('pulp.server.db.model.FileStorage')
+    def test_import_content_with_location(self, file_storage, isfile):
+        path = '/tmp/working/file'
+        location = 'a/b'
+        isfile.return_value = True
+        storage = Mock()
+        storage.__enter__ = Mock(return_value=storage)
+        storage.__exit__ = Mock()
+        file_storage.return_value = storage
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._storage_path = '/tmp/content'
+        unit.import_content(path, location)
+
+        # validation
+        file_storage.assert_called_once_with()
+        storage.__enter__.assert_called_once_with()
+        storage.__exit__.assert_called_once_with(None, None, None)
+        storage.put.assert_called_once_with(unit, path, location)
+
+    def test_import_content_unit_not_saved(self):
         try:
-            unit.set_content('1234')
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0036)
+            unit = TestFileContentUnit.TestUnit()
+            unit.import_content('')
+            self.fail('Expected coded exception')
+        except PulpCodedException, e:
+            self.assertEqual(e.error_code, PLP0036)
 
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
-    def test_pre_save_signal(self, close, _open, put):
-        sender = Mock()
-        kwargs = {'a': 1, 'b': 2}
-
-        # test
-        unit = TestFileContentUnit.TestUnit()
-        unit._source_location = '1234'
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
-            unit.pre_save_signal(sender, unit, **kwargs)
-
-        # validation
-        base.assert_called_once_with(sender, unit, **kwargs)
-        _open.assert_called_once_with()
-        close.assert_called_once_with()
-        put.assert_called_once_with(unit, '1234')
-        self.assertEqual(unit._source_location, None)
-
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
-    def test_pre_save_signal_no_content(self, close, _open, put):
-        sender = Mock()
-        kwargs = {'a': 1, 'b': 2}
-
-        # test
-        unit = TestFileContentUnit.TestUnit()
-        unit._source_location = None
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
-            unit.pre_save_signal(sender, unit, **kwargs)
-
-        # validation
-        base.assert_called_once_with(sender, unit, **kwargs)
-        self.assertFalse(_open.called)
-        self.assertFalse(close.called)
-        self.assertFalse(put.called)
+    @patch('os.path.isfile')
+    def test_import_content_not_existing_file(self, isfile):
+        isfile.return_value = False
+        try:
+            unit = TestFileContentUnit.TestUnit()
+            unit._storage_path = '/tmp/test'
+            unit.import_content('')
+            self.fail('Expected coded exception')
+        except PulpCodedException, e:
+            self.assertEqual(e.error_code, PLP0037)
 
 
 class TestSharedContentUnit(unittest.TestCase):

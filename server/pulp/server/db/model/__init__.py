@@ -7,7 +7,7 @@ import uuid
 from collections import namedtuple
 from hmac import HMAC
 
-from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
+from mongoengine import (BooleanField, DateTimeField, DictField, Document, DynamicField, IntField,
                          ListField, StringField, UUIDField, ValidationError)
 from mongoengine import signals
 
@@ -449,17 +449,17 @@ class ContentUnit(AutoRetryDocument):
 
     :ivar id: content unit id
     :type id: mongoengine.StringField
-    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
-    :type _last_updated: mongoengine.IntField
     :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
     :type pulp_user_metadata: mongoengine.DictField
-    :ivar _storage_path: Location on disk where the content associated with this unit lives
+    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
+    :type _last_updated: mongoengine.IntField
+    :ivar _storage_path: The absolute path to associated content files.
     :type _storage_path: mongoengine.StringField
     """
 
     id = StringField(primary_key=True)
-    _last_updated = IntField(required=True)
     pulp_user_metadata = DictField()
+    _last_updated = IntField(required=True)
     _storage_path = StringField()
 
     meta = {
@@ -570,6 +570,16 @@ class ContentUnit(AutoRetryDocument):
         return Repository.objects(repo_id__in=id_list)
 
     @property
+    def storage_path(self):
+        """
+        The content storage path.
+
+        :return: The absolute path to stored content.
+        :rtype: str
+        """
+        return self._storage_path
+
+    @property
     def unit_key(self):
         """
         Dictionary representation of the unit key
@@ -627,27 +637,26 @@ class ContentUnit(AutoRetryDocument):
 
 class FileContentUnit(ContentUnit):
     """
-    A content unit representing content that is of type *file* or *directory*.
+    A content unit representing content that is of type *file*.
 
-    :ivar _source_location: The absolute path to file or directory
-        to be copied to the platform storage location when the unit
-        is saved. See: set_content().
-    :type _source_location: str
+    :ivar downloaded: Indicates whether all of the files associated with the
+        unit have been downloaded.
+    :type downloaded: bool
     """
+
+    downloaded = BooleanField(default=True)
 
     meta = {
         'abstract': True,
+        'indexes': [
+            'downloaded'
+        ]
     }
-
-    def __init__(self, *args, **kwargs):
-        super(FileContentUnit, self).__init__(*args, **kwargs)
-        self._source_location = None
 
     @classmethod
     def pre_save_signal(cls, sender, document, **kwargs):
         """
-        The signal that is triggered before a unit is saved, this is used to
-        move the unit file or directory into place.
+        The signal that is triggered before a unit is saved.
 
         :param sender: sender class
         :type sender: object
@@ -655,27 +664,33 @@ class FileContentUnit(ContentUnit):
         :type document: FileContentUnit
         """
         super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
-        if not document._source_location:
-            # no content
-            return
+        if not document._storage_path:
+            document._storage_path = FileStorage.get_path(document)
+
+    def import_content(self, path, location=None):
+        """
+        Import a content file into platform storage.
+        The (optional) *location* may be used to specify a path within the unit
+        storage where the content is to be stored.
+        For example:
+          import_content('/tmp/file') will store 'file' at: _storage_path
+          import_content('/tmp/file', 'a/b/c) will store 'file' at: _storage_path/a/b/c
+
+        :param path: The absolute path to the file to be imported.
+        :type path: str
+        :param location: The (optional) location within the unit storage path
+            where the content is to be stored.
+        :type location: str
+
+        :raises PulpCodedException: PLP0036 if the unit has not been saved.
+        :raises PulpCodedException: PLP0037 if *path* is not an existing file.
+        """
+        if not self._storage_path:
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036)
+        if not os.path.isfile(path):
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
         with FileStorage() as storage:
-            storage.put(document, document._source_location)
-            document._source_location = None
-
-    def set_content(self, source_location):
-        """
-        Store the source of the content for the unit and the relative path
-        where it should be stored within the plugin content directory.
-
-        :param source_location: The absolute path to the content in the plugin working directory.
-        :type source_location: str
-
-        :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
-        """
-        if not os.path.exists(source_location):
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
-                                                source_location=source_location)
-        self._source_location = source_location
+            storage.put(self, path, location)
 
 
 class SharedContentUnit(ContentUnit):
@@ -722,7 +737,7 @@ class SharedContentUnit(ContentUnit):
         """
         super(SharedContentUnit, cls).pre_save_signal(sender, document, **kwargs)
         with SharedStorage(document.storage_provider, document.storage_id) as storage:
-            storage.link(document)
+            document._storage_path = storage.link(document)
 
 
 class CeleryBeatLock(AutoRetryDocument):
