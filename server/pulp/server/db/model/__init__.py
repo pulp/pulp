@@ -457,7 +457,7 @@ class ContentUnit(AutoRetryDocument):
     :type _storage_path: mongoengine.StringField
     """
 
-    id = StringField(primary_key=True)
+    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
     pulp_user_metadata = DictField()
     _last_updated = IntField(required=True)
     _storage_path = StringField()
@@ -554,8 +554,6 @@ class ContentUnit(AutoRetryDocument):
         :param document: Document that sent the signal
         :type document: ContentUnit
         """
-        if not document.id:
-            document.id = str(uuid.uuid4())
         document._last_updated = dateutils.now_utc_timestamp()
 
     def get_repositories(self):
@@ -665,7 +663,26 @@ class FileContentUnit(ContentUnit):
         """
         super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
         if not document._storage_path:
-            document._storage_path = FileStorage.get_path(document)
+            document.set_storage_path()
+
+    def set_storage_path(self, filename=None):
+        """
+        Set the storage path including an optional file name.
+        The path is calculated as: content/units/<type_id>/unit.id[0:4]/unit.id/<filename>.
+        A *filename* should only be specified when the content unit is associated
+        with a single file.
+
+        :param filename: An optional file name to be appended.
+        :type filename: str
+        :raise: RuntimeError: if called after unit has been saved.
+        """
+        if self._last_updated:
+            raise RuntimeError(
+                _('The storage path cannot be updated after the unit has been saved'))
+        path = FileStorage.get_path(self)
+        if filename:
+            path = os.path.join(path, filename)
+        self._storage_path = path
 
     def import_content(self, path, location=None):
         """
