@@ -104,6 +104,7 @@ Deletes a user from the Pulp server. Permissions granted to the user are revoked
 | :response_list:`_`
 
 * :response_code:`200,if the user was successfully deleted`
+* :response_code:`400,if the user cannot be deleted because it is the last super user`
 * :response_code:`404,if there is no user with the given login`
 
 | :return:`null`
