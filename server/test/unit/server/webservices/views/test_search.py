@@ -19,6 +19,89 @@ class TestSearchView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
+    def test_get_no_query_params(self, from_client_input):
+        """
+        Test the GET search handler without any parameters passed.
+        """
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+        request = mock.MagicMock()
+        request.GET = http.QueryDict('')
+        view = FakeSearchView()
+        FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
+
+        with mock.patch.object(FakeSearchView, '_generate_response',
+                               side_effect=FakeSearchView._generate_response) as _generate_response:
+            results = view.get(request)
+
+        self.assertEqual(type(results), http.HttpResponse)
+        self.assertEqual(results.content, '["big money", "bigger money"]')
+        self.assertEqual(results.status_code, 200)
+
+        _generate_response.assert_called_once_with({}, {})
+        from_client_input.assert_called_once_with({})
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.search.SearchView._generate_response')
+    def test_get_with_options(self, mock_gen_response):
+        """
+        Test the GET search handler without any search parameters passed, but with options.
+        """
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+            _parse_args = mock.MagicMock(return_value=('query', 'options'))
+
+        request = mock.MagicMock()
+        request.GET = http.QueryDict('details=true')
+        view = FakeSearchView()
+        results = view.get(request)
+
+        FakeSearchView._parse_args.assert_called_once_with({'details': 'true'})
+        mock_gen_response.assert_called_once_with('query', 'options')
+        self.assertTrue(results is mock_gen_response.return_value)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
+    def test_get_with_json_field(self, from_client_input):
+        """
+        Test the GET search handler with a json field. This covers `filters` as well as `sort`.
+        """
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+
+        request = mock.MagicMock()
+        request.GET = http.QueryDict('filters={"name":"admin"}')
+        view = FakeSearchView()
+        FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
+
+        with mock.patch.object(FakeSearchView, '_generate_response',
+                               side_effect=FakeSearchView._generate_response) as _generate_response:
+            results = view.get(request)
+
+        self.assertEqual(type(results), http.HttpResponse)
+        self.assertEqual(results.content, '["big money", "bigger money"]')
+        self.assertEqual(results.status_code, 200)
+        _generate_response.assert_called_once_with({'filters': {"name": "admin"}}, {})
+        from_client_input.assert_called_once_with({'filters': {"name": "admin"}})
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.search.SearchView._parse_args')
+    def test_get_with_invalid_filters(self, mock_parse):
+        """
+        InvalidValue should be raised if param 'filters' is not json.
+        """
+        mock_parse.return_value = ({'mock': 'query'}, 'tuple')
+        search_view = search.SearchView()
+        mock_request = mock.MagicMock()
+        mock_request.GET = http.QueryDict('filters=invalid json')
+        self.assertRaises(exceptions.InvalidValue, search_view.get, mock_request)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
     def test_get_with_fields(self, from_client_input):
         """
         Test the GET search handler with fields in the request.
@@ -27,8 +110,7 @@ class TestSearchView(unittest.TestCase):
             model = mock.MagicMock()
 
         request = mock.MagicMock()
-        # Simulate an empty POST body
-        request.GET = {'field': '["name", "id"]', 'filters': '{"name":"admin"}'}
+        request.GET = http.QueryDict('field=name&field=id&filters={"name":"admin"}')
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
@@ -48,50 +130,6 @@ class TestSearchView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
-    def test_get_without_fields(self, from_client_input):
-        """
-        Test the GET search handler without any fields specified in the request.
-        """
-        class FakeSearchView(search.SearchView):
-            model = mock.MagicMock()
-
-        request = mock.MagicMock()
-        # Simulate an empty POST body
-        request.GET = {'filters': '{"name":"admin"}'}
-        view = FakeSearchView()
-        FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
-
-        with mock.patch.object(FakeSearchView, '_generate_response',
-                               side_effect=FakeSearchView._generate_response) as _generate_response:
-            results = view.get(request)
-
-        self.assertEqual(type(results), http.HttpResponse)
-        self.assertEqual(results.content, '["big money", "bigger money"]')
-        self.assertEqual(results.status_code, 200)
-        # This is actually a bug, but the intention of this Django port was to behave exactly like
-        # The webpy handlers did, bugs included. When #312 is fixed, the tests below should fail,
-        # because the get() handler should have deserialized the filters instead of leaving them as
-        # strings. Please modify these assertions to have the correct behavior.
-        # https://pulp.plan.io/issues/312
-        _generate_response.assert_called_once_with({'filters': {"name": "admin"}}, {})
-        from_client_input.assert_called_once_with({'filters': {"name": "admin"}})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.search.SearchView._parse_args')
-    def test_get_with_invalid_filters(self, mock_parse):
-        """
-        InvalidValue should be raised if param 'filters' is not json.
-        """
-        mock_parse.return_value = ({'mock': 'query'}, 'tuple')
-        search_view = search.SearchView()
-        mock_request = mock.MagicMock()
-        mock_request.GET = http.QueryDict('filters=invalid json')
-        self.assertRaises(exceptions.InvalidValue, search_view.get, mock_request)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
     def test_post(self):
         """
         Test the POST search under normal conditions.
@@ -100,7 +138,6 @@ class TestSearchView(unittest.TestCase):
             model = mock.MagicMock()
 
         request = mock.MagicMock()
-        # Simulate an empty POST body
         request.body = '{"criteria": {"filters": {"money": {"$gt": 1000000}}}}'
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -300,7 +337,7 @@ class TestParseArgs(unittest.TestCase):
         """
         Test that options are populated and optional fields are removed from args.
         """
-        args = http.QueryDict('opt_bool=true&opt_str=hi&non-optional=field')
+        args = {'opt_bool': 'true', 'opt_str': 'hi', 'non-optional': 'field'}
 
         search_params, options = self.fake_search._parse_args(args)
 
@@ -309,44 +346,42 @@ class TestParseArgs(unittest.TestCase):
         self.assertEqual(options['opt_str'], 'hi')
 
     def test_parse_args_converts_true(self):
-        args = http.QueryDict('opt_bool=true')
+        args = {'opt_bool': 'true'}
 
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is True)
 
     def test_parse_args_converts_TRUE(self):
-        args = http.QueryDict('opt_bool=TRUE')
+        args = {'opt_bool': 'TRUE'}
 
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is True)
 
     def test_parse_args_converts_false(self):
-        args = http.QueryDict('opt_bool=false')
+        args = {'opt_bool': 'false'}
 
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is False)
 
     def test_parse_args_converts_FALSE(self):
-        args = http.QueryDict('opt_bool=FALSE')
+        args = {'opt_bool': 'FALSE'}
 
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is False)
 
     def test_parse_args_preserves_true(self):
-        args = http.QueryDict('', mutable=True)
-        args['opt_bool'] = True
+        args = {'opt_bool': True}
 
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is True)
 
     def test_parse_args_preserves_false(self):
-        args = http.QueryDict('', mutable=True)
-        args['opt_bool'] = False
+        args = {'opt_bool': False}
 
         params, options = self.fake_search._parse_args(args)
 
