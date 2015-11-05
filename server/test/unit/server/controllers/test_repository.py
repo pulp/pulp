@@ -719,7 +719,7 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'canceled'
         )
-        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
+        mock_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
@@ -758,7 +758,7 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'success'
         )
-        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
+        mock_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
@@ -795,7 +795,7 @@ class TestSync(unittest.TestCase):
             mock_sync_result.removed_count, mock_sync_result.summary, mock_sync_result.details,
             'failed'
         )
-        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
+        mock_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
@@ -827,7 +827,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), -1, -1, -1, mock_gettext(), mock_gettext(),
             'err'
         )
-        mock_model.Importer.objects().update.assert_called_once_with(last_sync=mock_now())
+        mock_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
