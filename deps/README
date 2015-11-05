@@ -81,7 +81,8 @@ Permanent Patches:
                 it works around a permanent downstream issue whereby
                 ordereddict is installed as part of the Python system
                 library, and not in site-packages. This is not
-                contributed to upstream Kombu.
+                contributed to upstream Kombu. For more info, see:
+                https://bugzilla.redhat.com/show_bug.cgi?id=1212200#c7
 
 
 Temporary Patches:

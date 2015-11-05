@@ -658,7 +658,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     finally:
         # Do an update instead of a save in case the importer has changed the scratchpad
-        model.Importer.objects(repo_id=repo_obj.repo_id).update(last_sync=sync_end_timestamp)
+        model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
         sync_result_collection.save(sync_result, safe=True)
 
@@ -839,9 +839,10 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
         publish_report = publish_repo(transfer_repo, conduit, call_config)
         if publish_report is not None and hasattr(publish_report, 'success_flag') \
                 and not publish_report.success_flag:
+            _logger.info(publish_report.summary)
             raise pulp_exceptions.PulpCodedException(
                 error_code=error_codes.PLP0034, repository_id=repo_obj.repo_id,
-                distributor_id=dist_id
+                distributor_id=dist_id, summary=publish_report.summary
             )
 
     except Exception, e:

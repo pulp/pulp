@@ -53,64 +53,56 @@ class SearchView(generic.View):
     @classmethod
     def _parse_args(cls, args):
         """
-        Some search views are required to be able to include extra information. This function
-        separates those flags from the search arguments.
-        :param args: Search parameters mixed with extra options. Any extra options should be
-                     removed and returned separately.
-        :type  args: django.http.QueryDict
+        Some search views can contain options in addition to parameters. This function separates
+        those options (which should be defined in the subclass) from the search arguments.
+        :param args: Search parameters mixed with extra options.
+        :type  args: dict
 
         :return: filtered search parameters and options
         :rtype:  tuple containing a 2 dicts
         """
-        search_params = {}
         options = {}
-
         for field in filter(args.__contains__, cls.optional_bool_fields):
-            value = args.get(field)
+            value = args.pop(field)
             if isinstance(value, basestring):
                 options[field] = value.lower() == 'true'
             else:
                 options[field] = value
 
         for field in filter(args.__contains__, cls.optional_string_fields):
-            options[field] = args.get(field)
+            options[field] = args.pop(field)
 
-        for field in args.iterkeys():
-            if field not in options:
-                search_params[field] = args.get(field)
-
-        return search_params, options
+        return args, options
 
     @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
         """
-        Search for objects using an HTTP GET request.
+        Search for objects using an HTTP GET request. Parses the get parameters and builds a dict
+        that should be identical to the request body had this been a POST request.
 
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :return:        HttpReponse containing a list of objects that were matched by the request
         :rtype:         django.http.HttpResponse
 
-        :raises InvalidValue: if filters is passed but is not valid JSON
+        :raises InvalidValue: if `filters` or `sort` is passed but is not valid JSON
         """
-        query, options = self._parse_args(request.GET)
-        fields = query.pop('field', '')
-        if fields:
-            query['fields'] = fields
-        filters = request.GET.get('filters')
-        if filters:
-            query['filters'] = filters
-
-        # Load query data structures from json
-        json_criteria_fields = ['filters', 'fields', 'sort']
-        for field in json_criteria_fields:
-            value = query.get(field)
-            if value:
+        search_params = {}
+        for field, value in request.GET.iteritems():
+            # These fields need to be loaded from json
+            if field in ['filters', 'sort']:
                 try:
-                    query[field] = json.loads(value)
+                    search_params[field] = json.loads(value)
                 except ValueError:
                     raise exceptions.InvalidValue(field)
+            # The user passes a set of singular values, and a list of values is extracted.
+            elif field == 'field':
+                search_params['fields'] = request.GET.getlist('field')
+            # All other fields are singluar, including options.
+            else:
+                search_params[field] = value
 
+        query, options = self._parse_args(search_params)
         return self._generate_response(query, options, *args, **kwargs)
 
     @auth_required(authorization.READ)
@@ -127,10 +119,8 @@ class SearchView(generic.View):
         :raises MissingValue: if required param `criteria` is not passed in the body.
         """
         search_params, options = self._parse_args(request.body_as_json)
-        try:
-            # Retrieve the criteria from the POST data
-            query = search_params['criteria']
-        except KeyError:
+        query = search_params.get('criteria')
+        if query is None:
             raise exceptions.MissingValue(['criteria'])
         return self._generate_response(query, options, *args, **kwargs)
 
