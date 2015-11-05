@@ -588,7 +588,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     finally:
         # Do an update instead of a save in case the importer has changed the scratchpad
-        model.Importer.objects(repo_id=repo_obj.repo_id).update(last_sync=sync_end_timestamp)
+        model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
         sync_result_collection.save(sync_result, safe=True)
 
