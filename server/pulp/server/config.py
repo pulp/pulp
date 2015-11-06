@@ -94,7 +94,7 @@ _default_values = {
         'enabled': 'false',
         'redirect_host': '',
         'redirect_port': '',
-        'redirect_path': '',
+        'redirect_path': '/streamer/',
     },
     'streamer': {
         'port': '8751',
