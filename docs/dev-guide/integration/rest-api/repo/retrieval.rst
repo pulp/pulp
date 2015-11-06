@@ -303,20 +303,24 @@ will either be empty (no importer configured) or contain a single entry.
 :sample_response:`200` ::
 
  [
-  {
-    "scratchpad": 1,
-    "_ns": "repo_importers",
-    "importer_type_id": "harness_importer",
-    "last_sync": "2012-01-25T15:26:32Z",
-    "repo_id": "harness_repo_1",
-    "sync_in_progress": false,
-    "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
-    "config": {
-      "num_units": "5",
-      "write_files": "true"
-    },
-    "id": "harness_importer"
-  }
+    {
+        "_href": "/pulp/api/v2/repositories/zoo/importers/yum_importer/",
+        "_id": {
+            "$oid": "563c82fa45ef48043f026c32"
+        },
+        "_ns": "repo_importers",
+        "config": {
+            "feed": "http://example.com/repos/zoo/"
+        },
+        "id": "yum_importer",
+        "importer_type_id": "yum_importer",
+        "last_sync": "2015-11-06T10:38:23Z",
+        "repo_id": "zoo",
+        "scratchpad": {
+            "previous_skip_list": [],
+            "repomd_revision": 1331832478
+        }
+    }
  ]
 
 Retrieve an Importer Associated with a Repository
@@ -337,20 +341,24 @@ Retrieves the given :term:`importer` (if any) associated with a repository.
 
 :sample_response:`200` ::
 
-  {
-    "scratchpad": 1,
-    "_ns": "repo_importers",
-    "importer_type_id": "harness_importer",
-    "last_sync": "2012-01-25T15:26:32Z",
-    "repo_id": "harness_repo_1",
-    "sync_in_progress": false,
-    "_id": {"$oid": "bbe81308-ef7c-4c0c-b684-385fd627d99e"},
-    "config": {
-      "num_units": "5",
-      "write_files": "true"
+ {
+    "_href": "/pulp/api/v2/repositories/zoo/importers/yum_importer/",
+    "_id": {
+        "$oid": "563c82fa45ef48043f026c32"
     },
-    "id": "harness_importer"
-  }
+    "_ns": "repo_importers",
+    "config": {
+        "feed": "http://example.com/repos/zoo/"
+    },
+    "id": "yum_importer",
+    "importer_type_id": "yum_importer",
+    "last_sync": "2015-11-06T10:38:23Z",
+    "repo_id": "zoo",
+    "scratchpad": {
+        "previous_skip_list": [],
+        "repomd_revision": 1331832478
+    }
+ }
 
 Retrieve Distributors Associated with a Repository
 --------------------------------------------------
