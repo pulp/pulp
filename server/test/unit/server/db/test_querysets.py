@@ -39,7 +39,7 @@ class TestCriteriaQuerySet(unittest.TestCase):
         qs_skip = qs_order_by.return_value.skip
         qs_limit = qs_skip.return_value.limit
 
-        qs_only.assert_called_once_with('field')
+        qs_only.assert_called_once_with('field', 'id')
         qs_order_by.assert_called_once_with('+field', '-other')
         qs_skip.assert_called_once_with(mock_crit.skip)
         qs_limit.assert_called_once_with(mock_crit.limit)
@@ -70,7 +70,7 @@ class TestCriteriaQuerySet(unittest.TestCase):
         qs_skip = qs_order_by.return_value.skip
         qs_limit = qs_skip.return_value.limit
 
-        qs_only.assert_called_once_with('field')
+        qs_only.assert_called_once_with('field', 'id')
         qs_order_by.assert_called_once_with('+field', '-other')
         qs_skip.assert_called_once_with('skip')
         qs_limit.assert_called_once_with('limit')
