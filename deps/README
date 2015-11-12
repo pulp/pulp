@@ -11,8 +11,16 @@ createrepo
 
 Team owner: jcline
 
-Note: createrepo-0.9.9 is available in EL7.
+Note: createrepo-0.9.9 is available in EL6 and EL7. createrepo-0.10.3 is available in F21+
 
+The createrepo patch carried appears to be related to a problem in anaconda-13.21.195-1.el6[0].
+Based on the bug report against Pulp, this is only a problem for RHEL6[1]. It's possible this
+was fixed in Fedora as early as F18[2].
+
+
+[0] https://bugzilla.redhat.com/show_bug.cgi?id=949992
+[1] https://bugzilla.redhat.com/show_bug.cgi?id=950036
+[2] https://bugzilla.redhat.com/show_bug.cgi?id=950724
 
 mod_wsgi
 --------
