@@ -54,5 +54,11 @@ _paction() {
     done;
 }
 
+psmash() {
+    workon pulp-smash;
+    python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
+    deactivate;
+}
+
 export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings
 export CRANE_CONFIG_PATH=$HOME/devel/crane/crane.conf
