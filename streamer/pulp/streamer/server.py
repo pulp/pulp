@@ -161,6 +161,7 @@ class Streamer(resource.Resource):
                                              **catalog_entry.data)
         downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
+        downloader.config.finalize()
 
     @staticmethod
     def _add_deferred_download_entry(request, catalog_entry):
@@ -225,7 +226,23 @@ class Responder(object):
         """
         Forward the call to close the 'file' to the request.finish method.
         """
-        reactor.callFromThread(self.request.finish)
+        reactor.callFromThread(self.finish_wrapper)
+
+    def finish_wrapper(self):
+        """
+        Handles RuntimeErrors raised by calling ``finish`` on a request after
+        the connection is closed.
+
+        If finish is called after the client disconnects, a RuntimeError is
+        raised and Twisted logs the stack trace. Clients disconnecting before
+        Twisted gets around to calling ``finish`` is not uncommon. Ultimately
+        there should be a handler that stops streaming if the client disconnects,
+        but that is tricky with the current implementation's use of threads.
+        """
+        try:
+            self.request.finish()
+        except RuntimeError as e:
+            logger.debug(str(e))
 
     def write(self, data):
         """
