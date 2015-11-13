@@ -59,6 +59,7 @@ Example Task Report::
  }
 
 
+
 Polling Task Progress
 ---------------------
 
@@ -120,6 +121,7 @@ All currently running and waiting tasks may be listed. This returns an array of
 | :return:`array of` :ref:`task_report`
 
 
+
 Deleting Completed Tasks
 ------------------------
 
@@ -174,3 +176,57 @@ For example::
 | :response_list:`_`
 
 * :response_code:`200,containing the array of tasks.`
+
+.. _task_group_management:
+
+Task Group Management
+=====================
+
+.. _task_group_summary:
+
+Task Group Summary
+------------------
+
+Task Group Summary object summarizes the state of all the tasks belonging to a task group.
+
+ * **accepted** *(int)* - number of tasks in 'accepted' state
+ * **finished** *(int)* - number of tasks in 'finished' state
+ * **running** *(int)* - number of tasks in 'running' state
+ * **canceled** *(int)* - number of tasks in 'canceled' state
+ * **waiting** *(int)* - number of tasks in 'waiting' state
+ * **skipped** *(int)* - number of tasks in 'skipped' state
+ * **suspended** *(int)* - number of tasks in 'suspended' state
+ * **error** *(int)* - number of tasks in 'error' state
+ * **total** *(int)* - total number of tasks in the task group
+
+Example task group summary::
+
+ {
+  "accepted": 0,
+  "finished": 100,
+  "running": 4,
+  "canceled": 0,
+  "waiting": 2,
+  "skipped": 0,
+  "suspended": 0,
+  "error": 0,
+  "total": 106
+ }
+
+
+Polling Task Group Progress
+----------------------------
+
+Poll a group of tasks for progress summary. Polling returns a :ref:`task_group_summary`
+
+| :method:`get`
+| :path:`/v2/task_groups/<task_group_id>/state_summary/`
+| :permission:`read`
+
+| :response_list:`_`
+
+* :response_code:`200, if the task group is found`
+* :response_code:`404, if the task group id is not found`
+
+| :return:`a` :ref:`task_group_summary` summarizing the state of all tasks belonging to
+                   queried task group id

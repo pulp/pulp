@@ -21,7 +21,7 @@ from pulp.server.webservices.views.consumers import (ConsumerBindingsView,
                                                      UnitUpdateSchedulesView,
                                                      UnitUpdateScheduleResourceView)
 
-from pulp.server.webservices.views import tasks, users
+from pulp.server.webservices.views import tasks, users, task_groups
 from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,
@@ -244,6 +244,8 @@ urlpatterns = patterns('',
     url(r'^v2/tasks/$', tasks.TaskCollectionView.as_view(), name='task_collection'),
     url(r'^v2/tasks/search/$', tasks.TaskSearchView.as_view(), name='task_search'),
     url(r'^v2/tasks/(?P<task_id>[^/]+)/$', tasks.TaskResourceView.as_view(), name='task_resource'),
+    url(r'^v2/task_groups/(?P<group_id>[^/]+)/state_summary/$',
+        task_groups.TaskGroupSummaryView.as_view(), name='task_group_summary'),
     url(r'^v2/users/$', users.UsersView.as_view(), name='users'),
     url(r'^v2/users/search/$', users.UserSearchView.as_view(),
         name='user_search'),
