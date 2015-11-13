@@ -282,8 +282,7 @@ class TestSearchView(unittest.TestCase):
         self.assertEqual(results.content, '["big money", "bigger money"]')
         self.assertEqual(results.status_code, 200)
         self.assertEqual(
-            FakeSearchView.model.objects.find_by_criteria.mock_calls[0][1][0]['fields'],
-            ['cash', 'id'])
+            FakeSearchView.model.objects.find_by_criteria.mock_calls[0][1][0]['fields'], ['cash'])
         self.assertEqual(
             FakeSearchView.model.objects.find_by_criteria.mock_calls[0][1][0]['filters'],
             {'money': {'$gt': 1000000}})

@@ -1,7 +1,9 @@
 import copy
 
+from bson.objectid import ObjectId
 from django.core.urlresolvers import reverse
 
+from pulp.server import exceptions
 from pulp.server.db.model import criteria
 
 
@@ -190,12 +192,47 @@ class ModelSerializer(BaseSerializer):
         :rtype:  dict, following mongo syntax
         """
         translated_dict = {}
-        for field in filters.iterkeys():
-            if field in self._remapped_fields.itervalues():
-                translated_dict[self._translate(model, field)] = filters[field]
+        for key, value in filters.iteritems():
+            if key == '_id':
+                translated_dict['_id'] = self._translate__id(value)
+            elif key in self._remapped_fields.itervalues():
+                new_field = self._translate(model, key)
+                translated_dict[new_field] = value
             else:
-                translated_dict[field] = filters[field]
+                translated_dict[key] = value
         return translated_dict
+
+    def _translate__id(self, search_term):
+        """
+        The `_id` field is a special case because the db contains ObjectId's but the user may
+        search for the string representation of the ObjectId. This function attempts to convert
+        any `_id` strings into an ObjectId.
+
+        :param search_term: if string, convert to ObjectId, if dict, convert it's contents.
+        :type  search_term: string or dict
+
+        :return: ObjectId or dict containing ObjectId's where there were string reprs of ObjectIds
+        :raises exceptions.InvalidValue: if the data structure cannot be converted.
+        """
+        err_msg = 'Unable to perform search with `_id={0}`'.format(search_term)
+        # search_term is the string version of an ObjectId
+        if isinstance(search_term, basestring):
+            return ObjectId(search_term)
+        # This will break of many of the more complex searches but allows $in and $nin
+        elif isinstance(search_term, dict):
+            translated = {}
+            for key, value in search_term.iteritems():
+                # value is the string version of an ObjectId
+                if isinstance(value, basestring):
+                    translated[key] = ObjectId(value)
+                # value is a list of string versions of ObjectIds
+                elif isinstance(value, list):
+                    translated[key] = [ObjectId(str_id) for str_id in value]
+                else:
+                    raise exceptions.InvalidValue(err_msg)
+            return translated
+        else:
+            raise exceptions.InvalidValue(err_msg)
 
     def _translate(self, model, field):
         """
@@ -327,3 +364,21 @@ class User(ModelSerializer):
         :rtype:  str
         """
         return reverse('user_resource', kwargs={'login': instance.login})
+
+    def _translate_filters(self, model, filters):
+        """
+        Override the parent class to handle the case of a user provided filter including `id`.
+        Since this is no longer in the database we stay backwards compatible by instead searching
+        by `_id`.
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param filters: dict used to filter results
+        :type  filters: dict, following mongo syntax
+
+        :return: the same filters dictionary, with fields translated to the new db representation
+        :rtype:  dict, following mongo syntax
+        """
+        if filters and filters.get('id'):
+            filters['_id'] = filters.pop('id')
+        return super(User, self)._translate_filters(model, filters)
