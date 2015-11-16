@@ -161,6 +161,7 @@ class Streamer(resource.Resource):
                                              **catalog_entry.data)
         downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
+        downloader.config.finalize()
 
     @staticmethod
     def _add_deferred_download_entry(request, catalog_entry):
@@ -225,7 +226,20 @@ class Responder(object):
         """
         Forward the call to close the 'file' to the request.finish method.
         """
-        reactor.callFromThread(self.request.finish)
+        reactor.callFromThread(self.finish_wrapper)
+
+    def finish_wrapper(self):
+        """
+        If finish is called after the client disconnects, a traceback is
+        logged. The suggested alternative to this method is to make use of
+        ``twisted.web.server.Request.notifyFinish`` to determine if the
+        connection is lost.
+        :return:
+        """
+        try:
+            self.request.finish()
+        except RuntimeError, e:
+            logger.debug(str(e))
 
     def write(self, data):
         """

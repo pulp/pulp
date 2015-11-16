@@ -164,6 +164,7 @@ class TestStreamer(TestCase):
         self.assertEqual(self.config, mock_downloader.event_listener.streamer_config)
         mock_downloader.download_one.assert_called_once_with(mock_dl_request.return_value,
                                                              events=True)
+        mock_downloader.config.finalize.assert_called_once_with()
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
     def test_add_deferred_download_entry(self, mock_deferred_download):
@@ -231,7 +232,22 @@ class TestResponder(TestCase):
         """
         responder = Responder(Mock())
         responder.close()
-        mock_reactor.callFromThread.assert_called_once_with(responder.request.finish)
+        mock_reactor.callFromThread.assert_called_once_with(responder.finish_wrapper)
+
+    def test_finish_wrapper(self):
+        """Assert the ``finish`` method is called by its wrapper"""
+        responder = Responder(Mock())
+        responder.finish_wrapper()
+        responder.request.finish.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'logger')
+    def test_finish_wrapper_exception(self, mock_logger):
+        """Assert that if ``finish`` raises a RuntimeError, it's logged."""
+        responder = Responder(Mock())
+        responder.request.finish.side_effect = RuntimeError('Womp womp')
+        responder.finish_wrapper()
+        responder.request.finish.assert_called_once_with()
+        mock_logger.debug.assert_called_once_with('Womp womp')
 
     @patch(MODULE_PREFIX + 'reactor')
     def test_write(self, mock_reactor):
@@ -254,4 +270,4 @@ class TestResponder(TestCase):
 
         mock_calls = mock_reactor.callFromThread.call_args_list
         self.assertEqual((mock_request.write, 'some data'), mock_calls[0][0])
-        self.assertEqual((mock_request.finish,), mock_calls[1][0])
+        self.assertEqual((r.finish_wrapper,), mock_calls[1][0])
