@@ -4,8 +4,12 @@ Server Plugins
 Introduction
 ------------
 
-There are three components that can be used in a server side plugin:
+There are four components that can be used in a server side plugin:
 
+ * *Migrations:* It is advantageous, but not required, to define a migration
+   tracker before your plugin's first release. Pulp's migration system allows
+   you to adjust your data schema at upgrade time. Please see the Migration
+   documentation for details.
  * *Type definitions* are used to tell Pulp about the types of content that
    will be stored. These definitions contain metadata about the type itself
    (e.g. name, description) and clues about the structure of the unit, such
