@@ -309,7 +309,7 @@ class MigrationTracker(AutoRetryDocument):
     """
 
     name = StringField(unique=True, required=True)
-    version = IntField(default=0)
+    version = IntField(default=-1)
     # For backward compatibility
     _ns = StringField(default='migration_trackers')
 

@@ -77,6 +77,25 @@ def migrate_database(options):
                                  'v': migration_package.latest_available_version}
             _logger.info(message)
             continue
+        elif migration_package.current_version == -1:
+            # -1 is the default for a brand-new tracker, so it indicates that no data exists. Thus
+            # we can skip the migrations and fast-forward to the latest version.
+            log_args = {
+                'v': migration_package.latest_available_version,
+                'p': migration_package.name
+            }
+            if options.dry_run:
+                unperformed_migrations = True
+                _logger.info(_('Migration package %(p)s would have fast-forwarded '
+                               'to version %(v)d' % log_args))
+            else:
+                # fast-forward if there is no pre-existing tracker
+                migration_package._migration_tracker.version = \
+                    migration_package.latest_available_version
+                migration_package._migration_tracker.save()
+                _logger.info(_('Migration package %(p)s fast-forwarded to '
+                               'version %(v)d' % log_args))
+            continue
 
         try:
             for migration in migration_package.unapplied_migrations:
@@ -96,6 +115,10 @@ def migrate_database(options):
                     message = message % {'p': migration_package.name,
                                          'v': migration_package.current_version}
                 _logger.info(message)
+        except models.MigrationRemovedError as e:
+            # keep the log message simpler than the generic message below.
+            _logger.critical(str(e))
+            raise
         except Exception:
             # Log the error and what migration failed before allowing main() to handle the exception
             error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a '
@@ -149,6 +172,8 @@ def main():
         _logger.critical(str(e))
         _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_DATAERR
+    except models.MigrationRemovedError:
+        return os.EX_SOFTWARE
     except Exception, e:
         _logger.critical(str(e))
         _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
