@@ -4,6 +4,7 @@ from mongoengine import ValidationError
 from pulp.common.compat import unittest
 from pulp.server import exceptions
 from pulp.server.controllers import importer
+from pulp.server.db import model
 
 
 class MockException(Exception):
@@ -162,10 +163,11 @@ class TestQueueSetImporter(unittest.TestCase):
         """
         Test that the set_importer task is queued correctly.
         """
-        result = importer.queue_set_importer('m_id', 'm_type', 'm_conf')
+        repo = model.Repository('m_id')
+        result = importer.queue_set_importer(repo, 'm_type', 'm_conf')
         m_task_tags = [m_tags.resource_tag.return_value, m_tags.action_tag.return_value]
         m_set.apply_async_with_reservation.assert_called_once_with(
-            m_tags.RESOURCE_REPOSITORY_TYPE, 'm_id', ['m_id', 'm_type'],
+            m_tags.RESOURCE_REPOSITORY_TYPE, 'm_id', [repo, 'm_type'],
             {'repo_plugin_config': 'm_conf'}, tags=m_task_tags)
         self.assertTrue(result is m_set.apply_async_with_reservation.return_value)
 
