@@ -141,7 +141,7 @@ def associate_single_unit(repository, unit):
     qs = model.RepositoryContentUnit.objects(
         repo_id=repository.repo_id,
         unit_id=unit.id,
-        unit_type_id=unit.unit_type_id)
+        unit_type_id=unit._content_type_id)
     qs.update_one(
         set_on_insert__created=formatted_datetime,
         set__updated=formatted_datetime,
