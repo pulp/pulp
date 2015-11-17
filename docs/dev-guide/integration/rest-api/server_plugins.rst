@@ -1,5 +1,5 @@
 Server Plugins API
-=====================
+==================
 
 The pulp server itself has very little built in functionality, so it loads number of plugins
 that provide the desired functionality required by administrators.
@@ -119,7 +119,7 @@ Queries the server for the loaded content unit type definitions.
 
 
 Retrieve a Specific Content Unit Type
------------------------------------
+-------------------------------------
 
 Retrieves information about a specific content unit type.
 
@@ -212,7 +212,7 @@ Queries the server for the loaded importer plugins.
 
 
 Retrieve a Specific Importer Plugin
-----------------------------------
+-----------------------------------
 
 Retrieves information about a specific importer plugin.
 
@@ -302,7 +302,7 @@ Queries the server for the loaded distributor plugins.
 
 
 Retrieve a Specific Distributor Plugin
-------------------------------------
+--------------------------------------
 
 Retrieves information about a specific distributor plugin.
 
@@ -334,3 +334,4 @@ Retrieves information about a specific distributor plugin.
         "yum_repo_metadata_file"
     ]
  }
+

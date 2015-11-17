@@ -4,9 +4,6 @@
 Developer Setup
 ===============
 
-For the Impatient
------------------
-
 There are two ways to automatically configure a development environment. There is a Vagrantfile
 in the platform git repository that can automatically deploy a virtual machine on your host with a
 Pulp development environment configured. Alternatively, there is a script that can turn a blank
@@ -160,6 +157,48 @@ follow.
     if you end up with a corrupted environment you will need to destroy and recreate it.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
+
+
+Vagrant w/ PyCharm
+^^^^^^^^^^^^^^^^^^
+
+PyCharm 5.0.1 is mostly usable with Vagrant.
+
+Remote Debugging
+----------------
+
+To use a remote debugger provided by PyCharm, ensure the PyCharm debug egg is installed in the
+Vagrant environment. This can be done in the Vagrant environment using ``easy_install``
+so it is available in all virtualenv environments the Vagrantfile sets up.
+
+When SSHing to Vagrant, use a reverse SSH tunnel to allow the Vagrant environment to connect
+back to your host system where the PyCharm remote debugger is listening. ``vagrant ssh`` allows
+you to specify arbitrary SSH commands using the ``--`` syntax. Assuming a PyCharm remote debugger
+is listening on port 12345, connect to Vagrant with a reverse tunnel using::
+
+      $ vagrant ssh -- -R 12345:localhost:12345
+
+You'll also need to configure local to remote path mappings to allow PyCharm to treat your host
+code checkout corresponds with the remote Vagrant code. To do this, edit the PyCharm remote
+debugger instance and add the following path mapping configuration::
+
+      /home/<your_username>/devel=/home/vagrant/devel
+
+Resolving References
+--------------------
+
+With Vagrant, Pulp is not installed on your host system preventing PyCharm from knowing an object
+through static analysis. Practically speaking, this causes all Pulp objects to be shown as an
+unresolved reference and prevents jumping to the declaration (Ctrl + B).
+
+To resolve this, configure your project with a Vagrant-aware, remote interpreter. In settings,
+find the 'Project Interpreter' area and add a Remote Interpreter. Select 'Vagrant'
+and give it the path to your vagrant file. In my case this is ``/home/<username>/devel/pulp``.
+
+   .. note:: The remote interpreter copies the indexed remote code locally into PyCharm's cache.
+             Be aware, when you jump to a declaration (Ctrl + B), you are being shown PyCharm's
+             cached version. For reading code this is fine, but when applying changes, be sure
+             you know if you are editing the actual code or a cached copy.
 
 
 Provisioning Script
