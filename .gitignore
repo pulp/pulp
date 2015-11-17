@@ -1,6 +1,7 @@
 *svn*
 *.ipynb
 *.pyc
+*.pyo
 .project
 .pydevproject
 *.swp
