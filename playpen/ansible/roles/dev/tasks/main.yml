@@ -22,6 +22,7 @@
 
 - name: Install packages
   dnf: name={{ item }} state=present
+  retries: "{{ install_retries }}"
   with_items:
       - git
       - dstat
