@@ -19,7 +19,7 @@ class MockException(Exception):
 class DemoModel(model.ContentUnit):
     key_field = mongoengine.StringField()
     unit_key_fields = ['key_field']
-    unit_type_id = 'demo_model'
+    _content_type_id = 'demo_model'
 
 
 @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
@@ -183,7 +183,7 @@ class AssociateSingleUnitTests(unittest.TestCase):
         mock_rcu_objects.assert_called_once_with(
             repo_id='foo',
             unit_id='bar',
-            unit_type_id=DemoModel.unit_type_id
+            unit_type_id=DemoModel._content_type_id
         )
         mock_rcu_objects.return_value.update_one.assert_called_once_with(
             set_on_insert__created='foo_tstamp',
