@@ -19,8 +19,8 @@ class PrincipalManager(object):
         """
         Get the current user of the system,
         returning the default system user if there isn't one.
-        @return: current user of the system
-        @rtype: User or dict
+        :return: current user of the system
+        :rtype: pulp.server.db.model.User or pulp.server.db.model.SystemUser
         """
         return getattr(_PRINCIPAL_STORAGE, 'principal', model.SystemUser())
 
@@ -28,8 +28,8 @@ class PrincipalManager(object):
         """
         Set the current user of the system to the provided principal,
         if no principal is provided, set the current user to the system user.
-        @param principal: current user
-        @type principal: User or None
+        :param principal: current user
+        :type  principal: pulp.server.db.model.User or pulp.server.db.model.SystemUser
         """
         _PRINCIPAL_STORAGE.principal = principal or model.SystemUser()
 
@@ -42,7 +42,7 @@ class PrincipalManager(object):
     def is_system_principal(self):
         """
         Determine if the current user is the default system user.
-        @return: true if the current user is the system user, false otherwise
-        @rtype: bool
+        :return: true if the current user is the system user, false otherwise
+        :rtype: bool
         """
         return self.get_principal() is model.SystemUser()

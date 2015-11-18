@@ -21,6 +21,7 @@ from pulp.server.db.connection import UnsafeRetry
 from pulp.server.compat import digestmod
 from pulp.server.db.fields import ISO8601StringField, UTCDateTimeField
 from pulp.server.db.model.reaper_base import ReaperMixin
+from pulp.server.db.model import base
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
 from pulp.server.util import Singleton
 from pulp.server.webservices.views import serializers
@@ -1085,7 +1086,7 @@ class Distributor(AutoRetryDocument):
         return 'pulp:distributor:{0}:{1}'.format(self.repo_id, self.distributor_id)
 
 
-class SystemUser(object):
+class SystemUser(base.Model):
     """
     Singleton user class that represents the "system" user (i.e. no user).
 
