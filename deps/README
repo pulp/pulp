@@ -66,9 +66,10 @@ python-isodate
 
 Team owner: jcline
 
-This appears to be unmaintained upstream, and there is no knowledge of why we have
-a patch. This version is newer than what is in Fedora <= 20 and EPEL <= 7, so we should
-consider using a different library.
+The current version in Fedora is 0.5.0, while upstream is 0.5.4. Our patch fixes
+a problem when unpickling Duration objects. A fix is present in upstream 0.5.1,
+although it has not been tested with Pulp yet. dcallagh, jlaska, and jmatthews are
+the Fedora package administrators.
 
 
 python-kombu
