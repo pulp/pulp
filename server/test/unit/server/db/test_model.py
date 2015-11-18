@@ -3,6 +3,7 @@
 """
 Tests for the pulp.server.db.model module.
 """
+import os
 
 from mock import patch, Mock
 
@@ -84,10 +85,19 @@ class TestContentUnit(unittest.TestCase):
     def test_model_fields(self):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
         self.assertTrue(model.ContentUnit.id.primary_key)
+        self.assertTrue(callable(model.ContentUnit.id.default))
         self.assertTrue(isinstance(model.ContentUnit._last_updated, IntField))
         self.assertTrue(model.ContentUnit._last_updated.required)
         self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
         self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
+
+    @patch('pulp.server.db.model.uuid')
+    def test_default_id(self, uuid):
+        uuid.uuid4.return_value = '1234'
+        unit = model.ContentUnit()
+        unit_id = unit.id
+        uuid.uuid4.assert_called_once_with()
+        self.assertEqual(unit_id, uuid.uuid4.return_value)
 
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
@@ -125,22 +135,6 @@ class TestContentUnit(unittest.TestCase):
 
         # make sure the last updated time has been updated
         self.assertEquals(helper._last_updated, 'foo')
-
-    def test_pre_save_signal_leaves_existing_id(self):
-        """
-        Test the pre_save signal handler leaves an existing id on an object in place
-        """
-        class ContentUnitHelper(model.ContentUnit):
-            id = None
-            last_updated = None
-
-        helper = ContentUnitHelper()
-        helper.id = "foo"
-
-        model.ContentUnit.pre_save_signal({}, helper)
-
-        # make sure the id wasn't replaced
-        self.assertEquals(helper.id, 'foo')
 
     @patch('pulp.server.db.model.Repository.objects')
     @patch('pulp.server.db.model.RepositoryContentUnit.objects')
@@ -335,6 +329,36 @@ class TestFileContentUnit(unittest.TestCase):
         unit.pre_save_signal(None, document)
         self.assertFalse(get_path.called)
         self.assertEqual(document._storage_path, '123')
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path(self, get_path):
+        path = '/tmp/9876'
+        get_path.return_value = path
+        unit = TestFileContentUnit.TestUnit()
+        unit.set_storage_path()
+        get_path.assert_called_once_with(unit)
+        self.assertEqual(unit._storage_path, path)
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path_with_filename(self, get_path):
+        path = '/tmp/9876'
+        get_path.return_value = path
+        name = '1234'
+        unit = TestFileContentUnit.TestUnit()
+        unit.set_storage_path(name)
+        get_path.assert_called_once_with(unit)
+        self.assertEqual(unit._storage_path, os.path.join(path, name))
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_file_exception(self, get_path):
+        path = '/tmp/9876'
+        get_path.return_value = path
+        unit = TestFileContentUnit.TestUnit()
+        unit._storage_path = path
+        unit.set_storage_path()
+        unit.set_storage_path()
+        unit._last_updated = 'timestamp'
+        self.assertRaises(RuntimeError, unit.set_storage_path)
 
     @patch('os.path.isfile')
     @patch('pulp.server.db.model.FileStorage')
