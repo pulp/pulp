@@ -91,7 +91,7 @@ class BaseSerializer(object):
         :type representation: dict
         """
         root_key = accessor[0]
-        if root_key in representation:
+        if representation.get(root_key) is not None:
             if len(accessor) > 1:
                 self._remove_excluded(accessor[1:], representation[root_key])
             else:
@@ -108,7 +108,7 @@ class BaseSerializer(object):
         :type representation: dict
         """
         root_key = accessor[0]
-        if root_key in representation:
+        if representation.get(root_key) is not None:
             if len(accessor) > 1:
                 self._mask_field(accessor[1:], representation[root_key])
             else:
