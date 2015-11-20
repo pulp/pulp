@@ -47,6 +47,30 @@ class Step(object):
     """
     Base class for step processing. The only tie to the platform is an assumption of
     the use of a conduit that extends StatusMixin for reporting status along the way.
+
+    GETTING STARTED:
+
+    Override the process_main() method and do your work there.
+
+    If you are iterating over items and doing the same work on each, also override the
+    get_iterator() and get_total() methods.
+
+    A partial map of the execution flow:
+
+    process()
+    |
+    +-- initialize()
+    |
+    +-- _process_block()
+    |   |
+    |   +-- process_main()
+    |   |
+    |   +-- report_progress()
+    |
+    +-- finalize()
+    |
+    +-- post_process()
+
     """
 
     def __init__(self, step_type, status_conduit=None, non_halting_exceptions=None,
@@ -165,17 +189,22 @@ class Step(object):
 
     def process_main(self, item=None):
         """
-        Do any primary work required for this step
+        START HERE: override this method to do whatever work your step needs to do.
 
-        :param item: The item to process or none if this get_iterator is not defined
+        If your step performs the same work iteratively on numerous items, consider also
+        overriding get_iterator() and get_total().
+
+        Otherwise, ignore the "item" argument, and just do your work.
+
+        :param item: The item to process or None if this get_iterator is not defined
         :param item: object or None
         """
         pass
 
     def process(self):
         """
-        The process method is used to perform the work needed for this step.
-        It will update the step progress and raise an exception on error.
+        You probably do not want to override this method. It handles workflow for the rest of the
+        methods on your step. It will update the step progress and raise an exception on error.
         """
         if self.canceled:
             return
@@ -192,9 +221,12 @@ class Step(object):
                 self.report_progress()
                 self.initialize()
                 self.report_progress()
-                if self.get_iterator():
+                item_iterator = self.get_iterator()
+                if item_iterator is not None:
                     # We are using a generator and will call _process_block for each item
-                    for item in self.get_iterator():
+                    for item in item_iterator:
+                        if self.canceled:
+                            break
                         try:
                             self._process_block(item=item)
                         except Exception as e:
@@ -207,7 +239,7 @@ class Step(object):
                                     break
                             if raise_exception:
                                 raise
-                        # Clen out the progress_details for the individual item
+                        # Clean out the progress_details for the individual item
                         self.progress_details = ""
                     if self.exceptions:
                         raise PulpCodedTaskFailedException(error_code=error_codes.PLP0032,
@@ -248,7 +280,9 @@ class Step(object):
 
     def _process_block(self, item=None):
         """
-        This block is called for the main processing loop
+        This is part of the workflow internals that should not be overridden unless you are sure of
+        what you are doing. If you want somewhere to generally perform work in your step, this is
+        not the place. See the class doc block for more info on where to put your code.
         """
         failures = self.progress_failures
         # Need to keep backwards compatibility
@@ -518,21 +552,12 @@ class PluginStep(Step):
 
     def process_lifecycle(self):
         """
-        Perform the action for the step
+        Changes the parent class behavior by returning a report.
 
         :return: report describing the step's run
         :rtype:  pulp.plugins.model.PublishReport
         """
-        working_dir = self.get_working_dir()
-        if not working_dir:
-            raise RuntimeError("working_dir for step not found, unable to execute step")
-        if not os.path.exists(working_dir):
-            os.makedirs(working_dir)
-        try:
-            super(PluginStep, self).process_lifecycle()
-        finally:
-            # Always cleanup the working directory
-            shutil.rmtree(working_dir, ignore_errors=True)
+        super(PluginStep, self).process_lifecycle()
 
         return self._build_final_report()
 
@@ -577,9 +602,11 @@ class PublishStep(PluginStep):
 
     def publish(self):
         """
+        DEPRECATED
+
         Perform the publish action for the repo
 
-        A compatability method. process_lifecycle() should be called directly instead.
+        A compatibility method. process_lifecycle() should be called directly instead.
 
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
@@ -620,11 +647,8 @@ class PublishStep(PluginStep):
 
 class UnitPublishStep(PublishStep):
     """
-    The UnitPublishStep has been deprecated in favor of the PluginStep with the
-    PluginStepIterativeProcessingMixin
-
-    All code that is currently using the UnitPublishStep should migrate to use the
-    PluginStep with the PluginStepIterativeProcessingMixin
+    Contains logic specific to publishing units, such as determining the total number
+    of units.
     """
 
     def __init__(self, step_type, unit_type=None, association_filters=None,
@@ -649,17 +673,30 @@ class UnitPublishStep(PublishStep):
 
     def get_unit_generator(self):
         """
-        This method returns a generator for the unit_type specified on the PublishStep.
-        The units created by this generator will be iterated over by the process_unit method.
+        DEPRECATED function name. Please override get_iterator instead of this method. Do not call
+        this function directly.
 
-        :return: generator of units
-        :rtype:  GeneratorTyp of Units
+        This method returns a generator to loop over items.
+        The items created by this generator will be iterated over by the process_main method.
+
+        :return: a list or other iterable
+        :rtype: iterator
         """
         types_to_query = (set(self.unit_type)).difference(self.skip_list)
         criteria = UnitAssociationCriteria(type_ids=list(types_to_query),
                                            association_filters=self.association_filters,
                                            unit_fields=self.unit_fields)
         return self.get_conduit().get_units(criteria, as_generator=True)
+
+    def get_iterator(self):
+        """
+        This method returns a generator to loop over items.
+        The items created by this generator will be iterated over by the process_main method.
+
+        :return: a list or other iterable
+        :rtype: iterator
+        """
+        return self.get_unit_generator()
 
     def is_skipped(self):
         """
@@ -681,27 +718,17 @@ class UnitPublishStep(PublishStep):
 
         return set(self.unit_type).issubset(self.skip_list)
 
+    def process_main(self, item=None):
+        """
+        Alias to provide compatibility. Can be removed when process_unit gets removed.
+        """
+        return self.process_unit(item)
+
     def process_unit(self, unit):
         """
-        Do any work required for publishing a unit in this step
-
-        :param unit: The unit to process
-        :type unit: Unit
+        DEPRECATED: override process_main instead.
         """
         pass
-
-    def _process_block(self):
-        """
-        This block is called for the main processing loop
-        """
-        package_unit_generator = self.get_unit_generator()
-        for package_unit in package_unit_generator:
-            if self.canceled:
-                return
-            self.process_unit(package_unit)
-            self.progress_successes += 1
-            self.progress_details = ""
-            self.report_progress()
 
     def _get_total(self, id_list=None, ignore_filter=False):
         """
@@ -920,37 +947,6 @@ class CopyDirectoryStep(PublishStep):
         copytree(self.source_dir, self.target_dir, symlinks=self.preserve_symlinks)
 
 
-class PluginStepIterativeProcessingMixin(object):
-    """
-    A mixin for steps that iterate over a generator
-    """
-
-    def _process_block(self):
-        """
-        This block is called for the main processing loop and handles reporting.
-        """
-        generator = self.get_generator()
-        for item in generator:
-            if self.canceled:
-                return
-            # Clear the details text so that the details from a previous iteration won't
-            # show up for the next iteration
-            self.progress_details = ""
-            self.process_item(item)
-            self.progress_successes += 1
-            self.report_progress()
-
-    def get_generator(self):
-        """
-        This method returns a generator to loop over items.
-        The items created by this generator will be iterated over by the process_item method.
-
-        :return: generator of items
-        :rtype: GeneratorType of items
-        """
-        raise NotImplementedError()
-
-
 class DownloadStep(PluginStep, listener.DownloadEventListener):
 
     def __init__(self, step_type, downloads=None, repo=None, conduit=None, config=None,
@@ -1038,7 +1034,7 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         """
         return len(self.downloads)
 
-    def _process_block(self):
+    def process_main(self, item=None):
         """
         the main "do stuff" method. In this case, just kick off all the
         downloads.
