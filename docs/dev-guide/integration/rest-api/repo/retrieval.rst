@@ -5,8 +5,9 @@ Retrieve a Single Repository
 ----------------------------
 
 Retrieves information on a single Pulp repository. The returned data includes
-general repository metadata and metadata describing any :term:`importers <importer>`
-and :term:`distributors <distributor>` associated with it.
+general repository metadata, metadata describing any :term:`importers <importer>`
+and :term:`distributors <distributor>` associated with it, and a count of how many
+content units have been stored locally for the repository.
 
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/`
@@ -14,7 +15,7 @@ and :term:`distributors <distributor>` associated with it.
 
 | :param_list:`get`
 
-* :param:`?details,bool,shortcut for including both distributors and importers`
+* :param:`?details,bool,shortcut for including distributors, importers, and content unit counts`
 * :param:`?importers,bool,include the "importers" attribute on each repository`
 * :param:`?distributors,bool,include the "distributors" attribute on each repository`
 
@@ -68,7 +69,9 @@ and :term:`distributors <distributor>` associated with it.
       "id": "harness_importer"
     }
   ],
-  "id": "harness_repo_1"
+  "id": "harness_repo_1",
+  "total_repository_units": 5,
+  "locally_stored_units": 3
  }
 
 
