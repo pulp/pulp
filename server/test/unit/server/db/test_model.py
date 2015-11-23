@@ -8,7 +8,7 @@ import os
 from mock import patch, Mock
 
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField, Document,
-                         IntField, ListField, StringField)
+                         IntField, ListField, StringField, signals)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
@@ -783,6 +783,16 @@ class TestImporter(unittest.TestCase):
         indexes = model.Importer._meta['indexes']
         self.assertDictEqual(
             indexes[0], {'fields': ['-repo_id', '-importer_type_id'], 'unique': True})
+
+    @patch('pulp.server.db.model.LazyCatalogEntry.objects')
+    def test_pre_delete(self, mock_lazy):
+        """Assert that the pre_delete signal deletes lazy catalog entries."""
+        model.Importer.pre_delete(None, Mock(id='fake'))
+        mock_lazy.assert_called_once_with(importer_id='fake')
+        mock_lazy.return_value.delete.assert_called_once_with()
+
+    def test_pre_delete_connect(self):
+        self.assertTrue(signals.pre_delete.has_receivers_for(model.Importer))
 
 
 class TestCeleryBeatLock(unittest.TestCase):

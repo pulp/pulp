@@ -233,6 +233,23 @@ class Importer(AutoRetryDocument):
             'indexes': [{'fields': ['-repo_id', '-importer_type_id'], 'unique': True}],
             'queryset_class': CriteriaQuerySet}
 
+    @classmethod
+    def pre_delete(cls, sender, document, **kwargs):
+        """
+        Purge the lazy catalog of all entries for the importer being deleted.
+
+        :param sender:   class of sender (unused)
+        :type  sender:   object
+        :param document: mongoengine document being deleted.
+        :type  document: pulp.server.db.model.Importer
+        """
+        query_set = LazyCatalogEntry.objects(importer_id=str(document.id))
+        _logger.debug(_('Deleting lazy catalog entries for the {repo} repository.').format(
+            repo=document.repo_id))
+        query_set.delete()
+
+signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
+
 
 class ReservedResource(AutoRetryDocument):
     """
