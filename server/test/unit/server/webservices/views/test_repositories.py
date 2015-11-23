@@ -1469,7 +1469,8 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.repositories.regenerate_applicability_for_repos')
+    @mock.patch(('pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager.'
+                'queue_regenerate_applicability_for_repos'))
     @mock.patch('pulp.server.webservices.views.repositories.tags')
     @mock.patch('pulp.server.webservices.views.repositories.Criteria.from_client_input')
     def test_post_with_expected_content(self, mock_crit, mock_tags, mock_regen):
@@ -1488,10 +1489,7 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
             raise AssertionError('OperationPostponed should be raised for a regenerate task')
 
         self.assertEqual(response.http_status_code, 202)
-        mock_regen.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE, mock_tags.RESOURCE_ANY_ID,
-            (mock_crit.return_value.as_dict(),), tags=[mock_tags.action_tag()]
-        )
+        mock_regen.assert_called_once_with(mock_crit.return_value.as_dict())
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -1517,7 +1515,8 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.repositories.regenerate_applicability_for_repos')
+    @mock.patch(('pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager.'
+                'queue_regenerate_applicability_for_repos'))
     def test_post_without_repo_criteria(self, mock_crit):
         """
         Test regenerate content applicability with missing repo_criteria.

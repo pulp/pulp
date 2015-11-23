@@ -59,11 +59,11 @@ to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
 the `Query Content Applicability` API described below.
 
-The API will return a :ref:`call_report`. Users can check whether the applicability
-generation is completed using task id in the :ref:`call_report`. You can run
-a single applicability generation task at a time. If an applicability generation 
-task is running, any new applicability generation tasks requested are queued 
-and postponed until the current task is completed.
+The API will return a :ref:`group_call_report`. Users can check whether the applicability
+generation is completed using group id in the :ref:`group_call_report`. The `_href` in the
+:ref:`group_call_report` will point to the root of `task_group` resource. However, this API
+endpoint currently returns 404 in all cases. You can append '/state-summary/' to the URL and
+perform a GET request to retrieve a :ref:`task_group_summary`.
 
 | :method:`post`
 | :path:`/v2/repositories/actions/content/regenerate_applicability/`
@@ -77,7 +77,7 @@ and postponed until the current task is completed.
 * :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:a :ref:`call_report` representing the current state of the applicability regeneration
+| :return: a :ref:`group_call_report` representing the current state of the applicability regeneration
 
 :sample_request:`_` ::
 
@@ -87,8 +87,14 @@ and postponed until the current task is completed.
   }
  }
 
-**Tags:**
-The task created will have the following tag: ``"pulp:action:content_applicability_regeneration"``
+
+:sample_response:`202` ::
+
+ {
+     "_href": "/pulp/api/v2/task_groups/16412fcb-06fa-4caa-818b-b103e2a9bf44/",
+    "group_id": "16412fcb-06fa-4caa-818b-b103e2a9bf44"
+ }
+
 
 Generate Content Applicability for a single Consumer
 ----------------------------------------------------
@@ -114,7 +120,7 @@ are queued and postponed until the current task is completed.
 * :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`404,if a consumer with given consumer_id does not exist`
 
-| :return:a :ref:`call_report` representing the current state of the applicability regeneration
+| :return: a :ref:`call_report` representing the current state of the applicability regeneration
 
 **Tags:**
 The task created will have the following tag: ``"pulp:action:consumer_content_applicability_regeneration"``

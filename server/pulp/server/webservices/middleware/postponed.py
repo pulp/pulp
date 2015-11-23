@@ -24,9 +24,10 @@ class PostponedOperationMiddleware(object):
         if isinstance(exception.call_report, AsyncResult):
             report = TaskResult.from_async_result(exception.call_report)
         serialized_call_report = report.serialize()
-        for task in serialized_call_report['spawned_tasks']:
-            href_obj = dispatch.task_result_href(task)
-            task.update(href_obj)
+        if 'spawned_tasks' in serialized_call_report:
+            for task in serialized_call_report['spawned_tasks']:
+                href_obj = dispatch.task_result_href(task)
+                task.update(href_obj)
 
         # Use the object's serializer if it is a Mongoengine Document.
         result = serialized_call_report.get('result')

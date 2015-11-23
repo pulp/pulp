@@ -189,7 +189,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
-        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        manager.queue_regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 4)
@@ -204,7 +204,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
-        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        manager.queue_regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 2)
@@ -219,7 +219,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.populate_bindings()
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
-        manager.regenerate_applicability_for_repos(Criteria())
+        manager.queue_regenerate_applicability_for_repos(Criteria())
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 2)
@@ -232,7 +232,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
     def test_regenerate_applicability_for_repo_criteria_no_bindings(self, mock_repo_qs):
         self.populate_repos()
         manager = factory.applicability_regeneration_manager()
-        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        manager.queue_regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(applicability_list, [])
@@ -245,7 +245,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
         # Test
         manager = factory.applicability_regeneration_manager()
-        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        manager.queue_regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 0)
@@ -272,7 +272,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         profile_manager = factory.consumer_profile_manager()
         profile_manager.update(self.CONSUMER_IDS[0], 'rpm', {'name': 'zsh', 'version': '1.0'})
         # Request applicability regeneration for the repo and assert that no exception is raised
-        applicability_manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        applicability_manager.queue_regenerate_applicability_for_repos(self.REPO_CRITERIA)
 
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 1)
@@ -282,21 +282,21 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
     @mock.patch('pulp.server.db.model.consumer.RepoProfileApplicability.get_collection')
-    def test_regenerate_applicability_for_repos_batch_size(self, mock_get_collection, mock_repo_qs):
+    @mock.patch('pulp.server.db.model.consumer.UnitProfile.get_collection')
+    def test_batch_regenerate_applicability(self, mock_unit_profile_get_collection,
+                                            mock_repo_profile_app_get_collection, mock_repo_qs):
 
         factory.initialize()
         applicability_manager = ApplicabilityRegenerationManager()
-        repo_criteria = {'filters': None, 'sort': None, 'limit': None,
-                         'skip': None, 'fields': None}
         mock_repo = mock.MagicMock()
         mock_repo.repo_id = 'fake-repo'
         mock_repo_qs.find_by_criteria.return_value = [mock_repo]
-
-        applicability_manager.regenerate_applicability_for_repos(repo_criteria)
+        existing_ids = ({'_id': 'mock-object-id'}, {'_id': 'mock-object-id-2'})
+        applicability_manager.batch_regenerate_applicability('mock_repo', existing_ids)
 
         # validate that batch size of 5 is used
-
-        mock_get_collection.return_value.find.return_value.batch_size.assert_called_with(5)
+        expected_params = {'_id': {'$in': ['mock-object-id', 'mock-object-id-2']}}
+        mock_repo_profile_app_get_collection.return_value.find.assert_called_with(expected_params)
 
     @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
     def test_get_existing_repo_content_types_no_repo(self, mock_repo_qs):
@@ -324,7 +324,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         """
         Test that if a repository exists but has no units, return an empty list.
         """
-        mock_repo = mock_repo_qs.first.return_value
+        mock_repo = mock_repo_qs.get.return_value
         mock_repo.content_unit_counts = {'mock_type_1': 4, 'mock_type_2': 8}
         content_types = self.old_get_existing('repo')
         self.assertListEqual(content_types, ['mock_type_2', 'mock_type_1'])
