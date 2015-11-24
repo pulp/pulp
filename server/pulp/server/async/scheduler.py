@@ -11,6 +11,7 @@ import mongoengine
 
 from pulp.common.constants import (CELERYBEAT_WAIT_SECONDS, RESOURCE_MANAGER_WORKER_NAME,
                                    SCHEDULER_WORKER_NAME, TICK_SECONDS)
+from pulp.common.dateutils import ensure_tz
 from pulp.server.async import worker_watcher
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
@@ -123,7 +124,8 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager '
                 'processes are missing for more than %d seconds') % self.CELERY_TIMEOUT_SECONDS
         _logger.debug(msg)
-        oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.CELERY_TIMEOUT_SECONDS)
+        now = ensure_tz(datetime.utcnow())
+        oldest_heartbeat_time = now - timedelta(seconds=self.CELERY_TIMEOUT_SECONDS)
         worker_list = Worker.objects.all()
         worker_count = 0
         resource_manager_count = 0
