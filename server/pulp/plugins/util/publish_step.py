@@ -1,6 +1,7 @@
 from gettext import gettext as _
 from itertools import chain, imap
 import copy
+import itertools
 import logging
 import os
 import shutil
@@ -560,6 +561,87 @@ class PluginStep(Step):
         super(PluginStep, self).process_lifecycle()
 
         return self._build_final_report()
+
+
+class UnitModelPluginStep(PluginStep):
+    """
+    Useful for performing actions on units that are defined as mongoengine models.
+
+    QuerySetNoCache objects returned by the unit_queryset property are cached, so multiple accesses
+    to that property will return the same list containing the same objects.
+
+    The QuerySetNoCache objects themselves do not cache results, as the name implies.
+    """
+    def __init__(self, step_type, model_classes, repo_content_unit_q=None, repo=None, conduit=None,
+                 config=None, working_dir=None, plugin_type=None, **kwargs):
+        """
+        :param step_type: The id of the step this processes
+        :type  step_type: str
+        :param model_classes:   list of ContentUnit subclasses that should be queried
+        :type  model_classes:   list
+        :param repo_content_unit_q: optional Q object that will be applied to the queries performed
+                                    against each ContentUnit class that gets passed in
+        :type  repo_content_unit_q: mongoengine.Q
+        :param repo: The repo being worked on
+        :type  repo: pulp.plugins.model.Repository
+        :param conduit: The conduit for the repo
+        :type  conduit: a conduit from pulp.plugins.conduits
+        :param config: The configuration
+        :type  config: PluginCallConfiguration
+        :param working_dir: The temp directory this step should use for processing
+        :type  working_dir: str
+        :param plugin_type: The type of the plugin
+        :type  plugin_type: str
+        """
+        super(UnitModelPluginStep, self).__init__(step_type, repo, conduit, config, working_dir,
+                                                  plugin_type, **kwargs)
+
+        self.model_classes = model_classes
+        self._repo_content_unit_q = repo_content_unit_q
+
+        # the corresponding publicly-accessible values get cached here
+        self._unit_querysets = None
+        self._total = None
+
+    def get_iterator(self):
+        """
+        This method returns a generator to loop over ContentUnits. The items created by this
+        generator will be iterated over by the process_main method.
+
+        ContentUnit results are not cached, so calling this a second time will cause results to be
+        retrieved from the database a second time.
+
+        :return: a generator of ContentUnit objects
+        :rtype:  generator
+        """
+        return itertools.chain(*self.unit_querysets)
+
+    @property
+    def unit_querysets(self):
+        """
+        :return: list of QuerySetNoCache objects that correspond to ContentUnit searches for the
+                 classes passed in to this step. The return value is cached, so multiple accesses of
+                 this property will return the same list containing the same objects.
+        :rtype:  list
+        """
+        if self._unit_querysets is None:
+            self._unit_querysets = []
+            for model_class in self.model_classes:
+                queries = repo_controller.get_unit_model_querysets(self.get_repo().id,
+                                                                   model_class,
+                                                                   self._repo_content_unit_q)
+                self._unit_querysets.extend(q.no_cache() for q in queries)
+        return self._unit_querysets
+
+    def get_total(self):
+        """
+        :return: total number of ContentUnits this step will operate on. This value is cached, so
+                 multiple accesses will only incur one database query.
+        :rtype:  int
+        """
+        if self._total is None:
+            self._total = sum(query.count() for query in self.unit_querysets)
+        return self._total
 
 
 class PublishStep(PluginStep):

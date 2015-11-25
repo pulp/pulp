@@ -66,6 +66,70 @@ class PluginBase(unittest.TestCase):
             config=self.config, plugin_type='test_plugin_type')
 
 
+class TestUnitModelPluginStep(PluginBase):
+    def setUp(self):
+        super(TestUnitModelPluginStep, self).setUp()
+        self.ModelA = MagicMock()
+        self.ModelB = MagicMock()
+        self.step = publish_step.UnitModelPluginStep('mytype', [self.ModelA, self.ModelB],
+                                                     repo=self.repo)
+
+    @patch('pulp.server.controllers.repository.get_unit_model_querysets')
+    def test_returns_querysets(self, mock_get_querysets):
+        qs1 = MagicMock()
+        qs2 = MagicMock()
+        mock_get_querysets.side_effect = [[qs1], [qs2]]
+
+        ret = self.step.unit_querysets
+
+        self.assertEqual(ret, [qs1.no_cache.return_value, qs2.no_cache.return_value])
+
+    @patch('pulp.server.controllers.repository.get_unit_model_querysets')
+    def test_caches_querysets(self, mock_get_querysets):
+        """
+        make sure the values retrieved from get_unit_model_querysets are cached
+        """
+        qs1 = MagicMock()
+        qs2 = MagicMock()
+        mock_get_querysets.side_effect = [[qs1], [qs2]]
+
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+
+        self.assertEqual(mock_get_querysets.call_count, 2)
+
+    def test_get_total(self):
+        qs1 = MagicMock()
+        qs1.count.return_value = 3
+        qs2 = MagicMock()
+        qs2.count.return_value = 4
+        self.step._unit_querysets = [qs1, qs2]
+
+        total = self.step.get_total()
+
+        self.assertEqual(total, 7)
+
+    def test_get_total_zero(self):
+        self.step._unit_querysets = []
+
+        total = self.step.get_total()
+
+        self.assertEqual(total, 0)
+
+    def test_get_iterator(self):
+        u1 = MagicMock()
+        u2 = MagicMock()
+        u3 = MagicMock()
+        self.step._unit_querysets = [[u1, u2], [u3]]
+
+        ret = self.step.get_iterator()
+
+        self.assertEqual(list(ret), [u1, u2, u3])
+
+
 class PostOrderTests(unittest.TestCase):
 
     def test_ordered_output(self):
