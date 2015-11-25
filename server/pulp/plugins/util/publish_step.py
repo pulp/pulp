@@ -1169,20 +1169,24 @@ class SaveUnitsStep(PluginStep):
 
 class GetLocalUnitsStep(SaveUnitsStep):
     """
-    Associate existing units & produce a list of unknown units
+    Associate existing units & produce a list of unknown units.
 
     Given an iterator of units, associate the ones that are already in Pulp with the
     repository and create a list of all the units that do not yet exist in Pulp.
-    This requires a parent step with the attribute "available_units",
-    which must be an iterable of unit model instances with the unit keys populated
+    This requires an iterable of "available_units", which must be an iterable of unit model
+    instances with the unit keys populated. By default it will use it's parent step's
+    available_units attribute, but can be overridden in the constructor.
     """
 
-    def __init__(self, importer_type, unit_pagination_size=50, **kwargs):
+    def __init__(self, importer_type, unit_pagination_size=50, available_units=None, **kwargs):
         """
-        :param importer_type: unique identifier for the type of importer
-        :type  importer_type: basestring
+        :param importer_type:        unique identifier for the type of importer
+        :type  importer_type:        basestring
         :param unit_pagination_size: How many units should be queried at one time (default 50)
-        :type  importer_type: int
+        :type  importer_type:        int
+        :param available_units:      An iterable of Units available for retrieval. This defaults to
+                                     this step's parent's available_units attribute if not provided.
+        :type  available_units:      iterable
         """
         super(GetLocalUnitsStep, self).__init__(step_type=reporting_constants.SYNC_STEP_GET_LOCAL,
                                                 plugin_type=importer_type,
@@ -1192,6 +1196,7 @@ class GetLocalUnitsStep(SaveUnitsStep):
         # list of unit model instances
         self.units_to_download = []
         self.unit_pagination_size = unit_pagination_size
+        self.available_units = available_units
 
     def process_main(self, item=None):
         """
@@ -1204,7 +1209,11 @@ class GetLocalUnitsStep(SaveUnitsStep):
         # any units that are already in pulp
         units_we_already_had = set()
 
-        for units_group in misc.paginate(self.parent.available_units, self.unit_pagination_size):
+        # If available_units was defined in the constructor, let's use it. Otherwise let's use the
+        # default of self.parent.available_units
+        available_units = self.available_units or self.parent.available_units
+
+        for units_group in misc.paginate(available_units, self.unit_pagination_size):
             # Get this group of units
             query = units_controller.find_units(units_group)
 
