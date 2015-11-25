@@ -45,3 +45,5 @@
 
 - name: Install custom ~/.bashrc
   copy: src=bashrc dest=/home/{{ ansible_env.SUDO_USER }}/.bashrc
+
+- copy: src=drop_database.js dest=/home/{{ ansible_env.SUDO_USER }}/drop_database.js
