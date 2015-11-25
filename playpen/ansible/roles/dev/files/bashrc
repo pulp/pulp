@@ -67,10 +67,7 @@ ptests() {
 }
 
 _paction() {
-
-    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
-        sudo systemctl $1 $s;
-    done;
+    sudo systemctl $1 goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager
 }
 
 psmash() {
