@@ -142,7 +142,7 @@ class AgentConduit(Conduit):
 class PluginTestBase(ServerTests):
 
     REPO_ID = 'test-repo'
-    UNIT_TYPE_ID = 'rpm'
+    UNIT_TYPE_ID = 'notarealtype'
     UNIT_ID = 'test_unit_%d'
     UNIT_KEY = {'A': 'a', 'B': 'b', 'N': 0}
     UNIT_METADATA = {'name': 'Elvis', 'age': 42}

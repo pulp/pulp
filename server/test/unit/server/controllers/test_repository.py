@@ -1,3 +1,5 @@
+import inspect
+
 from bson.objectid import InvalidId
 from mock import Mock, MagicMock, patch
 import mock
@@ -23,7 +25,79 @@ class MockException(Exception):
 class DemoModel(model.ContentUnit):
     key_field = mongoengine.StringField()
     unit_key_fields = ['key_field']
-    _content_type_id = 'demo_model'
+    _content_type_id = mongoengine.StringField(default='demo_model')
+
+
+@mock.patch('pulp.server.db.model.RepositoryContentUnit.objects')
+class TestGetAssociatedUnitIDs(unittest.TestCase):
+    def setUp(self):
+        self.associations = [
+            model.RepositoryContentUnit(repo_id='repo1', unit_id='a', unit_type_id='demo_model'),
+            model.RepositoryContentUnit(repo_id='repo1', unit_id='b', unit_type_id='demo_model'),
+        ]
+
+    def test_returns_ids(self, mock_objects):
+        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+
+        ret = list(repo_controller.get_associated_unit_ids('repo1', 'demo_model'))
+
+        self.assertEqual(ret, ['a', 'b'])
+
+    def test_returns_generator(self, mock_objects):
+        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+
+        ret = repo_controller.get_associated_unit_ids('repo1', 'demo_model')
+
+        self.assertTrue(inspect.isgenerator(ret))
+
+    def test_uses_q(self, mock_objects):
+        mock_objects.return_value.only.return_value = self.associations
+        q = mongoengine.Q(foo='bar')
+
+        list(repo_controller.get_associated_unit_ids('repo1', 'demo_model', q))
+
+        mock_objects.assert_called_once_with(repo_id='repo1', unit_type_id='demo_model', q_obj=q)
+
+
+@mock.patch.object(repo_controller, 'get_associated_unit_ids')
+@mock.patch.object(DemoModel, 'objects')
+class TestGetUnitModelQuerySets(unittest.TestCase):
+    def setUp(self):
+        self.units = [
+            DemoModel(key_field='foo', id='123'),
+            DemoModel(key_field='bar', id='456')
+        ]
+
+    def test_returns_generator(self, mock_objects, mock_get_ids):
+        mock_objects.return_value = self.units
+
+        ret = repo_controller.get_unit_model_querysets('repo1', DemoModel)
+
+        self.assertTrue(inspect.isgenerator(ret))
+
+    def test_returns_objects_return_value(self, mock_objects, mock_get_ids):
+        """
+        yielded items should directly be the QuerySets returned by calling model_class.objects()
+        """
+        mock_get_ids.return_value = ['123', '456']
+
+        ret = repo_controller.get_unit_model_querysets('repo1', DemoModel)
+
+        self.assertEqual(list(ret)[0], mock_objects.return_value)
+
+    def test_filters_with_ids(self, mock_objects, mock_get_ids):
+        mock_get_ids.return_value = ['123', '456']
+
+        list(repo_controller.get_unit_model_querysets('repo1', DemoModel))
+
+        mock_objects.assert_called_once_with(id__in=('123', '456'))
+
+    def test_calls_get_ids(self, mock_objects, mock_get_ids):
+        q = mongoengine.Q(foo='bar')
+
+        list(repo_controller.get_unit_model_querysets('repo1', DemoModel, q))
+
+        mock_get_ids.assert_called_once_with('repo1', 'demo_model', q)
 
 
 @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
@@ -321,7 +395,7 @@ class AssociateSingleUnitTests(unittest.TestCase):
         mock_rcu_objects.assert_called_once_with(
             repo_id='foo',
             unit_id='bar',
-            unit_type_id=DemoModel._content_type_id
+            unit_type_id=DemoModel._content_type_id.default
         )
         mock_rcu_objects.return_value.update_one.assert_called_once_with(
             set_on_insert__created='foo_tstamp',

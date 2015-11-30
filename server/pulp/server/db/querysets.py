@@ -31,6 +31,10 @@ class CriteriaQuerySet(QuerySet):
             query_set = query_set.filter(__raw__=criteria.spec)
 
         if criteria.fields is not None:
+            # if limiting the fields, we should always include the id, but id must be added after
+            # the translate because we don't want this turned into _id.
+            if 'id' not in criteria.fields:
+                criteria.fields.append('id')
             query_set = query_set.only(*criteria.fields)
 
         sort_list = []

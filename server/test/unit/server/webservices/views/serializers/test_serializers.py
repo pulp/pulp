@@ -1,3 +1,4 @@
+from bson.objectid import ObjectId
 import mock
 
 from pulp.common.compat import unittest
@@ -5,6 +6,7 @@ from pulp.common.compat import unittest
 # the criteria module before serializers to prevent a circular import. This is only an issue when
 # running this test module by itself, and will be fixed when pulp.server.db.model becomes a true
 # module or moves to pulp.server.db.models. See https://pulp.plan.io/issues/1066
+from pulp.server import exceptions
 from pulp.server.db.model import criteria  # noqa
 from pulp.server.webservices.views import serializers
 
@@ -237,6 +239,85 @@ class TestModelSerializer(unittest.TestCase):
         test_serializer = FakeSerializer()
         result = test_serializer._translate_filters(mock_model, filters)
         self.assertDictEqual(result, {'internal_db': 'was external', 'leave': 'should not change'})
+
+    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate__id')
+    def test_translate_filters_with__id(self, mock_trans_id):
+        """
+        Translate criteria objects' filters to from external to internal representation for search.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        mock_model = mock.MagicMock()
+        filters = {'_id': 'translate me!'}
+        test_serializer = FakeSerializer()
+        result = test_serializer._translate_filters(mock_model, filters)
+        self.assertDictEqual(result, {'_id': mock_trans_id.return_value})
+        mock_trans_id.assert_called_once_with('translate me!')
+
+    def test_transalte__id_str(self):
+        """
+        Test the translation of _id if the value is a string representation of an ObjectId.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        obj_id = ObjectId()
+        test_serializer = FakeSerializer()
+        result = test_serializer._translate__id(str(obj_id))
+        self.assertEqual(result, obj_id)
+
+    def test_translate__id_dict_with_str(self):
+        """
+        Test the translation of a query that uses a Mongo operator.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        obj_id = ObjectId()
+        test_serializer = FakeSerializer()
+        result = test_serializer._translate__id({'$mongo_operator': str(obj_id)})
+        self.assertDictEqual(result, {'$mongo_operator': obj_id})
+
+    def test_translate__id_dict_with_list(self):
+        """
+        Test the translation of a more complex _id field.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        obj_ids = [ObjectId() for i in range(3)]
+        string_ids = [str(obj_id) for obj_id in obj_ids]
+        test_serializer = FakeSerializer()
+        result = test_serializer._translate__id({'$in': string_ids})
+        self.assertDictEqual(result, {'$in': obj_ids})
+
+    def test_tranlate__id_type_failure(self):
+        """
+        Raise if _id is a type that we cannot translate.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        test_serializer = FakeSerializer()
+        self.assertRaises(exceptions.InvalidValue, test_serializer._translate__id, ['invalid'])
+
+    def test_tranlate__id_nested_type_failure(self):
+        """
+        Raise if _id is structured in a way that we cannot translate.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        search_term = {'$and': {'implementation': 'doesnt support this'}}
+        test_serializer = FakeSerializer()
+        self.assertRaises(exceptions.InvalidValue, test_serializer._translate__id, search_term)
 
     def test_translate(self):
         """

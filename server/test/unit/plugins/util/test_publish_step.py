@@ -66,6 +66,70 @@ class PluginBase(unittest.TestCase):
             config=self.config, plugin_type='test_plugin_type')
 
 
+class TestUnitModelPluginStep(PluginBase):
+    def setUp(self):
+        super(TestUnitModelPluginStep, self).setUp()
+        self.ModelA = MagicMock()
+        self.ModelB = MagicMock()
+        self.step = publish_step.UnitModelPluginStep('mytype', [self.ModelA, self.ModelB],
+                                                     repo=self.repo)
+
+    @patch('pulp.server.controllers.repository.get_unit_model_querysets')
+    def test_returns_querysets(self, mock_get_querysets):
+        qs1 = MagicMock()
+        qs2 = MagicMock()
+        mock_get_querysets.side_effect = [[qs1], [qs2]]
+
+        ret = self.step.unit_querysets
+
+        self.assertEqual(ret, [qs1.no_cache.return_value, qs2.no_cache.return_value])
+
+    @patch('pulp.server.controllers.repository.get_unit_model_querysets')
+    def test_caches_querysets(self, mock_get_querysets):
+        """
+        make sure the values retrieved from get_unit_model_querysets are cached
+        """
+        qs1 = MagicMock()
+        qs2 = MagicMock()
+        mock_get_querysets.side_effect = [[qs1], [qs2]]
+
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+        self.step.unit_querysets
+
+        self.assertEqual(mock_get_querysets.call_count, 2)
+
+    def test_get_total(self):
+        qs1 = MagicMock()
+        qs1.count.return_value = 3
+        qs2 = MagicMock()
+        qs2.count.return_value = 4
+        self.step._unit_querysets = [qs1, qs2]
+
+        total = self.step.get_total()
+
+        self.assertEqual(total, 7)
+
+    def test_get_total_zero(self):
+        self.step._unit_querysets = []
+
+        total = self.step.get_total()
+
+        self.assertEqual(total, 0)
+
+    def test_get_iterator(self):
+        u1 = MagicMock()
+        u2 = MagicMock()
+        u3 = MagicMock()
+        self.step._unit_querysets = [[u1, u2], [u3]]
+
+        ret = self.step.get_iterator()
+
+        self.assertEqual(list(ret), [u1, u2, u3])
+
+
 class PostOrderTests(unittest.TestCase):
 
     def test_ordered_output(self):
@@ -403,38 +467,6 @@ class PluginStepTests(PluginBase):
 
         step.report_progress.assert_called_once_with(force=True)
 
-    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
-    @patch('pulp.plugins.util.publish_step.Step.process_lifecycle', side_effect=Exception('foo'))
-    def test_process_lifecycle_exception_still_removes_working_dir(self, super_pl, mock_rmtree):
-        step = publish_step.PluginStep("foo", working_dir=self.working_dir, conduit=self.conduit)
-        step._build_final_report = Mock()
-        self.assertRaises(Exception, step.process_lifecycle)
-        super_pl.assert_called_once_with()
-        self.assertFalse(step._build_final_report.called)
-        mock_rmtree.assert_called_once_with(self.working_dir, ignore_errors=True)
-
-    @patch('pulp.plugins.util.publish_step.PluginStep.get_working_dir')
-    def test_process_lifecycle_no_working_dir(self, mock_wd):
-        # we need to mock this to None instead of just setting
-        # self.working_directory to None so that we don't go up the step repo
-        # chain looking for working_dirs
-        mock_wd.return_value = None
-        step = publish_step.PluginStep("foo")
-        self.assertRaises(RuntimeError, step.process_lifecycle)
-
-    @patch('pulp.plugins.util.publish_step.PluginStep._build_final_report')
-    @patch('pulp.plugins.util.publish_step.PluginStep.report_progress')
-    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
-    @patch('pulp.plugins.util.publish_step.PluginStep.get_working_dir')
-    def test_process_lifecycle_non_existent_working_dir(self, mock_wd, mock_rmtree, mock_progress,
-                                                        mock_build_report):
-        new_dir = os.path.join(self.working_dir, 'test', 'bar')
-        mock_wd.return_value = new_dir
-        step = publish_step.PluginStep("foo")
-        step.process_lifecycle()
-        self.assertTrue(os.path.exists(new_dir))
-        mock_rmtree.assert_called_once_with(new_dir, ignore_errors=True)
-
     def test_clear_children(self):
         step = publish_step.PublishStep("foo")
         step.children = ['bar']
@@ -619,7 +651,7 @@ class UnitPublishStepTests(PublisherBase):
     def test_process_unit_with_no_work(self):
         # Run the blank process unit to ensure no exceptions are raised
         step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
-        step.process_unit('foo')
+        step.process_main('foo')
 
 
 class TestAtomicDirectoryPublishStep(unittest.TestCase):
@@ -756,60 +788,6 @@ class TestCopyDirectoryStep(unittest.TestCase):
         step.process_main()
 
         self.assertTrue(os.path.exists(target_file))
-
-
-class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
-
-    class DummyStep(publish_step.PluginStepIterativeProcessingMixin):
-        """
-        A dummy class that provides some stuff that the mixin uses
-        """
-        def __init__(self):
-            self.canceled = False
-            self.progress_successes = 0
-            self.process_item = Mock()
-            self.report_progress = Mock()
-
-        def get_generator(self):
-            return (n for n in [1, 2])
-
-    class DummyCanceledStep(publish_step.PluginStepIterativeProcessingMixin):
-        """
-        A dummy class that provides some stuff that the mixin uses
-        """
-        def __init__(self):
-            self.canceled = True
-            self.progress_successes = 0
-            self.process_item = Mock()
-            self.report_progress = Mock()
-
-        def get_generator(self):
-            return (n for n in [1, 2])
-
-    def test_get_generator(self):
-        mixin = publish_step.PluginStepIterativeProcessingMixin()
-        try:
-            mixin.get_generator()
-            self.assertTrue(False, "no exception thrown")
-        except NotImplementedError:
-            pass
-        except:
-            self.assertTrue(False, "wrong exception thrown")
-
-    def test_process_block(self):
-        dummystep = self.DummyStep()
-        dummystep._process_block()
-        dummystep.process_item.assert_called()
-        dummystep.report_progress.assert_called()
-        self.assertEquals(dummystep.progress_successes, 2)
-
-    def test_process_block_canceled_item(self):
-        dummystep = self.DummyCanceledStep()
-        dummystep._process_block()
-        dummystep.process_item.assert_called()
-        dummystep.report_progress.assert_called()
-        # step is canceled!
-        self.assertEquals(dummystep.progress_successes, 0)
 
 
 class DownloadStepTests(unittest.TestCase):
@@ -992,12 +970,12 @@ class DownloadStepTests(unittest.TestCase):
         dlstep = publish_step.DownloadStep('fake-step', downloads=mock_downloads)
         self.assertEquals(dlstep.get_total(), 2)
 
-    def test__process_block(self):
+    def test_process_main(self):
         mock_downloader = Mock()
         mock_downloads = ['fake', 'downloads']
         dlstep = publish_step.DownloadStep('fake-step', downloads=mock_downloads)
         dlstep.downloader = mock_downloader
-        dlstep._process_block()
+        dlstep.process_main()
         mock_downloader.download.assert_called_once_with(['fake', 'downloads'])
 
     def test_download_succeeded(self):

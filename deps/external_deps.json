@@ -28,5 +28,35 @@
         "name": "gofer",
         "version": "2.6.6-2",
         "platform": ["el5", "el6", "el7", "fc21", "fc22"]
+    },
+    {
+        "name": "python-amqp",
+        "version": "1.4.6-1",
+        "platform": ["el6", "el7"]
+    },
+    {
+        "name": "python-billiard",
+        "version": "3.3.0.17-2",
+        "platform": ["el6", "el7"]
+    },
+    {
+        "name": "python-celery",
+        "version": "3.1.11-1",
+        "platform": ["el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-kombu",
+        "version": "3.0.24-10",
+        "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-mongoengine",
+        "version": "0.9.0-1",
+        "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-pymongo",
+        "version": "2.7.2-1",
+        "platform": [ "el6", "el7", "fc22", "fc23"]
     }
 ]

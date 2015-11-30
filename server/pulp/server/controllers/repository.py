@@ -31,6 +31,57 @@ from pulp.server.managers.repo import _common as common_utils
 _logger = logging.getLogger(__name__)
 
 
+def get_associated_unit_ids(repo_id, unit_type, repo_content_unit_q=None):
+    """
+    Return a generator of unit IDs within the given repo that match the type and query
+
+    :param repo_id:     ID of the repo whose units should be queried
+    :type  repo_id:     str
+    :param unit_type:   ID of the unit type which should be retrieved
+    :type  unit_type:   str
+    :param repo_content_unit_q: any additional filters that should be applied to the
+                                RepositoryContentUnit search
+    :type  repo_content_unit_q: mongoengine.Q
+    :return:    generator of unit IDs
+    :rtype:     generator
+    """
+    qs = model.RepositoryContentUnit.objects(q_obj=repo_content_unit_q,
+                                             repo_id=repo_id,
+                                             unit_type_id=unit_type)
+    for assoc in qs.no_cache().only('unit_id'):
+        yield assoc.unit_id
+
+
+def get_unit_model_querysets(repo_id, model_class, repo_content_unit_q=None):
+    """
+    Return a generator of mongoengine.queryset.QuerySet objects that collectively represent the
+    units in the specified repo that are of the type corresponding to the model_class and that
+    match the optional query.
+
+    Results are broken up into multiple QuerySet objects, because units are requested by their ID,
+    and we do not want to exceed the maximum size for a single query by stuffing too many IDs in one
+    QuerySet object.
+
+    You are welcome and encouraged to convert the return value into one generator of ContentUnit
+    objects by using itertools.chain()
+
+    :param repo_id:     ID of the repo whose units should be queried
+    :type  repo_id:     str
+    :param model_class: a subclass of ContentUnit that defines a unit model
+    :type  model_class: pulp.server.db.model.ContentUnit
+    :param repo_content_unit_q: any additional filters that should be applied to the
+                                RepositoryContentUnit search
+    :type  repo_content_unit_q: mongoengine.Q
+
+    :return:    generator of mongoengine.queryset.QuerySet
+    :rtype:     generator
+    """
+    for chunk in paginate(get_associated_unit_ids(repo_id,
+                                                  model_class._content_type_id.default,
+                                                  repo_content_unit_q)):
+        yield model_class.objects(id__in=chunk)
+
+
 def find_repo_content_units(
         repository, repo_content_unit_q=None,
         units_q=None, unit_fields=None, limit=None, skip=None,
@@ -186,7 +237,7 @@ def associate_single_unit(repository, unit):
     qs = model.RepositoryContentUnit.objects(
         repo_id=repository.repo_id,
         unit_id=unit.id,
-        unit_type_id=unit.type_id)
+        unit_type_id=unit._content_type_id)
     qs.update_one(
         set_on_insert__created=formatted_datetime,
         set__updated=formatted_datetime,

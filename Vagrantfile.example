@@ -10,8 +10,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
  # Comment out if you don't want Vagrant to add and remove entries from /etc/hosts for each VM.
- config.hostmanager.enabled = true
- config.hostmanager.manage_host = true
+ # requires the vagrant-hostmanager plugin to be installed
+ if Vagrant.has_plugin?("vagrant-hostmanager")
+     config.hostmanager.enabled = true
+     config.hostmanager.manage_host = true
+ end
+
+ # Comment this out to prevent resizing the root filesystem to fill the base box disk
+ config.vm.provision "shell", inline: "sudo xfs_growfs /dev/vda3"
+ # the command args above must match the filesystems and devices used in the base box
 
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"

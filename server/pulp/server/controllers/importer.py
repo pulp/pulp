@@ -55,8 +55,8 @@ def set_importer(repo, importer_type_id, repo_plugin_config):
     """
     Configures an importer to be used for the given repository.
 
-    :param repo_id: identifies the repo
-    :type  repo_id: str
+    :param repo: repository object that the importer should be associated with
+    :type  repo: pulp.server.db.model.Repository
     :param importer_type_id: type of importer, must correspond to a plugin loaded at server startup
     :type  importer_type_id: str
     :param repo_plugin_config: configuration values for the importer; may be None
@@ -99,12 +99,12 @@ def set_importer(repo, importer_type_id, repo_plugin_config):
     return importer
 
 
-def queue_set_importer(repo_id, importer_type_id, config):
+def queue_set_importer(repo, importer_type_id, config):
     """
     Dispatch a task to set the importer on a repository.
 
-    :param repo_id: identifies the repo
-    :type  repo_id: str
+    :param repo: repository object that the importer should be associated with
+    :type  repo: pulp.server.db.model.Repository
     :param importer_type_id: type of importer, must correspond to a plugin loaded at server startup
     :type  importer_type_id: str
     :param config: configuration values for the importer
@@ -113,10 +113,10 @@ def queue_set_importer(repo_id, importer_type_id, config):
     :return: asynchronous result
     :rtype:  pulp.server.async.tasks.TaskResult
     """
-    task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+    task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id),
                  tags.action_tag('add_importer')]
     async_result = set_importer.apply_async_with_reservation(
-        tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, importer_type_id],
+        tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id, [repo, importer_type_id],
         {'repo_plugin_config': config}, tags=task_tags)
     return async_result
 

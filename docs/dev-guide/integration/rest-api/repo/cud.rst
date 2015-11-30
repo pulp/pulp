@@ -390,7 +390,8 @@ repository. This performs the following actions:
 1. Updates the distributor on the server.
 2. Rebinds any bound consumers.
 
-Any distributor configuration value that is not specified remains unchanged.
+Any distributor configuration value that is not specified remains unchanged and any value that is
+set to explicitly to `None` will be removed from the config.
 
 The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
 spawned_tasks field will be populated with links to any tasks required to complete step 2.
@@ -400,6 +401,10 @@ See :ref:`bind` for details.
 | :method:`put`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
 | :permission:`update`
+| :param_list:`put`
+
+* :param:`?distributor_config,object,dictionary containing plugin specific keys with values that will update the distributor config`
+* :param:`?delta,object, dictionary containing keys with values that will update the distributor object, currently only supports "auto_publish"`
 
 | :response_list:`_`
 

@@ -178,6 +178,8 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Nov 24 2015 Brian Bouterse <bbouters@redhat.com> 3.0.24-10.pulp
+- rebuild for 3.0.24-10
 * Tue Feb 03 2015 Brian Bouterse 3.0.24-5.pulp
 - 1174361 - Revert patch introduced with b0f2319. It is not needed.
   (bbouters@redhat.com)

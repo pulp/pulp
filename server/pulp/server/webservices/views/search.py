@@ -140,9 +140,6 @@ class SearchView(generic.View):
         :raises exceptions.InvalidValue: if pymongo is unable to use the criteria object
         """
         query = criteria.Criteria.from_client_input(query)
-        if query.fields:
-            if 'id' not in query.fields:
-                query.fields.append('id')
 
         # Our MongoEngine SearchViews will have cls.model set to the MongoEngine model, while the
         # "old" style objects will have the cls.manager attribute set to the model's manager. While
@@ -154,6 +151,12 @@ class SearchView(generic.View):
         if hasattr(cls, 'model'):
             search_method = cls.model.objects.find_by_criteria
         else:
+            # id field should always be in query.fields. We are forced to do this twice, here and
+            # in the queryset for the mongoengine work. This is necessary because in mongoengine
+            # id is an alias to _id, and queries must be translated to reflect that. If we append
+            # id before this split, our serializers will translate this id also.
+            if query.fields and 'id' not in query.fields:
+                query.fields.append('id')
             search_method = cls.manager.find_by_criteria
 
         # We do not validate all aspects of the criteria object, so if pymongo has a problem we

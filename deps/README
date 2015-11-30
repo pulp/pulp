@@ -11,8 +11,16 @@ createrepo
 
 Team owner: jcline
 
-Note: createrepo-0.9.9 is available in EL7.
+Note: createrepo-0.9.9 is available in EL6 and EL7. createrepo-0.10.3 is available in F21+
 
+The createrepo patch carried appears to be related to a problem in anaconda-13.21.195-1.el6[0].
+Based on the bug report against Pulp, this is only a problem for RHEL6[1]. It's possible this
+was fixed in Fedora as early as F18[2].
+
+
+[0] https://bugzilla.redhat.com/show_bug.cgi?id=949992
+[1] https://bugzilla.redhat.com/show_bug.cgi?id=950036
+[2] https://bugzilla.redhat.com/show_bug.cgi?id=950724
 
 mod_wsgi
 --------
@@ -29,11 +37,7 @@ python-amqp
 
 Team owner: bmbouter
 
-kombu 3.0.24 requires amqp>=1.4.6,<2.0, which is not available in EPEL <= 7, or Fedora <= 20.
-
-This requirement may not actually be necessary if amqp becomes available on the necessary platforms [0].
-
-[0]: https://apps.fedoraproject.org/packages/python-amqp/overview/
+kombu 3.0.24 requires amqp>=1.4.6,<2.0, which is not available in EPEL <= 7.
 
 
 python-billiard
@@ -41,8 +45,7 @@ python-billiard
 
 Team owner: bmbouter
 
-celery-3.1.11 requires billiard>=3.3.0.17,<3.4, and a new-enough version is not available in
-Fedora <= 20 or EPEL <= 7.
+celery-3.1.11 requires billiard>=3.3.0.17,<3.4, which is not available in EPEL <= 7.
 
 
 python-celery
@@ -50,7 +53,7 @@ python-celery
 
 Team owner: bmbouter
 
-Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL <= 7.
+Pulp is tested against celery 3.1.11, which is not available in any Fedora or EPEL <= 7.
 
 
 python-isodate
@@ -58,9 +61,10 @@ python-isodate
 
 Team owner: jcline
 
-This appears to be unmaintained upstream, and there is no knowledge of why we have
-a patch. This version is newer than what is in Fedora <= 20 and EPEL <= 7, so we should
-consider using a different library.
+The current version in Fedora is 0.5.0, while upstream is 0.5.4. Our patch fixes
+a problem when unpickling Duration objects. A fix is present in upstream 0.5.1,
+although it has not been tested with Pulp yet. dcallagh, jlaska, and jmatthews are
+the Fedora package administrators.
 
 
 python-kombu

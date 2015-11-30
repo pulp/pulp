@@ -43,15 +43,7 @@
       - tito
       - yum-utils
 
-- name: Install flower
-  pip: name=flower
-  sudo: yes
-
-- name: Install flower systemd unit
-  copy: src=flower.service dest=/etc/systemd/system/flower.service
-  sudo: yes
-
-- service: name=flower.service state=started enabled=yes
-
 - name: Install custom ~/.bashrc
   copy: src=bashrc dest=/home/{{ ansible_env.SUDO_USER }}/.bashrc
+
+- copy: src=drop_database.js dest=/home/{{ ansible_env.SUDO_USER }}/drop_database.js

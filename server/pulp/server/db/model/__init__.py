@@ -7,7 +7,7 @@ import uuid
 from collections import namedtuple
 from hmac import HMAC
 
-from mongoengine import (BooleanField, DateTimeField, DictField, Document, DynamicField, IntField,
+from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
                          ListField, StringField, UUIDField, ValidationError)
 from mongoengine import signals
 
@@ -20,7 +20,7 @@ from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.connection import UnsafeRetry
 from pulp.server.compat import digestmod
-from pulp.server.db.fields import ISO8601StringField
+from pulp.server.db.fields import ISO8601StringField, UTCDateTimeField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
 from pulp.server.util import Singleton
@@ -95,9 +95,9 @@ class Repository(AutoRetryDocument):
                       across multiple operations.
     :type scratchpad: mongoengine.DictField
     :ivar last_unit_added: Datetime of the most recent occurence of adding a unit to the repo
-    :type last_unit_added: mongoengine.DateTimeField
+    :type last_unit_added: UTCDateTimeField
     :ivar last_unit_removed: Datetime of the most recent occurence of removing a unit from the repo
-    :type last_unit_removed: mongoengine.DateTimeField
+    :type last_unit_removed: UTCDateTimeField
     :ivar _ns: (Deprecated) Namespace of repo, included for backwards compatibility.
     :type _is: mongoengine.StringField
     """
@@ -111,8 +111,8 @@ class Repository(AutoRetryDocument):
     notes = DictField()
     scratchpad = DictField(default={})
     content_unit_counts = DictField(default={})
-    last_unit_added = DateTimeField()
-    last_unit_removed = DateTimeField()
+    last_unit_added = UTCDateTimeField()
+    last_unit_removed = UTCDateTimeField()
 
     # For backward compatibility
     _ns = StringField(default='repos')
@@ -286,10 +286,10 @@ class Worker(AutoRetryDocument):
     :ivar name:    worker name, in the form of "worker_type@hostname"
     :type name:    mongoengine.StringField
     :ivar last_heartbeat:  A timestamp of the last heartbeat from the Worker
-    :type last_heartbeat:  mongoengine.DateTimeField
+    :type last_heartbeat:  UTCDateTimeField
     """
     name = StringField(primary_key=True)
-    last_heartbeat = DateTimeField()
+    last_heartbeat = UTCDateTimeField()
 
     # For backward compatibility
     _ns = StringField(default='workers')
@@ -678,9 +678,9 @@ class FileContentUnit(ContentUnit):
         :param document: Document that sent the signal
         :type document: FileContentUnit
         """
-        super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
         if not document._storage_path:
             document.set_storage_path()
+        super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
 
     def set_storage_path(self, filename=None):
         """
@@ -788,7 +788,7 @@ class CeleryBeatLock(AutoRetryDocument):
     :type _ns: mongoengine.StringField
     """
     celerybeat_name = StringField(required=True)
-    timestamp = DateTimeField(required=True)
+    timestamp = UTCDateTimeField(required=True)
     lock = StringField(required=True, default="locked", unique=True)
 
     # For backward compatibility

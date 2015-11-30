@@ -77,6 +77,14 @@ class TestAutoRetryDocumentClean(unittest.TestCase):
         self.assertRaises(ValidationError, MockDoc().clean)
 
 
+class ContentUnitHelper(model.ContentUnit):
+    """Used to test ContentUnit since it must be sub-classed to be used."""
+    apple = StringField()
+    pear = StringField()
+    unit_key_fields = ('apple', 'pear')
+    _content_type_id = StringField(default='mock_type_id')
+
+
 class TestContentUnit(unittest.TestCase):
     """
     Test ContentUnit model
@@ -94,26 +102,22 @@ class TestContentUnit(unittest.TestCase):
     @patch('pulp.server.db.model.uuid')
     def test_default_id(self, uuid):
         uuid.uuid4.return_value = '1234'
-        unit = model.ContentUnit()
-        unit_id = unit.id
+        unit = ContentUnitHelper()
         uuid.uuid4.assert_called_once_with()
-        self.assertEqual(unit_id, uuid.uuid4.return_value)
+        self.assertEqual(unit.id, uuid.uuid4.return_value)
 
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
 
     @patch('pulp.server.db.model.signals')
     def test_attach_signals(self, mock_signals):
-        class ContentUnitHelper(model.ContentUnit):
-            _content_type_id = StringField(default='foo')
-            unit_key_fields = ['apple', 'pear']
 
         ContentUnitHelper.attach_signals()
 
         mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
                                                               sender=ContentUnitHelper)
 
-        self.assertEquals('foo', ContentUnitHelper.NAMED_TUPLE.__name__)
+        self.assertEquals('mock_type_id', ContentUnitHelper.NAMED_TUPLE.__name__)
         self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
@@ -121,10 +125,6 @@ class TestContentUnit(unittest.TestCase):
         """
         Test the pre_save signal handler
         """
-        class ContentUnitHelper(model.ContentUnit):
-            id = None
-            last_updated = None
-
         mock_now_utc.return_value = 'foo'
         helper = ContentUnitHelper()
         helper._last_updated = 50
@@ -139,9 +139,6 @@ class TestContentUnit(unittest.TestCase):
     @patch('pulp.server.db.model.Repository.objects')
     @patch('pulp.server.db.model.RepositoryContentUnit.objects')
     def test_get_repositories(self, mock_rcu_query, mock_repository_query):
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-
         c1 = model.RepositoryContentUnit(repo_id='repo1')
         c2 = model.RepositoryContentUnit(repo_id='repo2')
 
@@ -157,12 +154,6 @@ class TestContentUnit(unittest.TestCase):
 
     @patch('pulp.server.db.model.signals')
     def test_as_named_tuple(self, m_signal):
-        class ContentUnitHelper(model.ContentUnit):
-            apple = StringField()
-            pear = StringField()
-            unit_key_fields = ('apple', 'pear')
-            _content_type_id = StringField(default='bar')
-
         # create the named tuple
         ContentUnitHelper.attach_signals()
 
@@ -173,25 +164,19 @@ class TestContentUnit(unittest.TestCase):
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
 
     def test_id_to_dict(self):
-        class ContentUnitHelper(model.ContentUnit):
-            apple = StringField()
-            pear = StringField()
-            unit_key_fields = ('apple', 'pear')
-            _content_type_id = StringField(default='bar')
         my_unit = ContentUnitHelper(apple='apple', pear='pear')
         ret = my_unit.to_id_dict()
-        expected_dict = {'unit_key': {'pear': u'pear', 'apple': u'apple'}, 'type_id': 'bar'}
+        expected_dict = {
+            'unit_key': {'pear': u'pear', 'apple': u'apple'},
+            'type_id': 'mock_type_id'
+        }
         self.assertEqual(ret, expected_dict)
 
     def test_storage_path(self):
-        class ContentUnitHelper(model.ContentUnit):
-            _storage_path = StringField()
         my_unit = ContentUnitHelper(_storage_path='apple')
         self.assertEqual(my_unit.storage_path, my_unit._storage_path)
 
     def test_type_id(self):
-        class ContentUnitHelper(model.ContentUnit):
-            _content_type_id = StringField()
         my_unit = ContentUnitHelper(_content_type_id='apple')
         self.assertEqual(my_unit.type_id, my_unit._content_type_id)
 
@@ -319,8 +304,7 @@ class TestFileContentUnit(unittest.TestCase):
         document = Mock(_storage_path=None)
         unit = TestFileContentUnit.TestUnit()
         unit.pre_save_signal(None, document)
-        get_path.assert_called_once_with(document)
-        self.assertEqual(document._storage_path, get_path.return_value)
+        document.set_storage_path.assert_called_once_with()
 
     @patch('pulp.server.db.model.FileStorage.get_path')
     def test_pre_save_signal_already_has_storage_path(self, get_path):
