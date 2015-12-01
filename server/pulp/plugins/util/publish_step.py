@@ -482,7 +482,7 @@ class PluginStep(Step):
         Return the repo associated with the step
 
         :returns: the repository for this action
-        :rtype: pulp.server.db.model.Repository
+        :rtype: pulp.plugins.model.Repository
         """
         if self.repo:
             return self.repo
@@ -1164,7 +1164,7 @@ class SaveUnitsStep(PluginStep):
     """
 
     def finalize(self):
-        repo_controller.rebuild_content_unit_counts(self.get_repo())
+        repo_controller.rebuild_content_unit_counts(self.get_repo().repo_obj)
 
 
 class GetLocalUnitsStep(SaveUnitsStep):
