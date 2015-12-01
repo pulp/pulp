@@ -12,7 +12,7 @@
     {
         "name": "gofer",
         "version": "2.6.6-2",
-        "platform": ["el5", "el6", "el7", "fc21", "fc22"]
+        "platform": ["el5", "el6", "el7", "fc22", "fc23"]
     },
     {
         "name": "python-amqp",
