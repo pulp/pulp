@@ -11,7 +11,7 @@ for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_
     ! mkvirtualenv --system-site-packages $r
     workon $r
     setvirtualenvproject
-    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)
+    rpmspec -q --queryformat '[%{REQUIRENEVRS}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "^pulp.*" | uniq | xargs -d "\n" sudo dnf install -y
     # Install dependencies for automated tests
     pip install -r test_requirements.txt
     sudo python ./pulp-dev.py -I
@@ -27,7 +27,7 @@ if [ -d crane ]; then
     workon crane
     setvirtualenvproject
     # Install dependencies
-    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' python-crane.spec | grep -v "/.*" | uniq)
+    rpmspec -q --queryformat '[%{REQUIRENEVRS}\n]' python-crane.spec | grep -v "/.*" | uniq | xargs -d "\n" sudo dnf install -y
     pip install -r test-requirements.txt
 
     cat << EOF > $HOME/devel/crane/crane.conf
