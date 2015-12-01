@@ -111,13 +111,7 @@ if [ ! -f $HOME/.pulp/user-cert.pem ]; then
     pulp-admin login -u admin -p admin
 fi
 
-if [ -d $HOME/devel/pulp_rpm ]; then
-    if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
-        echo "Creating the example zoo repository"
-        pulp-admin rpm repo create --repo-id zoo --feed \
-            https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/ --relative-url zoo
-    fi
-fi
+ppopulate
 
 # Give the user some use instructions
 sudo cp $HOME/devel/pulp/playpen/vagrant-motd.txt /etc/motd
