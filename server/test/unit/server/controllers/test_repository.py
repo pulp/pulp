@@ -1,7 +1,7 @@
 import inspect
 
 from bson.objectid import InvalidId
-from mock import Mock, MagicMock, patch
+from mock import call, Mock, MagicMock, patch
 import mock
 import mongoengine
 
@@ -223,138 +223,75 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         self.assertEquals(result[4].unit_id, 'bar_9')
 
 
-class TestFindUnitsNotDownloaded(unittest.TestCase):
+class FindUnitsNotDownloadedTests(unittest.TestCase):
 
-    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
-    @patch(MODULE + '.model.RepositoryContentUnit')
-    def test_call(self, association, get_model):
-        associations = [
-            Mock(unit_id=1, unit_type_id='dog'),
-            Mock(unit_id=2, unit_type_id='dog'),
-            Mock(unit_id=3, unit_type_id='dog'),
-            Mock(unit_id=4, unit_type_id='cat'),
-            Mock(unit_id=5, unit_type_id='cat'),
-            Mock(unit_id=6, unit_type_id='cat'),
-        ]
-        units = [
-            Mock(id=1, downloaded=False),
-            Mock(id=2, downloaded=True),
-            Mock(id=3, downloaded=False),
-            Mock(id=4, downloaded=False),
-            Mock(id=5, downloaded=True),
-            Mock(id=6, downloaded=False),
-        ]
-        associations_q_set = Mock()
-        associations_q_set.only.return_value = associations
-        association.objects.return_value = associations_q_set
-        dog = Mock()
-        dog.objects.return_value = [u for u in units[0:3] if not u.downloaded]
-        cat = Mock()
-        cat.objects.return_value = [u for u in units[3:6] if not u.downloaded]
-        types = {
-            'dog': dog,
-            'cat': cat
-        }
-        get_model.side_effect = lambda t: types[t]
-        repository = Mock(repo_id='1234')
-
-        # test
-        found = repo_controller.find_units_not_downloaded(repository)
-        found = list(found)
-
-        # validation
-        association.objects.assert_called_once_with(repo_id=repository.repo_id)
-        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
-        dog.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[0:3]]),
-            downloaded=False)
-        cat.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[3:6]]),
-            downloaded=False)
-        self.assertEqual(
-            sorted([u.id for u in found]),
-            sorted([u.id for u in units if not u.downloaded]))
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_call(self, mock_repo_querysets):
+        mock_qs = Mock()
+        mock_qs.return_value = [0, 1, 2]
+        mock_repo_querysets.return_value = [mock_qs]
+        units = repo_controller.find_units_not_downloaded('mock_repo')
+        for x, unit in zip(range(3), units):
+            self.assertEqual(x, unit)
 
 
-class TestHasAllUnitsDownloaded(unittest.TestCase):
+class MissingUnitCountTests(unittest.TestCase):
 
-    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
-    @patch(MODULE + '.model.RepositoryContentUnit')
-    def test_all_downloaded(self, association, get_model):
-        associations = [
-            Mock(unit_id=1, unit_type_id='dog'),
-            Mock(unit_id=2, unit_type_id='dog'),
-            Mock(unit_id=3, unit_type_id='dog'),
-            Mock(unit_id=4, unit_type_id='cat'),
-            Mock(unit_id=5, unit_type_id='cat'),
-            Mock(unit_id=6, unit_type_id='cat'),
-        ]
-        associations_q_set = Mock()
-        associations_q_set.only.return_value = associations
-        association.objects.return_value = associations_q_set
-        dog = Mock()
-        dog.objects.return_value.count.return_value = 0
-        cat = Mock()
-        cat.objects.return_value.count.return_value = 0
-        types = {
-            'dog': dog,
-            'cat': cat
-        }
-        get_model.side_effect = lambda t: types[t]
-        repository = Mock(repo_id='1234')
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_call(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 5
+        mock_repo_querysets.return_value = [query_set]
+        self.assertEqual(5, repo_controller.missing_unit_count('mock_repo'))
 
-        # test
-        result = repo_controller.has_all_units_downloaded(repository)
 
-        # validation
-        association.objects.assert_called_once_with(repo_id=repository.repo_id)
-        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
-        dog.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[0:3]]),
-            downloaded=False)
-        cat.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[3:6]]),
-            downloaded=False)
-        self.assertTrue(result)
+class HasAllUnitsDownloadedTests(unittest.TestCase):
 
-    @patch(MODULE + '.plugin_api.get_unit_model_by_id')
-    @patch(MODULE + '.model.RepositoryContentUnit')
-    def test_not_all_downloaded(self, association, get_model):
-        associations = [
-            Mock(unit_id=1, unit_type_id='dog'),
-            Mock(unit_id=2, unit_type_id='dog'),
-            Mock(unit_id=3, unit_type_id='dog'),
-            Mock(unit_id=4, unit_type_id='cat'),
-            Mock(unit_id=5, unit_type_id='cat'),
-            Mock(unit_id=6, unit_type_id='cat'),
-        ]
-        associations_q_set = Mock()
-        associations_q_set.only.return_value = associations
-        association.objects.return_value = associations_q_set
-        dog = Mock()
-        dog.objects.return_value.count.return_value = 0
-        cat = Mock()
-        cat.objects.return_value.count.return_value = 3
-        types = {
-            'dog': dog,
-            'cat': cat
-        }
-        get_model.side_effect = lambda t: types[t]
-        repository = Mock(repo_id='1234')
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_true(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 0
+        mock_repo_querysets.return_value = [query_set]
+        self.assertTrue(repo_controller.has_all_units_downloaded('mock_repo'))
 
-        # test
-        result = repo_controller.has_all_units_downloaded(repository)
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_false(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 5
+        mock_repo_querysets.return_value = [query_set]
+        self.assertFalse(repo_controller.has_all_units_downloaded('mock_repo'))
 
-        # validation
-        association.objects.assert_called_once_with(repo_id=repository.repo_id)
-        associations_q_set.only.assert_called_once_with('unit_id', 'unit_type_id')
-        dog.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[0:3]]),
-            downloaded=False)
-        cat.objects.assert_called_once_with(
-            id__in=tuple([a.unit_id for a in associations[3:6]]),
-            downloaded=False)
-        self.assertFalse(result)
+
+class GetMongoengineRepoQuerysetsTests(unittest.TestCase):
+    """Tests for the get_mongoengine_unit_querysets function."""
+
+    @patch(MODULE + '.get_unit_model_querysets')
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    def test_mongoengine_types_only(self, mock_repo_units, mock_get_querysets):
+        """Assert that the correct number of query sets are returned."""
+        content_types = ['dog', 'cat', 'goat']
+        mock_repo_units.return_value.distinct.return_value = content_types
+        mock_get_querysets.return_value = [1]
+
+        result = list(repo_controller.get_mongoengine_unit_querysets('mock_repo'))
+        self.assertEqual(3, len(result))
+        for content_type, actual_call in zip(content_types, mock_get_querysets.call_args_list):
+            self.assertEqual(call('mock_repo', content_type, None), actual_call)
+
+    @patch(MODULE + '.get_unit_model_querysets')
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    def test_non_mongoengine_type(self, mock_repo_units, mock_get_querysets):
+        """Assert that the correct number of query sets are returned."""
+        content_types = ['dog', None, 'goat']
+        mock_repo_units.return_value.distinct.return_value = content_types
+        mock_get_querysets.return_value = [1]
+
+        result = list(repo_controller.get_mongoengine_unit_querysets('mock_repo'))
+        self.assertEqual(2, len(result))
+        for content_type, actual_call in zip(['dog', 'goat'], mock_get_querysets.call_args_list):
+            self.assertEqual(call('mock_repo', content_type, None), actual_call)
 
 
 class UpdateRepoUnitCountsTests(unittest.TestCase):

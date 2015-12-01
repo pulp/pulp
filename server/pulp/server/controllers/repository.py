@@ -1,5 +1,6 @@
 from datetime import datetime
 from gettext import gettext as _
+from itertools import chain
 import logging
 import sys
 
@@ -82,6 +83,47 @@ def get_unit_model_querysets(repo_id, model_class, repo_content_unit_q=None):
         yield model_class.objects(id__in=chunk)
 
 
+def get_repo_unit_models(repo_id):
+    """
+    Retrieve all the MongoEngine models for units in a given repository. If a unit
+    type is in the repository and does not have a MongoEngine model, that unit type
+    is excluded from the returned list.
+
+    :param repo_id: ID of the repo whose unit models should be retrieved.
+    :type  repo_id: str
+
+    :return: A list of sub-classes of ContentUnit that define a unit model.
+    :rtype:  list of pulp.server.db.model.ContentUnit
+    """
+    unit_types = model.RepositoryContentUnit.objects(
+        repo_id=repo_id).distinct('unit_type_id')
+    unit_models = [plugin_api.get_unit_model_by_id(type_id) for type_id in unit_types]
+    # Filter any non-MongoEngine content types.
+    return filter(None, unit_models)
+
+
+def get_mongoengine_unit_querysets(repo_id, repo_content_unit_q=None):
+    """
+    Retrieve an iterable of QuerySets for all the units in a repository that have
+    MongoEngine models. If a unit type is in the repository and does not have a
+    MongoEngine model, that unit type is excluded from the iterable.
+
+    :param repo_id:             The ID of the repo whose units should be queried
+    :type  repo_id:             str
+    :param repo_content_unit_q: Any additional filters that should be applied to the
+                                RepositoryContentUnit search
+    :type  repo_content_unit_q: mongoengine.Q
+
+    :return: A generator of query sets.
+    :rtype:  generator of mongoengine.queryset.QuerySet
+    """
+    unit_models = get_repo_unit_models(repo_id)
+    for unit_model in unit_models:
+        query_sets = get_unit_model_querysets(repo_id, unit_model, repo_content_unit_q)
+        for query_set in query_sets:
+            yield query_set
+
+
 def find_repo_content_units(
         repository, repo_content_unit_q=None,
         units_q=None, unit_fields=None, limit=None, skip=None,
@@ -156,47 +198,49 @@ def find_repo_content_units(
             yield_count += 1
 
 
-def find_units_not_downloaded(repository):
+def find_units_not_downloaded(repo_id):
     """
     Find content units that have not been fully downloaded.
 
-    :param repository: A repository.
-    :type repository: model.Repository
+    :param repo_id: ID of the repo whose units should be retrieved.
+    :type  repo_id: str
+
     :return: The requested units.
-    :rtype: generator
+    :rtype:  generator
     """
-    types = {}
-    q_set = model.RepositoryContentUnit.objects(repo_id=repository.repo_id)
-    for association in q_set.only('unit_id', 'unit_type_id'):
-        unit_ids = types.setdefault(association.unit_type_id, [])
-        unit_ids.append(association.unit_id)
-    for type_id, unit_ids in types.items():
-        _model = plugin_api.get_unit_model_by_id(type_id)
-        for page in paginate(unit_ids):
-            for unit in _model.objects(id__in=page, downloaded=False):
-                yield unit
+    query_sets = get_mongoengine_unit_querysets(repo_id)
+    query_sets = [q(downloaded=False) for q in query_sets]
+    return chain(*query_sets)
 
 
-def has_all_units_downloaded(repository):
+def missing_unit_count(repo_id):
+    """
+    Retrieve the number of units that have not been downloaded.
+
+    :param repo_id: ID of the repo to retrieve the missing unit count for.
+    :type  repo_id: str
+
+    :return: Number of units that have a ``downloaded`` flag set to false.
+    :rtype:  int
+    """
+    query_sets = get_mongoengine_unit_querysets(repo_id)
+    return sum([query_set(downloaded=False).count() for query_set in query_sets])
+
+
+def has_all_units_downloaded(repo_id):
     """
     Get whether a repository contains units that have all been downloaded.
 
-    :param repository: A repository.
-    :type repository: model.Repository
-    :return: True if completely downloaded
-    :rtype: bool
+    :param repo_id: ID of the repo to retrieve the missing unit count for.
+    :type  repo_id: str
+
+    :return: True if no unit in the repository has the ``downloaded`` flag set
+             to False.
+    :rtype:  bool
     """
-    types = {}
-    q_set = model.RepositoryContentUnit.objects(repo_id=repository.repo_id)
-    for association in q_set.only('unit_id', 'unit_type_id'):
-        unit_ids = types.setdefault(association.unit_type_id, [])
-        unit_ids.append(association.unit_id)
-    for type_id, unit_ids in types.items():
-        _model = plugin_api.get_unit_model_by_id(type_id)
-        for page in paginate(unit_ids):
-            q_set = _model.objects(id__in=page, downloaded=False)
-            if q_set.count():
-                return False
+    for qs in get_mongoengine_unit_querysets(repo_id):
+        if qs(downloaded=False).count():
+            return False
     return True
 
 

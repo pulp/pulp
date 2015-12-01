@@ -170,7 +170,6 @@ class RepoResourceView(View):
         :rtype : django.http.HttpResponse
         :raises pulp_exceptions.MissingResource: if repo cannot be found
         """
-
         repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
         repo = serializers.Repository(repo_obj).data
 
@@ -182,6 +181,10 @@ class RepoResourceView(View):
         if request.GET.get('distributors', 'false').lower() == 'true' or details:
             _merge_related_objects(
                 'distributors', manager_factory.repo_distributor_manager(), (repo,))
+        if details:
+            repo['total_repository_units'] = sum(repo['content_unit_counts'].itervalues())
+            total_missing = repo_controller.missing_unit_count(repo_obj.repo_id)
+            repo['locally_stored_units'] = repo['total_repository_units'] - total_missing
 
         return generate_json_response_with_pulp_encoder(repo)
 

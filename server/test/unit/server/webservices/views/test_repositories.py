@@ -403,6 +403,8 @@ class TestRepoResourceView(unittest.TestCase):
         self.assertTrue(response.error_code is error_codes.PLP0009)
         self.assertEqual(response.error_data['resources'], {'repo': 'mock_repo'})
 
+    @mock.patch('__builtin__.sum')
+    @mock.patch('pulp.server.webservices.views.repositories.repo_controller')
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
@@ -412,16 +414,19 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories.model')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test_get_existing_repo_with_details(self, mock_factory, mock_model, mock_serialize,
-                                            mock_merge, mock_resp):
+                                            mock_merge, mock_resp, mock_repo_ctrl, mock_sum):
         """
         Retrieve an existing repository with details.
         """
-
-        mock_repo = {'mock_repo': 'somedata'}
+        mock_repo = mock.MagicMock(spec=model.Repository)
+        mock_repo.repo_id = 'mock_repo'
         mock_model.Repository.objects.get_repo_or_missing_resource.return_value = mock_repo
         mock_request = mock.MagicMock()
         mock_request.GET = {'details': 'true'}
         mock_merge.side_effect = lambda x, y, z: z
+        mock_sum.return_value = 30
+        mock_repo_ctrl.missing_unit_count.return_value = 10
+        serialized_repo = mock_serialize.return_value.data
 
         repos_resource = RepoResourceView()
         response = repos_resource.get(mock_request, 'mock_repo')
@@ -435,6 +440,15 @@ class TestRepoResourceView(unittest.TestCase):
             mock.call('distributors', mock_factory.repo_distributor_manager(),
                       (mock_serialize().data,)),
         ])
+        mock_repo_ctrl.missing_unit_count.assert_called_once_with('mock_repo')
+        serialized_repo.__setitem__.assert_any_call(
+            'total_repository_units',
+            mock_sum.return_value
+        )
+        serialized_repo.__setitem__.assert_any_call(
+            'locally_stored_units',
+            serialized_repo.__getitem__.return_value - 10
+        )
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
