@@ -1060,8 +1060,6 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         """
         Test that units which already exist in the database are associated properly
         """
-        # mock_get_multiple.return_value = [self.DemoModel(key_field='a')]
-
         demo = self.DemoModel(key_field='a')
         self.parent.available_units = [demo]
         existing_demo = self.DemoModel(key_field='a', id='foo')
