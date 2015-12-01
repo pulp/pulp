@@ -1,5 +1,12 @@
 #!/usr/bin/bash
 
+# Important things:
+# - this file is still in-use, but deprecated in favor of ansible
+# - the contents of this file are being converted to ansible tasks
+# - add to the ansible playbook instead of adding to or altering this file
+# - dev-setup script calls this script after running ansible, so (despite the
+#   unfortunate name), it is *not* vagrant-specific
+
 . ~/.bashrc
 
 pushd devel
