@@ -43,5 +43,10 @@
         "name": "python-pymongo",
         "version": "2.7.2-1",
         "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-nectar",
+        "version": "1.4.1-1",
+        "platform": [ "el6", "el7", "fc22", "fc23"]
     }
 ]
