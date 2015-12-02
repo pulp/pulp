@@ -53,9 +53,13 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
     allowed to do whatever threading makes sense to optimize its sync process.
     Calls into this instance do not have to be coordinated for thread safety,
     the instance will take care of it itself.
+
+    :ivar importer_object_id: The ObjectId of the importer for the given repo_id
+                              and importer_id.
+    :type importer_object_id: bson.objectid.ObjectId
     """
 
-    def __init__(self, repo_id, importer_id):
+    def __init__(self, repo_id, importer_id, importer_object_id):
         RepoScratchPadMixin.__init__(self, repo_id, ImporterConduitException)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
         AddUnitMixin.__init__(self, repo_id, importer_id)
@@ -63,6 +67,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         StatusMixin.__init__(self, importer_id, ImporterConduitException)
         SearchUnitsMixin.__init__(self, ImporterConduitException)
 
+        self.importer_object_id = importer_object_id
         self._association_manager = manager_factory.repo_unit_association_manager()
         self._content_query_manager = manager_factory.content_query_manager()
 

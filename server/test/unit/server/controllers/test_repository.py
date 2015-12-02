@@ -912,6 +912,7 @@ class TestSync(unittest.TestCase):
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(actual_result is mock_task_result.return_value)
+        self.assertEqual(mock_imp_inst.id, mock_conduit.call_args_list[0][0][2])
 
     @mock.patch('pulp.server.controllers.repository.TaskResult')
     def test_sync_failed(self, mock_task_result, mock_model, mock_plugin_api, mock_plug_conf,
