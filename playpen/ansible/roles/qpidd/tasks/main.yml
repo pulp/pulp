@@ -2,12 +2,9 @@
 - name: Install packages
   dnf: name={{ item }} state=present
   with_items:
-    # qpid is broken in f23, so we have to install the compat packages:
-    #  https://bugzilla.redhat.com/show_bug.cgi?id=1286881
-    # - qpid-cpp-server
-    # - qpid-cpp-server-linerstore
-    - compat-qpid-cpp-server
-    - compat-qpid-cpp-server-store
+    - qpid-cpp-client
+    - qpid-cpp-server
+    - qpid-cpp-server-linearstore
     - qpid-tools
 
 - name: Start and enable services
