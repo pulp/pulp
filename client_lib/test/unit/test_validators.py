@@ -1,6 +1,7 @@
 import unittest
 
 from pulp.client import validators
+from pulp.common.plugins import importer_constants
 
 
 class TestPositiveInt(unittest.TestCase):
@@ -136,3 +137,17 @@ class TestIdAllowDots(unittest.TestCase):
         # Multiple input
         self.assertRaises(ValueError, validators.id_validator_allow_dots, ['**invalid**', '!#$%'])
         self.assertRaises(ValueError, validators.id_validator_allow_dots, ['valid', '**invalid**'])
+
+
+class TestDownloadPolicyValidator(unittest.TestCase):
+
+    def test_valid(self):
+        valid = (
+            importer_constants.DOWNLOAD_IMMEDIATE,
+            importer_constants.DOWNLOAD_BACKGROUND,
+            importer_constants.DOWNLOAD_ON_DEMAND)
+        for policy in valid:
+            validators.download_policy_validator(policy)
+
+    def test_invalid(self):
+        self.assertRaises(ValueError, validators.download_policy_validator, '1234')

@@ -2,6 +2,7 @@ from gettext import gettext as _
 
 from pulp.client import arg_utils, parsers
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliOptionGroup
+from pulp.client.validators import download_policy_validator
 from pulp.common.plugins import importer_constants as constants
 
 
@@ -11,6 +12,7 @@ GROUP_NAME_SSL = _('Feed SSL')
 GROUP_NAME_PROXY = _('Feed Proxy')
 GROUP_NAME_BASIC_AUTH = _('Basic Authentication')
 GROUP_NAME_UNIT_POLICY = _('Repository Content Behavior')
+GROUP_DOWNLOAD_POLICY = _('Download Policy')
 
 
 class OptionsBundle(object):
@@ -96,6 +98,16 @@ class OptionsBundle(object):
             parse_func=parsers.pulp_parse_optional_nonnegative_int
         )
 
+        d = _('content downloading policy ({m})'.format(
+            m=' | '.join((constants.DOWNLOAD_IMMEDIATE,
+                          constants.DOWNLOAD_BACKGROUND,
+                          constants.DOWNLOAD_ON_DEMAND))))
+        self.opt_download_policy = PulpCliOption(
+            '--download-policy',
+            d,
+            validate_func=download_policy_validator,
+            required=False)
+
 
 class ImporterConfigMixin(object):
     """
@@ -134,7 +146,8 @@ class ImporterConfigMixin(object):
                  include_proxy=True,
                  include_basic_auth=False,
                  include_throttling=True,
-                 include_unit_policy=True):
+                 include_unit_policy=True,
+                 include_download_policy=False):
 
         # If the caller didn't dork with any of the options, instantiate one with the defaults
         self.options_bundle = options_bundle or OptionsBundle()
@@ -147,6 +160,7 @@ class ImporterConfigMixin(object):
         self.basic_auth_group = PulpCliOptionGroup(GROUP_NAME_BASIC_AUTH)
         self.throttling_group = PulpCliOptionGroup(GROUP_NAME_THROTTLING)
         self.unit_policy_group = PulpCliOptionGroup(GROUP_NAME_UNIT_POLICY)
+        self.download_policy_group = PulpCliOptionGroup(GROUP_DOWNLOAD_POLICY)
 
         if include_sync:
             self.populate_sync_group()
@@ -171,6 +185,10 @@ class ImporterConfigMixin(object):
         if include_unit_policy:
             self.populate_unit_policy()
             self.add_option_group(self.unit_policy_group)
+
+        if include_download_policy:
+            self.populate_download_policy()
+            self.add_option_group(self.download_policy_group)
 
     def populate_sync_group(self):
         """
@@ -224,6 +242,13 @@ class ImporterConfigMixin(object):
         self.unit_policy_group.add_option(self.options_bundle.opt_remove_missing)
         self.unit_policy_group.add_option(self.options_bundle.opt_retain_old_count)
 
+    def populate_download_policy(self):
+        """
+        Adds options to the download policy group. This is only called if the
+        include_download_policy flag is set to True in the constructor.
+        """
+        self.download_policy_group.add_option(self.options_bundle.opt_download_policy)
+
     def parse_user_input(self, user_input):
         """
         Reads the user input for any specified values that correspond to the importer config
@@ -247,6 +272,7 @@ class ImporterConfigMixin(object):
         config.update(self.parse_proxy_group(user_input))
         config.update(self.parse_throttling_group(user_input))
         config.update(self.parse_unit_policy(user_input))
+        config.update(self.parse_download_policy(user_input))
         return config
 
     def parse_sync_group(self, user_input):
@@ -372,6 +398,20 @@ class ImporterConfigMixin(object):
             (constants.KEY_UNITS_REMOVE_MISSING, self.options_bundle.opt_remove_missing.keyword),
             (constants.KEY_UNITS_RETAIN_OLD_COUNT,
              self.options_bundle.opt_retain_old_count.keyword),
+        )
+
+        config = {}
+        for config_key, input_key in key_tuples:
+            safe_parse(user_input, config, input_key, config_key)
+        return config
+
+    def parse_download_policy(self, user_input):
+        """
+        Reads download policy related config options from the user input and packages them into
+        the Pulp standard importer config format.
+        """
+        key_tuples = (
+            (constants.DOWNLOAD_POLICY, self.options_bundle.opt_download_policy.keyword),
         )
 
         config = {}
