@@ -1,4 +1,5 @@
 from gettext import gettext as _
+import itertools
 import logging
 import os
 import re
@@ -220,6 +221,10 @@ class OrphanManager(object):
             if content_unit_ids is not None and content_unit['_id'] not in content_unit_ids:
                 continue
 
+            model.LazyCatalogEntry.objects(
+                unit_id=content_unit['_id'],
+                unit_type_id=content_type_id
+            ).delete()
             content_units_collection.remove(content_unit['_id'], safe=False)
 
             storage_path = content_unit.get('_storage_path', None)
@@ -227,7 +232,7 @@ class OrphanManager(object):
                 OrphanManager.delete_orphaned_file(storage_path)
 
     @staticmethod
-    def delete_orphan_content_units_by_type(type_id):
+    def delete_orphan_content_units_by_type(type_id, content_unit_ids=None):
         """
         Delete the orphaned content units for the given content type.
         This method only applies to new style content units that are loaded via entry points
@@ -236,10 +241,19 @@ class OrphanManager(object):
 
         :param type_id: id of the content type
         :type type_id: basestring
+        :param content_unit_ids: list of content unit ids to delete; None means delete them all
+        :type content_unit_ids: iterable or None
         """
         # get the model matching the type
         content_model = plugin_api.get_unit_model_by_id(type_id)
-        content_units = content_model.objects().only('id', '_storage_path')
+        if content_unit_ids:
+            query_sets = []
+            for page in plugin_misc.paginate(content_unit_ids):
+                qs = content_model.objects(id__in=page).no_cache().only('id', '_storage_path')
+                query_sets.append(qs)
+            content_units = itertools.chain(*query_sets)
+        else:
+            content_units = content_model.objects.no_cache().only('id', '_storage_path')
 
         # Paginate the content units
         for units_group in plugin_misc.paginate(content_units):
@@ -252,12 +266,16 @@ class OrphanManager(object):
 
             # Clear the units that are currently associated from unit_dict
             non_orphan = model.RepositoryContentUnit.objects(unit_id__in=id_list)\
-                .distinct('unit_id')
+                .no_cache().distinct('unit_id')
             for non_orphan_id in non_orphan:
                 unit_dict.pop(non_orphan_id)
 
-            # Remove the unit and any references on disk
+            # Remove the unit, lazy catalog entries, and any content in storage.
             for unit_to_delete in unit_dict.itervalues():
+                model.LazyCatalogEntry.objects(
+                    unit_id=str(unit_to_delete.id),
+                    unit_type_id=str(type_id)
+                ).delete()
                 unit_to_delete.delete()
                 if unit_to_delete._storage_path:
                     OrphanManager.delete_orphaned_file(unit_to_delete._storage_path)
