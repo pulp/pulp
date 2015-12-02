@@ -535,7 +535,7 @@ class TestMigrationTracker(unittest.TestCase):
         self.assertTrue(model.MigrationTracker.name.required)
 
         self.assertTrue(isinstance(model.MigrationTracker.version, IntField))
-        self.assertEqual(model.MigrationTracker.version.default, 0)
+        self.assertEqual(model.MigrationTracker.version.default, -1)
 
         self.assertTrue(isinstance(model.MigrationTracker._ns, StringField))
         self.assertEqual(model.MigrationTracker._ns.default, 'migration_trackers')

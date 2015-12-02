@@ -10,7 +10,9 @@ Registration
 ============
 
 In order to write migrations for your Pulp plugin, you will need to register your plugin's
-migrations package with the Pulp server.
+migrations package with the Pulp server. It is advantageous to register even a brand-new plugin
+that has no migrations; doing so will enable future users to fast-forward past your future
+migrations when doing new installations.
 
 How to Register
 ---------------
@@ -75,8 +77,8 @@ nobody gets hurt. Here are the rules:
 #. Migration scripts should be modules in your migrations package.
 #. Each migration module should be named starting with a version number.
 #. Your migration version numbers are significant. Pulp tracks which version each install has been
-   migrated to. It requires your migration versions to start with 1, and to be sequential with no
-   gaps in version numbers. For example, 0001_my_first_migration.py, 0002_my_second_migration.py,
+   migrated to. It requires your migration versions to be positive integers that increase in value.
+   For example, 0001_my_first_migration.py, 0002_my_second_migration.py,
    0003_add_email_addresses_to_users.py, etc. You don't have to use leading zeros in the names, as
    the number is processed with a regular expression that interprets it as an integer. However, the
    advantage to using leading zeros is that programs like ``ls`` will display your migrations in
@@ -111,3 +113,46 @@ Here's what the first migration, 0001_rename_user_to_username.py, might look lik
 		"""
 		db = initialize_db()
 		db.users.update({}, {'$rename': {'user': 'username'}})
+
+
+Enabling Fast-Forward for New Installations
+-------------------------------------------
+
+When a user installs your plugin for the first time, pulp can optionally skip the migrations. This
+saves a small amount of time, but more importantly, facilitates the removal of old migrations as
+described below.
+
+By default, your migrations will not be skipped. To enable fast-forward, set the variable
+``allow_fast_forward`` in your migration module's ``__init__.py``. The simplest example::
+
+    allow_fast_forward = True
+
+This example assumes that you registered your migration tracker in the first release of your
+plugin. If that is not true, you will need to do some work to determine dynamically if it is
+safe to fast-forward. A simple and recommended approach is to check for existence of data::
+
+    allow_fast_forward = MyModel.objects.count() == 0
+
+If your plugin has no data in the database, it is probably safe to skip the migrations.
+
+
+Removing Old Migrations
+=======================
+
+You may not want to support all of your migrations forever. When you are ready to remove old
+migrations, follow these steps.
+
+#. Choose the oldest version of your plugin whose migrations you want to keep. We will use 1.4.0 as
+   an example.
+#. Identify which migrations were introduced prior to that version, and delete them. For this
+   example, imagine that migrations 0001-0005 were introduced prior to 1.4.0.
+#. Create a new migration with the highest number that was removed, which in this example is 0005.
+   From that migration's ``migrate`` function, raise
+   ``pulp.server.db.migrate.models.MigrationRemovedError```.
+
+The new migration could be named ``0005_migrations_removed.py`` and would look like this::
+
+    from pulp.server.db.migrate.models import MigrationRemovedError
+
+    def migrate(*args, **kwargs):
+        raise MigrationRemovedError('0005', '1.2.0', '1.4.0', 'my_plugin_name')

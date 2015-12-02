@@ -60,6 +60,12 @@ After yum completes you should migrate the database using::
 After migrating the database, restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
 `pulp_resource_manager`.
 
+Upgrade From Older Release
+--------------------------
+
+If you are upgrading from pulp older than 2.4.0, you must first upgrade to some release between
+2.4.0 and 2.7.x, and then upgrade to 2.8.0 or greater.
+
 Rest API Changes
 ----------------
 
