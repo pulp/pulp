@@ -80,11 +80,11 @@ KEY_UNITS_REMOVE_MISSING = 'remove_missing'
 KEY_UNITS_RETAIN_OLD_COUNT = 'retain_old_count'
 
 
-# Lazy
-# DISABLED - Content is downloaded immediately.
-# ACTIVE   - Content is downloaded in the background.
-# PASSIVE  - Content is downloaded on demand.
-LAZY_DISABLED = None
-LAZY_ACTIVE = 'active'
-LAZY_PASSIVE = 'passive'
-LAZY_MODE = 'lazy_mode'
+# Download policy (Lazy)
+# IMMEDIATE  - Content is downloaded immediately.
+# BACKGROUND - Content is downloaded in the background.
+# ON_DEMAND  - Content is downloaded on demand.
+DOWNLOAD_IMMEDIATE = 'immediate'
+DOWNLOAD_ON_DEMAND = 'on_demand'
+DOWNLOAD_BACKGROUND = 'background'
+DOWNLOAD_POLICY = 'download_policy'

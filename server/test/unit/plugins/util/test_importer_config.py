@@ -472,29 +472,29 @@ class RetainOldCountTests(unittest.TestCase):
             self.assertTrue('-1' in e[0])
 
 
-class TestLazyMode(unittest.TestCase):
+class TestDownloadPolicy(unittest.TestCase):
 
     def test_valid(self):
         # not specified
         config = PluginCallConfiguration({}, {})
-        importer_config.validate_lazy_mode(config)
+        importer_config.validate_download_policy(config)
         # off
         config = PluginCallConfiguration(
-            {importer_constants.LAZY_MODE: importer_constants.LAZY_DISABLED}, {})
-        importer_config.validate_lazy_mode(config)
+            {importer_constants.DOWNLOAD_POLICY: importer_constants.DOWNLOAD_IMMEDIATE}, {})
+        importer_config.validate_download_policy(config)
         # active
         config = PluginCallConfiguration(
-            {importer_constants.LAZY_MODE: importer_constants.LAZY_ACTIVE}, {})
-        importer_config.validate_lazy_mode(config)
+            {importer_constants.DOWNLOAD_POLICY: importer_constants.DOWNLOAD_BACKGROUND}, {})
+        importer_config.validate_download_policy(config)
         # passive
         config = PluginCallConfiguration(
-            {importer_constants.LAZY_MODE: importer_constants.LAZY_PASSIVE}, {})
-        importer_config.validate_lazy_mode(config)
+            {importer_constants.DOWNLOAD_POLICY: importer_constants.DOWNLOAD_ON_DEMAND}, {})
+        importer_config.validate_download_policy(config)
 
     def test_invalid(self):
         config = PluginCallConfiguration(
-            {importer_constants.LAZY_MODE: 'This is bad'}, {})
-        self.assertRaises(ValueError, importer_config.validate_lazy_mode, config)
+            {importer_constants.DOWNLOAD_POLICY: 'This is bad'}, {})
+        self.assertRaises(ValueError, importer_config.validate_download_policy, config)
 
 
 class ValidateIsNonRequiredBooleanTests(unittest.TestCase):

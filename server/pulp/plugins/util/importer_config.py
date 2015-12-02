@@ -363,20 +363,20 @@ def validate_retain_old_count(config):
         raise ValueError(msg)
 
 
-def validate_lazy_mode(config):
+def validate_download_policy(config):
     """
-    Validate lazy content modes.
+    Validate download policy.
 
     :param config: A configuration.
     :type config: pulp.plugins.config.PluginCallConfiguration
     :raise ValueError: on failed.
     """
-    key = importer_constants.LAZY_MODE
-    lazy = config.get(key)
+    key = importer_constants.DOWNLOAD_POLICY
+    lazy = config.get(key, importer_constants.DOWNLOAD_IMMEDIATE)
     modes = [
-        importer_constants.LAZY_DISABLED,
-        importer_constants.LAZY_ACTIVE,
-        importer_constants.LAZY_PASSIVE
+        importer_constants.DOWNLOAD_IMMEDIATE,
+        importer_constants.DOWNLOAD_BACKGROUND,
+        importer_constants.DOWNLOAD_ON_DEMAND
     ]
     if lazy not in modes:
         raise ValueError(_('{k} must be: {m}').format(k=key, m=modes))
@@ -445,5 +445,5 @@ VALIDATIONS = (
     validate_validate_downloads,
     validate_remove_missing,
     validate_retain_old_count,
-    validate_lazy_mode,
+    validate_download_policy,
 )

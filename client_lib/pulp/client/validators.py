@@ -8,6 +8,7 @@ import re
 from gettext import gettext as _
 
 from pulp.common import dateutils
+from pulp.common.plugins import importer_constants
 
 
 ID_REGEX_ALLOW_DOTS = re.compile(r'^[.\-_A-Za-z0-9]+$')
@@ -116,3 +117,20 @@ def id_validator_allow_dots(x):
         if ID_REGEX_ALLOW_DOTS.match(input_id) is None:
             raise ValueError(_('value must contain only letters, numbers, underscores, periods and '
                                'hyphens'))
+
+
+def download_policy_validator(x):
+    """
+    Download policy validator.
+
+    :param x: input value to be validated
+    :type  x: str or list
+
+    :raise ValueError: if the input is not a valid policy.
+    """
+    valid = (
+        importer_constants.DOWNLOAD_IMMEDIATE,
+        importer_constants.DOWNLOAD_BACKGROUND,
+        importer_constants.DOWNLOAD_ON_DEMAND)
+    if x not in valid:
+        raise ValueError(_('policy must be: ({p})'.format(p=' | '.join(valid))))
