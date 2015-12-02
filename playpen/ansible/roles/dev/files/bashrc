@@ -26,6 +26,7 @@ pstop() {
 }
 
 prestart() {
+    find ~/devel/pulp* -name *.py[co] -delete;
     _paction restart
 }
 
@@ -37,6 +38,7 @@ preset() {
     pstop;
     mongo pulp_database ~/drop_database.js;
     sudo rm -rf /var/lib/pulp/*;
+    find ~/devel/pulp* -name *.py[co] -delete;
     sudo -u apache pulp-manage-db;
     # If Crane is present, let's set up the publishing symlinks so that the app files can be used
     if [ -d $HOME/devel/crane ]; then
@@ -73,6 +75,7 @@ _paction() {
 
 psmash() {
     workon pulp-smash;
+    prestart;
     python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
     deactivate;
 }
