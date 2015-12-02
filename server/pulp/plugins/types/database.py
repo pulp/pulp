@@ -309,7 +309,7 @@ def _update_indexes(type_def, unique):
             LOG.debug('Ensuring index [%s] (unique: %s) on type definition [%s]' % (index, unique, type_def.id))
             mongo_index = index
 
-        index_name = collection.ensure_index(mongo_index, unique=unique, drop_dups=False)
+        index_name = collection.ensure_index(mongo_index, unique=unique)
 
         if index_name is not None:
             LOG.debug('Index [%s] created on type definition [%s]' % (index_name, type_def.id))

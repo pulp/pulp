@@ -326,13 +326,10 @@ class TestManageDB(MigrationTest):
         self.assertEqual(indexes['_id_']['key'], [(u'_id', 1)])
         # Make sure we have the unique constraint on all three attributes
         self.assertEqual(indexes['attribute_1_1_attribute_2_1_attribute_3_1']['unique'], True)
-        self.assertEqual(indexes['attribute_1_1_attribute_2_1_attribute_3_1']['dropDups'], False)
         self.assertEqual(indexes['attribute_1_1_attribute_2_1_attribute_3_1']['key'],
                          [(u'attribute_1', 1), (u'attribute_2', 1), (u'attribute_3', 1)])
-        # Make sure we indexes attributes 1 and 3
-        self.assertEqual(indexes['attribute_1_1']['dropDups'], False)
+        # Make sure we indexed attributes 1 and 3
         self.assertEqual(indexes['attribute_1_1']['key'], [(u'attribute_1', 1)])
-        self.assertEqual(indexes['attribute_3_1']['dropDups'], False)
         self.assertEqual(indexes['attribute_3_1']['key'], [(u'attribute_3', 1)])
         # Make sure we only have the indexes that we've hand inspected here
         self.assertEqual(indexes.keys(), [u'_id_', u'attribute_1_1_attribute_2_1_attribute_3_1',
