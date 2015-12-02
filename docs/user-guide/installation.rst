@@ -115,9 +115,10 @@ Repositories
  * MRG Messaging v. 1
  * MRG Messaging Base v. 1
 
-4. Qpid RPMs are not available in the default CentOS repositories for CentOS
-   releases 6.2 and earlier. Instructions on building those RPMs can be found
-   at :ref:`centos-build-qpid-rpms`.
+.. note::
+   See the `Qpid packaging docs <http://qpid.apache.org/packages.html>`_ or the
+   `RabbitMQ installation docs <http://www.rabbitmq.com/download.html>`_ for information on
+   where to get broker packages for your OS.
 
 
 .. _server_installation:
