@@ -50,6 +50,7 @@ preset() {
         popd
     fi
     pstart;
+    ppopulate;
 }
 
 ptests() {
@@ -74,6 +75,29 @@ psmash() {
     workon pulp-smash;
     python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
     deactivate;
+}
+
+ppopulate() {
+    if [ ! -f $HOME/.pulp/user-cert.pem ]; then
+        pulp-admin login -u admin -p admin
+    fi
+
+    if [ -d $HOME/devel/pulp_rpm ]; then
+        pulp-admin rpm repo create --repo-id=zoo \
+            --feed=https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/
+    fi
+
+    if [ -d $HOME/devel/pulp_puppet ]; then
+        pulp-admin puppet repo create --repo-id=forge \
+            --feed=http://forge.puppetlabs.com \
+            --queries=torssh
+    fi
+
+    if [ -d $HOME/devel/pulp_python ]; then
+        pulp-admin python repo create --repo-id=pypi \
+            --feed=https://pypi.python.org/ \
+            --package-names=pip
+    fi
 }
 
 export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings
