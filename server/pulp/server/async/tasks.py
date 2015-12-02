@@ -33,37 +33,25 @@ _logger = logging.getLogger(__name__)
 
 class PulpTask(CeleryTask):
     """
-    This is a custom Pulp subclass of the Celery Task object. It allows us to check if the
-    parameters are valid or not and call Celery's method if they are valid.
-    Otherwise raise an exception.
+    The ancestor of Celery tasks in Pulp. All Celery tasks should inherit from this object.
+
+    It provides behavioral modifications to apply_async and __call__ to serialize and
+    deserialize common object types which are not json serializable.
     """
 
-    @classmethod
-    def _json_validator(cls, value):
+    def _type_transform(self, value):
         """
-            Checks if the value is an allowed type or not. It also transforms the
-            ObjectId's to str type and vice versa.
-
-            Accepted types are ObjectId, bool, int, long, float or basestring.
-            This function is recursively called for dict, list or tuples.
+            Transforms ObjectId types to str type and vice versa.
 
             Any ObjectId types present are serialized to a str.
             The same str is converted back to an ObjectId while de-serializing.
 
-            This function is called from apply_async and __call__ methods of this class.
-            A TypeError is raised if value is not a Python primitive or ObjectId.
-
-            :param value: the args or kwargs to be checked
+            :param value: the object to be transformed
             :type  value: Object
 
-            :returns: ars or kwargs value with updated id field
+            :returns: recursively transformed object
             :rtype: Object
-            :raise TypeError: if value is not a Python primitive or ObjectId
         """
-
-        if value is None or isinstance(value, (bool, int, long, float, basestring)):
-            return value
-
         # Encoding ObjectId to str
         if isinstance(value, ObjectId):
             return bson_dumps(value)
@@ -76,49 +64,41 @@ class PulpTask(CeleryTask):
             if '$oid' in value.keys():
                 return bson_loads(value)
 
-            return {cls._json_validator(k): cls._json_validator(v) for k, v in value.iteritems()}
+            return {self._type_transform(k): self._type_transform(v) for k, v in value.iteritems()}
 
         # Recursive checks inside a list
         if isinstance(value, list):
             if len(value) == 0:
                 return value
             for i, val in enumerate(value):
-                value[i] = cls._json_validator(val)
+                value[i] = self._type_transform(val)
             return value
 
         # Recursive checks inside a tuple
         if isinstance(value, tuple):
             if len(value) == 0:
                 return value
-            return tuple([cls._json_validator(val) for val in value])
+            return tuple([self._type_transform(val) for val in value])
 
-        raise TypeError("%s is of type %s. The Pulp tasking system only allows Python primitives "
-                        "and PyMongo ObjectId types as arguments." % (repr(value), type(value)))
+        return value
 
     def apply_async(self, *args, **kwargs):
         """
-        A wrapper around the Celery apply_async method.
+        Serializes args and kwargs using _type_transform()
 
-        It calls the _json_checker with args and kwargs to check if they are valid
-        or not. If they are valid, the methods calls the Celery apply_async methods,
-        if not, a TypeError is expected to be raised.
-
-        :return:            An AsyncResult instance as returned by Celery's apply_async
-        :rtype:             celery.result.AsyncResult
+        :return: An AsyncResult instance as returned by Celery's apply_async
+        :rtype: celery.result.AsyncResult
         """
-
-        args = self._json_validator(args)
-        kwargs = self._json_validator(kwargs)
+        args = self._type_transform(args)
+        kwargs = self._type_transform(kwargs)
         return super(PulpTask, self).apply_async(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         """
-        This overrides Celery's __call__() method. We use this method
-        for task state tracking of Pulp tasks.
+        Deserializes args and kwargs using _type_transform()
         """
-
-        args = self._json_validator(args)
-        kwargs = self._json_validator(kwargs)
+        args = self._type_transform(args)
+        kwargs = self._type_transform(kwargs)
         return super(PulpTask, self).__call__(*args, **kwargs)
 
 
