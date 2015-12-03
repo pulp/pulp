@@ -114,7 +114,6 @@ fi
 ppopulate
 
 # Give the user some use instructions
-sudo cp $HOME/devel/pulp/playpen/vagrant-motd.txt /etc/motd
 if [ $USER = "vagrant" ]; then
     echo -e '\n\nDone. You can ssh into your development environment with vagrant ssh.\n'
 fi
