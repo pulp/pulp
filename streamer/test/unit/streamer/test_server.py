@@ -138,9 +138,11 @@ class TestStreamer(TestCase):
                                                       'handling the request.')
         self.request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
 
+    @patch(MODULE_PREFIX + 'StreamerListener')
+    @patch(MODULE_PREFIX + 'ContentContainer')
     @patch(MODULE_PREFIX + 'nectar_request.DownloadRequest')
     @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
-    def test_download(self, mock_repo_controller, mock_dl_request):
+    def test_download(self, mock_repo_controller, mock_dl_request, mock_container, mock_listener):
         # Setup
         mock_catalog = Mock()
         mock_catalog.importer_id = 'mock_id'
@@ -160,10 +162,12 @@ class TestStreamer(TestCase):
         mock_dl_request.assert_called_once_with(mock_catalog.url, mock_responder)
         mock_importer.get_downloader.assert_called_once_with(
             mock_importer_config, mock_catalog.url, **mock_catalog.data)
-        self.assertEqual(mock_request, mock_downloader.event_listener.request)
-        self.assertEqual(self.config, mock_downloader.event_listener.streamer_config)
-        mock_downloader.download_one.assert_called_once_with(mock_dl_request.return_value,
-                                                             events=True)
+        mock_container.assert_called_once_with(threaded=False)
+        mock_container.return_value.download.assert_called_once_with(
+            mock_downloader,
+            [mock_dl_request.return_value],
+            mock_listener.return_value
+        )
         mock_downloader.config.finalize.assert_called_once_with()
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)

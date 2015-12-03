@@ -416,7 +416,7 @@ class TestSerial(TestCase):
         # validation
         source.get_downloader.assert_called_once_with()
         request.assert_called_once_with(url, destination)
-        downloader.download_one.assert_called_once_with(request.return_value)
+        downloader.download_one.assert_called_once_with(request.return_value, events=True)
 
     @patch(MODULE + '.DownloadRequest')
     def test__download_failed(self, request):
@@ -434,7 +434,7 @@ class TestSerial(TestCase):
         # validation
         source.get_downloader.assert_called_once_with()
         request.assert_called_once_with(url, destination)
-        downloader.download_one.assert_called_once_with(request.return_value)
+        downloader.download_one.assert_called_once_with(request.return_value, events=True)
 
 
 class TestThreaded(TestCase):
