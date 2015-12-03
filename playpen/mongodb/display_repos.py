@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
 import time
 from pymongo import Connection
 from pymongo.son_manipulator import AutoReference, NamespaceInjector

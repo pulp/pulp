@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #http://api.mongodb.org/python/1.9%2B/examples/map_reduce.html?highlight=map%20reduce
 
 from pymongo import Connection
