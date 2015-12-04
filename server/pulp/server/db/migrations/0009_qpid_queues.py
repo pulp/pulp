@@ -19,12 +19,6 @@ from pulp.server.agent.direct.services import ReplyHandler
 from pulp.server.db.model.consumer import Consumer
 
 
-TROUBLESHOOTING_URL = 'http://pulp-user-guide.readthedocs.org/en/2.4-release/troubleshooting.html%s'
-QPID_MESSAGING_URL = TROUBLESHOOTING_URL % '#qpid-messaging-is-not-installed'
-QPIDTOOLLIBS_URL = TROUBLESHOOTING_URL % '#qpidtoollibs-is-not-installed'
-CANNOT_DELETE_QUEUE_URL = TROUBLESHOOTING_URL % '#pulp-manage-db-gives-an-error-cannot-delete-queue'
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,17 +35,17 @@ def migrate(*args, **kwargs):
 
     if not QPID_MESSAGING_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpid.messaging is not '
-                'installed. Please install qpid.messaging and rerun the migrations. See %s'
-                'for more information.')
-        msg = msg % QPID_MESSAGING_URL
+                'installed. Pulp\'s Qpid client dependencies can be installed with the '
+                '\"pulp-server-qpid\" package group. See the installation docs for more '
+                'information. Alternatively, you may reconfigure Pulp to use RabbitMQ.')
         logger.error(msg)
         raise Exception(msg)
 
     if not QPIDTOOLLIBS_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpidtoollibs is not '
-                'installed. Please install qpidtoollibs and rerun the migrations. See %s for more '
-                'information.')
-        msg = msg % QPIDTOOLLIBS_URL
+                'installed. Pulp\'s Qpid client dependencies can be installed with the '
+                '\"pulp-server-qpid\" package group. See the installation docs for more '
+                'information. Alternatively, you may reconfigure Pulp to use RabbitMQ.')
         logger.error(msg)
         raise Exception(msg)
 
@@ -143,12 +137,11 @@ def _del_queue_catch_queue_in_use_exception(broker, name):
         broker.delQueue(name)
     except Exception as exc:
         if 'Cannot delete queue' in exc.message and 'queue in use' in exc.message:
-            msg_data = {'queue_name': name, 'cannot_delete_queue_url': CANNOT_DELETE_QUEUE_URL}
+            msg_data = {'queue_name': name}
             msg = _(
                 "Consumers are still bound to the queue '%(queue_name)s'. "
-                "All consumers must be unregistered, upgraded, or off "
-                "before you can continue. Read more about this issue "
-                "here:\n\n%(cannot_delete_queue_url)s")
+                "All consumers must be unregistered, upgraded, or off before you can continue. "
+                "See troubleshooting guide for more information.")
             msg = msg % msg_data
             logger.error(msg)
             raise Exception(msg)
