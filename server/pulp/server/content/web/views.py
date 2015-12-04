@@ -123,7 +123,7 @@ class ContentView(View):
         :rtype: django.http.HttpResponse
         """
         host = request.get_host()
-        path = os.path.realpath(request.path)
+        path = os.path.realpath(request.path_info)
         lazy_enabled = parse_bool(pulp_conf.get('lazy', 'enabled'))
 
         # Authorization
