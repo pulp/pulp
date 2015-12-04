@@ -28,37 +28,35 @@ def _parse_and_log_event(event):
     """
     Parse and return the event information we are interested in. Also log it.
 
-    A new dict is returned containing the keys 'timestamp', 'type', and 'worker_name'. The
-    only data transformation here is on the timestamp. The timestamp arrives as seconds since
-    the epoch, and is converted to UTC time, and returned as a naive datetime.datetime object.
+    A new dict is returned containing the keys 'timestamp', 'local_received', 'type', and
+    'worker_name'. The data transformations here are on the timestamp and local_received. They
+    both arrive as seconds since the epoch, and are converted to a naive datetime.datetime object in
+    UTC. The timestamp is set by the sender, and the local_received time is set by the receiver.
+    Beware of a bug in the value of the timestamp as of the time of this commit as it suffers from
+    issues in localities that use daylight savings time during the non-daylight savings time part of
+    the year. See https://github.com/celery/celery/issues/1802#issuecomment-161916587 for discussion
+    around this issue. Until that issue is resolved, consider using the local_received time instead
+    of the timestamp.
 
-    Logging is done through a call to _log_event()
+    Logging is done through a call to _log_event().
 
     :param event: A celery event
-    :type event: dict
-    :return: A dict containing the keys 'timestamp', 'type', and 'worker_name'. 'timestamp'
-             is a naive datetime.datetime reported in UTC. 'type' is the event name as a string
-             (ie: 'worker-heartbeat'), and 'worker_name' is the name of the worker as a string.
-    :rtype: dict
+    :type  event: dict
+    :return:      A dict containing the keys 'timestamp', 'local_received', 'type', and
+                  'worker_name'. 'timestamp' and 'local_received' are naive datetime.datetime
+                  objects reported in UTC. 'type' is the event name as a string
+                  (ie: 'worker-heartbeat'), and 'worker_name' is the name of the worker as a string.
+    :rtype:       dict
     """
-    event_info = {'timestamp': datetime.utcfromtimestamp(event['timestamp']),
-                  'type': event['type'],
-                  'worker_name': event['hostname']}
-    _log_event(event_info)
-    return event_info
-
-
-def _log_event(event_info):
-    """
-    Log the type, worker_name, and timestamp of an event at the debug log level.
-
-    :param event_info: A dict expected to contain the keys 'type', 'worker_name', and
-                       'timestamp'. The value of each key will be converted to a string and
-                       included in the log output.
-    :type event_info: dict
-    """
-    msg = _("received '%(type)s' from %(worker_name)s at time: %(timestamp)s") % event_info
+    event_info = {
+        'timestamp': datetime.utcfromtimestamp(event['timestamp']),
+        'local_received': datetime.utcfromtimestamp(event['local_received']), 'type': event['type'],
+        'worker_name': event['hostname']}
+    msg = _("'%(type)s' sent at time %(timestamp)s from %(worker_name)s, received at time: "
+            "%(local_received)s")
+    msg = msg % event_info
     _logger.debug(msg)
+    return event_info
 
 
 def handle_worker_heartbeat(event):
@@ -81,7 +79,7 @@ def handle_worker_heartbeat(event):
         _logger.info(msg)
 
     Worker.objects(name=event_info['worker_name']).\
-        update_one(set__last_heartbeat=event_info['timestamp'], upsert=True)
+        update_one(set__last_heartbeat=event_info['local_received'], upsert=True)
 
 
 def handle_worker_offline(event):

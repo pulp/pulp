@@ -106,13 +106,19 @@ class TestSchedulerTick(unittest.TestCase):
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
+    @mock.patch('pulp.server.async.scheduler.platform.node')
+    @mock.patch('pulp.server.async.scheduler.time')
     @mock.patch('pulp.server.async.scheduler.worker_watcher.handle_worker_heartbeat')
-    def test_calls_handle_heartbeat(self, mock_heartbeat, mock_tick):
+    def test_calls_handle_heartbeat(self, mock_heartbeat, time, node, mock_tick):
         sched_instance = scheduler.Scheduler()
+        time.time.return_value = 1449261335.275528
+        node.return_value = 'some_host'
 
         sched_instance.tick()
 
-        mock_heartbeat.assert_called_once()
+        expected_event = {'timestamp': 1449261335.275528, 'local_received': 1449261335.275528,
+                          'type': 'scheduler-event', 'hostname': 'scheduler@some_host'}
+        mock_heartbeat.assert_called_once_with(expected_event)
 
 
 class TestSchedulerSetupSchedule(unittest.TestCase):
