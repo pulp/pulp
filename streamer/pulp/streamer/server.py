@@ -11,6 +11,7 @@ from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
 
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
+from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -147,6 +148,8 @@ class Streamer(resource.Resource):
     def _download(self, catalog_entry, request, responder):
         """
         Build a nectar downloader and download the content from the catalog entry.
+        The download is performed by the alternate content container, so it is possible
+        to use the streamer in conjunction with alternate content sources.
 
         :param catalog_entry:   The catalog entry to download.
         :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
@@ -157,11 +160,13 @@ class Streamer(resource.Resource):
         """
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
         download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
-        downloader = importer.get_downloader(config, catalog_entry.url,
-                                             **catalog_entry.data)
-        downloader.event_listener = StreamerListener(request, self.config)
-        downloader.download_one(download_request, events=True)
-        downloader.config.finalize()
+        primary_downloader = importer.get_downloader(config, catalog_entry.url,
+                                                     **catalog_entry.data)
+        listener = StreamerListener(request, self.config)
+        primary_downloader.event_listener = listener
+        content_container = ContentContainer(threaded=False)
+        content_container.download(primary_downloader, [download_request], listener)
+        primary_downloader.config.finalize()
 
     @staticmethod
     def _add_deferred_download_entry(request, catalog_entry):

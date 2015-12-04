@@ -35,14 +35,16 @@ class ContentContainer(object):
     :type threaded: bool
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, threaded=True):
         """
-        :param path: The absolute path to a directory containing
-            content source descriptor files.
-        :type path: str
+        :param path:     The absolute path to a directory containing
+                         content source descriptor files.
+        :type  path:     str
+        :param threaded: Whether or not to use the threaded download method.
+        :type  threaded: bool
         """
         self.sources = ContentSource.load_all(path)
-        self.threaded = True
+        self.threaded = threaded
 
     def download(self, downloader, requests, listener=None):
         """
@@ -285,7 +287,7 @@ class Serial(Batch):
         """
         downloader = source.get_downloader()
         request = DownloadRequest(url, destination)
-        report = downloader.download_one(request)
+        report = downloader.download_one(request, events=True)
         if report.state == DOWNLOAD_SUCCEEDED:
             # All good
             return
