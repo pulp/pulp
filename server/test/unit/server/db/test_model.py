@@ -7,7 +7,7 @@ Tests for the pulp.server.db.model module.
 from mock import patch, Mock
 
 from mongoengine import (ValidationError, DateTimeField, DictField, Document, IntField, ListField,
-                         StringField)
+                         StringField, QuerySetNoCache)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
@@ -39,7 +39,12 @@ class TestAutoRetryDocument(unittest.TestCase):
         """
         Ensure that AutoRetryDocument is an abstract document.
         """
-        self.assertDictEqual(model.AutoRetryDocument._meta, {'abstract': True})
+        self.assertTrue(model.AutoRetryDocument._meta['abstract'])
+
+    def test_no_cache_query_set(self):
+        """Ensure the QuerySet class is the non-caching variety."""
+        self.assertTrue(issubclass(model.AutoRetryDocument._meta['queryset_class'],
+                                   QuerySetNoCache))
 
     def test_clean_raises_nothing_if_properly_defined(self):
         class MockDoc(model.AutoRetryDocument):
@@ -518,6 +523,7 @@ class TestWorkerModel(unittest.TestCase):
 
     def test_meta_queryset(self):
         self.assertEqual(model.Worker._meta['queryset_class'], CriteriaQuerySet)
+        self.assertTrue(issubclass(model.Worker.objects.__class__, QuerySetNoCache))
 
 
 class TestMigrationTracker(unittest.TestCase):
@@ -782,6 +788,11 @@ class TestUser(unittest.TestCase):
         sample_model = model.CeleryBeatLock()
         self.assertTrue(isinstance(sample_model, Document))
 
+    def test_no_cache_query_set(self):
+        """Ensure the QuerySet class is the non-caching variety."""
+        self.assertTrue(issubclass(model.User.objects.__class__,
+                                   QuerySetNoCache))
+
     def test_attributes(self):
         self.assertTrue(isinstance(model.User.login, StringField))
         self.assertTrue(model.User.login.required)
@@ -819,6 +830,7 @@ class TestUser(unittest.TestCase):
         Test that the model can search with criteria.
         """
         self.assertEqual(model.User._meta['queryset_class'], CriteriaQuerySet)
+        self.assertTrue(issubclass(model.Worker.objects.__class__, QuerySetNoCache))
 
 
 class TestUserAuth(unittest.TestCase):

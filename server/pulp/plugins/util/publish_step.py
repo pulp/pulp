@@ -630,7 +630,7 @@ class UnitModelPluginStep(PluginStep):
                 queries = repo_controller.get_unit_model_querysets(self.get_repo().id,
                                                                    model_class,
                                                                    self._repo_content_unit_q)
-                self._unit_querysets.extend(q.no_cache() for q in queries)
+                self._unit_querysets.extend(queries)
         return self._unit_querysets
 
     def get_total(self):

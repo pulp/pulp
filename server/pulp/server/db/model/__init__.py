@@ -8,7 +8,8 @@ from collections import namedtuple
 from hmac import HMAC
 
 from mongoengine import (DictField, Document, DynamicField, IntField,
-                         ListField, StringField, UUIDField, ValidationError)
+                         ListField, StringField, UUIDField, ValidationError,
+                         QuerySetNoCache)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
@@ -50,7 +51,12 @@ class AutoRetryDocument(Document):
         super(AutoRetryDocument, self).__init__(*args, **kwargs)
         UnsafeRetry.decorate_instance(instance=self, full_name=type(self))
 
-    meta = {'abstract': True}
+    # QuerySetNoCache is used as the default QuerySet to ensure that all sub-classes
+    # do not cache query results unless specifically requested by calling ``cache``.
+    meta = {
+        'abstract': True,
+        'queryset_class': QuerySetNoCache,
+    }
 
     def clean(self):
         """

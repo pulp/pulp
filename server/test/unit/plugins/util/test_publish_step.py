@@ -81,7 +81,7 @@ class TestUnitModelPluginStep(PluginBase):
 
         ret = self.step.unit_querysets
 
-        self.assertEqual(ret, [qs1.no_cache.return_value, qs2.no_cache.return_value])
+        self.assertEqual(ret, [qs1, qs2])
 
     @patch('pulp.server.controllers.repository.get_unit_model_querysets')
     def test_caches_querysets(self, mock_get_querysets):

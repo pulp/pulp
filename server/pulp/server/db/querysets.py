@@ -1,10 +1,39 @@
-from mongoengine.queryset import DoesNotExist, QuerySet
+from gettext import gettext as _
+
+from mongoengine.queryset import DoesNotExist, QuerySetNoCache
 from pymongo import ASCENDING
 
 from pulp.server import exceptions as pulp_exceptions
 
 
-class CriteriaQuerySet(QuerySet):
+class QuerySetPreventCache(QuerySetNoCache):
+    """
+    All custom QuerySet classes should inherit from this class rather than QuerySet
+    or QuerySetNoCache. There are two reasons for this. Firstly, all QuerySets should
+    not cache their query results by default, so QuerySetNoCache must be inherited.
+    Secondly, QuerySetNoCache's implementation of the `cache` instance method
+    explicitly returns an instance of QuerySet which effectively removes any
+    customized behavior for that QuerySet.
+    """
+
+    def cache(self):
+        """
+        Currently, there is no reason to have a caching version of any of our
+        custom QuerySet classes. If that ever changes, this method should be
+        implemented to return a caching version of the custom QuerySet. This
+        implementation exists in order to avoid bugs resulting from the
+        unexpected default behavior of `cache`.
+
+        As of mongoengine 0.10, the default implementation of ``cache`` cannot
+        be used as it explicitly creates a QuerySet object, thus removing any
+        custom behavior of the custom QuerySet.
+        """
+        msg = _('In order to support caching QuerySets, you must implement the'
+                ' cache method on ' + self.__class__.__name__)
+        raise NotImplementedError(msg)
+
+
+class CriteriaQuerySet(QuerySetPreventCache):
     """
     This class defines a custom QuerySet to support searching by Criteria object
     which is a Pulp custom query object.

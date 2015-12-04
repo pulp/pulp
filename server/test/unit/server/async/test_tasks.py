@@ -604,7 +604,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task.apply_async(*args, **kwargs)
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(len(task_statuses), 1)
+        self.assertEqual(task_statuses.count(), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
         self.assertIsNone(new_task_status['group_id'])
@@ -631,7 +631,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task.apply_async(*args, **kwargs)
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(len(task_statuses), 1)
+        self.assertEqual(task_statuses.count(), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
         self.assertEqual(new_task_status['group_id'], group_id)
@@ -689,7 +689,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task.apply_async(*args, **kwargs)
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(len(task_statuses), 1)
+        self.assertEqual(task_statuses.count(), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
         self.assertEqual(new_task_status['worker_name'],
@@ -707,7 +707,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task.apply_async(*args, **kwargs)
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(len(task_statuses), 1)
+        self.assertEqual(task_statuses.count(), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
         self.assertEqual(new_task_status['worker_name'], 'othername')

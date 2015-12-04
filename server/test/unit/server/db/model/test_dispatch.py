@@ -273,7 +273,7 @@ class TestTaskStatus(unittest.TestCase):
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
-        self.assertEqual(len(ts), 1)
+        self.assertEqual(ts.count(), 1)
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
@@ -319,7 +319,7 @@ class TestTaskStatus(unittest.TestCase):
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
-        self.assertEqual(len(ts), 1)
+        self.assertEqual(ts.count(), 1)
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
@@ -369,7 +369,7 @@ class TestTaskStatus(unittest.TestCase):
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
-        self.assertEqual(len(ts), 1)
+        self.assertEqual(ts.count(), 1)
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
@@ -426,7 +426,7 @@ class TestTaskStatus(unittest.TestCase):
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
-        self.assertEqual(len(ts), 1)
+        self.assertEqual(ts.count(), 1)
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
@@ -1000,7 +1000,7 @@ class TaskStatusTests(base.PulpServerTests):
         created = TaskStatus(task_id, worker_name, tags, state).save()
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(1, len(task_statuses))
+        self.assertEqual(1, task_statuses.count())
 
         task_status = task_statuses[0]
         self.assertEqual(task_id, task_status['task_id'])
@@ -1022,7 +1022,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
 
         task_statuses = TaskStatus.objects()
-        self.assertEqual(1, len(task_statuses))
+        self.assertEqual(task_statuses.count(), 1)
         self.assertEqual(task_id, task_statuses[0]['task_id'])
         self.assertEqual(None, task_statuses[0]['worker_name'])
         self.assertEqual([], task_statuses[0]['tags'])
@@ -1172,7 +1172,7 @@ class TaskStatusTests(base.PulpServerTests):
         sort = (('task_id', DESCENDING), )
         criteria = Criteria(filters=filters, fields=fields, limit=limit, sort=sort)
         query_set = TaskStatus.objects.find_by_criteria(criteria)
-        self.assertEqual(len(query_set), 1)
+        self.assertEqual(query_set.count(), 1)
         self.assertEqual(query_set[0].task_id, '3')
         self.assertEqual(query_set[0].result, result)
         task_state_default = constants.CALL_WAITING_STATE
