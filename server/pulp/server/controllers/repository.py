@@ -665,8 +665,8 @@ def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None
 @celery.task(base=Task, name='pulp.server.managers.repo.sync.sync')
 def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     """
-    Performs a synchronize operation on the given repository and triggers publishs for distributors
-    with autopublish enabled.
+    Performs a synchronize operation on the given repository and triggers publishes for
+    distributors with auto-publish enabled.
 
     The given repo must have an importer configured. This method is intentionally limited to
     synchronizing a single repo. Performing multiple repository syncs concurrently will require a
@@ -698,7 +698,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     call_config = PluginCallConfiguration(imp_config, repo_importer.config, sync_config_override)
     transfer_repo.working_dir = common_utils.get_working_directory()
-    conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id)
+    conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id, repo_importer.id)
     sync_result_collection = RepoSyncResult.get_collection()
 
     # Fire an events around the call

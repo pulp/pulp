@@ -676,7 +676,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -722,7 +724,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -763,7 +767,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -806,7 +812,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -848,7 +856,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -898,7 +908,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -944,7 +956,9 @@ class ImporterTest(PluginTestBase):
             configuration = PluginCallConfiguration(configuration, {})
             conduit = RepoSyncConduit(
                 self.REPO_ID,
-                constants.HTTP_IMPORTER)
+                constants.HTTP_IMPORTER,
+                'abc123'
+            )
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)

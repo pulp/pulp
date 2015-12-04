@@ -43,7 +43,7 @@ class RepoSyncConduitTests(base.PulpServerTests):
         self.query_manager = query_manager.ContentQueryManager()
 
         importer_controller.set_importer(mock.MagicMock(repo_id='repo-1'), 'mock-importer', {})
-        self.conduit = RepoSyncConduit('repo-1', 'test-importer')
+        self.conduit = RepoSyncConduit('repo-1', 'test-importer', 'abc123')
 
     def tearDown(self):
         super(RepoSyncConduitTests, self).tearDown()
