@@ -49,8 +49,8 @@ Prerequisites
  * 80 for consumers to access repositories served over HTTP
  * 443 for consumers to access repositories served over HTTPS
  * 443 for clients (both admin and consumer) to access Pulp APIs
+ * 5671 for consumers to connect to the message bus if it is running over TLS
  * 5672 for consumers to connect to the message bus if it is left unsecured
- * 5671 for consumers to connect to the message bus if it is running over HTTPS
 
 * The mod_python Apache module must be uninstalled or not loaded. Pulp uses
   mod_wsgi which conflicts with mod_python and will cause the server to fail.
