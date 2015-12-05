@@ -14,18 +14,11 @@ For example, the 2.6 releases of pulp will build into the pulp-2.6-<distribution
 You can see the full list of Pulp's Koji tags
 `here <http://koji.katello.org/koji/search?match=glob&type=tag&terms=pulp*>`_.
 
-Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
-Architecture) is built in Koji, it cannot be built again. However, it can be tagged into multiple
-Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
-``pulp-2.4-rhel7`` tag and you wish to add that exact package in the ``pulp-2.5-rhel7`` tag,
-you cannot build it again. Instead, you must tag that package for the new tag. You will see later
-on in this document that Pulp has a tool to help you do this.
-
 Pulp release and testing builds are collections of components that are versioned independently.
 For example, the core Pulp server may be at version 2.6 while pulp_docker may be at version 1.0.
 This assembly is accomplished using release definitions specified in the
-``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the detail of a
-build that the Pulp build scripts can later assemble. The components within that
+``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the details
+of a build that the Pulp build scripts can later assemble. The components within that
 file specify the target koji tag as well as the individual git repositories and branches that
 will be assembled as part of a build. In addition it specifies the directory within
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
@@ -69,16 +62,21 @@ X.Y.Z-<build_number>
 
 .. note::
 
-   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
+   For pre-release builds, Pulp uses the build number as the release field. The first pre-release build
    will always be 0.1, and every build thereafter prior to the release will be the last release plus
    0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
-   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
-   follow the
+   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. For release
+   builds, use whole numbers for the build number. We loosely follow the
    `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
 
+Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
+Architecture) is built in Koji, it cannot be built again. However, it can be included in multiple
+Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
+``pulp-2.4-rhel7`` tag and you wish to add that exact package in the ``pulp-2.5-rhel7`` tag, you
+must indicate the build to use in the version field of the release stream's definition file,
+``2.5-dev.yaml`` in this case.
 
-Because there is no way to automatically determine when a particular component needs a new version
-or what that version should be, the build-infrastructure assumes that whatever version is specified
+Because there is no way to automatically determine when a particular component needs to be rebuilt or what that version should be, the build-infrastructure assumes that whatever version is specified
 in the yaml file is the final version that is required.  If a release build of that version had
 already been built in koji then those RPMs will be used. If the version specified in the yaml file
 does not match the version in the spec file, the spec file will be updated and the change will be
@@ -91,7 +89,8 @@ All alphas and betas are built from the -dev branch of each project. As changes 
 -dev branch of a project, those changes are released with the next alpha or beta. Once a beta is
 considered stable, the release candidate should be built from the tag that was generated during
 the build process of the stable beta. This guarantees that the RPMs generated will be exactly the
-same as the ones that were part of the stable beta.
+same as the ones that were part of the stable beta. Similarly, a GA release should be built from
+the tag created by the release candidate.
 
 In some situations you want to include something extra on top of the stable beta. This could be
 documentation changes or a particular fix for an issue that was found after releasing the first
@@ -139,6 +138,8 @@ items.
 In order to publish builds to the Pulp repository, you will need the SSH keypair used to upload
 packages to the fedorapeople.org repository. You can get this from members of the Pulp team.
 
+Additionally you will need to install ``createrepo`` on the machine you will be building from.
+
 Configuring your build environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -150,7 +151,7 @@ step is to make a clean checkout of the pulp_packging somewhere away from your o
 
     $ mkdir ~/pulp_build
     $ cd ~/pulp_build
-    $ git clone git@github.com:pulp/pulp_packaging.git; done;
+    $ git clone git@github.com:pulp/pulp_packaging.git
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder::
@@ -159,7 +160,6 @@ Katello CA certificate and your client certificate in your home folder::
 
 Here is an example $HOME/.koji/config file you can use::
 
-    ``
     [koji]
 
     ;configuration for koji cli tool
@@ -186,7 +186,6 @@ Here is an example $HOME/.koji/config file you can use::
 
     ;certificate of the CA that issued the HTTP server certificate
     serverca = ~/.katello-ca.cert
-    ``
 
 Make sure you install your Katello CA certificate and client certificate to the paths listed in the
 example above::
@@ -207,9 +206,6 @@ Next, you should install Tito::
 
 Now you are ready to begin building.
 
-
-Dependencies
-------------
 
 Building Dependencies
 ^^^^^^^^^^^^^^^^^^^^^
@@ -249,9 +245,11 @@ dependency is performed.
 Test Building Pulp and the plugins
 ----------------------------------
 
-Are you ready to build something?  If so, you should `cd` to the ``pulp_packaging/ci``
-directory.  The next step is to perform the build.  There is a helper script that will
-perform the following actions:
+Are you ready to build something? The next step is to ensure that the build that you are going to do
+has an appropriate yaml file in ``pulp_packaging/ci/config/releases/<build-name>.yaml`` (explained in
+detail above). Double check for each repository that the ``git_branch`` field points to the branch or tag
+that you wish to build from and that the ``version`` field is correct. The ``pulp_packaging/ci/build-all.py``
+script which will perform the following actions:
 
 #. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
 #. Clone all the required git repositories to the ``working/<repo_name>`` directory.
@@ -262,21 +260,26 @@ perform the following actions:
 #. Find all the spec files in the repositories.
 #. Check koji to determine if the version in the spec already exists in koji.
 #. Test build all the packages that do not already exist in koji.
-#. Optionally, create tag and push it to github.
-#. Optionally release build all the packages that do not already exist in koji.
+#. Optionally (if ``--release`` is passed), create tag and push it to GitHub.
+#. Optionally (if ``--release`` is passed), release build all the packages that do not already exist in koji.
 #. Download the already existing packages from koji.
 #. Download the scratch built packages from koji.
 #. Assemble the repositories for all the associated distributions.
-#. Optionally push the repositories to fedorapeople.
+#. Optionally (if ``--disable-push`` is not passed) push the repositories to fedorapeople.
 
-The ``build-all.py`` script can be used to do all of this.  For example, to perform a test
-build of the 2.6-dev release as specified in ``pulp_packaging/ci/config/releases/2.6-dev.py``
-where the results are not pushed to fedorapeople::
+Run the build script with the following syntax::
 
-    $ build-all.py 2.6-dev --disable-push
+    $ ./build-all.py <name of yaml file> [options]
+
+For example, to perform a test build of the 2.6-dev release as specified in
+``pulp_packaging/ci/config/releases/2.6-dev.py`` where the results are not pushed to
+fedorapeople::
+
+    $ ./build-all.py 2.6-dev --disable-push
 
 Submit to Koji
 ^^^^^^^^^^^^^^
+
 We are now prepared to submit the build to Koji. This task is simple::
 
     $ cd pulp_packaging/ci
@@ -292,33 +295,35 @@ At the end it will automatically upload the resulting build to fedorapeople in t
 specified in the release config file. You can disable the push to fedorapeople by supplying
 --disable-push flag.
 
-Now is a good time to start our Jenkins builder to run the unit tests in all the supported operating
-systems. You can configure it to run the tests in the git branch that you are building. Make sure
-these pass before publishing the build.
+If you want to start our Jenkins builder to run the unit tests in all the supported operating
+systems, you should wait until the build script is finished so that it can push the correct tag to
+GitHub. You can configure Jenkins to run the tests in the git branch or tag that you are building.
+Make sure these pass before publishing the build.
 
-After the repositories are built, the next step is to merge the tag changes you
-have made all the way forward to master. You may experience merge conflicts with this step. Be
-sure to merge forward on all of the repositories.
+After the repositories are built, the next step is to merge the tag changes you have made all the
+way forward to master.
 
 .. warning::
-   
+
    Do not use the ours strategy, as that will drop the changelog entries. You must manually resolve
    the conflicts!
 
-You may experience conflicts when you push these changes. If you do, merge your checkout with
-upstream. Then you can ``git push <branch>:<branch>`` after you check the diff to make sure it is
-correct. Lastly, do a new git checkout elsewhere and check that ``tito build --srpm`` is tagged
-correctly and builds.
+You will experience conflicts with this step if you are building a stream that is not the latest stream.
+Be sure to merge forward on all of the repositories, keeping the changelog entries in chronological
+order. Be cautious not to clobber the versions in the spec file! Then you can ``git push <branch>:<branch>``
+after you check the diff to make sure it is correct. Lastly, do a new git checkout elsewhere and check that
+``tito build --srpm`` is tagged correctly and builds.
 
 
 Updating Versions
 ^^^^^^^^^^^^^^^^^
-Once you have built the package successfully and merged the changelog forward, you should update
-the versions of all the projects that were just included in the build. You will want to update
-the yaml configuration file that corresponds with the jenkins job that does the nightly builds.
-Most likely it is the same file you were using to build the packages in the previous step. You can
-use ``update-version-and-merge-forward.py`` to update the versions. This script checks out all the
-projects and updates the version in the spec file and in all of the setup.py files.
+
+We use Jenkins to make nightly builds, so once you have built the package successfully and merged the
+changelog forward, you should update the yaml file that Jenkins uses and bump the versions of all the
+projects that were included in this build. Most likely it is the same file you were using to build
+the packages in the previous step. You can use ``update-version-and-merge-forward.py`` to update
+the versions. This script checks out all the projects and updates the version in the spec file and
+in all of the setup.py files.
 
 At this point you can inspect the files to ensure the versions are as you expect. You can rerun the
 script with ``--push`` flag to push the changes to Github.
@@ -327,6 +332,8 @@ You should also push the changes in the yaml file inside of pulp_packaging to Gi
 
 Updating Docs
 -------------
+
+When releasing a new X or Y release, the internal links in the docs need to be updated to match.
 
 The docs for Pulp platform and each plugin use `intersphinx <http://sphinx-doc.org/ext/intersphinx.html>`_
 to facilitiate linking between documents. It is important that each branch
@@ -473,9 +480,9 @@ typical email you can use::
 
    Subject: [devel] Pulp beta <version> is available
 
-   Pulp <version> has been published to the beta repositories[1]. This fixes <add some text here>.
+   Pulp <version> has been published to the beta repositories[0]. This fixes <add some text here>.
 
-   [1] https://repos.fedorapeople.org/repos/pulp/pulp/beta/
+   [0] https://repos.fedorapeople.org/repos/pulp/pulp/beta/
 
 If you have published a stable build, there are a few more items to take care of:
 
@@ -491,11 +498,12 @@ a typical email you can use::
    Subject: Pulp <version> is available!
 
    The Pulp team is pleased to announce that we have released <version>
-   to our stable repositories. <Say if it's just bugfixes or bugs and features>.
+   to our stable repositories[0]. <Say if it's just bugfixes or bugs and features>.
 
-   Please see the release notes[0][1][2] if you are interested in reading about
+   Please see the release notes[1][2][3] if you are interested in reading about
    the fixes that are included. Happy upgrading!
 
+   [0] https://repos.fedorapeople.org/repos/pulp/pulp/stable/<stream>/
    [0] link to pulp release notes (if updated)
    [0] link to pulp-rpm release notes (if updated)
    [0] link to pulp-puppet release notes (if updated)
