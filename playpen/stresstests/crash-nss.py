@@ -1,4 +1,5 @@
-#!/usr/bin/python -tt
+#!/usr/bin/env python2
+
 import optparse
 import pycurl
 import sys
