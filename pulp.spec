@@ -388,10 +388,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_var}/lib/%{name}/published
 %{_var}/lib/%{name}/static
 %{_var}/lib/%{name}/uploads
-%dir %{_var}/log/%{name}
 %{_var}/www/pub
 %{_var}/cache/%{name}/
 %{_var}/run/%{name}/
+%defattr(640,apache,apache,750)
+%dir %{_var}/log/%{name}
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE COPYRIGHT
