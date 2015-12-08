@@ -114,7 +114,8 @@ class TestSchedulerTick(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.time')
     @mock.patch('pulp.server.async.scheduler.worker_watcher')
     @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
-    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, time, node, mock_tick):
+    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, time, node,
+                                    mock_tick):
         sched_instance = scheduler.Scheduler()
         time.time.return_value = 1449261335.275528
         node.return_value = 'some_host'
@@ -123,7 +124,7 @@ class TestSchedulerTick(unittest.TestCase):
 
         expected_event = {'timestamp': 1449261335.275528, 'local_received': 1449261335.275528,
                           'type': 'scheduler-event', 'hostname': 'scheduler@some_host'}
-        mock_heartbeat.assert_called_once_with(expected_event)
+        mock_worker_watcher.handle_worker_heartbeat.assert_called_once_with(expected_event)
         mock_worker_watcher.assert_called_once()
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
