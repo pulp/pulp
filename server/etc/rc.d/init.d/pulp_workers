@@ -125,8 +125,8 @@ create_default_dir() {
         echo "- Creating default directory: '$1'"
         mkdir -p "$1"
         maybe_die "Couldn't create directory $1"
-        echo "- Changing permissions of '$1' to 02755"
-        chmod 02755 "$1"
+        echo "- Changing permissions of '$1' to 02750"
+        chmod 02750 "$1"
         maybe_die "Couldn't change permissions for $1"
         if [ -n "$CELERYD_USER" ]; then
             echo "- Changing owner of '$1' to '$CELERYD_USER'"
@@ -197,12 +197,14 @@ write_log_message () {
     do
       local log_file="`dirname $CELERYD_LOG_FILE`/${i}.log"
       touch $log_file && chown $CELERYD_USER $log_file
+      chmod 640 $log_file
       echo -n `date "+%Y-%m-%d %T"` >> $log_file
       echo " $1" >> $log_file
     done
   else
     local log_file="`dirname $CELERYD_LOG_FILE`/${CELERYD_NODES}.log"
     touch $log_file && chown $CELERYD_USER $log_file
+    chmod 640 $log_file
     echo -n `date "+%Y-%m-%d %T"` >> $log_file
     echo " $1" >> $log_file
   fi
