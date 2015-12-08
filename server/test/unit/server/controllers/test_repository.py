@@ -121,14 +121,34 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         """
         repo = MagicMock(repo_id='foo')
         test_unit = DemoModel(id='bar', key_field='baz')
-        test_rcu = model.RepositoryContentUnit(repo_id='foo',
-                                               unit_type_id='demo_model',
-                                               unit_id='bar')
-        mock_rcu_objects.return_value = [test_rcu]
+        test_rcu_list = [
+            model.RepositoryContentUnit(repo_id='foo',
+                                        unit_type_id='demo_model',
+                                        unit_id='bar'),
+            model.RepositoryContentUnit(repo_id='foo',
+                                        unit_type_id='other',
+                                        unit_id='other'),
+        ]
+
+        mock_rcu_objects.return_value = test_rcu_list
+
+        # The (other) model is used to generate the InvalidQueryError
+        other_model = MagicMock(id='bar', key_field='baz')
+        other_qs = MagicMock()
+        other_qs.only.return_value = other_qs
+        other_qs.__iter__.side_effect = mongoengine.InvalidQueryError
+        other_model.objects.return_value = other_qs
 
         u_filter = mongoengine.Q(key_field='baz')
         u_fields = ['key_field']
-        mock_get_model.return_value = DemoModel
+
+        models = {
+            'demo_model': DemoModel,
+            'other': other_model
+        }
+
+        mock_get_model.side_effect = models.get
+
         mock_demo_objects.return_value.only.return_value = [test_unit]
         result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
                                                               unit_fields=u_fields))
@@ -136,7 +156,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         mock_demo_objects.return_value.only.assert_called_once_with(['key_field'])
 
         # validate that the repo content unit was returned and that the unit is attached
-        self.assertEquals(result, [test_rcu])
+        self.assertEquals(result, test_rcu_list[0:1])
         self.assertEquals(result[0].unit, test_unit)
 
     @patch.object(DemoModel, 'objects')

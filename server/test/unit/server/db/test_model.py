@@ -3,9 +3,7 @@
 """
 Tests for the pulp.server.db.model module.
 """
-import os
-
-from mock import patch, Mock
+from mock import patch, Mock, call
 
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField, Document,
                          IntField, ListField, StringField, signals)
@@ -293,56 +291,42 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 class TestFileContentUnit(unittest.TestCase):
 
     class TestUnit(model.FileContentUnit):
-        pass
+        _content_type_id = StringField(default='')
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_init(self, get_path):
+        unit = TestFileContentUnit.TestUnit()
+        get_path.assert_called_once_with(unit)
+        self.assertEqual(unit.storage_path, get_path.return_value)
 
     def test_fields(self):
         self.assertTrue(isinstance(model.FileContentUnit.downloaded, BooleanField))
         self.assertEqual(model.FileContentUnit.downloaded.default, True)
 
     @patch('pulp.server.db.model.FileStorage.get_path')
-    def test_pre_save_signal(self, get_path):
-        document = Mock(_storage_path=None)
-        unit = TestFileContentUnit.TestUnit()
-        unit.pre_save_signal(None, document)
-        document.set_storage_path.assert_called_once_with()
-
-    @patch('pulp.server.db.model.FileStorage.get_path')
-    def test_pre_save_signal_already_has_storage_path(self, get_path):
-        document = Mock(_storage_path='123')
-        unit = TestFileContentUnit.TestUnit()
-        unit.pre_save_signal(None, document)
-        self.assertFalse(get_path.called)
-        self.assertEqual(document._storage_path, '123')
-
-    @patch('pulp.server.db.model.FileStorage.get_path')
     def test_set_storage_path(self, get_path):
-        path = '/tmp/9876'
-        get_path.return_value = path
+        get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
-        unit.set_storage_path()
-        get_path.assert_called_once_with(unit)
-        self.assertEqual(unit._storage_path, path)
+        unit.storage_path = 'test'
+        self.assertEqual(unit._storage_path, '/tmp/test')
 
     @patch('pulp.server.db.model.FileStorage.get_path')
-    def test_set_storage_path_with_filename(self, get_path):
-        path = '/tmp/9876'
-        get_path.return_value = path
-        name = '1234'
+    def test_set_storage_path_absolute(self, get_path):
+        get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
-        unit.set_storage_path(name)
-        get_path.assert_called_once_with(unit)
-        self.assertEqual(unit._storage_path, os.path.join(path, name))
+        self.assertRaises(ValueError, setattr, unit, 'storage_path', '/violation/test')
 
-    @patch('pulp.server.db.model.FileStorage.get_path')
-    def test_set_file_exception(self, get_path):
-        path = '/tmp/9876'
-        get_path.return_value = path
+    @patch('os.path.isdir')
+    def test_list_files(self, isdir):
+        isdir.return_value = False
         unit = TestFileContentUnit.TestUnit()
-        unit._storage_path = path
-        unit.set_storage_path()
-        unit.set_storage_path()
-        unit._last_updated = 'timestamp'
-        self.assertRaises(RuntimeError, unit.set_storage_path)
+        self.assertEqual(unit.list_files(), [unit._storage_path])
+
+    @patch('os.path.isdir')
+    def test_list_files_multi_file(self, isdir):
+        isdir.return_value = True
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [])
 
     @patch('os.path.isfile')
     @patch('pulp.server.db.model.FileStorage')
@@ -356,7 +340,7 @@ class TestFileContentUnit(unittest.TestCase):
 
         # test
         unit = TestFileContentUnit.TestUnit()
-        unit._storage_path = '/tmp/content'
+        unit._last_updated = 1234
         unit.import_content(path)
 
         # validation
@@ -378,7 +362,7 @@ class TestFileContentUnit(unittest.TestCase):
 
         # test
         unit = TestFileContentUnit.TestUnit()
-        unit._storage_path = '/tmp/content'
+        unit._last_updated = 1234
         unit.import_content(path, location)
 
         # validation
@@ -400,7 +384,7 @@ class TestFileContentUnit(unittest.TestCase):
         isfile.return_value = False
         try:
             unit = TestFileContentUnit.TestUnit()
-            unit._storage_path = '/tmp/test'
+            unit._last_updated = 1234
             unit.import_content('')
             self.fail('Expected coded exception')
         except PulpCodedException, e:
@@ -837,16 +821,56 @@ class TestLazyCatalogEntry(unittest.TestCase):
         self.assertTrue(isinstance(model.LazyCatalogEntry.checksum_algorithm, StringField))
         self.assertFalse(model.LazyCatalogEntry.checksum_algorithm.required)
 
+        self.assertTrue(isinstance(model.LazyCatalogEntry.revision, IntField))
+        self.assertFalse(model.LazyCatalogEntry.revision.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.data, DictField))
+        self.assertFalse(model.LazyCatalogEntry.data.required)
+
         self.assertTrue(isinstance(model.LazyCatalogEntry._ns, StringField))
         self.assertEqual(self.COLLECTION_NAME, model.LazyCatalogEntry._ns.default)
 
     def test_indexes(self):
-        expected = [[('importer_id', 1)], [('path', -1), ('importer_id', -1)], [(u'_id', 1)]]
+        expected = [
+            [('importer_id', 1)],
+            [('path', -1), ('importer_id', -1), ('revision', -1)],
+            [(u'_id', 1)]
+        ]
         result = model.LazyCatalogEntry.list_indexes()
         self.assertEqual(expected, result)
 
     def test_meta_collection(self):
         self.assertEquals(model.LazyCatalogEntry._meta['collection'], self.COLLECTION_NAME)
+
+    @patch('pulp.server.db.model.LazyCatalogEntry.save')
+    @patch('pulp.server.db.model.LazyCatalogEntry.objects')
+    def test_save_revision(self, objects, save):
+        qs = Mock()
+        qs.distinct.return_value = [1]
+        objects.filter.return_value = qs
+        entry = model.LazyCatalogEntry()
+        entry.unit_id = '123'
+        entry.unit_type_id = 'test'
+        entry.importer_id = '44'
+
+        # test
+        entry.save_revision()
+
+        # validation
+        self.assertEqual(
+            objects.filter.call_args_list,
+            [
+                call(unit_id=entry.unit_id,
+                     unit_type_id=entry.unit_type_id,
+                     importer_id=entry.importer_id),
+                call(revision__in=set([0, 1]),
+                     unit_id=entry.unit_id,
+                     unit_type_id=entry.unit_type_id,
+                     importer_id=entry.importer_id),
+            ])
+        self.assertEqual(entry.revision, 2)
+        save.assert_called_once_with()
+        qs.delete.assert_called_once_with()
 
 
 class TestDeferredDownload(unittest.TestCase):

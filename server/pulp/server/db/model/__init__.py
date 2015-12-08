@@ -668,38 +668,47 @@ class FileContentUnit(ContentUnit):
         ]
     }
 
-    @classmethod
-    def pre_save_signal(cls, sender, document, **kwargs):
-        """
-        The signal that is triggered before a unit is saved.
+    def __init__(self, *args, **kwargs):
+        super(FileContentUnit, self).__init__(*args, **kwargs)
+        self._storage_path = FileStorage.get_path(self)
 
-        :param sender: sender class
-        :type sender: object
-        :param document: Document that sent the signal
-        :type document: FileContentUnit
+    @property
+    def storage_path(self):
         """
-        if not document._storage_path:
-            document.set_storage_path()
-        super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
+        The content storage path.
 
-    def set_storage_path(self, filename=None):
+        :return: The absolute path to stored content.
+        :rtype: str
         """
-        Set the storage path including an optional file name.
-        The path is calculated as: content/units/<type_id>/unit.id[0:4]/unit.id/<filename>.
-        A *filename* should only be specified when the content unit is associated
-        with a single file.
+        return self._storage_path
 
-        :param filename: An optional file name to be appended.
-        :type filename: str
-        :raise: RuntimeError: if called after unit has been saved.
+    @storage_path.setter
+    def storage_path(self, path):
         """
-        if self._last_updated:
-            raise RuntimeError(
-                _('The storage path cannot be updated after the unit has been saved'))
-        path = FileStorage.get_path(self)
-        if filename:
-            path = os.path.join(path, filename)
-        self._storage_path = path
+        Set the storage path.
+        This is a total hack to support existing single-file units with a
+        _storage_path that includes the file name.
+
+        :param path: A relative path.
+        :rtype path: str
+        """
+        if os.path.isabs(path):
+            raise ValueError(_('must be relative path'))
+        _dir = FileStorage.get_path(self)
+        self._storage_path = os.path.join(_dir, path)
+
+    def list_files(self):
+        """
+        List absolute paths to files associated with this unit.
+        This *must* be overridden by multi-file unit subclasses.
+
+        :return: A list of absolute file paths.
+        :rtype: list
+        """
+        if not os.path.isdir(self._storage_path):
+            return [self._storage_path]
+        else:
+            return []
 
     def import_content(self, path, location=None):
         """
@@ -719,7 +728,7 @@ class FileContentUnit(ContentUnit):
         :raises PulpCodedException: PLP0036 if the unit has not been saved.
         :raises PulpCodedException: PLP0037 if *path* is not an existing file.
         """
-        if not self._storage_path:
+        if not self._last_updated:
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0036)
         if not os.path.isfile(path):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
@@ -815,6 +824,8 @@ class LazyCatalogEntry(AutoRetryDocument):
     :type checksum: str
     :ivar checksum_algorithm: The algorithm used to generate the checksum.
     :type checksum_algorithm: str
+    :ivar revision: The revision is used to group collections of entries.
+    :type revision: int
     :ivar data: Arbitrary information stored with the entry.
         Managed by the plugin.
     :type data: dict
@@ -830,10 +841,11 @@ class LazyCatalogEntry(AutoRetryDocument):
             {
                 'fields': [
                     '-path',
-                    '-importer_id'
+                    '-importer_id',
+                    '-revision',
                 ],
                 'unique': True
-            }
+            },
         ],
     }
 
@@ -847,7 +859,30 @@ class LazyCatalogEntry(AutoRetryDocument):
     url = StringField(required=True)
     checksum = StringField()
     checksum_algorithm = StringField(regex=ALG_REGEX)
+    revision = IntField(default=0)
     data = DictField()
+
+    def save_revision(self):
+        """
+        Add the entry using the next revision number.
+        Previous revisions are deleted.
+        """
+        revisions = set([0])
+        query = dict(
+            unit_id=self.unit_id,
+            unit_type_id=self.unit_type_id,
+            importer_id=self.importer_id)
+        # Find revisions
+        qs = LazyCatalogEntry.objects.filter(**query)
+        for revision in qs.distinct('revision'):
+            revisions.add(revision)
+        # Add new revision
+        last_revision = sorted(revisions, reverse=True)[0]
+        self.revision = last_revision + 1
+        self.save()
+        # Delete previous revisions
+        qs = LazyCatalogEntry.objects.filter(revision__in=revisions, **query)
+        qs.delete()
 
 
 class DeferredDownload(AutoRetryDocument):

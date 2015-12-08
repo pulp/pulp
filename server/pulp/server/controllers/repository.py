@@ -4,7 +4,8 @@ from itertools import chain
 import logging
 import sys
 
-from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
+from mongoengine import (NotUniqueError, OperationError, ValidationError, DoesNotExist,
+                         InvalidQueryError)
 from bson.objectid import ObjectId, InvalidId
 import celery
 
@@ -174,28 +175,33 @@ def find_repo_content_units(
         content_unit_set[repo_content_unit.unit_id] = repo_content_unit
 
     for unit_type, unit_ids in type_map.iteritems():
-        qs = plugin_api.get_unit_model_by_id(unit_type).objects(
-            q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
+        _model = plugin_api.get_unit_model_by_id(unit_type)
+        qs = _model.objects(q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
         if unit_fields:
             qs = qs.only(unit_fields)
 
-        for unit in qs:
-            if skip and skip_count < skip:
-                skip_count += 1
-                continue
+        try:
+            for unit in qs:
+                if skip and skip_count < skip:
+                    skip_count += 1
+                    continue
 
-            if yield_content_unit:
-                yield unit
-            else:
-                cu = content_units[unit_type][unit.id]
-                cu.unit = unit
-                yield cu
+                if yield_content_unit:
+                    yield unit
+                else:
+                    cu = content_units[unit_type][unit.id]
+                    cu.unit = unit
+                    yield cu
 
-            if limit:
-                if yield_count >= limit:
-                    return
+                if limit:
+                    if yield_count >= limit:
+                        return
 
-            yield_count += 1
+                yield_count += 1
+        except InvalidQueryError, e:
+            # The repository can contain a mix of types and the
+            # query may not be valid for all of them.
+            _logger.debug(_('Unit query failed: {0}').format(e))
 
 
 def find_units_not_downloaded(repo_id):
