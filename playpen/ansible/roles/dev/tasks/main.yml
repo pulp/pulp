@@ -65,6 +65,7 @@
       - python2-rpdb
       - redhat-lsb-core
       - rpm-build
+      - telnet
       - tito
       - yum-utils
 
