@@ -16,14 +16,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      config.hostmanager.manage_host = true
  end
 
- # install vagrant-cachier for some caching goodness
- if Vagrant.has_plugin?("vagrant-cachier")
-    config.cache.scope = :box
-    config.cache.synced_folder_opts = {
-        type: :nfs,
-        mount_options: ['rw', 'vers=4', 'tcp']
-    }
- end
+ # vagrant-cachier is currently broken due to making yum-based assumptions
+ #  https://github.com/fgrehm/vagrant-cachier/issues/163
+ # It is included here as an example if you're still using a yum-based box
+
+ # vagrant plugin install vagrant-cachier to cache packages installed by yum/dnf
+ # if Vagrant.has_plugin?("vagrant-cachier")
+ #    config.cache.scope = :box
+ #    config.cache.synced_folder_opts = {
+ #        type: :nfs,
+ #        mount_options: ['rw', 'vers=4', 'tcp']
+ #    }
+ # end
 
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"
@@ -31,6 +35,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # bootstrap and run with ansible
  config.vm.provision "shell", path: "playpen/bootstrap-ansible.sh"
  config.vm.provision "ansible" do |ansible|
+     # Uncomment this if you want debug tools like gdb, tcpdump, et al. installed
+     # (you don't, unless you know you do)
+     # ansible.extra_vars = { pulp_dev_debug: true }
      ansible.playbook = "playpen/ansible/vagrant-playbook.yml"
  end
 
