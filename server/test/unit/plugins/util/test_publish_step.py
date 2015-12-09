@@ -23,7 +23,6 @@ from pulp.plugins.util import publish_step
 from pulp.server.db import model
 from pulp.server.managers import factory
 
-
 factory.initialize()
 
 
