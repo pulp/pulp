@@ -62,6 +62,7 @@
       - python-setuptools
       - python-sphinx
       - python-virtualenvwrapper
+      - python2-rpdb
       - redhat-lsb-core
       - rpm-build
       - tito
