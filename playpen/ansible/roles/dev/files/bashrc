@@ -26,7 +26,6 @@ pstop() {
 }
 
 prestart() {
-    find ~/devel/pulp* -name '*.py[co]' -delete;
     _paction restart
 }
 
