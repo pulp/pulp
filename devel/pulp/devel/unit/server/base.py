@@ -49,14 +49,53 @@ def _load_test_config():
 
     config.config.set('database', 'name', 'pulp_unittest')
     config.config.set('server', 'storage_dir', '/tmp/pulp')
-
-    # Prevent the tests from altering the config so that nobody accidentally makes global changes
-    config.config.set = _enforce_config
-    config.load_configuration = _enforce_config
-    config.__setattr__ = _enforce_config
-    config.config.__setattr__ = _enforce_config
+    override_config_attrs()
 
     start_logging()
+
+
+def override_config_attrs():
+    # Remove server.conf from the autoloaded config files
+    # does not get restored by restore_config_attrs; server.conf shouldn't ever be used in testing
+    block_load_conf()
+
+    if not hasattr(config, '_overridden_attrs'):
+        # only save these once so we don't end up saving _enforce_config as the "original" values
+        setattr(config, '_overridden_attrs', {
+            '__setattr__': config.__setattr__,
+            'load_configuration': config.load_configuration,
+            'config.set': config.config.set,
+        })
+
+    # Prevent the tests from altering the config so that nobody accidentally makes global changes
+    config.__setattr__ = _enforce_config
+    config.load_configuration = _enforce_config
+    config.config.set = _enforce_config
+
+
+def restore_config_attrs():
+    # Restore values overridden by _override_config_attrs
+    if not hasattr(config, '_overridden_attrs'):
+        return
+
+    for attr in '__setattr__', 'load_configuration':
+        setattr(config, attr, config._overridden_attrs[attr])
+    setattr(config.config, attr, config._overridden_attrs['config.set'])
+
+    del(config._overridden_attrs)
+
+
+def block_load_conf():
+    # Remove server.conf from the list of autoloaded config files
+    # This is needed when testing modules that create objects using conf data found in the
+    # server config, such as DB connections, celery, etc. This should be used as little as
+    # possible and as early as possible, before config file loads happen
+    conf = '/etc/pulp/server.conf'
+    try:
+        config.remove_config_file(conf)
+    except RuntimeError:
+        # server.conf already removed, move along...
+        pass
 
 
 class PulpWebservicesTests(unittest.TestCase):

@@ -3,7 +3,45 @@ import socket
 from ConfigParser import SafeConfigParser
 
 
-config = None  # ConfigParser.SafeConfigParser instance
+class LazyConfigParser(SafeConfigParser):
+    def __init__(self, *args, **kwargs):
+        self.reload()
+        SafeConfigParser.__init__(self, *args, **kwargs)
+
+        # The superclass _sections attr takes precedence over the property of
+        # the same name defined below. Deleting it exposes that property to hook
+        # the config loading mechanism into an attribute used by just about every
+        # ConfigParser method.
+        self._lazy_sections = self._sections
+        del self._sections
+
+    def reload(self):
+        self._loaded = False
+
+    @property
+    def _sections(self):
+        self._load_config()
+        return self._lazy_sections
+
+    def _load_config(self):
+        # calls to self.get/self.set access _sections, which triggers _load_config,
+        # so to avoid infinite recursion _loaded is set before calling those methods
+        if self._loaded:
+            return
+        self._loaded = True
+
+        # add the defaults first
+        self._sections.clear()
+        for section, settings in _default_values.items():
+            self.add_section(section)
+            for option, value in settings.items():
+                self.set(section, option, value)
+
+        # check and load config files
+        check_config_files()
+        self.read(_config_files)
+
+config = LazyConfigParser()
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
@@ -112,16 +150,10 @@ def load_configuration():
     """
     Check the configuration files and load the global 'config' object from them.
     """
-    global config
-    check_config_files()
-    config = SafeConfigParser()
-    # add the defaults first
-    for section, settings in _default_values.items():
-        config.add_section(section)
-        for option, value in settings.items():
-            config.set(section, option, value)
-    # read the config files
-    return config.read(_config_files)
+    # config is lazy, so this doesn't immediately trigger a load
+    # the actual load will occur the next time config is accessed
+    config.reload()
+    return config
 
 
 def add_config_file(file_path):
@@ -132,11 +164,10 @@ def add_config_file(file_path):
     @type file_path: str
     @param file_path: full path to the new file to add
     """
-    global _config_files
     if file_path in _config_files:
         raise RuntimeError('File, %s, already in configuration files' % file_path)
     _config_files.append(file_path)
-    load_configuration()
+    config.reload()
 
 
 def remove_config_file(file_path):
@@ -147,11 +178,7 @@ def remove_config_file(file_path):
     @type file_path: str
     @param file_path: full path to the file to remove
     """
-    global _config_files
     if file_path not in _config_files:
         raise RuntimeError('File, %s, not in configuration files' % file_path)
     _config_files.remove(file_path)
-    load_configuration()
-
-
-load_configuration()
+    config.reload()

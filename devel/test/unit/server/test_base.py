@@ -61,7 +61,6 @@ class LoadTestConfigTestCase(unittest.TestCase):
         self.assertTrue(config.config.set is base._enforce_config)
         self.assertTrue(config.load_configuration is base._enforce_config)
         self.assertTrue(config.__setattr__ is base._enforce_config)
-        self.assertTrue(config.config.__setattr__ is base._enforce_config)
 
 
 class StartDatabaseConnectionTestCase(unittest.TestCase):
