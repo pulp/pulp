@@ -16,7 +16,7 @@ from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
 from pulp.plugins.util import misc
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
+from pulp.server.async.tasks import PulpTask, register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
@@ -524,7 +524,7 @@ def update_last_unit_removed(repo_id):
     repo_obj.save()
 
 
-@celery.task()
+@celery.task(base=PulpTask)
 def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
     """
     Sync a repository and upon successful completion, publish any distributors that are configured
@@ -697,7 +697,7 @@ def sync_history(start_date, end_date, repo_id):
     return RepoSyncResult.get_collection().find(search_params)
 
 
-@celery.task()
+@celery.task(base=PulpTask)
 def queue_publish(repo_id, distributor_id, overrides=None, scheduled_call_id=None):
     """
     Queue a repo publish task.

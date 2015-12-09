@@ -64,7 +64,8 @@ class PulpTask(CeleryTask):
             if '$oid' in value.keys():
                 return bson_loads(value)
 
-            return {self._type_transform(k): self._type_transform(v) for k, v in value.iteritems()}
+            return dict((self._type_transform(k), self._type_transform(v))
+                        for k, v in value.iteritems())
 
         # Recursive checks inside a list
         if isinstance(value, list):

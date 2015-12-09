@@ -1131,7 +1131,7 @@ class RepoAssociate(View):
         :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
         """
         model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
-        criteria_body = request.body_as_json.get('criteria', None)
+        criteria_body = request.body_as_json.get('criteria', {})
         overrides = request.body_as_json.get('override_config', None)
         source_repo_id = request.body_as_json.get('source_repo_id', None)
         if source_repo_id is None:
@@ -1143,22 +1143,19 @@ class RepoAssociate(View):
         except pulp_exceptions.MissingResource:
             raise pulp_exceptions.InvalidValue(['source_repo_id'])
 
-        if criteria_body:
-            try:
-                criteria = UnitAssociationCriteria.from_client_input(criteria_body)
-            except pulp_exceptions.InvalidValue, e:
-                invalid_criteria = pulp_exceptions.InvalidValue('criteria')
-                invalid_criteria.add_child_exception(e)
-                raise invalid_criteria
-        else:
-            criteria = None
+        try:
+            criteria = UnitAssociationCriteria.from_client_input(criteria_body)
+        except pulp_exceptions.InvalidValue, e:
+            invalid_criteria = pulp_exceptions.InvalidValue('criteria')
+            invalid_criteria.add_child_exception(e)
+            raise invalid_criteria
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
                      tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, source_repo_id),
                      tags.action_tag('associate')]
         async_result = associate_from_repo.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id, [source_repo_id, dest_repo_id],
-            {'criteria': criteria, 'import_config_override': overrides}, tags=task_tags)
+            {'criteria': criteria.to_dict(), 'import_config_override': overrides}, tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
@@ -1166,7 +1163,6 @@ class RepoUnassociate(View):
     """
     View to unassociate a unit from a repository.
     """
-
     @auth_required(authorization.UPDATE)
     @json_body_allow_empty
     def post(self, request, repo_id):
@@ -1182,23 +1178,20 @@ class RepoUnassociate(View):
         :raises pulp_exceptions.OperationPostponed: dispatch a unassociate_by_criteria task
         """
 
-        criteria_body = request.body_as_json.get('criteria')
-        if criteria_body:
-            try:
-                criteria = UnitAssociationCriteria.from_client_input(criteria_body)
-            except pulp_exceptions.InvalidValue, e:
-                invalid_criteria = pulp_exceptions.InvalidValue('criteria')
-                invalid_criteria.add_child_exception(e)
-                raise invalid_criteria
-        else:
-            criteria = None
+        criteria_body = request.body_as_json.get('criteria', {})
+        try:
+            criteria = UnitAssociationCriteria.from_client_input(criteria_body)
+        except pulp_exceptions.InvalidValue, e:
+            invalid_criteria = pulp_exceptions.InvalidValue('criteria')
+            invalid_criteria.add_child_exception(e)
+            raise invalid_criteria
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.action_tag('unassociate')]
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = unassociate_by_criteria.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, criteria], tags=task_tags)
+            [repo_id, criteria.to_dict()], tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 

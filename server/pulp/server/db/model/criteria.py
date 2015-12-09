@@ -177,6 +177,48 @@ class UnitAssociationCriteria(Model):
 
         self.remove_duplicates = remove_duplicates
 
+    def to_dict(self):
+        """
+        :return:    the UnitAssociationCriteria as a dict, suitable for serialization by
+                    something like JSON, and compatible as input to the from_dict method.
+
+        :rtype:     dict
+        """
+
+        return {
+            'type_ids': self.type_ids,
+            'association_filters': self.association_filters,
+            'unit_filters': self.unit_filters,
+            'association_sort': self.association_sort,
+            'unit_sort': self.unit_sort,
+            'limit': self.limit,
+            'skip': self.skip,
+            'association_fields': self.association_fields,
+            'unit_fields': self.unit_fields,
+            'remove_duplicates': self.remove_duplicates
+        }
+
+    @classmethod
+    def from_dict(cls, input_dictionary):
+        """
+        Convert a dictionary representation of the UnitAssociationCriteria into a new
+        UnitAssociationCriteria object.
+        The output of to_dict() is suitable as input to this method.
+
+        :param input_dictionary: The dictionary representation of a UnitAssociationCriteria
+                                 object that will be used to construct one.
+        :type  input_dictionary: dict
+        :return:                 A new UnitAssociationCriteria object
+
+        :rtype:                  UnitAssociationCriteria
+        """
+
+        return cls(input_dictionary['type_ids'], input_dictionary['association_filters'],
+                   input_dictionary['unit_filters'], input_dictionary['association_sort'],
+                   input_dictionary['unit_sort'], input_dictionary['limit'],
+                   input_dictionary['skip'], input_dictionary['association_fields'],
+                   input_dictionary['unit_fields'], input_dictionary['remove_duplicates'])
+
     @classmethod
     def from_client_input(cls, query):
         """
