@@ -33,14 +33,14 @@ class TestGetAssociatedUnitIDs(unittest.TestCase):
         ]
 
     def test_returns_ids(self, mock_objects):
-        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value = self.associations
 
         ret = list(repo_controller.get_associated_unit_ids('repo1', 'demo_model'))
 
         self.assertEqual(ret, ['a', 'b'])
 
     def test_returns_generator(self, mock_objects):
-        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value = self.associations
 
         ret = repo_controller.get_associated_unit_ids('repo1', 'demo_model')
 
