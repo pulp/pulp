@@ -96,6 +96,7 @@ if sys.version_info >= (2, 6):
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
         # Pulp Nodes
+        ('/var/lib/pulp/content', '/var/www/pulp/nodes'),
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
         ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
         ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
