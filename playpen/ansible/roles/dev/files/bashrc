@@ -84,6 +84,11 @@ ppopulate() {
         pulp-admin login -u admin -p admin
     fi
 
+    if [ -d $HOME/devel/pulp_docker ]; then
+        pulp-admin docker repo create --repo-id busybox --feed https://index.docker.io \
+            --upstream-name busybox
+    fi
+
     if [ -d $HOME/devel/pulp_rpm ]; then
         pulp-admin rpm repo create --repo-id=zoo \
             --feed=https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/
