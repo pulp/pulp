@@ -367,15 +367,33 @@ class RepositoryActionsAPI(PulpAPI):
         return self.server.POST(path, data)
 
     def publish(self, repo_id, distributor_id, override_config):
-        path = self.base_path % repo_id + "/publish/"
+        path = self.base_path % repo_id + "publish/"
         data = {'id': distributor_id,
                 'override_config': override_config}
         return self.server.POST(path, data)
 
     def associate(self, repo_id, source_repo_id):
-        path = self.base_path % repo_id + "/associate/"
+        path = self.base_path % repo_id + "associate/"
         data = {'source_repo_id': source_repo_id}
         return self.server.POST(path, data)
+
+    def download(self, repo_id, verify_all_units=False):
+        """
+        Dispatch a task to download all ContentUnits for the given repository
+        that are not already downloaded. This is intended for repositories using
+        the ``background`` or ``on_demand`` download strategies.
+
+        :param repo_id:          the repository id to dispatch the task for.
+        :type  repo_id:          str
+        :param verify_all_units: verify all unit files in the repo if true. See
+                                 the API documentation for more information.
+        :type  verify_all_units: bool
+
+        :return: Response object
+        :rtype:  pulp.bindings.responses.Response
+        """
+        path = self.base_path % repo_id + 'download/'
+        return self.server.POST(path, {'verify_all_units': verify_all_units})
 
 
 class RepositoryUnitAPI(PulpAPI):

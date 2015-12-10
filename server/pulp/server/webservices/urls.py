@@ -68,7 +68,8 @@ from pulp.server.webservices.views.repositories import(
     RepoDistributorsView, RepoAssociate, RepoImporterResourceView, RepoImportersView,
     RepoImportUpload, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,
     RepoPublishSchedulesView, RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory,
-    RepoSyncSchedulesView, RepoSyncScheduleResourceView, RepoUnassociate, RepoUnitSearch, ReposView,
+    RepoSyncSchedulesView, RepoSyncScheduleResourceView, RepoUnassociate, RepoUnitSearch,
+    ReposView, RepoDownload
 )
 from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
                                                  RolesView)
@@ -232,6 +233,8 @@ urlpatterns = patterns(
         name='repo_sync'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/actions/publish/$', RepoPublish.as_view(),
         name='repo_publish'),
+    url(r'^v2/repositories/(?P<repo_id>[^/]+)/actions/download/$', RepoDownload.as_view(),
+        name='repo_download'),
     url(r'^v2/repositories/(?P<dest_repo_id>[^/]+)/actions/associate/$', RepoAssociate.as_view(),
         name='repo_associate'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/actions/unassociate/$', RepoUnassociate.as_view(),

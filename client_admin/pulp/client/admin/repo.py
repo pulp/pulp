@@ -3,6 +3,8 @@ from gettext import gettext as _
 from pulp.client.commands.repo import cudl as repo_commands
 from pulp.client.commands.repo import group as group_commands
 from pulp.client.commands.repo import history as history_commands
+from pulp.client.commands.repo.status import PublishStepStatusRenderer
+from pulp.client.commands.repo.sync_publish import DownloadRepositoryCommand
 from pulp.client.extensions.extensions import PulpCliSection
 
 
@@ -24,6 +26,7 @@ class RepoSection(PulpCliSection):
         self.prompt = context.prompt  # for easier access
 
         self.add_command(repo_commands.ListRepositoriesCommand(context, include_all_flag=False))
+        self.add_command(DownloadRepositoryCommand(context, PublishStepStatusRenderer(context)))
 
         # Subsections
         self.add_subsection(RepoGroupSection(context))

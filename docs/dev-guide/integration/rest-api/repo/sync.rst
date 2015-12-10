@@ -33,6 +33,45 @@ The task created will have the following tags:
 ``"pulp:action:sync", "pulp:repository:<repo_id>"``
 
 
+Download a Repository
+---------------------
+
+Downloads content into a repository that was deferred at sync time. This is useful for
+repositories with importers that are configured with ``download_policy=(background | on_demand)``.
+Content that has already been downloaded will not be downloaded again.
+
+.. note::
+  This API requires that the :ref:`deferred downloading` features must be installed
+  and configured to work. If it has not been configured, the task dispatched by this
+  API does nothing.
+
+| :method:`post`
+| :path:`/v2/repositories/<repo_id>/actions/download/`
+| :permission:`execute`
+| :param_list:`post`
+
+* :param:`?verify_all_units,boolean,check all units in the repository for corrupted or
+  missing files and re-download files as necessary rather than just downloading files
+  that are known to be missing (defaults to false)`
+
+| :response_list:`_`
+
+* :response_code:`202,if the download is set to be executed`
+* :response_code:`404,if the repository does not exist`
+
+| :return:`a` :ref:`call_report`
+
+:sample_request:`_` ::
+
+ {
+   "verify_all_units": false
+ }
+
+**Tags:**
+The task created will have the following tags:
+``"pulp:action:download_repo", "pulp:repository:<repo_id>"``
+
+
 Scheduling a Sync
 -----------------
 A repository can be synced automatically using an :term:`iso8601 interval`.

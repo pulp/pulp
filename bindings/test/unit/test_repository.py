@@ -2,7 +2,8 @@ import unittest
 
 import mock
 
-from pulp.bindings.repository import (RepositorySearchAPI, RepositoryUnitAPI, RepositoryAPI,
+from pulp.bindings.repository import (RepositoryActionsAPI, RepositorySearchAPI,
+                                      RepositoryUnitAPI, RepositoryAPI,
                                       RepositoryDistributorAPI, RepositoryHistoryAPI)
 from pulp.bindings.server import PulpConnection
 from pulp.common import constants
@@ -97,6 +98,62 @@ class TestRepoUnitCopyAPI(unittest.TestCase):
         self.assertEqual(self.api.server.POST.call_args[0][1].get('source_repo_id', None), 'repo1')
 
 
+class TestRepositoryActionsAPI(unittest.TestCase):
+    """Tests for the binding to the 'v2/repositories/<repo-id>/actions/sync/' API."""
+
+    def setUp(self):
+        self.pulp_connection = mock.MagicMock(spec=PulpConnection)
+        self.actions_api = RepositoryActionsAPI(self.pulp_connection)
+        self.repo_id = 'mock_repo'
+        self.override_config = {'key': 'value'}
+
+    def test_sync(self):
+        """Assert the sync API path is called."""
+        self.response = self.actions_api.sync(self.repo_id, self.override_config)
+        self.pulp_connection.POST.assert_called_once_with(
+            '/v2/repositories/mock_repo/actions/sync/',
+            {'override_config': self.override_config}
+        )
+
+    def test_publish(self):
+        """Assert the publish API path is called."""
+        self.response = self.actions_api.publish(
+            self.repo_id,
+            'mock_distributor',
+            self.override_config
+        )
+        self.override_config['id'] = 'mock_distributor'
+        body = {'id': 'mock_distributor', 'override_config': self.override_config}
+        self.pulp_connection.POST.assert_called_once_with(
+            '/v2/repositories/mock_repo/actions/publish/',
+            body
+        )
+
+    def test_associate(self):
+        """Assert the associate API path is called."""
+        self.response = self.actions_api.associate(self.repo_id, 'other_repo')
+        self.pulp_connection.POST.assert_called_once_with(
+            '/v2/repositories/mock_repo/actions/associate/',
+            {'source_repo_id': 'other_repo'}
+        )
+
+    def test_download(self):
+        """Assert the download API path is called and the default parameters are correct."""
+        self.response = self.actions_api.download(self.repo_id)
+        self.pulp_connection.POST.assert_called_once_with(
+            '/v2/repositories/mock_repo/actions/download/',
+            {'verify_all_units': False}
+        )
+
+    def test_download_verify(self):
+        """Assert the download API path is called and the default parameters are correct."""
+        self.response = self.actions_api.download(self.repo_id, verify_all_units=True)
+        self.pulp_connection.POST.assert_called_once_with(
+            '/v2/repositories/mock_repo/actions/download/',
+            {'verify_all_units': True}
+        )
+
+
 class TestRepositoryDistributorAPI(unittest.TestCase):
     """
     Tests for the RepositoryDistributorAPI.
@@ -116,7 +173,7 @@ class TestRepositoryDistributorAPI(unittest.TestCase):
         self.assertEqual(result, self.api.server.PUT.return_value)
 
 
-class TestRespositoryHistoryAPI(unittest.TestCase):
+class TestRepositoryHistoryAPI(unittest.TestCase):
     """
     Tests for the RepositoryHistoryAPI binding. Tests that the query is constructed correctly and
     the correct path is used

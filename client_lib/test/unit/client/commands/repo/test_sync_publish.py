@@ -555,3 +555,69 @@ class PublishStatusCommand(base.PulpClientTests):
         mock_search.assert_called_once_with(filters=expected_search_query)
         self.assertEqual(0, mock_poll.call_count)
         self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
+
+
+class TestDownloadRepoCommand(base.PulpClientTests):
+
+    def setUp(self):
+        super(TestDownloadRepoCommand, self).setUp()
+        self.renderer = mock.Mock()
+        self.context = mock.Mock()
+        self.context.config = self.config
+        self.command = sp.DownloadRepositoryCommand(self.context, self.renderer)
+        self.command.poll = mock.Mock()
+
+    @mock.patch('pulp.client.commands.repo.sync_publish._get_repo_tasks')
+    def test_run(self, mock_get_tasks):
+        # Setup
+        kwargs = {'repo-id': 'fake-id', 'bg': False, 'verify-all': False}
+        mock_get_tasks.return_value = []
+
+        # Test
+        self.command.run(**kwargs)
+        mock_get_tasks.assert_called_once_with(self.context, 'fake-id', 'download')
+        self.context.server.repo_actions.download.assert_called_once_with(
+            'fake-id',
+            verify_all_units=False
+        )
+        response = self.context.server.repo_actions.download.return_value
+        self.command.poll.assert_called_once_with([response.response_body], kwargs)
+
+    @mock.patch('pulp.client.commands.repo.sync_publish._get_repo_tasks')
+    def test_run_background(self, mock_get_tasks):
+        # Setup
+        kwargs = {'repo-id': 'fake-id', 'bg': True, 'verify-all': True}
+        mock_get_tasks.return_value = []
+
+        # Test
+        self.command.run(**kwargs)
+        mock_get_tasks.assert_called_once_with(self.context, 'fake-id', 'download')
+        self.context.server.repo_actions.download.assert_called_once_with(
+            'fake-id',
+            verify_all_units=True
+        )
+        self.assertEqual(0, self.command.poll.call_count)
+
+    @mock.patch('pulp.client.commands.repo.sync_publish._get_repo_tasks')
+    def test_run_existing_task(self, mock_get_tasks):
+        # Setup
+        kwargs = {'repo-id': 'fake-id', 'bg': False, 'verify-all': False}
+        mock_get_tasks.return_value = ['some-task']
+
+        # Test
+        self.command.run(**kwargs)
+        mock_get_tasks.assert_called_once_with(self.context, 'fake-id', 'download')
+        self.assertEqual(0, self.context.server.repo_actions.download.call_count)
+        self.command.poll.assert_called_once_with(['some-task'], kwargs)
+
+    @mock.patch('pulp.client.commands.repo.sync_publish._get_repo_tasks')
+    def test_run_existing_task_background(self, mock_get_tasks):
+        # Setup
+        kwargs = {'repo-id': 'fake-id', 'bg': True, 'verify-all': False}
+        mock_get_tasks.return_value = ['some-task']
+
+        # Test
+        self.command.run(**kwargs)
+        mock_get_tasks.assert_called_once_with(self.context, 'fake-id', 'download')
+        self.assertEqual(0, self.context.server.repo_actions.download.call_count)
+        self.assertEqual(0, self.command.poll.call_count)
