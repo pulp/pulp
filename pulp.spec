@@ -906,6 +906,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Thu Dec 10 2015 Austin Macdonald <asmacdo@gmail.com> 2.7.1-1
+- Pulp rebuild
+
 * Tue Dec 08 2015 Austin Macdonald <asmacdo@gmail.com> 2.7.1-0.1.beta
 - Pulp rebuild
 
