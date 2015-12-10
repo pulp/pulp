@@ -26,8 +26,8 @@
       <packagereq type="default">pulp-puppet-plugins</packagereq>
       <packagereq type="default">pulp-selinux</packagereq>
       <packagereq type="default">python-gofer-qpid</packagereq>
-      <packagereq type="default">python-qpid-qmf</packagereq>
       <packagereq type="default">python-qpid</packagereq>
+      <packagereq type="default">qpid-tools</packagereq>
     </packagelist>
   </group>
   <group>

@@ -32,7 +32,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.7.0
+Version: 2.7.1
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -906,6 +906,12 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Thu Dec 10 2015 Austin Macdonald <asmacdo@gmail.com> 2.7.1-1
+- Pulp rebuild
+
+* Tue Dec 08 2015 Austin Macdonald <asmacdo@gmail.com> 2.7.1-0.1.beta
+- Pulp rebuild
+
 * Tue Feb 10 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.7.beta
 - Pulp rebuild
 
