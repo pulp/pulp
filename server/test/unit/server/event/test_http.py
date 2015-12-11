@@ -1,129 +1,86 @@
-import httplib
-import time
+import unittest
 
-# needed to create unserializable ID
-from bson.objectid import ObjectId as _test_objid
 import mock
 
-from ... import base
-from pulp.server.compat import json
 from pulp.server.event import http
 from pulp.server.event.data import Event
 
+MODULE_PATH = 'pulp.server.event.http.'
 
-@mock.patch('pulp.server.event.data.task_serializer')
-class TestHTTPNotifierTests(base.PulpServerTests):
 
-    @mock.patch('pulp.server.event.http._create_connection')
-    def test_handle_event(self, mock_create, mock_task_ser):
+class TestHTTPNotifierTests(unittest.TestCase):
+
+    @mock.patch(MODULE_PATH + 'threading.Thread')
+    def test_handle_event(self, mock_thread):
         # Setup
+        notifier_config = {'key': 'value'}
+        mock_event = mock.Mock(spec=Event)
+        event_data = mock_event.data.return_value
+
+        # Test
+        http.handle_event(notifier_config, mock_event)
+        mock_thread.assert_called_once_with(
+            target=http._send_post,
+            args=[notifier_config, event_data]
+        )
+
+    @mock.patch(MODULE_PATH + 'post')
+    def test_send_post_no_auth(self, mock_post):
+        notifier_config = {'url': 'https://localhost/api/'}
+        data = {'head': 'feet'}
+
+        http._send_post(notifier_config, data)
+        mock_post.assert_called_once_with(
+            'https://localhost/api/',
+            data=data, auth=None
+        )
+
+    @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
+    @mock.patch(MODULE_PATH + 'post')
+    def test_send_post_auth(self, mock_post, mock_basic_auth):
         notifier_config = {
             'url': 'https://localhost/api/',
-            'username': 'admin',
-            'password': 'admin',
+            'username': 'jcline',
+            'password': 'hunter2'
         }
+        data = {'head': 'feet'}
 
-        event = Event('type-1', {'k1': 'v1'})
+        http._send_post(notifier_config, data)
+        mock_post.assert_called_once_with(
+            'https://localhost/api/',
+            data=data,
+            auth=mock_basic_auth.return_value
+        )
+        mock_basic_auth.assert_called_once_with('jcline', 'hunter2')
 
-        mock_connection = mock.Mock()
-        mock_response = mock.Mock()
-        mock_task_ser.return_value = None
+    @mock.patch(MODULE_PATH + '_logger')
+    @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
+    @mock.patch(MODULE_PATH + 'post')
+    def test_send_post_no_url(self, mock_post, mock_basic_auth, mock_log):
+        """Assert attempting to post to no url fails."""
+        expected_log = 'HTTP notifier configured without a URL; cannot fire event'
+        http._send_post({}, {})
+        mock_log.error.assert_called_once_with(expected_log)
+        self.assertEqual(0, mock_post.call_count)
 
-        mock_response.status = httplib.OK
+    @mock.patch(MODULE_PATH + '_logger')
+    @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
+    @mock.patch(MODULE_PATH + 'post')
+    def test_send_post_bad_response(self, mock_post, mock_basic_auth, mock_log):
+        """Assert non-200 posts get logged."""
+        expected_log = 'Received HTTP 404 from HTTP notifier to https://localhost/api/.'
+        notifier_config = {
+            'url': 'https://localhost/api/',
+            'username': 'jcline',
+            'password': 'hunter2'
+        }
+        data = {'head': 'feet'}
+        mock_post.return_value.status_code = 404
 
-        mock_connection.getresponse.return_value = mock_response
-        mock_create.return_value = mock_connection
-
-        # Test
-        http.handle_event(notifier_config, event)
-        time.sleep(.5)  # handle works in a thread so give it a bit to finish
-
-        # Verify
-        self.assertEqual(1, mock_create.call_count)
-        self.assertEqual(1, mock_connection.request.call_count)
-
-        request_args = mock_connection.request.call_args[0]
-        self.assertEqual('POST', request_args[0])
-        self.assertEqual('/api/', request_args[1])
-
-        expected_body = {'event_type': event.event_type,
-                         'payload': event.payload,
-                         'call_report': None}
-
-        request_kwargs = mock_connection.request.call_args[1]
-        parsed_body = json.loads(request_kwargs['body'])
-        self.assertEqual(parsed_body, expected_body)
-
-        headers = request_kwargs['headers']
-        self.assertTrue('Authorization' in headers)
-
-    @mock.patch('pulp.server.event.http._create_connection')
-    def test_handle_event_with_error(self, mock_create, mock_task_ser):
-        # Setup
-        notifier_config = {'url': 'https://localhost/api/'}
-        mock_task_ser.return_value = 'serialized data!'
-
-        event = Event('type-1', {'k1': 'v1'})
-
-        mock_connection = mock.Mock()
-        mock_response = mock.Mock()
-
-        mock_response.status = httplib.NOT_FOUND
-
-        mock_connection.getresponse.return_value = mock_response
-        mock_create.return_value = mock_connection
-
-        # Test
-        http.handle_event(notifier_config, event)  # should not error
-        time.sleep(.5)
-
-        # Verify
-        self.assertEqual(1, mock_create.call_count)
-        self.assertEqual(1, mock_connection.request.call_count)
-
-    # test bz 1099945
-    @mock.patch('pulp.server.event.http._create_connection')
-    def test_handle_event_with_serialize_error(self, mock_create, mock_task_ser):
-        # Setup
-        notifier_config = {'url': 'https://localhost/api/'}
-        mock_task_ser.return_value = 'serialized data!'
-
-        event = Event('type-1', {'k1': 'v1', '_id': _test_objid()})
-
-        mock_connection = mock.Mock()
-        mock_response = mock.Mock()
-
-        mock_response.status = httplib.NOT_FOUND
-
-        mock_connection.getresponse.return_value = mock_response
-        mock_create.return_value = mock_connection
-
-        # Test
-        http.handle_event(notifier_config, event)  # should not throw TypeError
-
-    @mock.patch('pulp.server.event.http._create_connection')
-    def test_handle_event_missing_url(self, mock_create, mock_task_ser):
-        # Test
-        mock_task_ser.return_value = 'serialized data!'
-        http.handle_event({}, Event('type-1', {}))  # should not error
-
-        # Verify
-        self.assertEqual(0, mock_create.call_count)
-
-    @mock.patch('pulp.server.event.http._create_connection')
-    def test_handle_event_unparsable_url(self, mock_create, mock_task_ser):
-        # Test
-        mock_task_ser.return_value = 'serialized data!'
-        http.handle_event({'url': '!@#$%'}, Event('type-1', {}))  # should not error
-
-        # Verify
-        self.assertEqual(0, mock_create.call_count)
-
-    def test_create_configuration(self, mock_task_ser):
-        # Test HTTPS
-        conn = http._create_connection('https', 'foo')
-        self.assertTrue(isinstance(conn, httplib.HTTPSConnection))
-
-        # Test HTTP
-        conn = http._create_connection('http', 'foo')
-        self.assertTrue(isinstance(conn, httplib.HTTPConnection))
+        http._send_post(notifier_config, data)
+        mock_post.assert_called_once_with(
+            'https://localhost/api/',
+            data=data,
+            auth=mock_basic_auth.return_value
+        )
+        mock_log.error.assert_called_once_with(expected_log)
