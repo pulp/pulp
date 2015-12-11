@@ -48,5 +48,10 @@
         "name": "python-nectar",
         "version": "1.4.1-1",
         "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-rhsm",
+        "version": "1.8.0-2.pulp",
+        "platform": [ "el6"]
     }
 ]
