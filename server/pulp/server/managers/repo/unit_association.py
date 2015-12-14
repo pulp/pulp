@@ -240,6 +240,7 @@ class RepoUnitAssociationManager(object):
                 units=transfer_units)
 
             unit_ids = [u.to_id_dict() for u in copied_units]
+            repo_controller.rebuild_content_unit_counts(dest_repo)
             return {'units_successful': unit_ids}
         except Exception:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')
