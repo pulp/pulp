@@ -134,7 +134,7 @@ def find_repo_content_units(
         qs = plugin_api.get_unit_model_by_id(unit_type).objects(
             q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
         if unit_fields:
-            qs = qs.only(unit_fields)
+            qs = qs.only(*unit_fields)
 
         for unit in qs:
             if skip and skip_count < skip:
