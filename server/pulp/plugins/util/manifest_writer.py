@@ -21,8 +21,6 @@ def make_manifest_for_dir(path):
     file_paths = [os.path.join(path, filename) for filename in os.listdir(path)
                   if filename != MANIFEST_FILENAME]
     with open(os.path.join(path, MANIFEST_FILENAME), 'w') as open_file:
-        print dir(open_file)
-        print open_file.closed
         writer = csv.writer(open_file)
         for fullpath in filter(os.path.isfile, file_paths):
             size = os.path.getsize(fullpath)

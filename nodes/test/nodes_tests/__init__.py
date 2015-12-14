@@ -1,4 +1,7 @@
 from pulp.devel.unit.server import base as devel_base
+from pulp.devel.unit.server.base import block_load_conf
+
+block_load_conf()
 
 
 def setup():

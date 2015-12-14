@@ -4,26 +4,13 @@ import unittest
 
 from pulp.plugins.util import verification
 
+from pulp.server.exceptions import PulpCodedException
+
 
 class TestSanitizeChecksumType(unittest.TestCase):
     """
     This class contains tests for the sanitize_checksum_type() function.
     """
-    def test_none(self):
-        """
-        Assert correct behavior when the checksum_type is None.
-        """
-        checksum_type = verification.sanitize_checksum_type(None)
-
-        self.assertEqual(checksum_type, None)
-
-    def test_nothing_necessary(self):
-        """
-        Assert that the method doesn't change the checksum_type when it's not needed.
-        """
-        checksum_type = verification.sanitize_checksum_type('sha512')
-
-        self.assertEqual(checksum_type, 'sha512')
 
     def test_sha_to_sha1(self):
         """
@@ -48,6 +35,10 @@ class TestSanitizeChecksumType(unittest.TestCase):
         checksum_type = verification.sanitize_checksum_type('SHA256')
 
         self.assertEqual(checksum_type, 'sha256')
+
+    def test_invalid_type_raises_coded_exception(self):
+        self.assertRaises(PulpCodedException,
+                          verification.sanitize_checksum_type, 'not_a_real_checksum')
 
 
 class VerificationTests(unittest.TestCase):

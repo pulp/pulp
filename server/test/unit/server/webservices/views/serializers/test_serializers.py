@@ -116,6 +116,15 @@ class TestBaseSerializer(unittest.TestCase):
         serializer._remove_excluded(['baz'], representation)
         self.assertDictEqual(representation, {'foo': 'bar'})
 
+    def test__remove_excluded_missing_field(self):
+        """
+        Test with a single accessor
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar'}
+        serializer._remove_excluded(['baz'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar'})
+
     def test__remove_excluded_multiple(self):
         """
         Test with multiple accessors
@@ -124,6 +133,33 @@ class TestBaseSerializer(unittest.TestCase):
         representation = {'foo': 'bar', 'baz': {'quux': 'apples'}}
         serializer._remove_excluded(['baz', 'quux'], representation)
         self.assertDictEqual(representation, {'foo': 'bar', 'baz': {}})
+
+    def test__remove_excluded_multiple_missing_field(self):
+        """
+        Test with multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar'}
+        serializer._remove_excluded(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar'})
+
+    def test__remove_excluded_multiple_missing_inner_field(self):
+        """
+        Test with multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar', 'baz': {}}
+        serializer._remove_excluded(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar', 'baz': {}})
+
+    def test__remove_excluded_multiple_value_none(self):
+        """
+        Test with multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar', 'baz': None}
+        serializer._remove_excluded(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar', 'baz': None})
 
     def test__mask_field(self):
         """
@@ -134,6 +170,24 @@ class TestBaseSerializer(unittest.TestCase):
         serializer._mask_field(['baz'], representation)
         self.assertDictEqual(representation, {'foo': 'bar', 'baz': '*****'})
 
+    def test__mask_none_value(self):
+        """
+        Test with a single accessor
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar', 'baz': None}
+        serializer._mask_field(['baz'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar', 'baz': None})
+
+    def test__mask_missing_field(self):
+        """
+        Test with a single accessor
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar'}
+        serializer._mask_field(['baz'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar'})
+
     def test__mask_field_multiple(self):
         """
         Test field masking with a multiple accessors
@@ -142,6 +196,33 @@ class TestBaseSerializer(unittest.TestCase):
         representation = {'foo': 'bar', 'baz': {'quux': 'apples'}}
         serializer._mask_field(['baz', 'quux'], representation)
         self.assertDictEqual(representation, {'foo': 'bar', 'baz': {'quux': '*****'}})
+
+    def test__mask_field_multiple_missing_field(self):
+        """
+        Test field masking with a multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar'}
+        serializer._mask_field(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar'})
+
+    def test__mask_field_multiple_missing_inner_field(self):
+        """
+        Test field masking with a multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar', 'baz': {}}
+        serializer._mask_field(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar', 'baz': {}})
+
+    def test__mask_field_multiple_value_none(self):
+        """
+        Test field masking with a multiple accessors
+        """
+        serializer = serializers.BaseSerializer('foo')
+        representation = {'foo': 'bar', 'baz': None}
+        serializer._mask_field(['baz', 'quux'], representation)
+        self.assertDictEqual(representation, {'foo': 'bar', 'baz': None})
 
     def test_data_multiple(self):
         class TestSerializer(serializers.BaseSerializer):

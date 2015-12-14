@@ -37,14 +37,14 @@ class TestGetAssociatedUnitIDs(unittest.TestCase):
         ]
 
     def test_returns_ids(self, mock_objects):
-        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value = self.associations
 
         ret = list(repo_controller.get_associated_unit_ids('repo1', 'demo_model'))
 
         self.assertEqual(ret, ['a', 'b'])
 
     def test_returns_generator(self, mock_objects):
-        mock_objects.return_value.no_cache.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value = self.associations
 
         ret = repo_controller.get_associated_unit_ids('repo1', 'demo_model')
 
@@ -153,7 +153,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
                                                               unit_fields=u_fields))
 
-        mock_demo_objects.return_value.only.assert_called_once_with(['key_field'])
+        mock_demo_objects.return_value.only.assert_called_once_with('key_field')
 
         # validate that the repo content unit was returned and that the unit is attached
         self.assertEquals(result, test_rcu_list[0:1])
@@ -181,7 +181,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
                                                               unit_fields=u_fields,
                                                               yield_content_unit=True))
 
-        mock_demo_objects.return_value.only.assert_called_once_with(['key_field'])
+        mock_demo_objects.return_value.only.assert_called_once_with('key_field')
 
         # validate that the content unit was returned
         self.assertEquals(result, [test_unit])

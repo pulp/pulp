@@ -1,5 +1,12 @@
 #!/usr/bin/bash
 
+# Important things:
+# - this file is still in-use, but deprecated in favor of ansible
+# - the contents of this file are being converted to ansible tasks
+# - add to the ansible playbook instead of adding to or altering this file
+# - dev-setup script calls this script after running ansible, so (despite the
+#   unfortunate name), it is *not* vagrant-specific
+
 . ~/.bashrc
 
 pushd devel
@@ -11,7 +18,7 @@ for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_
     ! mkvirtualenv --system-site-packages $r
     workon $r
     setvirtualenvproject
-    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)
+    rpmspec -q --queryformat '[%{REQUIRENEVRS}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "^pulp.*" | uniq | xargs -d "\n" sudo dnf install -y
     # Install dependencies for automated tests
     pip install -r test_requirements.txt
     sudo python ./pulp-dev.py -I
@@ -27,7 +34,7 @@ if [ -d crane ]; then
     workon crane
     setvirtualenvproject
     # Install dependencies
-    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' python-crane.spec | grep -v "/.*" | uniq)
+    rpmspec -q --queryformat '[%{REQUIRENEVRS}\n]' python-crane.spec | grep -v "/.*" | uniq | xargs -d "\n" sudo dnf install -y
     pip install -r test-requirements.txt
 
     cat << EOF > $HOME/devel/crane/crane.conf
@@ -74,46 +81,18 @@ fi
 echo "Adjusting facls for apache"
 setfacl -m user:apache:rwx $HOME
 
-echo "populating mongodb"
-sudo -u apache pulp-manage-db
-
-# If Crane is present, let's set up the publishing symlinks so that the app files can be used
-if [ -d $HOME/devel/crane ]; then
-    pushd $HOME/devel/crane
-    mkdir -p metadata/v1 metadata/v2
-    sudo mkdir -p /var/lib/pulp/published/docker/v1 /var/lib/pulp/published/docker/v2
-    sudo chown apache:apache /var/lib/pulp/published/docker/v1
-    sudo chown apache:apache /var/lib/pulp/published/docker/v2
-    sudo ln -s $HOME/devel/crane/metadata/v1 /var/lib/pulp/published/docker/v1/app
-    sudo ln -s $HOME/devel/crane/metadata/v2 /var/lib/pulp/published/docker/v2/app
-    popd
-fi
-
 # Enable and start the Pulp services
 echo "Starting more services"
 for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
   sudo systemctl enable $s
 done
-pstart
 
 echo "Disabling SSL verification on dev setup"
 sudo sed -i 's/# verify_ssl: True/verify_ssl: False/' /etc/pulp/admin/admin.conf
 
-if [ ! -f $HOME/.pulp/user-cert.pem ]; then
-    echo "Logging in"
-    pulp-admin login -u admin -p admin
-fi
-
-if [ -d $HOME/devel/pulp_rpm ]; then
-    if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
-        echo "Creating the example zoo repository"
-        pulp-admin rpm repo create --repo-id zoo --feed \
-            https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/ --relative-url zoo
-    fi
-fi
+preset
 
 # Give the user some use instructions
-sudo cp $HOME/devel/pulp/playpen/vagrant-motd.txt /etc/motd
 if [ $USER = "vagrant" ]; then
     echo -e '\n\nDone. You can ssh into your development environment with vagrant ssh.\n'
 fi

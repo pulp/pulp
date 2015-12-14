@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
 from pymongo import Connection
 
 db = Connection().pulp_database

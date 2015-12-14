@@ -4,7 +4,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
- config.vm.box = "https://dl.fedoraproject.org/pub/alt/purpleidea/vagrant/fedora-22/fedora-22.box"
+ config.vm.box = "fedora/23-cloud-base"
  # By default, Vagrant wants to mount the code in /vagrant with NFSv3, which will fail. Let's
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
@@ -16,23 +16,29 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      config.hostmanager.manage_host = true
  end
 
- # Comment this out to prevent resizing the root filesystem to fill the base box disk
- config.vm.provision "shell", inline: "sudo xfs_growfs /dev/vda3"
- # the command args above must match the filesystems and devices used in the base box
+ # vagrant-cachier is currently broken due to making yum-based assumptions
+ #  https://github.com/fgrehm/vagrant-cachier/issues/163
+ # It is included here as an example if you're still using a yum-based box
+
+ # vagrant plugin install vagrant-cachier to cache packages installed by yum/dnf
+ # if Vagrant.has_plugin?("vagrant-cachier")
+ #    config.cache.scope = :box
+ #    config.cache.synced_folder_opts = {
+ #        type: :nfs,
+ #        mount_options: ['rw', 'vers=4', 'tcp']
+ #    }
+ # end
 
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"
 
+ # bootstrap and run with ansible
+ config.vm.provision "shell", path: "playpen/bootstrap-ansible.sh"
  config.vm.provision "ansible" do |ansible|
+     # Uncomment this if you want debug tools like gdb, tcpdump, et al. installed
+     # (you don't, unless you know you do)
+     # ansible.extra_vars = { pulp_dev_debug: true }
      ansible.playbook = "playpen/ansible/vagrant-playbook.yml"
- end
-
- if Vagrant.has_plugin?("vagrant-cachier")
-    config.cache.scope = :box
-    config.cache.synced_folder_opts = {
-        type: :nfs,
-        mount_options: ['rw', 'vers=4', 'tcp']
-    }
  end
 
  # Create the "dev" box
@@ -46,6 +52,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         domain.memory = 2048
         domain.video_type = "qxl"
 
+        # Uncomment this to expand the disk to the given size, in GB (default is usually 40)
+        # You'll also need to uncomment the provisioning step below that resizes the root partition
+        # do not set this to a size smaller than the base box, or you will be very sad
+        # domain.machine_virtual_size = 80
+
         # Uncomment the following line if you would like to enable libvirt's unsafe cache
         # mode. It is called unsafe for a reason, as it causes the virtual host to ignore all
         # fsync() calls from the guest. Only do this if you are comfortable with the possibility of
@@ -54,6 +65,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         #
         # domain.volume_cache = "unsafe"
     end
+
+    # Uncomment this to resize the root partition and filesystem to fill the base box disk
+    # This script is only guaranteed to work with the default official fedora image, and is
+    # only needed it you changed machine_virtual_size above.
+    # For other boxen, use at your own risk
+    # dev.vm.provision "shell", path: "playpen/vagrant-resize-disk.sh"
 
     dev.vm.provision "shell", inline: "sudo -u vagrant bash /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
  end

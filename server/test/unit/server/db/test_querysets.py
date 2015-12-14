@@ -9,6 +9,7 @@ from pulp.server.db import querysets
 
 
 class MockDocument(Document):
+    """Fake Mongoengine document"""
     meta = {'queryset_class': querysets.CriteriaQuerySet}
 
 
@@ -17,14 +18,14 @@ class TestCriteriaQuerySet(unittest.TestCase):
     Tests for custom querysets that search with Criteria objects.
     """
 
+    def test_cache_not_implemented(self):
+        """Assert that calling `cache` results in an exception."""
+        self.assertRaises(NotImplementedError, MockDocument.objects.cache)
+
     def test_find_by_criteria_no_translate(self):
         """
         Test that various QuerySet methods are called.
         """
-
-        class MockDocument(Document):
-            """Fake Mongoengine document"""
-            meta = {'queryset_class': querysets.CriteriaQuerySet}
 
         mock_crit = mock.MagicMock()
         mock_crit.fields = ['field']
@@ -96,6 +97,11 @@ class TestReqoQuerySet(unittest.TestCase):
     """
     Tests for the repository custom query set.
     """
+
+    def test_cache_not_implemented(self):
+        """Assert that calling `cache` results in an exception."""
+        qs = querysets.RepoQuerySet(mock.MagicMock(), mock.MagicMock())
+        self.assertRaises(NotImplementedError, qs.cache)
 
     def test_get_repo(self):
         """

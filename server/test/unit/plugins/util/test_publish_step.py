@@ -23,7 +23,6 @@ from pulp.plugins.util import publish_step
 from pulp.server.db import model
 from pulp.server.managers import factory
 
-
 factory.initialize()
 
 
@@ -82,7 +81,7 @@ class TestUnitModelPluginStep(PluginBase):
 
         ret = self.step.unit_querysets
 
-        self.assertEqual(ret, [qs1.no_cache.return_value, qs2.no_cache.return_value])
+        self.assertEqual(ret, [qs1, qs2])
 
     @patch('pulp.server.controllers.repository.get_unit_model_querysets')
     def test_caches_querysets(self, mock_get_querysets):
@@ -1039,6 +1038,27 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         self.step.conduit = MagicMock()
         self.parent.available_units = []
 
+    def test___init___default_available_units(self, find_units, associate):
+        """
+        Assert that the __init__() method correctly defaults to a value of None for the
+        available_units parameter.
+        """
+        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo')
+
+        self.assertEqual(step.available_units, None)
+
+    def test___init___with_available_units(self, find_units, associate):
+        """
+        Assert that the __init__() method allows the user to override the value of None for the
+        available_units parameter.
+        """
+        available_units = ['unit1', 'unit2']
+
+        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo',
+                                              available_units=available_units)
+
+        self.assertEqual(step.available_units, available_units)
+
     def test_no_available_units(self, mock_find_units, mock_associate):
         self.step.process_main()
 
@@ -1060,8 +1080,6 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         """
         Test that units which already exist in the database are associated properly
         """
-        # mock_get_multiple.return_value = [self.DemoModel(key_field='a')]
-
         demo = self.DemoModel(key_field='a')
         self.parent.available_units = [demo]
         existing_demo = self.DemoModel(key_field='a', id='foo')
@@ -1077,7 +1095,8 @@ class TestGetLocalUnitsStep(unittest.TestCase):
     def test_populates_units_to_download(self, mock_find_units, mock_associate):
         """
         Test that if a unit does not exist in the database it is added to the
-        units_to_download list
+        units_to_download list. This test also tests the case when the step is not constructed with
+        an available_units parameter that the parent step's available units is used.
         """
         demo_1 = self.DemoModel(key_field='a')
         demo_2 = self.DemoModel(key_field='b')
@@ -1088,10 +1107,37 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         self.step.process_main()
         mock_find_units.assert_called_once_with((demo_1, demo_2))
 
-        # The one that exists is associated
+        # the one that exists is associated
         mock_associate.assert_called_once_with('fake_repo', existing_demo)
-        # The one that does not exist yet is added to the download list
+        # the one that does not exist yet is added to the download list
         self.assertEqual(self.step.units_to_download, [demo_1])
+
+    def test_uses_passed_available_units_when_requested(self, mock_find_units, mock_associate):
+        """
+        Assert that if the step is constructed with the default available_units, the step's parent's
+        available_units attribute is used.
+        """
+        demo_1 = self.DemoModel(key_field='a')
+        demo_2 = self.DemoModel(key_field='b')
+        demo_3 = self.DemoModel(key_field='c')
+        self.parent.available_units = [demo_1, demo_2]
+        available_units = [demo_1, demo_2, demo_3]
+        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo',
+                                              available_units=available_units)
+        step.parent = self.parent
+        step.conduit = MagicMock()
+        existing_demo = self.DemoModel(key_field='b', id='foo')
+        mock_find_units.return_value = [existing_demo]
+
+        step.process_main()
+
+        # The parent step's available units only has demo 1 and 2, so this asserts that that is
+        # being ignored and the correct available_units is being used instead.
+        mock_find_units.assert_called_once_with((demo_1, demo_2, demo_3))
+        # the one that exists is associated
+        mock_associate.assert_called_once_with('fake_repo', existing_demo)
+        # the two that do not exist yet are added to the download list
+        self.assertEqual(step.units_to_download, [demo_1, demo_3])
 
 
 class TestSaveUnitsStep(unittest.TestCase):

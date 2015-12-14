@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # Reference: Blog post from Jason Dobies
 # http://blog.pulpproject.org/2011/05/18/pulp-protected-repositories/

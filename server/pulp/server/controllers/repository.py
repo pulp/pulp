@@ -50,7 +50,7 @@ def get_associated_unit_ids(repo_id, unit_type, repo_content_unit_q=None):
     qs = model.RepositoryContentUnit.objects(q_obj=repo_content_unit_q,
                                              repo_id=repo_id,
                                              unit_type_id=unit_type)
-    for assoc in qs.no_cache().only('unit_id'):
+    for assoc in qs.only('unit_id'):
         yield assoc.unit_id
 
 
@@ -178,7 +178,7 @@ def find_repo_content_units(
         _model = plugin_api.get_unit_model_by_id(unit_type)
         qs = _model.objects(q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
         if unit_fields:
-            qs = qs.only(unit_fields)
+            qs = qs.only(*unit_fields)
 
         try:
             for unit in qs:

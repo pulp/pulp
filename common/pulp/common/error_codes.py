@@ -138,7 +138,8 @@ PLP1004 = Error(
     "PLP1004",
     _("An object of type %(type)s already exists in the database with an id of %(object_id)s"),
     ['type', 'object_id'])
-PLP1005 = Error("PLP1005", _("The checksum type %(checksum_type)s is unknown."), ['checksum_type'])
+PLP1005 = Error("PLP1005", _("The checksum type '%(checksum_type)s' is unknown."),
+                ['checksum_type'])
 PLP1006 = Error(
     "PLP1006", _("The value specified for the field %(field)s may not start with %(value)s."),
     ['field', 'value'])
@@ -151,3 +152,4 @@ PLP1010 = Error("PLP1010", _("Provided value %(value)s for field %(field)s must 
                              "%(field_type)s."), ["value", "field", "field_type"])
 PLP1011 = Error("PLP1011", _("Invalid task state passed to purge: %(state)s."), ["state"])
 PLP1012 = Error("PLP1012", _("No task state given to parameters list for delete."), [])
+PLP1013 = Error("PLP1013", _("Checksum does not match calculated value."), [])

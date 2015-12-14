@@ -18,6 +18,47 @@ _logger = logging.getLogger(__name__)
 MIGRATIONS_ENTRY_POINT = 'pulp.server.db.migrations'
 
 
+class MigrationRemovedError(Exception):
+    def __init__(self, migration_version, component_version, min_component_version,
+                 component='pulp'):
+        """
+        :param migration_version:       version number of the current migration
+        :type  migration_version:       str
+        :param component_version:       version of the component in which a migration was removed
+        :type  component_version:       str
+        :param min_component_version:   minimum version of the component that has all of the
+                                        removed migrations
+        :type  min_component_version:   str
+        :param component:               name of the component which is being migrated, such as
+                                        "pulp", "pulp_rpm", etc. Default is "pulp"
+        :type  component:               str
+        """
+        self.migration_version = migration_version
+        self.component_version = component_version
+        self.min_component_version = min_component_version
+        self.component = component
+
+        message_args = {
+            'm': migration_version,
+            'current': component_version,
+            'min': min_component_version,
+            'component': self.component
+        }
+        self.message = _('Migrations %(m)s and earlier were removed in %(component)s %(current)s. '
+                         'Please upgrade to at least %(component)s %(min)s before attempting to '
+                         'upgrade to %(current)s or greater.') % message_args
+        super(MigrationRemovedError, self).__init__()
+
+    def __str__(self):
+        return 'MigrationRemovedError: %s' % self.message
+
+    def __repr__(self):
+        return 'MigrationRemovedError("%s", "%s", "%s", "%s")' % (self.migration_version,
+                                                                  self.component_version,
+                                                                  self.min_component_version,
+                                                                  self.component)
+
+
 class MigrationModule(object):
     """
     This is a wrapper around the real migration module. It allows us to add a version attribute to
@@ -107,12 +148,6 @@ class MigrationPackage(object):
         """
         pass
 
-    class MissingVersion(Exception):
-        """
-        This is raised when a migration package has a gap in the MigrationModule versions.
-        """
-        pass
-
     def __init__(self, python_package):
         """
         Initialize the MigrationPackage to represent the Python migration package passed in.
@@ -121,8 +156,7 @@ class MigrationPackage(object):
         :type  python_package: package
         """
         self._package = python_package
-        # This is an object representation of the DB object that keeps track of the migration
-        # version that has been applied
+        self.allow_fast_forward = getattr(python_package, 'allow_fast_forward', False)
 
         try:
             self._migration_tracker = MigrationTracker.objects().get(name=self.name)
@@ -145,15 +179,10 @@ class MigrationPackage(object):
         :param migration:              The migration to apply
         :type  migration:              pulp.server.db.migrate.utils.MigrationModule
         :param update_current_version: If True, update the package's current version after
-                                       successful application and enforce migration version order.
-                                       If False, don't enforce and don't update.
+                                       successful application
+                                       If False, don't update.
         :type  update_current_version: bool
         """
-        if update_current_version and migration.version != self.current_version + 1:
-            msg = _('Cannot apply migration %(name)s, because the next migration version is '
-                    '%(version)s.')
-            msg = msg % {'name': migration.name, 'version': self.current_version + 1}
-            raise Exception(msg)
         migration.migrate()
         if update_current_version:
             self._migration_tracker.version = migration.version
@@ -206,8 +235,6 @@ class MigrationPackage(object):
                 msg = msg % {'m': module_name}
                 _logger.debug(msg)
         migration_modules.sort()
-        # We should have migrations starting at version 1, which each module version being exactly
-        # one larger than the migration preceeding it.
         last_version = 0
         for module in migration_modules:
             if module.version == 0:
@@ -220,10 +247,6 @@ class MigrationPackage(object):
                                   '%(n)s.')
                 error_message = error_message % {'v': module.version, 'n': self.name}
                 raise self.__class__.DuplicateVersions(error_message)
-            if module.version != last_version + 1:
-                msg = _('Migration version %(v)s is missing in %(n)s.')
-                msg = msg % ({'v': last_version + 1, 'n': self.name})
-                raise self.__class__.MissingVersion(msg)
             last_version = module.version
         return migration_modules
 
@@ -302,7 +325,7 @@ def get_migration_packages():
         try:
             migration_package_module = entry_point.load()
             migration_packages.append(MigrationPackage(migration_package_module))
-        except (MigrationPackage.DuplicateVersions, MigrationPackage.MissingVersion), e:
+        except MigrationPackage.DuplicateVersions as e:
             _logger.error(str(e))
     migration_packages.sort()
     return migration_packages

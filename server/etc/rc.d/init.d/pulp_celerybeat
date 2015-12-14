@@ -123,8 +123,8 @@ create_default_dir() {
         echo "- Creating default directory: '$1'"
         mkdir -p "$1"
         maybe_die "Couldn't create directory $1"
-        echo "- Changing permissions of '$1' to 02755"
-        chmod 02755 "$1"
+        echo "- Changing permissions of '$1' to 02750"
+        chmod 02750 "$1"
         maybe_die "Couldn't change permissions for $1"
         if [ -n "$CELERYBEAT_USER" ]; then
             echo "- Changing owner of '$1' to '$CELERYBEAT_USER'"
@@ -226,6 +226,7 @@ start_beat () {
 # this function implements the fix for bz #1145723
 write_log_message () {
   touch $CELERYBEAT_LOG_FILE && chown $CELERYD_USER $CELERYBEAT_LOG_FILE
+  chmod 640 $CELERYBEAT_LOG_FILE
   echo -n `date "+%Y-%m-%d %T"` >> $CELERYBEAT_LOG_FILE
   echo " $1" >> $CELERYBEAT_LOG_FILE
 }

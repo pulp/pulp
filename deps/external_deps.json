@@ -1,11 +1,6 @@
 [
     {
         "name": "python-qpid",
-        "version": "0.26-3",
-        "platform": ["el6"]
-    },
-    {
-        "name": "python-qpid",
         "version": "0.18-10",
         "platform": ["el5"]
     },
@@ -15,19 +10,9 @@
         "platform": ["el5"]
     },
     {
-        "name": "qpid-cpp",
-        "version": "0.26-9",
-        "platform": ["el6"]
-    },
-    {
-        "name": "qpid-qmf",
-        "version": "0.26-2",
-        "platform": ["el6"]
-    },
-    {
         "name": "gofer",
         "version": "2.6.6-2",
-        "platform": ["el5", "el6", "el7", "fc21", "fc22"]
+        "platform": ["el5", "el6", "el7", "fc22", "fc23"]
     },
     {
         "name": "python-amqp",
@@ -46,7 +31,7 @@
     },
     {
         "name": "python-kombu",
-        "version": "3.0.24-10",
+        "version": "3.0.24-10.pulp",
         "platform": [ "el6", "el7", "fc22", "fc23"]
     },
     {
@@ -58,5 +43,15 @@
         "name": "python-pymongo",
         "version": "2.7.2-1",
         "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-nectar",
+        "version": "1.4.1-1",
+        "platform": [ "el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-rhsm",
+        "version": "1.8.0-2.pulp",
+        "platform": [ "el6"]
     }
 ]

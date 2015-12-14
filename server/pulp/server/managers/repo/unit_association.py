@@ -139,7 +139,30 @@ class RepoUnitAssociationManager(object):
         return unique_count
 
     @staticmethod
-    def associate_from_repo(source_repo_id, dest_repo_id, criteria=None,
+    def _units_from_criteria(source_repo, criteria):
+        """
+        Given a criteria, return an iterator of units
+
+        :param source_repo: repository to look for units in
+        :type  source_repo: pulp.server.db.model.Repository
+        :param criteria:    criteria object to use for the search parameters
+        :type  criteria:    pulp.server.db.model.criteria.UnitAssociationCriteria
+
+        :return:    generator of pulp.server.db.model.ContentUnit instances
+        :rtype:     generator
+        """
+        association_q = mongoengine.Q(__raw__=criteria.association_spec)
+        if criteria.type_ids:
+            association_q &= mongoengine.Q(unit_type_id__in=criteria.type_ids)
+        unit_q = mongoengine.Q(__raw__=criteria.unit_spec)
+        return repo_controller.find_repo_content_units(
+            repository=source_repo,
+            repo_content_unit_q=association_q,
+            units_q=unit_q,
+            yield_content_unit=True)
+
+    @classmethod
+    def associate_from_repo(cls, source_repo_id, dest_repo_id, criteria=None,
                             import_config_override=None):
         """
         Creates associations in a repository based on the contents of a source
@@ -200,13 +223,7 @@ class RepoUnitAssociationManager(object):
         if criteria is not None:
             # if all source types have been converted to mongo - search via new style
             if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
-                association_q = mongoengine.Q(__raw__=criteria.association_spec)
-                unit_q = mongoengine.Q(__raw__=criteria.unit_spec)
-                transfer_units = repo_controller.find_repo_content_units(
-                    repository=source_repo,
-                    repo_content_unit_q=association_q,
-                    units_q=unit_q,
-                    yield_content_unit=True)
+                transfer_units = cls._units_from_criteria(source_repo, criteria)
             else:
                 # else, search via old style
                 associate_us = load_associated_units(source_repo_id, criteria)
@@ -240,6 +257,7 @@ class RepoUnitAssociationManager(object):
                 units=transfer_units)
 
             unit_ids = [u.to_id_dict() for u in copied_units]
+            repo_controller.rebuild_content_unit_counts(dest_repo)
             return {'units_successful': unit_ids}
         except Exception:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')

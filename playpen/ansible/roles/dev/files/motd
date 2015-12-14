@@ -3,18 +3,30 @@ Welcome to the Pulp dev environment!
 
 Here are some tips:
 * Your code is all checked out inside of ~/devel/.
+
 * The default username:password is admin:admin. When your session expires, you
   can log in again with pulp-admin login -u admin
+
 * You can type workon <project> to quickly cd to a project dir and activate its
   virtualenv. For example:
 
     $ workon pulp_python
 
   Similarly, run "workon pulp" to jump into the pulp platform virtualenv.
+
 * Each project has a "run-tests.py" to run the unit tests.
-* There are a set of bash functions in your .bashrc that are useful: pstart,
-  pstop, prestart, pstatus, and ptests. They will start, stop, restart, tell you
-  the status of all of the Pulp services, and run all unit tests.
+
+* There are a set of bash functions in your .bashrc that are useful:
+
+    pstart:    Start all Pulp services
+    pstop:     Stop all Pulp services
+    prestart:  Restart all Pulp services
+    pstatus:   Report status on all Pulp services
+    ptests:    Run all unit test on all the Pulp repositories
+    psmash:    Run Pulp Smash!
+    preset:    Reset Pulp to a clean install state
+    ppopulate: Populate Pulp with test repositories of several types
+
 * You can ssh into your vagrant environment with vagrant ssh, but presumably
   you already know this since you are reading this message :)
 
