@@ -129,7 +129,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
                                                               unit_fields=u_fields))
 
-        mock_demo_objects.return_value.only.assert_called_once_with(['key_field'])
+        mock_demo_objects.return_value.only.assert_called_once_with('key_field')
 
         # validate that the repo content unit was returned and that the unit is attached
         self.assertEquals(result, [test_rcu])
@@ -157,7 +157,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
                                                               unit_fields=u_fields,
                                                               yield_content_unit=True))
 
-        mock_demo_objects.return_value.only.assert_called_once_with(['key_field'])
+        mock_demo_objects.return_value.only.assert_called_once_with('key_field')
 
         # validate that the content unit was returned
         self.assertEquals(result, [test_unit])
