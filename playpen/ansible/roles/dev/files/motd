@@ -27,6 +27,7 @@ Here are some tips:
     preset:    Reset Pulp to a clean install state
     ppopulate: Populate Pulp with test repositories of several types
     pprocs:    List all Pulp-related process IDs
+    pdebug:    Start a remote PDB session on localhost
 
 * You can ssh into your vagrant environment with vagrant ssh, but presumably
   you already know this since you are reading this message :)
