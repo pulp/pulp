@@ -43,22 +43,30 @@ def _enforce_config(*args, **kwargs):
 
 def _load_test_config():
     """
-    Load the test database configuration information.
+    Load test configuration, reconfigure logging, block config changes during testing
     """
-    stop_logging()
+    # prevent reading of server.conf
+    block_load_conf()
 
+    # allow altering the conf during config load, since we have to load the defaults
+    restore_config_attrs()
+
+    # force reloading the config
+    config.load_configuration()
+
+    # configure the test database
     config.config.set('database', 'name', 'pulp_unittest')
     config.config.set('server', 'storage_dir', '/tmp/pulp')
-    override_config_attrs()
 
+    # reset logging conf
+    stop_logging()
     start_logging()
+
+    # block future attempts to alter the config in place
+    override_config_attrs()
 
 
 def override_config_attrs():
-    # Remove server.conf from the autoloaded config files
-    # does not get restored by restore_config_attrs; server.conf shouldn't ever be used in testing
-    block_load_conf()
-
     if not hasattr(config, '_overridden_attrs'):
         # only save these once so we don't end up saving _enforce_config as the "original" values
         setattr(config, '_overridden_attrs', {
@@ -80,9 +88,7 @@ def restore_config_attrs():
 
     for attr in '__setattr__', 'load_configuration':
         setattr(config, attr, config._overridden_attrs[attr])
-    setattr(config.config, attr, config._overridden_attrs['config.set'])
-
-    del(config._overridden_attrs)
+    config.config.set = config._overridden_attrs['config.set']
 
 
 def block_load_conf():
@@ -90,9 +96,8 @@ def block_load_conf():
     # This is needed when testing modules that create objects using conf data found in the
     # server config, such as DB connections, celery, etc. This should be used as little as
     # possible and as early as possible, before config file loads happen
-    conf = '/etc/pulp/server.conf'
     try:
-        config.remove_config_file(conf)
+        config.remove_config_file('/etc/pulp/server.conf')
     except RuntimeError:
         # server.conf already removed, move along...
         pass
