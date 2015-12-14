@@ -142,9 +142,11 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
 
+    @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
     @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
     @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
-    def test_associate_from_repo_no_criteria(self, mock_importer, mock_plugin, mock_repo):
+    def test_associate_from_repo_no_criteria(self, mock_importer, mock_plugin,
+                                             mock_rebuild_count, mock_repo):
         source_repo = mock.MagicMock(repo_id='source-repo')
         dest_repo = mock.MagicMock(repo_id='dest-repo')
         mock_imp_inst = mock.MagicMock()
@@ -189,6 +191,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         conduit = args[2]
         self.assertTrue(isinstance(conduit, ImportUnitConduit))
 
+        # This test is too complex and fragile to try asserting the right argument was passed.
+        self.assertEqual(mock_rebuild_count.call_count, 1)
+
         # Clean Up
         manager_factory.principal_manager().set_principal(principal=None)
 
@@ -230,9 +235,11 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.import_units.side_effect = None
 
+    @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
     @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
     @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
-    def test_associate_from_repo_no_matching_units(self, mock_importer, mock_plugin, mock_repo):
+    def test_associate_from_repo_no_matching_units(self, mock_importer, mock_plugin,
+                                                   mock_rebuild_count, mock_repo):
         mock_imp_inst = mock.MagicMock()
         mock_plugin.get_importer_by_id.return_value = (mock_imp_inst, mock.MagicMock())
         source_repo = mock.MagicMock(repo_id='source-repo')
