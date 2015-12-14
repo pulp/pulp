@@ -7,7 +7,7 @@ import uuid
 from collections import namedtuple
 from hmac import HMAC
 
-from mongoengine import (DictField, Document, DynamicField, IntField,
+from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
                          ListField, StringField, UUIDField, ValidationError,
                          QuerySetNoCache)
 from mongoengine import signals
