@@ -1,6 +1,7 @@
 import mock
 
 from .... import base
+from pulp.common.compat import unittest
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -24,6 +25,30 @@ TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
 
 MOCK_TYPE_DEF = model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock importer',
                                      ['key-1'], [], [])
+
+
+@mock.patch('pulp.server.controllers.repository.find_repo_content_units', spec_set=True)
+class TestUnitsFromCriteria(unittest.TestCase):
+    def setUp(self):
+        super(TestUnitsFromCriteria, self).setUp()
+        self.manager = association_manager.RepoUnitAssociationManager()
+        self.repo = me_model.Repository(repo_id='repo1')
+
+    def test_limits_by_type(self, mock_find):
+        criteria = UnitAssociationCriteria(type_ids=['foo'])
+
+        self.manager._units_from_criteria(self.repo, criteria)
+
+        # This is the combination of a Q with a raw query, plus a normal Q. The original Q
+        # objects are preserved on the "children" attribute, since they cannot be directly
+        # combined like normal Q objects.
+        association_q_combination = mock_find.call_args[1]['repo_content_unit_q']
+        found = False
+        for association_q in association_q_combination.children:
+            if association_q.query.get('unit_type_id__in') == ['foo']:
+                found = True
+                break
+        self.assertTrue(found)
 
 
 @mock.patch('pulp.server.managers.repo.unit_association.model.Repository')
