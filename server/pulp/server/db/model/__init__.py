@@ -472,7 +472,7 @@ class ContentUnit(AutoRetryDocument):
         'abstract': True,
     }
 
-    _NAMED_TUPLE = None
+    NAMED_TUPLE = None
 
     @classmethod
     def attach_signals(cls):
