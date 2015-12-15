@@ -75,7 +75,10 @@ _paction() {
 psmash() {
     workon pulp-smash;
     prestart;
-    python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
+    if make lint test
+    then
+        python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
+    fi
     deactivate;
 }
 
