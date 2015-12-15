@@ -127,7 +127,7 @@ class SearchView(generic.View):
         return self._generate_response(query, options, *args, **kwargs)
 
     @classmethod
-    def _serialize_results(cls, results):
+    def _serialize_results(cls, results, only=None):
         """
         Serialize a set of search results
 
@@ -149,6 +149,8 @@ class SearchView(generic.View):
         # ...otherwise go through sane defaults here
         elif hasattr(cls, 'model') and hasattr(cls.model, 'SERIALIZER'):
             results = cls.model.SERIALIZER(results, multiple=True).data
+            if only is not None:
+                _trim_results(cls.model, results, only)
         return results
 
     @classmethod
@@ -212,5 +214,19 @@ class SearchView(generic.View):
         :return: search results
         :rtype:  list
         """
+        only = query.get('fields')
         results = list(search_method(query))
-        return cls._serialize_results(results)
+        return cls._serialize_results(results, only=only)
+
+
+def _trim_results(model, results, only):
+    """
+    Remove key/value pairs from results that are not required or specified by `fields`.
+    """
+    min_fields = set(['_id', 'id', '_href'])
+    required_fields = set([field for field, val in model._fields.items() if val.required])
+    return_fields = set(only) | min_fields | required_fields
+    for result in results:
+        for k, v in result.items():
+            if k not in return_fields:
+                result.pop(k)

@@ -247,10 +247,15 @@ class RepoSearch(search.SearchView):
         :return: processed results of the query
         :rtype:  list
         """
+        only = query.get('fields', [])
         results = list(search_method(query))
-        return _process_repos(results, options.get('details', False),
-                              options.get('importers', False),
-                              options.get('distributors', False))
+        results = _process_repos(results, options.get('details', False),
+                                 options.get('importers', False),
+                                 options.get('distributors', False))
+        if only:
+            only.extend(['importers', 'distributors'])
+            search._trim_results(cls.model, results, only)
+        return results
 
 
 class RepoUnitSearch(search.SearchView):

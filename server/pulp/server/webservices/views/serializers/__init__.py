@@ -245,11 +245,16 @@ class ModelSerializer(BaseSerializer):
         :return: the key that mongoengine uses to store this field in the database
         :rtype:  basestring
         """
-        for internal, external in self._remapped_fields.iteritems():
-            if external == field:
-                return getattr(model, internal).db_field
-        else:
-            return getattr(model, field).db_field
+        try:
+            for internal, external in self._remapped_fields.iteritems():
+                if external == field:
+                    return getattr(model, internal).db_field
+            else:
+                return getattr(model, field).db_field
+        except AttributeError:
+            raise exceptions.InvalidValue(
+                "Field: <{0}> does not exist on objects in the <{1}> collection".format(
+                    field, model._meta['collection']))
 
     def translate_criteria(self, model, crit):
         """
