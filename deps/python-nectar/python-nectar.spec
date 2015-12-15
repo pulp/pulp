@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.4.1
+Version:        1.4.2
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Tue Dec 15 2015 Ina Panova <ipanova@redhat.com> 1.4.2-1
+- Now static server listens on ipv6 (ipanova@redhat.com)
+- Tests do not have to depend on the internet. (ipanova@redhat.com)
+- Convert shebang to python2 (ipanova@redhat.com)
+- Add a shebang to the setup.py. (rbarlow@redhat.com)
+- PEP-8 setup.py. (rbarlow@redhat.com)
+
 * Wed Oct 21 2015 Ina Panova <ipanova@redhat.com> 1.4.1-1
 - 1229-Json config file values must be url encoded. (ipanova@redhat.com)
 
