@@ -101,17 +101,10 @@ class TestContentUnit(unittest.TestCase):
 
     @patch('pulp.server.db.model.signals')
     def test_attach_signals(self, mock_signals):
-        class ContentUnitHelper(model.ContentUnit):
-            _content_type_id = StringField(default='foo')
-            unit_key_fields = ['apple', 'pear']
+        model.ContentUnit.attach_signals()
 
-        ContentUnitHelper.attach_signals()
-
-        mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
-                                                              sender=ContentUnitHelper)
-
-        self.assertEquals('foo', ContentUnitHelper.NAMED_TUPLE.__name__)
-        self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
+        mock_signals.pre_save.connect.assert_called_once_with(
+            model.ContentUnit.pre_save_signal, sender=model.ContentUnit)
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
@@ -176,9 +169,6 @@ class TestContentUnit(unittest.TestCase):
             unit_key_fields = ('apple', 'pear')
             _content_type_id = StringField(default='bar')
 
-        # create the named tuple
-        ContentUnitHelper.attach_signals()
-
         helper = ContentUnitHelper(apple='foo', pear='bar')
 
         n_tuple = helper.unit_key_as_named_tuple
@@ -207,6 +197,73 @@ class TestContentUnit(unittest.TestCase):
 
     def test_unit_key_fields_is_not_defined_on_abstract_class(self):
         self.assertFalse(hasattr(model.ContentUnit, 'unit_key_fields'))
+
+
+class TestContentUnitNamedTuple(unittest.TestCase):
+    def setUp(self):
+        # Some ContentUnit test classes to test out the namedtuple generator
+        self.first_helper = type(
+            'FirstContentUnitHelper',
+            (model.ContentUnit,),
+            {'_content_type_id': StringField(default='foo'), 'unit_key_fields': ['apple', 'pear']}
+        )
+        self.second_helper = type(
+            'SecondContentUnitHelper',
+            (model.ContentUnit,),
+            {'_content_type_id': StringField(default='bar'), 'unit_key_fields': ['lemon', 'lime']}
+        )
+
+        # mock out the descriptor cache to keep our dirty test classes contained
+        cache_mock = patch.dict(model._ContentUnitNamedTupleDescriptor._cache, clear=True)
+        cache_mock.start()
+        self.addCleanup(cache_mock.stop)
+
+    def test_values(self):
+        # NAMED_TUPLE has the expected values
+        self.assertEqual('foo', self.first_helper.NAMED_TUPLE.__name__)
+        self.assertEqual(('apple', 'pear'), self.first_helper.NAMED_TUPLE._fields)
+
+        # NAMED_TUPLE on a class with different values is also correct
+        self.assertEqual('bar', self.second_helper.NAMED_TUPLE.__name__)
+        self.assertEqual(('lemon', 'lime'), self.second_helper.NAMED_TUPLE._fields)
+
+    def test_identity(self):
+        # Multiple calls to NAMED_TUPLE return the same instance
+        # This looks silly, but NAMED_TUPLE is a dynamic class property, so this makes sure the
+        # cache is working properly by checking that the same objects are returned...
+        self.assertTrue(self.first_helper.NAMED_TUPLE is self.first_helper.NAMED_TUPLE)
+        self.assertTrue(self.second_helper.NAMED_TUPLE is self.second_helper.NAMED_TUPLE)
+
+        # ...but the same objects aren't returned for different classes
+        self.assertTrue(self.first_helper.NAMED_TUPLE is not self.second_helper.NAMED_TUPLE)
+
+    def test_cache(self):
+        # descriptor cache is only filled when NAMED_TUPLE is accessed...
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 0)
+
+        # ...and contains the expected objects when it is filled
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 1)
+        self.assertTrue(self.first_helper in model._ContentUnitNamedTupleDescriptor._cache)
+
+        self.second_helper.NAMED_TUPLE
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 2)
+        self.assertTrue(self.second_helper in model._ContentUnitNamedTupleDescriptor._cache)
+
+    @patch('pulp.server.db.model.namedtuple')
+    def test_namedtuple_call_counts(self, mock_namedtuple):
+        # namedtuple itself isn't called until NAMED_TUPLE is accessed
+        self.assertEqual(mock_namedtuple.call_count, 0)
+
+        # multiple calls to the same property don't call namedtuple again
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 1)
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 1)
+
+        # generating another namedtuple type results in another call
+        self.second_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 2)
 
 
 class TestContentUnitValidateModelDefinition(unittest.TestCase):
