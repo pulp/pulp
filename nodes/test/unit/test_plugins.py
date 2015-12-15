@@ -692,7 +692,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -739,7 +740,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -782,7 +784,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -826,7 +829,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -869,7 +873,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -920,7 +925,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
@@ -967,7 +973,8 @@ class ImporterTest(PluginTestBase):
             RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
+        with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+            importer.sync_repo(repo, conduit, configuration)
         # Verify
         unit = collection.find_one({'N': 0})
         self.assertEqual(unit['age'], 42)
