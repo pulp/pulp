@@ -105,6 +105,9 @@ for r in $REPOS; do
   fi
 done
 
+# Install some of Ansible's dependencies
+$HOME/devel/pulp/playpen/bootstrap-ansible.sh
+
 pushd pulp
 if [ ! -f /tmp/ansible_inventory ]; then
     echo -e "localhost ansible_connection=local" >> /tmp/ansible_inventory
