@@ -6,7 +6,8 @@ Tests for the pulp.server.db.model module.
 from mock import patch, Mock, call
 
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField,
-                         Document, IntField, ListField, StringField, QuerySetNoCache)
+                         Document, IntField, ListField, StringField, QuerySetNoCache,
+                         signals)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
