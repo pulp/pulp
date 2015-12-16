@@ -80,20 +80,16 @@ def create_symlink(source_path, link_path, directory_permissions=0770):
 
     If we are overriding a current symlink with a new target - a debug message will be logged.
 
-    If a file already exists at the location specified by link_path an exception will be raised.
-
-    :param source_path: path of the source to link to
-    :type  source_path: str
-    :param link_path: path of the link
-    :type  link_path: str
+    :param source_path:           path of the source to link to
+    :type  source_path:           str
+    :param link_path:             path of the link
+    :type  link_path:             str
     :param directory_permissions: The permissions used to create any missing directories.
-           This defaults to 0770
-    :type directory_permissions: int
-    """
+                                  This defaults to 0770
+    :type  directory_permissions: int
 
-    if not os.path.exists(source_path):
-        msg = _('Will not create a symlink to a non-existent source [%(s)s]')
-        raise RuntimeError(msg % {'s': source_path})
+    :raise RuntimeError: If the link path exists and is not already a symbolic link
+    """
 
     if link_path.endswith('/'):
         link_path = link_path[:-1]
