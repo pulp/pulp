@@ -673,9 +673,7 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -719,9 +717,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -760,9 +756,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -803,9 +797,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -845,9 +837,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -895,9 +885,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -941,9 +929,7 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER)
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
