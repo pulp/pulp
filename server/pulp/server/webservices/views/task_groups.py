@@ -11,6 +11,28 @@ from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import generate_json_response_with_pulp_encoder
 
 
+class TaskGroupView(View):
+    """
+    View for a task group.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request, group_id):
+        """
+        Return a response containing a list of tasks for task group.
+
+        :param request: WSGI request object
+        :type  request: django.core.handlers.wsgi.WSGIRequest
+        :param group_id: The ID of the task group you wish to summarize
+        :type  group_id: basestring
+
+        :return: Response containing a list of the tasks in task group
+        :rtype : django.http.HttpResponse
+        :raises MissingResource: if group id is not found
+        """
+        raise MissingResource(group_id)
+
+
 class TaskGroupSummaryView(View):
     """
     View for a task group summary.
