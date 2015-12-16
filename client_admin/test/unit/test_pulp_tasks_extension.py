@@ -123,7 +123,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
         # Verify
         fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
-        filters = {'state': {'$in': ['running', 'waiting']}}
+        filters = {'state': {'$in': ['running', 'waiting']}, 'group_id': None}
         mock_search.assert_called_once_with(fields=fields, filters=filters)
 
     @mock.patch('pulp.bindings.search.SearchAPI.search')
@@ -139,7 +139,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
         # Verify
         fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
-        filters = {'state': {'$in': 'canceled,error'}}
+        filters = {'state': {'$in': 'canceled,error'}, 'group_id': None}
         mock_search.assert_called_once_with(fields=fields, filters=filters)
 
     def test_list_all_state(self):
