@@ -138,7 +138,6 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
     :param super_user_only: Only authorize a user if they are a super user.
     """
     # Check Authentication
-
     # Run through each registered and enabled auth function
     is_consumer = False
     registered_auth_functions = [check_preauthenticated,
@@ -167,12 +166,15 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
 
     principal_manager = factory.principal_manager()
 
-    user = model.User.objects.get_or_404(login=login)
-    if super_user_only and not user.is_superuser():
-        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=login,
-                                               operation=OPERATION_NAMES[operation])
+    # Consumers are not part of the User collection
+    if not is_consumer:
+        user = model.User.objects.get(login=login)
+        if super_user_only and not user.is_superuser():
+            raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=login,
+                                                   operation=OPERATION_NAMES[operation])
+
     # if the operation is None, don't check authorization
-    elif operation is not None:
+    if operation is not None:
         if is_consumer:
             if is_consumer_authorized(http.resource_path(), login, operation):
                 # set default principal = SYSTEM
