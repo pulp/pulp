@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.views.generic import View
 
 from pulp.common import constants, dateutils, tags
-from pulp.server import exceptions as pulp_exceptions
+from pulp.server import exceptions
 from pulp.server.auth import authorization
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
@@ -14,7 +14,6 @@ from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
 from pulp.server.managers.content.upload import import_uploaded_unit
-from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.webservices.views import search, serializers
 from pulp.server.webservices.views.decorators import auth_required
@@ -26,19 +25,16 @@ from pulp.server.webservices.views.util import (generate_json_response,
                                                 json_body_required)
 
 
-def _merge_related_objects(name, manager, repos):
+def _merge_related_objects(name, model, repos):
     """
-    Modifies in place a list of Repo dicts and adds their corresponding related objects in a list
-    under the attribute given in 'name'. Uses the given manager to access the related objects by
-    passing the list of IDs for the given repos. This is most commonly used for RepoImporter or
-    RepoDistributor objects in lists under the 'importers' and 'distributors' attributes.
+    Modifies in place a list of repo dicts and adds their corresponding related objects in a list
+    under the attribute given in 'name'.
 
     :param name: name of the field, either 'importers' or 'distributors'.
-    :type  name: str
-    :param manager: manager class for the object type. must implement a method 'find_by_repo_list'
-                    that takes a list of repo ids.
-    :type  manager: class
-    :param repos: list of repos that should have importers and distributors added.
+    :type  name: basestring
+    :param model: mongoengine document, must specify its serializer
+    :type  model: mongoengine.Document
+    :param repos: list of serialized repos that should have importers and distributors added.
     :type  repos: list of dicts
     """
     # make it cheap to access each repo by id
@@ -49,32 +45,21 @@ def _merge_related_objects(name, manager, repos):
     for repo in repos:
         repo[name] = []
 
-    # Should be removed upon completion of the https://pulp.plan.io/issues/780
-    if hasattr(manager, 'find_by_repo_list'):
-        all_items = manager.find_by_repo_list(repo_ids)
-        for item in all_items:
-            repo_dict[item['repo_id']][name].append(item)
-    else:
-        # Collection has been converted to mongoengine
-        all_items = manager.objects(repo_id__in=repo_ids)
-        for item in all_items:
-            serializer = model.Importer.serializer(item)
-            repo_dict[item['repo_id']][name].append(serializer.data)
+    for item in model.objects(repo_id__in=repo_ids):
+        serialized = model.serializer(item).data
+        repo_dict[item['repo_id']][name].append(serialized)
 
 
 def _process_repos(repo_objs, details, importers, distributors):
     """
-    Serialize a collection of repository objects and add related importers and distributors if
-    requested.
+    Serialize repository objects and add related importers and distributors if requested.
 
     Apply standard processing to a collection of repositories being returned to a client. Adds
     the object link and optionally adds related importers and distributors.
 
     :param repo_objs: collection of repository objects
     :type  repo_objs: list or tuple of pulp.server.db.model.Repository objects
-    :type  repos: list, tuple
-    :param details: if True, sets both "importers" and "distributors" to True regardless of any
-                    value that may have been passed in.
+    :param details: if True, include importers and distributors, overrides other values
     :type  details: bool
     :param importers: if True, adds related importers under the attribute "importers".
     :type  importers: bool
@@ -85,12 +70,10 @@ def _process_repos(repo_objs, details, importers, distributors):
     :rtype:  list of dicts
     """
     repos = serializers.Repository(repo_objs, multiple=True).data
-    if details:
-        importers = distributors = True
-    if importers:
+    if importers or details:
         _merge_related_objects('importers', model.Importer, repos)
-    if distributors:
-        _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), repos)
+    if distributors or details:
+        _merge_related_objects('distributors', model.Distributor, repos)
 
     return repos
 
@@ -168,7 +151,7 @@ class RepoResourceView(View):
 
         :return: Response containing a serialized dict for the requested repo.
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.MissingResource: if repo cannot be found
+        :raises exceptions.MissingResource: if repo cannot be found
         """
 
         repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
@@ -177,11 +160,9 @@ class RepoResourceView(View):
         # Add importers and distributors to the dicts if requested.
         details = request.GET.get('details', 'false').lower() == 'true'
         if request.GET.get('importers', 'false').lower() == 'true' or details:
-            _merge_related_objects(
-                'importers', model.Importer, (repo,))
+            _merge_related_objects('importers', model.Importer, (repo,))
         if request.GET.get('distributors', 'false').lower() == 'true' or details:
-            _merge_related_objects(
-                'distributors', manager_factory.repo_distributor_manager(), (repo,))
+            _merge_related_objects('distributors', model.Distributor, (repo,))
 
         return generate_json_response_with_pulp_encoder(repo)
 
@@ -196,12 +177,12 @@ class RepoResourceView(View):
         :type  repo_id: str
 
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.MissingResource: if repo does not exist
-        :raises pulp_exceptions.OperationPostponed: dispatch a task to delete the provided repo
+        :raises exceptions.MissingResource: if repo does not exist
+        :raises exceptions.OperationPostponed: dispatch a task to delete the provided repo
         """
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = repo_controller.queue_delete(repo_id)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
     @json_body_allow_empty
@@ -217,7 +198,7 @@ class RepoResourceView(View):
         :return: Response containing a serialized dict for the updated repo.
         :rtype : django.http.HttpResponse
 
-        :raises pulp_exceptions.OperationPostponed: if a task has been dispatched to update a
+        :raises exceptions.OperationPostponed: if a task has been dispatched to update a
                                                     distributor
         """
 
@@ -231,7 +212,7 @@ class RepoResourceView(View):
 
         # Tasks are spawned if a distributor is updated, raise that as a result
         if task_result.spawned_tasks:
-            raise pulp_exceptions.OperationPostponed(task_result)
+            raise exceptions.OperationPostponed(task_result)
 
         call_report = task_result.serialize()
         call_report['result'] = serializers.Repository(call_report['result']).data
@@ -342,14 +323,14 @@ class RepoImportersView(View):
         :param repo_id: the repository to associate the importer with
         :type  repo_id: str
 
-        :raises pulp_exceptions.OperationPostponed: dispatch a task
+        :raises exceptions.OperationPostponed: dispatch a task
         """
         importer_type = request.body_as_json.get('importer_type_id', None)
         config = request.body_as_json.get('importer_config', None)
         importer_controller.validate_importer_config(repo_id, importer_type, config)
         repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = importer_controller.queue_set_importer(repo, importer_type, config)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoImporterResourceView(View):
@@ -371,7 +352,7 @@ class RepoImporterResourceView(View):
 
         :return: Response containing a dict reporesenting the importer of the repo
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.MissingResource: if importer_id does not match importer for repo
+        :raises exceptions.MissingResource: if importer_id does not match importer for repo
         """
         importer = importer_controller.get_valid_importer(repo_id, importer_id)
         serialized_importer = model.Importer.serializer(importer).data
@@ -389,11 +370,11 @@ class RepoImporterResourceView(View):
         :param importer_id: The id of the importer to remove from the given repository
         :type  importer_id: str
 
-        :raises pulp_exceptions.OperationPostponed: to dispatch a task to delete the importer
+        :raises exceptions.OperationPostponed: to dispatch a task to delete the importer
         """
         importer_controller.get_valid_importer(repo_id, importer_id)
         async_result = importer_controller.queue_remove_importer(repo_id, importer_id)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
     @json_body_required
@@ -408,20 +389,20 @@ class RepoImporterResourceView(View):
         :param importer_id: The id of the importer to associate
         :type  importer_id: str
 
-        :raises pulp_exceptions.MissingValue: if required param importer_config is not in the body
-        :raises pulp_exceptions.MissingResource: if importer does not match the repo's importer
-        :raises pulp_exceptions.OperationPostponed: dispatch a task
+        :raises exceptions.MissingValue: if required param importer_config is not in the body
+        :raises exceptions.MissingResource: if importer does not match the repo's importer
+        :raises exceptions.OperationPostponed: dispatch a task
         """
 
         importer_controller.get_valid_importer(repo_id, importer_id)
         importer_config = request.body_as_json.get('importer_config', None)
 
         if importer_config is None:
-            raise pulp_exceptions.MissingValue(['importer_config'])
+            raise exceptions.MissingValue(['importer_config'])
 
         async_result = importer_controller.queue_update_importer_config(repo_id, importer_id,
                                                                         importer_config)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoSyncSchedulesView(View):
@@ -471,7 +452,7 @@ class RepoSyncSchedulesView(View):
 
         :return: Response containing a serialized dict of the new  scheduled sync
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.UnsupportedValue: if there are unsupported request body params
+        :raises exceptions.UnsupportedValue: if there are unsupported request body params
         """
 
         manager = manager_factory.repo_sync_schedule_manager()
@@ -480,7 +461,7 @@ class RepoSyncSchedulesView(View):
         failure_threshold = request.body_as_json.pop('failure_threshold', None)
         enabled = request.body_as_json.pop('enabled', True)
         if request.body_as_json:
-            raise pulp_exceptions.UnsupportedValue(request.body_as_json.keys())
+            raise exceptions.UnsupportedValue(request.body_as_json.keys())
 
         scheduled_call = manager.create(repo_id, importer_id, sync_options,
                                         schedule, failure_threshold, enabled)
@@ -547,13 +528,13 @@ class RepoSyncScheduleResourceView(ScheduleResource):
 
         :return: An empty response
         :rtype: django.http.HttpResponse
-        :raises pulp_exceptions.MissingResource: if schedule_id/importer_id/repo_id does not exist
+        :raises exceptions.MissingResource: if schedule_id/importer_id/repo_id does not exist
         """
 
         try:
             self.manager.delete(repo_id, importer_id, schedule_id)
-        except pulp_exceptions.InvalidValue:
-            raise pulp_exceptions.MissingResource(schedule_id=schedule_id)
+        except exceptions.InvalidValue:
+            raise exceptions.MissingResource(schedule_id=schedule_id)
         return generate_json_response(None)
 
     @auth_required(authorization.UPDATE)
@@ -599,16 +580,15 @@ class RepoDistributorsView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :param repo_id: The id of the requested repository
-        :type  repo_id: str
+        :type  repo_id: basestring
 
         :return: Response containing a list of dicts, one for each associated distributor
         :rtype : django.http.HttpResponse
         """
-
-        distributor_manager = manager_factory.repo_distributor_manager()
-
-        distributor_list = distributor_manager.get_distributors(repo_id)
-        return generate_json_response_with_pulp_encoder(distributor_list)
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        distributors = model.Distributor.objects(repo_id=repo_id)
+        serialized_dists = model.Distributor.serializer(distributors, multiple=True).data
+        return generate_json_response_with_pulp_encoder(serialized_dists)
 
     @auth_required(authorization.CREATE)
     @json_body_required
@@ -619,28 +599,24 @@ class RepoDistributorsView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :param repo_id: The id of the repository to associate with
-        :type  repo_id: str
+        :type  repo_id: basestring
 
-        :return: Response containing a dict of the associated distributor
+        :return: Response containing the serialized distributor
         :rtype : django.http.HttpResponse
         """
+        distributor_type = request.body_as_json.get('distributor_type_id')
+        if distributor_type is None:
+            raise exceptions.MissingValue('distributor_type_id')
 
-        # Validation will occur in the manager
-        distributor_type = request.body_as_json.get('distributor_type_id', None)
-        distributor_config = request.body_as_json.get('distributor_config', None)
-        distributor_id = request.body_as_json.get('distributor_id', None)
+        distributor_config = request.body_as_json.get('distributor_config')
+        distributor_id = request.body_as_json.get('distributor_id')
         auto_publish = request.body_as_json.get('auto_publish', False)
 
-        distributor_manager = manager_factory.repo_distributor_manager()
-        distributor = distributor_manager.add_distributor(
-            repo_id, distributor_type, distributor_config, auto_publish, distributor_id
-        )
-        distributor['_href'] = reverse(
-            'repo_distributor_resource',
-            kwargs={'repo_id': repo_id, 'distributor_id': distributor['id']}
-        )
-        response = generate_json_response_with_pulp_encoder(distributor)
-        return generate_redirect_response(response, distributor['_href'])
+        distributor = dist_controller.add_distributor(repo_id, distributor_type, distributor_config,
+                                                      auto_publish, distributor_id)
+        serialized = model.Distributor.serializer(distributor).data
+        response = generate_json_response_with_pulp_encoder(serialized)
+        return generate_redirect_response(response, serialized['_href'])
 
 
 class RepoDistributorsSearchView(search.SearchView):
@@ -648,7 +624,7 @@ class RepoDistributorsSearchView(search.SearchView):
     Distributor search view.
     """
 
-    manager = RepoDistributorManager()
+    model = model.Distributor
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
 
@@ -663,17 +639,18 @@ class RepoDistributorResourceView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :param repo_id: The id of the repository the distributor is associated with
-        :type  repo_id: str
+        :type  repo_id: basestring
         :param repo_id: The id of the requested distributor
-        :type  repo_id: str
+        :type  repo_id: basestring
 
         :return: Response containing a dict of the requested distributor
         :rtype : django.http.HttpResponse
         """
 
-        distributor_manager = manager_factory.repo_distributor_manager()
-        distributor = distributor_manager.get_distributor(repo_id, distributor_id)
-        return generate_json_response_with_pulp_encoder(distributor)
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+        serialized = model.Distributor.serializer(dist).data
+        return generate_json_response_with_pulp_encoder(serialized)
 
     @auth_required(authorization.DELETE)
     def delete(self, request, repo_id, distributor_id):
@@ -683,26 +660,15 @@ class RepoDistributorResourceView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :param repo_id: The id of the repository the to disassociate from
-        :type  repo_id: str
+        :type  repo_id: basestring
         :param repo_id: The id of the distributor to disassociate
-        :type  repo_id: str
+        :type  repo_id: basestring
 
-        :raises pulp_exceptions.OperationPostponed: dispatch a task
+        :raises exceptions.OperationPostponed: dispatch a task
         """
-
-        # validate resources
-        manager = manager_factory.repo_distributor_manager()
-        manager.get_distributor(repo_id, distributor_id)
-
-        task_tags = [
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            tags.action_tag('remove_distributor')
-        ]
-        async_result = dist_controller.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
-            tags=task_tags)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+        async_result = dist_controller.queue_delete(dist)
+        raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
     @json_body_required
@@ -719,31 +685,17 @@ class RepoDistributorResourceView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :param repo_id: id of the repository the distributor is associated with
-        :type  repo_id: str
+        :type  repo_id: basestring
         :param distributor_id: id of the distributor instance to update.
-        :type  distributor_id: str
+        :type  distributor_id: basestring
 
-        :raises pulp_exceptions.MissingValue: if distributor_config is not passed
-        :raises pulp_exceptions.OperationPostponed: dispatch a task
+        :raises exceptions.OperationPostponed: dispatch a task
         """
-
-        # validate
-        manager = manager_factory.repo_distributor_manager()
-        manager.get_distributor(repo_id, distributor_id)
-
-        delta = request.body_as_json.get('delta', None)
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
+        delta = request.body_as_json.get('delta')
         config = request.body_as_json.get('distributor_config')
-        if config is None:
-            raise pulp_exceptions.MissingValue(['distributor_config'])
-        task_tags = [
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            tags.action_tag('update_distributor')
-        ]
-        async_result = dist_controller.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, distributor_id, config, delta], tags=task_tags)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        async_result = dist_controller.queue_update(dist, config, delta)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoPublishSchedulesView(View):
@@ -791,7 +743,7 @@ class RepoPublishSchedulesView(View):
 
         :return: Response containing a dict for the new scheduled publish
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.UnsupportedValue: if unsupported fields are included in body
+        :raises exceptions.UnsupportedValue: if unsupported fields are included in body
         """
 
         manager = manager_factory.repo_publish_schedule_manager()
@@ -800,7 +752,7 @@ class RepoPublishSchedulesView(View):
         failure_threshold = request.body_as_json.pop('failure_threshold', None)
         enabled = request.body_as_json.pop('enabled', True)
         if request.body_as_json:
-            raise pulp_exceptions.UnsupportedValue(request.body_as_json.keys())
+            raise exceptions.UnsupportedValue(request.body_as_json.keys())
 
         schedule = manager.create(repo_id, distributor_id, publish_options,
                                   schedule, failure_threshold, enabled)
@@ -898,8 +850,8 @@ class RepoPublishScheduleResourceView(ScheduleResource):
 
         try:
             self.manager.delete(repo_id, distributor_id, schedule_id)
-        except pulp_exceptions.InvalidValue:
-            raise pulp_exceptions.MissingResource(schedule_id=schedule_id)
+        except exceptions.InvalidValue:
+            raise exceptions.MissingResource(schedule_id=schedule_id)
 
         return generate_json_response(None)
 
@@ -919,13 +871,13 @@ class ContentApplicabilityRegenerationView(View):
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
 
-        :raises pulp_exceptions.MissingValue: if repo_critera is not a body parameter
-        :raises pulp_exceptions.InvalidValue: if repo_critera (dict) has unsupported keys,
+        :raises exceptions.MissingValue: if repo_critera is not a body parameter
+        :raises exceptions.InvalidValue: if repo_critera (dict) has unsupported keys,
                                               the manager will raise an InvalidValue for the
                                               specific keys. Here, we create a parent exception
                                               for repo_criteria and include the specific keys as
                                               child exceptions.
-        :raises pulp_exceptions.OperationPostponed: dispatch a task
+        :raises exceptions.OperationPostponed: dispatch a task
         """
         class GroupCallReport(dict):
             def serialize(self):
@@ -933,11 +885,11 @@ class ContentApplicabilityRegenerationView(View):
 
         repo_criteria_body = request.body_as_json.get('repo_criteria', None)
         if repo_criteria_body is None:
-            raise pulp_exceptions.MissingValue('repo_criteria')
+            raise exceptions.MissingValue('repo_criteria')
         try:
             repo_criteria = Criteria.from_client_input(repo_criteria_body)
-        except pulp_exceptions.InvalidValue, e:
-            invalid_criteria = pulp_exceptions.InvalidValue('repo_criteria')
+        except exceptions.InvalidValue, e:
+            invalid_criteria = exceptions.InvalidValue('repo_criteria')
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
@@ -947,7 +899,7 @@ class ContentApplicabilityRegenerationView(View):
         ret['group_id'] = str(async_result)
         ret['_href'] = reverse('task_group', kwargs={'group_id': str(async_result)})
 
-        raise pulp_exceptions.OperationPostponed(ret)
+        raise exceptions.OperationPostponed(ret)
 
 
 class HistoryView(View):
@@ -1001,7 +953,7 @@ class HistoryView(View):
         :return: start_date, end_date, sort, limit
         :rtype:  tuple
 
-        :raises pulp_exceptions.InvalidValue: if one or more params are invalid
+        :raises exceptions.InvalidValue: if one or more params are invalid
         """
         sort = get_params.get(constants.REPO_HISTORY_FILTER_SORT)
         start_date = get_params.get(constants.REPO_HISTORY_FILTER_START_DATE)
@@ -1032,7 +984,7 @@ class HistoryView(View):
                 invalid_values.append('end_date')
 
         if invalid_values:
-            raise pulp_exceptions.InvalidValue(invalid_values)
+            raise exceptions.InvalidValue(invalid_values)
 
         return start_date, end_date, sort, limit
 
@@ -1076,13 +1028,13 @@ class RepoSync(View):
         :param repo_id: id of the repository to sync
         :type  repo_id: str
 
-        :raises pulp_exceptions.OperationPostponed: dispatch a sync repo task
+        :raises exceptions.OperationPostponed: dispatch a sync repo task
         """
 
         overrides = request.body_as_json.get('override_config', None)
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         async_result = repo_controller.queue_sync_with_auto_publish(repo_id, overrides)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoPublish(View):
@@ -1101,17 +1053,17 @@ class RepoPublish(View):
         :param repo_id: id of the repository to publish
         :type  repo_id: str
 
-        :raises pulp_exceptions.MissingResource: if repo does not exist
-        :raises pulp_exceptions.MissingValue: if required param id is not passed
-        :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
+        :raises exceptions.MissingResource: if repo does not exist
+        :raises exceptions.MissingValue: if required param id is not passed
+        :raises exceptions.OperationPostponed: dispatch a publish repo task
         """
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         distributor_id = request.body_as_json.get('id', None)
         if distributor_id is None:
-            raise pulp_exceptions.MissingValue('id')
+            raise exceptions.MissingValue('id')
         overrides = request.body_as_json.get('override_config', None)
         async_result = repo_controller.queue_publish(repo_id, distributor_id, overrides)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoAssociate(View):
@@ -1130,28 +1082,28 @@ class RepoAssociate(View):
         :param dest_repo_id: id of the repository content will be copied to
         :type  dest_repo_id: str
 
-        :raises pulp_exceptions.MissingValue: if required param source_repo_id is not passed
-        :raises pulp_exceptions.InvalidValue: if source_repo_id is not found or if criteria
+        :raises exceptions.MissingValue: if required param source_repo_id is not passed
+        :raises exceptions.InvalidValue: if source_repo_id is not found or if criteria
                                               params cannot be parsed
-        :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
+        :raises exceptions.OperationPostponed: dispatch a publish repo task
         """
         model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
         criteria_body = request.body_as_json.get('criteria', {})
         overrides = request.body_as_json.get('override_config', None)
         source_repo_id = request.body_as_json.get('source_repo_id', None)
         if source_repo_id is None:
-            raise pulp_exceptions.MissingValue(['source_repo_id'])
+            raise exceptions.MissingValue(['source_repo_id'])
 
         # Catch MissingResource because this is body data, raise 400 rather than 404
         try:
             model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
-        except pulp_exceptions.MissingResource:
-            raise pulp_exceptions.InvalidValue(['source_repo_id'])
+        except exceptions.MissingResource:
+            raise exceptions.InvalidValue(['source_repo_id'])
 
         try:
             criteria = UnitAssociationCriteria.from_client_input(criteria_body)
-        except pulp_exceptions.InvalidValue, e:
-            invalid_criteria = pulp_exceptions.InvalidValue('criteria')
+        except exceptions.InvalidValue, e:
+            invalid_criteria = exceptions.InvalidValue('criteria')
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
@@ -1161,7 +1113,7 @@ class RepoAssociate(View):
         async_result = associate_from_repo.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id, [source_repo_id, dest_repo_id],
             {'criteria': criteria.to_dict(), 'import_config_override': overrides}, tags=task_tags)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoUnassociate(View):
@@ -1179,15 +1131,15 @@ class RepoUnassociate(View):
         :param repo_id: id of the repository to unassociate content from
         :type  repo_id: str
 
-        :raises pulp_exceptions.InvalidValue: if criteria params cannot be parsed
-        :raises pulp_exceptions.OperationPostponed: dispatch a unassociate_by_criteria task
+        :raises exceptions.InvalidValue: if criteria params cannot be parsed
+        :raises exceptions.OperationPostponed: dispatch a unassociate_by_criteria task
         """
 
         criteria_body = request.body_as_json.get('criteria', {})
         try:
             criteria = UnitAssociationCriteria.from_client_input(criteria_body)
-        except pulp_exceptions.InvalidValue, e:
-            invalid_criteria = pulp_exceptions.InvalidValue('criteria')
+        except exceptions.InvalidValue, e:
+            invalid_criteria = exceptions.InvalidValue('criteria')
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
@@ -1197,7 +1149,7 @@ class RepoUnassociate(View):
         async_result = unassociate_by_criteria.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id, criteria.to_dict()], tags=task_tags)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoImportUpload(View):
@@ -1216,7 +1168,7 @@ class RepoImportUpload(View):
         :param repo_id: The id of the repository the upload should be imported into
         :type  repo_id: str
 
-        :raises pulp_exceptions.OperationPostponed: dispatch a importy_uploaded_unit task
+        :raises exceptions.OperationPostponed: dispatch a importy_uploaded_unit task
         """
 
         try:
@@ -1224,7 +1176,7 @@ class RepoImportUpload(View):
             unit_type_id = request.body_as_json['unit_type_id']
             unit_key = request.body_as_json['unit_key']
         except KeyError, e:
-            raise pulp_exceptions.MissingValue(e.args[0])
+            raise exceptions.MissingValue(e.args[0])
 
         unit_metadata = request.body_as_json.pop('unit_metadata', None)
         override_config = request.body_as_json.pop('override_config', None)
@@ -1234,4 +1186,4 @@ class RepoImportUpload(View):
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id, unit_type_id, unit_key, unit_metadata, upload_id, override_config],
             tags=task_tags)
-        raise pulp_exceptions.OperationPostponed(async_result)
+        raise exceptions.OperationPostponed(async_result)

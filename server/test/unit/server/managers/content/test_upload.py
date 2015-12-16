@@ -33,8 +33,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
     def clean(self):
         base.PulpServerTests.clean(self)
-        model.Repository.drop_collection()
-        model.Importer.drop_collection()
+        model.Repository.objects.delete()
+        model.Importer.objects.delete()
 
     def test_save_data_string(self):
 

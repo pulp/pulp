@@ -40,7 +40,7 @@ class RepoGroupTests(PulpServerTests):
     def tearDown(self):
         super(RepoGroupTests, self).tearDown()
         self.manager = None
-        model.Repository.drop_collection()
+        model.Repository.objects.delete()
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 

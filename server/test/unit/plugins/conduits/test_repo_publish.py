@@ -7,9 +7,10 @@ from pulp.common import dateutils
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import DistributorConduitException
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit, RepoGroupPublishConduit
+from pulp.server import exceptions
+from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
-from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers import factory as manager_factory
 
 
@@ -19,20 +20,18 @@ class RepoPublishConduitTests(base.PulpServerTests):
         super(RepoPublishConduitTests, self).clean()
 
         mock_plugins.reset()
-        model.Repository.drop_collection()
-        RepoDistributor.get_collection().remove()
+        model.Repository.objects.delete()
+        model.Distributor.objects.delete()
 
-    @mock.patch('pulp.server.managers.repo.distributor.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.distributor.model.Repository.objects')
     def setUp(self, mock_repo_qs):
         super(RepoPublishConduitTests, self).setUp()
         mock_plugins.install()
         manager_factory.initialize()
 
-        self.distributor_manager = manager_factory.repo_distributor_manager()
-
         # Populate the database with a repo with units
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True,
-                                                 distributor_id='dist-1')
+        dist_controller.add_distributor('repo-1', 'mock-distributor', {}, True,
+                                        distributor_id='dist-1')
 
         self.conduit = RepoPublishConduit('repo-1', 'dist-1')
 
@@ -57,9 +56,9 @@ class RepoPublishConduitTests(base.PulpServerTests):
 
         # Setup - Previous publish
         last_publish = datetime.datetime(2015, 4, 29, 20, 23, 56, 0)
-        repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1'})
+        repo_dist = model.Distributor.objects.get_or_404(repo_id='repo-1')
         repo_dist['last_publish'] = last_publish
-        RepoDistributor.get_collection().save(repo_dist)
+        repo_dist.save()
 
         # Test - Last publish
         found = self.conduit.last_publish()
@@ -68,12 +67,12 @@ class RepoPublishConduitTests(base.PulpServerTests):
         self.assertEqual(found.tzinfo, dateutils.utc_tz())
         self.assertEqual(repo_dist['last_publish'], found.replace(tzinfo=None))
 
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoDistributor')
-    def test_last_publish_with_error(self, mock_dist):
+    @mock.patch('pulp.plugins.conduits.repo_publish.model.Distributor.objects')
+    def test_last_publish_with_error(self, m_dist_qs):
         """
         Test the handling of an error getting last_publish information.
         """
-        mock_dist.get_collection().find_one.return_value = None
+        m_dist_qs.only.return_value.get_or_404.side_effect = exceptions.MissingResource
         self.assertRaises(DistributorConduitException, self.conduit.last_publish)
 
 
@@ -114,8 +113,8 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         self.assertTrue(unpublished is None)
 
         last_publish = datetime.datetime.now()
-        repo_group_dist = self.distributor_manager.get_distributor(self.group_id,
-                                                                   self.distributor_id)
+        repo_group_dist = self.distributor_manager.get_distributor(
+            self.group_id, self.distributor_id)
         repo_group_dist['last_publish'] = dateutils.format_iso8601_datetime(last_publish)
         RepoGroupDistributor.get_collection().save(repo_group_dist)
 

@@ -3,10 +3,10 @@ from mock import patch
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
@@ -36,7 +36,7 @@ class BindManagerTests(base.PulpServerTests):
     def setUp(self):
         super(BindManagerTests, self).setUp()
         Consumer.get_collection().remove()
-        RepoDistributor.get_collection().remove()
+        model.Distributor.objects.delete()
         Bind.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()
         plugin_api._create_manager()
@@ -45,16 +45,15 @@ class BindManagerTests(base.PulpServerTests):
     def tearDown(self):
         super(BindManagerTests, self).tearDown()
         Consumer.get_collection().remove()
-        model.Repository.drop_collection()
-        RepoDistributor.get_collection().remove()
+        model.Repository.objects.delete()
+        model.Distributor.objects.delete()
         Bind.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()
         mock_plugins.reset()
 
     def populate(self):
         config = {'key1': 'value1', 'key2': None}
-        manager = factory.repo_distributor_manager()
-        manager.add_distributor(
+        dist_controller.add_distributor(
             self.REPO_ID,
             'mock-distributor',
             config,
@@ -513,8 +512,7 @@ class BindManagerTests(base.PulpServerTests):
 
     def test_bind_missing_distributor(self, mock_repo_qs):
         self.populate()
-        collection = RepoDistributor.get_collection()
-        collection.remove({})
+        model.Distributor.objects.delete()
         manager = factory.consumer_bind_manager()
         self.assertRaises(InvalidValue, manager.bind, self.CONSUMER_ID, self.REPO_ID,
                           self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)

@@ -6,10 +6,11 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
+from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.repository import RepoDistributor, RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory
 
 
@@ -28,7 +29,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def setUp(self):
         super(BaseProfilerConduitTests, self).setUp()
         Consumer.get_collection().remove()
-        RepoDistributor.get_collection().remove()
+        model.Distributor.objects.delete()
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         UnitProfile.get_collection().remove()
@@ -39,8 +40,8 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def tearDown(self):
         super(BaseProfilerConduitTests, self).tearDown()
         Consumer.get_collection().remove()
-        model.Repository.drop_collection()
-        RepoDistributor.get_collection().remove()
+        model.Repository.objects.delete()
+        model.Distributor.objects.delete()
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         UnitProfile.get_collection().remove()
@@ -63,8 +64,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
 
     def populate_repository(self):
         config = {'key1': 'value1', 'key2': None}
-        manager = factory.repo_distributor_manager()
-        manager.add_distributor(
+        dist_controller.add_distributor(
             self.REPO_ID,
             'mock-distributor',
             config,

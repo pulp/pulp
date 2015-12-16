@@ -7,13 +7,11 @@ import uuid
 from collections import namedtuple
 from hmac import HMAC
 
-from mongoengine import (DictField, Document, DynamicField, IntField,
-                         ListField, StringField, UUIDField, ValidationError,
-                         QuerySetNoCache)
+from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
+                         ListField, StringField, UUIDField, ValidationError, QuerySetNoCache)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
-
 from pulp.server import exceptions
 from pulp.server.constants import SUPER_USER_ROLE
 from pulp.server.content.storage import FileStorage, SharedStorage
@@ -885,6 +883,36 @@ class User(AutoRetryDocument):
         for i in xrange(iterations):
             result = HMAC(result, salt, digestmod).digest()  # use HMAC to apply the salt
         return result
+
+
+class Distributor(AutoRetryDocument):
+    """
+    Defines schema for a Distributor in the 'repo_distributors' collection.
+    """
+    repo_id = StringField(required=True)
+    distributor_id = StringField(required=True, regex=r'^[\-_A-Za-z0-9]+$')
+    distributor_type_id = StringField(required=True)
+    config = DictField()
+    auto_publish = BooleanField(default=False)
+    last_publish = UTCDateTimeField()
+    scratchpad = DictField()
+
+    _ns = StringField(default='repo_distributors')
+    serializer = serializers.Distributor
+
+    meta = {'collection': 'repo_distributors',
+            'allow_inheritance': False,
+            'indexes': [{'fields': ['-repo_id', '-distributor_id'], 'unique': True}],
+            'queryset_class': CriteriaQuerySet}
+
+    @property
+    def resource_tag(self):
+        """
+        :return: a globally unique identifier for the repo and distributor that
+                 can be used in cross-type comparisons.
+        :rtype:  basestring
+        """
+        return 'pulp:distributor:{0}:{1}'.format(self.repo_id, self.distributor_id)
 
 
 class SystemUser(object):

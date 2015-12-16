@@ -43,7 +43,6 @@ TYPE_REPO_GROUP = 'repo-group-manager'
 TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
 TYPE_REPO_GROUP_PUBLISH = 'repo-group-publish'
 TYPE_REPO_GROUP_QUERY = 'repo-group-query-manager'
-TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH_SCHEDULE = 'repo-publish-schedule-manager'
 TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
 TYPE_ROLE = 'role-manager'
@@ -283,13 +282,6 @@ def repo_group_query_manager():
     return get_manager(TYPE_REPO_GROUP_QUERY)
 
 
-def repo_distributor_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.distributor.RepoDistributorManager}
-    """
-    return get_manager(TYPE_REPO_DISTRIBUTOR)
-
-
 def repo_unit_association_manager():
     """
     @rtype: L{pulp.server.managers.repo.unit_association.RepoUnitAssociationManager}
@@ -372,7 +364,6 @@ def initialize():
     from pulp.server.managers.event.fire import EventFireManager
     from pulp.server.managers.event.remote import TopicPublishManager
     from pulp.server.managers.plugin import PluginManager
-    from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.group.cud import RepoGroupManager
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
     from pulp.server.managers.repo.group.publish import RepoGroupPublishManager
@@ -413,7 +404,6 @@ def initialize():
         TYPE_PRINCIPAL: PrincipalManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY: RepoUnitAssociationQueryManager,
-        TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_GROUP: RepoGroupManager,
         TYPE_REPO_GROUP_DISTRIBUTOR: RepoGroupDistributorManager,
         TYPE_REPO_GROUP_PUBLISH: RepoGroupPublishManager,

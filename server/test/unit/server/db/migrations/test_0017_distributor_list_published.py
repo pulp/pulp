@@ -16,8 +16,8 @@ class TestMigration(TestCase):
     """
 
     @patch('.'.join((MIGRATION, 'parse_iso8601_datetime')))
-    @patch('.'.join((MIGRATION, 'RepoDistributor')))
-    def test_migrate(self, distributor, parse_iso8601_datetime):
+    @patch('.'.join((MIGRATION, 'get_collection')))
+    def test_migrate(self, m_get_collection, parse_iso8601_datetime):
         collection = Mock()
         found = [
             {LAST_PUBLISH: '2015-04-28T18:19:01Z'},
@@ -27,7 +27,7 @@ class TestMigration(TestCase):
         ]
         parsed = [1, 2]
         collection.find.return_value = deepcopy(found)
-        distributor.get_collection.return_value = collection
+        m_get_collection.return_value = collection
         parse_iso8601_datetime.side_effect = parsed
 
         # test
@@ -35,7 +35,7 @@ class TestMigration(TestCase):
         module.migrate()
 
         # validation
-        distributor.get_collection.assert_called_once_with()
+        m_get_collection.assert_called_once_with('repo_distributors')
         collection.find.assert_called_once_with()
         self.assertEqual(
             parse_iso8601_datetime.call_args_list,

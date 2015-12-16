@@ -485,6 +485,26 @@ class TestRepository(unittest.TestCase):
                                       '_id': 'test_id', 'id': 'test_repo_id'})
 
 
+class TestDistributor(unittest.TestCase):
+
+    def test_meta(self):
+        self.assertDictEqual(serializers.Distributor.Meta.remapped_fields,
+                             {'distributor_id': 'id', 'id': '_id'})
+
+    @mock.patch('pulp.server.webservices.views.serializers.reverse')
+    def test_get_href(self, m_reverse):
+        instance = {
+            'repo_id': 'apple',
+            'distributor_id': 'pear'
+        }
+        test_serializer = serializers.Distributor()
+        result = test_serializer.get_href(instance)
+
+        self.assertTrue(result is m_reverse.return_value)
+        m_reverse.assert_called_once_with(
+            'repo_distributor_resource', kwargs={'repo_id': 'apple', 'distributor_id': 'pear'})
+
+
 class TestUser(unittest.TestCase):
     """
     Tests for the user serializer.

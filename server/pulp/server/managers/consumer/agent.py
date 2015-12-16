@@ -18,6 +18,8 @@ from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent.context import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
 from pulp.server.async.tasks import Task
+from pulp.server.controllers import distributor as dist_controller
+from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind
 from pulp.server.db.model import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
@@ -374,11 +376,11 @@ class AgentManager(object):
         agent_bindings = []
         for binding in bindings:
             repo_id = binding['repo_id']
-            manager = managers.repo_distributor_manager()
-            distributor = manager.get_distributor(
-                binding['repo_id'],
-                binding['distributor_id'])
-            details = manager.create_bind_payload(
+            dist_qs = model.Distributor.objects.get_or_404
+            distributor = dist_qs(
+                repo_id=binding['repo_id'],
+                distributor_id=binding['distributor_id'])
+            details = dist_controller.create_bind_payload(
                 binding['repo_id'],
                 binding['distributor_id'],
                 binding['binding_config'])
@@ -391,6 +393,7 @@ class AgentManager(object):
     def _unbindings(bindings):
         """
         Build the (un)bindings needed by the agent.
+
         :param bindings: A list of binding IDs.
           Each binding is:
             {consumer_id:<str>, repo_id:<str>, distributor_id:<str>}
@@ -401,12 +404,10 @@ class AgentManager(object):
         """
         agent_bindings = []
         for binding in bindings:
-            manager = managers.repo_distributor_manager()
             try:
-                distributor = manager.get_distributor(
-                    binding['repo_id'],
-                    binding['distributor_id'])
-                type_id = distributor['distributor_type_id']
+                distributor = model.Distributor.objects.get_or_404(
+                    repo_id=binding['repo_id'], distributor_id=binding['distributor_id'])
+                type_id = distributor.distributor_type_id
             except MissingResource:
                 # In case the distributor was already deleted from the server.
                 type_id = None
