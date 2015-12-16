@@ -107,10 +107,6 @@ class TestHttp(TestCase):
             if n == 0:  # TARBALL
                 path = pathlib.join(publish_dir, repo_id, unit[constants.TARBALL_PATH])
                 self.assertTrue(os.path.isfile(path))
-            else:
-                path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
-                self.assertTrue(os.path.islink(path))
-                self.assertEqual(unit[constants.FILE_SIZE], os.path.getsize(path))
             if n == 0:  # TARBALL
                 path = pathlib.join(publish_dir, repo_id, unit[constants.TARBALL_PATH])
                 tb = tarfile.open(path)
@@ -119,11 +115,6 @@ class TestHttp(TestCase):
                 finally:
                     tb.close()
                 self.assertEqual(len(files), self.NUM_TARED_FILES)
-            else:
-                path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
-                with open(path, 'rb') as fp:
-                    unit_content = fp.read()
-                    self.assertEqual(unit_content, unit_content)
             self.assertEqual(unit['unit_key']['n'], n)
             n += 1
 

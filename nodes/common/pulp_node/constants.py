@@ -56,6 +56,10 @@ FILE_SIZE = 'size'
 TARBALL_PATH = 'tgz_path'
 LAST_UPDATED = 'last_updated'
 
+# The URL endpoint linked to /var/lib/pulp/content.
+# This replaced publishing links to each unit file individually.
+CONTENT_PATH = 'pulp/nodes/'
+
 
 # --- consumer notes ---------------------------------------------------------
 
