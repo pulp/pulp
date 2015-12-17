@@ -51,7 +51,7 @@ def clean_config_dict(config):
 
 
 @celery.task(base=Task, name='pulp.server.managers.repo.importer.set_importer')
-def set_importer(repo, importer_type_id, repo_plugin_config):
+def set_importer(repo_id, importer_type_id, repo_plugin_config):
     """
     Configures an importer to be used for the given repository.
 
@@ -68,6 +68,7 @@ def set_importer(repo, importer_type_id, repo_plugin_config):
     :raises PulpExecutionException: if something goes wrong in the plugin
     :raises exceptions.InvalidValue: if the values passed to create the importer are invalid
     """
+    repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     validate_importer_config(repo.repo_id, importer_type_id, repo_plugin_config)
 
     importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
@@ -78,7 +79,7 @@ def set_importer(repo, importer_type_id, repo_plugin_config):
     transfer_repo = repo.to_transfer_repo()
 
     try:
-        remove_importer(repo.repo_id)
+        remove_importer(repo_id)
     except exceptions.MissingResource:
         pass  # it didn't exist, so no harm done
 
@@ -90,7 +91,7 @@ def set_importer(repo, importer_type_id, repo_plugin_config):
             'Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo.repo_id))
         raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
-    importer = model.Importer(repo.repo_id, importer_type_id, clean_config)
+    importer = model.Importer(repo_id, importer_type_id, clean_config)
     try:
         importer.save()
     except ValidationError, e:
@@ -116,7 +117,7 @@ def queue_set_importer(repo, importer_type_id, config):
     task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id),
                  tags.action_tag('add_importer')]
     async_result = set_importer.apply_async_with_reservation(
-        tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id, [repo, importer_type_id],
+        tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id, [repo.repo_id, importer_type_id],
         {'repo_plugin_config': config}, tags=task_tags)
     return async_result
 

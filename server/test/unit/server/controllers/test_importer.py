@@ -62,10 +62,10 @@ class TestSetImporter(unittest.TestCase):
         mock_plugin_config = mock.MagicMock()
         m_plug_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
 
-        result = importer.set_importer(mock_repo, 'mtype', 'm_conf')
+        result = importer.set_importer('mrepo', 'mtype', 'm_conf')
         m_clean.assert_called_once_with('m_conf')
         mock_plug_call_config.assert_called_once_with(mock_plugin_config, m_clean.return_value)
-        mock_remove.assert_called_once_with(mock_repo.repo_id)
+        mock_remove.assert_called_once_with('mrepo')
         mock_imp_inst.importer_added.assert_called_once_with(mock_repo.to_transfer_repo(),
                                                              mock_call_config)
         mock_importer.save.assert_called_once_with()
@@ -83,8 +83,8 @@ class TestSetImporter(unittest.TestCase):
         mock_plugin_config = mock.MagicMock()
         m_plug_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
 
-        result = importer.set_importer(mock_repo, 'mtype', 'm_conf')
-        mock_remove.assert_called_once_with(mock_repo.repo_id)
+        result = importer.set_importer('mrepo', 'mtype', 'm_conf')
+        mock_remove.assert_called_once_with('mrepo')
         mock_imp_inst.importer_added.assert_called_once_with(mock_repo.to_transfer_repo(),
                                                              mock_call_config)
         m_clean.assert_called_once_with('m_conf')
@@ -105,9 +105,9 @@ class TestSetImporter(unittest.TestCase):
         mock_plugin_config = mock.MagicMock()
         m_plug_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
 
-        self.assertRaises(exceptions.InvalidValue, importer.set_importer, mrepo, 'mtype', 'mconf')
+        self.assertRaises(exceptions.InvalidValue, importer.set_importer, 'mrepo', 'mtype', 'mconf')
         m_clean.assert_called_once_with('mconf')
-        mock_remove.assert_called_once_with(mrepo.repo_id)
+        mock_remove.assert_called_once_with('mrepo')
         mock_imp_inst.importer_added.assert_called_once_with(mrepo.to_transfer_repo(),
                                                              mock_call_config)
         mock_plug_call_config.assert_called_once_with(mock_plugin_config, m_clean.return_value)
@@ -167,7 +167,7 @@ class TestQueueSetImporter(unittest.TestCase):
         result = importer.queue_set_importer(repo, 'm_type', 'm_conf')
         m_task_tags = [m_tags.resource_tag.return_value, m_tags.action_tag.return_value]
         m_set.apply_async_with_reservation.assert_called_once_with(
-            m_tags.RESOURCE_REPOSITORY_TYPE, 'm_id', [repo, 'm_type'],
+            m_tags.RESOURCE_REPOSITORY_TYPE, 'm_id', ['m_id', 'm_type'],
             {'repo_plugin_config': 'm_conf'}, tags=m_task_tags)
         self.assertTrue(result is m_set.apply_async_with_reservation.return_value)
 

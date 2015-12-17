@@ -202,7 +202,7 @@ class TestDelete(unittest.TestCase):
 
         m_repo_pub_sched_man.delete_by_distributor_id.assert_called_once_with('rid', 'did')
         m_dist_inst.distributor_removed.assert_called_once_with(
-            m_repo_obj.to_transfer_repo.return_value, m_plug_call_conf.return_value)
+            m_repo_obj, m_plug_call_conf.return_value)
         m_dist_qs.get_or_404.return_value.delete.assert_called_once_with()
         m_task.assert_called_once_with(error=None, spawned_tasks=[])
         self.assertTrue(result is m_task.return_value)
