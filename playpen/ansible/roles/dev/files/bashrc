@@ -73,10 +73,14 @@ _paction() {
 }
 
 psmash() {
+    # We start and end with {push,pop}d because workon changes CWD and we don't want to user's CWD
+    # to be altered when they type pulp-smash.
+    pushd ~;
     workon pulp-smash;
     prestart;
     python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
     deactivate;
+    popd;
 }
 
 ppopulate() {
