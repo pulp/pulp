@@ -120,7 +120,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/pulp/content'
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -134,20 +134,30 @@ class TestContentView(TestCase):
         x_send.assert_called_once_with(path.upper())
         self.assertEqual(reply, x_send.return_value)
 
+    @patch(MODULE + '.pulp_conf')
     @patch('os.path.realpath')
     @patch('os.path.exists')
     @patch(MODULE + '.allow_access')
     @patch(MODULE + '.ContentView.redirect')
     @patch(MODULE + '.Key.load', Mock())
-    def test_get_redirected(self, redirect, allow_access, exists, realpath):
+    def test_get_redirected(self, redirect, allow_access, exists, realpath, pulp_conf):
         allow_access.return_value = True
         exists.return_value = False
         realpath.side_effect = lambda p: p.upper()
+        conf = {
+            'authentication': {
+                'rsa_key': '/tmp/key'
+            },
+            'lazy': {
+                'enabled': 'true',
+            }
+        }
+        pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
         host = 'localhost'
         path = '/pulp/content'
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -160,6 +170,46 @@ class TestContentView(TestCase):
         exists.assert_called_once_with(path.upper())
         redirect.assert_called_once_with(request, view.key)
         self.assertEqual(reply, redirect.return_value)
+
+    @patch(MODULE + '.HttpResponseNotFound')
+    @patch(MODULE + '.pulp_conf')
+    @patch('os.path.realpath')
+    @patch('os.path.exists')
+    @patch(MODULE + '.allow_access')
+    @patch(MODULE + '.ContentView.redirect')
+    @patch(MODULE + '.Key.load', Mock())
+    def test_get_no_redirect_lazy_off(self, redirect, allow_access, exists,
+                                      realpath, pulp_conf, not_found):
+        allow_access.return_value = True
+        exists.return_value = False
+        realpath.side_effect = lambda p: p.upper()
+        conf = {
+            'authentication': {
+                'rsa_key': '/tmp/key'
+            },
+            'lazy': {
+                'enabled': 'false',
+            }
+        }
+        pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
+
+        host = 'localhost'
+        path = '/pulp/content'
+
+        request = Mock(path_info=path)
+        request.get_host.return_value = host
+
+        # test
+        view = ContentView()
+        reply = view.get(request)
+
+        # validation
+        allow_access.assert_called_once_with(request.environ, host)
+        realpath.assert_called_once_with(path)
+        exists.assert_called_once_with(path.upper())
+        self.assertEqual(0, redirect.call_count)
+        not_found.assert_called_once_with(request.path_info)
+        self.assertEqual(reply, not_found.return_value)
 
     @patch('os.path.realpath')
     @patch('os.path.exists')
@@ -185,7 +235,7 @@ class TestContentView(TestCase):
         }
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -199,16 +249,27 @@ class TestContentView(TestCase):
         not_found.assert_called_once_with(path)
         self.assertEqual(reply, not_found.return_value)
 
+    @patch('os.path.realpath', Mock())
+    @patch(MODULE + '.pulp_conf')
     @patch(MODULE + '.allow_access')
     @patch(MODULE + '.HttpResponseForbidden')
     @patch(MODULE + '.Key.load', Mock())
-    def test_get_not_authorized(self, forbidden, allow_access):
+    def test_get_not_authorized(self, forbidden, allow_access, pulp_conf):
         allow_access.return_value = False
 
         host = 'localhost'
         path = '/pulp/content'
+        conf = {
+            'authentication': {
+                'rsa_key': '/tmp/key'
+            },
+            'lazy': {
+                'enabled': 'false',
+            }
+        }
+        pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test

@@ -284,11 +284,11 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
             self, m_get_model, m_rcu_objects, m_del_orphan, mock_lazy_catalog_objects):
         orphan = Mock(_storage_path='test_foo_path', id='orphan')
         non_orphan = Mock(_storage_path='test_foo_path', id='non_orphan')
-        m_get_model.return_value.objects.no_cache.return_value.only.return_value = [
+        m_get_model.return_value.objects.only.return_value = [
             orphan,
             non_orphan
         ]
-        m_rcu_objects.return_value.no_cache.return_value.distinct.return_value = ['non_orphan']
+        m_rcu_objects.return_value.distinct.return_value = ['non_orphan']
 
         self.orphan_manager.delete_orphan_content_units_by_type('foo_type')
         mock_lazy_catalog_objects.assert_called_once_with(

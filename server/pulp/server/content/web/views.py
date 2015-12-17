@@ -140,4 +140,4 @@ class ContentView(View):
             return self.redirect(request, self.key)
 
         # NotFound
-        return HttpResponseNotFound(request.path)
+        return HttpResponseNotFound(request.path_info)

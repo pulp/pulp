@@ -249,11 +249,11 @@ class OrphanManager(object):
         if content_unit_ids:
             query_sets = []
             for page in plugin_misc.paginate(content_unit_ids):
-                qs = content_model.objects(id__in=page).no_cache().only('id', '_storage_path')
+                qs = content_model.objects(id__in=page).only('id', '_storage_path')
                 query_sets.append(qs)
             content_units = itertools.chain(*query_sets)
         else:
-            content_units = content_model.objects.no_cache().only('id', '_storage_path')
+            content_units = content_model.objects.only('id', '_storage_path')
 
         # Paginate the content units
         for units_group in plugin_misc.paginate(content_units):
@@ -266,7 +266,7 @@ class OrphanManager(object):
 
             # Clear the units that are currently associated from unit_dict
             non_orphan = model.RepositoryContentUnit.objects(unit_id__in=id_list)\
-                .no_cache().distinct('unit_id')
+                .distinct('unit_id')
             for non_orphan_id in non_orphan:
                 unit_dict.pop(non_orphan_id)
 
