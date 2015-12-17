@@ -34,4 +34,4 @@ def patch(overrides):
 
     # Returning the patch this way allows us to emulate all the normal mock.patch abilities, such as
     # acting as a function or class decorator, as well as acting as a context manager.
-    return mock.patch('pulp.server.config.config', new_config)
+    return mock.patch('pulp.server.config.config._lazy_sections', new_config._sections)

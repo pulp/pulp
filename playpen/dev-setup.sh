@@ -34,9 +34,9 @@ if [ "$GITHUB_USERNAME" = "" ]; then
 fi
 echo "Choosing $GITHUB_USERNAME as your GitHub username."
 
-read -p 'Which repos would you like to clone from your GitHub account? [crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm] ' REPOS
+read -p 'Which repos would you like to clone from your GitHub account? [crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash] ' REPOS
 if [ "$REPOS" = "" ]; then
-    REPOS="crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm"
+    REPOS="crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash"
 fi
 echo "These repos will be cloned into your development path: $REPOS"
 
@@ -94,7 +94,11 @@ for r in $REPOS; do
       echo "configuring remotes for $r"
       pushd $r
       # Configure the upstream remote
-      git remote add -f upstream git@github.com:pulp/$r.git
+      if [ "$r" = "pulp-smash" ]; then
+          git remote add -f upstream git@github.com:PulpQE/$r.git
+      else
+          git remote add -f upstream git@github.com:pulp/$r.git
+      fi
       # Add the ability to checkout pull requests (git checkout pr/99 will check out #99!)
       git config --add remote.upstream.fetch '+refs/pull/*/head:refs/remotes/upstream/pr/*'
       # Set master's remote to upstream
@@ -104,6 +108,9 @@ for r in $REPOS; do
       popd
   fi
 done
+
+# Install some of Ansible's dependencies
+$HOME/devel/pulp/playpen/bootstrap-ansible.sh
 
 pushd pulp
 if [ ! -f /tmp/ansible_inventory ]; then

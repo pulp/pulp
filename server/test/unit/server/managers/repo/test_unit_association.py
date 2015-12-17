@@ -73,10 +73,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Set up a valid configured repo for the tests
         self.repo_id = 'associate-repo'
-        with mock.patch('pulp.server.controllers.importer.model.Repository') as repo_model:
-            repo = repo_model()
-            repo.repo_id = self.repo_id
-            importer_controller.set_importer(repo, 'mock-importer', {})
+        with mock.patch('pulp.server.controllers.importer.model.Repository'):
+            importer_controller.set_importer(self.repo_id, 'mock-importer', {})
 
         # Create units that can be associated to a repo
         self.unit_type_id = 'mock-type'
@@ -176,29 +174,23 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     def test_associate_from_repo_dest_unsupported_types(self, mock_repo_qs, mock_crit):
-        source_repo = mock.MagicMock(repo_id='source-repo')
-        dest_repo = mock.MagicMock(repo_id='dest-repo')
-
-        importer_controller.set_importer(source_repo, 'mock-importer', {})
+        importer_controller.set_importer('source_repo', 'mock-importer', {})
         self.assertRaises(exceptions.MissingResource, self.manager.associate_from_repo,
-                          source_repo.repo_id, dest_repo.repo_id, mock_crit)
+                          'source_repo', 'dest_repo', mock_crit)
 
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     def test_associate_from_repo_importer_error(self, mock_repo, mock_crit):
-        source_repo = mock.MagicMock(repo_id='source-repo')
-        dest_repo = mock.MagicMock(repo_id='dest-repo')
-
-        importer_controller.set_importer(source_repo, 'mock-importer', {})
-        importer_controller.set_importer(dest_repo, 'mock-importer', {})
+        importer_controller.set_importer('source_repo', 'mock-importer', {})
+        importer_controller.set_importer('dest_repo', 'mock-importer', {})
 
         mock_plugins.MOCK_IMPORTER.import_units.side_effect = Exception()
 
         self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1': 'unit-1'})
-        self.manager.associate_unit_by_id(source_repo.repo_id, 'mock-type', 'unit-1')
+        self.manager.associate_unit_by_id('source_repo', 'mock-type', 'unit-1')
 
         # Test
         try:
-            self.manager.associate_from_repo(source_repo.repo_id, dest_repo.repo_id, mock_crit)
+            self.manager.associate_from_repo('source_repo', 'dest_repo', mock_crit)
             self.fail('Exception expected')
         except exceptions.PulpExecutionException:
             pass
@@ -229,22 +221,20 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     def test_associate_from_repo_missing_source(self, mock_repo, mock_crit):
-        dest_repo = mock.MagicMock(repo_id='dest-repo')
-        importer_controller.set_importer(dest_repo, 'mock-importer', {})
+        importer_controller.set_importer('dest_repo', 'mock-importer', {})
 
         try:
-            self.manager.associate_from_repo('missing', dest_repo.repo_id, mock_crit)
+            self.manager.associate_from_repo('missing', 'dest_repo', mock_crit)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repo_id'])
 
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     def test_associate_from_repo_missing_destination(self, mock_repo, mock_crit):
-        source_repo = mock.MagicMock(repo_id='source-repo')
-        importer_controller.set_importer(source_repo, 'mock-importer', {})
+        importer_controller.set_importer('source_repo', 'mock-importer', {})
 
         try:
-            self.manager.associate_from_repo(source_repo.repo_id, 'missing', mock_crit)
+            self.manager.associate_from_repo('source_repo', 'missing', mock_crit)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repo_id'])

@@ -320,7 +320,8 @@ class TestDatabaseSSL(unittest.TestCase):
     def test_ssl_off_by_default(self):
         self.assertEqual(config.config.getboolean('database', 'ssl'), False)
 
-    @mock_config.patch({'database': {'ssl': 'false', 'seeds': 'champs.example.com:27018'}})
+    @mock_config.patch({'database': {'ssl': 'false', 'seeds': 'champs.example.com:27018',
+                                     'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -328,9 +329,6 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
         replica_set = ''
-        config.config.set('database', 'ssl', 'false')
-        config.config.set('database', 'seeds', host)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -340,7 +338,8 @@ class TestDatabaseSSL(unittest.TestCase):
                                                          host=host, replicaSet=replica_set)
 
     @mock_config.patch({'database': {'verify_ssl': 'true',
-                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018',
+                                     'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
@@ -349,10 +348,6 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
         replica_set = ''
-        config.config.set('database', 'verify_ssl', 'true')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', host)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -365,7 +360,8 @@ class TestDatabaseSSL(unittest.TestCase):
             ssl_ca_certs=ssl_ca_certs, host=host, replicaSet=replica_set)
 
     @mock_config.patch({'database': {'verify_ssl': 'false',
-                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018',
+                                     'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
@@ -374,10 +370,6 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
         replica_set = ''
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', host)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -390,7 +382,8 @@ class TestDatabaseSSL(unittest.TestCase):
             ssl_ca_certs=ssl_ca_certs, host=host, replicaSet=replica_set)
 
     @mock_config.patch({'database': {'ssl_keyfile': 'keyfilepath', 'verify_ssl': 'false',
-                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018',
+                                     'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
@@ -399,11 +392,6 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
         replica_set = ''
-        config.config.set('database', 'ssl_keyfile', 'keyfilepath')
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', host)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -417,7 +405,8 @@ class TestDatabaseSSL(unittest.TestCase):
             replicaSet=replica_set)
 
     @mock_config.patch({'database': {'ssl_certfile': 'certfilepath', 'verify_ssl': 'false',
-                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018',
+                                     'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
@@ -426,11 +415,6 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
         replica_set = ''
-        config.config.set('database', 'ssl_certfile', 'certfilepath')
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', host)
-        config.config.set('database', 'replica_set', replica_set)
 
         connection.initialize()
 
@@ -490,7 +474,8 @@ class TestDatabaseAuthentication(unittest.TestCase):
 
     @mock_config.patch(
         {'database': {'name': 'nbachamps', 'username': 'larrybird',
-                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018'}})
+                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018',
+                      'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -502,11 +487,6 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               MONGO_MIN_TEST_VERSION}
-        config.config.set('database', 'name', 'nbachamps')
-        config.config.set('database', 'username', 'larrybird')
-        config.config.set('database', 'password', 'celtics1981')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
-        config.config.set('database', 'replica_set', '')
 
         connection.initialize()
 
@@ -516,7 +496,8 @@ class TestDatabaseAuthentication(unittest.TestCase):
 
     @mock_config.patch(
         {'database': {'name': 'nbachamps', 'username': 'larrybird',
-                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018'}})
+                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018',
+                      'replica_set': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection._logger.debug')
@@ -528,11 +509,6 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               MONGO_MIN_TEST_VERSION}
-        config.config.set('database', 'name', 'nbachamps')
-        config.config.set('database', 'username', 'larrybird')
-        config.config.set('database', 'password', 'celtics1981')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
-        config.config.set('database', 'replica_set', '')
 
         connection.initialize()
 

@@ -10,7 +10,6 @@ from unittest import TestCase
 
 from mock import Mock, patch
 from base import ServerTests
-import mock
 
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.config import DownloaderConfig
@@ -168,6 +167,7 @@ class PluginTestBase(ServerTests):
         self.alias = (self.parentfs, self.parentfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
+        model.Repository.objects.delete()
         model.Distributor.objects.delete()
         model.Importer.objects.delete()
         RepoContentUnit.get_collection().remove()
@@ -199,11 +199,12 @@ class PluginTestBase(ServerTests):
         collection = ContentType.get_collection()
         collection.save(dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY.keys()))
 
-    @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
-    def populate(self, mock_repo_ctrl):
+    def populate(self):
         # make content/ dir.
         os.makedirs(os.path.join(self.parentfs, 'content'))
-
+        repository = model.Repository()
+        repository.repo_id = self.REPO_ID
+        repository.save()
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             units = self.add_units(0, self.NUM_UNITS)
             self.units = units
@@ -648,7 +649,6 @@ class ImporterTest(PluginTestBase):
         self.populate()
         max_concurrency = 5
         max_bandwidth = 12345
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -657,7 +657,6 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -673,10 +672,10 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -688,7 +687,6 @@ class ImporterTest(PluginTestBase):
     def test_import_cached_manifest_matched(self, mock_fetch, *unused):
         # Setup
         self.populate()
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -697,7 +695,6 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -717,10 +714,10 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -738,7 +735,6 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -756,10 +752,10 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -768,7 +764,6 @@ class ImporterTest(PluginTestBase):
     def test_import_cached_manifest_units_invalid(self, *unused):
         # Setup
         self.populate()
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -777,7 +772,6 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -797,10 +791,10 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -811,7 +805,6 @@ class ImporterTest(PluginTestBase):
     def test_import_unit_files_already_exist(self, *mocks):
         # Setup
         self.populate()
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -820,7 +813,6 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -837,10 +829,10 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -853,7 +845,6 @@ class ImporterTest(PluginTestBase):
     def test_import_unit_files_already_exist_size_mismatch(self, *mocks):
         # Setup
         self.populate()
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -862,7 +853,6 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.objects.delete()
             model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -885,10 +875,10 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             units = conduit.get_units()
             self.assertEquals(len(units), self.NUM_UNITS)
@@ -903,7 +893,6 @@ class ImporterTest(PluginTestBase):
         self.populate()
         max_concurrency = 5
         max_bandwidth = 12345
-
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -929,10 +918,10 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
-
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, Mock())
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
-            importer.sync_repo(repo, conduit, configuration)
+            with patch('pulp_node.constants.CONTENT_PATH', self.parentfs):
+                importer.sync_repo(repo, conduit, configuration)
             # Verify
             unit = collection.find_one({'N': 0})
             self.assertEqual(unit['age'], 42)

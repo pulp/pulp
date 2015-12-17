@@ -423,8 +423,7 @@ class TestCreateRepo(unittest.TestCase):
         """
         repo = repo_controller.create_repo('m_repo', importer_type_id='mock_type',
                                            importer_repo_plugin_config='mock_config')
-        m_imp_ctrl.set_importer.assert_called_once_with(m_repo_model.return_value, 'mock_type',
-                                                        'mock_config')
+        m_imp_ctrl.set_importer.assert_called_once_with('m_repo', 'mock_type', 'mock_config')
         self.assertTrue(repo is m_repo_model.return_value)
         self.assertEqual(repo.delete.call_count, 0)
 
@@ -433,12 +432,11 @@ class TestCreateRepo(unittest.TestCase):
         """
         Test creation of a repository when the importer configuration fails.
         """
-        repo_inst = m_repo_model.return_value
         m_imp_ctrl.set_importer.side_effect = MockException
         repo_inst = m_repo_model.return_value
         self.assertRaises(MockException, repo_controller.create_repo, 'm_repo',
                           importer_type_id='id', importer_repo_plugin_config='mock_config')
-        m_imp_ctrl.set_importer.assert_called_once_with(repo_inst, 'id', 'mock_config')
+        m_imp_ctrl.set_importer.assert_called_once_with('m_repo', 'id', 'mock_config')
         self.assertEqual(repo_inst.delete.call_count, 1)
 
     def test_create_with_distributor_list_not_list(self, m_repo_model, m_factory, m_imp_ctrl,
@@ -560,7 +558,7 @@ class TestDelete(unittest.TestCase):
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
         pymongo_kwargs = {'safe': True}
-        m_dist_ctrl.delete.assert_called_once_with(m_dist)
+        m_dist_ctrl.delete.assert_called_once_with(m_dist.repo_id, m_dist.distributor_id)
         m_model.Distributor.objects.return_value.delete.assert_called_once_with()
         m_model.Importer.objects.return_value.delete.assert_called_once_with()
         m_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)

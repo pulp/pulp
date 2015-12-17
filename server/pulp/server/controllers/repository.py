@@ -367,7 +367,7 @@ def create_repo(repo_id, display_name=None, description=None, notes=None, import
     # Add the importer. Delete the repository if this fails.
     if importer_type_id is not None:
         try:
-            importer_controller.set_importer(repo, importer_type_id, importer_repo_plugin_config)
+            importer_controller.set_importer(repo_id, importer_type_id, importer_repo_plugin_config)
         except Exception:
             _logger.exception(
                 'Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
@@ -472,7 +472,7 @@ def delete(repo_id):
     # Inform all distributors
     for distributor in model.Distributor.objects(repo_id=repo_id):
         try:
-            dist_controller.delete(distributor)
+            dist_controller.delete(distributor.repo_id, distributor.distributor_id)
         except Exception, e:
             _logger.exception('Error received removing distributor [%s] from repo [%s]' % (
                 distributor.id, repo_id))
