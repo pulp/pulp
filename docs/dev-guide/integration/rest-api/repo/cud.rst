@@ -87,7 +87,8 @@ is centered around updating only that metadata.
 
 * :param:`?delta,object,object containing keys with values that should be updated on the repository`
 * :param:`?importer_config,object,object containing keys with values that should be updated on the repository's importer config`
-* :param:`?distributor_configs,object,object containing keys that are distributor ids, and values that are objects containing keys with values that should be updated on the specified distributor's config`
+* :param:`?distributor_configs,object,object containing keys that are distributor ids, and values that are objects containing plugin specific keys/value pairs`
+* :param:`?delta,object,object containing keys with values that will update the distributor object, currently only supports "auto_publish"`
 
 | :response_list:`_`
 
@@ -257,7 +258,7 @@ The details of the added distributor are returned from the call.
 | :param_list:`post`
 
 * :param:`distributor_type_id,string,indicates the type of distributor being associated with the repository; there must be a distributor installed in the Pulp server with this ID`
-* :param:`distributor_config,object,configuration the repository will use to drive the behavior of the distributor`
+* :param:`distributor_config,object,plugin specific configuration the repository will use to drive the behavior of the distributor.
 * :param:`?distributor_id,string,if specified, this value will be used to refer to the distributor; if not specified, one will be randomly assigned to the distributor`
 * :param:`?auto_publish,boolean,if true, this distributor will automatically have its publish operation invoked after a successful repository sync. Defaults to false if unspecified`
 
@@ -403,8 +404,8 @@ See :ref:`bind` for details.
 | :permission:`update`
 | :param_list:`put`
 
-* :param:`?distributor_config,object,dictionary containing plugin specific keys with values that will update the distributor config`
-* :param:`?delta,object, dictionary containing keys with values that will update the distributor object, currently only supports "auto_publish"`
+* :param:`?distributor_config,object,object containing plugin specific keys with values that will update the distributor config`
+* :param:`?delta,object,object containing keys with values that will update the distributor object, currently only supports "auto_publish"`
 
 | :response_list:`_`
 
