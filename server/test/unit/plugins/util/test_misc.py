@@ -171,17 +171,22 @@ class TestCreateSymlink(unittest.TestCase):
     def test_create_symlink(self):
         source_path = os.path.join(self.working_dir, 'source')
         link_path = os.path.join(self.published_dir, 'link')
-
         touch(source_path)
-        self.assertFalse(os.path.exists(link_path))
 
+        self.assertFalse(os.path.exists(link_path))
         misc.create_symlink(source_path, link_path)
+        self.assertTrue(os.path.exists(link_path))
 
     def test_create_symlink_no_source(self):
+        """Assert links are created, even if the source doesn't exist."""
         source_path = os.path.join(self.working_dir, 'source')
         link_path = os.path.join(self.published_dir, 'link')
 
-        self.assertRaises(RuntimeError, misc.create_symlink, source_path, link_path)
+        self.assertFalse(os.path.exists(source_path))
+        self.assertFalse(os.path.exists(link_path))
+        misc.create_symlink(source_path, link_path)
+        self.assertTrue(os.path.lexists(link_path))
+        self.assertFalse(os.path.exists(source_path))
 
     @patch('pulp.plugins.util.misc.os.symlink')
     @patch('pulp.plugins.util.misc.os.makedirs')
