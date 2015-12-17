@@ -92,9 +92,16 @@ class RecursiveUnorderedListComparisonMixin(object):
             return a
         self.assertEqual(_sort_lists(a), _sort_lists(b))
 
+
+class TestRecursiveUnorderedListComparisonMixin(unittest.TestCase,
+                                                RecursiveUnorderedListComparisonMixin):
+    """
+    Tests for the RecursiveUnorderedListComparisonMixin.
+    """
+
     def test_assert_equal_ignoring_list_order(self):
         """
-        Quick test to make sure our new assertion works. How meta.
+        Ensure that the recursive unordered list assertion works as expected.
         """
         self.assert_equal_ignoring_list_order([1, 2, 3], [2, 1, 3])
         # Test lists embedded in dictionaries

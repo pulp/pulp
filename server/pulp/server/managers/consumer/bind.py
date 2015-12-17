@@ -436,7 +436,7 @@ class BindManager(object):
         except MissingResource:
             missing_values['repo_id'] = repo_id
         try:
-            factory.repo_distributor_manager().get_distributor(repo_id, distributor_id)
+            model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         except MissingResource:
             missing_values['distributor_id'] = distributor_id
 

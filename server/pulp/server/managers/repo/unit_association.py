@@ -162,7 +162,7 @@ class RepoUnitAssociationManager(object):
             yield_content_unit=True)
 
     @classmethod
-    def associate_from_repo(cls, source_repo_id, dest_repo_id, criteria=None,
+    def associate_from_repo(cls, source_repo_id, dest_repo_id, criteria,
                             import_config_override=None):
         """
         Creates associations in a repository based on the contents of a source
@@ -197,6 +197,7 @@ class RepoUnitAssociationManager(object):
         :rtype:                        dict
         :raise MissingResource:        if either of the specified repositories don't exist
         """
+        criteria = UnitAssociationCriteria.from_dict(criteria)
         source_repo = model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
         dest_repo = model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
 
@@ -219,23 +220,21 @@ class RepoUnitAssociationManager(object):
                 message='The the target importer does not support the types from the source')
 
         transfer_units = None
-        # If criteria is specified, retrieve the list of units now
-        if criteria is not None:
-            # if all source types have been converted to mongo - search via new style
-            if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
-                transfer_units = cls._units_from_criteria(source_repo, criteria)
-            else:
-                # else, search via old style
-                associate_us = load_associated_units(source_repo_id, criteria)
-                # If units were supposed to be filtered but none matched, we're done
-                if len(associate_us) == 0:
-                    # Return an empty list to indicate nothing was copied
-                    return {'units_successful': []}
-                # Convert all of the units into the plugin standard representation if
-                # a filter was specified
-                transfer_units = None
-                if associate_us is not None:
-                    transfer_units = create_transfer_units(associate_us)
+        # if all source types have been converted to mongo - search via new style
+        if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
+            transfer_units = cls._units_from_criteria(source_repo, criteria)
+        else:
+            # else, search via old style
+            associate_us = load_associated_units(source_repo_id, criteria)
+            # If units were supposed to be filtered but none matched, we're done
+            if len(associate_us) == 0:
+                # Return an empty list to indicate nothing was copied
+                return {'units_successful': []}
+            # Convert all of the units into the plugin standard representation if
+            # a filter was specified
+            transfer_units = None
+            if associate_us is not None:
+                transfer_units = create_transfer_units(associate_us)
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = dest_repo.to_transfer_repo()
@@ -328,6 +327,7 @@ class RepoUnitAssociationManager(object):
         :param notify_plugins: if true, relevant plugins will be informed of the removal
         :type  notify_plugins: bool
         """
+        criteria = UnitAssociationCriteria.from_dict(criteria)
         association_query_manager = manager_factory.repo_unit_association_query_manager()
         unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
 

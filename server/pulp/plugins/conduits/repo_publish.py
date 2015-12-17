@@ -6,13 +6,11 @@ interacting with the Pulp server during a repo publish.
 import logging
 import sys
 
-from pulp.server import exceptions as pulp_exceptions
-from pulp.common import dateutils
 from pulp.plugins.conduits.mixins import (
     DistributorConduitException, RepoScratchPadMixin, RepoScratchpadReadMixin,
     DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
     SingleRepoUnitsMixin, MultipleRepoUnitsMixin, PublishReportMixin)
-from pulp.server.db.model.repository import RepoDistributor
+from pulp.server.db import model
 from pulp.server.managers import factory as manager_factory
 
 
@@ -64,11 +62,9 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         :raises DistributorConduitException: if any errors occur
         """
         try:
-            collection = RepoDistributor.get_collection()
-            distributor = collection.find_one({'repo_id': self.repo_id, 'id': self.distributor_id})
-            if distributor is None:
-                raise pulp_exceptions.MissingResource(self.repo_id)
-            return dateutils.ensure_tz(distributor['last_publish'])
+            dist = model.Distributor.objects.only('last_publish').get_or_404(
+                repo_id=self.repo_id, distributor_id=self.distributor_id)
+            return dist.last_publish
         except Exception, e:
             _logger.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]

@@ -114,14 +114,10 @@ class TestContentUnit(unittest.TestCase):
 
     @patch('pulp.server.db.model.signals')
     def test_attach_signals(self, mock_signals):
-
         ContentUnitHelper.attach_signals()
 
         mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
                                                               sender=ContentUnitHelper)
-
-        self.assertEquals('mock_type_id', ContentUnitHelper.NAMED_TUPLE.__name__)
-        self.assertEquals(('apple', 'pear'), ContentUnitHelper.NAMED_TUPLE._fields)
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
@@ -157,8 +153,11 @@ class TestContentUnit(unittest.TestCase):
 
     @patch('pulp.server.db.model.signals')
     def test_as_named_tuple(self, m_signal):
-        # create the named tuple
-        ContentUnitHelper.attach_signals()
+        class ContentUnitHelper(model.ContentUnit):
+            apple = StringField()
+            pear = StringField()
+            unit_key_fields = ('apple', 'pear')
+            _content_type_id = StringField(default='bar')
 
         helper = ContentUnitHelper(apple='foo', pear='bar')
 
@@ -188,6 +187,73 @@ class TestContentUnit(unittest.TestCase):
 
     def test_unit_key_fields_is_not_defined_on_abstract_class(self):
         self.assertFalse(hasattr(model.ContentUnit, 'unit_key_fields'))
+
+
+class TestContentUnitNamedTuple(unittest.TestCase):
+    def setUp(self):
+        # Some ContentUnit test classes to test out the namedtuple generator
+        self.first_helper = type(
+            'FirstContentUnitHelper',
+            (model.ContentUnit,),
+            {'_content_type_id': StringField(default='foo'), 'unit_key_fields': ['apple', 'pear']}
+        )
+        self.second_helper = type(
+            'SecondContentUnitHelper',
+            (model.ContentUnit,),
+            {'_content_type_id': StringField(default='bar'), 'unit_key_fields': ['lemon', 'lime']}
+        )
+
+        # mock out the descriptor cache to keep our dirty test classes contained
+        cache_mock = patch.dict(model._ContentUnitNamedTupleDescriptor._cache, clear=True)
+        cache_mock.start()
+        self.addCleanup(cache_mock.stop)
+
+    def test_values(self):
+        # NAMED_TUPLE has the expected values
+        self.assertEqual('foo', self.first_helper.NAMED_TUPLE.__name__)
+        self.assertEqual(('apple', 'pear'), self.first_helper.NAMED_TUPLE._fields)
+
+        # NAMED_TUPLE on a class with different values is also correct
+        self.assertEqual('bar', self.second_helper.NAMED_TUPLE.__name__)
+        self.assertEqual(('lemon', 'lime'), self.second_helper.NAMED_TUPLE._fields)
+
+    def test_identity(self):
+        # Multiple calls to NAMED_TUPLE return the same instance
+        # This looks silly, but NAMED_TUPLE is a dynamic class property, so this makes sure the
+        # cache is working properly by checking that the same objects are returned...
+        self.assertTrue(self.first_helper.NAMED_TUPLE is self.first_helper.NAMED_TUPLE)
+        self.assertTrue(self.second_helper.NAMED_TUPLE is self.second_helper.NAMED_TUPLE)
+
+        # ...but the same objects aren't returned for different classes
+        self.assertTrue(self.first_helper.NAMED_TUPLE is not self.second_helper.NAMED_TUPLE)
+
+    def test_cache(self):
+        # descriptor cache is only filled when NAMED_TUPLE is accessed...
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 0)
+
+        # ...and contains the expected objects when it is filled
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 1)
+        self.assertTrue(self.first_helper in model._ContentUnitNamedTupleDescriptor._cache)
+
+        self.second_helper.NAMED_TUPLE
+        self.assertEqual(len(model._ContentUnitNamedTupleDescriptor._cache), 2)
+        self.assertTrue(self.second_helper in model._ContentUnitNamedTupleDescriptor._cache)
+
+    @patch('pulp.server.db.model.namedtuple')
+    def test_namedtuple_call_counts(self, mock_namedtuple):
+        # namedtuple itself isn't called until NAMED_TUPLE is accessed
+        self.assertEqual(mock_namedtuple.call_count, 0)
+
+        # multiple calls to the same property don't call namedtuple again
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 1)
+        self.first_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 1)
+
+        # generating another namedtuple type results in another call
+        self.second_helper.NAMED_TUPLE
+        self.assertEqual(mock_namedtuple.call_count, 2)
 
 
 class TestContentUnitValidateModelDefinition(unittest.TestCase):
@@ -766,7 +832,66 @@ class TestImporter(unittest.TestCase):
         mock_lazy.return_value.delete.assert_called_once_with()
 
     def test_pre_delete_connect(self):
-        self.assertTrue(signals.pre_delete.has_receivers_for(model.Importer))
+        self.assertTrue(model.signals.pre_delete.has_receivers_for(model.Importer))
+
+
+class TestDistributor(unittest.TestCase):
+    """
+    Tests for the distributor model.
+    """
+    def test_model_superclass(self):
+        """
+        Ensure that the class is a Mongoengine Document.
+        """
+        sample_model = model.Distributor()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        """
+        Ensure the attributes are the correct type and they have the correct values.
+        """
+        self.assertTrue(isinstance(model.Distributor.repo_id, StringField))
+        self.assertTrue(model.Distributor.repo_id.required)
+        self.assertTrue(isinstance(model.Distributor.distributor_id, StringField))
+        self.assertTrue(model.Distributor.distributor_id.required)
+        self.assertTrue(isinstance(model.Distributor.distributor_type_id, StringField))
+        self.assertTrue(model.Distributor.distributor_type_id.required)
+        self.assertTrue(isinstance(model.Distributor.config, DictField))
+        self.assertFalse(model.Distributor.config.required)
+        self.assertTrue(isinstance(model.Distributor.auto_publish, BooleanField))
+        self.assertEqual(model.Distributor.auto_publish.default, False)
+        self.assertTrue(isinstance(model.Distributor.last_publish, DateTimeField))
+        self.assertFalse(model.Distributor.last_publish.required)
+        self.assertTrue(isinstance(model.Distributor._ns, StringField))
+        self.assertEqual(model.Distributor._ns.default, 'repo_distributors')
+        self.assertTrue(isinstance(model.Distributor.scratchpad, DictField))
+        self.assertFalse(model.Distributor.scratchpad.required)
+
+    def test_serializer(self):
+        """
+        Ensure that the serializer is set.
+        """
+        self.assertEqual(model.Distributor.serializer, serializers.Distributor)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.Distributor._meta['collection'], 'repo_distributors')
+
+    def test_meta_allow_inheritance(self):
+        """
+        Ensure that inheritance is not allowed.
+        """
+        self.assertEquals(model.Distributor._meta['allow_inheritance'], False)
+
+    def test_meta_indexes(self):
+        """
+        Test that the indexes are set correctly.
+        """
+        indexes = model.Distributor._meta['indexes']
+        self.assertDictEqual(
+            indexes[0], {'fields': ['-repo_id', '-distributor_id'], 'unique': True})
 
 
 class TestCeleryBeatLock(unittest.TestCase):

@@ -39,6 +39,7 @@ CELERYBEAT_SCHEDULE = {
 celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
 celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_WORKER_DIRECT=True)
+celery.conf.update(CELERY_TASK_SERIALIZER='json')
 
 
 def configure_login_method():

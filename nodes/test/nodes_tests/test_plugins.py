@@ -29,7 +29,6 @@ from pulp.plugins.types import database as unit_db
 from pulp.server import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db import model
-from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.content import ContentType
@@ -169,8 +168,8 @@ class PluginTestBase(ServerTests):
         self.alias = (self.parentfs, self.parentfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        model.Importer.drop_collection()
+        model.Distributor.objects.delete()
+        model.Importer.objects.delete()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
         self.define_plugins()
@@ -190,9 +189,9 @@ class PluginTestBase(ServerTests):
         shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
-        model.Repository.drop_collection()
-        RepoDistributor.get_collection().remove()
-        model.Importer.drop_collection()
+        model.Repository.objects.delete()
+        model.Distributor.objects.delete()
+        model.Importer.objects.delete()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 
@@ -658,8 +657,8 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -674,11 +673,7 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -702,8 +697,8 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -722,11 +717,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -747,8 +738,8 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -765,11 +756,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -790,8 +777,8 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -810,11 +797,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -837,8 +820,8 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -854,11 +837,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -883,8 +862,8 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            model.Repository.drop_collection()
-            RepoDistributor.get_collection().remove()
+            model.Repository.objects.delete()
+            model.Distributor.objects.delete()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
             self.define_plugins()
@@ -906,11 +885,7 @@ class ImporterTest(PluginTestBase):
                 constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)
@@ -954,11 +929,7 @@ class ImporterTest(PluginTestBase):
                 importer_constants.KEY_MAX_SPEED: max_bandwidth,
             }
             configuration = PluginCallConfiguration(configuration, {})
-            conduit = RepoSyncConduit(
-                self.REPO_ID,
-                constants.HTTP_IMPORTER,
-                'abc123'
-            )
+            conduit = RepoSyncConduit(self.REPO_ID, constants.HTTP_IMPORTER, None)
 
         with mock_config.patch({'server': {'storage_dir': self.childfs}}):
             importer.sync_repo(repo, conduit, configuration)

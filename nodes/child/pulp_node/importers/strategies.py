@@ -9,6 +9,7 @@ import errno
 
 from gettext import gettext as _
 from logging import getLogger
+from urlparse import urlparse, ParseResult
 
 from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
@@ -249,9 +250,8 @@ class ImporterStrategy(object):
                 # unit has no file associated
                 self.add_unit(request, unit_ref.fetch())
                 continue
-            unit_path, destination = self._path_and_destination(unit)
-            unit_URL = pathlib.url_join(unit_inventory.base_URL, unit_path)
-            _request = listener.create_request(unit_URL, destination, unit, unit_ref)
+            unit_url, destination = self._url_and_destination(unit_inventory.base_URL, unit)
+            _request = listener.create_request(unit_url, destination, unit, unit_ref)
             download_list.append(_request)
         if request.cancelled():
             return
@@ -272,21 +272,34 @@ class ImporterStrategy(object):
             unit = ref.fetch()
             self.add_unit(request, unit)
 
-    def _path_and_destination(self, unit):
+    def _url_and_destination(self, base_url, unit):
         """
-        Get the path component of the download URL and download destination.
+        Get the download URL and download destination.
+        :param base_url: The base URL.
+        :type base_url: str
         :param unit: A content unit.
         :type unit: dict
-        :return: (path, destination)
+        :return: (url, destination)
         :rtype: tuple(2)
         """
         storage_path = unit[constants.STORAGE_PATH]
         tar_path = unit.get(constants.TARBALL_PATH)
         if not tar_path:
+            # The pulp/nodes/content endpoint provides all content.
+            # This replaced the publishing of individual links for each unit.
+            parsed = urlparse(base_url)
             relative_path = unit[constants.RELATIVE_PATH]
-            return pathlib.quote(relative_path), storage_path
+            path = pathlib.join(constants.CONTENT_PATH, pathlib.quote(relative_path))
+            base_url = ParseResult(
+                scheme=parsed.scheme,
+                netloc=parsed.netloc,
+                path=path,
+                params=parsed.params,
+                query=parsed.query,
+                fragment=parsed.fragment)
+            return base_url.geturl(), storage_path
         else:
-            return pathlib.quote(tar_path),\
+            return pathlib.url_join(base_url, pathlib.quote(tar_path)),\
                 pathlib.join(os.path.dirname(storage_path), os.path.basename(tar_path))
 
     def _needs_download(self, unit):

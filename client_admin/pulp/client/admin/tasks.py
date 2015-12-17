@@ -284,10 +284,11 @@ class AllTasksSection(BaseTasksSection):
             # until #1028 and #1041 are fixed.
             self.translate_state_discrepancy(states)
             tasks = self.context.server.tasks_search.search(
-                filters={'state': {'$in': states}}, fields=self.FIELDS)
+                filters={'state': {'$in': states}, 'group_id': None}, fields=self.FIELDS)
         else:
             tasks = self.context.server.tasks_search.search(
-                filters={'state': {'$in': ['running', 'waiting']}}, fields=self.FIELDS)
+                filters={'state': {'$in': ['running', 'waiting']}, 'group_id': None},
+                fields=self.FIELDS)
         return tasks
 
     def purge(self, **kwargs):

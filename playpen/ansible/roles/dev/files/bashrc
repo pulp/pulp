@@ -107,5 +107,19 @@ ppopulate() {
     fi
 }
 
+pprocs() {
+    printf "Pulp Worker processes:\n"
+    ps ax | grep "pulp.server.async.app -c 1" | grep -v grep | awk '{ print $1 }'
+
+    printf "\nPulp Resource Manager processes:\n"
+    ps ax | grep "pulp.server.async.app -n resource_manager" | grep -v grep | awk '{ print $1 }'
+
+    printf "\nPulp Celerybeat processes:\n"
+    ps ax | grep "pulp.server.async.celery_instance.celery" | grep -v grep | awk '{ print $1 }'
+
+    printf "\nPulp WSGI processes:\n"
+    ps ax | grep "wsgi:pulp" | grep -v grep | awk '{ print $1 }'
+}
+
 export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings
 export CRANE_CONFIG_PATH=$HOME/devel/crane/crane.conf

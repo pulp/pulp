@@ -120,7 +120,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/pulp/content'
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -136,10 +136,11 @@ class TestContentView(TestCase):
 
     @patch('os.path.realpath')
     @patch('os.path.exists')
+    @patch(MODULE + '.pulp_conf.get', return_value='True')
     @patch(MODULE + '.allow_access')
     @patch(MODULE + '.ContentView.redirect')
     @patch(MODULE + '.Key.load', Mock())
-    def test_get_redirected(self, redirect, allow_access, exists, realpath):
+    def test_get_redirected(self, redirect, allow_access, mock_conf_get, exists, realpath):
         allow_access.return_value = True
         exists.return_value = False
         realpath.side_effect = lambda p: p.upper()
@@ -147,7 +148,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/pulp/content'
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -157,7 +158,8 @@ class TestContentView(TestCase):
         # validation
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
-        exists.assert_called_once_with(path.upper())
+        exists.assert_has_call(path.upper())
+        self.assertTrue(exists.call_count > 0)
         redirect.assert_called_once_with(request, view.key)
         self.assertEqual(reply, redirect.return_value)
 
@@ -185,7 +187,7 @@ class TestContentView(TestCase):
         }
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test
@@ -208,7 +210,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/pulp/content'
 
-        request = Mock(path=path)
+        request = Mock(path_info=path)
         request.get_host.return_value = host
 
         # test

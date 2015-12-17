@@ -91,7 +91,7 @@ class QueryTests(ServerTests):
 
     def tearDown(self):
         super(QueryTests, self).tearDown()
-        model.Repository.drop_collection()
+        model.Repository.objects.delete()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
 

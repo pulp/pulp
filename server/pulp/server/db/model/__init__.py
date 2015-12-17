@@ -8,12 +8,10 @@ from collections import namedtuple
 from hmac import HMAC
 
 from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
-                         ListField, StringField, UUIDField, ValidationError,
-                         QuerySetNoCache)
+                         ListField, StringField, UUIDField, ValidationError, QuerySetNoCache)
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
-
 from pulp.server import exceptions
 from pulp.server.constants import SUPER_USER_ROLE
 from pulp.server.content.storage import FileStorage, SharedStorage
@@ -459,6 +457,27 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
 signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)
 
 
+class _ContentUnitNamedTupleDescriptor(object):
+    """A descriptor used to dynamically generate and cache the namedtuple type for a ContentUnit
+
+    The generated namedtuple is cached, keyed to the class for which it was generated, so
+    this property will return the same namedtuple for each class that inherits an instance
+    of this descriptor. Furthermore, the namedtuple cache behaves as a singleton, so all instances
+    of this descriptor use the same shared cache.
+
+    In the class scope, descriptor __set__ methods are not used by the type metaclass,
+    so instances of this class should only be bound to names that LOOK_LIKE_CONSTANTS,
+    effectively making this a lazily-evaluated read-only class property.
+
+    """
+    _cache = {}
+
+    def __get__(self, obj, cls):
+        if cls not in self._cache:
+            self._cache[cls] = namedtuple(cls._content_type_id.default, cls.unit_key_fields)
+        return self._cache[cls]
+
+
 class ContentUnit(AutoRetryDocument):
     """
     The base class for all content units.
@@ -489,7 +508,7 @@ class ContentUnit(AutoRetryDocument):
         'abstract': True,
     }
 
-    _NAMED_TUPLE = None
+    NAMED_TUPLE = _ContentUnitNamedTupleDescriptor()
 
     @classmethod
     def attach_signals(cls):
@@ -500,9 +519,6 @@ class ContentUnit(AutoRetryDocument):
         and all the correct signals will be applied.
         """
         signals.pre_save.connect(cls.pre_save_signal, sender=cls)
-
-        # Create the named tuple here so it happens during server startup
-        cls.NAMED_TUPLE = namedtuple(cls._content_type_id.default, cls.unit_key_fields)
 
     @classmethod
     def validate_model_definition(cls):
@@ -1033,6 +1049,36 @@ class User(AutoRetryDocument):
         for i in xrange(iterations):
             result = HMAC(result, salt, digestmod).digest()  # use HMAC to apply the salt
         return result
+
+
+class Distributor(AutoRetryDocument):
+    """
+    Defines schema for a Distributor in the 'repo_distributors' collection.
+    """
+    repo_id = StringField(required=True)
+    distributor_id = StringField(required=True, regex=r'^[\-_A-Za-z0-9]+$')
+    distributor_type_id = StringField(required=True)
+    config = DictField()
+    auto_publish = BooleanField(default=False)
+    last_publish = UTCDateTimeField()
+    scratchpad = DictField()
+
+    _ns = StringField(default='repo_distributors')
+    serializer = serializers.Distributor
+
+    meta = {'collection': 'repo_distributors',
+            'allow_inheritance': False,
+            'indexes': [{'fields': ['-repo_id', '-distributor_id'], 'unique': True}],
+            'queryset_class': CriteriaQuerySet}
+
+    @property
+    def resource_tag(self):
+        """
+        :return: a globally unique identifier for the repo and distributor that
+                 can be used in cross-type comparisons.
+        :rtype:  basestring
+        """
+        return 'pulp:distributor:{0}:{1}'.format(self.repo_id, self.distributor_id)
 
 
 class SystemUser(object):

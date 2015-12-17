@@ -142,15 +142,15 @@ class FilePublisher(Publisher):
         if not storage_path:
             # not all units have associated files.
             return unit, None
+        unit[constants.FILE_SIZE] = os.path.getsize(storage_path)
+        if not os.path.isdir(storage_path):
+            # unit does not have multiple files
+            return
         relative_path = unit[constants.RELATIVE_PATH]
         published_path = pathlib.join(self.tmp_dir, relative_path)
         pathlib.mkdir(os.path.dirname(published_path))
-        unit[constants.FILE_SIZE] = os.path.getsize(storage_path)
-        if os.path.isdir(storage_path):
-            tar_dir(storage_path, tar_path(published_path))
-            unit[constants.TARBALL_PATH] = tar_path(relative_path)
-        else:
-            os.symlink(storage_path, published_path)
+        tar_dir(storage_path, tar_path(published_path))
+        unit[constants.TARBALL_PATH] = tar_path(relative_path)
 
     def commit(self):
         """

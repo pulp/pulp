@@ -6,7 +6,6 @@ import os
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.db import model
-from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from pulp.server.compat import json
 
@@ -251,9 +250,10 @@ class NodesHttpDistributor(Distributor):
         :type payload: dict
         """
         distributors = []
-        manager = factory.repo_distributor_manager()
-        for dist in manager.get_distributors(repo_id):
-            if dist['distributor_type_id'] in constants.ALL_DISTRIBUTORS:
+        for dist in model.Distributor.objects(repo_id=repo_id):
+            if dist.distributor_type_id in constants.ALL_DISTRIBUTORS:
                 continue
-            distributors.append(dist)
+            serialized = model.Distributor.serializer(dist).data
+            serialized.pop('_href')
+            distributors.append(serialized)
         payload['distributors'] = distributors

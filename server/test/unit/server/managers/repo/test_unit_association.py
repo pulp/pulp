@@ -3,9 +3,6 @@ import mock
 from .... import base
 from pulp.common.compat import unittest
 from pulp.devel import mock_plugins
-from pulp.plugins.conduits.unit_import import ImportUnitConduit
-from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Unit
 from pulp.plugins.types import database, model
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import model as me_model
@@ -58,8 +55,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         super(RepoUnitAssociationManagerTests, self).clean()
         database.clean()
         RepoContentUnit.get_collection().remove()
-        me_model.Repository.drop_collection()
-        me_model.Importer.drop_collection()
+        me_model.Repository.objects.delete()
+        me_model.Importer.objects.delete()
 
     def tearDown(self):
         super(RepoUnitAssociationManagerTests, self).tearDown()
@@ -167,78 +164,27 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id(self.repo_id, 'type-1', 'unit-1')
 
-    @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
-    @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
-    def test_associate_from_repo_no_criteria(self, mock_importer, mock_plugin,
-                                             mock_rebuild_count, mock_repo):
-        source_repo = mock.MagicMock(repo_id='source-repo')
-        dest_repo = mock.MagicMock(repo_id='dest-repo')
-        mock_imp_inst = mock.MagicMock()
-        mock_plugin.get_importer_by_id.return_value = (mock_imp_inst, mock.MagicMock())
-
-        with mock.patch('pulp.server.controllers.importer.remove_importer'):
-            importer_controller.set_importer(source_repo, 'mock-importer', {})
-            importer_controller.set_importer(dest_repo, 'mock-importer', {})
-
-        self.content_manager.add_content_unit('mock-type', 'unit-1', {'key-1': 'unit-1'})
-        self.content_manager.add_content_unit('mock-type', 'unit-2', {'key-1': 'unit-2'})
-        self.content_manager.add_content_unit('mock-type', 'unit-3', {'key-1': 'unit-3'})
-
-        self.manager.associate_unit_by_id('source_repo', 'mock-type', 'unit-1')
-        self.manager.associate_unit_by_id('source_repo', 'mock-type', 'unit-2')
-        self.manager.associate_unit_by_id('source_repo', 'mock-type', 'unit-3')
-
-        fake_user = me_model.User('associate-user', '')
-        manager_factory.principal_manager().set_principal(principal=fake_user)
-
-        mock_imp_inst.import_units.return_value = [Unit('mock-type', {'k': 'v'}, {}, '')]
-
-        # Test
-        results = self.manager.associate_from_repo('source_repo', 'dest_repo')
-        associated = results['units_successful']
-
-        # Verify
-        self.assertEqual(1, len(associated))
-        self.assertEqual(associated[0]['type_id'], 'mock-type')
-        self.assertEqual(associated[0]['unit_key'], {'k': 'v'})
-
-        self.assertEqual(1, mock_imp_inst.import_units.call_count)
-
-        mock_repo = mock_repo.objects.get_repo_or_missing_resource.return_value
-        args = mock_imp_inst.import_units.call_args[0]
-        kwargs = mock_imp_inst.import_units.call_args[1]
-        self.assertEqual(args[0], mock_repo.to_transfer_repo())
-        self.assertEqual(args[1], mock_repo.to_transfer_repo())
-        self.assertEqual(None, kwargs['units'])  # units to import
-        self.assertTrue(isinstance(args[3], PluginCallConfiguration))  # config
-
-        conduit = args[2]
-        self.assertTrue(isinstance(conduit, ImportUnitConduit))
-
-        # This test is too complex and fragile to try asserting the right argument was passed.
-        self.assertEqual(mock_rebuild_count.call_count, 1)
-
-        # Clean Up
-        manager_factory.principal_manager().set_principal(principal=None)
-
-    def test_associate_from_repo_dest_has_no_importer(self, mock_repo):
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
+    def test_associate_from_repo_dest_has_no_importer(self, mock_repo, mock_crit):
         self.assertRaises(
             exceptions.MissingResource,
             self.manager.associate_from_repo,
             'source-repo',
-            'repo-with-no-importer'
+            'repo-with-no-importer',
+            mock_crit
         )
 
-    def test_associate_from_repo_dest_unsupported_types(self, mock_repo_qs):
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
+    def test_associate_from_repo_dest_unsupported_types(self, mock_repo_qs, mock_crit):
         source_repo = mock.MagicMock(repo_id='source-repo')
         dest_repo = mock.MagicMock(repo_id='dest-repo')
 
         importer_controller.set_importer(source_repo, 'mock-importer', {})
-        self.assertRaises(exceptions.MissingResource,
-                          self.manager.associate_from_repo, source_repo.repo_id, dest_repo.repo_id)
+        self.assertRaises(exceptions.MissingResource, self.manager.associate_from_repo,
+                          source_repo.repo_id, dest_repo.repo_id, mock_crit)
 
-    def test_associate_from_repo_importer_error(self, mock_repo):
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
+    def test_associate_from_repo_importer_error(self, mock_repo, mock_crit):
         source_repo = mock.MagicMock(repo_id='source-repo')
         dest_repo = mock.MagicMock(repo_id='dest-repo')
 
@@ -252,7 +198,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Test
         try:
-            self.manager.associate_from_repo(source_repo.repo_id, dest_repo.repo_id)
+            self.manager.associate_from_repo(source_repo.repo_id, dest_repo.repo_id, mock_crit)
             self.fail('Exception expected')
         except exceptions.PulpExecutionException:
             pass
@@ -261,10 +207,11 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_IMPORTER.import_units.side_effect = None
 
     @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
     @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
-    def test_associate_from_repo_no_matching_units(self, mock_importer, mock_plugin,
-                                                   mock_rebuild_count, mock_repo):
+    def test_associate_from_repo_no_matching_units(self, mock_importer, mock_plugin, mock_repo,
+                                                   mock_crit, mock_rebuild_count):
         mock_imp_inst = mock.MagicMock()
         mock_plugin.get_importer_by_id.return_value = (mock_imp_inst, mock.MagicMock())
         source_repo = mock.MagicMock(repo_id='source-repo')
@@ -275,27 +222,29 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             importer_controller.set_importer(dest_repo, 'mock-importer', {})
 
         mock_plugins.MOCK_IMPORTER.import_units.return_value = []
-        ret = self.manager.associate_from_repo('source_repo', 'dest_repo')
+        ret = self.manager.associate_from_repo('source_repo', 'dest_repo', mock_crit)
 
         self.assertEqual(1, mock_imp_inst.import_units.call_count)
         self.assertEqual(ret.get('units_successful'), [])
 
-    def test_associate_from_repo_missing_source(self, mock_repo):
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
+    def test_associate_from_repo_missing_source(self, mock_repo, mock_crit):
         dest_repo = mock.MagicMock(repo_id='dest-repo')
         importer_controller.set_importer(dest_repo, 'mock-importer', {})
 
         try:
-            self.manager.associate_from_repo('missing', dest_repo.repo_id)
+            self.manager.associate_from_repo('missing', dest_repo.repo_id, mock_crit)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repo_id'])
 
-    def test_associate_from_repo_missing_destination(self, mock_repo):
+    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
+    def test_associate_from_repo_missing_destination(self, mock_repo, mock_crit):
         source_repo = mock.MagicMock(repo_id='source-repo')
         importer_controller.set_importer(source_repo, 'mock-importer', {})
 
         try:
-            self.manager.associate_from_repo(source_repo.repo_id, 'missing')
+            self.manager.associate_from_repo(source_repo.repo_id, 'missing', mock_crit)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['repo_id'])

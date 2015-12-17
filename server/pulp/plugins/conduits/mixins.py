@@ -305,40 +305,33 @@ class DistributorScratchPadMixin(object):
 
     def get_scratchpad(self):
         """
-        Returns the value set in the scratchpad for this repository. If no
-        value has been set, None is returned.
+        Returns the scratchpad for this Distributor or None if it has not been set.
 
-        @return: value saved for the repository and this distributor
-        @rtype:  <serializable>
-
-        @raises DistributorConduitException: wraps any exception that may occur
-                in the Pulp server
+        :return: value saved for the repository and this distributor
+        :rtype:  dict or None
+        :raises DistributorConduitException: wraps any exception that may occur in the Pulp server
         """
         try:
-            distributor_manager = manager_factory.repo_distributor_manager()
-            value = distributor_manager.get_distributor_scratchpad(self.repo_id,
-                                                                   self.distributor_id)
-            return value
+            qs = model.Distributor.objects.get_or_404
+            distributor = qs(repo_id=self.repo_id, distributor_id=self.distributor_id)
+            return distributor.scratchpad
         except Exception, e:
             _logger.exception('Error getting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
         """
-        Saves the given value to the scratchpad for this repository. It can later
-        be retrieved in subsequent syncs through get_scratchpad. The type for
-        the given value is anything that can be stored in the database (string,
-        list, dict, etc.).
+        Sets the scratchpad of this distributor to the given value.
 
-        @param value: will overwrite the existing scratchpad
-        @type  value: <serializable>
-
-        @raises DistributorConduitException: wraps any exception that may occur
-                in the Pulp server
+        :param value: will overwrite the existing scratchpad
+        :type  value: dict
+        :raises DistributorConduitException: wraps any exception that may occur in the Pulp server
         """
         try:
-            distributor_manager = manager_factory.repo_distributor_manager()
-            distributor_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
+            qs = model.Distributor.objects.get_or_404
+            distributor = qs(repo_id=self.repo_id, distributor_id=self.distributor_id)
+            distributor.scratchpad = value
+            distributor.save()
         except Exception, e:
             _logger.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]

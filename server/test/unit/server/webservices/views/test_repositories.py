@@ -10,10 +10,9 @@ from base import (
     assert_auth_UPDATE
 )
 from pulp.common import constants, error_codes
-from pulp.server import exceptions as pulp_exceptions
+from pulp.server import exceptions
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.db import model
-from pulp.server.managers.repo import distributor
 from pulp.server.webservices.views import repositories, util, search
 from pulp.server.webservices.views.repositories import(
     ContentApplicabilityRegenerationView, HistoryView, RepoAssociate, RepoDistributorResourceView,
@@ -24,13 +23,13 @@ from pulp.server.webservices.views.repositories import(
 )
 
 
+@mock.patch('pulp.server.webservices.views.repositories.model')
 class TestMergeRelatedObjects(unittest.TestCase):
     """
     Tests for merge related objects
     """
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Importer')
-    def test__merge_related_objects(self, mock_imp_model):
+    def test_merge_as_expected(self, m_model):
         """
         Test that objects are included in the appropriate repositories.
         """
@@ -48,15 +47,13 @@ class TestMergeRelatedObjects(unittest.TestCase):
                           {'repo_id': 'mock1', 'id': 'mock_importer2'},
                           {'repo_id': 'mock2', 'id': 'mock_importer2'}]
 
-        mock_imp_model.objects.return_value = mock_importers
-
-        # Test data is serialized, so just return it.
-        mock_imp_model.serializer.side_effect = mock_serialize
+        m_model.Importer.objects.return_value = mock_importers
+        m_model.Importer.serializer.side_effect = mock_serialize
 
         # If this is available, it will be used. Removed after https://pulp.plan.io/issues/780
-        del mock_imp_model.find_by_repo_list
+        del m_model.Importer.find_by_repo_list
 
-        repositories._merge_related_objects('importers', mock_imp_model, mock_repos)
+        repositories._merge_related_objects('importers', m_model.Importer, mock_repos)
         self.assertTrue(len(mock_repos) == 2)
         self.assertEqual(map(itemgetter('id'), mock_repos), ['mock1', 'mock2'])
         mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1'},
@@ -67,40 +64,15 @@ class TestMergeRelatedObjects(unittest.TestCase):
         self.assertEqual(mock1_importers, mock1_expected_importers)
         self.assertEqual(mock2_importers, mock2_expected_importers)
 
-    def test__merge_related_objects_distributors(self):
-        """
-        Test that objects are included in the appropriate for distributors
-        """
-
-        m_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        mock_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
-                             {'repo_id': 'mock1', 'id': 'mock_distributor2'},
-                             {'repo_id': 'mock2', 'id': 'mock_distributor2'}]
-
-        mock_distributor_manager = mock.MagicMock()
-        mock_distributor_manager.find_by_repo_list.return_value = mock_distributors
-        repositories._merge_related_objects('distributors', mock_distributor_manager, m_repos)
-
-        self.assertTrue(len(m_repos) == 2)
-        self.assertEqual(map(itemgetter('id'), m_repos), ['mock1', 'mock2'])
-        mock1_expected_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
-                                       {'repo_id': 'mock1', 'id': 'mock_distributor2'}]
-        mock2_expected_distributors = [{'repo_id': 'mock2', 'id': 'mock_distributor2'}]
-        mock1_distributors = m_repos[map(itemgetter('id'), m_repos).index('mock1')]['distributors']
-        mock2_distributors = m_repos[map(itemgetter('id'), m_repos).index('mock2')]['distributors']
-        self.assertEqual(mock1_distributors, mock1_expected_distributors)
-        self.assertEqual(mock2_distributors, mock2_expected_distributors)
-
-    def test__merge_related_objects_no_objects(self):
+    def test_no_objects(self, m_model):
         """
         Test that merge happens correctly when there are no objects to merge.
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
 
-        mock_importer_manager = mock.MagicMock()
-        mock_importer_manager.find_by_repo_list.return_value = []
-        repositories._merge_related_objects('importers', mock_importer_manager, mock_repos)
+        m_model.Importer.objects.return_value = []
+        repositories._merge_related_objects('importers', m_model.Importer, mock_repos)
 
         self.assertTrue(len(mock_repos) == 2)
         self.assertEqual(map(itemgetter('id'), mock_repos), ['mock1', 'mock2'])
@@ -130,11 +102,10 @@ class TestReposView(unittest.TestCase):
         repositories._process_repos(mock_repos, False, False, False)
         self.assertEqual(mock_merge.call_count, 0)
 
-    @mock.patch('pulp.server.webservices.views.repositories.model.Importer')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
+    @mock.patch('pulp.server.webservices.views.repositories.model')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    def test__process_repos_with_details(self, mock_serial, mock_merge, mock_factory, m_importer):
+    def test__process_repos_with_details(self, mock_serial, mock_merge, m_model):
         """
         Test _process_repos with details='true', assert that processing was called for each repo.
         """
@@ -144,8 +115,8 @@ class TestReposView(unittest.TestCase):
 
         repositories._process_repos(mock_repos, True, False, False)
         mock_merge.assert_has_calls([
-            mock.call('importers', m_importer, mock_serial().data),
-            mock.call('distributors', mock_factory.repo_distributor_manager(), mock_serial().data)
+            mock.call('importers', m_model.Importer, mock_serial().data),
+            mock.call('distributors', m_model.Distributor, mock_serial().data)
         ])
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -391,10 +362,10 @@ class TestRepoResourceView(unittest.TestCase):
         mock_request = mock.MagicMock()
         repos_resource = RepoResourceView()
         mock_model.Repository.objects.get_repo_or_missing_resource.side_effect = \
-            pulp_exceptions.MissingResource(repo='mock_repo')
+            exceptions.MissingResource(repo='mock_repo')
         try:
             repos_resource.get(mock_request, 'mock_repo')
-        except pulp_exceptions.MissingResource, response:
+        except exceptions.MissingResource, response:
             pass
         else:
             raise AssertionError("MissingResource should be raised for a nonexisting repository")
@@ -412,33 +383,28 @@ class TestRepoResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
     @mock.patch('pulp.server.webservices.views.repositories.model')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_get_existing_repo_with_details(self, mock_factory, mock_model, mock_serialize,
-                                            mock_merge, mock_resp, mock_repo_ctrl, mock_sum):
-        """
-        Retrieve an existing repository with details.
-        """
+    def test_get_existing_repo_with_details(self, m_model, m_serialize, m_merge, m_resp,
+                                            mock_repo_ctrl, mock_sum):
         mock_repo = mock.MagicMock(spec=model.Repository)
         mock_repo.repo_id = 'mock_repo'
-        mock_model.Repository.objects.get_repo_or_missing_resource.return_value = mock_repo
+        m_model.Repository.objects.get_repo_or_missing_resource.return_value = mock_repo
         mock_request = mock.MagicMock()
         mock_request.GET = {'details': 'true'}
-        mock_merge.side_effect = lambda x, y, z: z
+        m_merge.side_effect = lambda x, y, z: z
         mock_sum.return_value = 30
         mock_repo_ctrl.missing_unit_count.return_value = 10
-        serialized_repo = mock_serialize.return_value.data
+        serialized_repo = m_serialize.return_value.data
 
         repos_resource = RepoResourceView()
         response = repos_resource.get(mock_request, 'mock_repo')
 
-        mock_serialize.assert_called_once_with(mock_repo)
-        mock_resp.assert_called_once_with(mock_serialize().data)
-        self.assertTrue(response is mock_resp.return_value)
-        self.assertEqual(mock_merge.call_count, 2)
-        mock_merge.assert_has_calls([
-            mock.call('importers', mock_model.Importer, (mock_serialize().data,)),
-            mock.call('distributors', mock_factory.repo_distributor_manager(),
-                      (mock_serialize().data,)),
+        m_serialize.assert_called_once_with(mock_repo)
+        m_resp.assert_called_once_with(m_serialize().data)
+        self.assertTrue(response is m_resp.return_value)
+        self.assertEqual(m_merge.call_count, 2)
+        m_merge.assert_has_calls([
+            mock.call('importers', m_model.Importer, (m_serialize().data,)),
+            mock.call('distributors', m_model.Distributor, (m_serialize().data,)),
         ])
         mock_repo_ctrl.missing_unit_count.assert_called_once_with('mock_repo')
         serialized_repo.__setitem__.assert_any_call(
@@ -511,28 +477,25 @@ class TestRepoResourceView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     @mock.patch('pulp.server.webservices.views.repositories.model')
-    def test_get_existing_repo_with_distributors(self, mock_model, mock_factory, mock_serialize,
-                                                 mock_merge, mock_resp):
+    def test_get_existing_repo_with_dists(self, m_model, m_serialize, m_merge, mock_resp):
         """
         Retrieve an existing repository with distributors.
         """
 
         mock_repo = {'mock_repo': 'somedata'}
-        mock_model.Repository.objects.get_repo_or_missing_resource.return_value = mock_repo
+        m_model.Repository.objects.get_repo_or_missing_resource.return_value = mock_repo
         mock_request = mock.MagicMock()
         mock_request.GET = {'distributors': 'true'}
-        mock_merge.side_effect = lambda x, y, z: z
+        m_merge.side_effect = lambda x, y, z: z
 
         repos_resource = RepoResourceView()
         response = repos_resource.get(mock_request, 'mock_repo')
 
-        mock_serialize.assert_called_once_with(mock_repo)
-        mock_resp.assert_called_once_with(mock_serialize().data)
+        m_serialize.assert_called_once_with(mock_repo)
+        mock_resp.assert_called_once_with(m_serialize().data)
         self.assertTrue(response is mock_resp.return_value)
-        mock_merge.assert_called_once_with('distributors', mock_factory.repo_distributor_manager(),
-                                           (mock_serialize().data,))
+        m_merge.assert_called_once_with('distributors', m_model.Distributor, (m_serialize().data,))
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
@@ -547,7 +510,7 @@ class TestRepoResourceView(unittest.TestCase):
         repos_resource = RepoResourceView()
         try:
             repos_resource.delete(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raised for asynchronous delete.')
@@ -662,7 +625,7 @@ class TestRepoResourceView(unittest.TestCase):
 
         repos_resource = RepoResourceView()
 
-        self.assertRaises(pulp_exceptions.OperationPostponed, repos_resource.put,
+        self.assertRaises(exceptions.OperationPostponed, repos_resource.put,
                           mock_request, 'mock_repo')
         mock_ctrl.update_repo_and_plugins.assert_called_once_with(
             mock_model.Repository.objects.get_repo_or_missing_resource.return_value,
@@ -784,7 +747,7 @@ class TestRepoImportersView(unittest.TestCase):
 
         try:
             repo_importers.post(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError("Associate importer call should raise OperationPostponed")
@@ -829,7 +792,7 @@ class TestRepoImporterResourceView(unittest.TestCase):
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.delete(mock_request, 'mock_repo', 'mock_importer')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError("OperationPostponed should be raised for delete task")
@@ -851,7 +814,7 @@ class TestRepoImporterResourceView(unittest.TestCase):
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.put(mock_request, 'mock_repo', 'mock_importer')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError("OperationPostponed should be raised for update importer task")
@@ -873,7 +836,7 @@ class TestRepoImporterResourceView(unittest.TestCase):
         repo_importer = RepoImporterResourceView()
         try:
             repo_importer.put(mock_request, 'mock_repo', 'mock_importer')
-        except pulp_exceptions.MissingValue, response:
+        except exceptions.MissingValue, response:
             pass
         else:
             raise AssertionError("MissingValue should be raised if importer config is not passed")
@@ -989,7 +952,7 @@ class TestRepoSyncSchedulesView(unittest.TestCase):
         sync_schedule = RepoSyncSchedulesView()
         try:
             sync_schedule.post(mock_request, 'mock_repo', 'mock_importer')
-        except pulp_exceptions.UnsupportedValue, response:
+        except exceptions.UnsupportedValue, response:
             pass
         else:
             raise AttributeError("UnsupportedValue should be raised with extra fields in body")
@@ -1053,11 +1016,11 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
 
         mock_request = mock.MagicMock()
         selfmanager = mock_manager.return_value
-        selfmanager.delete.side_effect = pulp_exceptions.InvalidValue('InvalidValue')
+        selfmanager.delete.side_effect = exceptions.InvalidValue('InvalidValue')
         sync_resource = RepoSyncScheduleResourceView()
         try:
             sync_resource.delete(mock_request, 'mock_repo', 'mock_importer', 'mock_schedule')
-        except pulp_exceptions.MissingResource, response:
+        except exceptions.MissingResource, response:
             pass
         else:
             raise AssertionError("MissingResource should be raised if url param is invalid")
@@ -1122,62 +1085,73 @@ class TestRepoDistributorsView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_get_distributors(self, mock_factory, mock_resp):
+    @mock.patch('pulp.server.webservices.views.repositories.model')
+    def test_get(self, m_model, m_resp):
         """
-        Get distributors for a repository.
+        Test that distributors are retrieved and serialized.
         """
+        repo_dist = RepoDistributorsView()
+        response = repo_dist.get(mock.MagicMock(), 'mock_repo')
 
-        mock_request = mock.MagicMock()
-        mock_dist = [{"mock": "distributor"}]
-        mock_factory.repo_distributor_manager.return_value.get_distributors.return_value = mock_dist
-        repo_importers = RepoDistributorsView()
-        response = repo_importers.get(mock_request, 'mock_repo')
-        mock_resp.assert_called_once_with(mock_dist)
-        self.assertTrue(response is mock_resp.return_value)
+        m_model.Distributor.serializer.assert_called_once_with(
+            m_model.Distributor.objects.return_value, multiple=True)
+        m_resp.assert_called_once_with(m_model.Distributor.serializer.return_value.data)
+        self.assertTrue(response is m_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_redirect_response')
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.reverse')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_distributors(self, mock_factory, mock_rev, mock_resp, mock_redir):
+    @mock.patch('pulp.server.webservices.views.repositories.model.Distributor.serializer')
+    @mock.patch('pulp.server.webservices.views.repositories.dist_controller')
+    def test_post_as_expected(self, m_dist_cont, m_serial, mock_resp, mock_redir):
         """
         Associate a distributor to a repository with minimal options.
         """
 
         mock_dist = {'id': 'mock_distributor'}
-        mock_manager = mock_factory.repo_distributor_manager.return_value
-        mock_manager.add_distributor.return_value = mock_dist
+        m_dist_cont.add_distributor.return_value = mock_dist
         mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({})
+        mock_request.body = json.dumps({'distributor_type_id': 'fake', 'distributor_config': {}})
+        m_dist_cont.add_distributor.return_value = {'_href': '/mock/url/'}
+
         repo_dist = RepoDistributorsView()
         response = repo_dist.post(mock_request, 'mock_repo')
 
-        mock_rev.assert_called_once_with('repo_distributor_resource', kwargs={
-            'repo_id': 'mock_repo', 'distributor_id': 'mock_distributor'})
-        mock_manager.add_distributor.assert_called_once_with(
-            'mock_repo', None, None, False, None
-        )
-        mock_dist['_href'] = mock_rev.return_value
-        mock_resp.assert_called_once_with(mock_dist)
-        mock_redir.assert_called_once_with(mock_resp.return_value, mock_rev.return_value)
+        m_serial.assert_called_once_with(m_dist_cont.add_distributor.return_value)
+        mock_resp.assert_called_once_with(m_serial.return_value.data)
+        mock_redir.assert_called_once_with(
+            mock_resp.return_value, m_serial.return_value.data['_href'])
         self.assertTrue(response is mock_redir.return_value)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
+    def test_post_missing_dist_type(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = json.dumps({'distributor_config': {}})
+
+        repo_dist = RepoDistributorsView()
+        self.assertRaises(exceptions.MissingValue, repo_dist.post, mock_request, 'mock_repo')
 
 
 class TestRepoDistributorsSearchView(unittest.TestCase):
+    """
+    Tests for distributor searching.
+    """
 
     def test_view(self):
+        """
+        Assert that the search view has the expected attributes.
+        """
         view = RepoDistributorsSearchView()
         self.assertTrue(isinstance(view, search.SearchView))
-        self.assertTrue(isinstance(RepoDistributorsSearchView.manager,
-                                   distributor.RepoDistributorManager))
+        self.assertTrue(RepoDistributorsSearchView.model is model.Distributor)
         self.assertEqual(RepoDistributorsSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
 
 
+@mock.patch('pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
+@mock.patch('pulp.server.webservices.views.repositories.dist_controller')
+@mock.patch('pulp.server.webservices.views.repositories.model')
 class TestRepoDistributorResourceView(unittest.TestCase):
     """
     Tests for RepoDistributorResourceView.
@@ -1185,99 +1159,59 @@ class TestRepoDistributorResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_get_distributor(self, mock_factory, mock_resp):
+    def test_get_distributor(self, m_model, m_dist_cont, m_resp):
         """
         Get a distributor for a repository.
         """
-
         mock_request = mock.MagicMock()
-        mock_dist = {"id": "mock_distributor"}
-        mock_factory.repo_distributor_manager.return_value.get_distributor.return_value = mock_dist
-
         repo_dist = RepoDistributorResourceView()
         response = repo_dist.get(mock_request, 'mock_repo', 'mock_distributor')
 
-        mock_resp.assert_called_once_with(mock_dist)
-        self.assertTrue(response is mock_resp.return_value)
+        m_model.Distributor.serializer.assert_called_once_with(
+            m_model.Distributor.objects.get_or_404.return_value)
+        m_resp.assert_called_once_with(m_model.Distributor.serializer.return_value.data)
+        self.assertTrue(response is m_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.repositories.dist_controller.delete')
-    @mock.patch('pulp.server.webservices.views.repositories.tags')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_delete_distributor(self, mock_factory, mock_tags, mock_delete):
+    def test_delete_distributor(self, m_model, m_dist_cont, m_resp):
         """
         Disassociate a distributor from a repository.
         """
 
         mock_request = mock.MagicMock()
-        mock_task = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
         repo_dist = RepoDistributorResourceView()
 
         try:
             repo_dist.delete(mock_request, 'mock_repo', 'mock_distributor')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError("OperationPostponed should be raised for delete task")
 
         self.assertEqual(response.http_status_code, 202)
-        mock_delete.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo', 'mock_distributor'],
-            tags=mock_task
-        )
+        m_dist_cont.queue_delete.assert_called_once_with(
+            m_model.Distributor.objects.get_or_404.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.dist_controller')
-    @mock.patch('pulp.server.webservices.views.repositories.tags')
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_put_update_distributor(self, mock_factory, mock_tags, mock_dist_ctrl):
+    def test_put_update_distributor(self, m_model, m_dist_cont, m_resp):
         """
-        Update a distributor with all required params.
+        Test that a distributor update task is queued.
         """
-
         mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({'distributor_config': 'test'})
-        mock_task = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
-
+        mock_request.body = json.dumps({'distributor_config': 'm_conf', 'delta': 'm_delta'})
         repo_distributor = RepoDistributorResourceView()
         try:
             repo_distributor.put(mock_request, 'mock_repo', 'mock_distributor')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError("OperationPostponed should be raised for update distributor task")
 
         self.assertEqual(response.http_status_code, 202)
-        mock_dist_ctrl.update.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo',
-            ['mock_repo', 'mock_distributor', 'test', None], tags=mock_task
-        )
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_put_update_dist_no_conf(self, mock_factory):
-        """
-        Update a distributor without the required param 'distributor_config'.
-        """
-
-        mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({})
-        repo_distributor = RepoDistributorResourceView()
-        try:
-            repo_distributor.put(mock_request, 'mock_repo', 'mock_distributor')
-        except pulp_exceptions.MissingValue, response:
-            pass
-        else:
-            raise AssertionError("MissingValue should be raised if distributor_config is missing")
-
-        self.assertEqual(response.http_status_code, 400)
-        self.assertTrue(response.error_code is error_codes.PLP0016)
+        m_dist_cont.queue_update.assert_called_once_with(
+            m_model.Distributor.objects.get_or_404.return_value, 'm_conf', 'm_delta')
 
 
 class TestRepoPublishSchedulesView(unittest.TestCase):
@@ -1310,8 +1244,7 @@ class TestRepoPublishSchedulesView(unittest.TestCase):
                                             '_href': mock_rev.return_value}])
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_redirect_response')
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
@@ -1340,8 +1273,7 @@ class TestRepoPublishSchedulesView(unittest.TestCase):
         mock_resp.assert_called_once_with({'_id': 'mock_schedule', '_href': mock_rev.return_value})
         self.assertTrue(response is mock_redir.return_value)
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
     def test_post_new_scheduled_publish_extra_fields(self, mock_factory):
         """
@@ -1353,7 +1285,7 @@ class TestRepoPublishSchedulesView(unittest.TestCase):
         publish_schedule = RepoPublishSchedulesView()
         try:
             publish_schedule.post(mock_request, 'mock_repo', 'mock_distributor')
-        except pulp_exceptions.UnsupportedValue, response:
+        except exceptions.UnsupportedValue, response:
             pass
         else:
             raise AttributeError("UnsupportedValue should be raised with extra fields in body")
@@ -1417,11 +1349,11 @@ class TestRepoPublishScheduleResourceView(unittest.TestCase):
 
         mock_request = mock.MagicMock()
         selfmanager = mock_manager.return_value
-        selfmanager.delete.side_effect = pulp_exceptions.InvalidValue('InvalidValue')
+        selfmanager.delete.side_effect = exceptions.InvalidValue('InvalidValue')
         publish_resource = RepoPublishScheduleResourceView()
         try:
             publish_resource.delete(mock_request, 'mock_repo', 'mock_importer', 'mock_schedule')
-        except pulp_exceptions.MissingResource, response:
+        except exceptions.MissingResource, response:
             pass
         else:
             raise AssertionError("MissingResource should be raised if url param is invalid")
@@ -1481,9 +1413,9 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
     Tests for the ContentApplicabilityRegenerationView.
     """
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.repositories.regenerate_applicability_for_repos')
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
+    @mock.patch(('pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager.'
+                'queue_regenerate_applicability_for_repos'))
     @mock.patch('pulp.server.webservices.views.repositories.tags')
     @mock.patch('pulp.server.webservices.views.repositories.Criteria.from_client_input')
     def test_post_with_expected_content(self, mock_crit, mock_tags, mock_regen):
@@ -1496,19 +1428,15 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
         content_app_regen = ContentApplicabilityRegenerationView()
         try:
             content_app_regen.post(mock_request)
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raised for a regenerate task')
 
         self.assertEqual(response.http_status_code, 202)
-        mock_regen.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE, mock_tags.RESOURCE_ANY_ID,
-            (mock_crit.return_value.as_dict(),), tags=[mock_tags.action_tag()]
-        )
+        mock_regen.assert_called_once_with(mock_crit.return_value.as_dict())
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repositories.Criteria.from_client_input')
     def test_post_with_invalid_repo_criteria(self, mock_crit):
         """
@@ -1518,10 +1446,10 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'repo_criteria': 'not a dict'})
         content_app_regen = ContentApplicabilityRegenerationView()
-        mock_crit.side_effect = pulp_exceptions.InvalidValue("Invalid repo criteria")
+        mock_crit.side_effect = exceptions.InvalidValue("Invalid repo criteria")
         try:
             content_app_regen.post(mock_request)
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised if repo_criteria is not valid')
@@ -1529,9 +1457,9 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         mock_crit.assert_called_once_with('not a dict')
 
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.repositories.regenerate_applicability_for_repos')
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
+    @mock.patch(('pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager.'
+                'queue_regenerate_applicability_for_repos'))
     def test_post_without_repo_criteria(self, mock_crit):
         """
         Test regenerate content applicability with missing repo_criteria.
@@ -1540,10 +1468,10 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'not_repo_criteria': 'data'})
         content_app_regen = ContentApplicabilityRegenerationView()
-        mock_crit.side_effect = pulp_exceptions.InvalidValue("Invalid repo criteria")
+        mock_crit.side_effect = exceptions.InvalidValue("Invalid repo criteria")
         try:
             content_app_regen.post(mock_request)
-        except pulp_exceptions.MissingValue, response:
+        except exceptions.MissingValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised if repo_criteria is None')
@@ -1651,7 +1579,7 @@ class TestHistoryView(unittest.TestCase):
         mock_parse_date.side_effect = ValueError
         try:
             history._get_and_validate_params(get_params)
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised when params are invalid.')
@@ -1667,7 +1595,7 @@ class TestHistoryView(unittest.TestCase):
         history = HistoryView()
         try:
             history._get_and_validate_params(get_params)
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised when params are invalid.')
@@ -1726,7 +1654,7 @@ class TestRepoSync(unittest.TestCase):
         sync_repo = RepoSync()
         try:
             sync_repo.post(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raised for sync task')
@@ -1758,7 +1686,7 @@ class TestRepoPublish(unittest.TestCase):
         publish_repo = RepoPublish()
         try:
             publish_repo.post(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raised for publish task')
@@ -1782,7 +1710,7 @@ class TestRepoPublish(unittest.TestCase):
         publish_repo = RepoPublish()
         try:
             publish_repo.post(mock_request, 'mock_repo')
-        except pulp_exceptions.MissingValue, response:
+        except exceptions.MissingValue, response:
             pass
         else:
             raise AssertionError('MissingValue should be raised if id for distributor not passed')
@@ -1803,7 +1731,7 @@ class TestRepoAssociate(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
     @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
-    def test_post_minimal(self, mock_repo_qs, mock_get_repo, mock_associate, mock_tags):
+    def test_post_minimal(self, mock_repo_qs, mock_crit, mock_associate, mock_tags):
         """
         Test that a task is created with the minimal body params.
         """
@@ -1814,7 +1742,7 @@ class TestRepoAssociate(unittest.TestCase):
 
         try:
             repo_associate.post(mock_request, 'mock_dest_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raise for an associate task')
@@ -1823,8 +1751,8 @@ class TestRepoAssociate(unittest.TestCase):
         mock_associate.apply_async_with_reservation.assert_called_once_with(
             mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_dest_repo',
             ['mock_source_repo', 'mock_dest_repo'],
-            {'criteria': None, 'import_config_override': None},
-            tags=task_tags
+            {'criteria': mock_crit.return_value.to_dict.return_value,
+             'import_config_override': None}, tags=task_tags
         )
         self.assertEqual(response.http_status_code, 202)
 
@@ -1842,7 +1770,7 @@ class TestRepoAssociate(unittest.TestCase):
 
         try:
             repo_associate.post(mock_request, 'mock_dest_repo')
-        except pulp_exceptions.MissingValue, response:
+        except exceptions.MissingValue, response:
             pass
         else:
             raise AssertionError('MissingValue should be raised if source_repo_id not in body')
@@ -1865,7 +1793,7 @@ class TestRepoAssociate(unittest.TestCase):
             Do not raise MissingResource for dest_repo_id, just source_repo_id.
             """
             if repo_id == source_repo:
-                raise pulp_exceptions.MissingResource
+                raise exceptions.MissingResource
             return
 
         mock_request = mock.MagicMock()
@@ -1875,7 +1803,7 @@ class TestRepoAssociate(unittest.TestCase):
 
         try:
             repo_associate.post(mock_request, 'mock_dest_repo')
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised if source_repo_id does not exist')
@@ -1895,11 +1823,11 @@ class TestRepoAssociate(unittest.TestCase):
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'source_repo_id': 'mock_repo', 'criteria': 'mock_crit'})
         repo_associate = RepoAssociate()
-        mock_crit.from_client_input.side_effect = pulp_exceptions.InvalidValue("Fake value")
+        mock_crit.from_client_input.side_effect = exceptions.InvalidValue("Fake value")
 
         try:
             repo_associate.post(mock_request, 'mock_dest_repo')
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised if criteria cannot be parsed')
@@ -1932,15 +1860,15 @@ class TestRepoUnunassociate(unittest.TestCase):
 
         try:
             repo_unassociate.post(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raise for an unassociate task')
 
         task_tags = [mock_tags.resource_tag(), mock_tags.action_tag()]
         mock_unassociate.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo', None],
-            tags=task_tags
+            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo',
+            ['mock_repo', mock_crit.return_value.to_dict.return_value], tags=task_tags
         )
         self.assertEqual(response.http_status_code, 202)
 
@@ -1955,11 +1883,11 @@ class TestRepoUnunassociate(unittest.TestCase):
         mock_request = mock.MagicMock()
         mock_request.body = json.dumps({'criteria': 'mock_crit'})
         repo_unassociate = RepoUnassociate()
-        mock_crit.from_client_input.side_effect = pulp_exceptions.InvalidValue("Fake value")
+        mock_crit.from_client_input.side_effect = exceptions.InvalidValue("Fake value")
 
         try:
             repo_unassociate.post(mock_request, 'mock_repo')
-        except pulp_exceptions.InvalidValue, response:
+        except exceptions.InvalidValue, response:
             pass
         else:
             raise AssertionError('InvalidValue should be raised if repo_id cannot be parsed')
@@ -1989,7 +1917,7 @@ class TestRepoImportUpload(unittest.TestCase):
 
         try:
             repo_import.post(mock_request, 'mock_repo')
-        except pulp_exceptions.OperationPostponed, response:
+        except exceptions.OperationPostponed, response:
             pass
         else:
             raise AssertionError('OperationPostponed should be raise for an import task')
@@ -2016,7 +1944,7 @@ class TestRepoImportUpload(unittest.TestCase):
 
         try:
             repo_import.post(mock_request, 'mock_repo')
-        except pulp_exceptions.MissingValue, response:
+        except exceptions.MissingValue, response:
             pass
         else:
             raise AssertionError('MissingValue should be raised when missing required body params.')

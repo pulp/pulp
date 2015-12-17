@@ -18,6 +18,7 @@ New Features
   store rather than the certificate authority trust store bundled with
   ``python-requests``.
 
+* Content applicability for an updated repository is calculated in parallel.
 
 Deprecation
 -----------
@@ -74,6 +75,9 @@ Rest API Changes
 ----------------
 
 * Tasks with complete states (except `canceled` state) can now be deleted.
+
+* The API for regenerating content applicability for updated repositories no longer returns a
+  :ref:`call_report`. Instead a :ref:`group_call_report` is returned.
 
 Binding API Changes
 -------------------

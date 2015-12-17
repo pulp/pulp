@@ -26,6 +26,7 @@ Here are some tips:
     psmash:    Run Pulp Smash!
     preset:    Reset Pulp to a clean install state
     ppopulate: Populate Pulp with test repositories of several types
+    pprocs:    List all Pulp-related process IDs
 
 * You can ssh into your vagrant environment with vagrant ssh, but presumably
   you already know this since you are reading this message :)

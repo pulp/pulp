@@ -61,6 +61,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE'],
                          celery_instance.CELERYBEAT_SCHEDULE)
+        self.assertEqual(celery_instance.celery.conf['CELERY_TASK_SERIALIZER'], 'json')
 
 
 def fake_get(new_config, section, key):

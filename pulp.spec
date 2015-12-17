@@ -257,6 +257,9 @@ cp -R server/srv %{buildroot}
 # Web Content
 ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
+# Nodes Publishing
+ln -s %{_var}/lib/pulp/content %{buildroot}/%{_var}/www/pulp/nodes
+
 # Tools
 cp server/bin/* %{buildroot}/%{_bindir}
 

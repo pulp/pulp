@@ -13,6 +13,9 @@ from pulp.server.db.model import criteria
 
 
 FIELDS = set(('sort', 'skip', 'limit', 'filters', 'fields'))
+ASSOCIATION_FIELDS = set(('type_ids', 'association_filters', 'unit_filters', 'association_sort',
+                          'unit_sort', 'limit', 'skip', 'association_fields', 'unit_fields',
+                          'remove_duplicates'))
 
 
 class TestCriteria(unittest.TestCase):
@@ -320,3 +323,61 @@ class TestDateOperator(unittest.TestCase):
         matched, translated = criteria.DateOperator.translate(value)
         self.assertFalse(matched)
         self.assertEqual(translated, value)
+
+
+class TestUnitAssociationCriteria(unittest.TestCase):
+
+    def test_to_dict(self):
+        c = criteria.UnitAssociationCriteria(
+            type_ids=['rpm'],
+            association_filters={},
+            unit_filters={'name': 'test'},
+            association_sort=None,
+            unit_sort=None,
+            limit=10,
+            skip=10,
+            association_fields=None,
+            unit_fields=['foo', 'bar'],
+            remove_duplicates=False
+        )
+        ret = c.to_dict()
+        self.assertTrue(isinstance(ret, dict))
+        self.assertTrue(isinstance(ret['association_filters'], dict))
+        self.assertEqual(ret['limit'], 10)
+        self.assertEqual(ret['skip'], 10)
+        self.assertEqual(ret['unit_fields'], c.unit_fields)
+        self.assertEqual(ret['type_ids'], c.type_ids)
+        self.assertEqual(ret['unit_filters'], c.unit_filters)
+        self.assertEqual(ret['remove_duplicates'], False)
+        self.assertEqual(set(ret.keys()), ASSOCIATION_FIELDS)
+
+    def test_from_dict(self):
+        type_ids = ['rpm']
+        unit_filters = {'some': 'filters'}
+        limit = 42
+        skip = 64
+        unit_fields = ['a_field']
+        remove_duplicates = False
+        association_fields = None
+        unit_sort = None
+        association_sort = None
+        association_filters = {}
+        a_dict = {'unit_filters': unit_filters, 'limit': limit, 'skip': skip,
+                  'unit_fields': unit_fields, 'type_ids': type_ids,
+                  'remove_duplicates': remove_duplicates, 'association_fields': association_fields,
+                  'unit_sort': unit_sort, 'association_sort': association_sort,
+                  'association_filters': association_filters}
+
+        new_criteria = criteria.UnitAssociationCriteria.from_dict(a_dict)
+
+        self.assertTrue(isinstance(new_criteria, criteria.UnitAssociationCriteria))
+        self.assertEqual(new_criteria.unit_filters, unit_filters)
+        self.assertEqual(new_criteria.association_sort, association_sort)
+        self.assertEqual(new_criteria.limit, limit)
+        self.assertEqual(new_criteria.type_ids, type_ids)
+        self.assertEqual(new_criteria.unit_fields, unit_fields)
+        self.assertEqual(new_criteria.skip, skip)
+        self.assertEqual(new_criteria.unit_fields, unit_fields)
+        self.assertEqual(new_criteria.remove_duplicates, remove_duplicates)
+        self.assertEqual(new_criteria.unit_sort, unit_sort)
+        self.assertEqual(new_criteria.association_filters, association_filters)

@@ -18,7 +18,7 @@ from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
-from pulp.server.async import tasks
+from pulp.server.async import app, tasks
 from pulp.server.db.model import Worker, ReservedResource, TaskStatus
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
@@ -1059,3 +1059,19 @@ class TestGetUnreservedWorker(ResourceReservationTests):
 
     def test_is_not_worker_is_resource_mgr(self):
         self.assertEquals(tasks._is_worker("resource_manager@some.hostname"), False)
+
+
+class TestPulpTask(unittest.TestCase):
+
+    def test_check_task_type(self):
+        """
+        This test looks through celery registry and asserts that each task entry in it is
+        a subclass of PulpTask.
+        This test should not be adjusted, unless you are really sure what are you doing.
+        """
+
+        for task_name, task in app.celery.tasks.iteritems():
+            if task_name.startswith('pulp'):
+                if not isinstance(task, tasks.PulpTask):
+                    self.fail('Task named %s must have %s as an ancestor'
+                              % (task_name, tasks.PulpTask))
