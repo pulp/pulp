@@ -130,7 +130,7 @@ def delete(repo_id, dist_id):
 
     call_config = PluginCallConfiguration(plugin_config, distributor.config)
     repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    dist_instance.distributor_removed(repo, call_config)
+    dist_instance.distributor_removed(repo.to_transfer_repo(), call_config)
     distributor.delete()
 
     unbind_errors = []
