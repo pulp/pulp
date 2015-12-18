@@ -122,6 +122,7 @@ pprocs() {
 
     printf "\nPulp WSGI processes:\n"
     ps ax | grep "wsgi:pulp" | grep -v grep | awk '{ print $1 }'
+}
 
 pdebug() {
     telnet 127.0.0.1 4444
