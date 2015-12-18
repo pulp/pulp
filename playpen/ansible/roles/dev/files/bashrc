@@ -35,9 +35,32 @@ pstatus() {
 
 preset() {
     pstop;
+
+    pushd ~/devel/
+    # Remove and unlink all development files
+    for r in {pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm,pulp}; do
+        if [ -d $r ]; then
+            pushd $r
+            sudo ./pulp-dev.py -U
+            popd
+        fi
+    done
+
     mongo pulp_database ~/drop_database.js;
     sudo rm -rf /var/lib/pulp/*;
     find ~/devel/pulp* -name '*.py[co]' -delete;
+    rm ~/.pulp/user-cert.pem
+
+    # Re-install and relink development files
+    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
+        if [ -d $r ]; then
+            pushd $r
+            sudo ./pulp-dev.py -I
+            popd
+        fi
+    done
+    popd
+
     sudo -u apache pulp-manage-db;
     # If Crane is present, let's set up the publishing symlinks so that the app files can be used
     if [ -d $HOME/devel/crane ]; then
