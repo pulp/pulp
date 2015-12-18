@@ -364,11 +364,15 @@ class TestFileContentUnit(unittest.TestCase):
     class TestUnit(model.FileContentUnit):
         _content_type_id = StringField(default='')
 
-    @patch('pulp.server.db.model.FileStorage.get_path')
-    def test_init(self, get_path):
-        unit = TestFileContentUnit.TestUnit()
-        get_path.assert_called_once_with(unit)
-        self.assertEqual(unit.storage_path, get_path.return_value)
+    def test_pre_save_signal(self):
+        document = Mock(_storage_path='')
+        self.TestUnit.pre_save_signal(Mock(), document)
+        document.set_storage_path.assert_called_once_with()
+
+    def test_pre_save_signal_storage_path_already_set(self):
+        document = Mock(_storage_path='123')
+        self.TestUnit.pre_save_signal(Mock(), document)
+        self.assertFalse(document.set_storage_path.called)
 
     def test_fields(self):
         self.assertTrue(isinstance(model.FileContentUnit.downloaded, BooleanField))
@@ -378,14 +382,21 @@ class TestFileContentUnit(unittest.TestCase):
     def test_set_storage_path(self, get_path):
         get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
-        unit.storage_path = 'test'
+        unit.set_storage_path('test')
         self.assertEqual(unit._storage_path, '/tmp/test')
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path_no_filename(self, get_path):
+        get_path.return_value = '/tmp'
+        unit = TestFileContentUnit.TestUnit()
+        unit.set_storage_path()
+        self.assertEqual(unit._storage_path, '/tmp')
 
     @patch('pulp.server.db.model.FileStorage.get_path')
     def test_set_storage_path_absolute(self, get_path):
         get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
-        self.assertRaises(ValueError, setattr, unit, 'storage_path', '/violation/test')
+        self.assertRaises(ValueError, unit.set_storage_path, '/violation/test')
 
     @patch('os.path.isdir')
     def test_list_files(self, isdir):

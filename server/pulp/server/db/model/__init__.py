@@ -690,34 +690,37 @@ class FileContentUnit(ContentUnit):
         ]
     }
 
-    def __init__(self, *args, **kwargs):
-        super(FileContentUnit, self).__init__(*args, **kwargs)
-        self._storage_path = FileStorage.get_path(self)
-
-    @property
-    def storage_path(self):
+    @classmethod
+    def pre_save_signal(cls, sender, document, **kwargs):
         """
-        The content storage path.
+        The signal that is triggered before a unit is saved.
+        Ensures the _storage_path is populated.
 
-        :return: The absolute path to stored content.
-        :rtype: str
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: FileContentUnit
         """
-        return self._storage_path
+        super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
+        if not document._storage_path:
+            document.set_storage_path()
 
-    @storage_path.setter
-    def storage_path(self, path):
+    def set_storage_path(self, filename=None):
         """
         Set the storage path.
         This is a total hack to support existing single-file units with a
         _storage_path that includes the file name.
 
-        :param path: A relative path.
-        :rtype path: str
+        :param filename: An optional filename to appended to the path.
+        :rtype filename: str
         """
-        if os.path.isabs(path):
-            raise ValueError(_('must be relative path'))
-        _dir = FileStorage.get_path(self)
-        self._storage_path = os.path.join(_dir, path)
+        path = FileStorage.get_path(self)
+        if filename:
+            if not os.path.isabs(filename):
+                path = os.path.join(path, filename)
+            else:
+                raise ValueError(_('must be relative path'))
+        self._storage_path = path
 
     def list_files(self):
         """
