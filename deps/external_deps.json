@@ -16,8 +16,8 @@
     },
     {
         "name": "python-amqp",
-        "version": "1.4.6-1",
-        "platform": ["el6", "el7"]
+        "version": "1.4.7-1",
+        "platform": ["el6", "el7", "fc22", "fc23"]
     },
     {
         "name": "python-billiard",

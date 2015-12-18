@@ -39,6 +39,9 @@ Team owner: bmbouter
 
 kombu 3.0.24 requires amqp>=1.4.6,<2.0, which is not available in EPEL <= 7.
 
+We carry python-amqp 1.4.7-1 in preparation for a future upgrade to python-kombu to 3.0.30+.
+python-amqp 1.4.7-1 is not available in EPEL <= 7 or Fedora <= 23.
+
 
 python-billiard
 ---------------
