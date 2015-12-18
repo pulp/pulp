@@ -130,6 +130,9 @@ Documentation for python-amqp
 
 
 %changelog
+* Fri Dec 18 2015 Brian Bouterse <bbouters@redhat.com> 1.4.7-1
+- Upgrade python-amqp dep to 1.4.7 (sean.myers@redhat.com)
+
 * Thu Dec 18 2015 Sean Myers <sean.myers@redhat.com> 1.4.7-1
 - Upgrade python-amqp to 1.4.7 (sean.myers@redhat.com)
 
