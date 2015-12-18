@@ -28,11 +28,29 @@ class EnforceConfigTestCase(unittest.TestCase):
     """
     This class contains tests for the _enforce_config() function.
     """
+    def setUp(self):
+        self.wrapped_func_name = 'package.func_name'
+        self.enforcer = base._enforce_config(self.wrapped_func_name)
+
     def test_raises_exception(self):
         """
         Ensure that _enforce_config raises an Exception.
         """
-        self.assertRaises(Exception, base._enforce_config)
+        self.assertRaises(base._ConfigAlteredDuringTestingError, self.enforcer)
+
+    def test_errmsg(self):
+        # If the config modification enforcer is tripped, it gives you a useful error message,
+        # indicating which callable tripped it, and with what args/kwargs
+        args = ('arg1', 'arg2')
+        kwargs = {'kwarg1': True, 'kwarg2': False}
+        try:
+            # Trip the exception
+            self.enforcer(*args, **kwargs)
+        except base._ConfigAlteredDuringTestingError as exc:
+            err_msg = exc.args[0]
+            self.assertTrue(self.wrapped_func_name in err_msg)
+            self.assertTrue(str(args) in err_msg)
+            self.assertTrue(str(kwargs) in err_msg)
 
 
 class LoadTestConfigTestCase(unittest.TestCase):
@@ -68,11 +86,15 @@ class ConfigAttrOverride(unittest.TestCase):
     def test_override_restore(self):
         # override and restore works as expected
         base.override_config_attrs()
-        self.assertTrue(config.load_configuration is base._enforce_config)
-        self.assertTrue(config.__setattr__ is base._enforce_config)
-        self.assertTrue(config.config.set is base._enforce_config)
         self.assertTrue(hasattr(config, '_overridden_attrs'))
 
+        # overridden attrs should be the config enforcer function
+        enforcer_name = 'the_enforcer'
+        self.assertEqual(config.load_configuration.__name__, enforcer_name)
+        self.assertEqual(config.__setattr__.__name__, enforcer_name)
+        self.assertEqual(config.config.set.__name__, enforcer_name)
+
+        # overridden attrs have been restored
         base.restore_config_attrs()
         self.assertTrue(
             config.load_configuration is config._overridden_attrs['load_configuration'])
@@ -87,7 +109,7 @@ class ConfigAttrOverride(unittest.TestCase):
         base.override_config_attrs()
 
         for attr in config._overridden_attrs.values():
-            self.assertTrue(attr is not base._enforce_config)
+            self.assertNotEqual(attr.__name__, 'the_enforcer')
 
     def test_load_test_config_after_override(self):
         """
@@ -98,7 +120,8 @@ class ConfigAttrOverride(unittest.TestCase):
         # If something was wrong, this would raise Exception
         base._load_test_config()
         # but attempts to alter the config afterwatd are still blocked
-        self.assertRaises(Exception, config.config.set, 'section', 'key', 'value')
+        self.assertRaises(base._ConfigAlteredDuringTestingError,
+                          config.config.set, 'section', 'key', 'value')
 
 
 class StartDatabaseConnectionTestCase(unittest.TestCase):

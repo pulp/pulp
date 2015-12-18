@@ -8,6 +8,10 @@ from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 
 
+class _ConfigAlteredDuringTestingError(RuntimeError):
+    """Exception raised during attempts to modify the pulp config during unit testing"""
+
+
 def drop_database():
     """
     Drop the database so that the next test run starts with a clean database.
@@ -25,20 +29,22 @@ def start_database_connection():
         connection.initialize()
 
 
-def _enforce_config(*args, **kwargs):
+def _enforce_config(wrapped_func_name):
     """
     Raise an Exception that tells developers to mock the config rather than trying to change the
     real config.
 
-    :param args:   Unused
-    :type  args:   list
-    :param kwargs: Unused
-    :type  kwargs: dict
+    :param wrapped_func_name: Name of function being replaced by the config enforcer
+    :type  str :
 
     :raises:       Exception
     """
-    raise Exception("Do not change the config during test runs! Please use "
-                    "pulp.devel.mock_config.patch instead.")
+    def the_enforcer(*args, **kwargs):
+        raise _ConfigAlteredDuringTestingError(
+            "Attempt to modify the config during a test run has been blocked. "
+            "{0} was called with args {1} and kwargs {2}".format(
+                wrapped_func_name, args, kwargs))
+    return the_enforcer
 
 
 def _load_test_config():
@@ -76,9 +82,12 @@ def override_config_attrs():
         })
 
     # Prevent the tests from altering the config so that nobody accidentally makes global changes
-    config.__setattr__ = _enforce_config
-    config.load_configuration = _enforce_config
-    config.config.set = _enforce_config
+    config.__setattr__ = _enforce_config(
+        '.'.join((config.__package__, 'config.__setattr__')))
+    config.load_configuration = _enforce_config(
+        '.'.join((config.__package__, 'config.load_configuration')))
+    config.config.set = _enforce_config(
+        '.'.join((config.__package__, 'config.config.set')))
 
 
 def restore_config_attrs():
