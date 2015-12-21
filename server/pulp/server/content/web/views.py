@@ -86,7 +86,7 @@ class ContentView(View):
         :return: A redirect or not-found reply.
         :rtype: django.http.HttpResponse
         """
-        path = os.path.realpath(request.path)
+        path = os.path.realpath(request.path_info)
         scheme = request.environ['REQUEST_SCHEME']
         host = request.environ['SERVER_NAME']
         port = request.environ['SERVER_PORT']

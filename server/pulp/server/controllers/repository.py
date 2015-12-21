@@ -223,7 +223,7 @@ def missing_unit_count(repo_id):
     :rtype:  int
     """
     query_sets = get_mongoengine_unit_querysets(repo_id)
-    return sum([query_set(downloaded=False).count() for query_set in query_sets])
+    return sum(query_set(downloaded=False).count() for query_set in query_sets)
 
 
 def has_all_units_downloaded(repo_id):

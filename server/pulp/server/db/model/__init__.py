@@ -252,6 +252,7 @@ class Importer(AutoRetryDocument):
             repo=document.repo_id))
         query_set.delete()
 
+
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
 
 

@@ -11,7 +11,6 @@ from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
 
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
-from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -24,15 +23,17 @@ class StreamerListener(nectar_listener.DownloadEventListener):
     This DownloadEventListener subclass's purpose is to set the
     response headers on the given HTTP request. This includes setting
     the cache-control header with the max-age which is loaded from the
-    Pulp server.conf.
+    streamer configuration file.
     """
 
     def __init__(self, request, streamer_config):
         """
         Initialize a StreamerNectarListener.
 
-        :param request: the request to set the response headers for.
-        :type  request: twisted.web.server.Request
+        :param request:         the request to set the response headers for.
+        :type  request:         twisted.web.server.Request
+        :param streamer_config: The configuration for this streamer instance.
+        :type  streamer_config: ConfigParser.SafeConfigParser
         """
         super(StreamerListener, self).__init__()
         self.request = request
@@ -84,14 +85,18 @@ class Streamer(resource.Resource):
     """
     Define the web resource that streams content from the upstream repository
     to the client.
-
-    :ivar config: The configuration for this streamer instance.
-    :type config: ConfigParser.SafeConfigParser
     """
+
     # Ensure self.getChild isn't called as this has no child resources
     isLeaf = True
 
     def __init__(self, config):
+        """
+        Initialize a streamer instance.
+
+        :param config: The configuration for this streamer instance.
+        :type  config: ConfigParser.SafeConfigParser
+        """
         resource.Resource.__init__(self)
         self.config = config
 
@@ -138,7 +143,7 @@ class Streamer(resource.Resource):
                 request.setResponseCode(NOT_FOUND)
             except PluginNotFound:
                 msg = _('Catalog entry for {rel} references a plugin id'
-                        ' which is not a valid.')
+                        ' which is not valid.')
                 logger.error(msg.format(rel=catalog_path))
                 request.setResponseCode(INTERNAL_SERVER_ERROR)
             except Exception:
@@ -160,13 +165,11 @@ class Streamer(resource.Resource):
         """
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
         download_request = nectar_request.DownloadRequest(catalog_entry.url, responder)
-        primary_downloader = importer.get_downloader(config, catalog_entry.url,
-                                                     **catalog_entry.data)
-        listener = StreamerListener(request, self.config)
-        primary_downloader.event_listener = listener
-        content_container = ContentContainer(threaded=False)
-        content_container.download(primary_downloader, [download_request], listener)
-        primary_downloader.config.finalize()
+        downloader = importer.get_downloader(config, catalog_entry.url,
+                                             **catalog_entry.data)
+        downloader.event_listener = StreamerListener(request, self.config)
+        downloader.download_one(download_request, events=True)
+        downloader.config.finalize()
 
     @staticmethod
     def _add_deferred_download_entry(request, catalog_entry):
