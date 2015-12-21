@@ -1,6 +1,7 @@
 import inspect
 
-from mock import MagicMock, patch
+from bson.objectid import InvalidId
+from mock import call, Mock, MagicMock, patch
 import mock
 import mongoengine
 
@@ -11,6 +12,9 @@ from pulp.plugins.model import PublishReport
 from pulp.server.controllers import repository as repo_controller
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db import model
+
+
+MODULE = 'pulp.server.controllers.repository'
 
 
 class MockException(Exception):
@@ -217,6 +221,77 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         self.assertEquals(5, len(result))
         self.assertEquals(result[0].unit_id, 'bar_5')
         self.assertEquals(result[4].unit_id, 'bar_9')
+
+
+class FindUnitsNotDownloadedTests(unittest.TestCase):
+
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_call(self, mock_repo_querysets):
+        mock_qs = Mock()
+        mock_qs.return_value = [0, 1, 2]
+        mock_repo_querysets.return_value = [mock_qs]
+        units = repo_controller.find_units_not_downloaded('mock_repo')
+        for x, unit in zip(range(3), units):
+            self.assertEqual(x, unit)
+
+
+class MissingUnitCountTests(unittest.TestCase):
+
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_call(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 5
+        mock_repo_querysets.return_value = [query_set]
+        self.assertEqual(5, repo_controller.missing_unit_count('mock_repo'))
+
+
+class HasAllUnitsDownloadedTests(unittest.TestCase):
+
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_true(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 0
+        mock_repo_querysets.return_value = [query_set]
+        self.assertTrue(repo_controller.has_all_units_downloaded('mock_repo'))
+
+    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    def test_false(self, mock_repo_querysets):
+        query_set = Mock()
+        query_set.return_value.count.return_value = 5
+        mock_repo_querysets.return_value = [query_set]
+        self.assertFalse(repo_controller.has_all_units_downloaded('mock_repo'))
+
+
+class GetMongoengineRepoQuerysetsTests(unittest.TestCase):
+    """Tests for the get_mongoengine_unit_querysets function."""
+
+    @patch(MODULE + '.get_unit_model_querysets')
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    def test_mongoengine_types_only(self, mock_repo_units, mock_get_querysets):
+        """Assert that the correct number of query sets are returned."""
+        content_types = ['dog', 'cat', 'goat']
+        mock_repo_units.return_value.distinct.return_value = content_types
+        mock_get_querysets.return_value = [1]
+
+        result = list(repo_controller.get_mongoengine_unit_querysets('mock_repo'))
+        self.assertEqual(3, len(result))
+        for content_type, actual_call in zip(content_types, mock_get_querysets.call_args_list):
+            self.assertEqual(call('mock_repo', content_type, None), actual_call)
+
+    @patch(MODULE + '.get_unit_model_querysets')
+    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    def test_non_mongoengine_type(self, mock_repo_units, mock_get_querysets):
+        """Assert that the correct number of query sets are returned."""
+        content_types = ['dog', None, 'goat']
+        mock_repo_units.return_value.distinct.return_value = content_types
+        mock_get_querysets.return_value = [1]
+
+        result = list(repo_controller.get_mongoengine_unit_querysets('mock_repo'))
+        self.assertEqual(2, len(result))
+        for content_type, actual_call in zip(['dog', 'goat'], mock_get_querysets.call_args_list):
+            self.assertEqual(call('mock_repo', content_type, None), actual_call)
 
 
 class UpdateRepoUnitCountsTests(unittest.TestCase):
@@ -827,6 +902,7 @@ class TestSync(unittest.TestCase):
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
+        self.assertEqual(mock_imp_inst.id, mock_conduit.call_args_list[0][0][2])
         self.assertTrue(actual_result is m_task_result.return_value)
 
     @mock.patch('pulp.server.controllers.repository.TaskResult')
@@ -1203,3 +1279,65 @@ class TestUpdateUnitCount(unittest.TestCase):
                           'm_repo', 'mock_type', 2)
         expected_key = 'inc__content_unit_counts__mock_type'
         m_repo_qs().update_one.assert_called_once_with(**{expected_key: 2})
+
+
+class TestGetImporterById(unittest.TestCase):
+
+    @patch('pulp.server.controllers.repository.ObjectId')
+    @patch('pulp.server.controllers.repository.plugin_api')
+    @patch('pulp.server.controllers.repository.PluginCallConfiguration')
+    @patch('pulp.server.db.model.Importer')
+    def test_call(self, importer, call_conf, plugin_api, object_id):
+        _id = '1234'
+        cfg = MagicMock()
+        plugin = MagicMock()
+        document = MagicMock()
+        importer.objects.get.return_value = document
+        plugin_api.get_importer_by_id.return_value = (plugin, cfg)
+
+        # test
+        _plugin, _conf = repo_controller.get_importer_by_id(_id)
+
+        # validation
+        object_id.assert_called_once_with(_id)
+        importer.objects.get.assert_called_once_with(id=object_id.return_value)
+        call_conf.assert_called_once_with(cfg, document.config)
+        self.assertEqual(_plugin, plugin)
+        self.assertEqual(_conf, call_conf.return_value)
+
+    @patch('pulp.server.controllers.repository.ObjectId', MagicMock())
+    @patch('pulp.server.db.model.Importer')
+    def test_call_document_not_found(self, importer):
+        _id = '1234'
+        importer.objects.get.side_effect = mongoengine.DoesNotExist
+        self.assertRaises(
+            plugin_exceptions.PluginNotFound,
+            repo_controller.get_importer_by_id, _id)
+
+    @patch('pulp.server.controllers.repository.ObjectId')
+    def test_call_invalid_id(self, object_id):
+        _id = '1234'
+        object_id.side_effect = InvalidId
+        self.assertRaises(
+            plugin_exceptions.PluginNotFound,
+            repo_controller.get_importer_by_id, _id)
+
+    @patch('pulp.server.controllers.repository.ObjectId')
+    @patch('pulp.server.controllers.repository.plugin_api')
+    @patch('pulp.server.controllers.repository.PluginCallConfiguration')
+    @patch('pulp.server.db.model.Importer')
+    def test_call_plugin_not_found(self, importer, call_conf, plugin_api, object_id):
+        _id = '1234'
+        document = MagicMock()
+        importer.objects.get.return_value = document
+        plugin_api.get_importer_by_id.side_effect = plugin_exceptions.PluginNotFound
+
+        # test
+        self.assertRaises(
+            plugin_exceptions.PluginNotFound,
+            repo_controller.get_importer_by_id, _id)
+
+        # validation
+        object_id.assert_called_once_with(_id)
+        importer.objects.get.assert_called_once_with(id=object_id.return_value)
+        self.assertFalse(call_conf.called)

@@ -1,0 +1,14 @@
+---
+- name: Install lazy packages
+  dnf: name={{ item }} state=present
+  with_items:
+      - squid
+      - httpd
+
+- name: Install Squid proxy configuration
+  copy: src=squid.conf dest=/etc/squid/squid.conf
+
+- file: path=/var/spool/squid state=directory owner=squid group=squid mode=750
+
+- name: Start and enable Squid service
+  service: name=squid state=started enabled=yes

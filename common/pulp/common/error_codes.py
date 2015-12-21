@@ -102,8 +102,12 @@ PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed 
                              "attribute %(field_name)s correctly"), ['class_name', 'field_name'])
 PLP0036 = Error(
     "PLP0036",
-    _("The source_location: %(source_location)s specified for the content unit is invalid."),
-    ['source_location'])
+    _("Content unit must be saved before associated content files can be imported."),
+    [])
+PLP0037 = Error(
+    "PLP0037",
+    _("Content import of %(path)s failed - must be an existing file."),
+    ['path'])
 PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
                              "%(model_class)s failed to register. Another model has already "
                              "been registered with the same id."), ['model_id', 'model_class'])

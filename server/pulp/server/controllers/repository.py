@@ -1,8 +1,10 @@
 from gettext import gettext as _
+from itertools import chain
 import logging
 import sys
 
-from mongoengine import NotUniqueError, OperationError, ValidationError
+from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
+from bson.objectid import ObjectId, InvalidId
 import celery
 
 from pulp.common import dateutils, error_codes, tags
@@ -13,7 +15,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
-from pulp.plugins.util import misc
+from pulp.plugins.util.misc import paginate
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import PulpTask, register_sigterm_handler, Task, TaskResult
 from pulp.server.controllers import consumer as consumer_controller
@@ -74,10 +76,51 @@ def get_unit_model_querysets(repo_id, model_class, repo_content_unit_q=None):
     :return:    generator of mongoengine.queryset.QuerySet
     :rtype:     generator
     """
-    for chunk in misc.paginate(get_associated_unit_ids(repo_id,
-                                                       model_class._content_type_id.default,
-                                                       repo_content_unit_q)):
+    for chunk in paginate(get_associated_unit_ids(repo_id,
+                                                  model_class._content_type_id.default,
+                                                  repo_content_unit_q)):
         yield model_class.objects(id__in=chunk)
+
+
+def get_repo_unit_models(repo_id):
+    """
+    Retrieve all the MongoEngine models for units in a given repository. If a unit
+    type is in the repository and does not have a MongoEngine model, that unit type
+    is excluded from the returned list.
+
+    :param repo_id: ID of the repo whose unit models should be retrieved.
+    :type  repo_id: str
+
+    :return: A list of sub-classes of ContentUnit that define a unit model.
+    :rtype:  list of pulp.server.db.model.ContentUnit
+    """
+    unit_types = model.RepositoryContentUnit.objects(
+        repo_id=repo_id).distinct('unit_type_id')
+    unit_models = [plugin_api.get_unit_model_by_id(type_id) for type_id in unit_types]
+    # Filter any non-MongoEngine content types.
+    return filter(None, unit_models)
+
+
+def get_mongoengine_unit_querysets(repo_id, repo_content_unit_q=None):
+    """
+    Retrieve an iterable of QuerySets for all the units in a repository that have
+    MongoEngine models. If a unit type is in the repository and does not have a
+    MongoEngine model, that unit type is excluded from the iterable.
+
+    :param repo_id:             The ID of the repo whose units should be queried
+    :type  repo_id:             str
+    :param repo_content_unit_q: Any additional filters that should be applied to the
+                                RepositoryContentUnit search
+    :type  repo_content_unit_q: mongoengine.Q
+
+    :return: A generator of query sets.
+    :rtype:  generator of mongoengine.queryset.QuerySet
+    """
+    unit_models = get_repo_unit_models(repo_id)
+    for unit_model in unit_models:
+        query_sets = get_unit_model_querysets(repo_id, unit_model, repo_content_unit_q)
+        for query_set in query_sets:
+            yield query_set
 
 
 def find_repo_content_units(
@@ -130,8 +173,8 @@ def find_repo_content_units(
         content_unit_set[repo_content_unit.unit_id] = repo_content_unit
 
     for unit_type, unit_ids in type_map.iteritems():
-        qs = plugin_api.get_unit_model_by_id(unit_type).objects(
-            q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
+        _model = plugin_api.get_unit_model_by_id(unit_type)
+        qs = _model.objects(q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
         if unit_fields:
             qs = qs.only(*unit_fields)
 
@@ -152,6 +195,52 @@ def find_repo_content_units(
                     return
 
             yield_count += 1
+
+
+def find_units_not_downloaded(repo_id):
+    """
+    Find content units that have not been fully downloaded.
+
+    :param repo_id: ID of the repo whose units should be retrieved.
+    :type  repo_id: str
+
+    :return: The requested units.
+    :rtype:  generator
+    """
+    query_sets = get_mongoengine_unit_querysets(repo_id)
+    query_sets = [q(downloaded=False) for q in query_sets]
+    return chain(*query_sets)
+
+
+def missing_unit_count(repo_id):
+    """
+    Retrieve the number of units that have not been downloaded.
+
+    :param repo_id: ID of the repo to retrieve the missing unit count for.
+    :type  repo_id: str
+
+    :return: Number of units that have a ``downloaded`` flag set to false.
+    :rtype:  int
+    """
+    query_sets = get_mongoengine_unit_querysets(repo_id)
+    return sum(query_set(downloaded=False).count() for query_set in query_sets)
+
+
+def has_all_units_downloaded(repo_id):
+    """
+    Get whether a repository contains units that have all been downloaded.
+
+    :param repo_id: ID of the repo to retrieve the missing unit count for.
+    :type  repo_id: str
+
+    :return: True if no unit in the repository has the ``downloaded`` flag set
+             to False.
+    :rtype:  bool
+    """
+    for qs in get_mongoengine_unit_querysets(repo_id):
+        if qs(downloaded=False).count():
+            return False
+    return True
 
 
 def rebuild_content_unit_counts(repository):
@@ -207,7 +296,7 @@ def disassociate_units(repository, unit_iterable):
     :param unit_iterable: The units to disassociate from the repository.
     :type unit_iterable: iterable of pulp.server.db.model.ContentUnit
     """
-    for unit_group in misc.paginate(unit_iterable):
+    for unit_group in paginate(unit_iterable):
         unit_id_list = [unit.id for unit in unit_group]
         qs = model.RepositoryContentUnit.objects(
             repo_id=repository.repo_id, unit_id__in=unit_id_list)
@@ -315,6 +404,31 @@ def queue_delete(repo_id):
         tags.RESOURCE_REPOSITORY_TYPE, repo_id,
         [repo_id], tags=task_tags)
     return async_result
+
+
+def get_importer_by_id(object_id):
+    """
+    Get a plugin and call configuration using the document ID
+    of the repository-importer association document.
+
+    :param object_id: The document ID.
+    :type object_id: str
+    :return: A tuple of:
+        (pulp.plugins.importer.Importer, pulp.plugins.config.PluginCallConfiguration)
+    :rtype: tuple
+    :raise pulp.plugins.loader.exceptions.PluginNotFound: not found.
+    """
+    try:
+        object_id = ObjectId(object_id)
+    except InvalidId:
+        raise plugin_exceptions.PluginNotFound()
+    try:
+        document = model.Importer.objects.get(id=object_id)
+    except DoesNotExist:
+        raise plugin_exceptions.PluginNotFound()
+    plugin, cfg = plugin_api.get_importer_by_id(document.importer_type_id)
+    call_conf = PluginCallConfiguration(cfg, document.config)
+    return plugin, call_conf
 
 
 @celery.task(base=Task, name='pulp.server.tasks.repository.delete')
@@ -544,8 +658,8 @@ def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None
 @celery.task(base=Task, name='pulp.server.managers.repo.sync.sync')
 def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     """
-    Performs a synchronize operation on the given repository and triggers publishs for distributors
-    with autopublish enabled.
+    Performs a synchronize operation on the given repository and triggers publishes for
+    distributors with auto-publish enabled.
 
     The given repo must have an importer configured. This method is intentionally limited to
     synchronizing a single repo. Performing multiple repository syncs concurrently will require a
@@ -577,7 +691,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     call_config = PluginCallConfiguration(imp_config, repo_importer.config, sync_config_override)
     transfer_repo.working_dir = common_utils.get_working_directory()
-    conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id)
+    conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id, repo_importer.id)
     sync_result_collection = RepoSyncResult.get_collection()
 
     # Fire an events around the call

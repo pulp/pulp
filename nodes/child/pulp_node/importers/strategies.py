@@ -68,7 +68,7 @@ class Request(object):
         :param summary: A summary report.
         :type summary: pulp_node.importers.reports.SummaryReport
         :param repo: The repository to synchronize.
-        :type repo_id: pulp.server.plugins.model.Repository
+        :type repo: pulp.server.plugins.model.Repository
         """
         self.cancel_event = cancel_event
         self.conduit = conduit
@@ -256,8 +256,7 @@ class ImporterStrategy(object):
         if request.cancelled():
             return
         container = ContentContainer()
-        request.summary.sources = \
-            container.download(request.cancel_event, request.downloader, download_list, listener)
+        request.summary.sources = container.download(request.downloader, download_list, listener)
         request.summary.errors.extend(listener.error_list)
 
     def _update_units(self, request, unit_inventory):

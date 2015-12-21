@@ -91,7 +91,7 @@ ptests() {
 }
 
 _paction() {
-    sudo systemctl $1 goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager
+    sudo systemctl $1 goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager pulp_streamer
 }
 
 psmash() {

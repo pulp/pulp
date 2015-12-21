@@ -17,16 +17,19 @@ class MixinTest(PulpCliCommand, importer_config.ImporterConfigMixin):
     """
 
     def __init__(self, options_bundle=None, include_sync=True, include_ssl=True, include_proxy=True,
-                 include_throttling=True, include_unit_policy=True, include_basic_auth=True):
+                 include_throttling=True, include_unit_policy=True, include_basic_auth=True,
+                 include_download_policy=True):
         PulpCliCommand.__init__(self, 'mixin', '', self.run)
-        importer_config.ImporterConfigMixin.__init__(self,
-                                                     options_bundle=options_bundle,
-                                                     include_sync=include_sync,
-                                                     include_ssl=include_ssl,
-                                                     include_proxy=include_proxy,
-                                                     include_basic_auth=include_basic_auth,
-                                                     include_throttling=include_throttling,
-                                                     include_unit_policy=include_unit_policy)
+        importer_config.ImporterConfigMixin.__init__(
+            self,
+            options_bundle=options_bundle,
+            include_sync=include_sync,
+            include_ssl=include_ssl,
+            include_proxy=include_proxy,
+            include_basic_auth=include_basic_auth,
+            include_throttling=include_throttling,
+            include_unit_policy=include_unit_policy,
+            include_download_policy=include_download_policy)
 
         self.last_parsed_config = None
 
@@ -54,18 +57,21 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         tested separately.
         """
 
-        self.assertEqual(6, len(self.mixin.option_groups))
+        self.assertEqual(7, len(self.mixin.option_groups))
         group_names = [g.name for g in self.mixin.option_groups]
-        expected_names = [importer_config.GROUP_NAME_SYNC, importer_config.GROUP_NAME_SSL,
-                          importer_config.GROUP_NAME_PROXY, importer_config.GROUP_NAME_THROTTLING,
+        expected_names = [importer_config.GROUP_NAME_SYNC,
+                          importer_config.GROUP_NAME_SSL,
+                          importer_config.GROUP_NAME_PROXY,
+                          importer_config.GROUP_NAME_THROTTLING,
                           importer_config.GROUP_NAME_UNIT_POLICY,
-                          importer_config.GROUP_NAME_BASIC_AUTH]
+                          importer_config.GROUP_NAME_BASIC_AUTH,
+                          importer_config.GROUP_DOWNLOAD_POLICY]
         self.assertEqual(set(group_names), set(expected_names))
 
     def test_groups_no_includes(self):
         self.mixin = MixinTest(include_sync=False, include_ssl=False, include_proxy=False,
                                include_throttling=False, include_unit_policy=False,
-                               include_basic_auth=False)
+                               include_basic_auth=False, include_download_policy=False)
         self.assertEqual(0, len(self.mixin.option_groups))
 
     # -- populate tests -------------------------------------------------------
@@ -188,6 +194,13 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(2, len(parsed))
         self.assertEqual(parsed['max_downloads'], 4)
         self.assertEqual(parsed['max_speed'], 1024)
+
+    def test_parse_download_policy_group(self):
+        user_input = {
+            self.mixin.options_bundle.opt_download_policy.keyword: constants.DOWNLOAD_BACKGROUND
+        }
+        parsed = self.mixin.parse_download_policy(user_input)
+        self.assertEqual(parsed[constants.DOWNLOAD_POLICY], constants.DOWNLOAD_BACKGROUND)
 
     def test_end_to_end(self):
         # Setup

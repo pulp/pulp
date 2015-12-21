@@ -62,45 +62,52 @@ class TestContentStorage(TestCase):
 
 class TestFileStorage(TestCase):
 
-    @patch('pulp.server.content.storage.shutil')
     @patch('pulp.server.content.storage.config')
-    @patch('os.path.isdir', Mock(return_value=True))
-    def test_put_dir(self, config, shutil):
-        path_in = '/tmp/test/'
+    def test_get_path(self, config):
         storage_dir = '/tmp/storage'
-        unit = Mock(id='0123456789', _content_type_id='ABC')
         config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
-        storage = FileStorage()
+        unit = Mock(id='0123456789', type_id='ABC')
 
         # test
-        storage.put(unit, path_in)
+        path = FileStorage.get_path(unit)
 
         # validation
-        destination = os.path.join(
-            os.path.join(storage_dir, 'content', 'units', unit._content_type_id),
-            unit.id[0:4], unit.id)
-        shutil.copytree.assert_called_once_with(path_in, destination)
-        self.assertEqual(unit._storage_path, destination)
+        self.assertEqual(
+            path,
+            os.path.join(storage_dir, 'content', 'units',
+                         unit.type_id,
+                         unit.id[0:4],
+                         unit.id))
 
     @patch('pulp.server.content.storage.shutil')
-    @patch('pulp.server.content.storage.config')
-    @patch('os.path.isdir', Mock(return_value=False))
-    def test_put_file(self, config, shutil):
+    @patch('pulp.server.content.storage.mkdir')
+    def test_put_file(self, _mkdir, shutil):
         path_in = '/tmp/test'
-        storage_dir = '/tmp/storage'
-        unit = Mock(id='0123456789', _content_type_id='ABC')
-        config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
+        unit = Mock(id='123', storage_path='/tmp/storage')
         storage = FileStorage()
 
         # test
         storage.put(unit, path_in)
 
         # validation
-        destination = os.path.join(
-            os.path.join(storage_dir, 'content', 'units', unit._content_type_id),
-            unit.id[0:4], unit.id)
+        _mkdir.assert_called_once_with(os.path.dirname(unit.storage_path))
+        shutil.copy.assert_called_once_with(path_in, unit.storage_path)
+
+    @patch('pulp.server.content.storage.shutil')
+    @patch('pulp.server.content.storage.mkdir')
+    def test_put_file_with_location(self, _mkdir, shutil):
+        path_in = '/tmp/test'
+        location = '/a/b/'
+        unit = Mock(id='123', storage_path='/tmp/storage')
+        storage = FileStorage()
+
+        # test
+        storage.put(unit, path_in, location)
+
+        # validation
+        destination = os.path.join(unit.storage_path, location.lstrip('/'))
+        _mkdir.assert_called_once_with(os.path.dirname(destination))
         shutil.copy.assert_called_once_with(path_in, destination)
-        self.assertEqual(unit._storage_path, destination)
 
     def test_get(self):
         storage = FileStorage()
@@ -173,12 +180,12 @@ class TestSharedStorage(TestCase):
         storage = SharedStorage('git', '1234')
 
         # test
-        storage.link(unit)
+        path = storage.link(unit)
 
         # validation
         expected_path = os.path.join(storage.links_dir, unit.id)
         symlink.assert_called_once_with(storage.content_dir, expected_path)
-        self.assertEqual(unit._storage_path, expected_path)
+        self.assertEqual(path, expected_path)
 
     @patch('os.symlink')
     @patch('os.readlink')
@@ -195,13 +202,13 @@ class TestSharedStorage(TestCase):
         readlink.return_value = storage.content_dir
 
         # test
-        storage.link(unit)
+        path = storage.link(unit)
         # note: not exception raised
 
         # validation
         expected_path = os.path.join(storage.links_dir, unit.id)
         symlink.assert_called_once_with(storage.content_dir, expected_path)
-        self.assertEqual(unit._storage_path, expected_path)
+        self.assertEqual(path, expected_path)
 
     @patch('os.symlink')
     @patch('os.readlink')

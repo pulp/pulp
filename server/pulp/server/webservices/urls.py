@@ -47,10 +47,11 @@ from pulp.server.webservices.views.content import (
     OrphanTypeSubCollectionView,
     UploadResourceView,
     UploadsCollectionView,
-    UploadSegmentResourceView
+    UploadSegmentResourceView,
 )
 
 from pulp.server.webservices.views.events import (EventResourceView, EventView)
+
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
                                                        PermissionView, RevokeFromRoleView,
                                                        RevokeFromUserView)
@@ -78,7 +79,8 @@ from pulp.server.webservices.views.status import StatusView
 handler404 = 'pulp.server.webservices.views.util.page_not_found'
 
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'), # flake8: noqa
     url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),
     url(r'^v2/consumers/$', ConsumersView.as_view(), name='consumers'),

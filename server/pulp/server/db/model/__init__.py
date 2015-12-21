@@ -237,6 +237,24 @@ class Importer(AutoRetryDocument):
             'indexes': [{'fields': ['-repo_id', '-importer_type_id'], 'unique': True}],
             'queryset_class': CriteriaQuerySet}
 
+    @classmethod
+    def pre_delete(cls, sender, document, **kwargs):
+        """
+        Purge the lazy catalog of all entries for the importer being deleted.
+
+        :param sender:   class of sender (unused)
+        :type  sender:   object
+        :param document: mongoengine document being deleted.
+        :type  document: pulp.server.db.model.Importer
+        """
+        query_set = LazyCatalogEntry.objects(importer_id=str(document.id))
+        _logger.debug(_('Deleting lazy catalog entries for the {repo} repository.').format(
+            repo=document.repo_id))
+        query_set.delete()
+
+
+signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
+
 
 class ReservedResource(AutoRetryDocument):
     """
@@ -474,17 +492,17 @@ class ContentUnit(AutoRetryDocument):
 
     :ivar id: content unit id
     :type id: mongoengine.StringField
-    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
-    :type _last_updated: mongoengine.IntField
     :ivar pulp_user_metadata: Bag of User supplied data to go along with this unit
     :type pulp_user_metadata: mongoengine.DictField
-    :ivar _storage_path: Location on disk where the content associated with this unit lives
+    :ivar _last_updated: last time this unit was updated (since epoch, zulu time)
+    :type _last_updated: mongoengine.IntField
+    :ivar _storage_path: The absolute path to associated content files.
     :type _storage_path: mongoengine.StringField
     """
 
-    id = StringField(primary_key=True)
-    _last_updated = IntField(required=True)
+    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
     pulp_user_metadata = DictField()
+    _last_updated = IntField(required=True)
     _storage_path = StringField()
 
     meta = {
@@ -576,8 +594,6 @@ class ContentUnit(AutoRetryDocument):
         :param document: Document that sent the signal
         :type document: ContentUnit
         """
-        if not document.id:
-            document.id = str(uuid.uuid4())
         document._last_updated = dateutils.now_utc_timestamp()
 
     def get_repositories(self):
@@ -590,6 +606,16 @@ class ContentUnit(AutoRetryDocument):
         content_list = RepositoryContentUnit.objects(unit_id=self.id)
         id_list = [item.repo_id for item in content_list]
         return Repository.objects(repo_id__in=id_list)
+
+    @property
+    def storage_path(self):
+        """
+        The content storage path.
+
+        :return: The absolute path to stored content.
+        :rtype: str
+        """
+        return self._storage_path
 
     @property
     def unit_key(self):
@@ -649,27 +675,27 @@ class ContentUnit(AutoRetryDocument):
 
 class FileContentUnit(ContentUnit):
     """
-    A content unit representing content that is of type *file* or *directory*.
+    A content unit representing content that is of type *file*.
 
-    :ivar _source_location: The absolute path to file or directory
-        to be copied to the platform storage location when the unit
-        is saved. See: set_content().
-    :type _source_location: str
+    :ivar downloaded: Indicates whether all of the files associated with the
+        unit have been downloaded.
+    :type downloaded: bool
     """
+
+    downloaded = BooleanField(default=True)
 
     meta = {
         'abstract': True,
+        'indexes': [
+            'downloaded'
+        ]
     }
-
-    def __init__(self, *args, **kwargs):
-        super(FileContentUnit, self).__init__(*args, **kwargs)
-        self._source_location = None
 
     @classmethod
     def pre_save_signal(cls, sender, document, **kwargs):
         """
-        The signal that is triggered before a unit is saved, this is used to
-        move the unit file or directory into place.
+        The signal that is triggered before a unit is saved.
+        Ensures the _storage_path is populated.
 
         :param sender: sender class
         :type sender: object
@@ -677,27 +703,63 @@ class FileContentUnit(ContentUnit):
         :type document: FileContentUnit
         """
         super(FileContentUnit, cls).pre_save_signal(sender, document, **kwargs)
-        if not document._source_location:
-            # no content
-            return
+        if not document._storage_path:
+            document.set_storage_path()
+
+    def set_storage_path(self, filename=None):
+        """
+        Set the storage path.
+        This is a total hack to support existing single-file units with a
+        _storage_path that includes the file name.
+
+        :param filename: An optional filename to appended to the path.
+        :rtype filename: str
+        """
+        path = FileStorage.get_path(self)
+        if filename:
+            if not os.path.isabs(filename):
+                path = os.path.join(path, filename)
+            else:
+                raise ValueError(_('must be relative path'))
+        self._storage_path = path
+
+    def list_files(self):
+        """
+        List absolute paths to files associated with this unit.
+        This *must* be overridden by multi-file unit subclasses.
+
+        :return: A list of absolute file paths.
+        :rtype: list
+        """
+        if not os.path.isdir(self._storage_path):
+            return [self._storage_path]
+        else:
+            return []
+
+    def import_content(self, path, location=None):
+        """
+        Import a content file into platform storage.
+        The (optional) *location* may be used to specify a path within the unit
+        storage where the content is to be stored.
+        For example:
+          import_content('/tmp/file') will store 'file' at: _storage_path
+          import_content('/tmp/file', 'a/b/c) will store 'file' at: _storage_path/a/b/c
+
+        :param path: The absolute path to the file to be imported.
+        :type path: str
+        :param location: The (optional) location within the unit storage path
+            where the content is to be stored.
+        :type location: str
+
+        :raises PulpCodedException: PLP0036 if the unit has not been saved.
+        :raises PulpCodedException: PLP0037 if *path* is not an existing file.
+        """
+        if not self._last_updated:
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036)
+        if not os.path.isfile(path):
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
         with FileStorage() as storage:
-            storage.put(document, document._source_location)
-            document._source_location = None
-
-    def set_content(self, source_location):
-        """
-        Store the source of the content for the unit and the relative path
-        where it should be stored within the plugin content directory.
-
-        :param source_location: The absolute path to the content in the plugin working directory.
-        :type source_location: str
-
-        :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
-        """
-        if not os.path.exists(source_location):
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
-                                                source_location=source_location)
-        self._source_location = source_location
+            storage.put(self, path, location)
 
 
 class SharedContentUnit(ContentUnit):
@@ -744,7 +806,7 @@ class SharedContentUnit(ContentUnit):
         """
         super(SharedContentUnit, cls).pre_save_signal(sender, document, **kwargs)
         with SharedStorage(document.storage_provider, document.storage_id) as storage:
-            storage.link(document)
+            document._storage_path = storage.link(document)
 
 
 class CeleryBeatLock(AutoRetryDocument):
@@ -766,6 +828,114 @@ class CeleryBeatLock(AutoRetryDocument):
 
     # For backward compatibility
     _ns = StringField(default='celery_beat_lock')
+
+
+class LazyCatalogEntry(AutoRetryDocument):
+    """
+    A catalog of content that can be downloaded by the specified plugin.
+
+    :ivar path: The content unit storage path.
+    :type path: str
+    :ivar importer_id: The ID of the plugin that contributed the catalog entry.
+        This plugin participates in the downloading of content when requested by the streamer.
+    :type importer_id: str
+    :ivar unit_id: The associated content unit ID.
+    :type unit_id: str
+    :ivar unit_type_id: The associated content unit type.
+    :type unit_type_id: str
+    :ivar url: The *real* download URL.
+    :type url: str
+    :ivar checksum: The checksum of the file associated with the
+        content unit. Used for validation.
+    :type checksum: str
+    :ivar checksum_algorithm: The algorithm used to generate the checksum.
+    :type checksum_algorithm: str
+    :ivar revision: The revision is used to group collections of entries.
+    :type revision: int
+    :ivar data: Arbitrary information stored with the entry.
+        Managed by the plugin.
+    :type data: dict
+    """
+
+    ALG_REGEX = r'(md5|sha1|sha224|sha256|sha384|sha512)'
+
+    meta = {
+        'collection': 'lazy_content_catalog',
+        'allow_inheritance': False,
+        'indexes': [
+            'importer_id',
+            {
+                'fields': [
+                    '-path',
+                    '-importer_id',
+                    '-revision',
+                ],
+                'unique': True
+            },
+        ],
+    }
+
+    # For backward compatibility
+    _ns = StringField(default=meta['collection'])
+
+    path = StringField(required=True)
+    importer_id = StringField(required=True)
+    unit_id = StringField(required=True)
+    unit_type_id = StringField(required=True)
+    url = StringField(required=True)
+    checksum = StringField()
+    checksum_algorithm = StringField(regex=ALG_REGEX)
+    revision = IntField(default=0)
+    data = DictField()
+
+    def save_revision(self):
+        """
+        Add the entry using the next revision number.
+        Previous revisions are deleted.
+        """
+        revisions = set([0])
+        query = dict(
+            unit_id=self.unit_id,
+            unit_type_id=self.unit_type_id,
+            importer_id=self.importer_id)
+        # Find revisions
+        qs = LazyCatalogEntry.objects.filter(**query)
+        for revision in qs.distinct('revision'):
+            revisions.add(revision)
+        # Add new revision
+        last_revision = max(revisions)
+        self.revision = last_revision + 1
+        self.save()
+        # Delete previous revisions
+        qs = LazyCatalogEntry.objects.filter(revision__in=revisions, **query)
+        qs.delete()
+
+
+class DeferredDownload(AutoRetryDocument):
+    """
+    A collection of units that have been handled by the streamer in the
+    passive lazy workflow that Pulp should download.
+
+    :ivar unit_id:      The associated content unit ID.
+    :type unit_id:      str
+    :ivar unit_type_id: The associated content unit type.
+    :type unit_type_id: str
+    """
+    meta = {
+        'collection': 'deferred_download',
+        'indexes': [
+            {
+                'fields': ['unit_id', 'unit_type_id'],
+                'unique': True
+            }
+        ]
+    }
+
+    unit_id = StringField(required=True)
+    unit_type_id = StringField(required=True)
+
+    # For backward compatibility
+    _ns = StringField(default='deferred_download')
 
 
 class User(AutoRetryDocument):

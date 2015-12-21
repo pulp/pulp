@@ -1,0 +1,209 @@
+#!/bin/sh
+# =============================================================
+#  pulp_streamer - Starts Pulp's Lazy Content Streamer service.
+# =============================================================
+#
+# :Usage: /etc/init.d/pulp_streamer {start|stop|force-reload|restart|try-restart|status}
+# :Configuration file: /etc/default/pulp_streamer
+
+### BEGIN INIT INFO
+# Provides:          pulp_streamer
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Should-Start:      mongod qpidd rabbitmq-server
+# Default-Start:     3 4 5
+# Default-Stop:      0 1 2 6
+# Short-Description: pulp's lazy content streamer service
+### END INIT INFO
+
+TWISTD="/usr/bin/twistd"
+TWISTD_USER="apache"
+TWISTD_GROUP="apache"
+TWISTD_PID_FILE="/var/run/pulp/pulp_streamer.pid"
+TWISTD_PID_DIR="/var/run/pulp"
+TWISTD_LOG_FILE="/var/log/pulp/pulp_streamer.log"
+TWISTD_LOG_DIR="/var/log/pulp"
+TWISTD_OPTS="--pidfile=$TWISTD_PID_FILE --syslog \
+ --prefix=pulp_streamer --python /srv/pulp/streamer.tac"
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+if [ -L "$0" ]; then
+    SCRIPT_FILE=$(readlink "$0")
+else
+    SCRIPT_FILE="$0"
+fi
+SCRIPT_NAME="$(basename "$SCRIPT_FILE")"
+
+if [ "$EUID" != "0" ]; then
+    echo "Error: This program can only be used by the root user."
+    exit 1
+fi
+
+if test -f /etc/default/pulp_streamer; then
+    write_log_message "Loading config from /etc/default/pulp_streamer"
+    scripts="/etc/default/pulp_streamer"
+    . /etc/default/pulp_streamer
+fi
+
+start_streamer() {
+    echo "Starting ${SCRIPT_NAME}..."
+    su - "$TWISTD_USER" -s /bin/sh -c "$TWISTD $TWISTD_OPTS"
+    echo "OK"
+}
+
+stop_streamer () {
+    echo -n "Stopping ${SCRIPT_NAME}... "
+    if [ -f "$TWISTD_PID_FILE" ]; then
+        wait_pid $(cat "$TWISTD_PID_FILE")
+    else
+        echo "NOT RUNNING"
+    fi
+}
+
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+        echo "/dev/null is not a character device!"
+        exit 75  # EX_TEMPFAIL
+    fi
+}
+
+maybe_die() {
+    if [ $? -ne 0 ]; then
+        echo "Exiting: $*"
+        exit 77  # EX_NOPERM
+    fi
+}
+
+create_default_dir() {
+    if [ ! -d "$1" ]; then
+        echo "- Creating default directory: '$1'"
+        mkdir -p "$1"
+        maybe_die "Couldn't create directory $1"
+        echo "- Changing permissions of '$1' to 02755"
+        chmod 02755 "$1"
+        maybe_die "Couldn't change permissions for $1"
+        if [ -n "$TWISTD_USER" ]; then
+            echo "- Changing owner of '$1' to '$TWISTD_USER'"
+            chown "$TWISTD_USER" "$1"
+            maybe_die "Couldn't change owner of $1"
+        fi
+        if [ -n "$TWISTD_GROUP" ]; then
+            echo "- Changing group of '$1' to '$TWISTD_GROUP'"
+            chgrp "$TWISTD_GROUP" "$1"
+            maybe_die "Couldn't change group of $1"
+        fi
+        echo "- Restoring context of $1 to 'pulp_var_run_t'"
+        restorecon /var/run/pulp
+        maybe_die "Couldn't restore context of $1"
+    fi
+}
+
+check_paths() {
+    create_default_dir "$TWISTD_LOG_DIR"
+    create_default_dir "$TWISTD_PID_DIR"
+}
+
+check_status() {
+    if [ ! -e $TWISTD_PID_FILE ]; then
+        local pid=
+    else
+        local pid=`cat "$TWISTD_PID_FILE"`
+    fi
+
+    if [ -z "$pid" ]; then
+        echo "${SCRIPT_NAME} is stopped."
+        exit 1
+    fi
+    local failed=
+    kill -0 $pid 2> /dev/null || failed=true
+    if [ "$failed" ]; then
+        echo "${SCRIPT_NAME} is missing."
+        exit 1
+    fi
+    echo "${SCRIPT_NAME} (pid $pid) is running."
+    exit 0
+}
+
+create_paths () {
+    create_default_dir "$TWISTD_LOG_DIR"
+    create_default_dir "$TWISTD_PID_DIR"
+}
+
+wait_pid () {
+    pid=$1
+    forever=1
+    i=0
+    while [ $forever -gt 0 ]; do
+        kill -0 $pid 1>/dev/null 2>&1
+        if [ $? -eq 1 ]; then
+            echo "OK"
+            forever=0
+        else
+            kill -TERM "$pid"
+            i=$((i + 1))
+            if [ $i -gt 60 ]; then
+                echo "ERROR"
+                echo "Timed out while stopping (30s)"
+                forever=0
+            else
+                sleep 0.5
+            fi
+        fi
+    done
+}
+
+# this function implements the fix for bz #1145723
+write_log_message () {
+  touch $TWISTD_LOG_FILE && chown $TWISTD_USER $TWISTD_LOG_FILE
+  echo -n `date "+%Y-%m-%d %T"` >> $TWISTD_LOG_FILE
+  echo " $1" >> $TWISTD_LOG_FILE
+}
+
+case "$1" in
+    start)
+        check_dev_null
+        check_paths
+        write_log_message "**********************************************************"
+        write_log_message "* Pulp streamer startup requested. After startup is      *"
+        write_log_message "* complete, messages will be logged to /var/log/messages.*"
+        write_log_message "**********************************************************"
+        start_streamer
+    ;;
+    stop)
+        check_paths
+        stop_streamer
+    ;;
+    reload|force-reload)
+        echo "Use start+stop"
+    ;;
+    restart)
+        echo "Restarting pulp streamer"
+        check_paths
+        stop_streamer
+        check_dev_null
+        write_log_message "**********************************************************"
+        write_log_message "* Pulp streamer startup requested. After startup is      *"
+        write_log_message "* complete, messages will be logged to /var/log/messages.*"
+        write_log_message "**********************************************************"
+        start_streamer
+    ;;
+    status)
+        check_status
+    ;;
+    create-paths)
+        check_dev_null
+        create_paths
+    ;;
+    check-paths)
+        check_dev_null
+        check_paths
+    ;;
+    *)
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|status|create-paths|check-paths}"
+        exit 64  # EX_USAGE
+    ;;
+esac
+
+exit 0
+

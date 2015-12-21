@@ -7,17 +7,18 @@ import string
 import tempfile
 import traceback
 
-from mock import patch
+from mock import patch, Mock
 
 from .... import base
 from pulp.plugins.types import database as content_type_db
 from pulp.plugins.types.model import TypeDefinition
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.db import model
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager
 
+
+MODULE_PATH = 'pulp.server.managers.content.orphan.'
 
 PHONY_TYPE_1 = TypeDefinition('phony_type_1', 'Phony Type 1', None, 'name', [], [])
 PHONY_TYPE_2 = TypeDefinition('phony_type_2', 'Phony Type 2', None, 'name', [], [])
@@ -258,7 +259,8 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         self.assertFalse(os.path.exists(unit_1['_storage_path']))
         self.assertTrue(os.path.exists(unit_2['_storage_path']))
 
-    def test_delete_by_id_using_generators(self):
+    @patch(MODULE_PATH + 'model.LazyCatalogEntry.objects')
+    def test_delete_by_id_using_generators(self, mock_lazy_catalog_objects):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
 
         json_obj = {'content_type_id': unit['_content_type_id'],
@@ -268,24 +270,41 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 0)
         self.assertEqual(self.number_of_files_in_content_root(), 0)
+        mock_lazy_catalog_objects.assert_called_once_with(
+            unit_id=unit['_id'],
+            unit_type_id=unit['_content_type_id']
+        )
+        mock_lazy_catalog_objects.return_value.delete.assert_called_once_with()
 
-    @patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphaned_file')
-    @patch('pulp.server.managers.content.orphan.model.RepositoryContentUnit.objects')
-    @patch('pulp.server.managers.content.orphan.plugin_api.get_unit_model_by_id')
+    @patch(MODULE_PATH + 'model.LazyCatalogEntry.objects')
+    @patch(MODULE_PATH + 'OrphanManager.delete_orphaned_file')
+    @patch(MODULE_PATH + 'model.RepositoryContentUnit.objects')
+    @patch(MODULE_PATH + 'plugin_api.get_unit_model_by_id')
     def test_delete_content_unit_by_type(
-            self, m_get_model, m_rcu_objects, m_del_orphan):
-
-        class TestUnit(model.FileContentUnit):
-            pass
-        orphan = TestUnit(_storage_path='test_foo_path', id='orphan')
-        non_orphan = TestUnit(_storage_path='test_foo_path', id='non_orphan')
-
-        m_get_model.return_value.objects.return_value.only.return_value = [orphan, non_orphan]
+            self, m_get_model, m_rcu_objects, m_del_orphan, mock_lazy_catalog_objects):
+        orphan = Mock(_storage_path='test_foo_path', id='orphan')
+        non_orphan = Mock(_storage_path='test_foo_path', id='non_orphan')
+        m_get_model.return_value.objects.only.return_value = [
+            orphan,
+            non_orphan
+        ]
         m_rcu_objects.return_value.distinct.return_value = ['non_orphan']
 
         self.orphan_manager.delete_orphan_content_units_by_type('foo_type')
-
+        mock_lazy_catalog_objects.assert_called_once_with(
+            unit_id='orphan',
+            unit_type_id='foo_type'
+        )
+        mock_lazy_catalog_objects.return_value.delete.assert_called_once_with()
         m_del_orphan.assert_called_once_with('test_foo_path')
+
+    @patch(MODULE_PATH + 'plugin_api.get_unit_model_by_id')
+    def test_delete_content_unit_by_type_filtered(self, mock_get_model):
+        mock_get_model.return_value.objects.return_value.only.return_value = []
+
+        self.orphan_manager.delete_orphan_content_units_by_type('foo_type',
+                                                                content_unit_ids=['orphan2'])
+        mock_get_model.return_value.objects.assert_called_once_with(id__in=('orphan2',))
 
 
 class TestDelete(TestCase):

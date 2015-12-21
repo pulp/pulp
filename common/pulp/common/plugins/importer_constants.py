@@ -78,3 +78,13 @@ KEY_UNITS_REMOVE_MISSING = 'remove_missing'
 
 # Number of non-latest versions of a unit to leave in a repository
 KEY_UNITS_RETAIN_OLD_COUNT = 'retain_old_count'
+
+
+# Download policy (Lazy)
+# IMMEDIATE  - Content is downloaded immediately.
+# BACKGROUND - Content is downloaded in the background.
+# ON_DEMAND  - Content is downloaded on demand.
+DOWNLOAD_IMMEDIATE = 'immediate'
+DOWNLOAD_ON_DEMAND = 'on_demand'
+DOWNLOAD_BACKGROUND = 'background'
+DOWNLOAD_POLICY = 'download_policy'

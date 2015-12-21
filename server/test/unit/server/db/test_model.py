@@ -3,14 +3,14 @@
 """
 Tests for the pulp.server.db.model module.
 """
+from mock import patch, Mock, call
 
-from mock import patch, Mock
-
-from mongoengine import (BooleanField, DateTimeField, DictField, Document, IntField, ListField,
-                         StringField, QuerySetNoCache, ValidationError)
+from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField,
+                         Document, IntField, ListField, StringField, QuerySetNoCache)
 
 from pulp.common import error_codes, dateutils
 from pulp.common.compat import unittest
+from pulp.common.error_codes import PLP0036, PLP0037
 from pulp.server import exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
@@ -80,6 +80,14 @@ class TestAutoRetryDocumentClean(unittest.TestCase):
         self.assertRaises(ValidationError, MockDoc().clean)
 
 
+class ContentUnitHelper(model.ContentUnit):
+    """Used to test ContentUnit since it must be sub-classed to be used."""
+    apple = StringField()
+    pear = StringField()
+    unit_key_fields = ('apple', 'pear')
+    _content_type_id = StringField(default='mock_type_id')
+
+
 class TestContentUnit(unittest.TestCase):
     """
     Test ContentUnit model
@@ -88,33 +96,34 @@ class TestContentUnit(unittest.TestCase):
     def test_model_fields(self):
         self.assertTrue(isinstance(model.ContentUnit.id, StringField))
         self.assertTrue(model.ContentUnit.id.primary_key)
-
+        self.assertTrue(callable(model.ContentUnit.id.default))
         self.assertTrue(isinstance(model.ContentUnit._last_updated, IntField))
         self.assertTrue(model.ContentUnit._last_updated.required)
-
+        self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
         self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
 
-        self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
+    @patch('pulp.server.db.model.uuid')
+    def test_default_id(self, uuid):
+        uuid.uuid4.return_value = '1234'
+        unit = ContentUnitHelper()
+        uuid.uuid4.assert_called_once_with()
+        self.assertEqual(unit.id, uuid.uuid4.return_value)
 
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
 
     @patch('pulp.server.db.model.signals')
     def test_attach_signals(self, mock_signals):
-        model.ContentUnit.attach_signals()
+        ContentUnitHelper.attach_signals()
 
-        mock_signals.pre_save.connect.assert_called_once_with(
-            model.ContentUnit.pre_save_signal, sender=model.ContentUnit)
+        mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
+                                                              sender=ContentUnitHelper)
 
     @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
     def test_pre_save_signal(self, mock_now_utc):
         """
         Test the pre_save signal handler
         """
-        class ContentUnitHelper(model.ContentUnit):
-            id = None
-            last_updated = None
-
         mock_now_utc.return_value = 'foo'
         helper = ContentUnitHelper()
         helper._last_updated = 50
@@ -126,28 +135,9 @@ class TestContentUnit(unittest.TestCase):
         # make sure the last updated time has been updated
         self.assertEquals(helper._last_updated, 'foo')
 
-    def test_pre_save_signal_leaves_existing_id(self):
-        """
-        Test the pre_save signal handler leaves an existing id on an object in place
-        """
-        class ContentUnitHelper(model.ContentUnit):
-            id = None
-            last_updated = None
-
-        helper = ContentUnitHelper()
-        helper.id = "foo"
-
-        model.ContentUnit.pre_save_signal({}, helper)
-
-        # make sure the id wasn't replaced
-        self.assertEquals(helper.id, 'foo')
-
     @patch('pulp.server.db.model.Repository.objects')
     @patch('pulp.server.db.model.RepositoryContentUnit.objects')
     def test_get_repositories(self, mock_rcu_query, mock_repository_query):
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-
         c1 = model.RepositoryContentUnit(repo_id='repo1')
         c2 = model.RepositoryContentUnit(repo_id='repo2')
 
@@ -176,21 +166,21 @@ class TestContentUnit(unittest.TestCase):
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
 
     def test_id_to_dict(self):
-        class ContentUnitHelper(model.ContentUnit):
-            apple = StringField()
-            pear = StringField()
-            unit_key_fields = ('apple', 'pear')
-            _content_type_id = StringField(default='bar')
         my_unit = ContentUnitHelper(apple='apple', pear='pear')
         ret = my_unit.to_id_dict()
-        expected_dict = {'unit_key': {'pear': u'pear', 'apple': u'apple'}, 'type_id': 'bar'}
+        expected_dict = {
+            'unit_key': {'pear': u'pear', 'apple': u'apple'},
+            'type_id': 'mock_type_id'
+        }
         self.assertEqual(ret, expected_dict)
 
+    def test_storage_path(self):
+        my_unit = ContentUnitHelper(_storage_path='apple')
+        self.assertEqual(my_unit.storage_path, my_unit._storage_path)
+
     def test_type_id(self):
-        class ContentUnitHelper(model.ContentUnit):
-            _content_type_id = StringField()
         my_unit = ContentUnitHelper(_content_type_id='apple')
-        self.assertEqual(my_unit.type_id, 'apple')
+        self.assertEqual(my_unit.type_id, my_unit._content_type_id)
 
     def test__content_type_id_field_is_not_defined_on_abstract_class(self):
         self.assertFalse(hasattr(model.ContentUnit, '_content_type_id'))
@@ -372,73 +362,115 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 class TestFileContentUnit(unittest.TestCase):
 
     class TestUnit(model.FileContentUnit):
-        pass
+        _content_type_id = StringField(default='')
 
-    def test_init(self):
-        unit = TestFileContentUnit.TestUnit()
-        self.assertEqual(unit._source_location, None)
+    def test_pre_save_signal(self):
+        document = Mock(_storage_path='')
+        self.TestUnit.pre_save_signal(Mock(), document)
+        document.set_storage_path.assert_called_once_with()
 
-    @patch('os.path.exists')
-    def test_set_content(self, exists):
-        path = '1234'
-        unit = TestFileContentUnit.TestUnit()
-        exists.return_value = True
-        unit.set_content(path)
-        exists.assert_called_once_with(path)
-        self.assertEquals(unit._source_location, path)
+    def test_pre_save_signal_storage_path_already_set(self):
+        document = Mock(_storage_path='123')
+        self.TestUnit.pre_save_signal(Mock(), document)
+        self.assertFalse(document.set_storage_path.called)
 
-    @patch('os.path.exists')
-    def test_set_content_bad_source_location(self, exists):
-        """
-        Test that the appropriate exception is raised when set_content
-        is called with a non existent source_location
-        """
-        exists.return_value = False
+    def test_fields(self):
+        self.assertTrue(isinstance(model.FileContentUnit.downloaded, BooleanField))
+        self.assertEqual(model.FileContentUnit.downloaded.default, True)
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path(self, get_path):
+        get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
+        unit.set_storage_path('test')
+        self.assertEqual(unit._storage_path, '/tmp/test')
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path_no_filename(self, get_path):
+        get_path.return_value = '/tmp'
+        unit = TestFileContentUnit.TestUnit()
+        unit.set_storage_path()
+        self.assertEqual(unit._storage_path, '/tmp')
+
+    @patch('pulp.server.db.model.FileStorage.get_path')
+    def test_set_storage_path_absolute(self, get_path):
+        get_path.return_value = '/tmp'
+        unit = TestFileContentUnit.TestUnit()
+        self.assertRaises(ValueError, unit.set_storage_path, '/violation/test')
+
+    @patch('os.path.isdir')
+    def test_list_files(self, isdir):
+        isdir.return_value = False
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [unit._storage_path])
+
+    @patch('os.path.isdir')
+    def test_list_files_multi_file(self, isdir):
+        isdir.return_value = True
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [])
+
+    @patch('os.path.isfile')
+    @patch('pulp.server.db.model.FileStorage')
+    def test_import_content(self, file_storage, isfile):
+        path = '/tmp/working/file'
+        isfile.return_value = True
+        storage = Mock()
+        storage.__enter__ = Mock(return_value=storage)
+        storage.__exit__ = Mock()
+        file_storage.return_value = storage
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._last_updated = 1234
+        unit.import_content(path)
+
+        # validation
+        file_storage.assert_called_once_with()
+        storage.__enter__.assert_called_once_with()
+        storage.__exit__.assert_called_once_with(None, None, None)
+        storage.put.assert_called_once_with(unit, path, None)
+
+    @patch('os.path.isfile')
+    @patch('pulp.server.db.model.FileStorage')
+    def test_import_content_with_location(self, file_storage, isfile):
+        path = '/tmp/working/file'
+        location = 'a/b'
+        isfile.return_value = True
+        storage = Mock()
+        storage.__enter__ = Mock(return_value=storage)
+        storage.__exit__ = Mock()
+        file_storage.return_value = storage
+
+        # test
+        unit = TestFileContentUnit.TestUnit()
+        unit._last_updated = 1234
+        unit.import_content(path, location)
+
+        # validation
+        file_storage.assert_called_once_with()
+        storage.__enter__.assert_called_once_with()
+        storage.__exit__.assert_called_once_with(None, None, None)
+        storage.put.assert_called_once_with(unit, path, location)
+
+    def test_import_content_unit_not_saved(self):
         try:
-            unit.set_content('1234')
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0036)
+            unit = TestFileContentUnit.TestUnit()
+            unit.import_content('')
+            self.fail('Expected coded exception')
+        except PulpCodedException, e:
+            self.assertEqual(e.error_code, PLP0036)
 
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
-    def test_pre_save_signal(self, close, _open, put):
-        sender = Mock()
-        kwargs = {'a': 1, 'b': 2}
-
-        # test
-        unit = TestFileContentUnit.TestUnit()
-        unit._source_location = '1234'
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
-            unit.pre_save_signal(sender, unit, **kwargs)
-
-        # validation
-        base.assert_called_once_with(sender, unit, **kwargs)
-        _open.assert_called_once_with()
-        close.assert_called_once_with()
-        put.assert_called_once_with(unit, '1234')
-        self.assertEqual(unit._source_location, None)
-
-    @patch('pulp.server.db.model.FileStorage.put')
-    @patch('pulp.server.db.model.FileStorage.open')
-    @patch('pulp.server.db.model.FileStorage.close')
-    def test_pre_save_signal_no_content(self, close, _open, put):
-        sender = Mock()
-        kwargs = {'a': 1, 'b': 2}
-
-        # test
-        unit = TestFileContentUnit.TestUnit()
-        unit._source_location = None
-        with patch('pulp.server.db.model.ContentUnit.pre_save_signal') as base:
-            unit.pre_save_signal(sender, unit, **kwargs)
-
-        # validation
-        base.assert_called_once_with(sender, unit, **kwargs)
-        self.assertFalse(_open.called)
-        self.assertFalse(close.called)
-        self.assertFalse(put.called)
+    @patch('os.path.isfile')
+    def test_import_content_not_existing_file(self, isfile):
+        isfile.return_value = False
+        try:
+            unit = TestFileContentUnit.TestUnit()
+            unit._last_updated = 1234
+            unit.import_content('')
+            self.fail('Expected coded exception')
+        except PulpCodedException, e:
+            self.assertEqual(e.error_code, PLP0037)
 
 
 class TestSharedContentUnit(unittest.TestCase):
@@ -803,6 +835,16 @@ class TestImporter(unittest.TestCase):
         self.assertDictEqual(
             indexes[0], {'fields': ['-repo_id', '-importer_type_id'], 'unique': True})
 
+    @patch('pulp.server.db.model.LazyCatalogEntry.objects')
+    def test_pre_delete(self, mock_lazy):
+        """Assert that the pre_delete signal deletes lazy catalog entries."""
+        model.Importer.pre_delete(None, Mock(id='fake'))
+        mock_lazy.assert_called_once_with(importer_id='fake')
+        mock_lazy.return_value.delete.assert_called_once_with()
+
+    def test_pre_delete_connect(self):
+        self.assertTrue(model.signals.pre_delete.has_receivers_for(model.Importer))
+
 
 class TestDistributor(unittest.TestCase):
     """
@@ -890,6 +932,117 @@ class TestCeleryBeatLock(unittest.TestCase):
         Assert that the collection name is correct.
         """
         self.assertEquals(model.CeleryBeatLock._meta['collection'], 'celery_beat_lock')
+
+
+class TestLazyCatalogEntry(unittest.TestCase):
+    """
+    Test the LazyCatalogEntry class.
+    """
+    COLLECTION_NAME = 'lazy_content_catalog'
+
+    def test_model_superclass(self):
+        sample_model = model.LazyCatalogEntry()
+        self.assertTrue(isinstance(sample_model, model.AutoRetryDocument))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.LazyCatalogEntry.path, StringField))
+        self.assertTrue(model.LazyCatalogEntry.path.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.importer_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.importer_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.unit_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.unit_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.unit_type_id, StringField))
+        self.assertTrue(model.LazyCatalogEntry.unit_type_id.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.checksum, StringField))
+        self.assertFalse(model.LazyCatalogEntry.checksum.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.checksum_algorithm, StringField))
+        self.assertFalse(model.LazyCatalogEntry.checksum_algorithm.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.revision, IntField))
+        self.assertFalse(model.LazyCatalogEntry.revision.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry.data, DictField))
+        self.assertFalse(model.LazyCatalogEntry.data.required)
+
+        self.assertTrue(isinstance(model.LazyCatalogEntry._ns, StringField))
+        self.assertEqual(self.COLLECTION_NAME, model.LazyCatalogEntry._ns.default)
+
+    def test_indexes(self):
+        expected = [
+            [('importer_id', 1)],
+            [('path', -1), ('importer_id', -1), ('revision', -1)],
+            [(u'_id', 1)]
+        ]
+        result = model.LazyCatalogEntry.list_indexes()
+        self.assertEqual(expected, result)
+
+    def test_meta_collection(self):
+        self.assertEquals(model.LazyCatalogEntry._meta['collection'], self.COLLECTION_NAME)
+
+    @patch('pulp.server.db.model.LazyCatalogEntry.save')
+    @patch('pulp.server.db.model.LazyCatalogEntry.objects')
+    def test_save_revision(self, objects, save):
+        qs = Mock()
+        qs.distinct.return_value = [1]
+        objects.filter.return_value = qs
+        entry = model.LazyCatalogEntry()
+        entry.unit_id = '123'
+        entry.unit_type_id = 'test'
+        entry.importer_id = '44'
+
+        # test
+        entry.save_revision()
+
+        # validation
+        self.assertEqual(
+            objects.filter.call_args_list,
+            [
+                call(unit_id=entry.unit_id,
+                     unit_type_id=entry.unit_type_id,
+                     importer_id=entry.importer_id),
+                call(revision__in=set([0, 1]),
+                     unit_id=entry.unit_id,
+                     unit_type_id=entry.unit_type_id,
+                     importer_id=entry.importer_id),
+            ])
+        self.assertEqual(entry.revision, 2)
+        save.assert_called_once_with()
+        qs.delete.assert_called_once_with()
+
+
+class TestDeferredDownload(unittest.TestCase):
+    """
+    Test the DeferredDownload class.
+    """
+
+    def test_model_superclass(self):
+        sample_model = model.DeferredDownload()
+        self.assertTrue(isinstance(sample_model, model.AutoRetryDocument))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.DeferredDownload.unit_id, StringField))
+        self.assertTrue(model.DeferredDownload.unit_id.required)
+
+        self.assertTrue(isinstance(model.DeferredDownload.unit_type_id, StringField))
+        self.assertTrue(model.DeferredDownload.unit_type_id.required)
+
+        self.assertTrue(isinstance(model.DeferredDownload._ns, StringField))
+        self.assertEqual('deferred_download', model.DeferredDownload._ns.default)
+
+    def test_indexes(self):
+        result = model.DeferredDownload.list_indexes()
+        self.assertEqual([[('unit_id', 1), ('unit_type_id', 1)], [(u'_id', 1)]], result)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.DeferredDownload._meta['collection'], 'deferred_download')
 
 
 class TestUser(unittest.TestCase):

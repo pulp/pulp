@@ -7,9 +7,9 @@ from pulp.common import dateutils
 from pulp.server.db import fields
 
 
-class TestCustomFields(unittest.TestCase):
+class TestISODateField(unittest.TestCase):
 
-    def test_iso8601_string_field(self):
+    def test_validate(self):
         iso8601_field = fields.ISO8601StringField()
         valid = dateutils.format_iso8601_datetime(datetime.now())
         iso8601_field.validate(valid)

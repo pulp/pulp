@@ -72,6 +72,7 @@ if sys.version_info >= (2, 6):
         '/var/log/pulp',
         '/var/run/pulp',
         '/var/www/pulp',
+        '/var/www/streamer',
         '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
     ])
 
@@ -95,7 +96,17 @@ if sys.version_info >= (2, 6):
     LINKS.extend([
         # Server Web Configuration
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+        ('server/srv/pulp/content.wsgi', '/srv/pulp/content.wsgi'),
         ('server/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
+
+        # Apache
+        ('server/etc/httpd/conf.d/pulp_content.conf', '/etc/httpd/conf.d/pulp_content.conf'),
+
+        # Lazy Streamer components
+        ('streamer/srv/pulp/streamer.tac', '/srv/pulp/streamer.tac'),
+        ('streamer/srv/pulp/streamer_auth.wsgi', '/srv/pulp/streamer_auth.wsgi'),
+        ('streamer/etc/httpd/conf.d/pulp_streamer.conf', '/etc/httpd/conf.d/pulp_streamer.conf'),
+        ('streamer/etc/pulp/streamer.conf', '/etc/pulp/streamer.conf'),
 
         # Pulp Nodes
         ('/var/lib/pulp/content', '/var/www/pulp/nodes'),
@@ -245,6 +256,9 @@ def get_paths_to_copy():
         paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
                       'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'streamer/usr/lib/systemd/system/pulp_streamer.service',
+                      'destination': '/etc/systemd/system/pulp_streamer.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
         paths.append({'source': 'server/usr/lib/tmpfiles.d/pulp.conf',
                       'destination': '/etc/tmpfiles.d/pulp.conf', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': True})
@@ -340,6 +354,7 @@ def install(opts):
         os.system('chown -R apache:apache /var/lib/pulp')
         os.system('chown -R apache:apache /var/cache/pulp')
         os.system('chown -R apache:apache /var/run/pulp')
+        os.system('chown -R apache:apache /var/www/streamer')
 
         # The Celery init script will get angry if /etc/default things aren't root owned
         os.system('chown root:root /etc/default/pulp_celerybeat')

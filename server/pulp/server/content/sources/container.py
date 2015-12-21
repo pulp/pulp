@@ -4,9 +4,10 @@ from threading import Thread, RLock
 from Queue import Queue, Empty, Full
 
 from nectar.listener import DownloadEventListener
-from nectar.report import DownloadReport as NectarDownloadReport
+from nectar.report import DownloadReport as NectarDownloadReport, DOWNLOAD_SUCCEEDED
 from nectar.request import DownloadRequest
 
+from pulp.server.content.sources.event import Started, Succeeded, Failed
 from pulp.server.content.sources.model import ContentSource, PrimarySource, \
     DownloadReport, DownloadDetails, RefreshReport
 from pulp.server.managers import factory as managers
@@ -15,31 +16,44 @@ from pulp.server.managers import factory as managers
 log = getLogger(__name__)
 
 
+class DownloadFailed(Exception):
+    """
+    A serial download has failed.
+    """
+    pass
+
+
 class ContentContainer(object):
     """
     The content container represents a virtual collection of content that is
-    supplied by a collection of content sources.
+    supplied by a collection of content sources.  When using within reactor
+    frameworks such as "Twisted", set threaded = False.
+
     :ivar sources: A dictionary of content sources keyed by source ID.
     :type sources: dict
+    :ivar threaded: Use threaded download method (default:True).
+    :type threaded: bool
     """
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, threaded=True):
         """
-        :param path: The absolute path to a directory containing
-            content source descriptor files.
-        :type path: str
+        :param path:     The absolute path to a directory containing
+                         content source descriptor files.
+        :type  path:     str
+        :param threaded: Whether or not to use the threaded download method.
+        :type  threaded: bool
         """
         self.sources = ContentSource.load_all(path)
+        self.threaded = threaded
 
-    def download(self, canceled, downloader, requests, listener=None):
+    def download(self, downloader, requests, listener=None):
         """
         Download files using available alternate content sources.
         An attempt is made to satisfy each download request using the alternate
         content sources in the order specified by priority.  The specified
         downloader is designated as the primary source and is used in the event that
         the request cannot be completed using alternate sources.
-        :param canceled: An event that indicates the download has been canceled.
-        :type canceled: threading.Event
+
         :param downloader: A primary nectar downloader.  Used to download the
             requested content unit when it cannot be achieved using alternate content sources.
         :type downloader: nectar.downloaders.base.Downloader
@@ -50,17 +64,20 @@ class ContentContainer(object):
         :return: A download report.
         :rtype: DownloadReport
         """
-        self.refresh(canceled)
+        self.refresh()
         primary = PrimarySource(downloader)
-        batch = Batch(canceled, primary, self.sources, requests, listener)
-        report = batch.download()
+        if self.threaded:
+            method = Threaded
+        else:
+            method = Serial
+        batch = method(primary, self, requests, listener)
+        report = batch()
         return report
 
-    def refresh(self, canceled, force=False):
+    def refresh(self, force=False):
         """
         Refresh the content catalog using available content sources.
-        :param canceled: An event that indicates the refresh has been canceled.
-        :type canceled: threading.Event
+
         :param force: Force refresh of content sources with unexpired catalog entries.
         :type force: bool
         :return: A list of refresh reports.
@@ -69,11 +86,9 @@ class ContentContainer(object):
         reports = []
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
-            if canceled.is_set():
-                break
             if force or not catalog.has_entries(source_id):
                 try:
-                    report = source.refresh(canceled)
+                    report = source.refresh()
                     reports.extend(report)
                 except Exception, e:
                     log.error('refresh %s, failed: %s', source_id, e)
@@ -94,54 +109,12 @@ class ContentContainer(object):
         catalog.purge_orphans(valid_ids)
 
 
-class Listener(object):
-    """
-    Download event listener.
-    """
-
-    def download_started(self, request):
-        """
-        Notification that downloading has started for the specified request.
-        :param request: A download request.
-        :type request: pulp.server.content.sources.model.Request
-        """
-
-    def download_succeeded(self, request):
-        """
-        Notification that downloading has succeeded for the specified request.
-        :param request: A download request.
-        :type request: pulp.server.content.sources.model.Request
-        """
-
-    def download_failed(self, request):
-        """
-        Notification that downloading has failed for the specified request.
-        :param request: A download request.
-        :type request: pulp.server.content.sources.model.Request
-        """
-
-
 class NectarListener(DownloadEventListener):
-
-    @staticmethod
-    def _forward(method, request):
-        """
-        Safely invoke the method forwarding a notification to the listener.
-        Catch and log exceptions.
-        :param method: A listener method.
-        :type method: callable
-        :param request: A download request.
-        :type request: pulp.server.content.sources.model.Request.
-        """
-        try:
-            method(request)
-        except Exception:
-            log.exception(str(method))
 
     def __init__(self, batch):
         """
         :param batch: A download batch.
-        :type batch: Batch
+        :type batch: Threaded
         """
         self.batch = batch
         self.total_succeeded = 0
@@ -151,37 +124,31 @@ class NectarListener(DownloadEventListener):
         """
         Nectar download started.
         Forwarded to the listener registered with the container.
+
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.batch.is_canceled:
-            return
         request = report.data
         listener = self.batch.listener
-        if not listener:
-            # nobody listening
-            return
-        self._forward(listener.download_started, request)
+        event = Started(request)
+        event(listener)
 
     def download_succeeded(self, report):
         """
         Nectar download succeeded.
         The associated request is marked as succeeded.
         Forwarded to the listener registered with the container.
+
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
         self.total_succeeded += 1
-        if self.batch.is_canceled:
-            return
         request = report.data
         request.downloaded = True
         listener = self.batch.listener
         self.batch.in_progress.decrement()
-        if not listener:
-            # nobody listening
-            return
-        self._forward(listener.download_succeeded, request)
+        event = Succeeded(request)
+        event(listener)
 
     def download_failed(self, report):
         """
@@ -189,27 +156,148 @@ class NectarListener(DownloadEventListener):
         Forwarded to the listener registered with the container.
         The request is marked as failed ONLY if the request has no more
         content sources to try.
+
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
         self.total_failed += 1
-        if self.batch.is_canceled:
-            return
         request = report.data
         request.errors.append(report.error_msg)
         listener = self.batch.listener
         if self.batch.dispatch(request):
             # trying another
             return
-        if not listener:
-            # nobody listening
-            return
-        self._forward(listener.download_failed, request)
+        event = Failed(request)
+        event(listener)
 
 
 class Batch(object):
     """
     Provides batch processing of a collection of content download requests.
+
+    :ivar primary: A primary nectar downloader.  Used to download the
+        requested content unit when it cannot be achieved using alternate content sources.
+    :type primary: nectar.downloaders.base.Downloader
+    :ivar container: A content container.
+    :type container: ContentContainer
+    :ivar requests: An iterable of: pulp.server.content.sources.model.Request.
+    :type requests: iterable
+    :ivar listener: An optional download request listener.
+    :type listener: Listener
+    """
+
+    def __init__(self, primary, container, requests, listener):
+        """
+        :param primary: The *primary* content source used when requested content
+            download requests cannot be satisfied using alternate content sources.
+        :type primary: PrimarySource
+        :param container: A content container.
+        :type container: ContentContainer
+        :param requests: An iterable of: pulp.server.content.sources.model.Request.
+        :type requests: iterable
+        :param listener: An optional download request listener.
+        :type listener: Listener
+        """
+        self.primary = primary
+        self.container = container
+        self.requests = requests
+        self.listener = listener
+
+    @property
+    def sources(self):
+        """
+        The list of available sources.
+
+        :return: The list of available sources.
+        :rtype: list
+        """
+        return self.container.sources
+
+    def __call__(self):
+        """
+        Begin processing the batch of requests.
+        Download files using available alternate content sources.
+        An attempt is made to satisfy each download request using the alternate
+        content sources in the order specified by priority.  The specified
+        downloader is designated as the primary source and is used in the event that
+        the request cannot be completed using alternate sources.
+
+        :return: The download report.
+        :rtype: DownloadReport
+        """
+        raise NotImplementedError()
+
+
+class Serial(Batch):
+    """
+    Provides sequential batch processing of a collection of content download requests.
+    This approach does *not* use threading.
+    """
+
+    def __call__(self):
+        """
+        Begin processing the batch of requests.
+        Download files using available alternate content sources.
+        An attempt is made to satisfy each download request using the alternate
+        content sources in the order specified by priority.  The specified
+        downloader is designated as the primary source and is used in the event that
+        the request cannot be completed using alternate sources.
+
+        :return: The download report.
+        :rtype: DownloadReport
+        """
+        report = DownloadReport()
+        report.total_sources = len(self.sources)
+        for request in self.requests:
+            event = Started(request)
+            event(self.listener)
+            request.find_sources(self.primary, self.sources)
+            for source, url in request.sources:
+                details = report.downloads.setdefault(source.id, DownloadDetails())
+                try:
+                    self._download(url, request.destination, source)
+                    details.total_succeeded += 1
+                    request.downloaded = True
+                    event = Succeeded(request)
+                    event(self.listener)
+                    break
+                except DownloadFailed, df:
+                    request.errors.append(str(df))
+                    details.total_failed += 1
+            if request.downloaded:
+                continue
+            event = Failed(request)
+            event(self.listener)
+        return report
+
+    @staticmethod
+    def _download(url, destination, source):
+        """
+        Download the URL using the source.
+
+        :param source: A content source used for the download.
+        :type source: ContentSource
+        :param url: The URL of the file to be downloaded.
+        :type url: str
+        :param destination: The absolute path to where the file is
+            to be downloaded.
+        :type destination: str
+        :return: The result: (succeeded, error-message)
+        :rtype: tuple
+        """
+        downloader = source.get_downloader()
+        request = DownloadRequest(url, destination)
+        report = downloader.download_one(request, events=True)
+        if report.state == DOWNLOAD_SUCCEEDED:
+            # All good
+            return
+        else:
+            raise DownloadFailed(report.error_msg)
+
+
+class Threaded(Batch):
+    """
+    Provides threaded batch processing of a collection of content download requests.
 
     How it works:
 
@@ -235,13 +323,11 @@ class Batch(object):
         |              |--> END
         ...
 
-    :ivar canceled: A cancel event.  Signals cancellation requested.
-    :type canceled: threading.Event
     :ivar primary: A primary nectar downloader.  Used to download the
         requested content unit when it cannot be achieved using alternate content sources.
     :type primary: nectar.downloaders.base.Downloader
-    :ivar sources: A dictionary of content sources keyed by source ID.
-    :type sources: dict
+    :ivar container: A content container.
+    :type container: ContentContainer
     :ivar requests: An iterable of: pulp.server.content.sources.model.Request.
     :type requests: iterable
     :ivar listener: An optional download request listener.
@@ -252,37 +338,22 @@ class Batch(object):
     :type queues: dict
     """
 
-    def __init__(self, canceled, primary, sources, requests, listener):
+    def __init__(self, primary, container, requests, listener):
         """
-        :param canceled: A cancel event.  Signals cancellation requested.
-        :type canceled: threading.Event
         :param primary: The *primary* content source used when requested content
             download requests cannot be satisfied using alternate content sources.
         :type primary: PrimarySource
-        :param sources: A dictionary of content sources keyed by source ID.
-        :type sources: dict
+        :param container: A content container.
+        :type container: ContentContainer
         :param requests: An iterable of: pulp.server.content.sources.model.Request.
         :type requests: iterable
         :param listener: An optional download request listener.
         :type listener: Listener
         """
+        super(Threaded, self).__init__(primary, container, requests, listener)
         self._mutex = RLock()
-        self.canceled = canceled
-        self.primary = primary
-        self.sources = sources
-        self.requests = requests
-        self.listener = listener
-        self.in_progress = Tracker(canceled)
+        self.in_progress = Tracker()
         self.queues = {}
-
-    @property
-    def is_canceled(self):
-        """
-        Get whether the batch download has been canceled.
-        :return: True if canceled.
-        :rtype: bool.
-        """
-        return self.canceled.is_set()
 
     def dispatch(self, request):
         """
@@ -290,6 +361,7 @@ class Batch(object):
         next content source that can satisfy the request.  The next source is
         determined by the request itself.  If the list of available sources
         is exhausted, the request is not dispatched.
+
         :param request: The request that has been stared.
         :type request: pulp.server.content.sources.model.Request
         :return: True if dispatched.
@@ -309,6 +381,7 @@ class Batch(object):
         """
         Find the request queue associated with the specified content source.
         The queue is created and added if not found.
+
         :param source: A content source.
         :type source: pulp.server.content.sources.model.ContentSource
         :return: The request queue.
@@ -324,18 +397,19 @@ class Batch(object):
         """
         Create a request queue for the specified content source and add
         it to the *sources* dictionary by source_id.
+
         :param source: A content source.
         :type source: pulp.server.content.sources.model.ContentSource
         :return: The added queue.
         :rtype: RequestQueue
         """
-        queue = RequestQueue(self.canceled, source)
+        queue = RequestQueue(source)
         queue.downloader.event_listener = NectarListener(self)
         self.queues[source.id] = queue
         queue.start()
         return queue
 
-    def download(self):
+    def __call__(self):
         """
         Begin processing the batch of requests.
         Download files using available alternate content sources.
@@ -343,6 +417,7 @@ class Batch(object):
         content sources in the order specified by priority.  The specified
         downloader is designated as the primary source and is used in the event that
         the request cannot be completed using alternate sources.
+
         :return: The download report.
         :rtype: DownloadReport
         """
@@ -352,14 +427,9 @@ class Batch(object):
 
         try:
             for request in self.requests:
-                if self.is_canceled:
-                    break
                 request.find_sources(self.primary, self.sources)
                 self.dispatch(request)
                 count += 1
-        except Exception:
-            self.canceled.set()
-            raise
         finally:
             self.in_progress.wait(count)
             for queue in self.queues.values():
@@ -387,20 +457,17 @@ class RequestQueue(Thread):
     The StopIteration is raised when:
     - The end-of-queue marker (None) is queued.
     - The thread is halted by calling halt().
+
     :ivar _halted: Flag indicating that a thread halt has been requested.
     :type _halted: bool
     :ivar queue: Used to queue download requests between threads.
     :type queue: Queue
     :ivar downloader: A nectar downloader.
     :type downloader: nectar.downloaders.base.Downloader
-    :ivar canceled: A cancel event.  Signals cancellation has been requested.
-    :type canceled: threading.Event
     """
 
-    def __init__(self, canceled, source):
+    def __init__(self, source):
         """
-        :param canceled: A cancel event.  Signals cancellation requested.
-        :type canceled: threading.Event
         :param source: A content source.
         :type source: ContentSource
         """
@@ -408,18 +475,7 @@ class RequestQueue(Thread):
         self._halted = False
         self.queue = Queue(source.max_concurrent)
         self.downloader = source.get_downloader()
-        self.canceled = canceled
         self.setDaemon(True)
-
-    @property
-    def _run(self):
-        """
-        Get whether the thread should continue to run.
-        Convenient method for checking the *canceled* event and the *_halted* flag.
-        :return: True if should continue.
-        :rtype: bool
-        """
-        return not (self.canceled.is_set() or self._halted)
 
     def put(self, item):
         """
@@ -427,10 +483,11 @@ class RequestQueue(Thread):
         An item of (None) is and end-of-queue marker.  This marker will cause
         The next() method to return with will cause StopIteration to be raised when
         the generator is being iterated.
+
         :param item: An item to queue.
         :return: Item
         """
-        while self._run:
+        while not self._halted:
             try:
                 self.queue.put(item, timeout=3)
                 break
@@ -441,10 +498,11 @@ class RequestQueue(Thread):
     def get(self):
         """
         Get the next item queued for download.
+
         :return: The next item queued for download.
         :rtype: Item
         """
-        while self._run:
+        while not self._halted:
             try:
                 return self.queue.get(timeout=3)
             except Empty:
@@ -481,6 +539,7 @@ class RequestQueue(Thread):
 class NectarFeed(object):
     """
     Provides a blocking download request feed to a nectar downloader.
+
     :param queue: A queue to drain.
     :type queue: RequestQueue
     """
@@ -495,6 +554,7 @@ class NectarFeed(object):
     def __iter__(self):
         """
         Performs a get() on the queue until reaching the end-of-queue marker.
+
         :return: An iterable of: DownloadRequest.
         :rtype: iterable
         """
@@ -510,18 +570,12 @@ class NectarFeed(object):
 class Tracker(object):
     """
     A *decrement* event tracker.
-    :ivar canceled: A cancel event.  Signals cancellation requested.
-    :type canceled: threading.Event
+
     :ivar queue: A queue containing *decrement* token.
     :type queue: Queue
     """
 
-    def __init__(self, canceled):
-        """
-        :param canceled: A cancel event.  Signals cancellation requested.
-        :type canceled: threading.Event
-        """
-        self.canceled = canceled
+    def __init__(self):
         self.queue = Queue()
 
     def decrement(self):
@@ -533,12 +587,13 @@ class Tracker(object):
     def wait(self, count):
         """
         Wait for the specified number of *decrement* tokens.
+
         :param count: The number of expected *decrement* tokens.
         :type: count: int
         """
         if count < 0:
             raise ValueError('must be >= 0')
-        while count > 0 and (not self.canceled.is_set()):
+        while count > 0:
             try:
                 self.queue.get(timeout=3)
                 count -= 1
