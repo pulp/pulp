@@ -1219,7 +1219,7 @@ class GetLocalUnitsStep(SaveUnitsStep):
 
             for found_unit in query:
                 units_we_already_had.add(hash(found_unit))
-                repo_controller.associate_single_unit(self.get_repo(), found_unit)
+                repo_controller.associate_single_unit(self.get_repo().repo_obj, found_unit)
 
             for unit in units_group:
                 if hash(unit) not in units_we_already_had:

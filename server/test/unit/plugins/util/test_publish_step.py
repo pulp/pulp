@@ -1033,7 +1033,8 @@ class TestGetLocalUnitsStep(unittest.TestCase):
     def setUp(self):
         super(TestGetLocalUnitsStep, self).setUp()
         self.parent = MagicMock()
-        self.step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo')
+        fake_repo = Repository(id='fake-repo', repo_obj='fake_repo')
+        self.step = publish_step.GetLocalUnitsStep('fake_importer_type', repo=fake_repo)
         self.step.parent = self.parent
         self.step.conduit = MagicMock()
         self.parent.available_units = []
@@ -1122,7 +1123,8 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         demo_3 = self.DemoModel(key_field='c')
         self.parent.available_units = [demo_1, demo_2]
         available_units = [demo_1, demo_2, demo_3]
-        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo',
+        fake_repo = Repository(id='fake-repo', repo_obj='fake_repo')
+        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo=fake_repo,
                                               available_units=available_units)
         step.parent = self.parent
         step.conduit = MagicMock()
