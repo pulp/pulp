@@ -1,10 +1,10 @@
 from httplib import INTERNAL_SERVER_ERROR, NOT_FOUND
-from unittest import TestCase
 
 from mock import Mock, patch
 from mongoengine import NotUniqueError
 from twisted.web.server import Request
 
+from pulp.common.compat import unittest
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.streamer import Responder, StreamerListener, Streamer
@@ -13,7 +13,7 @@ from pulp.streamer import Responder, StreamerListener, Streamer
 MODULE_PREFIX = 'pulp.streamer.server.'
 
 
-class TestStreamerListener(TestCase):
+class TestStreamerListener(unittest.TestCase):
 
     def test_download_headers(self):
         """
@@ -51,7 +51,7 @@ class TestStreamerListener(TestCase):
         listener.request.setResponseCode.assert_called_once_with('418')
 
 
-class TestStreamer(TestCase):
+class TestStreamer(unittest.TestCase):
 
     def setUp(self):
         self.config = Mock()
@@ -205,7 +205,7 @@ class TestStreamer(TestCase):
         self.assertEqual(0, mock_deferred_download.return_value.save.call_count)
 
 
-class TestResponder(TestCase):
+class TestResponder(unittest.TestCase):
 
     def test_enter(self):
         """

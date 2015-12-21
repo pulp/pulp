@@ -98,10 +98,10 @@ class OptionsBundle(object):
             parse_func=parsers.pulp_parse_optional_nonnegative_int
         )
 
-        d = _('content downloading policy ({m})'.format(
-            m=' | '.join((constants.DOWNLOAD_IMMEDIATE,
-                          constants.DOWNLOAD_BACKGROUND,
-                          constants.DOWNLOAD_ON_DEMAND))))
+        methods = ' | '.join((constants.DOWNLOAD_IMMEDIATE,
+                              constants.DOWNLOAD_BACKGROUND,
+                              constants.DOWNLOAD_ON_DEMAND))
+        d = _('content downloading policy (%(method)s)' % {'method': methods})
         self.opt_download_policy = PulpCliOption(
             '--download-policy',
             d,
