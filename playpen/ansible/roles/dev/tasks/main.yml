@@ -16,19 +16,9 @@
       url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
       dest: /etc/yum.repos.d/fedora-pulp.repo
 
-- name: Enable Pulp 2.7 beta repository
-  command: dnf config-manager --set-enabled pulp-2.7-beta
-  when: pulp_27_beta_repo_enabled == false
-
-# This and its related fact should go away when we do have an f23 build, since it'll be a noop at that point
-- name: Rejigger the repo file if fedora 23 builds aren't available
-  replace:
-      dest: /etc/yum.repos.d/fedora-pulp.repo
-      regexp: 'fedora-\$releasever'
-      replace: fedora-22
-  when: not pulp_27_beta_f23_repo_available and
-        ansible_distribution == 'Fedora' and
-        ansible_distribution_version == '23'
+- name: Enable Pulp Nightly repository
+  command: dnf config-manager --set-enabled pulp-nightlies
+  when: pulp_nightly_repo_enabled == false
 
 # These can go away when https://fedorahosted.org/spin-kickstarts/ticket/59 is fixed
 - stat:
@@ -75,6 +65,10 @@
       state: present
       groups: systemd-journal
       append: true
+
+- name: Install Pulp RPM dependencies
+  dnf: name={{ item }} state=present
+  with_items: "{{ pulp_rpm_dependencies }}"
 
 - copy: src=bashrc dest=/home/{{ ansible_env.SUDO_USER }}/.bashrc
 - copy: src=drop_database.js dest=/home/{{ ansible_env.SUDO_USER }}/drop_database.js

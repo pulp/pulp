@@ -76,7 +76,7 @@ class TestAuthenticationMethods(base.PulpServerTests):
         Test that if the user is not a super user and the operation requires super user,
         an exception is raised. This test mocks out the authentication portion of the decorator.
         """
-        mock_user_qs.get_or_404.return_value.is_superuser.return_value = False
+        mock_user_qs.get.return_value.is_superuser.return_value = False
         decorated_func = decorators.auth_required(0, True)(self.func)
         self.assertRaises(PulpCodedAuthenticationException, decorated_func, None)
         self.assertEqual(0, mock_is_authed.call_count)
@@ -102,6 +102,33 @@ class TestAuthenticationMethods(base.PulpServerTests):
         decorated_func = decorators.auth_required(0, False)(self.func)
         self.assertRaises(PulpCodedAuthenticationException, decorated_func, None)
         self.assertEqual(1, mock_is_authorized.call_count)
+
+    @mock.patch('pulp.server.webservices.http.resource_path', autospec=True, return_value='/')
+    @mock.patch('pulp.server.webservices.views.decorators.consumer_cert_authentication',
+                return_value='gob')
+    @mock.patch('pulp.server.webservices.views.decorators.user_cert_authentication',
+                return_value=None)
+    @mock.patch('pulp.server.webservices.views.decorators.password_authentication',
+                return_value=None)
+    @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated',
+                return_value=None)
+    @mock.patch('pulp.server.webservices.views.decorators.factory.principal_manager')
+    @mock.patch('pulp.server.webservices.views.decorators.model.User.objects')
+    @mock.patch('pulp.server.webservices.views.decorators.is_consumer_authorized',
+                return_value=True)
+    def test_auth_decorator_consumer_authorized(self, mock_is_authorized, mock_user_objects,
+                                                mock_principal_manager, *unused_mocks):
+        """
+        Test that if the consumer is authorized, no exception is raised.
+        """
+        principal_manager = mock_principal_manager.return_value
+        decorated_func = decorators.auth_required(0, False)(lambda *x: None)
+        decorated_func(None)
+
+        self.assertEqual(0, mock_user_objects.get.call_count)
+        mock_is_authorized.assert_called_once_with('/', 'gob', 0)
+        principal_manager.set_principal.assert_called_once_with()
+        principal_manager.clear_principal.assert_called_once_with()
 
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
