@@ -1,11 +1,10 @@
-from unittest import TestCase
-
 from mock import Mock, patch, call
 
 from pulp.streamer.config import load_configuration, DEFAULT_VALUES
+from pulp.common.compat import unittest
 
 
-class TestConfig(TestCase):
+class TestConfig(unittest.TestCase):
 
     @patch('pulp.streamer.config.SafeConfigParser')
     def test_load_configuration(self, mock_parser_class):
