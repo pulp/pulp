@@ -94,7 +94,7 @@ class TestContentView(TestCase):
             'QUERY_STRING': query,
             'REMOTE_ADDR': remote_ip
         }
-        request = Mock(environ=environ, path=path)
+        request = Mock(environ=environ, path_info=path)
         key = Mock()
 
         # test

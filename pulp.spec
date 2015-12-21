@@ -5,6 +5,7 @@
 %define pulp_admin 0
 %define pulp_client_oauth 0
 %define pulp_server 0
+%define pulp_streamer 0
 %else
 %define pulp_admin 1
 %define pulp_client_oauth 1
