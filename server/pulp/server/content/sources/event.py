@@ -129,8 +129,8 @@ class Listener(object):
         :param event: An event.
         :type event: Event
         """
+        name = 'on_{event}'.format(event=event.name)
         try:
-            name = 'on_{event}'.format(event=event.name)
             method = getattr(self, name)
             method(event.request)
         except AttributeError:

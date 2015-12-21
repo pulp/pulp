@@ -33,9 +33,10 @@ class Importer(object):
         """
         url = urlparse(url)
         nectar_config = importer_config_to_nectar_config(config.flatten())
-        if url.scheme == 'file':
+        scheme = url.scheme.lower()
+        if scheme == 'file':
             return LocalFileDownloader(nectar_config)
-        if url.scheme in ('http', 'https'):
+        if scheme in ('http', 'https'):
             return HTTPThreadedDownloader(nectar_config)
         raise ValueError(_('Scheme "{s}" not supported').format(s=url.scheme))
 

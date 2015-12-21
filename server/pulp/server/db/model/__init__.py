@@ -903,7 +903,7 @@ class LazyCatalogEntry(AutoRetryDocument):
         for revision in qs.distinct('revision'):
             revisions.add(revision)
         # Add new revision
-        last_revision = sorted(revisions, reverse=True)[0]
+        last_revision = max(revisions)
         self.revision = last_revision + 1
         self.save()
         # Delete previous revisions
