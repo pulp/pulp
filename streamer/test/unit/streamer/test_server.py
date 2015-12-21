@@ -213,7 +213,7 @@ class TestResponder(unittest.TestCase):
         """
         responder = Responder(Mock())
         result = responder.__enter__()
-        self.assertIs(responder, result)
+        self.assertTrue(responder is result)
 
     def test_exit(self):
         """

@@ -133,4 +133,5 @@ def download_policy_validator(x):
         importer_constants.DOWNLOAD_BACKGROUND,
         importer_constants.DOWNLOAD_ON_DEMAND)
     if x not in valid:
-        raise ValueError(_('policy must be: ({p})'.format(p=' | '.join(valid))))
+        raise ValueError(_('policy must be: (%(p)s)' %
+                           {'p': ' | '.join(valid)}))
