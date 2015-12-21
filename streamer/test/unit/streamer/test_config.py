@@ -18,5 +18,5 @@ class TestConfig(unittest.TestCase):
         for expected, actual in zip(expected_sections, actual_sections):
             self.assertEqual(call(expected), actual)
             for option, value in DEFAULT_VALUES[expected].items():
-                self.assertIn(call(expected, option, value), mock_parser.set.call_args_list)
+                self.assertTrue(call(expected, option, value) in mock_parser.set.call_args_list)
         mock_parser.read.assert_called_once_with(['/a/file'])
