@@ -1144,9 +1144,11 @@ class TestSaveUnitsStep(unittest.TestCase):
 
     @patch('pulp.plugins.util.publish_step.repo_controller')
     def test_finalize(self, mock_repo_controller):
-        step = publish_step.SaveUnitsStep('foo_type', repo='bar')
+        repo = Repository('repo1')
+        repo.repo_obj = model.Repository(repo_id=repo.id)
+        step = publish_step.SaveUnitsStep('foo_type', repo=repo)
         step.finalize()
-        mock_repo_controller.rebuild_content_unit_counts.assert_called_once_with('bar')
+        mock_repo_controller.rebuild_content_unit_counts.assert_called_once_with(repo.repo_obj)
 
 
 class TestCreateManifestStep(unittest.TestCase):
