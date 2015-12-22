@@ -482,7 +482,7 @@ class PluginStep(Step):
         Return the repo associated with the step
 
         :returns: the repository for this action
-        :rtype: pulp.server.db.model.Repository
+        :rtype: pulp.plugins.model.Repository
         """
         if self.repo:
             return self.repo
@@ -1130,7 +1130,7 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         download succeeds. Bump the successes counter and report progress.
 
         :param report: report (passed in from nectar but currently not used)
-        :type  report: pulp.plugins.model.PublishReport
+        :type  report: nectar.report.DownloadReport
         """
         self.progress_successes += 1
         self.report_progress()
@@ -1142,7 +1142,7 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         download fails. Bump the failure counter and report progress.
 
         :param report: report (passed in from nectar but currently not used)
-        :type  report: pulp.plugins.model.PublishReport
+        :type  report: nectar.report.DownloadReport
         """
         self.progress_failures += 1
         self.report_progress()
@@ -1164,7 +1164,7 @@ class SaveUnitsStep(PluginStep):
     """
 
     def finalize(self):
-        repo_controller.rebuild_content_unit_counts(self.get_repo())
+        repo_controller.rebuild_content_unit_counts(self.get_repo().repo_obj)
 
 
 class GetLocalUnitsStep(SaveUnitsStep):
