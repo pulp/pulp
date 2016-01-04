@@ -291,7 +291,8 @@ class Step(object):
             self.process_main(item=item)
         else:
             self.process_main()
-        if failures == self.progress_failures:
+        if failures == self.progress_failures and \
+                self.progress_successes + failures < self.get_total():
             self.progress_successes += 1
         self.report_progress()
 
