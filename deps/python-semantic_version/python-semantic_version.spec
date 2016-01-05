@@ -1,6 +1,6 @@
-Name: python-semantic-version
+Name: python-semantic_version
 Version: 2.2.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: A library implementing the 'SemVer' scheme.
 
 License: BSD
@@ -37,6 +37,9 @@ SemVer scheme.
 
 
 %changelog
+* Tue Jan 05 2016 Ina Panova <ipanova@redhat.com> 2.2.0-4
+- Rebuild python-semantic_version for 2.2.0-4
+
 * Wed Sep 11 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-3
 - comment out the unit tests in python-semantic-version. too much of a pain to
   add the dep in brew.  We can uncomment later. (jortel@redhat.com)
