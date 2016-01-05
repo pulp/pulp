@@ -1,8 +1,11 @@
+from gettext import gettext as _
 import logging
 
 from pulp.server.config import config
 from pulp.server.lazy.url import SignedURL, NotValid, Key
+from pulp.server.logs import start_logging
 
+start_logging()
 log = logging.getLogger(__name__)
 
 key_path = config.get('authentication', 'rsa_pub')
@@ -31,7 +34,9 @@ def allow_access(environ, host):
     remote_ip = environ['REMOTE_ADDR']
     try:
         url.validate(key, remote_ip=remote_ip)
+        log.debug(_('Validated {ip} for {url}.').format(ip=remote_ip, url=url))
         return True
     except NotValid, le:
-        log.info(str(le))
+        msg = _('Received invalid request from {ip} for {url}: {error}.')
+        log.debug(msg.format(ip=remote_ip, url=url, error=str(le)))
         return False

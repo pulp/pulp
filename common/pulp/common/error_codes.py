@@ -153,3 +153,6 @@ PLP1010 = Error("PLP1010", _("Provided value %(value)s for field %(field)s must 
 PLP1011 = Error("PLP1011", _("Invalid task state passed to purge: %(state)s."), ["state"])
 PLP1012 = Error("PLP1012", _("No task state given to parameters list for delete."), [])
 PLP1013 = Error("PLP1013", _("Checksum does not match calculated value."), [])
+PLP1014 = Error("PLP1014", _("The configuration value for the key '%(key)s' in "
+                             "section '%(section)s' is not valid for the following "
+                             "reason: %(reason)s"), ["key", "section", "reason"])

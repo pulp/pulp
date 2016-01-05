@@ -12,6 +12,7 @@ import mock
 from pulp.server.async import celery_instance
 from pulp.server.config import config, _default_values
 from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
+from pulp.server.controllers.content import download_deferred
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
@@ -29,7 +30,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         # Please read the docblock to this test if you find yourself needing to adjust this
         # assertion.
-        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 2)
+        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 3)
 
     def test_reap_expired_documents(self):
         """
@@ -54,6 +55,20 @@ class TestCelerybeatSchedule(unittest.TestCase):
         }
         self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['monthly_maintenance'],
                          expected_monthly_maintenance)
+
+    def test_download_deferred_content(self):
+        """
+        Make sure the monthly maintenance Task is present and properly configured.
+        """
+        expected_download_deferred = {
+            'task': download_deferred.name,
+            'schedule': timedelta(minutes=config.getint('lazy', 'download_interval')),
+            'args': tuple(),
+        }
+        self.assertEqual(
+            celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['download_deferred_content'],
+            expected_download_deferred
+        )
 
     def test_celery_conf_updated(self):
         """

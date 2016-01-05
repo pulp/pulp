@@ -402,7 +402,14 @@ class TestFileContentUnit(unittest.TestCase):
     def test_list_files(self, isdir):
         isdir.return_value = False
         unit = TestFileContentUnit.TestUnit()
+        unit._storage_path = '/some/dir/'
         self.assertEqual(unit.list_files(), [unit._storage_path])
+
+    @patch('os.path.isdir')
+    def test_list_files_no_path(self, isdir):
+        isdir.return_value = False
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [])
 
     @patch('os.path.isdir')
     def test_list_files_multi_file(self, isdir):

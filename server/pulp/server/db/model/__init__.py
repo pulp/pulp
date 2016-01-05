@@ -12,10 +12,10 @@ from mongoengine import (BooleanField, DictField, Document, DynamicField, IntFie
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
+from pulp.plugins.model import Repository as plugin_repo
 from pulp.server import exceptions
 from pulp.server.constants import SUPER_USER_ROLE
 from pulp.server.content.storage import FileStorage, SharedStorage
-from pulp.plugins.model import Repository as plugin_repo
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.connection import UnsafeRetry
 from pulp.server.compat import digestmod
@@ -731,7 +731,7 @@ class FileContentUnit(ContentUnit):
         :return: A list of absolute file paths.
         :rtype: list
         """
-        if not os.path.isdir(self._storage_path):
+        if self._storage_path and not os.path.isdir(self._storage_path):
             return [self._storage_path]
         else:
             return []
