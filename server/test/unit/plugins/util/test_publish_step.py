@@ -200,6 +200,26 @@ class StepTests(PublisherBase):
         self.assertFalse(step.status_conduit.report_progress.called)
 
 
+class TestStepProcessBlock(unittest.TestCase):
+    def test_increments_progress(self):
+        step = publish_step.Step('foo_step', disable_reporting=True)
+
+        step._process_block()
+
+        self.assertEqual(step.progress_successes, 1)
+
+    def test_progress_overflow_prevention(self):
+        step = publish_step.Step('foo_step', disable_reporting=True)
+        # ensure the step still defaults to 1
+        self.assertEqual(step.get_total(), 1)
+        step.progress_successes = 1
+
+        step._process_block()
+
+        # make sure progress does not get incremented beyond the total
+        self.assertEqual(step.progress_successes, 1)
+
+
 class PluginStepTests(PluginBase):
     """
     This class has a lot of duplicated tests from PublishStepTests, in order to

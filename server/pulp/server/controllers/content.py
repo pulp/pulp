@@ -104,7 +104,7 @@ class ContentSourcesRefreshStep(Step):
                 raise PulpCodedTaskException(error_code=error_codes.PLP0031, id=report.source_id,
                                              url=report.url)
 
-    def _get_total(self):
+    def get_total(self):
         return len(self.sources)
 
 
