@@ -37,8 +37,8 @@ TESTS_ALL_PLATFORMS = [
 TESTS_NON_RHEL5 = [
     'client_admin/test/unit',
     'nodes/test/nodes_tests',
-    'server/test/unit',
     'streamer/test/unit',
+    'server/test/unit',
     'repoauth/test',
     'oid_validation/test',
     'devel/test/unit'
