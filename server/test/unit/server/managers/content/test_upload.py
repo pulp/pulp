@@ -160,8 +160,9 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u',
                           'fake-type')
 
+    @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts')
     @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
-    def test_import_uploaded_unit(self, mock_repo_qs):
+    def test_import_uploaded_unit(self, mock_repo_qs, mock_rebuild):
         importer_controller.set_importer('repo-u', 'mock-importer', {})
 
         key = {'key': 'value'}
@@ -193,6 +194,9 @@ class ContentUploadManagerTests(base.PulpServerTests):
         conduit = call_args[5]
         self.assertTrue(isinstance(conduit, UploadConduit))
         self.assertEqual(call_args[5].repo_id, 'repo-u')
+
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
 
         # Clean up
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = None

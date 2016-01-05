@@ -784,6 +784,7 @@ class TestUpdateLastUnitRemoved(unittest.TestCase):
         m_repo.save.assert_called_once_with()
 
 
+@mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts')
 @mock.patch('pulp.server.controllers.repository.sys')
 @mock.patch('pulp.server.controllers.repository.register_sigterm_handler')
 @mock.patch('pulp.server.controllers.repository._now_timestamp')
@@ -808,7 +809,7 @@ class TestSync(unittest.TestCase):
 
     def test_sync_sigterm_error(self, m_model, mock_plugin_api,
                                 mock_plug_conf, mock_wd, mock_conduit, mock_result, m_factory,
-                                mock_now, mock_reg_sig, mock_sys):
+                                mock_now, mock_reg_sig, mock_sys, mock_rebuild):
         """
         An error_result should be built when there is an error with the sigterm handler.
         """
@@ -828,11 +829,14 @@ class TestSync(unittest.TestCase):
         sync_func.assert_called_once_with(m_repo.to_transfer_repo(), mock_conduit(),
                                           mock_plug_conf())
 
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
+
     @mock.patch('pulp.server.controllers.repository._queue_auto_publish_tasks')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
     def test_sync_canceled(self, m_task_result, mock_spawn_auto_pub, m_model,
                            mock_plugin_api, mock_plug_conf, mock_wd, mock_conduit, mock_result,
-                           m_factory, mock_now, mock_reg_sig, mock_sys):
+                           m_factory, mock_now, mock_reg_sig, mock_sys, mock_rebuild):
         """
         Test the behavior of sync when the task is canceled.
         """
@@ -865,12 +869,15 @@ class TestSync(unittest.TestCase):
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(actual_result is m_task_result.return_value)
 
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
+
     @mock.patch('pulp.server.controllers.repository._queue_auto_publish_tasks')
     @mock.patch('pulp.server.controllers.repository.TaskResult')
     def test_sync_success(self, m_task_result, mock_spawn_auto_pub, m_model,
                           mock_plugin_api, mock_plug_conf, mock_wd,
                           mock_conduit, mock_result, m_factory, mock_now, mock_reg_sig,
-                          mock_sys):
+                          mock_sys, mock_rebuild):
         """
         Test repository sync when everything works as expected.
         """
@@ -905,10 +912,13 @@ class TestSync(unittest.TestCase):
         self.assertEqual(mock_imp_inst.id, mock_conduit.call_args_list[0][0][2])
         self.assertTrue(actual_result is m_task_result.return_value)
 
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
+
     @mock.patch('pulp.server.controllers.repository.TaskResult')
     def test_sync_failed(self, m_task_result, m_model, mock_plugin_api, mock_plug_conf,
                          mock_wd, mock_conduit, mock_result, m_factory, mock_now, mock_reg_sig,
-                         mock_sys):
+                         mock_sys, mock_rebuild):
         """
         Test repository sync when the result is failure.
         """
@@ -941,6 +951,9 @@ class TestSync(unittest.TestCase):
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
 
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
+
     @mock.patch('pulp.server.controllers.repository._queue_auto_publish_tasks')
     @mock.patch('pulp.server.controllers.repository._')
     @mock.patch('pulp.server.controllers.repository._logger')
@@ -948,7 +961,7 @@ class TestSync(unittest.TestCase):
     def test_sync_invalid_sync_report(self, m_task_result, mock_logger, mock_gettext,
                                       mock_spawn_auto_pub, m_model, mock_plugin_api,
                                       mock_plug_conf, mock_wd, mock_conduit, mock_result,
-                                      m_factory, mock_now, mock_reg_sig, mock_sys):
+                                      m_factory, mock_now, mock_reg_sig, mock_sys, mock_rebuild):
         """
         Test repository sync when the sync report is not valid.
         """
@@ -973,6 +986,9 @@ class TestSync(unittest.TestCase):
                                                                   safe=True)
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(result is m_task_result.return_value)
+
+        # It is now platform's responsiblity to update plugin content unit counts
+        self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
 
 
 @mock.patch('pulp.server.controllers.repository.model.Distributor.objects')
