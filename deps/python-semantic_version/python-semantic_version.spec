@@ -1,6 +1,6 @@
 Name: python-semantic_version
 Version: 2.2.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: A library implementing the 'SemVer' scheme.
 
 License: BSD
@@ -37,6 +37,9 @@ SemVer scheme.
 
 
 %changelog
+* Wed Jan 06 2016 Ina Panova <ipanova@redhat.com> 2.2.0-5
+- Fix python-semantic_version build (ipanova@redhat.com)
+
 * Tue Jan 05 2016 Ina Panova <ipanova@redhat.com> 2.2.0-4
 - Rebuild python-semantic_version for 2.2.0-4
 
