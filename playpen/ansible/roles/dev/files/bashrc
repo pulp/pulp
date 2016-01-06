@@ -17,6 +17,8 @@ export VIRTUALENV_USE_DISTRIBUTE=true
 export PIP_RESPECT_VIRTUALENV=true
 source /usr/bin/virtualenvwrapper.sh
 
+alias phttp="http --verify no --cert ~/.pulp/user-cert.pem"
+
 pstart() {
     _paction start
 }
