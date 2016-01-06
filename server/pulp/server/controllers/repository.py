@@ -749,6 +749,8 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
         sync_result_collection.save(sync_result, safe=True)
+        # Ensure counts are updated
+        rebuild_content_unit_counts(repo_obj)
 
     fire_manager.fire_repo_sync_finished(sync_result)
     if sync_result.result == RepoSyncResult.RESULT_FAILED:

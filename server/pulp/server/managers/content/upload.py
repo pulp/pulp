@@ -15,6 +15,7 @@ from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException)
+from pulp.server.controllers import repository as repo_controller
 
 
 logger = logging.getLogger(__name__)
@@ -204,8 +205,11 @@ class ContentUploadManager(object):
 
         # Invoke the importer
         try:
-            return importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key,
-                                                 unit_metadata, file_path, conduit, call_config)
+            result = importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key,
+                                                   unit_metadata, file_path, conduit, call_config)
+            repo_controller.rebuild_content_unit_counts(repo_obj)
+            return result
+
         except PulpException:
             msg = _('Error from the importer while importing uploaded unit to repository [%(r)s]')
             msg = msg % {'r': repo_id}
