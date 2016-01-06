@@ -44,6 +44,7 @@
       - iotop
       - jnettop
       - koji
+      - httpie
       - python-django-bash-completion
       - python-gofer-qpid
       - python-ipdb
