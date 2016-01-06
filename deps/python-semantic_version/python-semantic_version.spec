@@ -9,6 +9,9 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 
+Provides: python-semantic-version = %{version}-%{release}
+Obsoletes: python-semantic-version < %{version}-%{release}
+
 BuildRequires: python2-devel
 
 %description
