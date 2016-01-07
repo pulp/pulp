@@ -69,7 +69,7 @@ class Request(object):
         :param url: The URL used to download the unit from the primary source.
         :type url: str
         :param destination: The absolute path used to store the downloaded file.
-        :type destination: str
+        :type destination: str|file-like
         """
         self.type_id = type_id
         self.unit_key = unit_key

@@ -1,8 +1,10 @@
-from uuid import uuid4
-from tempfile import mkdtemp
-from unittest import TestCase
 import os
 import shutil
+
+from StringIO import StringIO
+from tempfile import mkdtemp
+from unittest import TestCase
+from uuid import uuid4
 
 from mock import patch, Mock
 from nectar.config import DownloaderConfig
@@ -446,6 +448,66 @@ class TestSequentialDownload(ContainerTest):
         self.assertEqual(report.downloads[UNDERGROUND].total_failed, 0)
         self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 0)
         self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 10)
+
+    def test_download_to_stream(self):
+        request_list = []
+        _dir, cataloged = self.populate_catalog(ORPHANED, 0, 10)
+        _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 10)
+        _dir = self.populate_content(PRIMARY, 0, 20)
+        # unit-world
+        for n in range(0, 10):
+            request = Request(
+                cataloged[n].type_id,
+                cataloged[n].unit_key,
+                'file://%s/unit_%d' % (_dir, n),
+                StringIO())
+            request_list.append(request)
+        # primary
+        for n in range(11, 20):
+            unit_key = {
+                'name': 'unit_%d' % n,
+                'version': '1.0.%d' % n,
+                'release': '1',
+                'checksum': str(uuid4())
+            }
+            request = Request(
+                TYPE_ID,
+                unit_key,
+                'file://%s/unit_%d' % (_dir, n),
+                StringIO())
+            request_list.append(request)
+        downloader = LocalFileDownloader(DownloaderConfig())
+        listener = Mock()
+        container = ContentContainer(path=self.tmp_dir)
+        container.threaded = False
+        container.refresh = Mock()
+
+        # test
+        report = container.download(downloader, request_list, listener)
+
+        # validation
+        # unit-world
+        for i in range(0, 10):
+            request = request_list[i]
+            self.assertTrue(request.downloaded)
+            self.assertEqual(len(request.errors), 0)
+            fp = request.destination
+            s = fp.getvalue()
+            self.assertTrue(UNIT_WORLD in s)
+        # primary
+        for i in range(11, len(request_list)):
+            request = request_list[i]
+            self.assertTrue(request.downloaded)
+            self.assertEqual(len(request.errors), 0)
+            fp = request.destination
+            s = fp.getvalue()
+            self.assertTrue(PRIMARY in s)
+        self.assertEqual(report.total_sources, 2)
+        self.assertEqual(len(report.downloads), 2)
+        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 9)
+        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 10)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 0)
 
 
 class TestRefreshing(ContainerTest):
