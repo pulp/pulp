@@ -9,6 +9,7 @@ from pulp.server.auth import authorization
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import distributor as dist_controller
+from pulp.server.controllers import content as content_controller
 from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
@@ -1066,6 +1067,40 @@ class RepoPublish(View):
             raise exceptions.MissingValue('id')
         overrides = request.body_as_json.get('override_config', None)
         async_result = repo_controller.queue_publish(repo_id, distributor_id, overrides)
+        raise exceptions.OperationPostponed(async_result)
+
+
+class RepoDownload(View):
+    """
+    View for downloading a lazy (background or on-demand download method) repository.
+    """
+
+    @auth_required(authorization.EXECUTE)
+    @json_body_allow_empty
+    def post(self, request, repo_id):
+        """
+        Dispatch a task to publish a repository. The JSON body may contain a key,
+        `verify_all_units`, that forces the task to attempt to download all content
+        units again rather than just those known to be not downloaded.
+
+        :param request: WSGI request object.
+        :type  request: django.core.handlers.wsgi.WSGIRequest
+        :param repo_id: id of the repository to publish.
+        :type  repo_id: str
+
+        :raises pulp_exceptions.MissingResource: if repo does not exist.
+        :raises pulp_exceptions.OperationPostponed: dispatch a ``download_repo`` task.
+        """
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        verify = request.body_as_json.get('verify_all_units', False)
+        if not isinstance(verify, bool):
+            raise exceptions.PulpCodedValidationException(
+                error_code=exceptions.error_codes.PLP1010,
+                value=verify,
+                field='verify_all_units',
+                field_type='boolean'
+            )
+        async_result = content_controller.queue_download_repo(repo_id, verify_all_units=verify)
         raise exceptions.OperationPostponed(async_result)
 
 

@@ -1,6 +1,5 @@
 from operator import itemgetter
 import json
-import unittest
 
 from django import http
 import mock
@@ -10,6 +9,7 @@ from base import (
     assert_auth_UPDATE
 )
 from pulp.common import constants, error_codes
+from pulp.common.compat import unittest
 from pulp.server import exceptions
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.db import model
@@ -19,7 +19,8 @@ from pulp.server.webservices.views.repositories import(
     RepoDistributorsView, RepoDistributorsSearchView, RepoImportUpload, RepoImporterResourceView,
     RepoImportersView, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,
     RepoPublishSchedulesView, RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory,
-    RepoSyncScheduleResourceView, RepoSyncSchedulesView, RepoUnassociate, RepoUnitSearch, ReposView
+    RepoSyncScheduleResourceView, RepoSyncSchedulesView, RepoUnassociate, RepoUnitSearch,
+    ReposView, RepoDownload
 )
 
 
@@ -1717,6 +1718,84 @@ class TestRepoPublish(unittest.TestCase):
 
         self.assertEqual(response.http_status_code, 400)
         self.assertTrue(response.error_code is error_codes.PLP0016)
+
+
+class TestRepoDownload(unittest.TestCase):
+    """Tests for RepoDownload."""
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    @mock.patch('pulp.server.webservices.views.repositories.content_controller')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    def test_post_download_repo(self, mock_repo_qs, mock_content_controller):
+        """Test that a repo download task is dispatched."""
+        # Setup
+        download_repo = RepoDownload()
+
+        # Tests
+        with self.assertRaises(exceptions.OperationPostponed) as cm:
+            download_repo.post(mock.Mock(body=None), 'mock_repo')
+        self.assertEqual(cm.exception.http_status_code, 202)
+        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('mock_repo')
+        mock_content_controller.queue_download_repo.assert_called_once_with(
+            'mock_repo',
+            verify_all_units=False
+        )
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    @mock.patch('pulp.server.webservices.views.repositories.content_controller')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    def test_post_download_repo_verify(self, mock_repo_qs, mock_content_controller):
+        """Test that a repo download task is dispatched with verify_all_units."""
+        # Setup
+        mock_request = mock.Mock(body=json.dumps({'verify_all_units': True}))
+        download_repo = RepoDownload()
+
+        # Tests
+        with self.assertRaises(exceptions.OperationPostponed) as cm:
+            download_repo.post(mock_request, 'mock_repo')
+        self.assertEqual(cm.exception.http_status_code, 202)
+        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('mock_repo')
+        mock_content_controller.queue_download_repo.assert_called_once_with(
+            'mock_repo',
+            verify_all_units=True
+        )
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    @mock.patch('pulp.server.webservices.views.repositories.content_controller')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    def test_post_download_repo_bad_request(self, mock_repo_qs, mock_content_controller):
+        """Test that a repo download call with a bad request results in a 400."""
+        # Setup
+        mock_request = mock.Mock(body=json.dumps({'verify_all_units': 'please'}))
+        download_repo = RepoDownload()
+
+        # Tests
+        with self.assertRaises(exceptions.PulpCodedValidationException) as cm:
+            download_repo.post(mock_request, 'mock_repo')
+        self.assertEqual(error_codes.PLP1010, cm.exception.error_code)
+        self.assertEqual(cm.exception.http_status_code, 400)
+        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('mock_repo')
+        self.assertEqual(0, mock_content_controller.queue_download_repo.call_count)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    @mock.patch('pulp.server.webservices.views.repositories.content_controller')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Repository.objects')
+    def test_post_download_repo_missing_repo(self, mock_repo_qs, mock_content_controller):
+        """Test that a repo download call with an invalid repo id results in a 404."""
+        # Setup
+        mock_repo_qs.get_repo_or_missing_resource.side_effect = exceptions.MissingResource
+        download_repo = RepoDownload()
+
+        # Tests
+        with self.assertRaises(exceptions.MissingResource) as cm:
+            download_repo.post(mock.Mock(body=None), 'mock_repo')
+        self.assertEqual(cm.exception.http_status_code, 404)
+        mock_repo_qs.get_repo_or_missing_resource.assert_called_once_with('mock_repo')
+        self.assertEqual(0, mock_content_controller.queue_download_repo.call_count)
 
 
 class TestRepoAssociate(unittest.TestCase):

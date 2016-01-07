@@ -441,6 +441,14 @@ class TestDjangoRepositoriesUrls(unittest.TestCase):
         url_name = 'repo_sync'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
+    def test_match_repo_download(self):
+        """
+        Test url matching for repo_download.
+        """
+        url = '/v2/repositories/mock_repo/actions/download/'
+        url_name = 'repo_download'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
     def test_match_repo_publish_history(self):
         """
         Test url matching for repo_publish_history.

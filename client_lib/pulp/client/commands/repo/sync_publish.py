@@ -9,6 +9,8 @@ from pulp.client.commands import options, polling
 from pulp.client.extensions.extensions import PulpCliOptionGroup
 from pulp.common import tags
 
+from pulp.client.extensions.extensions import PulpCliFlag
+
 
 # Command Descriptions
 DESC_SYNC_RUN = _('triggers an immediate sync of a repository')
@@ -16,6 +18,14 @@ DESC_SYNC_STATUS = _('displays the status of a repository\'s sync tasks')
 
 DESC_PUBLISH_RUN = _('triggers an immediate publish of a repository')
 DESC_PUBLISH_STATUS = _('displays the status of a repository\'s publish tasks')
+
+DESC_DOWNLOAD = _('queues a full download of all missing units in a repository '
+                  'that is using a "background" or "on_demand" download policy.')
+DESC_VERIFY_ALL_FLAG = _('check all units in the repository for corrupted or '
+                         'missing files and re-download files as necessary '
+                         'rather than just downloading files that are known '
+                         'to be missing.')
+FLAG_VERIFY_ALL = PulpCliFlag('--verify-all', DESC_VERIFY_ALL_FLAG, aliases=['-a'])
 
 
 class StatusRenderer(object):
@@ -285,7 +295,7 @@ class PublishStatusCommand(SyncPublishCommand):
 def _get_repo_tasks(context, repo_id, action):
     """
     Retrieve a list of incomplete Task objects for the given repo_id and action. action must be one
-    of 'sync' or 'publish'.
+    of 'sync', 'download', or 'publish'.
 
     :param context: The CLI context from Okaara
     :type  context: pulp.client.extensions.core.ClientContext
@@ -301,9 +311,72 @@ def _get_repo_tasks(context, repo_id, action):
         action_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
     elif action == 'sync':
         action_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+    elif action == 'download':
+        action_tag = tags.action_tag(tags.ACTION_DOWNLOAD_TYPE)
     else:
         raise ValueError(
             '_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
     repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
                                         'tags': {'$all': [repo_tag, action_tag]}}}
     return context.server.tasks_search.search(**repo_search_criteria)
+
+
+class DownloadRepositoryCommand(SyncPublishCommand):
+    """
+    Base class for repo download operation.
+
+    Requests an immediate download for a repository. The user has the option
+    to exit the progress polling or skip it entirely through a flag on the run command.
+    List of additional configuration override options can be passed in override_config_options.
+    """
+
+    def __init__(self, context, renderer):
+        """
+
+        :param context:     The CLI context from Okaara
+        :type  context:     pulp.client.extensions.core.ClientContext
+        :param renderer:    StatusRenderer subclass that will interpret the
+                            sync or publish progress report.
+        :type  renderer:    StatusRenderer
+        """
+        super(DownloadRepositoryCommand, self).__init__(
+            _('download'),
+            DESC_DOWNLOAD,
+            self.run,
+            context,
+            renderer
+        )
+        self.add_flag(FLAG_VERIFY_ALL)
+
+    def run(self, **kwargs):
+        """
+        Run the download operation on the server. If a download task
+        for this repository is in progress, this will report progress
+        on that task rather than dispatching a new one.
+
+        :param kwargs: The user inputs
+        :type  kwargs: dict
+        """
+        repo_id = kwargs[options.OPTION_REPO_ID.keyword]
+        background = kwargs[polling.FLAG_BACKGROUND.keyword]
+        verify_all_units = kwargs[FLAG_VERIFY_ALL.keyword]
+
+        self.prompt.render_title(_('Downloading Repository [%(r)s]') % {'r': repo_id})
+
+        # See if an existing download task is running for the repo. If it is, resume
+        # progress tracking.
+        existing_download_tasks = _get_repo_tasks(self.context, repo_id, 'download')
+
+        if existing_download_tasks:
+            msg = _('A download task is already in progress for this repository. ')
+            if not background:
+                msg += _('Its progress will be tracked below.')
+                self.context.prompt.render_paragraph(msg, tag='in-progress')
+                self.poll(existing_download_tasks, kwargs)
+        else:
+            response = self.context.server.repo_actions.download(
+                repo_id,
+                verify_all_units=verify_all_units
+            )
+            if not background:
+                self.poll([response.response_body], kwargs)

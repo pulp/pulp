@@ -136,6 +136,7 @@ class TestQueueDownloadRepo(TestCase):
         mock_tags.action_tag.assert_called_once_with(mock_tags.ACTION_DOWNLOAD_TYPE)
         mock_download_repo.apply_async.assert_called_once_with(
             ['fake-id'],
+            {'verify_all_units': False},
             tags=[mock_tags.resource_tag.return_value, mock_tags.action_tag.return_value]
         )
 
@@ -157,11 +158,22 @@ class TestDownloadRepo(TestCase):
     @patch(MODULE_PATH + 'LazyUnitDownloadStep')
     @patch(MODULE_PATH + '_create_download_requests')
     @patch(MODULE_PATH + 'repo_controller.find_units_not_downloaded')
-    def test_download_deferred(self, mock_missing_units, mock_create_requests, mock_step):
-        """Assert the download step is initialized and called."""
+    def test_download_repo_no_verify(self, mock_missing_units, mock_create_requests, mock_step):
+        """Assert the download step is initialized and called with missing units."""
         content_controller.download_repo('fake-id')
         mock_missing_units.assert_called_once_with('fake-id')
         mock_create_requests.assert_called_once_with(mock_missing_units.return_value)
+        mock_step.return_value.process_lifecycle.assert_called_once_with()
+
+    @patch(MODULE_PATH + 'LazyUnitDownloadStep')
+    @patch(MODULE_PATH + '_create_download_requests')
+    @patch(MODULE_PATH + 'repo_controller.get_mongoengine_unit_querysets')
+    def test_download_repo_verify(self, mock_units_qs, mock_create_requests, mock_step):
+        """Assert the download step is initialized and called with all units."""
+        mock_units_qs.return_value = [['some'], ['lists']]
+        content_controller.download_repo('fake-id', verify_all_units=True)
+        mock_units_qs.assert_called_once_with('fake-id')
+        self.assertEqual(list(mock_create_requests.call_args[0][0]), ['some', 'lists'])
         mock_step.return_value.process_lifecycle.assert_called_once_with()
 
 

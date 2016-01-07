@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from gettext import gettext as _
+import itertools
 from logging import getLogger
 import os
 import threading
@@ -134,22 +135,27 @@ def queue_download_deferred():
     collection.
     """
     tags = [pulp_tags.action_tag(pulp_tags.ACTION_DEFERRED_DOWNLOADS_TYPE)]
-    download_deferred.apply_async(tags=tags)
+    return download_deferred.apply_async(tags=tags)
 
 
-def queue_download_repo(repo_id):
+def queue_download_repo(repo_id, verify_all_units=False):
     """
     Queue task to download all content units for a given repository
     using the lazy catalog.
 
-    :param repo_id: The ID of repository to download all lazy units for.
-    :type  repo_id: str
+    :param repo_id:          The ID of repository to download all lazy units for.
+    :type  repo_id:          str
+    :param verify_all_units: When verify_all_units is `True`, all units in the
+                             repository will be inspected. If a file for a unit is
+                             already present in its expected storage location and its
+                             checksum is valid, it will not be downloaded again.
+    :type  verify_all_units: bool
     """
     tags = [
         pulp_tags.resource_tag(pulp_tags.RESOURCE_REPOSITORY_TYPE, repo_id),
         pulp_tags.action_tag(pulp_tags.ACTION_DOWNLOAD_TYPE)
     ]
-    download_repo.apply_async([repo_id], tags=tags)
+    return download_repo.apply_async([repo_id], {'verify_all_units': verify_all_units}, tags=tags)
 
 
 @celery.task(base=Task)
@@ -171,18 +177,28 @@ def download_deferred():
 
 
 @celery.task(base=Task)
-def download_repo(repo_id):
+def download_repo(repo_id, verify_all_units=False):
     """
     Download all content units in the repository that have catalog entries associated
     with them. If a unit is encountered that does not have any catalog entries, it is
     skipped.
 
-    :param repo_id: The ID of the repository to download all lazy units for.
-    :type  repo_id: str
+    :param repo_id:          The ID of the repository to download all lazy units for.
+    :type  repo_id:          str
+    :param verify_all_units: When verify_all_units is `True`, all units in the
+                             repository will be inspected. If a file for a unit is
+                             already present in its expected storage location and its
+                             checksum is valid, it will not be downloaded again.
+    :type  verify_all_units: bool
     """
     task_description = _('Download Repository Content')
     conduit = LazyStatusConduit(task_description)
-    missing_content_units = repo_controller.find_units_not_downloaded(repo_id)
+    if verify_all_units:
+        repo_unit_querysets = repo_controller.get_mongoengine_unit_querysets(repo_id)
+        missing_content_units = itertools.chain(*repo_unit_querysets)
+    else:
+        missing_content_units = repo_controller.find_units_not_downloaded(repo_id)
+
     download_requests = _create_download_requests(missing_content_units)
     download_step = LazyUnitDownloadStep(
         _('background_download'),
@@ -245,6 +261,8 @@ def _create_download_requests(content_units):
                 path=file_path
             )
             catalog_entry = qs.order_by('revision').first()
+            if catalog_entry is None:
+                continue
             signed_url = _get_streamer_url(catalog_entry, signing_key)
 
             temporary_destination = os.path.join(
