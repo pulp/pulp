@@ -57,13 +57,11 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
         str(self.conduit)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
-    def test_get_remove_unit(self, mock_repo_qs):
+    def test_get_remove_unit(self):
         """
         Tests retrieving units through the conduit and removing them.
         """
-
-        # Setup
+        model.Repository(repo_id='repo-1').save()
         unit_1_key = {'key-1': 'unit_1'}
         unit_1_metadata = {'meta_1': 'value_1'}
         unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
@@ -88,13 +86,11 @@ class RepoSyncConduitTests(base.PulpServerTests):
         db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
         self.assertTrue(db_unit is not None)
 
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository')
-    def test_build_reports(self, mock_repo_qs):
+    def test_build_reports(self):
         """
         Tests that the conduit correctly inserts the count values into the report.
         """
-
-        # Setup
+        model.Repository(repo_id='repo-1').save()
 
         # Created - 10
         for i in range(0, 10):
