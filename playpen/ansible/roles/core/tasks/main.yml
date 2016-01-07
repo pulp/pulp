@@ -4,6 +4,7 @@
   with_items:
       - bash-completion
       - vim-enhanced
+      - screen
 
 - name: Install packages requires to gather Pulp facts
   dnf: name={{ item }} state=present
