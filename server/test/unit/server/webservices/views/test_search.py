@@ -25,7 +25,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         request = mock.MagicMock()
         request.GET = http.QueryDict('')
@@ -72,7 +72,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         request = mock.MagicMock()
         request.GET = http.QueryDict('filters={"name":"admin"}')
@@ -115,7 +115,7 @@ class TestSearchView(unittest.TestCase):
         request = mock.MagicMock()
         request.GET = http.QueryDict('field=name&field=id&filters={"name":"admin"}')
         view = FakeSearchView()
-        view.model.serializer.return_value.data = {'serialized': 'content'}
+        view.model.SERIALIZER.return_value.data = {'serialized': 'content'}
 
         with mock.patch.object(FakeSearchView, '_generate_response',
                                side_effect=FakeSearchView._generate_response) as _generate_response:
@@ -139,7 +139,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         request = mock.MagicMock()
         request.body = '{"criteria": {"filters": {"money": {"$gt": 1000000}}}}'
@@ -178,7 +178,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -202,8 +202,8 @@ class TestSearchView(unittest.TestCase):
         class FakeSearchView(search.SearchView):
             response_builder = mock.MagicMock(return_value=42)
             model = mock.MagicMock()
-            # If the model hasattr serializer it will be used.
-            del model.serializer
+            # If the model hasattr SERIALIZER it will be used.
+            del model.SERIALIZER
 
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -247,7 +247,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash', 'id']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -271,7 +271,7 @@ class TestSearchView(unittest.TestCase):
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()
-            del model.serializer
+            del model.SERIALIZER
 
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
@@ -290,7 +290,7 @@ class TestSearchView(unittest.TestCase):
     def test__generate_response_with_serializer(self):
         """
         Test the _generate_response() method for the case where the SearchView is configured to
-        use a serializer.
+        use a serializer method instead of the model SERIALIZER
         """
         class FakeSearchView(search.SearchView):
             model = mock.MagicMock()

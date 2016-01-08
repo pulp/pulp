@@ -258,7 +258,7 @@ def update_importer_config(repo_id, importer_config):
     except ValidationError, e:
         raise exceptions.InvalidValue(e.to_dict().keys())
 
-    serialized = model.Importer.serializer(repo_importer).data
+    serialized = model.Importer.SERIALIZER(repo_importer).data
     return serialized
 
 

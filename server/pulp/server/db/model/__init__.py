@@ -126,7 +126,7 @@ class Repository(AutoRetryDocument):
             'allow_inheritance': False,
             'indexes': [{'fields': ['-repo_id'], 'unique': True}],
             'queryset_class': RepoQuerySet}
-    serializer = serializers.Repository
+    SERIALIZER = serializers.Repository
 
     def to_transfer_repo(self):
         """
@@ -231,7 +231,7 @@ class Importer(AutoRetryDocument):
 
     # For backward compatibility
     _ns = StringField(default='repo_importers')
-    serializer = serializers.ImporterSerializer
+    SERIALIZER = serializers.ImporterSerializer
 
     meta = {'collection': 'repo_importers',
             'allow_inheritance': False,
@@ -966,7 +966,7 @@ class User(AutoRetryDocument):
             'indexes': ['-roles', {'fields': ['-login', '-name'], 'unique': True}],
             'queryset_class': CriteriaQuerySet}
 
-    serializer = serializers.User
+    SERIALIZER = serializers.User
 
     def is_superuser(self):
         """
@@ -1069,7 +1069,7 @@ class Distributor(AutoRetryDocument):
     scratchpad = DictField()
 
     _ns = StringField(default='repo_distributors')
-    serializer = serializers.Distributor
+    SERIALIZER = serializers.Distributor
 
     meta = {'collection': 'repo_distributors',
             'allow_inheritance': False,

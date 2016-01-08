@@ -618,7 +618,7 @@ class TestScheduledCallAsDict(unittest.TestCase):
         call['principal'] = model.User('test_user')
 
         result = call.as_dict()
-        self.assertEqual(result['principal'], model.User.serializer(call['principal']).data)
+        self.assertEqual(result['principal'], model.User.SERIALIZER(call['principal']).data)
 
     def test_system_user_is_dict(self):
         """
@@ -640,7 +640,7 @@ class TestScheduledCallAsDict(unittest.TestCase):
         self.assertEqual(result['_id'], call.id)
         for k, v in SCHEDULE.items():
             if k == 'principal':
-                self.assertTrue(result[k] is SCHEDULE[k].serializer.return_value.data)
+                self.assertTrue(result[k] is SCHEDULE[k].SERIALIZER.return_value.data)
             else:
                 self.assertEqual(v, result[k])
         self.assertTrue('next_run' in result)

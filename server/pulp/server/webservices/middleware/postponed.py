@@ -31,8 +31,8 @@ class PostponedOperationMiddleware(object):
 
         # Use the object's serializer if it is a Mongoengine Document.
         result = serialized_call_report.get('result')
-        if hasattr(result, 'serializer'):
-            serialized_call_report['result'] = result.serializer(result).data
+        if hasattr(result, 'SERIALIZER'):
+            serialized_call_report['result'] = result.SERIALIZER(result).data
 
         return json.dumps(serialized_call_report, default=json_util.default)
 

@@ -53,8 +53,8 @@ class CriteriaQuerySet(QuerySetPreventCache):
         """
         query_set = self
         model = query_set._document
-        if hasattr(model, 'serializer'):
-            criteria = model.serializer().translate_criteria(model, criteria)
+        if hasattr(model, 'SERIALIZER'):
+            criteria = model.SERIALIZER().translate_criteria(model, criteria)
 
         if criteria.spec is not None:
             query_set = query_set.filter(__raw__=criteria.spec)

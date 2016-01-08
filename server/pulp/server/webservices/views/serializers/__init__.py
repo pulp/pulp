@@ -4,7 +4,6 @@ from bson.objectid import ObjectId
 from django.core.urlresolvers import reverse
 
 from pulp.server import exceptions
-from pulp.server.db.model import criteria
 
 
 class BaseSerializer(object):
@@ -271,6 +270,8 @@ class ModelSerializer(BaseSerializer):
         :return: translated Criteria object
         :rtype:  pulp.server.db.model.criteria.Criteria
         """
+        # Circular import avoidance, since criteria imports models which imports serializers
+        from pulp.server.db.model.criteria import Criteria
         crit_dict = crit.as_dict()
         if crit.filters:
             crit_dict['filters'] = self._translate_filters(model, crit.filters)
@@ -279,7 +280,7 @@ class ModelSerializer(BaseSerializer):
             crit_dict['sort'] = sort
         if crit.fields:
             crit_dict['fields'] = [self._translate(model, field) for field in crit.fields]
-        return criteria.Criteria.from_dict(crit_dict)
+        return Criteria.from_dict(crit_dict)
 
 
 class Repository(ModelSerializer):

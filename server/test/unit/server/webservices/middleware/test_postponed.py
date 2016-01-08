@@ -68,7 +68,7 @@ class TestPostponedOperationMiddleware(unittest.TestCase):
         e.call_report.serialize.return_value = mock_serialized
         ret = postponed.PostponedOperationMiddleware._get_operation_postponed_body(e)
         e.call_report.serialize.assert_called_once_with()
-        mock_result.serializer.assert_called_once_with(mock_result)
+        mock_result.SERIALIZER.assert_called_once_with(mock_result)
         mjson.dumps.assert_called_once_with(mock_serialized, default=mjson_default)
-        mock_serialized['result'] = mock_result.serializer.return_value.data
+        mock_serialized['result'] = mock_result.SERIALIZER.return_value.data
         self.assertTrue(ret is mjson.dumps.return_value)

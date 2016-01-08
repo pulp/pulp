@@ -33,7 +33,7 @@ def _merge_related_objects(name, model, repos):
 
     :param name: name of the field, either 'importers' or 'distributors'.
     :type  name: basestring
-    :param model: mongoengine document, must specify its serializer
+    :param model: mongoengine document, must specify its serializer at the SERIALIZER attribute
     :type  model: mongoengine.Document
     :param repos: list of serialized repos that should have importers and distributors added.
     :type  repos: list of dicts
@@ -47,7 +47,7 @@ def _merge_related_objects(name, model, repos):
         repo[name] = []
 
     for item in model.objects(repo_id__in=repo_ids):
-        serialized = model.serializer(item).data
+        serialized = model.SERIALIZER(item).data
         repo_dict[item['repo_id']][name].append(serialized)
 
 
@@ -307,7 +307,7 @@ class RepoImportersView(View):
         """
 
         importers = model.Importer.objects(repo_id=repo_id)
-        serialized_importers = model.Importer.serializer(importers, multiple=True).data
+        serialized_importers = model.Importer.SERIALIZER(importers, multiple=True).data
         return generate_json_response_with_pulp_encoder(serialized_importers)
 
     @auth_required(authorization.CREATE)
@@ -359,7 +359,7 @@ class RepoImporterResourceView(View):
         :raises exceptions.MissingResource: if importer_id does not match importer for repo
         """
         importer = importer_controller.get_valid_importer(repo_id, importer_id)
-        serialized_importer = model.Importer.serializer(importer).data
+        serialized_importer = model.Importer.SERIALIZER(importer).data
         return generate_json_response_with_pulp_encoder(serialized_importer)
 
     @auth_required(authorization.DELETE)
@@ -591,7 +591,7 @@ class RepoDistributorsView(View):
         """
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         distributors = model.Distributor.objects(repo_id=repo_id)
-        serialized_dists = model.Distributor.serializer(distributors, multiple=True).data
+        serialized_dists = model.Distributor.SERIALIZER(distributors, multiple=True).data
         return generate_json_response_with_pulp_encoder(serialized_dists)
 
     @auth_required(authorization.CREATE)
@@ -618,7 +618,7 @@ class RepoDistributorsView(View):
 
         distributor = dist_controller.add_distributor(repo_id, distributor_type, distributor_config,
                                                       auto_publish, distributor_id)
-        serialized = model.Distributor.serializer(distributor).data
+        serialized = model.Distributor.SERIALIZER(distributor).data
         response = generate_json_response_with_pulp_encoder(serialized)
         return generate_redirect_response(response, serialized['_href'])
 
@@ -653,7 +653,7 @@ class RepoDistributorResourceView(View):
 
         model.Repository.objects.get_repo_or_missing_resource(repo_id)
         dist = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
-        serialized = model.Distributor.serializer(dist).data
+        serialized = model.Distributor.SERIALIZER(dist).data
         return generate_json_response_with_pulp_encoder(serialized)
 
     @auth_required(authorization.DELETE)
