@@ -29,6 +29,10 @@ Here are some tips:
     pprocs:    List all Pulp-related process IDs
     pdebug:    Start a remote PDB session on localhost
 
+* phttp is an alias that gives you authenticated access to the rest API using httpie:
+
+    phttp https://localhost/pulp/api/v2/repositories/zoo/
+
 * You can ssh into your vagrant environment with vagrant ssh, but presumably
   you already know this since you are reading this message :)
 
