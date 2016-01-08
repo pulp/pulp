@@ -1212,7 +1212,10 @@ class GetLocalUnitsStep(SaveUnitsStep):
 
         # If available_units was defined in the constructor, let's use it. Otherwise let's use the
         # default of self.parent.available_units
-        available_units = self.available_units or self.parent.available_units
+        if self.available_units is not None:
+            available_units = self.available_units
+        else:
+            available_units = self.parent.available_units
 
         for units_group in misc.paginate(available_units, self.unit_pagination_size):
             # Get this group of units

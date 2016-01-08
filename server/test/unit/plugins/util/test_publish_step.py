@@ -1135,8 +1135,8 @@ class TestGetLocalUnitsStep(unittest.TestCase):
 
     def test_uses_passed_available_units_when_requested(self, mock_find_units, mock_associate):
         """
-        Assert that if the step is constructed with the default available_units, the step's parent's
-        available_units attribute is used.
+        Assert that if the step is constructed with available_units passed in, the step's parent's
+        available_units attribute is ignored.
         """
         demo_1 = self.DemoModel(key_field='a')
         demo_2 = self.DemoModel(key_field='b')
@@ -1160,6 +1160,27 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         mock_associate.assert_called_once_with('fake_repo', existing_demo)
         # the two that do not exist yet are added to the download list
         self.assertEqual(step.units_to_download, [demo_1, demo_3])
+
+    def test_empty_available_units(self, mock_find_units, mock_associate):
+        """
+        Assert that if the step is constructed with the an empty available_units passed in, the
+        step's parent's available_units attribute is ignored.
+        """
+        demo_1 = self.DemoModel(key_field='a')
+        self.parent.available_units = [demo_1]
+        fake_repo = Repository(id='fake-repo', repo_obj='fake_repo')
+        step = publish_step.GetLocalUnitsStep('fake_importer_type', repo=fake_repo,
+                                              available_units=[])
+        step.parent = self.parent
+        step.conduit = MagicMock()
+        existing_demo = self.DemoModel(key_field='b', id='foo')
+        mock_find_units.return_value = [existing_demo]
+
+        step.process_main()
+
+        # The parent step's available units only has demo 1 and 2, so this asserts that that is
+        # being ignored and the correct available_units is being used instead.
+        self.assertEqual(mock_find_units.call_count, 0)
 
 
 class TestSaveUnitsStep(unittest.TestCase):
