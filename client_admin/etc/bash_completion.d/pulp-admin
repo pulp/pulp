@@ -1,4 +1,3 @@
-#!/bin/bash
 # bash completion support for pulp-admin.
 #
 # The contained completion routines provide support for completing
