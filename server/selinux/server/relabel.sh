@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # If upgrading from before 2.4.0
 if [[ $1 < '2.4.0' ]]
 then
