@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.4.2
+Version:        1.4.3
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,11 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Mon Jan 11 2016 Ina Panova <ipanova@redhat.com> 1.4.3-1
+- An individual request can now be canceled. (jeremy@jcline.org)
+- Debug log now logs every url it attempts to connect to
+  (seanokeeffe797@gmail.com)
+
 * Tue Dec 15 2015 Ina Panova <ipanova@redhat.com> 1.4.2-1
 - Now static server listens on ipv6 (ipanova@redhat.com)
 - Tests do not have to depend on the internet. (ipanova@redhat.com)
