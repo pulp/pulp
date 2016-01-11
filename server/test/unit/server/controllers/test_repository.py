@@ -1502,6 +1502,7 @@ class TestCreateDownloadRequests(unittest.TestCase):
 
         # Test
         requests = repo_controller._create_download_requests(content_units)
+        expected_data_dict[repo_controller.REQUEST] = requests[0]
         mock_catalog.objects.filter.assert_called_once_with(
             unit_id='123',
             unit_type_id='abc',
@@ -1592,6 +1593,7 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
         self.data = {
             repo_controller.TYPE_ID: 'abc',
             repo_controller.UNIT_ID: '1234',
+            repo_controller.REQUEST: Mock(canceled=False),
             repo_controller.UNIT_FILES: {
                 '/no/where': {
                     repo_controller.CATALOG_ENTRY: Mock(),
@@ -1612,7 +1614,6 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
         """Assert if validate_file raises an exception, the download is not skipped."""
         self.step.validate_file = Mock(side_effect=IOError)
 
-        # Test that deferred download entry for the unit.
         self.step.download_started(self.report)
         qs = mock_deferred_download.objects.filter
         qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
@@ -1623,12 +1624,8 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
         """Assert if validate_file doesn't raise an exception, the download is skipped."""
         self.step.validate_file = Mock()
 
-        # Test that deferred download entry for the unit.
-        self.assertRaises(
-            repo_controller.SkipLocation,
-            self.step.download_started,
-            self.report
-        )
+        self.step.download_started(self.report)
+        self.assertTrue(self.report.data[repo_controller.REQUEST].canceled)
         qs = mock_deferred_download.objects.filter
         qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
         qs.return_value.delete.assert_called_once_with()
