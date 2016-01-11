@@ -34,7 +34,7 @@ CELERYBEAT_SCHEDULE = {
         'args': tuple(),
     },
     'download_deferred_content': {
-        'task': 'pulp.server.controllers.content.download_deferred',
+        'task': 'pulp.server.controllers.repository.download_deferred',
         'schedule': timedelta(minutes=config.getint('lazy', 'download_interval')),
         'args': tuple(),
     },

@@ -1,13 +1,23 @@
 from gettext import gettext as _
 from itertools import chain
 import logging
+import os
 import sys
+import time
+from urlparse import urlunsplit
+import uuid
 
-from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
 from bson.objectid import ObjectId, InvalidId
 import celery
+from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
+from nectar.config import DownloaderConfig
+from nectar.request import DownloadRequest
+from nectar.downloaders.threaded import HTTPThreadedDownloader, SkipLocation
+from nectar.listener import DownloadEventListener
 
 from pulp.common import dateutils, error_codes, tags
+from pulp.common.config import parse_bool, Unparsable
+from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
@@ -16,19 +26,34 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
 from pulp.plugins.util.misc import paginate
+from pulp.plugins.util.verification import (InvalidChecksumType, VerificationException,
+                                            verify_checksum)
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async.tasks import PulpTask, register_sigterm_handler, Task, TaskResult
+from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, TaskResult,
+                                     get_current_task_id)
+from pulp.server.config import config as pulp_conf
+from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
+from pulp.server.content.sources.constants import MAX_CONCURRENT, HEADERS, SSL_VALIDATION
+from pulp.server.content.storage import FileStorage, mkdir
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import connection, model
 from pulp.server.db.model.repository import (
     RepoContentUnit, RepoSyncResult, RepoPublishResult)
+from pulp.server.exceptions import PulpCodedTaskException
+from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
 _logger = logging.getLogger(__name__)
+
+PATH_DOWNLOADED = 'downloaded'
+CATALOG_ENTRY = 'catalog_entry'
+UNIT_ID = 'unit_id'
+TYPE_ID = 'type_id'
+UNIT_FILES = 'unit_files'
 
 
 def get_associated_unit_ids(repo_id, unit_type, repo_content_unit_q=None):
@@ -757,6 +782,9 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         raise pulp_exceptions.PulpExecutionException(_('Importer indicated a failed response'))
 
     spawned_tasks = _queue_auto_publish_tasks(repo_obj.repo_id, scheduled_call_id=scheduled_call_id)
+    download_policy = call_config.get(importer_constants.DOWNLOAD_POLICY)
+    if download_policy == importer_constants.DOWNLOAD_BACKGROUND:
+        spawned_tasks.append(queue_download_repo(repo_obj.repo_id).task_id)
     return TaskResult(sync_result, spawned_tasks=spawned_tasks)
 
 
@@ -1007,3 +1035,423 @@ def _now_timestamp():
     now = dateutils.now_utc_datetime_with_tzinfo()
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
+
+
+def queue_download_deferred():
+    """
+    Queue a task to download all content units with entries in the DeferredDownload
+    collection.
+    """
+    task_tags = [tags.action_tag(tags.ACTION_DEFERRED_DOWNLOADS_TYPE)]
+    return download_deferred.apply_async(tags=task_tags)
+
+
+def queue_download_repo(repo_id, verify_all_units=False):
+    """
+    Queue task to download all content units for a given repository
+    using the lazy catalog.
+
+    :param repo_id:          The ID of repository to download all lazy units for.
+    :type  repo_id:          str
+    :param verify_all_units: When verify_all_units is `True`, all units in the
+                             repository will be inspected. If a file for a unit is
+                             already present in its expected storage location and its
+                             checksum is valid, it will not be downloaded again.
+    :type  verify_all_units: bool
+    """
+    task_tags = [
+        tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+        tags.action_tag(tags.ACTION_DOWNLOAD_TYPE)
+    ]
+    return download_repo.apply_async(
+        [repo_id],
+        {'verify_all_units': verify_all_units},
+        tags=task_tags
+    )
+
+
+@celery.task(base=Task)
+def download_deferred():
+    """
+    Downloads all the units with entries in the DeferredDownload collection.
+    """
+    task_description = _('Download Cached On-Demand Content')
+    deferred_content_units = _get_deferred_content_units()
+    download_requests = _create_download_requests(deferred_content_units)
+    download_step = LazyUnitDownloadStep(
+        _('on_demand_download'),
+        task_description,
+        download_requests
+    )
+    download_step.start()
+
+
+@celery.task(base=Task)
+def download_repo(repo_id, verify_all_units=False):
+    """
+    Download all content units in the repository that have catalog entries associated
+    with them. If a unit is encountered that does not have any catalog entries, it is
+    skipped.
+
+    :param repo_id:          The ID of the repository to download all lazy units for.
+    :type  repo_id:          str
+    :param verify_all_units: When verify_all_units is `True`, all units in the
+                             repository will be inspected. If a file for a unit is
+                             already present in its expected storage location and its
+                             checksum is valid, it will not be downloaded again.
+    :type  verify_all_units: bool
+    """
+    task_description = _('Download Repository Content')
+    if verify_all_units:
+        repo_unit_querysets = get_mongoengine_unit_querysets(repo_id)
+        missing_content_units = chain(*repo_unit_querysets)
+    else:
+        missing_content_units = find_units_not_downloaded(repo_id)
+
+    download_requests = _create_download_requests(missing_content_units)
+    download_step = LazyUnitDownloadStep(
+        _('background_download'),
+        task_description,
+        download_requests
+    )
+    download_step.start()
+
+
+def _get_deferred_content_units():
+    """
+    Retrieve a list of units that have been added to the DeferredDownload collection.
+
+    :return: A generator of content units that correspond to DeferredDownload entries.
+    :rtype:  generator of pulp.server.db.model.FileContentUnit
+    """
+    for deferred_download in model.DeferredDownload.objects.filter():
+        try:
+            unit_model = plugin_api.get_unit_model_by_id(deferred_download.unit_type_id)
+            if unit_model is None:
+                _logger.error(_('Unable to find the model object for the {type} type.').format(
+                    type=deferred_download.unit_type_id))
+            else:
+                unit = unit_model.objects.filter(id=deferred_download.unit_id).get()
+                yield unit
+        except DoesNotExist:
+            # This is normal if the content unit in question has been purged during an
+            # orphan cleanup.
+            _logger.debug(_('Unable to find the {type}:{id} content unit.').format(
+                type=deferred_download.unit_type_id, id=deferred_download.unit_id))
+
+
+def _create_download_requests(content_units):
+    """
+    Make a list of Nectar DownloadRequests for the given content units using
+    the lazy catalog.
+
+    :param content_units: The content units to build a list of DownloadRequests for.
+    :type  content_units: list of pulp.server.db.model.FileContentUnit
+
+    :return: A list of DownloadRequests; each request includes a ``data``
+             instance variable which is a dict containing the FileContentUnit,
+             the list of files in the unit, and the downloaded file's storage
+             path.
+    :rtype:  list of nectar.request.DownloadRequest
+    """
+    requests = []
+    working_dir = common_utils.get_working_directory()
+    signing_key = Key.load(pulp_conf.get('authentication', 'rsa_key'))
+
+    for content_unit in content_units:
+        # All files in the unit; every request for a unit has a reference to this dict.
+        unit_files = {}
+        unit_working_dir = os.path.join(working_dir, content_unit.id)
+        for file_path in content_unit.list_files():
+            qs = model.LazyCatalogEntry.objects.filter(
+                unit_id=content_unit.id,
+                unit_type_id=content_unit.type_id,
+                path=file_path
+            )
+            catalog_entry = qs.order_by('revision').first()
+            if catalog_entry is None:
+                continue
+            signed_url = _get_streamer_url(catalog_entry, signing_key)
+
+            temporary_destination = os.path.join(
+                unit_working_dir,
+                os.path.basename(catalog_entry.path)
+            )
+            mkdir(unit_working_dir)
+            unit_files[temporary_destination] = {
+                CATALOG_ENTRY: catalog_entry,
+                PATH_DOWNLOADED: None,
+            }
+
+            request = DownloadRequest(signed_url, temporary_destination)
+            # For memory reasons, only hold onto the id and type_id so we can reload the unit
+            # once it's successfully downloaded.
+            request.data = {
+                TYPE_ID: content_unit.type_id,
+                UNIT_ID: content_unit.id,
+                UNIT_FILES: unit_files,
+            }
+            requests.append(request)
+
+    return requests
+
+
+def _get_streamer_url(catalog_entry, signing_key):
+    """
+    Build a URL that can be used to retrieve the file in the catalog entry from
+    the lazy streamer.
+
+    :param catalog_entry: The catalog entry to get the URL for.
+    :type  catalog_entry: pulp.server.db.model.LazyCatalogEntry
+    :param signing_key: The server private RSA key to sign the url with.
+    :type  signing_key: M2Crypto.RSA.RSA
+
+    :return: The signed streamer URL which corresponds to the catalog entry.
+    :rtype:  str
+    """
+    try:
+        https_retrieval = parse_bool(pulp_conf.get('lazy', 'https_retrieval'))
+    except Unparsable:
+        raise PulpCodedTaskException(error_codes.PLP1014, section='lazy', key='https_retrieval',
+                                     reason=_('The value is not boolean'))
+    retrieval_scheme = 'https' if https_retrieval else 'http'
+    host = pulp_conf.get('lazy', 'redirect_host')
+    port = pulp_conf.get('lazy', 'redirect_port')
+    path_prefix = pulp_conf.get('lazy', 'redirect_path')
+    netloc = (host + ':' + port) if port else host
+    path = os.path.join(path_prefix, catalog_entry.path.lstrip('/'))
+    unsigned_url = urlunsplit((retrieval_scheme, netloc, path, None, None))
+    # Sign the URL for a year to avoid the URL expiring before the task completes
+    return str(URL(unsigned_url).sign(signing_key, expiration=31536000))
+
+
+class LazyUnitDownloadStep(DownloadEventListener):
+    """
+    A Step that downloads all the given requests. The downloader is configured
+    to download from the Pulp Streamer components.
+
+    :ivar download_requests: The download requests the step will process.
+    :type download_requests: list of nectar.request.DownloadRequest
+    :ivar download_config:   The keyword args used to initialize the Nectar
+                             downloader configuration.
+    :type download_config:   dict
+    :ivar downloader:        The Nectar downloader used to fetch the requests.
+    :type downloader:        nectar.downloaders.threaded.HTTPThreadedDownloader
+    """
+
+    def __init__(self, step_type, step_description, download_requests):
+        """
+        Initializes a Step that downloads all the download requests provided.
+
+        :param download_requests:   List of download requests to process.
+        :type  download_requests:   list of nectar.request.DownloadRequest
+        """
+        self.description = step_description
+        self.download_requests = download_requests
+        self.download_config = {
+            MAX_CONCURRENT: int(pulp_conf.get('lazy', 'download_concurrency')),
+            HEADERS: {PULP_STREAM_REQUEST_HEADER: 'true'},
+            SSL_VALIDATION: True
+        }
+        self.downloader = HTTPThreadedDownloader(
+            DownloaderConfig(**self.download_config),
+            self
+        )
+
+        self.uuid = str(uuid.uuid4())
+        self.description = step_description
+        self.step_id = step_type
+        self.progress_details = ''
+        self.state = reporting_constants.STATE_NOT_STARTED
+        self.progress_successes = 0
+        self.progress_failures = 0
+        self.error_details = []
+        self.total_units = len(download_requests)
+        self.last_report_time = 0
+        self.last_reported_state = self.state
+        self.timestamp = str(time.time())
+        self.task_id = get_current_task_id()
+
+    def start(self):
+        """
+        Start the download process.
+        """
+        self.state = reporting_constants.STATE_RUNNING
+        self.report()
+        self.downloader.download(self.download_requests)
+
+    def report(self):
+        """
+        Report the current task status. This duplicates the Step reporting in order
+        to maintain compatibility, but this should be removed in favor of a universal
+        progress reporting system when that has been implemented.
+        """
+        total_processed = self.progress_successes + self.progress_failures
+        if self.total_units == total_processed:
+            self.state = reporting_constants.STATE_COMPLETE
+
+        if self.progress_failures > 0:
+            self.state = reporting_constants.STATE_FAILED
+
+        progress = {
+            reporting_constants.PROGRESS_STEP_UUID: self.uuid,
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: self.step_id,
+            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: self.progress_successes,
+            reporting_constants.PROGRESS_STATE_KEY: self.state,
+            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: self.error_details,
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: total_processed,
+            reporting_constants.PROGRESS_NUM_FAILURES_KEY: self.progress_failures,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: self.total_units,
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: self.description,
+            reporting_constants.PROGRESS_DETAILS_KEY: self.progress_details
+        }
+        report = {self.step_id: [progress]}
+
+        # Update at most once a second, unless the state changed
+        if self.state != self.last_reported_state or int(time.time()) != self.last_report_time:
+            if self.task_id is not None:
+                qs = model.TaskStatus.objects.filter(task_id=self.task_id)
+                qs.update_one(set__progress_report=report)
+        self.last_report_time = int(time.time())
+        self.last_reported_state = self.state
+
+    def download_started(self, report):
+        """
+        Checks the filesystem for the file that we are about to download,
+        and if it exists, raise an exception which will cause Nectar to
+        skip the download.
+
+        Inherited from DownloadEventListener.
+
+        :param report: the report associated with the download request.
+        :type  report: nectar.report.DownloadReport
+
+        :raises SkipLocation: if the file is already downloaded and matches
+                              the checksum stored in the catalog.
+        """
+        _logger.debug(_('Starting download of {url}.').format(url=report.url))
+
+        # Remove the deferred entry now that the download has started.
+        query_set = model.DeferredDownload.objects.filter(
+            unit_id=report.data[UNIT_ID],
+            unit_type_id=report.data[TYPE_ID]
+        )
+        query_set.delete()
+
+        try:
+            # If the file exists and the checksum is valid, don't download it
+            path_entry = report.data[UNIT_FILES][report.destination]
+            catalog_entry = path_entry[CATALOG_ENTRY]
+            self.validate_file(
+                catalog_entry.path,
+                catalog_entry.checksum_algorithm,
+                catalog_entry.checksum
+            )
+            path_entry[PATH_DOWNLOADED] = True
+            self.progress_successes += 1
+            self.report()
+            msg = _('{path} has already been downloaded.').format(
+                path=path_entry[CATALOG_ENTRY].path)
+            _logger.debug(msg)
+            raise SkipLocation()
+        except (InvalidChecksumType, VerificationException, IOError):
+            # It's either missing or incorrect, so download it
+            pass
+
+    def download_succeeded(self, report):
+        """
+        Marks the individual file for the unit as downloaded and moves it into
+        its final storage location if its checksum value matches the value in
+        the catalog entry (if present).
+
+        Inherited from DownloadEventListener.
+
+        :param report: the report associated with the download request.
+        :type  report: nectar.report.DownloadReport
+        """
+        # Reload the content unit
+        unit_model = plugin_api.get_unit_model_by_id(report.data[TYPE_ID])
+        unit_qs = unit_model.objects.filter(id=report.data[UNIT_ID])
+        content_unit = unit_qs.only('_content_type_id', 'id', '_last_updated').get()
+        path_entry = report.data[UNIT_FILES][report.destination]
+
+        # Validate the file and update the progress.
+        catalog_entry = path_entry[CATALOG_ENTRY]
+        try:
+            self.validate_file(
+                report.destination,
+                catalog_entry.checksum_algorithm,
+                catalog_entry.checksum
+            )
+
+            relative_path = os.path.relpath(
+                catalog_entry.path,
+                FileStorage.get_path(content_unit)
+            )
+            if len(report.data[UNIT_FILES]) == 1:
+                # If the unit is single-file, update the storage path to point to the file
+                content_unit.set_storage_path(relative_path)
+                unit_qs.update_one(set___storage_path=content_unit._storage_path)
+                content_unit.import_content(report.destination)
+            else:
+                content_unit.import_content(report.destination, location=relative_path)
+            self.progress_successes += 1
+            path_entry[PATH_DOWNLOADED] = True
+        except (InvalidChecksumType, VerificationException, IOError), e:
+            _logger.debug(_('Download of {path} failed: {reason}.').format(
+                path=catalog_entry.path, reason=str(e)))
+            path_entry[PATH_DOWNLOADED] = False
+            self.progress_failures += 1
+        self.report()
+
+        # Mark the entire unit as downloaded, if necessary.
+        download_flags = [entry[PATH_DOWNLOADED] for entry in
+                          report.data[UNIT_FILES].values()]
+        if all(download_flags):
+            _logger.debug(_('Marking content unit {type}:{id} as downloaded.').format(
+                type=content_unit.type_id, id=content_unit.id))
+            unit_qs.update_one(set__downloaded=True)
+
+    def download_failed(self, report):
+        """
+        Marks a file entry as not downloaded.
+
+        Inherited from DownloadEventListener
+
+        :param report: the report associated with the download request.
+        :type  report: nectar.report.DownloadReport
+        """
+        super(LazyUnitDownloadStep, self).download_failed(report)
+        path_entry = report.data[UNIT_FILES][report.destination]
+        _logger.info('Download of {path} failed: {reason}.'.format(
+            path=path_entry[CATALOG_ENTRY].path, reason=report.error_msg))
+        path_entry[PATH_DOWNLOADED] = False
+        self.progress_failures += 1
+        self.report()
+
+    @staticmethod
+    def validate_file(file_path, checksum_algorithm, checksum):
+        """
+        Attempts to validate the checksum of file referenced by the catalog entry. If
+        the checksum and checksum algorithm is not available, this method simply checks
+        that the file exists.
+
+        :param file_path:          Absolute path to the file to validate.
+        :type  file_path:          str
+        :param checksum_algorithm: Algorithm used to generate the provided checksum.
+        :type  checksum_algorithm: str
+        :param checksum:           The expected checksum to verify against.
+        :type  checksum:           str
+
+        :raises IOError:               If self.path is not a file.
+        :raises InvalidChecksumType:   If the checksum algorithm is not supported by
+                                       pulp.plugins.utils.verification.
+        :raises VerificationException: If the calculated checksum does not match the
+                                       one provided in the report.
+        """
+        if checksum_algorithm and checksum:
+            with open(file_path) as f:
+                verify_checksum(f, checksum_algorithm, checksum)
+        else:
+            if not os.path.isfile(file_path):
+                raise IOError(_("The path '{path}' does not exist").format(path=file_path))
