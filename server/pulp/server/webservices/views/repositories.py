@@ -19,6 +19,7 @@ from pulp.server.managers.repo.unit_association import associate_from_repo, unas
 from pulp.server.webservices.views import search, serializers
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.schedule import ScheduleResource
+from pulp.server.webservices.views.serializers import content
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
@@ -284,6 +285,8 @@ class RepoUnitSearch(search.SearchView):
             units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)
         else:
             units = manager.get_units(repo_id, criteria=criteria)
+        for unit in units:
+            content.remap_fields_with_serializer(unit['metadata'])
         return generate_json_response_with_pulp_encoder(units)
 
 
