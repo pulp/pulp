@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-streamer',
-    version='1.0.0',
+    version='2.8.0b1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
