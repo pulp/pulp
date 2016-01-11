@@ -316,8 +316,8 @@ class RepoUnitAssociationManager(object):
         return self.unassociate_by_criteria(repo_id, criteria,
                                             notify_plugins=notify_plugins)
 
-    @staticmethod
-    def unassociate_by_criteria(repo_id, criteria, notify_plugins=True):
+    @classmethod
+    def unassociate_by_criteria(cls, repo_id, criteria, notify_plugins=True):
         """
         Unassociate units that are matched by the given criteria.
 
@@ -328,11 +328,26 @@ class RepoUnitAssociationManager(object):
         :type  notify_plugins: bool
         """
         criteria = UnitAssociationCriteria.from_dict(criteria)
-        association_query_manager = manager_factory.repo_unit_association_query_manager()
-        unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
+        repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+
+        unassociate_units = load_associated_units(repo_id, criteria)
 
         if len(unassociate_units) == 0:
             return {}
+
+        # Convert the units into transfer units. This happens regardless of whether or not
+        # the plugin will be notified as it's used to generate the return result.
+        # If all source types have been converted to mongo, search via new style.
+        repo_unit_types = set(repo.content_unit_counts.keys())
+        if repo_unit_types.issubset(set(plugin_api.list_unit_models())):
+            transfer_units = list(cls._units_from_criteria(repo, criteria))
+        else:
+            transfer_units = None
+            if unassociate_units is not None:
+                transfer_units = list(create_transfer_units(unassociate_units))
+
+        if notify_plugins:
+            remove_from_importer(repo_id, transfer_units)
 
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
@@ -358,13 +373,6 @@ class RepoUnitAssociationManager(object):
             repo_controller.update_unit_count(repo_id, unit_type_id, -unique_count)
 
         repo_controller.update_last_unit_removed(repo_id)
-
-        # Convert the units into transfer units. This happens regardless of whether or not
-        # the plugin will be notified as it's used to generate the return result,
-        transfer_units = create_transfer_units(unassociate_units)
-
-        if notify_plugins:
-            remove_from_importer(repo_id, transfer_units)
 
         # Match the return type/format as copy
         serializable_units = [u.to_id_dict() for u in transfer_units]
