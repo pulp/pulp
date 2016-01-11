@@ -9,6 +9,7 @@ import traceback
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
+from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import copytree
 
 BUILD_DIRNAME = 'build'
@@ -76,9 +77,8 @@ class FileDistributor(Distributor):
             units = publish_conduit.get_units()
 
             # Set up an empty build_dir
-            build_dir = os.path.join(repo.working_dir, BUILD_DIRNAME)
-            # Let's erase the path at build_dir so we can be sure it's a clean directory
-            self._rmtree_if_exists(build_dir)
+            working_dir = common_utils.get_working_directory()
+            build_dir = os.path.join(working_dir, BUILD_DIRNAME)
             os.makedirs(build_dir)
 
             self.initialize_metadata(build_dir)
