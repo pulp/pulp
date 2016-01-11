@@ -201,7 +201,15 @@ class ScheduledCall(Model):
         :return:    dictionary of public keys and values
         :rtype:     dict
         """
-        return {
+
+        # If principal is a User object, serialize it. If it does not have a serializer, it is
+        # a SystemUser which is already a dict.
+        try:
+            serial_principal = self.principal.serializer(self.principal).data
+        except AttributeError:
+            serial_principal = self.principal
+
+        dict_repr = {
             '_id': str(self._id),
             'args': self.args,
             'consecutive_failures': self.consecutive_failures,
@@ -213,13 +221,15 @@ class ScheduledCall(Model):
             'last_run_at': self.last_run_at,
             'last_updated': self.last_updated,
             'next_run': self.calculate_next_run(),
-            'principal': self.principal,
+            'principal': serial_principal,
             'remaining_runs': self.remaining_runs,
             'resource': self.resource,
             'schedule': self.schedule,
             'task': self.task,
             'total_run_count': self.total_run_count,
         }
+
+        return dict_repr
 
     def for_display(self):
         """

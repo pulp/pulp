@@ -35,12 +35,7 @@ SCHEDULE = {
     u'kwargs': {u'overrides': {}},
     u'last_run_at': u'2013-12-17T00:35:53Z',
     u'last_updated': 1387218569.811224,
-    u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\n"
-                  u"c__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i"
-                  u"\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\n"
-                  u"p12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\n"
-                  u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\n"
-                  u"V5220ab06e19a0010e1690589\np20\ns.",
+    u'principal': mock.MagicMock(),
     u'remaining_runs': None,
     u'resource': u'pulp:distributor:demo:puppet_distributor',
     u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\n"
@@ -614,6 +609,28 @@ class TestScheduledCallAsDict(unittest.TestCase):
 
         self.assertTrue(isinstance(call.as_dict(), dict))
 
+    def test_mongoengine_objects_serialized(self):
+        """
+        Ensure that mongoengine objects in the scheduled call were serialized.
+        """
+        schedule = bson.SON(SCHEDULE)
+        call = ScheduledCall.from_db(schedule)
+        call['principal'] = model.User('test_user')
+
+        result = call.as_dict()
+        self.assertEqual(result['principal'], model.User.serializer(call['principal']).data)
+
+    def test_system_user_is_dict(self):
+        """
+        Ensure value for principal is a dict when value is is a model.SystemUser.
+        """
+        schedule = bson.SON(SCHEDULE)
+        call = ScheduledCall.from_db(schedule)
+        call['principal'] = model.SystemUser()
+
+        result = call.as_dict()
+        self.assertTrue(isinstance(result['principal'], dict))
+
     def test_values(self):
         schedule = bson.SON(SCHEDULE)
         call = ScheduledCall.from_db(schedule)
@@ -622,13 +639,16 @@ class TestScheduledCallAsDict(unittest.TestCase):
 
         self.assertEqual(result['_id'], call.id)
         for k, v in SCHEDULE.items():
-            self.assertEqual(v, result[k])
+            if k == 'principal':
+                self.assertTrue(result[k] is SCHEDULE[k].serializer.return_value.data)
+            else:
+                self.assertEqual(v, result[k])
         self.assertTrue('next_run' in result)
 
 
 class TestScheduledCallForDisplay(unittest.TestCase):
     def test_returns_dict(self):
-        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', principal=mock.MagicMock())
 
         self.assertTrue(isinstance(call.for_display(), dict))
 
@@ -650,7 +670,8 @@ class TestScheduledCallSave(unittest.TestCase):
     def test_existing(self, mock_get_collection):
         mock_update = mock_get_collection.return_value.update
         fake_id = bson.ObjectId()
-        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', id=fake_id)
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', id=fake_id,
+                             principal=mock.MagicMock())
 
         call.save()
 
@@ -660,7 +681,7 @@ class TestScheduledCallSave(unittest.TestCase):
 
     def test_new(self, mock_get_collection):
         mock_insert = mock_get_collection.return_value.insert
-        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', principal=mock.MagicMock())
 
         call.save()
 
