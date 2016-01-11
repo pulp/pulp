@@ -7,7 +7,7 @@ import string
 import tempfile
 import traceback
 
-from mock import patch, Mock
+from mock import call, patch, Mock
 
 from .... import base
 from pulp.plugins.types import database as content_type_db
@@ -485,16 +485,17 @@ class TestUnlinkShared(TestCase):
         delete.assert_called_once_with(path)
 
 
+@patch('pulp.server.managers.content.orphan.os.rmdir')
+@patch('pulp.server.managers.content.orphan.pulp_config.config')
+@patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+@patch('pulp.server.managers.content.orphan.OrphanManager.unlink_shared')
+@patch('pulp.server.managers.content.orphan.OrphanManager.is_shared')
 class TestDeleteOrphanedFile(TestCase):
 
-    def test_not_absolute_path(self):
+    def test_not_absolute_path(self, is_shared, unlink_shared, delete, config, m_rmdir):
         self.assertRaises(ValueError, OrphanManager.delete_orphaned_file, 'path-1')
 
-    @patch('pulp.server.managers.content.orphan.pulp_config.config')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.unlink_shared')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.is_shared')
-    def test_shared(self, is_shared, unlink_shared, delete, config):
+    def test_shared(self, is_shared, unlink_shared, delete, config, m_os):
         path = '/path-1'
         storage_dir = '/storage/pulp/dir'
         is_shared.return_value = True
@@ -508,11 +509,7 @@ class TestDeleteOrphanedFile(TestCase):
         unlink_shared.assert_called_once_with(path)
         self.assertFalse(delete.called)
 
-    @patch('pulp.server.managers.content.orphan.pulp_config.config')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.unlink_shared')
-    @patch('pulp.server.managers.content.orphan.OrphanManager.is_shared')
-    def test_not_shared(self, is_shared, unlink_shared, delete, config):
+    def test_not_shared(self, is_shared, unlink_shared, delete, config, m_rmdir):
         path = '/path-1'
         storage_dir = '/storage/pulp/dir'
         is_shared.return_value = False
@@ -525,3 +522,52 @@ class TestDeleteOrphanedFile(TestCase):
         is_shared.assert_called_once_with(storage_dir, path)
         delete.assert_called_once_with(path)
         self.assertFalse(unlink_shared.called)
+
+    @patch('pulp.server.managers.content.orphan.os.access')
+    @patch('pulp.server.managers.content.orphan.os.listdir')
+    def test_clean_non_root(self, mls, maccess, is_shared, unlink_shared, delete, config, m_rmdir):
+        """
+        Ensure that empty directories more than 1 level up from root are removed.
+        """
+        mls.return_value = None
+        maccess.return_value = True
+        path = '/storage/pulp/content/test/lvl1/lvl2/thing.remove'
+        storage_dir = '/storage/pulp'
+        is_shared.return_value = False
+        config.get.return_value = storage_dir
+
+        OrphanManager.delete_orphaned_file(path)
+        m_rmdir.assert_has_calls([call('/storage/pulp/content/test/lvl1/lvl2'),
+                                  call('/storage/pulp/content/test/lvl1')])
+
+    @patch('pulp.server.managers.content.orphan.os.access')
+    @patch('pulp.server.managers.content.orphan.os.listdir')
+    def test_clean_nonempty(self, mls, maccess, is_shared, unlink_shared, delete, config, m_rmdir):
+        """
+        Ensure that nonempty directories are not removed.
+        """
+        mls.return_value = ['some', 'files']
+        maccess.return_value = True
+        path = '/storage/pulp/content/test/lvl1/lvl2/thing.remove'
+        storage_dir = '/storage/pulp'
+        is_shared.return_value = False
+        config.get.return_value = storage_dir
+
+        OrphanManager.delete_orphaned_file(path)
+        self.assertFalse(m_rmdir.called)
+
+    @patch('pulp.server.managers.content.orphan.os.access')
+    @patch('pulp.server.managers.content.orphan.os.listdir')
+    def test_clean_no_access(self, mls, maccess, is_shared, unlink_shared, delete, config, m_rmdir):
+        """
+        Ensure that rmdir is not called when user does not have access to dir.
+        """
+        mls.return_value = None
+        maccess.return_value = False
+        path = '/storage/pulp/content/test/lvl1/lvl2/thing.remove'
+        storage_dir = '/storage/pulp'
+        is_shared.return_value = False
+        config.get.return_value = storage_dir
+
+        OrphanManager.delete_orphaned_file(path)
+        self.assertFalse(m_rmdir.called)

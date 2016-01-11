@@ -302,7 +302,7 @@ class OrphanManager(object):
         OrphanManager.delete(path)
 
         # delete parent directories on the path as long as they fall empty
-        root_content_regex = re.compile(os.path.join(storage_dir, 'content', '[^/]+/?'))
+        root_content_regex = re.compile(os.path.join(storage_dir, 'content', '[^/]+/?$'))
         while True:
             path = os.path.dirname(path)
             if root_content_regex.match(path):
