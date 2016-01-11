@@ -42,7 +42,9 @@ class SearchView(generic.View):
     :cvar    serializer:       If your view needs to modify the QuerySet results before they
                                are returned to the caller, you can define this attribute. It
                                should be set to a function that accepts a single object, and
-                               returns a single object.
+                               returns a single object. Where possible, such as serializing a
+                               model instance, sane serializers are used by default, and this
+                               method should not be defined.
     :vartype serializer:       staticmethod
     """
 
@@ -125,6 +127,31 @@ class SearchView(generic.View):
         return self._generate_response(query, options, *args, **kwargs)
 
     @classmethod
+    def _serialize_results(cls, results):
+        """
+        Serialize a set of search results
+
+        If a model is related to this view and that model has a SERIALIZER attribute, that
+        will be used to serialize results by default.
+
+        The default behavior can be overridden by implementing the serializer staticmethod
+        on your SearchView implementation.
+
+        :param results: A list of search results from a search query
+        :type  results: list
+
+        :return: serialized search results
+        :rtype:  list
+        """
+        # serializer staticmethod is used if it exists...
+        if hasattr(cls, 'serializer'):
+            results = [cls.serializer(r) for r in results]
+        # ...otherwise go through sane defaults here
+        elif hasattr(cls, 'model') and hasattr(cls.model, 'SERIALIZER'):
+            results = cls.model.SERIALIZER(results, multiple=True).data
+        return results
+
+    @classmethod
     def _generate_response(cls, query, options, *args, **kwargs):
         """
         Perform the database query using the given search data, and return the resuls as a JSON
@@ -186,8 +213,4 @@ class SearchView(generic.View):
         :rtype:  list
         """
         results = list(search_method(query))
-        if hasattr(cls, 'serializer'):
-            results = [cls.serializer(r) for r in results]
-        elif hasattr(cls, 'model') and hasattr(cls.model, 'serializer'):
-            results = cls.model.serializer(results, multiple=True).data
-        return results
+        return cls._serialize_results(results)

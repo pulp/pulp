@@ -2,12 +2,7 @@ from bson.objectid import ObjectId
 import mock
 
 from pulp.common.compat import unittest
-# The serializers module should not normally be an starting point for imports, so we need to import
-# the criteria module before serializers to prevent a circular import. This is only an issue when
-# running this test module by itself, and will be fixed when pulp.server.db.model becomes a true
-# module or moves to pulp.server.db.models. See https://pulp.plan.io/issues/1066
 from pulp.server import exceptions
-from pulp.server.db.model import criteria  # noqa
 from pulp.server.webservices.views import serializers
 
 
@@ -416,7 +411,7 @@ class TestModelSerializer(unittest.TestCase):
         result = test_serializer._translate(mock_model, 'external')
         self.assertEqual(result, 'internal_db')
 
-    @mock.patch('pulp.server.webservices.views.serializers.criteria.Criteria.from_dict')
+    @mock.patch('pulp.server.db.model.criteria.Criteria.from_dict')
     @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate')
     @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate_filters')
     def test_translate_criteria(self, mock_translate_filters, mock_translate, mock_new_crit):

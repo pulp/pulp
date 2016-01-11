@@ -24,7 +24,7 @@ class TestUserSearchView(unittest.TestCase):
         self.assertEqual(UserSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
         self.assertEqual(UserSearchView.model, model.User)
-        self.assertEqual(UserSearchView.model.serializer, serializers.User)
+        self.assertEqual(UserSearchView.model.SERIALIZER, serializers.User)
 
 
 class TestUsersView(unittest.TestCase):
@@ -43,9 +43,9 @@ class TestUsersView(unittest.TestCase):
         request = mock.MagicMock()
         view = UsersView()
         response = view.get(request)
-        mock_model.serializer.assert_called_once_with(mock_model.objects.return_value,
+        mock_model.SERIALIZER.assert_called_once_with(mock_model.objects.return_value,
                                                       multiple=True)
-        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
+        mock_resp.assert_called_once_with(mock_model.SERIALIZER.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -98,12 +98,12 @@ class TestUsersView(unittest.TestCase):
         """
         request = mock.MagicMock()
         request.body = json.dumps({'login': 'test-user', 'name': 'test-user', 'password': '111'})
-        mock_model.serializer.return_value.data = {'_id': 'copy to id', '_href': 'mock/path'}
+        mock_model.SERIALIZER.return_value.data = {'_id': 'copy to id', '_href': 'mock/path'}
         user = UsersView()
         response = user.post(request)
 
         mock_ctrl.create_user.assert_called_once_with('test-user', password='111', name='test-user')
-        mock_model.serializer.assert_called_once_with(mock_ctrl.create_user.return_value)
+        mock_model.SERIALIZER.assert_called_once_with(mock_ctrl.create_user.return_value)
         mock_auto_perm = mock_factory.permission_manager().grant_automatic_permissions_for_resource
         mock_auto_perm.assert_called_once_with('mock/path')
         mock_resp.assert_called_once_with({'id': 'copy to id', '_href': 'mock/path',
@@ -130,7 +130,7 @@ class TestUserResourceView(unittest.TestCase):
         response = user.get(request, 'test-user')
 
         mock_model.objects.get_or_404.assert_called_once_with(login='test-user')
-        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
+        mock_resp.assert_called_once_with(mock_model.SERIALIZER.return_value.data)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -168,6 +168,6 @@ class TestUserResourceView(unittest.TestCase):
         response = user.put(request, 'test-user')
 
         mock_ctrl.update_user.assert_called_once_with('test-user', {'name': 'some-user'})
-        mock_model.serializer.assert_called_once_with(mock_ctrl.update_user.return_value)
-        mock_resp.assert_called_once_with(mock_model.serializer.return_value.data)
+        mock_model.SERIALIZER.assert_called_once_with(mock_ctrl.update_user.return_value)
+        mock_resp.assert_called_once_with(mock_model.SERIALIZER.return_value.data)
         self.assertTrue(response is mock_resp.return_value)

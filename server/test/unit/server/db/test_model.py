@@ -820,7 +820,7 @@ class TestImporter(unittest.TestCase):
         """
         Ensure that the serializer is set.
         """
-        self.assertEqual(model.Importer.serializer, serializers.ImporterSerializer)
+        self.assertEqual(model.Importer.SERIALIZER, serializers.ImporterSerializer)
 
     def test_meta_collection(self):
         """
@@ -889,7 +889,7 @@ class TestDistributor(unittest.TestCase):
         """
         Ensure that the serializer is set.
         """
-        self.assertEqual(model.Distributor.serializer, serializers.Distributor)
+        self.assertEqual(model.Distributor.SERIALIZER, serializers.Distributor)
 
     def test_meta_collection(self):
         """

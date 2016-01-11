@@ -366,7 +366,7 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_imp_inst = mock.MagicMock()
         mock_plugin_config = mock.MagicMock()
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
-        mock_ser = mock_model.Importer.serializer
+        mock_ser = mock_model.Importer.SERIALIZER
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'config'})
@@ -384,7 +384,7 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_imp_inst = mock.MagicMock()
         mock_plugin_config = mock.MagicMock()
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
-        mock_ser = mock_model.Importer.serializer
+        mock_ser = mock_model.Importer.SERIALIZER
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'change', 'dont_keep': None})

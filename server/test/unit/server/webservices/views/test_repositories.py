@@ -35,7 +35,7 @@ class TestMergeRelatedObjects(unittest.TestCase):
         Test that objects are included in the appropriate repositories.
         """
 
-        def mock_serialize(data):
+        def mock_serializer(data):
             """
             Imitate the serialzer by storing the data in .data.
             """
@@ -49,7 +49,7 @@ class TestMergeRelatedObjects(unittest.TestCase):
                           {'repo_id': 'mock2', 'id': 'mock_importer2'}]
 
         m_model.Importer.objects.return_value = mock_importers
-        m_model.Importer.serializer.side_effect = mock_serialize
+        m_model.Importer.SERIALIZER = mock_serializer
 
         # If this is available, it will be used. Removed after https://pulp.plan.io/issues/780
         del m_model.Importer.find_by_repo_list
@@ -92,7 +92,7 @@ class TestReposView(unittest.TestCase):
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories._merge_related_objects')
     @mock.patch('pulp.server.webservices.views.repositories.serializers.Repository')
-    def test__process_repos_minimal(self, mock_serialize, mock_merge, mock_resp):
+    def test__process_repos_minimal(self, mock_serializer, mock_merge, mock_resp):
         """
         Test _process_repos without optional args, assert that processing was called for each repo.
         """
@@ -717,7 +717,7 @@ class TestRepoImportersView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.serializer')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.SERIALIZER')
     @mock.patch('pulp.server.webservices.views.repositories.model.Importer.objects')
     def test_get_importers(self, mock_imp_qs, mock_imp_serializer, mock_resp):
         """
@@ -767,7 +767,7 @@ class TestRepoImporterResourceView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.repositories.importer_controller.get_valid_importer')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.serializer')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Importer.SERIALIZER')
     def test_get_importer(self, mock_imp_serializer, mock_validate, mock_resp):
         """
         Get an importer for a repository.
@@ -1094,16 +1094,16 @@ class TestRepoDistributorsView(unittest.TestCase):
         repo_dist = RepoDistributorsView()
         response = repo_dist.get(mock.MagicMock(), 'mock_repo')
 
-        m_model.Distributor.serializer.assert_called_once_with(
+        m_model.Distributor.SERIALIZER.assert_called_once_with(
             m_model.Distributor.objects.return_value, multiple=True)
-        m_resp.assert_called_once_with(m_model.Distributor.serializer.return_value.data)
+        m_resp.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data)
         self.assertTrue(response is m_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_redirect_response')
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.model.Distributor.serializer')
+    @mock.patch('pulp.server.webservices.views.repositories.model.Distributor.SERIALIZER')
     @mock.patch('pulp.server.webservices.views.repositories.dist_controller')
     def test_post_as_expected(self, m_dist_cont, m_serial, mock_resp, mock_redir):
         """
@@ -1168,9 +1168,9 @@ class TestRepoDistributorResourceView(unittest.TestCase):
         repo_dist = RepoDistributorResourceView()
         response = repo_dist.get(mock_request, 'mock_repo', 'mock_distributor')
 
-        m_model.Distributor.serializer.assert_called_once_with(
+        m_model.Distributor.SERIALIZER.assert_called_once_with(
             m_model.Distributor.objects.get_or_404.return_value)
-        m_resp.assert_called_once_with(m_model.Distributor.serializer.return_value.data)
+        m_resp.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data)
         self.assertTrue(response is m_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',

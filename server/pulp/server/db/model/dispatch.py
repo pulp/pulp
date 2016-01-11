@@ -205,7 +205,7 @@ class ScheduledCall(Model):
         # If principal is a User object, serialize it. If it does not have a serializer, it is
         # a SystemUser which is already a dict.
         try:
-            serial_principal = self.principal.serializer(self.principal).data
+            serial_principal = self.principal.SERIALIZER(self.principal).data
         except AttributeError:
             serial_principal = self.principal
 

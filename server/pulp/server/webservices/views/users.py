@@ -42,7 +42,7 @@ class UsersView(View):
         :return: Response containing a list of users
         :rtype: django.http.HttpResponse
         """
-        users = model.User.serializer(model.User.objects(), multiple=True).data
+        users = model.User.SERIALIZER(model.User.objects(), multiple=True).data
         return generate_json_response_with_pulp_encoder(users)
 
     @auth_required(authorization.CREATE)
@@ -74,7 +74,7 @@ class UsersView(View):
             raise pulp_exceptions.InvalidValue(user_data.keys())
 
         new_user = user_controller.create_user(login, password=password, name=name)
-        serialized_user = model.User.serializer(new_user).data
+        serialized_user = model.User.SERIALIZER(new_user).data
 
         # For backwards compatability. See https://pulp.plan.io/issues/1125
         serialized_user['id'] = str(serialized_user['_id'])
@@ -106,7 +106,7 @@ class UserResourceView(View):
         :rtype: django.http.HttpResponse
         """
         user = model.User.objects.get_or_404(login=login)
-        serialized_user = model.User.serializer(user).data
+        serialized_user = model.User.SERIALIZER(user).data
         return generate_json_response_with_pulp_encoder(serialized_user)
 
     @auth_required(authorization.DELETE)
@@ -146,5 +146,5 @@ class UserResourceView(View):
         """
         delta = request.body_as_json.get('delta')
         updated_user = user_controller.update_user(login, delta)
-        serialized_user = model.User.serializer(updated_user).data
+        serialized_user = model.User.SERIALIZER(updated_user).data
         return generate_json_response_with_pulp_encoder(serialized_user)

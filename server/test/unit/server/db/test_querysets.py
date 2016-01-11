@@ -53,8 +53,8 @@ class TestCriteriaQuerySet(unittest.TestCase):
         class MockDocument(Document):
             """Fake Mongoengine document"""
             meta = {'queryset_class': querysets.CriteriaQuerySet}
-            serializer = mock.MagicMock()
-            mock_crit = serializer().translate_criteria.return_value
+            SERIALIZER = mock.MagicMock()
+            mock_crit = SERIALIZER().translate_criteria.return_value
             mock_crit.spec = 'spec'
             mock_crit.fields = ['field']
             mock_crit.sort = [('field', 1), ('other', 0)]

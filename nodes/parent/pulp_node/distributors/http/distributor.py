@@ -253,7 +253,7 @@ class NodesHttpDistributor(Distributor):
         for dist in model.Distributor.objects(repo_id=repo_id):
             if dist.distributor_type_id in constants.ALL_DISTRIBUTORS:
                 continue
-            serialized = model.Distributor.serializer(dist).data
+            serialized = model.Distributor.SERIALIZER(dist).data
             serialized.pop('_href')
             distributors.append(serialized)
         payload['distributors'] = distributors
