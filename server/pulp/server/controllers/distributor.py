@@ -258,7 +258,8 @@ def update(repo_id, dist_id, config=None, delta=None):
                                                    distributor_id=distributor.distributor_id)
         bind_error.child_exceptions = unbind_errors
 
-    return TaskResult(distributor, error=bind_error, spawned_tasks=additional_tasks)
+    serialized_dist = model.Distributor.SERIALIZER(distributor).data
+    return TaskResult(serialized_dist, error=bind_error, spawned_tasks=additional_tasks)
 
 
 def create_bind_payload(repo_id, distributor_id, binding_config):

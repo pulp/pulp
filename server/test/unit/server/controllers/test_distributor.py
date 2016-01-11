@@ -393,7 +393,9 @@ class TestUpdate(unittest.TestCase):
         m_repo_conf_conduit.assert_called_once_with(dist.distributor_type_id)
         m_dist_inst.validate_config.assert_called_once_with(repo.to_transfer_repo.return_value,
                                                             m_call_conf, m_conf_conduit)
-        m_task.assert_called_once_with(dist, error=None, spawned_tasks=[])
+        m_model.Distributor.SERIALIZER.assert_called_once_with(dist)
+        m_task.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data,
+                                       error=None, spawned_tasks=[])
         self.assertTrue(result is m_task.return_value)
 
     def test_remove_none_values(self, m_model, m_plug_api, m_plug_call_conf, m_repo_conf_conduit,
@@ -419,7 +421,9 @@ class TestUpdate(unittest.TestCase):
         m_repo_conf_conduit.assert_called_once_with(dist.distributor_type_id)
         m_dist_inst.validate_config.assert_called_once_with(repo.to_transfer_repo.return_value,
                                                             m_call_conf, m_conf_conduit)
-        m_task.assert_called_once_with(dist, error=None, spawned_tasks=[])
+        m_model.Distributor.SERIALIZER.assert_called_once_with(dist)
+        m_task.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data,
+                                       error=None, spawned_tasks=[])
         self.assertTrue(result is m_task.return_value)
 
     def test_bindings(self, m_model, m_plug_api, m_plug_call_conf, m_repo_conf_conduit, m_managers,
@@ -449,7 +453,9 @@ class TestUpdate(unittest.TestCase):
         m_repo_conf_conduit.assert_called_once_with(dist.distributor_type_id)
         m_dist_inst.validate_config.assert_called_once_with(repo.to_transfer_repo.return_value,
                                                             m_call_conf, m_conf_conduit)
-        m_task.assert_called_once_with(dist, error=None, spawned_tasks=[])
+        m_model.Distributor.SERIALIZER.assert_called_once_with(dist)
+        m_task.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data,
+                                       error=None, spawned_tasks=[])
         m_bind_man.bind.assert_called_once_with(
             m_bind['consumer_id'], m_bind['repo_id'], m_bind['distributor_id'],
             m_bind['notify_agent'], m_bind['binding_config'], {})
@@ -482,7 +488,9 @@ class TestUpdate(unittest.TestCase):
         m_repo_conf_conduit.assert_called_once_with(dist.distributor_type_id)
         m_dist_inst.validate_config.assert_called_once_with(repo.to_transfer_repo.return_value,
                                                             m_call_conf, m_conf_conduit)
-        m_task.assert_called_once_with(dist, error=None, spawned_tasks=['spawned task'])
+        m_model.Distributor.SERIALIZER.assert_called_once_with(dist)
+        m_task.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data,
+                                       error=None, spawned_tasks=['spawned task'])
         m_bind_man.bind.assert_called_once_with(
             m_bind['consumer_id'], m_bind['repo_id'], m_bind['distributor_id'],
             m_bind['notify_agent'], m_bind['binding_config'], {})
@@ -516,7 +524,9 @@ class TestUpdate(unittest.TestCase):
         m_repo_conf_conduit.assert_called_once_with(dist.distributor_type_id)
         m_dist_inst.validate_config.assert_called_once_with(repo.to_transfer_repo.return_value,
                                                             m_call_conf, m_conf_conduit)
-        m_task.assert_called_once_with(dist, error=m_exception.return_value, spawned_tasks=[])
+        m_model.Distributor.SERIALIZER.assert_called_once_with(dist)
+        m_task.assert_called_once_with(m_model.Distributor.SERIALIZER.return_value.data,
+                                       error=m_exception.return_value, spawned_tasks=[])
         m_bind_man.bind.assert_called_once_with(
             m_bind['consumer_id'], m_bind['repo_id'], m_bind['distributor_id'],
             m_bind['notify_agent'], m_bind['binding_config'], {})
