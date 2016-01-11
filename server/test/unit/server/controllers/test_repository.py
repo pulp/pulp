@@ -14,7 +14,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db import model
 
 
-MODULE = 'pulp.server.controllers.repository'
+MODULE = 'pulp.server.controllers.repository.'
 
 
 class MockException(Exception):
@@ -225,7 +225,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
 
 class FindUnitsNotDownloadedTests(unittest.TestCase):
 
-    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    @patch(MODULE + 'get_mongoengine_unit_querysets')
     def test_call(self, mock_repo_querysets):
         mock_qs = Mock()
         mock_qs.return_value = [0, 1, 2]
@@ -237,7 +237,7 @@ class FindUnitsNotDownloadedTests(unittest.TestCase):
 
 class MissingUnitCountTests(unittest.TestCase):
 
-    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    @patch(MODULE + 'get_mongoengine_unit_querysets')
     def test_call(self, mock_repo_querysets):
         query_set = Mock()
         query_set.return_value.count.return_value = 5
@@ -247,14 +247,14 @@ class MissingUnitCountTests(unittest.TestCase):
 
 class HasAllUnitsDownloadedTests(unittest.TestCase):
 
-    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    @patch(MODULE + 'get_mongoengine_unit_querysets')
     def test_true(self, mock_repo_querysets):
         query_set = Mock()
         query_set.return_value.count.return_value = 0
         mock_repo_querysets.return_value = [query_set]
         self.assertTrue(repo_controller.has_all_units_downloaded('mock_repo'))
 
-    @patch(MODULE + '.get_mongoengine_unit_querysets')
+    @patch(MODULE + 'get_mongoengine_unit_querysets')
     def test_false(self, mock_repo_querysets):
         query_set = Mock()
         query_set.return_value.count.return_value = 5
@@ -265,9 +265,9 @@ class HasAllUnitsDownloadedTests(unittest.TestCase):
 class GetMongoengineRepoQuerysetsTests(unittest.TestCase):
     """Tests for the get_mongoengine_unit_querysets function."""
 
-    @patch(MODULE + '.get_unit_model_querysets')
-    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
-    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    @patch(MODULE + 'get_unit_model_querysets')
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + 'model.RepositoryContentUnit.objects')
     def test_mongoengine_types_only(self, mock_repo_units, mock_get_querysets):
         """Assert that the correct number of query sets are returned."""
         content_types = ['dog', 'cat', 'goat']
@@ -279,9 +279,9 @@ class GetMongoengineRepoQuerysetsTests(unittest.TestCase):
         for content_type, actual_call in zip(content_types, mock_get_querysets.call_args_list):
             self.assertEqual(call('mock_repo', content_type, None), actual_call)
 
-    @patch(MODULE + '.get_unit_model_querysets')
-    @patch(MODULE + '.plugin_api.get_unit_model_by_id', lambda x: x)
-    @patch(MODULE + '.model.RepositoryContentUnit.objects')
+    @patch(MODULE + 'get_unit_model_querysets')
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + 'model.RepositoryContentUnit.objects')
     def test_non_mongoengine_type(self, mock_repo_units, mock_get_querysets):
         """Assert that the correct number of query sets are returned."""
         content_types = ['dog', None, 'goat']
@@ -1357,3 +1357,389 @@ class TestGetImporterById(unittest.TestCase):
         object_id.assert_called_once_with(_id)
         importer.objects.get.assert_called_once_with(id=object_id.return_value)
         self.assertFalse(call_conf.called)
+
+
+class TestQueueDownloadDeferred(unittest.TestCase):
+
+    @patch(MODULE + 'tags')
+    @patch(MODULE + 'download_deferred')
+    def test_queue_download_deferred(self, mock_download_deferred, mock_tags):
+        """Assert download_deferred tasks are tagged correctly."""
+        repo_controller.queue_download_deferred()
+        mock_tags.action_tag.assert_called_once_with(mock_tags.ACTION_DEFERRED_DOWNLOADS_TYPE)
+        mock_download_deferred.apply_async.assert_called_once_with(
+            tags=[mock_tags.action_tag.return_value]
+        )
+
+
+class TestQueueDownloadRepo(unittest.TestCase):
+
+    @patch(MODULE + 'tags')
+    @patch(MODULE + 'download_repo')
+    def test_queue_download_repo(self, mock_download_repo, mock_tags):
+        """Assert download_repo tasks are tagged correctly."""
+        repo_controller.queue_download_repo('fake-id')
+        mock_tags.resource_tag.assert_called_once_with(
+            mock_tags.RESOURCE_REPOSITORY_TYPE,
+            'fake-id'
+        )
+        mock_tags.action_tag.assert_called_once_with(mock_tags.ACTION_DOWNLOAD_TYPE)
+        mock_download_repo.apply_async.assert_called_once_with(
+            ['fake-id'],
+            {'verify_all_units': False},
+            tags=[mock_tags.resource_tag.return_value, mock_tags.action_tag.return_value]
+        )
+
+
+class TestDownloadDeferred(unittest.TestCase):
+
+    @patch(MODULE + 'LazyUnitDownloadStep')
+    @patch(MODULE + '_create_download_requests')
+    @patch(MODULE + '_get_deferred_content_units')
+    def test_download_deferred(self, mock_get_deferred, mock_create_requests, mock_step):
+        """Assert the download step is initialized and called."""
+        repo_controller.download_deferred()
+        mock_create_requests.assert_called_once_with(mock_get_deferred.return_value)
+        mock_step.return_value.start.assert_called_once_with()
+
+
+class TestDownloadRepo(unittest.TestCase):
+
+    @patch(MODULE + 'LazyUnitDownloadStep')
+    @patch(MODULE + '_create_download_requests')
+    @patch(MODULE + 'find_units_not_downloaded')
+    def test_download_repo_no_verify(self, mock_missing_units, mock_create_requests, mock_step):
+        """Assert the download step is initialized and called with missing units."""
+        repo_controller.download_repo('fake-id')
+        mock_missing_units.assert_called_once_with('fake-id')
+        mock_create_requests.assert_called_once_with(mock_missing_units.return_value)
+        mock_step.return_value.start.assert_called_once_with()
+
+    @patch(MODULE + 'LazyUnitDownloadStep')
+    @patch(MODULE + '_create_download_requests')
+    @patch(MODULE + 'get_mongoengine_unit_querysets')
+    def test_download_repo_verify(self, mock_units_qs, mock_create_requests, mock_step):
+        """Assert the download step is initialized and called with all units."""
+        mock_units_qs.return_value = [['some'], ['lists']]
+        repo_controller.download_repo('fake-id', verify_all_units=True)
+        mock_units_qs.assert_called_once_with('fake-id')
+        self.assertEqual(list(mock_create_requests.call_args[0][0]), ['some', 'lists'])
+        mock_step.return_value.start.assert_called_once_with()
+
+
+class TestGetDeferredContentUnits(unittest.TestCase):
+
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    @patch(MODULE + 'model.DeferredDownload')
+    def test_get_deferred_content_units(self, mock_qs, mock_get_model):
+        # Setup
+        mock_unit = Mock(unit_type_id='abc', unit_id='123')
+        mock_qs.objects.filter.return_value = [mock_unit]
+
+        # Test
+        result = list(repo_controller._get_deferred_content_units())
+        self.assertEqual(1, len(result))
+        mock_get_model.assert_called_once_with('abc')
+        unit_filter = mock_get_model.return_value.objects.filter
+        unit_filter.assert_called_once_with(id='123')
+        unit_filter.return_value.get.assert_called_once_with()
+
+    @patch(MODULE + '_logger.error')
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    @patch(MODULE + 'model.DeferredDownload')
+    def test_get_deferred_content_units_no_model(self, mock_qs, mock_get_model, mock_log):
+        # Setup
+        mock_unit = Mock(unit_type_id='abc', unit_id='123')
+        mock_qs.objects.filter.return_value = [mock_unit]
+        mock_get_model.return_value = None
+
+        # Test
+        result = list(repo_controller._get_deferred_content_units())
+        self.assertEqual(0, len(result))
+        mock_log.assert_called_once_with('Unable to find the model object for the abc type.')
+        mock_get_model.assert_called_once_with('abc')
+
+    @patch(MODULE + '_logger.debug')
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    @patch(MODULE + 'model.DeferredDownload')
+    def test_get_deferred_content_units_no_unit(self, mock_qs, mock_get_model, mock_log):
+        # Setup
+        mock_unit = Mock(unit_type_id='abc', unit_id='123')
+        mock_qs.objects.filter.return_value = [mock_unit]
+        unit_qs = mock_get_model.return_value.objects.filter.return_value
+        unit_qs.get.side_effect = mongoengine.DoesNotExist()
+
+        # Test
+        result = list(repo_controller._get_deferred_content_units())
+        self.assertEqual(0, len(result))
+        mock_log.assert_called_once_with('Unable to find the abc:123 content unit.')
+        mock_get_model.assert_called_once_with('abc')
+
+
+class TestCreateDownloadRequests(unittest.TestCase):
+
+    @patch(MODULE + 'Key.load', Mock())
+    @patch(MODULE + 'common_utils.get_working_directory', Mock(return_value='/working/'))
+    @patch(MODULE + 'mkdir')
+    @patch(MODULE + '_get_streamer_url')
+    @patch(MODULE + 'model.LazyCatalogEntry')
+    def test_create_download_requests(self, mock_catalog, mock_get_url, mock_mkdir):
+        # Setup
+        content_units = [Mock(id='123', type_id='abc', list_files=lambda: ['/file/path'])]
+        filtered_qs = mock_catalog.objects.filter.return_value
+        catalog_entry = filtered_qs.order_by.return_value.first.return_value
+        catalog_entry.path = '/storage/123/path'
+        expected_data_dict = {
+            repo_controller.TYPE_ID: 'abc',
+            repo_controller.UNIT_ID: '123',
+            repo_controller.UNIT_FILES: {
+                '/working/123/path': {
+                    repo_controller.CATALOG_ENTRY: catalog_entry,
+                    repo_controller.PATH_DOWNLOADED: None
+                }
+            }
+        }
+
+        # Test
+        requests = repo_controller._create_download_requests(content_units)
+        mock_catalog.objects.filter.assert_called_once_with(
+            unit_id='123',
+            unit_type_id='abc',
+            path='/file/path'
+        )
+        filtered_qs.order_by.assert_called_once_with('revision')
+        filtered_qs.order_by.return_value.first.assert_called_once_with()
+        mock_mkdir.assert_called_once_with('/working/123')
+        self.assertEqual(1, len(requests))
+        self.assertEqual(mock_get_url.return_value, requests[0].url)
+        self.assertEqual('/working/123/path', requests[0].destination)
+        self.assertEqual(expected_data_dict, requests[0].data)
+
+
+class TestGetStreamerUrl(unittest.TestCase):
+
+    def setUp(self):
+        self.catalog = Mock(path='/path/to/content')
+        self.config = {
+            'https_retrieval': 'true',
+            'redirect_host': 'pulp.example.com',
+            'redirect_port': '',
+            'redirect_path': '/streamer/'
+        }
+
+    @patch(MODULE + 'pulp_conf')
+    @patch(MODULE + 'URL')
+    def test_https_url(self, mock_url, mock_conf):
+        """Assert HTTPS URLs are made if configured."""
+        expected_unsigned_url = 'https://pulp.example.com/streamer/path/to/content'
+        mock_key = Mock()
+        mock_conf.get = lambda s, k: self.config[k]
+
+        url = repo_controller._get_streamer_url(self.catalog, mock_key)
+        mock_url.assert_called_once_with(expected_unsigned_url)
+        mock_url.return_value.sign.assert_called_once_with(
+            mock_key, expiration=(60 * 60 * 24 * 365))
+        signed_url = mock_url.return_value.sign.return_value
+        self.assertEqual(url, str(signed_url))
+
+    @patch(MODULE + 'pulp_conf')
+    @patch(MODULE + 'URL')
+    def test_http_url(self, mock_url, mock_conf):
+        """Assert HTTP URLs are made if configured."""
+        expected_unsigned_url = 'http://pulp.example.com/streamer/path/to/content'
+        mock_key = Mock()
+        mock_conf.get = lambda s, k: self.config[k]
+        self.config['https_retrieval'] = 'false'
+
+        repo_controller._get_streamer_url(self.catalog, mock_key)
+        mock_url.assert_called_once_with(expected_unsigned_url)
+
+    @patch(MODULE + 'pulp_conf')
+    @patch(MODULE + 'URL')
+    def test_url_unparsable_setting(self, mock_url, mock_conf):
+        """Assert an exception is raised if the configuration is unparsable."""
+        mock_conf.get = lambda s, k: self.config[k]
+        self.config['https_retrieval'] = 'unsure'
+
+        self.assertRaises(
+            pulp_exceptions.PulpCodedTaskException,
+            repo_controller._get_streamer_url,
+            self.catalog,
+            Mock(),
+        )
+
+    @patch(MODULE + 'pulp_conf')
+    @patch(MODULE + 'URL')
+    def test_explicit_port(self, mock_url, mock_conf):
+        """Assert URLs are correctly formed with ports."""
+        expected_unsigned_url = 'https://pulp.example.com:1234/streamer/path/to/content'
+        mock_key = Mock()
+        mock_conf.get = lambda s, k: self.config[k]
+        self.config['redirect_port'] = '1234'
+
+        repo_controller._get_streamer_url(self.catalog, mock_key)
+        mock_url.assert_called_once_with(expected_unsigned_url)
+
+
+class TestLazyUnitDownloadStep(unittest.TestCase):
+
+    def setUp(self):
+        self.step = repo_controller.LazyUnitDownloadStep(
+            'test_step',
+            'Test Step',
+            [Mock()]
+        )
+        self.data = {
+            repo_controller.TYPE_ID: 'abc',
+            repo_controller.UNIT_ID: '1234',
+            repo_controller.UNIT_FILES: {
+                '/no/where': {
+                    repo_controller.CATALOG_ENTRY: Mock(),
+                    repo_controller.PATH_DOWNLOADED: None
+                }
+            }
+        }
+        self.report = Mock(data=self.data, destination='/no/where')
+
+    def test_start(self):
+        """Assert calls to `_process_block` result in calls to the downloader."""
+        self.step.downloader = Mock()
+        self.step.start()
+        self.step.downloader.download.assert_called_once_with(self.step.download_requests)
+
+    @patch(MODULE + 'model.DeferredDownload')
+    def test_download_started(self, mock_deferred_download):
+        """Assert if validate_file raises an exception, the download is not skipped."""
+        self.step.validate_file = Mock(side_effect=IOError)
+
+        # Test that deferred download entry for the unit.
+        self.step.download_started(self.report)
+        qs = mock_deferred_download.objects.filter
+        qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
+        qs.return_value.delete.assert_called_once_with()
+
+    @patch(MODULE + 'model.DeferredDownload')
+    def test_download_started_already_downloaded(self, mock_deferred_download):
+        """Assert if validate_file doesn't raise an exception, the download is skipped."""
+        self.step.validate_file = Mock()
+
+        # Test that deferred download entry for the unit.
+        self.assertRaises(
+            repo_controller.SkipLocation,
+            self.step.download_started,
+            self.report
+        )
+        qs = mock_deferred_download.objects.filter
+        qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
+        qs.return_value.delete.assert_called_once_with()
+
+    @patch(MODULE + 'os.path.relpath', Mock(return_value='filename'))
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    def test_download_succeeded(self, mock_get_model):
+        """Assert single file units mark the unit downloaded."""
+        # Setup
+        self.step.validate_file = Mock()
+        model_qs = mock_get_model.return_value
+        unit = model_qs.objects.filter.return_value.only.return_value.get.return_value
+
+        # Test
+        self.step.download_succeeded(self.report)
+        unit.set_storage_path.assert_called_once_with('filename')
+        self.assertEqual(
+            {'set___storage_path': unit._storage_path},
+            model_qs.objects.filter.return_value.update_one.call_args_list[0][1]
+        )
+        unit.import_content.assert_called_once_with(self.report.destination)
+        self.assertEqual(1, self.step.progress_successes)
+        self.assertEqual(0, self.step.progress_failures)
+        self.assertEqual(
+            {'set__downloaded': True},
+            model_qs.objects.filter.return_value.update_one.call_args_list[1][1]
+        )
+
+    @patch(MODULE + 'os.path.relpath', Mock(return_value='a/filename'))
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    def test_download_succeeded_multifile(self, mock_get_model):
+        """Assert multi-file units are not marked as downloaded on single file completion."""
+        # Setup
+        self.step.validate_file = Mock()
+        model_qs = mock_get_model.return_value
+        unit = model_qs.objects.filter.return_value.only.return_value.get.return_value
+        self.data[repo_controller.UNIT_FILES]['/second/file'] = {
+            repo_controller.PATH_DOWNLOADED: None
+        }
+
+        # Test
+        self.step.download_succeeded(self.report)
+        self.assertEqual(0, unit.set_storage_path.call_count)
+        unit.import_content.assert_called_once_with(
+            self.report.destination,
+            location='a/filename'
+        )
+        self.assertEqual(1, self.step.progress_successes)
+        self.assertEqual(0, self.step.progress_failures)
+        self.assertEqual(0, model_qs.objects.filter.return_value.update_one.call_count)
+
+    @patch(MODULE + 'os.path.relpath', Mock(return_value='a/filename'))
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    def test_download_succeeded_multifile_last_file(self, mock_get_model):
+        """Assert multi-file units are marked as downloaded on last file completion."""
+        # Setup
+        self.step.validate_file = Mock()
+        model_qs = mock_get_model.return_value
+        unit = model_qs.objects.filter.return_value.only.return_value.get.return_value
+        self.data[repo_controller.UNIT_FILES]['/second/file'] = {
+            repo_controller.PATH_DOWNLOADED: True
+        }
+
+        # Test
+        self.step.download_succeeded(self.report)
+        self.assertEqual(0, unit.set_storage_path.call_count)
+        unit.import_content.assert_called_once_with(
+            self.report.destination,
+            location='a/filename'
+        )
+        self.assertEqual(1, self.step.progress_successes)
+        self.assertEqual(0, self.step.progress_failures)
+        model_qs.objects.filter.return_value.update_one.assert_called_once_with(
+            set__downloaded=True)
+
+    @patch(MODULE + 'os.path.relpath', Mock(return_value='filename'))
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
+    def test_download_succeeded_corrupted_download(self, mock_get_model):
+        """Assert corrupted downloads are not copied or marked as downloaded."""
+        # Setup
+        self.step.validate_file = Mock(side_effect=repo_controller.VerificationException)
+        model_qs = mock_get_model.return_value
+        unit = model_qs.objects.filter.return_value.only.return_value.get.return_value
+
+        # Test
+        self.step.download_succeeded(self.report)
+        self.assertEqual(0, unit.set_storage_path.call_count)
+        self.assertEqual(0, unit.import_content.call_count)
+        self.assertEqual(0, self.step.progress_successes)
+        self.assertEqual(1, self.step.progress_failures)
+
+    def test_download_failed(self):
+        self.assertEqual(0, self.step.progress_failures)
+        self.step.download_failed(self.report)
+        self.assertEqual(1, self.step.progress_failures)
+        path_entry = self.report.data[repo_controller.UNIT_FILES]['/no/where']
+        self.assertFalse(path_entry[repo_controller.PATH_DOWNLOADED])
+
+    @patch('__builtin__.open')
+    @patch(MODULE + 'verify_checksum')
+    def test_validate_file(self, mock_verify_checksum, mock_open):
+        self.step.validate_file('/no/where', 'sha8', '7')
+        self.assertEqual(('sha8', '7'), mock_verify_checksum.call_args[0][1:])
+        mock_open.assert_called_once_with('/no/where')
+
+    @patch(MODULE + 'verify_checksum')
+    def test_validate_file_fail(self, mock_verify_checksum):
+        mock_verify_checksum.side_effect = IOError
+        self.assertRaises(IOError, self.step.validate_file, '/no/where', 'sha8', '7')
+
+    @patch(MODULE + 'os.path.isfile')
+    def test_validate_file_no_checksum(self, mock_isfile):
+        mock_isfile.return_value = False
+        self.assertRaises(IOError, self.step.validate_file, '/no/where', None, None)

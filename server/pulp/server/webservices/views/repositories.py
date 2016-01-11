@@ -9,7 +9,6 @@ from pulp.server.auth import authorization
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import distributor as dist_controller
-from pulp.server.controllers import content as content_controller
 from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
@@ -1103,7 +1102,7 @@ class RepoDownload(View):
                 field='verify_all_units',
                 field_type='boolean'
             )
-        async_result = content_controller.queue_download_repo(repo_id, verify_all_units=verify)
+        async_result = repo_controller.queue_download_repo(repo_id, verify_all_units=verify)
         raise exceptions.OperationPostponed(async_result)
 
 
