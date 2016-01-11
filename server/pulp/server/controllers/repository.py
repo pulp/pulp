@@ -12,7 +12,7 @@ import celery
 from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
 from nectar.config import DownloaderConfig
 from nectar.request import DownloadRequest
-from nectar.downloaders.threaded import HTTPThreadedDownloader, SkipLocation
+from nectar.downloaders.threaded import HTTPThreadedDownloader
 from nectar.listener import DownloadEventListener
 
 from pulp.common import dateutils, error_codes, tags
@@ -54,6 +54,7 @@ CATALOG_ENTRY = 'catalog_entry'
 UNIT_ID = 'unit_id'
 TYPE_ID = 'type_id'
 UNIT_FILES = 'unit_files'
+REQUEST = 'request'
 
 
 def get_associated_unit_ids(repo_id, unit_type, repo_content_unit_q=None):
@@ -1190,6 +1191,7 @@ def _create_download_requests(content_units):
                 TYPE_ID: content_unit.type_id,
                 UNIT_ID: content_unit.id,
                 UNIT_FILES: unit_files,
+                REQUEST: request
             }
             requests.append(request)
 
@@ -1353,7 +1355,7 @@ class LazyUnitDownloadStep(DownloadEventListener):
             msg = _('{path} has already been downloaded.').format(
                 path=path_entry[CATALOG_ENTRY].path)
             _logger.debug(msg)
-            raise SkipLocation()
+            report.data[REQUEST].canceled = True
         except (InvalidChecksumType, VerificationException, IOError):
             # It's either missing or incorrect, so download it
             pass
@@ -1422,12 +1424,13 @@ class LazyUnitDownloadStep(DownloadEventListener):
         :type  report: nectar.report.DownloadReport
         """
         super(LazyUnitDownloadStep, self).download_failed(report)
-        path_entry = report.data[UNIT_FILES][report.destination]
-        _logger.info('Download of {path} failed: {reason}.'.format(
-            path=path_entry[CATALOG_ENTRY].path, reason=report.error_msg))
-        path_entry[PATH_DOWNLOADED] = False
-        self.progress_failures += 1
-        self.report()
+        if not report.data[REQUEST].canceled:
+            path_entry = report.data[UNIT_FILES][report.destination]
+            _logger.info('Download of {path} failed: {reason}.'.format(
+                path=path_entry[CATALOG_ENTRY].path, reason=report.error_msg))
+            path_entry[PATH_DOWNLOADED] = False
+            self.progress_failures += 1
+            self.report()
 
     @staticmethod
     def validate_file(file_path, checksum_algorithm, checksum):
