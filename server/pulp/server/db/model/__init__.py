@@ -23,6 +23,7 @@ from pulp.server.db.fields import ISO8601StringField, UTCDateTimeField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.model import base
 from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
+from pulp.server.managers import factory
 from pulp.server.util import Singleton
 from pulp.server.webservices.views import serializers
 
@@ -761,6 +762,42 @@ class FileContentUnit(ContentUnit):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
         with FileStorage() as storage:
             storage.put(self, path, location)
+
+    def save_and_import_content(self, path, location=None):
+        """
+        Saves this unit to the database, then calls safe_import_content.
+
+        :param path: The absolute path to the file to be imported
+        :type path: str
+        :param location: The (optional) location within the unit storage path
+            where the content is to be stored.
+        :type location: str
+        """
+        self.save()
+        self.safe_import_content(path, location)
+
+    def safe_import_content(self, path, location=None):
+        """
+        If import_content raises exception, cleanup and raise the exception
+
+        :param path: The absolute path to the file to be imported
+        :type path: str
+        :param location: The (optional) location within the unit storage path
+            where the content is to be stored.
+        :type location: str
+        """
+        try:
+            self.import_content(path, location)
+        except:
+            self.clean_orphans()
+            raise
+
+    def clean_orphans(self):
+        """
+        Exposes the ability to clean up this unit as an orphan.
+        """
+        orphan_manger = factory.content_orphan_manager()
+        orphan_manger.delete_orphan_content_units_by_type(self._content_type_id, self.id)
 
 
 class SharedContentUnit(ContentUnit):

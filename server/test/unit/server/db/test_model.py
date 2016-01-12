@@ -479,6 +479,53 @@ class TestFileContentUnit(unittest.TestCase):
         except PulpCodedException, e:
             self.assertEqual(e.error_code, PLP0037)
 
+    @patch('pulp.server.db.model.FileContentUnit.save')
+    @patch('pulp.server.db.model.FileContentUnit.safe_import_content')
+    def test_save_and_import_content(self, safe_import_content, save):
+        path = '/tmp/working/file'
+        location = 'a/b'
+
+        unit = TestFileContentUnit.TestUnit()
+        unit.save_and_import_content(path, location)
+        save.assert_called_once_with()
+        safe_import_content.assert_called_once_with(path, location)
+
+    @patch('pulp.server.db.model.FileContentUnit.import_content')
+    def test_safe_import_content(self, import_content):
+        path = '/tmp/working/file'
+        location = 'a/b'
+
+        unit = TestFileContentUnit.TestUnit()
+        unit.safe_import_content(path, location)
+        import_content.assert_called_once_with(path, location)
+
+    @patch('pulp.server.db.model.FileContentUnit.clean_orphans')
+    @patch('pulp.server.db.model.FileContentUnit.import_content')
+    def test_safe_import_content_exception(self, import_content, clean_orphans):
+        path = '/tmp/working/file'
+        location = 'a/b'
+        mock_ex = Exception("TestException")
+        import_content.side_effect = mock_ex
+
+        unit = TestFileContentUnit.TestUnit()
+        try:
+            unit.safe_import_content(path, location)
+            self.assertTrue(False, "Exceptions should bubble up")
+        except AssertionError:
+            # Ensure the previous assertion doesn't get caught by the
+            # try/except logic
+            raise
+        except Exception as ex:
+            import_content.assert_called_once_with(path, location)
+            clean_orphans.assert_called_once()
+            self.assertEqual(mock_ex, ex, "Ensure exceptions bubble up properly")
+
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphan_content_units_by_type')
+    def test_clean_orphans(self, orphan_manager_delete_orphan):
+        unit = TestFileContentUnit.TestUnit()
+        unit.clean_orphans()
+        orphan_manager_delete_orphan.assert_called_once_with(unit._content_type_id, unit.id)
+
 
 class TestSharedContentUnit(unittest.TestCase):
 
