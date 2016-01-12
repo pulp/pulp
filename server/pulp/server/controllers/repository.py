@@ -127,7 +127,7 @@ def get_repo_unit_models(repo_id):
     return filter(None, unit_models)
 
 
-def get_mongoengine_unit_querysets(repo_id, repo_content_unit_q=None):
+def get_mongoengine_unit_querysets(repo_id, repo_content_unit_q=None, file_units=False):
     """
     Retrieve an iterable of QuerySets for all the units in a repository that have
     MongoEngine models. If a unit type is in the repository and does not have a
@@ -138,11 +138,17 @@ def get_mongoengine_unit_querysets(repo_id, repo_content_unit_q=None):
     :param repo_content_unit_q: Any additional filters that should be applied to the
                                 RepositoryContentUnit search
     :type  repo_content_unit_q: mongoengine.Q
+    :param file_units:          Retrieve QuerySets exclusively for units inheriting
+                                from pulp.server.db.model.FileContentUnit.
+    :type  file_units:          bool
 
     :return: A generator of query sets.
     :rtype:  generator of mongoengine.queryset.QuerySet
     """
     unit_models = get_repo_unit_models(repo_id)
+    if file_units:
+        unit_models = filter(lambda m: issubclass(m, model.FileContentUnit), unit_models)
+
     for unit_model in unit_models:
         query_sets = get_unit_model_querysets(repo_id, unit_model, repo_content_unit_q)
         for query_set in query_sets:
@@ -233,7 +239,7 @@ def find_units_not_downloaded(repo_id):
     :return: The requested units.
     :rtype:  generator
     """
-    query_sets = get_mongoengine_unit_querysets(repo_id)
+    query_sets = get_mongoengine_unit_querysets(repo_id, file_units=True)
     query_sets = [q(downloaded=False) for q in query_sets]
     return chain(*query_sets)
 
@@ -248,7 +254,7 @@ def missing_unit_count(repo_id):
     :return: Number of units that have a ``downloaded`` flag set to false.
     :rtype:  int
     """
-    query_sets = get_mongoengine_unit_querysets(repo_id)
+    query_sets = get_mongoengine_unit_querysets(repo_id, file_units=True)
     return sum(query_set(downloaded=False).count() for query_set in query_sets)
 
 
@@ -263,7 +269,7 @@ def has_all_units_downloaded(repo_id):
              to False.
     :rtype:  bool
     """
-    for qs in get_mongoengine_unit_querysets(repo_id):
+    for qs in get_mongoengine_unit_querysets(repo_id, file_units=True):
         if qs(downloaded=False).count():
             return False
     return True

@@ -293,6 +293,25 @@ class GetMongoengineRepoQuerysetsTests(unittest.TestCase):
         for content_type, actual_call in zip(['dog', 'goat'], mock_get_querysets.call_args_list):
             self.assertEqual(call('mock_repo', content_type, None), actual_call)
 
+    @patch(MODULE + 'get_unit_model_querysets')
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id', lambda x: x)
+    @patch(MODULE + 'model.RepositoryContentUnit.objects')
+    def test_non_mongoengine_filter_file_units(self, mock_repo_units, mock_get_querysets):
+        """Assert that the correct number of query sets are returned."""
+        class FileUnit(model.FileContentUnit):
+            pass
+
+        class NonFileUnit(model.ContentUnit):
+            pass
+
+        content_types = [FileUnit, NonFileUnit]
+        mock_repo_units.return_value.distinct.return_value = content_types
+        mock_get_querysets.return_value = [1]
+
+        result = list(repo_controller.get_mongoengine_unit_querysets('mock_repo',
+                                                                     file_units=True))
+        self.assertEqual(1, len(result))
+
 
 class UpdateRepoUnitCountsTests(unittest.TestCase):
 
