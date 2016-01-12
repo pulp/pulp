@@ -13,18 +13,15 @@ import time
 
 from bson.json_util import dumps
 from mongoengine import ValidationError
+import pkg_resources
 
 from pulp.server.db import model as platform_models
-from pulp_docker.plugins import models as docker_models
-from pulp_ostree.plugins.db import model as ostree_models
-from pulp_puppet.plugins.db import models as puppet_models
-from pulp_rpm.plugins.db import models as rpm_models
 from pulp.server import config
 from pulp.server.db import connection as db_connection
 
-
 VALIDATION_ERROR_MESSAGE = "There were validation errors.  Please see {0} for more information\n"
 ERROR_FILE_NAME = "validation_errors_{0}.txt"
+MODEL_ENTRY_POINT = 'pulp.unit_models'
 MONGOENGINE_MODELS = [platform_models.Repository,
                       platform_models.RepositoryContentUnit,
                       platform_models.Importer,
@@ -34,22 +31,7 @@ MONGOENGINE_MODELS = [platform_models.Repository,
                       platform_models.TaskStatus,
                       platform_models.CeleryBeatLock,
                       platform_models.User,
-                      platform_models.Distributor,
-                      rpm_models.Distribution,
-                      rpm_models.DRPM,
-                      rpm_models.RPM,
-                      rpm_models.SRPM,
-                      rpm_models.Errata,
-                      rpm_models.PackageGroup,
-                      rpm_models.PackageCategory,
-                      rpm_models.PackageEnvironment,
-                      rpm_models.YumMetadataFile,
-                      rpm_models.ISO,
-                      docker_models.Blob,
-                      docker_models.Image,
-                      docker_models.Manifest,
-                      puppet_models.Module,
-                      ostree_models.Branch]
+                      platform_models.Distributor]
 
 
 class ValidationExceptionHandler:
@@ -102,6 +84,7 @@ class ValidationCheck:
         """
         self.exception_handler = exception_handler
         self.has_exceptions = False
+        self._load_plugin_models()
 
     def check_model(self, model):
         """
@@ -133,9 +116,12 @@ class ValidationCheck:
         Loops through all models configured in MONGOENGINE_MODELS and tests them for validity
         """
         for item in MONGOENGINE_MODELS:
-            sys.stdout.write(item.__name__ + ": ")
+            sys.stdout.write(item.__module__ + "." + item.__name__ + ": ")
             self.check_model(item)
 
+    def _load_plugin_models(self):
+        for entry_point in pkg_resources.iter_entry_points(MODEL_ENTRY_POINT):
+            MONGOENGINE_MODELS.append(entry_point.resolve())
 
 if __name__ == '__main__':
     call(["pulp-manage-db"])
