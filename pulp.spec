@@ -235,6 +235,7 @@ cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd
 %else
 cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %endif
+cp server/etc/httpd/conf.d/pulp_content.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp_content.conf
 
 # Server init scripts/unit files and environment files
 %if %{pulp_systemd} == 0
@@ -394,6 +395,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/default/pulp_workers
 %config(noreplace) %{_sysconfdir}/default/pulp_resource_manager
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_content.conf
 %dir %{_sysconfdir}/pki/%{name}
 %dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %dir %{_sysconfdir}/%{name}/server
