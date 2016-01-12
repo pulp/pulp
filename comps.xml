@@ -10,6 +10,7 @@
       <packagereq type="mandatory">pulp-server</packagereq>
       <packagereq type="default">pulp-rpm-plugins</packagereq>
       <packagereq type="default">pulp-puppet-plugins</packagereq>
+      <packagereq type="default">pulp-docker-plugins</packagereq>
       <packagereq type="default">pulp-selinux</packagereq>
     </packagelist>
   </group>
@@ -24,6 +25,7 @@
       <packagereq type="mandatory">pulp-server</packagereq>
       <packagereq type="default">pulp-rpm-plugins</packagereq>
       <packagereq type="default">pulp-puppet-plugins</packagereq>
+      <packagereq type="default">pulp-docker-plugins</packagereq>
       <packagereq type="default">pulp-selinux</packagereq>
       <packagereq type="default">python-gofer-qpid</packagereq>
       <packagereq type="default">python-qpid</packagereq>
@@ -39,6 +41,7 @@
       <packagereq type="mandatory">pulp-admin-client</packagereq>
       <packagereq type="default">pulp-rpm-admin-extensions</packagereq>
       <packagereq type="default">pulp-puppet-admin-extensions</packagereq>
+      <packagereq type="default">pulp-docker-admin-extensions</packagereq>
     </packagelist>
   </group>
   <group>
