@@ -1,11 +1,6 @@
-import os
-import sys
-
 from mock import patch, Mock, call
 
 from base import ClientTests, Response
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
 from pulp.common.constants import PRIMARY_ID
