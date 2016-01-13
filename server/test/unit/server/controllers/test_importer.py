@@ -69,7 +69,8 @@ class TestSetImporter(unittest.TestCase):
         mock_imp_inst.importer_added.assert_called_once_with(mock_repo.to_transfer_repo(),
                                                              mock_call_config)
         mock_importer.save.assert_called_once_with()
-        self.assertTrue(result is m_model.Importer.return_value)
+        m_model.Importer.SERIALIZER.assert_called_once_with(mock_importer)
+        self.assertTrue(result is m_model.Importer.SERIALIZER.return_value.data)
 
     def test_as_expected(self, m_validate_conf, m_model, m_plug_api, m_clean, mock_remove,
                          mock_plug_call_config, *_):
@@ -90,7 +91,8 @@ class TestSetImporter(unittest.TestCase):
         m_clean.assert_called_once_with('m_conf')
         mock_plug_call_config.assert_called_once_with(mock_plugin_config, m_clean.return_value)
         mock_importer.save.assert_called_once_with()
-        self.assertTrue(result is m_model.Importer.return_value)
+        m_model.Importer.SERIALIZER.assert_called_once_with(mock_importer)
+        self.assertTrue(result is m_model.Importer.SERIALIZER.return_value.data)
 
     def test_validation_error(self, m_validate_conf, m_model, m_plug_api, m_clean, mock_remove,
                               mock_plug_call_config, *_):

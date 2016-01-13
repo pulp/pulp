@@ -62,8 +62,8 @@ def set_importer(repo_id, importer_type_id, repo_plugin_config):
     :param repo_plugin_config: configuration values for the importer; may be None
     :type  repo_plugin_config: dict or None
 
-    :return: created importer object
-    :rtype:  pulp.server.model.Importer
+    :return: key-value pairs describing the importer that was set
+    :rtype:  dict
 
     :raises PulpExecutionException: if something goes wrong in the plugin
     :raises exceptions.InvalidValue: if the values passed to create the importer are invalid
@@ -97,7 +97,8 @@ def set_importer(repo_id, importer_type_id, repo_plugin_config):
     except ValidationError, e:
         raise exceptions.InvalidValue(e.to_dict().keys())
 
-    return importer
+    serialized = model.Importer.SERIALIZER(importer).data
+    return serialized
 
 
 def queue_set_importer(repo, importer_type_id, config):
