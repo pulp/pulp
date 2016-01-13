@@ -58,8 +58,8 @@ if sys.version_info >= (2, 6):
         '/etc/pulp/server/plugins.conf.d/nodes/importer',
         '/etc/pulp/server/plugins.conf.d/nodes/distributor',
         '/etc/pulp/vhosts80',
-        '/srv',
-        '/srv/pulp',
+        '/usr/share/pulp',
+        '/usr/share/pulp/wsgi',
         '/usr/lib/pulp/admin',
         '/usr/lib/pulp/admin/extensions',
         '/usr/lib/pulp/plugins',
@@ -95,16 +95,19 @@ LINKS = [
 if sys.version_info >= (2, 6):
     LINKS.extend([
         # Server Web Configuration
-        ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
-        ('server/srv/pulp/content.wsgi', '/srv/pulp/content.wsgi'),
-        ('server/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
+        ('server/usr/share/pulp/wsgi/webservices.wsgi',
+         '/usr/share/pulp/wsgi/webservices.wsgi'),
+        ('server/usr/share/pulp/wsgi/content.wsgi', '/usr/share/pulp/wsgi/content.wsgi'),
+        ('server/usr/share/pulp/wsgi/repo_auth.wsgi',
+         '/usr/share/pulp/wsgi/repo_auth.wsgi'),
 
         # Apache
         ('server/etc/httpd/conf.d/pulp_content.conf', '/etc/httpd/conf.d/pulp_content.conf'),
 
         # Lazy Streamer components
-        ('streamer/srv/pulp/streamer.tac', '/srv/pulp/streamer.tac'),
-        ('streamer/srv/pulp/streamer_auth.wsgi', '/srv/pulp/streamer_auth.wsgi'),
+        ('streamer/usr/share/pulp/wsgi/streamer.tac', '/usr/share/pulp/wsgi/streamer.tac'),
+        ('streamer/usr/share/pulp/wsgi/streamer_auth.wsgi',
+         '/usr/share/pulp/wsgi/streamer_auth.wsgi'),
         ('streamer/etc/httpd/conf.d/pulp_streamer.conf', '/etc/httpd/conf.d/pulp_streamer.conf'),
         ('streamer/etc/pulp/streamer.conf', '/etc/pulp/streamer.conf'),
 

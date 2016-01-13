@@ -35,6 +35,12 @@ Client Changes
 * Tasks with complete states (except `canceled` state) can now be deleted. This can be done
   using `pulp-admin tasks purge` command.
 
+Other Changes
+-------------
+
+* Pulp `used to store WSGI files under /srv<https://pulp.plan.io/issues/1496>`_, which was
+  a violation of FHS. These files have been moved to /usr/share/pulp/wsgi.
+
 Agent Changes
 -------------
 
