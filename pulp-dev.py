@@ -12,7 +12,7 @@ ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # In order to import pulp.devel.environment, we will need to add pulp.devel to the syspath
 sys.path.append(os.path.join(ROOT_DIR, 'devel', 'pulp', 'devel'))
-import environment
+import environment  # NOQA
 
 
 DIRS = [
