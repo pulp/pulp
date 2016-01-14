@@ -22,8 +22,7 @@ from pulp.server.webservices.views.serializers import content
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_allow_empty,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 def _merge_related_objects(name, model, repos):
@@ -104,7 +103,7 @@ class ReposView(View):
         return generate_json_response_with_pulp_encoder(processed_repos)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a new repo. `id` field in body is required. `display_name` will default to `id`.
@@ -189,7 +188,7 @@ class RepoResourceView(View):
         raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, repo_id):
         """
         Update a repository. This call will return synchronously unless a distributor is updated.
@@ -313,7 +312,7 @@ class RepoImportersView(View):
         return generate_json_response_with_pulp_encoder(serialized_importers)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id):
         """
         Associate an importer with a repository.
@@ -383,7 +382,7 @@ class RepoImporterResourceView(View):
         raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, repo_id, importer_id):
         """
         Associate an importer to a repository.
@@ -444,7 +443,7 @@ class RepoSyncSchedulesView(View):
         return generate_json_response(for_display)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id, importer_id):
         """
         Create a new scheduled sync.
@@ -544,7 +543,7 @@ class RepoSyncScheduleResourceView(ScheduleResource):
         return generate_json_response(None)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, repo_id, importer_id, schedule_id):
         """
         Update a scheduled repository sync.
@@ -597,7 +596,7 @@ class RepoDistributorsView(View):
         return generate_json_response_with_pulp_encoder(serialized_dists)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id):
         """
         Associate a distributor with a repository.
@@ -677,7 +676,7 @@ class RepoDistributorResourceView(View):
         raise exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, repo_id, distributor_id):
         """
         Used to update a repo distributor instance.
@@ -735,7 +734,7 @@ class RepoPublishSchedulesView(View):
         return generate_json_response(for_display)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id, distributor_id):
         """
         Create a new scheduled publish.
@@ -808,7 +807,7 @@ class RepoPublishScheduleResourceView(ScheduleResource):
         return self._get(schedule_id, resource_href)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, repo_id, distributor_id, schedule_id):
         """
         Update a scheduled publish.
@@ -868,7 +867,7 @@ class ContentApplicabilityRegenerationView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Dispatch a task to regenerate content applicability data for repositories that match
@@ -1024,7 +1023,7 @@ class RepoSync(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, repo_id):
         """
         Dispatch a task to sync a repository.
@@ -1049,7 +1048,7 @@ class RepoPublish(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id):
         """
         Dispatch a task to publish a repository.
@@ -1078,7 +1077,7 @@ class RepoDownload(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, repo_id):
         """
         Dispatch a task to publish a repository. The JSON body may contain a key,
@@ -1112,7 +1111,7 @@ class RepoAssociate(View):
     """
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, dest_repo_id):
         """
         Associate units matching the criteria into the given repository
@@ -1161,7 +1160,7 @@ class RepoUnassociate(View):
     View to unassociate a unit from a repository.
     """
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, repo_id):
         """
         Unassociate units that match the criteria from the given repository.
@@ -1198,7 +1197,7 @@ class RepoImportUpload(View):
     """
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_id):
         """
         Import an uploaded unit into the given repository.

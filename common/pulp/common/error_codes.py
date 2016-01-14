@@ -156,3 +156,5 @@ PLP1013 = Error("PLP1013", _("Checksum does not match calculated value."), [])
 PLP1014 = Error("PLP1014", _("The configuration value for the key '%(key)s' in "
                              "section '%(section)s' is not valid for the following "
                              "reason: %(reason)s"), ["key", "section", "reason"])
+PLP1015 = Error("PLP1015", _("The JSON data must be of type '%(data_type)s'."),
+                ['data_type'])

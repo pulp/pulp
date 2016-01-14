@@ -25,8 +25,7 @@ from pulp.server.webservices.views.util import (_ensure_input_encoding,
                                                 generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_required,
-                                                json_body_allow_empty)
+                                                parse_json_body)
 
 
 def add_link(consumer):
@@ -169,7 +168,7 @@ class ConsumersView(View):
         return generate_json_response_with_pulp_encoder(consumers)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a consumer and return a serialized object containing just created consumer.
@@ -260,7 +259,7 @@ class ConsumerResourceView(View):
         return generate_json_response(response)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, consumer_id):
         """
         Update a specified consumer.
@@ -381,7 +380,7 @@ class ConsumerBindingsView(View):
         return generate_json_response_with_pulp_encoder(bindings)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, consumer_id):
         """
         Create a bind association between the specified
@@ -452,7 +451,7 @@ class ConsumerBindingResourceView(View):
         return generate_json_response_with_pulp_encoder(serialized_bind)
 
     @auth_required(authorization.DELETE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def delete(self, request, consumer_id, repo_id, distributor_id):
         """
         Delete a bind association between the specified
@@ -499,7 +498,7 @@ class ConsumerContentActionView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, consumer_id, action):
         """
         Install/update/uninstall content unit/s on the consumer.
@@ -686,7 +685,7 @@ class ConsumerProfilesView(View):
         return generate_json_response_with_pulp_encoder(profiles)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, consumer_id):
         """
         Associate a profile with a consumer by content type ID.
@@ -745,7 +744,7 @@ class ConsumerProfileResourceView(View):
         return generate_json_response_with_pulp_encoder(profile)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, consumer_id, content_type):
         """
         Update the association of a profile with a consumer by content type ID.
@@ -798,7 +797,7 @@ class ConsumerContentApplicabilityView(View):
     View for query content applicability.
     """
     @auth_required(authorization.READ)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Query content applicability for a given consumer criteria query.
@@ -889,7 +888,7 @@ class ConsumerContentApplicRegenerationView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Creates an async task to regenerate content applicability data for given consumers.
@@ -926,7 +925,7 @@ class ConsumerResourceContentApplicRegenerationView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request, consumer_id):
         """
         Creates an async task to regenerate content applicability data for given consumer.
@@ -996,7 +995,7 @@ class ConsumerUnitActionSchedulesView(View):
         return generate_json_response_with_pulp_encoder(schedule_objs)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, consumer_id):
         """
         Create a schedule.
@@ -1072,7 +1071,7 @@ class ConsumerUnitActionScheduleResourceView(View):
         return generate_json_response_with_pulp_encoder(scheduled_obj)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, consumer_id, schedule_id):
         """
         Update a specific schedule <action>.

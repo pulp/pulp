@@ -15,7 +15,7 @@ from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 class UserSearchView(search.SearchView):
@@ -46,7 +46,7 @@ class UsersView(View):
         return generate_json_response_with_pulp_encoder(users)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a new user.
@@ -131,7 +131,7 @@ class UserResourceView(View):
         return generate_json_response()
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, login):
         """
         Update a user.

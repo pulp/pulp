@@ -6,7 +6,7 @@ from pulp.server.managers import factory
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 class PermissionView(View):
@@ -55,7 +55,7 @@ class GrantToUserView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Grant permissions to a user.
@@ -88,7 +88,7 @@ class RevokeFromUserView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Revoke permissions from a user.
@@ -120,7 +120,7 @@ class GrantToRoleView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Grant permissions to a role.
@@ -154,7 +154,7 @@ class RevokeFromRoleView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Revoke permissions from a role.
