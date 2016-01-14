@@ -32,7 +32,7 @@ Deferred downloading relies on three services:
 * ``squid`` - The Squid process caches content and de-duplicates client requests so that
   the content is only downloaded one time.
 
-* ``pulp-streamer`` - The pulp-streamer process interacts with Pulp's core services to determine
+* ``pulp_streamer`` - The pulp_streamer process interacts with Pulp's core services to determine
   where the content is located and how to download it. It streams the content back to the client
   through Squid and Apache as it is downloaded.
 
@@ -45,12 +45,13 @@ a client next requests it, Pulp can serve it directly.
 
 Installation
 ------------
-The deferred downloading services can be installed using the ``pulp-lazy`` package group::
+The packages necessary for deferred downloading can be installed with the following command::
 
- $ sudo yum groupinstall pulp-lazy
+ $ sudo yum install httpd squid python-pulp-streamer
 
 
-Ensure that ``httpd``, ``squid``, and ``pulp-streamer`` are running and enabled to start at boot.
+Ensure that the ``httpd``, ``squid``, and ``pulp_streamer`` services are running and enabled
+to start at boot.
 
 
 Configuration
@@ -106,7 +107,7 @@ inline documentation::
   #  * no-query: Disable ICP queries to the Pulp Streamer.
   #  * originserver: Causes the Pulp Streamer to be contacted as the origin server.
   #  * name: Unique name for the peer. Used to reference the peer in other directives.
-  cache_peer localhost parent 8751 0 no-digest no-query originserver name=PulpStreamer
+  cache_peer 127.0.0.1 parent 8751 0 no-digest no-query originserver name=PulpStreamer
 
   # Allow all queries to be forwarded to the Pulp Streamer.
   cache_peer_access PulpStreamer allow all
