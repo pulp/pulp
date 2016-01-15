@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-bindings',
-    version='2.8.0b2',
+    version='2.8.0b3',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
