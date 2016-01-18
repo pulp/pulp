@@ -9,7 +9,7 @@ from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 class RolesView(View):
@@ -52,7 +52,7 @@ class RolesView(View):
         return generate_json_response_with_pulp_encoder(roles)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a new role.
@@ -133,7 +133,7 @@ class RoleResourceView(View):
         return generate_json_response(result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, role_id):
         """
         Update a specific role.
@@ -178,7 +178,7 @@ class RoleUsersView(View):
         return generate_json_response_with_pulp_encoder(role_users)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, role_id):
         """
         Add user to a role.

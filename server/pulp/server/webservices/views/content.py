@@ -24,8 +24,7 @@ from pulp.server.webservices.views.serializers import content as serial_content
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_allow_empty,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 def _process_content_unit(content_unit, content_type):
@@ -199,7 +198,7 @@ class DeleteOrphansActionView(View):
     """
 
     @auth_required(authorization.DELETE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request):
         """
         Dispatch a delete_orphan_by_id task.
@@ -380,7 +379,7 @@ class ContentUnitUserMetadataResourceView(View):
         return generate_json_response(resource)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body()
     def put(self, request, type_id, unit_id):
         """
         Set the pulp_user_metadata field on a content unit.
@@ -425,7 +424,7 @@ class UploadsCollectionView(View):
         return generate_json_response({'upload_ids': upload_ids})
 
     @auth_required(authorization.CREATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request, *args, **kwargs):
         """
         Initialize an upload and return a serialized dict containing the upload data.
@@ -551,7 +550,7 @@ class ContentSourceCollectionActionView(View):
         raise OperationPostponed(task_result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request, action):
         """
         Content source actions.
@@ -605,7 +604,7 @@ class ContentSourceResourceActionView(View):
     """
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request, source_id, action):
         """
         Single content source actions.

@@ -745,7 +745,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         Test consumer invalid content action.
         """
         request = mock.MagicMock()
-        request.body = json.dumps('')
+        request.body = json.dumps({})
         consumer_content = ConsumerContentActionView()
         response = consumer_content.post(request, 'my-consumer', 'no_such_action')
         self.assertTrue(isinstance(response, HttpResponseBadRequest))

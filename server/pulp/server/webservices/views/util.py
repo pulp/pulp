@@ -93,25 +93,43 @@ def _ensure_input_encoding(input):
         raise InputEncodingError(input), None, sys.exc_info()[2]
 
 
-def json_body_required(func, allow_empty=False):
+def parse_json_body(allow_empty=False, json_type=None):
+    """
+    Ensure request body carries valid JSON of specified data type
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        request = args[1]
-        if allow_empty and not request.body:
-            request.body_as_json = {}
+    :param allow_empty: if True, allows request body to be empty, defaults to False.
+    :type  allow_empty: bool
+    :param json_type: required type of request body. If None, any type is allowed,
+                      defaults to None.
+    :type  json_type: type
+
+    :raises PulpCodedValidationException: if request body contains invalid JSON or
+                                          of incorrect data type.
+
+    :return: decorator with proper parameters applied.
+    :rtype: function
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            request = args[1]
+            if allow_empty and not request.body:
+                request.body_as_json = {}
+                return func(*args, **kwargs)
+            try:
+                request_json = json.loads(request.body)
+            except ValueError:
+                raise PulpCodedValidationException(error_code=error_codes.PLP1009)
+            else:
+                if not (json_type is None or isinstance(request_json, json_type)):
+                    raise PulpCodedValidationException(
+                        error_code=error_codes.PLP1015,
+                        data_type=json_type.__name__
+                    )
+                request.body_as_json = _ensure_input_encoding(request_json)
             return func(*args, **kwargs)
-
-        try:
-            request_json = json.loads(request.body)
-        except ValueError:
-            raise PulpCodedValidationException(error_code=error_codes.PLP1009)
-        else:
-            request.body_as_json = _ensure_input_encoding(request_json)
-        return func(*args, **kwargs)
-    return wrapper
-
-json_body_allow_empty = functools.partial(json_body_required, allow_empty=True)
+        return wrapper
+    return decorator
 
 
 def page_not_found(request, *args, **kwargs):

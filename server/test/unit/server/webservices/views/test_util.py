@@ -1,14 +1,14 @@
 import httplib
 import json
 import mock
-import unittest
 
 from django.http import HttpResponse, HttpResponseNotFound
 
+from pulp.common.compat import unittest
 from pulp.server.exceptions import InputEncodingError, PulpCodedValidationException
 from pulp.server.webservices.views import util
-from pulp.server.webservices.views.util import (json_body_allow_empty, json_body_required,
-                                                page_not_found, pulp_json_encoder)
+from pulp.server.webservices.views.util import (parse_json_body, page_not_found,
+                                                pulp_json_encoder)
 
 
 class TestResponseGenerators(unittest.TestCase):
@@ -74,24 +74,33 @@ class TestResponseGenerators(unittest.TestCase):
         mock_iri_to_uri.assert_called_once_with(href)
 
 
-class TestMustHaveJSONBody(unittest.TestCase):
+class TestParseJsonBody(unittest.TestCase):
+    """
+    Tests for decorator which validates the request body.
+    """
 
-    def test_json_body_required_valid(self):
+    def test_json_valid(self):
+        """
+        Test that valid JSON is unchanged.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = '{"Valid": "JSON"}'
 
-        @json_body_required
+        @parse_json_body()
         def mock_function(self, request):
             return request
 
         final_request = mock_function(self, mock_request)
         self.assertEqual(final_request.body_as_json, {"Valid": "JSON"})
 
-    def test_json_body_required_invalid(self):
+    def test_json_invalid(self):
+        """
+        Test that invalid JSON results in a 400.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = '{"Invalid": "JSON"'
 
-        @json_body_required
+        @parse_json_body()
         def mock_function(self, request):
             return request
 
@@ -106,11 +115,14 @@ class TestMustHaveJSONBody(unittest.TestCase):
         self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
 
-    def test_json_body_required_empty(self):
+    def test_json_empty(self):
+        """
+        Test that empty request body results in a 400.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = ''
 
-        @json_body_required
+        @parse_json_body()
         def mock_function(self, request):
             return request
 
@@ -125,33 +137,42 @@ class TestMustHaveJSONBody(unittest.TestCase):
         self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
 
-    def test_json_body_allow_empty_valid(self):
+    def test_json_allow_empty_valid(self):
+        """
+        Test that valid JSON is unchanged when empty body is allowed.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = '{"Valid": "JSON"}'
 
-        @json_body_required
+        @parse_json_body()
         def mock_function(self, request):
             return request
 
         final_request = mock_function(self, mock_request)
         self.assertEqual(final_request.body_as_json, {"Valid": "JSON"})
 
-    def test_json_body_allow_empty_no_body(self):
+    def test_json_allow_empty_no_body(self):
+        """
+        Test that empty request body becomes an empty dictionary when it is allowed.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = ''
 
-        @json_body_allow_empty
+        @parse_json_body(allow_empty=True)
         def mock_function(self, request):
             return request
 
         final_request = mock_function(self, mock_request)
         self.assertEqual(final_request.body_as_json, {})
 
-    def test_json_body_allow_empty_invalid(self):
+    def test_json_allow_empty_invalid(self):
+        """
+        Test that invalid JSON results in a 400 when empty body is allowed.
+        """
         mock_request = mock.MagicMock()
         mock_request.body = '{"Invalid": "JSON"'
 
-        @json_body_required
+        @parse_json_body(allow_empty=True)
         def mock_function(self, request):
             return request
 
@@ -165,6 +186,63 @@ class TestMustHaveJSONBody(unittest.TestCase):
 
         self.assertEqual(response.http_status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.error_code.code, 'PLP1009')
+
+    def test_json_type_right(self):
+        """
+        Test that valid JSON is unchanged if it is of correct type.
+        """
+        mock_request = mock.MagicMock()
+        mock_expected_json = {"expected": "datatype"}
+        mock_request.body = json.dumps(mock_expected_json)
+
+        @parse_json_body(json_type=dict)
+        def mock_function(self, request):
+            return request
+
+        self.assertEqual(mock_function(self, mock_request).body_as_json, mock_expected_json)
+
+    def test_json_type_wrong(self):
+        """
+        Test that incorrect type of JSON results in a 400.
+        """
+        mock_request = mock.MagicMock()
+        mock_request.body = json.dumps(["unexpected datatype"])
+
+        @parse_json_body(json_type=dict)
+        def mock_function(self, request):
+            return request
+
+        with self.assertRaises(PulpCodedValidationException) as cm:
+            mock_function(self, mock_request)
+        self.assertEqual('PLP1015', cm.exception.error_code.code)
+        self.assertEqual(cm.exception.http_status_code, 400)
+
+    def test_json_allow_empty_type_right(self):
+        """
+        Test that valid JSON is unchanged if it is of correct type and empty body is allowed.
+        """
+        mock_request = mock.MagicMock()
+        mock_expected_json = {"expected": "datatype"}
+        mock_request.body = json.dumps(mock_expected_json)
+
+        @parse_json_body(allow_empty=True, json_type=dict)
+        def mock_function(self, request):
+            return request
+
+        self.assertEqual(mock_function(self, mock_request).body_as_json, mock_expected_json)
+
+    def test_json_allow_empty_type_right_no_body(self):
+        """
+        Test that empty body becomes an empty dict if it is allowed and JSON must be type of 'dict'.
+        """
+        mock_request = mock.MagicMock()
+        mock_request.body = ''
+
+        @parse_json_body(allow_empty=True, json_type=dict)
+        def mock_function(self, request):
+            return request
+
+        self.assertEqual(mock_function(self, mock_request).body_as_json, {})
 
 
 class TestEnsureInputEncoding(unittest.TestCase):

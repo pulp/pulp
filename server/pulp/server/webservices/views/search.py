@@ -108,7 +108,7 @@ class SearchView(generic.View):
         return self._generate_response(query, options, *args, **kwargs)
 
     @auth_required(authorization.READ)
-    @util.json_body_required
+    @util.parse_json_body(json_type=dict)
     def post(self, request, *args, **kwargs):
         """
         Search for objects using an HTTP POST request.

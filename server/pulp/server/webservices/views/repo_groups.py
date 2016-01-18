@@ -14,7 +14,7 @@ from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (
     generate_json_response, generate_json_response_with_pulp_encoder, generate_redirect_response,
-    json_body_allow_empty, json_body_required
+    parse_json_body
 )
 
 
@@ -49,7 +49,7 @@ class RepoGroupsView(View):
         return generate_json_response_with_pulp_encoder(groups)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a repo group from the data passed in the body.
@@ -128,7 +128,7 @@ class RepoGroupResourceView(View):
         return generate_json_response(None)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, repo_group_id):
         """
         Update the specified repo group with body data.
@@ -163,7 +163,7 @@ class RepoGroupAssociateView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, repo_group_id):
         """
         Associate repos that match criteria specified in the body to the specified repo group.
@@ -191,7 +191,7 @@ class RepoGroupUnassociateView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, repo_group_id):
         """
         Unassociate repos that match criteria specified in the body to the specified repo group.
@@ -240,7 +240,7 @@ class RepoGroupDistributorsView(View):
         return generate_json_response_with_pulp_encoder(distributor_list)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_group_id):
         """
         Asssociate a distributor with a repo group.
@@ -297,7 +297,7 @@ class RepoGroupDistributorResourceView(View):
         return generate_json_response_with_pulp_encoder(dist)
 
     @auth_required(authorization.DELETE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def delete(self, request, repo_group_id, distributor_id):
         """
         Disassociate a distributor from a repository group.
@@ -319,7 +319,7 @@ class RepoGroupDistributorResourceView(View):
         return generate_json_response(None)
 
     @auth_required(authorization.UPDATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def put(self, request, repo_group_id, distributor_id):
         """
         Change information about a single repo group distributor association.
@@ -355,7 +355,7 @@ class RepoGroupPublishView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, repo_group_id):
         """
         Dispatch a task to publish content from the repo group using the distributor specified by

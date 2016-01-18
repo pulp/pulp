@@ -15,8 +15,7 @@ from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
-                                                json_body_allow_empty,
-                                                json_body_required)
+                                                parse_json_body)
 
 
 def serialize(group):
@@ -54,7 +53,7 @@ class ConsumerGroupView(View):
         return generate_json_response_with_pulp_encoder(groups)
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request):
         """
         Create a consumer group and return a serialized object containing just created group.
@@ -128,7 +127,7 @@ class ConsumerGroupResourceView(View):
         return generate_json_response(result)
 
     @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def put(self, request, consumer_group_id):
         """
         Update a specified consumer group.
@@ -161,7 +160,7 @@ class ConsumerGroupAssociateActionView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, consumer_group_id):
         """
         Associate a consumer to the group.
@@ -188,7 +187,7 @@ class ConsumerGroupUnassociateActionView(View):
     """
 
     @auth_required(authorization.EXECUTE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True, json_type=dict)
     def post(self, request, consumer_group_id):
         """
         Unassociate a consumer from the group.
@@ -215,7 +214,7 @@ class ConsumerGroupContentActionView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_allow_empty
+    @parse_json_body(allow_empty=True)
     def post(self, request, consumer_group_id, action):
         """
         Install/update/uninstall content unit/s on each consumer in the group.
@@ -303,7 +302,7 @@ class ConsumerGroupBindingsView(View):
     """
 
     @auth_required(authorization.CREATE)
-    @json_body_required
+    @parse_json_body(json_type=dict)
     def post(self, request, consumer_group_id):
         """
         Create a bind association between the consumers belonging to the given
