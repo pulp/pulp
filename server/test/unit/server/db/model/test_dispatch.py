@@ -1214,7 +1214,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
 
         result = 'done'
-        now = '2014-11-21 05:21:38.829678'
+        now = '2014-11-21T05:21:38.829678'
         mock_date.return_value = now
 
         t = datetime.now(dateutils.utc_tz())
@@ -1232,7 +1232,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
 
         result = 'done'
-        now = '2014-11-21 05:21:38.829678'
+        now = '2014-11-21T05:21:38.829678'
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=now,
                                                        set__state=constants.CALL_FINISHED_STATE,
@@ -1248,7 +1248,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
 
         traceback = 'abcdef'
-        finished = '2014-11-21 05:21:38.829678'
+        finished = '2014-11-21T05:21:38.829678'
         mock_date.return_value = finished
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
@@ -1264,7 +1264,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
 
         traceback = 'abcdef'
-        finished = '2014-11-21 05:21:38.829678'
+        finished = '2014-11-21T05:21:38.829678'
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
                                                        set__state=constants.CALL_ERROR_STATE,
