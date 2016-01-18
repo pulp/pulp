@@ -1001,6 +1001,7 @@ class TestLazyCatalogEntry(unittest.TestCase):
         entry.unit_id = '123'
         entry.unit_type_id = 'test'
         entry.importer_id = '44'
+        entry.path = '/no/where'
 
         # test
         entry.save_revision()
@@ -1011,11 +1012,13 @@ class TestLazyCatalogEntry(unittest.TestCase):
             [
                 call(unit_id=entry.unit_id,
                      unit_type_id=entry.unit_type_id,
-                     importer_id=entry.importer_id),
+                     importer_id=entry.importer_id,
+                     path=entry.path),
                 call(revision__in=set([0, 1]),
                      unit_id=entry.unit_id,
                      unit_type_id=entry.unit_type_id,
-                     importer_id=entry.importer_id),
+                     importer_id=entry.importer_id,
+                     path=entry.path),
             ])
         self.assertEqual(entry.revision, 2)
         save.assert_called_once_with()

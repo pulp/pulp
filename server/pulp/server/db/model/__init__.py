@@ -898,7 +898,9 @@ class LazyCatalogEntry(AutoRetryDocument):
         query = dict(
             unit_id=self.unit_id,
             unit_type_id=self.unit_type_id,
-            importer_id=self.importer_id)
+            importer_id=self.importer_id,
+            path=self.path
+        )
         # Find revisions
         qs = LazyCatalogEntry.objects.filter(**query)
         for revision in qs.distinct('revision'):
