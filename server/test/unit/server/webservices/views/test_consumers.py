@@ -13,6 +13,7 @@ from pulp.server.managers.consumer import query
 from pulp.server.webservices.views import consumers
 from pulp.server.webservices.views import util
 from pulp.server.webservices.views.consumers import (ConsumersView, ConsumerBindingsView,
+                                                     ConsumerRepoBindingView,
                                                      ConsumerBindingResourceView,
                                                      ConsumerBindingSearchView,
                                                      ConsumerContentActionView,
@@ -438,6 +439,55 @@ class TestConsumerSearchView(unittest.TestCase):
         self.assertEqual(serialized_results, mock_expand.return_value)
 
 
+class TestConsumerBindingSearchView(unittest.TestCase):
+    """
+    Test the ConsumerBindingSearchView.
+    """
+    def test_class_attributes(self):
+        """
+        Ensure that the ConsumerBindingSearchView has the correct class attributes.
+        """
+        self.assertEqual(ConsumerBindingSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertTrue(isinstance(ConsumerBindingSearchView.manager, bind.BindManager))
+
+
+class TestConsumerRepoBindingView(unittest.TestCase):
+    """
+    Test the retrieval of bindings between consumer and repository.
+    """
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
+    @mock.patch(
+        'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.consumers.factory')
+    @mock.patch('pulp.server.webservices.views.consumers.model.Repository.objects')
+    def test_get_consumer_bindings_by_repoid(self, mock_repo_qs, mock_factory, mock_resp,
+                                             mock_serial):
+        """
+        Test all bindings retrieval by repo-id
+        """
+        mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
+        bindings = [{'repo_id': 'some-repo', 'consumer_id': 'foo'}]
+        mock_factory.consumer_bind_manager.return_value.find_by_consumer.return_value = bindings
+        mock_repo_qs.get_repo_or_missing_resource.return_value = 'some-repo'
+        serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
+                       '_href': '/v2/consumers/foo/bindings/some-repo/'}
+        mock_serial.serialize.return_value = serial_resp
+
+        request = mock.MagicMock()
+        consumer_binding = ConsumerRepoBindingView()
+        response = consumer_binding.get(request, 'foo', 'some-repo')
+
+        expected_cont = [{'consumer_id': 'foo',
+                          '_href': '/v2/consumers/foo/bindings/some-repo/',
+                          'repo_id': 'some-repo'}]
+
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
+
+
 class TestConsumerBindingsView(unittest.TestCase):
     """
     Represents consumers binding.
@@ -465,49 +515,6 @@ class TestConsumerBindingsView(unittest.TestCase):
 
         expected_cont = [{'consumer_id': 'foo', 'repo_id': 'some-repo',
                           '_href': '/v2/consumers/foo/bindings/some-repo/dist1/'}]
-
-        mock_resp.assert_called_once_with(expected_cont)
-        self.assertTrue(response is mock_resp.return_value)
-
-
-class TestConsumerBindingSearchView(unittest.TestCase):
-    """
-    Test the ConsumerBindingSearchView.
-    """
-    def test_class_attributes(self):
-        """
-        Ensure that the ConsumerBindingSearchView has the correct class attributes.
-        """
-        self.assertEqual(ConsumerBindingSearchView.response_builder,
-                         util.generate_json_response_with_pulp_encoder)
-        self.assertTrue(isinstance(ConsumerBindingSearchView.manager, bind.BindManager))
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
-    @mock.patch(
-        'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    @mock.patch('pulp.server.webservices.views.consumers.model.Repository.objects')
-    def test_get_consumer_bindings_by_repoid(self, mock_repo_qs, mock_factory, mock_resp,
-                                             mock_serial):
-        """
-        Test all bindings retrieval by repo-id
-        """
-        mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
-        bindings = [{'repo_id': 'some-repo', 'consumer_id': 'foo'}]
-        mock_factory.consumer_bind_manager.return_value.find_by_consumer.return_value = bindings
-        mock_repo_qs.get_repo_or_missing_resource.return_value = 'some-repo'
-        serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
-                       '_href': '/v2/consumers/foo/bindings/some-repo/'}
-        mock_serial.serialize.return_value = serial_resp
-
-        request = mock.MagicMock()
-        consumer_bindings = ConsumerBindingsView()
-        response = consumer_bindings.get(request, 'foo', 'some-repo')
-
-        expected_cont = [{'consumer_id': 'foo', '_href': '/v2/consumers/foo/bindings/some-repo/',
-                          'repo_id': 'some-repo'}]
 
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
