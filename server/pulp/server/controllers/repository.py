@@ -1380,7 +1380,11 @@ class LazyUnitDownloadStep(DownloadEventListener):
         # Reload the content unit
         unit_model = plugin_api.get_unit_model_by_id(report.data[TYPE_ID])
         unit_qs = unit_model.objects.filter(id=report.data[UNIT_ID])
-        content_unit = unit_qs.only('_content_type_id', 'id', '_last_updated').get()
+        content_unit = unit_qs.only(
+            '_content_type_id',
+            'id', '_last_updated',
+            '_storage_path',
+        ).get()
         path_entry = report.data[UNIT_FILES][report.destination]
 
         # Validate the file and update the progress.
