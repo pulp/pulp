@@ -165,7 +165,7 @@ def all_type_ids():
     """
 
     collection = ContentType.get_collection()
-    type_id_son = list(collection.find(fields={'id': 1}))
+    type_id_son = list(collection.find(projection={'id': 1}))
     type_ids = [t['id'] for t in type_id_son]
 
     return type_ids
@@ -178,7 +178,7 @@ def all_type_collection_names():
     """
 
     collection = ContentType.get_collection()
-    type_ids = list(collection.find(fields={'id': 1}))
+    type_ids = list(collection.find(projection={'id': 1}))
 
     type_collection_names = []
     for id in type_ids:
@@ -266,7 +266,7 @@ def _create_or_update_type(type_def):
         type_def.id, type_def.display_name, type_def.description, type_def.unit_key,
         type_def.search_indexes, type_def.referenced_types)
     # no longer rely on _id = id
-    existing_type = content_type_collection.find_one({'id': type_def.id}, fields=[])
+    existing_type = content_type_collection.find_one({'id': type_def.id}, projection=[])
     if existing_type is not None:
         content_type._id = existing_type['_id']
     # XXX this still causes a potential race condition when 2 users are updating the same type

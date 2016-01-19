@@ -149,7 +149,7 @@ class ApplicabilityRegenerationManager(object):
             existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
             profile_hash = existing_applicability['profile_hash']
             unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
-                                                                 fields=['id', 'content_type'])
+                                                                 projection=['id', 'content_type'])
             if unit_profile is None:
                 # Unit profiles change whenever packages are installed or removed on consumers,
                 # and it is possible that existing_applicability references a UnitProfile
@@ -206,7 +206,7 @@ class ApplicabilityRegenerationManager(object):
                 profile = existing_applicability.profile
             else:
                 unit_profile = UnitProfile.get_collection().find_one({'id': profile_id},
-                                                                     fields=['profile'])
+                                                                     projection=['profile'])
                 profile = unit_profile['profile']
             call_config = PluginCallConfiguration(plugin_config=profiler_cfg,
                                                   repo_plugin_config=None)
@@ -266,7 +266,7 @@ class ApplicabilityRegenerationManager(object):
         :type:               boolean
         """
         query_params = {'repo_id': repo_id, 'profile_hash': profile_hash}
-        if RepoProfileApplicability.get_collection().find_one(query_params, fields=['_id']):
+        if RepoProfileApplicability.get_collection().find_one(query_params, projection=['_id']):
             return True
         return False
 
@@ -517,7 +517,7 @@ def _add_profiles_to_consumer_map_and_get_hashes(consumer_ids, consumer_map):
     """
     profiles = UnitProfile.get_collection().find(
         {'consumer_id': {'$in': consumer_ids}},
-        fields=['consumer_id', 'profile_hash'])
+        projection=['consumer_id', 'profile_hash'])
     profile_hashes = set()
     for p in profiles:
         consumer_map[p['consumer_id']]['profiles'].append(p)
@@ -543,7 +543,7 @@ def _add_repo_ids_to_consumer_map(consumer_ids, consumer_map):
     """
     bindings = Bind.get_collection().find(
         {'consumer_id': {'$in': consumer_ids}},
-        fields=['consumer_id', 'repo_id'])
+        projection=['consumer_id', 'repo_id'])
     for b in bindings:
         consumer_map[b['consumer_id']]['repo_ids'].append(b['repo_id'])
 
@@ -595,7 +595,7 @@ def _get_applicability_map(profile_hashes, content_types):
     """
     applicabilities = RepoProfileApplicability.get_collection().find(
         {'profile_hash': {'$in': profile_hashes}},
-        fields=['profile_hash', 'repo_id', 'applicability'])
+        projection=['profile_hash', 'repo_id', 'applicability'])
     return_value = {}
     for a in applicabilities:
         if content_types is not None:

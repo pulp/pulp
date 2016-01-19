@@ -71,7 +71,7 @@ class ContentQueryManager(object):
         collection = content_types_db.type_units_collection(content_type)
         if db_spec is None:
             db_spec = {}
-        cursor = collection.find(db_spec, fields=model_fields)
+        cursor = collection.find(db_spec, projection=model_fields)
         if start > 0:
             cursor.skip(start)
         if limit is not None:
@@ -165,7 +165,7 @@ class ContentQueryManager(object):
         collection = content_types_db.type_units_collection(content_type)
         for segment in paginate(unit_keys_dicts, page_size=50):
             spec = _build_multi_keys_spec(content_type, segment)
-            cursor = collection.find(spec, fields=model_fields)
+            cursor = collection.find(spec, projection=model_fields)
             for unit_dict in cursor:
                 yield unit_dict
 
@@ -185,7 +185,7 @@ class ContentQueryManager(object):
         @rtype: (possibly empty) tuple of dict's
         """
         collection = content_types_db.type_units_collection(content_type)
-        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=model_fields)
+        cursor = collection.find({'_id': {'$in': unit_ids}}, projection=model_fields)
         return tuple(cursor)
 
     def get_content_unit_keys(self, content_type, unit_ids):
@@ -207,7 +207,7 @@ class ContentQueryManager(object):
         all_fields = ['_id']
         _flatten_keys(all_fields, key_fields)
         collection = content_types_db.type_units_collection(content_type)
-        cursor = collection.find({'_id': {'$in': unit_ids}}, fields=all_fields)
+        cursor = collection.find({'_id': {'$in': unit_ids}}, projection=all_fields)
         dicts = tuple(dict(d) for d in cursor)
         ids = tuple(d.pop('_id') for d in dicts)
         return (ids, dicts)
@@ -231,7 +231,7 @@ class ContentQueryManager(object):
         for segment in paginate(unit_keys):
             spec = _build_multi_keys_spec(content_type, segment)
             fields = ['_id']
-            for item in collection.find(spec, fields=fields):
+            for item in collection.find(spec, projection=fields):
                 yield str(item['_id'])
 
     def get_root_content_dir(self, content_type):

@@ -23,11 +23,12 @@ New Features
 Deprecation
 -----------
 
-Supported Platforms Changes
+Dependency/Platform Changes
 ---------------------------
 
 * If run on CentOS or Red Hat Enterprise Linux, the Pulp server now requires either
   version 7.1+ or 6.7+.
+* pymongo >= 3.0.0 is now required.
 
 Client Changes
 --------------

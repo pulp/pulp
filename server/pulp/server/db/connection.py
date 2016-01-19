@@ -66,7 +66,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
             max_pool_size = _DEFAULT_MAX_POOL_SIZE
-        connection_kwargs['max_pool_size'] = max_pool_size
+        connection_kwargs['maxPoolSize'] = max_pool_size
 
         if replica_set is None:
             if config.config.has_option('database', 'replica_set'):
@@ -121,14 +121,23 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
                         raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting"
                                              "version %s") % (MONGO_MINIMUM_VERSION,
                                                               db_version))
-                    elif db_version >= MONGO_WRITE_CONCERN_VERSION or replica_set:
-                        # Write concern of 'majority' only works with a replica set or when using
-                        # MongoDB >= 2.6.0
-                        _CONNECTION.write_concern['w'] = write_concern
-                    else:
-                        _CONNECTION.write_concern['w'] = 1
+                    if 'w' not in connection_kwargs:
+                        # We need to use the mongod version to determine what value to set the
+                        # write_concern to.
+                        if db_version >= MONGO_WRITE_CONCERN_VERSION or replica_set:
+                            # Write concern of 'majority' only works with a replica set or when
+                            # using MongoDB >= 2.6.0
+                            connection_kwargs['w'] = write_concern
+                        else:
+                            connection_kwargs['w'] = 1
+                        # Now that we've determined the write concern that we are allowed to use, we
+                        # must drop this connection and get another one because write_concern can
+                        # only be set upon establishing the connection in pymongo >= 3.
+                        _CONNECTION.close()
+                        _CONNECTION = None
+                        continue
                     _logger.info(_("Write concern for Mongo connection: %s") %
-                                 _CONNECTION.write_concern)
+                                 _CONNECTION.write_concern.document)
                     break
                 else:
                     next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
@@ -169,7 +178,7 @@ def _connect_to_one_of_seeds(connection_kwargs, seeds_list, db_name):
     :type seeds_list: list of strings
     :return: Connection object if connection is made or None if no connection is made
     """
-
+    connection_kwargs = copy.deepcopy(connection_kwargs)
     for seed in seeds_list:
         connection_kwargs.update({'host': seed.strip()})
         try:
@@ -277,7 +286,7 @@ class PulpCollection(Collection):
         :return: pymongo cursor for the given query
         :rtype:  pymongo.cursor.Cursor
         """
-        cursor = self.find(criteria.spec, fields=criteria.fields)
+        cursor = self.find(criteria.spec, projection=criteria.fields)
 
         if criteria.sort is not None:
             for entry in criteria.sort:

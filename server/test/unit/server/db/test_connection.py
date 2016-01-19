@@ -29,12 +29,22 @@ class TestDatabaseSeeds(unittest2.TestCase):
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_invalid(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+
         connection.initialize(seeds='localhost:27017:1234')
 
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         database = config.config.get('database', 'name')
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
-                                                         host='localhost:27017:1234')
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': 'localhost:27017:1234', 'maxPoolSize': max_pool_size})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': 'localhost:27017:1234', 'maxPoolSize': max_pool_size, 'w': 'majority'})
 
     @mock_config.patch({'database': {'seeds': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
@@ -53,14 +63,14 @@ class TestDatabaseSeeds(unittest2.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         mock_connect_seeds.return_value.server_info.return_value = {'version': '2.6.0'}
         replica_set = 'fakeReplica'
+
         connection.initialize(seeds='firsthost:1234,secondhost:5678')
 
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         database = config.config.get('database', 'name')
-        mock_connect_seeds.assert_called_with({'max_pool_size': max_pool_size,
-                                               'replicaSet': replica_set}, ['firsthost:1234',
-                                                                            'secondhost:5678'],
-                                              database)
+        mock_connect_seeds.assert_called_with(
+            {'maxPoolSize': max_pool_size, 'replicaSet': replica_set, 'w': 'majority'},
+            ['firsthost:1234', 'secondhost:5678'], database)
 
     @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678',
                                      'replica_set': 'fakeReplica'}})
@@ -77,10 +87,9 @@ class TestDatabaseSeeds(unittest2.TestCase):
 
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         database = config.config.get('database', 'name')
-        mock_connect_seeds.assert_called_with({'max_pool_size': max_pool_size,
-                                               'replicaSet': replica_set}, ['firsthost:1234',
-                                                                            'secondhost:5678'],
-                                              database)
+        mock_connect_seeds.assert_called_with(
+            {'maxPoolSize': max_pool_size, 'replicaSet': replica_set, 'w': 'majority'},
+            ['firsthost:1234', 'secondhost:5678'], database)
 
     @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
@@ -125,7 +134,17 @@ class TestDatabaseName(unittest.TestCase):
         connection.initialize()
 
         name = config.config.get('database', 'name')
-        mock_mongoengine.connect.assert_called_once_with(name, host=host, max_pool_size=10)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (name,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': 10})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (name,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': 10, 'w': 'majority'})
 
     @mock_config.patch({'database': {'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
@@ -141,7 +160,17 @@ class TestDatabaseName(unittest.TestCase):
 
         connection.initialize(name=name)
 
-        mock_mongoengine.connect.assert_called_once_with(name, host=host, max_pool_size=10)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (name,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': 10})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (name,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': 10, 'w': 'majority'})
 
 
 class TestDatabaseReplicaSet(unittest.TestCase):
@@ -151,17 +180,26 @@ class TestDatabaseReplicaSet(unittest.TestCase):
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
     def test_database_sets_replica_set(self, mock_mongoengine):
-        mock_replica_set = Mock()
+        replica_set = 'keep_it_safe_bro'
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         host = 'champs.example.com:27018'
-        connection.initialize(replica_set=mock_replica_set)
+        connection.initialize(replica_set=replica_set)
 
         database = config.config.get('database', 'name')
 
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(
-            database, host=host, max_pool_size=max_pool_size,
-            replicaSet=mock_replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'replicaSet': 'keep_it_safe_bro'})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'replicaSet': 'keep_it_safe_bro',
+             'w': 'majority'})
 
     @mock_config.patch({'database': {'replica_set': 'real_replica_set', 'name': 'nbachamps',
                                      'seeds': 'champs.example.com:27018'}})
@@ -177,9 +215,19 @@ class TestDatabaseReplicaSet(unittest.TestCase):
         connection.initialize()
 
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(
-            'nbachamps', host='champs.example.com:27018', max_pool_size=max_pool_size,
-            replicaSet='real_replica_set')
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': 'champs.example.com:27018', 'maxPoolSize': max_pool_size,
+             'replicaSet': 'real_replica_set'})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': 'champs.example.com:27018', 'maxPoolSize': max_pool_size,
+             'replicaSet': 'real_replica_set', 'w': 'majority'})
 
 
 class TestDatabaseMaxPoolSize(unittest.TestCase):
@@ -199,8 +247,17 @@ class TestDatabaseMaxPoolSize(unittest.TestCase):
 
         database = config.config.get('database', 'name')
 
-        mock_mongoengine.connect.assert_called_once_with(database, host=host,
-                                                         max_pool_size=10)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': 10})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': 10, 'w': 'majority'})
 
     @mock_config.patch({'database': {'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
@@ -214,8 +271,17 @@ class TestDatabaseMaxPoolSize(unittest.TestCase):
 
         database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(database, host=host,
-                                                         max_pool_size=max_pool_size)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'w': 'majority'})
 
     @mock_config.patch({'database': {'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
@@ -231,8 +297,17 @@ class TestDatabaseMaxPoolSize(unittest.TestCase):
 
         database = config.config.get('database', 'name')
         host = config.config.get('database', 'seeds')
-        mock_mongoengine.connect.assert_called_once_with(database, host=host,
-                                                         max_pool_size=5)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': 5})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': 5, 'w': 'majority'})
 
 
 class TestDatabase(unittest.TestCase):
@@ -334,8 +409,18 @@ class TestDatabaseSSL(unittest.TestCase):
 
         database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
-                                                         host=host, replicaSet=replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'replicaSet': replica_set})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'replicaSet': replica_set,
+             'w': 'majority'})
 
     @mock_config.patch({'database': {'verify_ssl': 'true',
                                      'ssl': 'true', 'seeds': 'champs.example.com:27018',
@@ -355,9 +440,21 @@ class TestDatabaseSSL(unittest.TestCase):
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_REQUIRED
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(
-            database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs, host=host, replicaSet=replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'replicaSet': replica_set})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'replicaSet': replica_set, 'w': 'majority'})
 
     @mock_config.patch({'database': {'verify_ssl': 'false',
                                      'ssl': 'true', 'seeds': 'champs.example.com:27018',
@@ -377,9 +474,21 @@ class TestDatabaseSSL(unittest.TestCase):
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(
-            database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs, host=host, replicaSet=replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'replicaSet': replica_set})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'replicaSet': replica_set, 'w': 'majority'})
 
     @mock_config.patch({'database': {'ssl_keyfile': 'keyfilepath', 'verify_ssl': 'false',
                                      'ssl': 'true', 'seeds': 'champs.example.com:27018',
@@ -399,10 +508,21 @@ class TestDatabaseSSL(unittest.TestCase):
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(
-            database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs, ssl_keyfile='keyfilepath', host=host,
-            replicaSet=replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'ssl_keyfile': 'keyfilepath', 'replicaSet': replica_set})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'ssl_keyfile': 'keyfilepath', 'replicaSet': replica_set, 'w': 'majority'})
 
     @mock_config.patch({'database': {'ssl_certfile': 'certfilepath', 'verify_ssl': 'false',
                                      'ssl': 'true', 'seeds': 'champs.example.com:27018',
@@ -422,10 +542,21 @@ class TestDatabaseSSL(unittest.TestCase):
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(
-            database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs, ssl_certfile='certfilepath', host=host,
-            replicaSet=replica_set)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'ssl_certfile': 'certfilepath', 'replicaSet': replica_set})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], (database,))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': max_pool_size, 'ssl': True,
+             'ssl_cert_reqs': ssl_cert_reqs, 'ssl_ca_certs': ssl_ca_certs,
+             'ssl_certfile': 'certfilepath', 'replicaSet': replica_set, 'w': 'majority'})
 
 
 class TestDatabaseVersion(unittest.TestCase):
@@ -490,9 +621,19 @@ class TestDatabaseAuthentication(unittest.TestCase):
 
         connection.initialize()
 
-        mock_mongoengine.connect.assert_called_once_with(
-            'nbachamps', username='larrybird', host='champs.example.com:27018',
-            password='celtics1981', max_pool_size=10, replicaSet='')
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'username': 'larrybird', 'host': 'champs.example.com:27018', 'password': 'celtics1981',
+             'maxPoolSize': 10, 'replicaSet': ''})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'username': 'larrybird', 'host': 'champs.example.com:27018', 'password': 'celtics1981',
+                'maxPoolSize': 10, 'replicaSet': '', 'w': 1})
 
     @mock_config.patch(
         {'database': {'name': 'nbachamps', 'username': 'larrybird',
@@ -512,14 +653,26 @@ class TestDatabaseAuthentication(unittest.TestCase):
 
         connection.initialize()
 
-        mock_mongoengine.connect.assert_called_once_with(
-            'nbachamps', username='larrybird', host='champs.example.com:27018',
-            password='celtics1981', max_pool_size=10, replicaSet='')
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mock_mongoengine.connect.call_count, 2)
+        self.assertEqual(mock_mongoengine.connect.mock_calls[0][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[0][2],
+            {'username': 'larrybird', 'host': 'champs.example.com:27018', 'password': 'celtics1981',
+             'maxPoolSize': 10, 'replicaSet': ''})
+        self.assertEqual(mock_mongoengine.connect.mock_calls[4][1], ('nbachamps',))
+        self.assertEqual(
+            mock_mongoengine.connect.mock_calls[4][2],
+            {'username': 'larrybird', 'host': 'champs.example.com:27018', 'password': 'celtics1981',
+                'maxPoolSize': 10, 'replicaSet': '', 'w': 1})
         expected_calls = [
             call('Attempting username and password authentication.'),
             call("Connection Arguments: {'username': 'larrybird', 'host': "
-                 "'champs.example.com:27018', 'password': '*****', 'max_pool_size': 10, "
+                 "'champs.example.com:27018', 'password': '*****', 'maxPoolSize': 10, "
                  "'replicaSet': ''}"),
+            call("Connection Arguments: {'username': 'larrybird', 'replicaSet': '', 'host': "
+                 "'champs.example.com:27018', 'maxPoolSize': 10, 'w': 1, 'password': '*****'}"),
             call('Querying the database to validate the connection.')]
         mock_log.assert_has_calls(expected_calls)
 
@@ -673,7 +826,17 @@ class TestInitialize(unittest.TestCase):
         # Connect should still have been called correctly
         name = config.config.get('database', 'name')
         host = config.config.get('database', 'seeds')
-        mongoengine.connect.assert_called_once_with(name, host=host, max_pool_size=10)
+        # There should be two calls to connect. The first will use the server version to determine
+        # which write concern is safe to use.
+        self.assertEqual(mongoengine.connect.call_count, 2)
+        self.assertEqual(mongoengine.connect.mock_calls[0][1], (name,))
+        self.assertEqual(
+            mongoengine.connect.mock_calls[0][2],
+            {'host': host, 'maxPoolSize': 10})
+        self.assertEqual(mongoengine.connect.mock_calls[4][1], (name,))
+        self.assertEqual(
+            mongoengine.connect.mock_calls[4][2],
+            {'host': host, 'maxPoolSize': 10, 'w': 'majority'})
 
 
 @patch('pulp.server.db.connection.UnsafeRetry._decorated_methods', new=('one', 'two'))

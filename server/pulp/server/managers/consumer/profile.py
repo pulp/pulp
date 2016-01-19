@@ -91,7 +91,7 @@ class ProfileManager(object):
         """
         collection = UnitProfile.get_collection()
         for p in self.get_profiles(id):
-            collection.remove(p, sefe=True)
+            collection.remove(p)
 
     @staticmethod
     def get_profile(consumer_id, content_type):

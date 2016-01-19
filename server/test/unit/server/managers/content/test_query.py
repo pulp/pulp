@@ -147,4 +147,4 @@ class TestGetContentUnitIDs(unittest.TestCase):
         # evaluate the generator so the code actually runs
         list(ret)
         expected_spec = {'$or': ({'a': 'foo'}, {'a': 'bar'})}
-        mock_find.assert_called_once_with(expected_spec, fields=['_id'])
+        mock_find.assert_called_once_with(expected_spec, projection=['_id'])

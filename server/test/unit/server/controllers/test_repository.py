@@ -524,7 +524,7 @@ class TestDelete(unittest.TestCase):
 
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
-        pymongo_kwargs = {'safe': True}
+        pymongo_kwargs = {}
         m_model.Distributor.objects.return_value.delete.assert_called_once_with()
         m_model.Importer.objects.return_value.delete.assert_called_once_with()
         m_sync.get_collection().remove.assert_called_once_with(pymongo_args, **pymongo_kwargs)
@@ -556,7 +556,7 @@ class TestDelete(unittest.TestCase):
 
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
-        pymongo_kwargs = {'safe': True}
+        pymongo_kwargs = {}
         m_dist_ctrl.delete.assert_called_once_with(m_dist.repo_id, m_dist.distributor_id)
         m_model.Distributor.objects.return_value.delete.assert_called_once_with()
         m_model.Importer.objects.return_value.delete.assert_called_once_with()
@@ -593,7 +593,7 @@ class TestDelete(unittest.TestCase):
 
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
-        pymongo_kwargs = {'safe': True}
+        pymongo_kwargs = {}
 
         m_dist_ctrl.remove_distributor.has_calls([
             mock.call('foo-repo', 'mock_d1'), mock.call('foo-repo', 'mock_d2')])
@@ -639,7 +639,7 @@ class TestDelete(unittest.TestCase):
 
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
-        pymongo_kwargs = {'safe': True}
+        pymongo_kwargs = {}
 
         m_model.Distributor.objects.return_value.delete.assert_called_once_with()
         m_model.Importer.objects.return_value.delete.assert_called_once_with()
@@ -678,7 +678,7 @@ class TestDelete(unittest.TestCase):
         result = repo_controller.delete('foo-repo')
         m_repo.delete.assert_called_once_with()
         pymongo_args = {'repo_id': 'foo-repo'}
-        pymongo_kwargs = {'safe': True}
+        pymongo_kwargs = {}
 
         m_model.Distributor.objects.return_value.delete.assert_called_once_with()
         m_model.Importer.objects.return_value.delete.assert_called_once_with()
@@ -883,8 +883,7 @@ class TestSync(unittest.TestCase):
             'canceled'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
-        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
-                                                                  safe=True)
+        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(actual_result is m_task_result.return_value)
 
@@ -925,8 +924,7 @@ class TestSync(unittest.TestCase):
             'success'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
-        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
-                                                                  safe=True)
+        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertEqual(mock_imp_inst.id, mock_conduit.call_args_list[0][0][2])
         self.assertTrue(actual_result is m_task_result.return_value)
@@ -966,8 +964,7 @@ class TestSync(unittest.TestCase):
             'failed'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
-        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
-                                                                  safe=True)
+        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
 
         # It is now platform's responsiblity to update plugin content unit counts
@@ -1001,8 +998,7 @@ class TestSync(unittest.TestCase):
             'err'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
-        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result(),
-                                                                  safe=True)
+        mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(result is m_task_result.return_value)
 
@@ -1103,7 +1099,7 @@ class TestDoPublish(unittest.TestCase):
             mock_now(), expected_e, mock_sys.exc_info()[2])
 
         m_repo_pub_result.get_collection().save.assert_called_once_with(
-            m_repo_pub_result.error_result(), safe=True)
+            m_repo_pub_result.error_result())
         mock_log.exception.assert_called_once_with(mock_text())
 
     def test_successful_publish(self, m_dist_qs, m_repo_pub_result, mock_now,
@@ -1126,7 +1122,7 @@ class TestDoPublish(unittest.TestCase):
             mock_now(), 'summary', 'details', m_repo_pub_result.RESULT_SUCCESS
         )
         m_repo_pub_result.get_collection().save.assert_called_once_with(
-            m_repo_pub_result.expected_result(), safe=True)
+            m_repo_pub_result.expected_result())
         self.assertTrue(result is m_repo_pub_result.expected_result.return_value)
 
     def test_failed_publish(self, m_dist_qs, m_repo_pub_result, mock_now,

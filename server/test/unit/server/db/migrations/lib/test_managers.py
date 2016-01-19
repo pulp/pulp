@@ -61,7 +61,6 @@ class RepoManagerTests(base.ResourceReservationTests):
         repo_col.update.assert_called_once_with(
             {'id': 'repo1'},
             {'$set': {'content_unit_counts': {'rpm': 6, 'srpm': 6}}},
-            safe=True
         )
 
     def test_rebuild_default_all_repos(self, mock_get_assoc_col, mock_get_repo_col):

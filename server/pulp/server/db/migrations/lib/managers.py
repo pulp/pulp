@@ -51,7 +51,7 @@ class RepoManager(object):
 
         # default to all repos if none were specified
         if not repo_ids:
-            repo_ids = [repo['id'] for repo in repo_collection.find(fields=['id'])]
+            repo_ids = [repo['id'] for repo in repo_collection.find(projection=['id'])]
 
         _logger.info('regenerating content unit counts for %d repositories' % len(repo_ids))
 
@@ -64,8 +64,7 @@ class RepoManager(object):
             for type_id in type_ids:
                 spec = {'repo_id': repo_id, 'unit_type_id': type_id}
                 counts[type_id] = association_collection.find(spec).count()
-            repo_collection.update({'id': repo_id}, {'$set': {'content_unit_counts': counts}},
-                                   safe=True)
+            repo_collection.update({'id': repo_id}, {'$set': {'content_unit_counts': counts}})
 
     @staticmethod
     def find_with_importer_type(importer_type_id):
