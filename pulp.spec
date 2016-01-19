@@ -1024,6 +1024,10 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Tue Jan 19 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.3.beta
+- 1356 - Pulp returns HTTP 500 when a bad request is made during repo creation.
+  (ttereshc@redhat.com)
+
 * Wed Jan 13 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.2.beta
 - Pulp rebuild
 
