@@ -9,7 +9,7 @@ simplicity, the individual method documentation will not repeat this information
 The document will contain the following:
 
 * **http_status** *(number)* - HTTP status code describing the error.
-* **href** *(string)* - Currently unused.
+* **_href** *(string)* - Currently unused.
 * **error_message** *(string)* - Description of what caused the error; may be empty but will
   be included in the document.
 * **exception** *(string)* - Message extracted from the exception if one occurred on
