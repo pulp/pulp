@@ -103,7 +103,7 @@ class TestContentView(TestCase):
         # validation
         url.assert_called_once_with(ContentView.urljoin(
             scheme, host, port, redirect_path, path, query))
-        url.return_value.sign.assert_called_once_with(key, remote_ip=remote_ip)
+        url.return_value.sign.assert_called_once_with(key)
         redirect.assert_called_once_with(str(url.return_value.sign.return_value))
         self.assertEqual(reply, redirect.return_value)
 

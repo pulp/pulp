@@ -31,12 +31,11 @@ def allow_access(environ, host):
     :rtype:  bool
     """
     url = SignedURL(environ['REQUEST_URI'])
-    remote_ip = environ['REMOTE_ADDR']
     try:
-        url.validate(key, remote_ip=remote_ip)
-        log.debug(_('Validated {ip} for {url}.').format(ip=remote_ip, url=url))
+        url.validate(key)
+        log.debug(_('Validated {ip} for {url}.').format(ip=environ['REMOTE_ADDR'], url=url))
         return True
     except NotValid, le:
         msg = _('Received invalid request from {ip} for {url}: {error}.')
-        log.debug(msg.format(ip=remote_ip, url=url, error=str(le)))
+        log.debug(msg.format(ip=environ['REMOTE_ADDR'], url=url, error=str(le)))
         return False
