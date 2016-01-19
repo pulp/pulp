@@ -91,7 +91,6 @@ class ContentView(View):
         host = request.environ['SERVER_NAME']
         port = request.environ['SERVER_PORT']
         query = request.environ['QUERY_STRING']
-        remote_ip = request.environ['REMOTE_ADDR']
 
         redirect_host = pulp_conf.get('lazy', 'redirect_host')
         redirect_port = pulp_conf.get('lazy', 'redirect_port')
@@ -106,7 +105,7 @@ class ContentView(View):
             query)
 
         url = URL(redirect)
-        signed = url.sign(key, remote_ip=remote_ip)
+        signed = url.sign(key)
         return HttpResponseRedirect(str(signed))
 
     def __init__(self, **kwargs):
