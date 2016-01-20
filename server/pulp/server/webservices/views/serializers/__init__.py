@@ -282,6 +282,11 @@ class ModelSerializer(BaseSerializer):
             crit_dict['fields'] = [self._translate(model, field) for field in crit.fields]
         return Criteria.from_dict(crit_dict)
 
+    # expose these "private" methods as public, pending a more in-depth refactor
+    # https://pulp.plan.io/issues/1555
+    translate_field = _translate
+    translate_filters = _translate_filters
+
 
 class Repository(ModelSerializer):
     """
