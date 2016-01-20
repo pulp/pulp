@@ -20,11 +20,14 @@ will support.
   Description: list repositories and manage repo groups
 
   Available Sections:
-    group - repository group commands
-    tasks - list and cancel tasks related to a specific repository
+    group   - repository group commands
+    history - show sync and publish history
+    tasks   - list and cancel tasks related to a specific repository
 
   Available Commands:
-    list - lists repositories on the Pulp server
+    download - queues a full download of all missing units in a repository that is using a
+               "background" or "on_demand" download policy.
+    list     - lists repositories on the Pulp server
 
 By comparison, many other features are implemented under a root-level section
 named for a content type. For example, the RPM repo section looks like this:
@@ -38,8 +41,9 @@ named for a content type. For example, the RPM repo section looks like this:
   Available Sections:
     content - search the contents of a repository
     copy    - copies one or more content units between repositories
-    export  - run or view the status of ISO export of a repository
-    publish - run, schedule, or view the status of publish tasks
+    export  - run or view the status of a repository export
+    group   - repository group commands
+    publish - run or view the status of publish tasks
     remove  - remove modules from a repository
     sync    - run, schedule, or view the status of sync tasks
     uploads - upload modules into a repository
@@ -48,7 +52,7 @@ named for a content type. For example, the RPM repo section looks like this:
     create - creates a new repository
     delete - deletes a repository
     list   - lists repositories on the Pulp server
-    search - searches for RPM repositories on the server
+    search - searches for repositories on the server
     update - changes metadata on an existing repository
 
 The reason for putting repository commands in different places is that some
@@ -358,5 +362,5 @@ of the CLI, you can ``cancel``, ``list``, and get ``details`` about repository t
   Available Commands:
     cancel  - cancel one or more tasks
     details - displays more detailed information about a specific task
-    list    - lists tasks queued or running in the server
+    list    - lists tasks queued (waiting) or running on the server
 

@@ -21,11 +21,12 @@ All pulp-admin commands accept username and password to capture authentication c
                             in ~/.pulp/admin.conf
       -p PASSWORD, --password=PASSWORD
                             password for the Pulp server; must be used with
-                            --username. If used will bypass the stored certificate
+                            --username. if used will bypass the stored certificate
                             and override a password specified in ~/.pulp/admin.conf
-      --debug               enables debug logging
       --config=CONFIG       absolute path to the configuration file
       --map                 prints a map of the CLI sections and commands
+      -v                    enables verbose output; use twice for increased
+                            verbosity with debug information
 
 
 Pulp Admin client allows the user to specify username and password credentials
