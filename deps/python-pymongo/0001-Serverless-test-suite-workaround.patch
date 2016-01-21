@@ -1,0 +1,41 @@
+From bc392400e5d53c8f65b7adb1bc1dd2e88a4d510b Mon Sep 17 00:00:00 2001
+From: Haikel Guemar <hguemar@fedoraproject.org>
+Date: Thu, 1 Oct 2015 11:26:44 +0200
+Subject: [PATCH 1/2] Serverless test suite workaround
+
+---
+ test/__init__.py | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/test/__init__.py b/test/__init__.py
+index 62e6bdf..d06120d 100644
+--- a/test/__init__.py
++++ b/test/__init__.py
+@@ -366,12 +366,6 @@ def setup():
+
+ def teardown():
+     c = client_context.client
+-    c.drop_database("pymongo-pooling-tests")
+-    c.drop_database("pymongo_test")
+-    c.drop_database("pymongo_test1")
+-    c.drop_database("pymongo_test2")
+-    c.drop_database("pymongo_test_mike")
+-    c.drop_database("pymongo_test_bernie")
+     if client_context.auth_enabled and not client_context.user_provided:
+         c.admin.remove_user(db_user)
+
+@@ -386,8 +380,10 @@ class PymongoTestRunner(unittest.TextTestRunner):
+             return result
+
+
+-def test_cases(suite):
++def test_cases(suite=None):
+     """Iterator over all TestCases within a TestSuite."""
++    if suite is None:
++        return
+     for suite_or_case in suite._tests:
+         if isinstance(suite_or_case, unittest.TestCase):
+             # unittest.TestCase
+--
+2.5.0
+
