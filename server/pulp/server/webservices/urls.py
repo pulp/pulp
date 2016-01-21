@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, url
 
 from pulp.server.webservices.views.consumers import (ConsumerBindingsView,
+                                                     ConsumerRepoBindingView,
                                                      ConsumerBindingSearchView,
                                                      ConsumerBindingResourceView,
                                                      ConsumerContentActionView,
@@ -95,7 +96,7 @@ urlpatterns = patterns(
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/$',
         ConsumerBindingsView.as_view(), name='bindings'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/(?P<repo_id>[^/]+)/$',
-        ConsumerBindingsView.as_view(), name='bindings_repo'),
+        ConsumerRepoBindingView.as_view(), name='bindings_repo'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/(?P<repo_id>[^/]+)/(?P<distributor_id>[^/]+)/$',
         ConsumerBindingResourceView.as_view(), name='consumer_binding_resource'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/actions/content/regenerate_applicability/$',

@@ -330,13 +330,9 @@ class ConsumerProfileSearchView(search.SearchView):
     manager = profile.ProfileManager()
 
 
-class ConsumerBindingsView(View):
+class ConsumerRepoBindingView(View):
     """
-    View for Consumer bindings - represents the collection of
-    objects used to associate a consumer and a repo-distributor
-    association.  Users wanting to create this association will
-    create an object in this collection.  Both bind and unbind
-    is idempotent.
+    View for bindings between consumer and repository.
     """
 
     @auth_required(authorization.READ)
@@ -378,6 +374,16 @@ class ConsumerBindingsView(View):
         bindings = manager.find_by_consumer(consumer_id, repo_id)
         bindings = [serial_binding.serialize(b) for b in bindings]
         return generate_json_response_with_pulp_encoder(bindings)
+
+
+class ConsumerBindingsView(ConsumerRepoBindingView):
+    """
+    View for Consumer bindings - represents the collection of
+    objects used to associate a consumer and a repo-distributor
+    association.  Users wanting to create this association will
+    create an object in this collection.  Both bind and unbind
+    is idempotent.
+    """
 
     @auth_required(authorization.CREATE)
     @parse_json_body(json_type=dict)
