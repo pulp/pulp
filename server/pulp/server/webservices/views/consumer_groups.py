@@ -387,7 +387,7 @@ def verify_group_resources(group_id, repo_id, distributor_id):
         group_manager.get_group(group_id)
     except pulp_exceptions.MissingResource:
         missing_resources['group_id'] = group_id
-    repo = model.Repository.objects(repo_id).first()
+    repo = model.Repository.objects(repo_id=repo_id).first()
     if repo is None:
         missing_resources['repo_id'] = repo_id
     try:
