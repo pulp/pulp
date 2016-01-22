@@ -881,7 +881,7 @@ class DownloadStepTests(unittest.TestCase):
             importer_constants.KEY_SSL_CLIENT_CERT: "Trust me, I'm who I say I am.",
             importer_constants.KEY_SSL_CLIENT_KEY: "Secret Key",
             importer_constants.KEY_SSL_CA_CERT: "Uh, I guess that's the right server.",
-            importer_constants.KEY_PROXY_HOST: 'proxy.com',
+            importer_constants.KEY_PROXY_HOST: 'http://proxy.com',
             importer_constants.KEY_PROXY_PORT: 1234,
             importer_constants.KEY_PROXY_USER: "the_dude",
             importer_constants.KEY_PROXY_PASS: 'bowling',
@@ -931,7 +931,7 @@ class DownloadStepTests(unittest.TestCase):
             'ssl_client_key': 'Secret Key',
             'ssl_ca_cert': "Uh, I guess that's the right server.",
             'ssl_validation': False,
-            'proxy_url': 'proxy.com',
+            'proxy_url': 'http://proxy.com',
             'proxy_port': 1234,
             'proxy_username': 'the_dude',
             'proxy_password': 'bowling'}
