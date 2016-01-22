@@ -269,9 +269,28 @@ class ImporterStrategy(object):
         :param unit_inventory: The inventory of both parent and child content units.
         :type unit_inventory: UnitInventory
         """
-        for unit, ref in unit_inventory.updated_units():
-            unit = ref.fetch()
-            self.add_unit(request, unit)
+        download_list = []
+        units = unit_inventory.updated_units()
+        listener = ContentDownloadListener(self, request)
+        for unit, unit_ref in units:
+            storage_path = unit[constants.STORAGE_PATH]
+            if storage_path:
+                self._reset_storage_path(unit)
+                unit_url, destination = self._url_and_destination(unit_inventory.base_URL, unit)
+                _request = listener.create_request(unit_url, destination, unit, unit_ref)
+                download_list.append(_request)
+            else:
+                unit = unit_ref.fetch()
+                self.add_unit(request, unit)
+        if not download_list:
+            return
+        container = ContentContainer()
+        request.summary.sources = container.download(
+                request.cancel_event,
+                request.downloader,
+                download_list,
+                listener)
+        request.summary.errors.extend(listener.error_list)
 
     def _url_and_destination(self, base_url, unit):
         """

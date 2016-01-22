@@ -915,10 +915,17 @@ class ImporterTest(PluginTestBase):
         dist.publish_repo(repo, conduit, cfg)
         # make the published unit have a newer _last_updated.
         collection = connection.get_collection(unit_db.unit_collection_name(self.UNIT_TYPE_ID))
+        # N=0 (no file)
         unit = collection.find_one({'N': 0})
-        unit['age'] = 84
+        unit['age'] = 84  # this will be updated back to 42.
         unit['_last_updated'] -= 1
-        collection.update({'N': 0}, unit)
+        unit['_storage_path'] = None
+        collection.update({'N': 0}, unit, safe=True)
+        # N=1
+        unit = collection.find_one({'N': 1})
+        unit['age'] = 85   # this will be updated back to 42.
+        unit['_last_updated'] -= 1
+        collection.update({'N': 1}, unit)
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
@@ -938,4 +945,6 @@ class ImporterTest(PluginTestBase):
             importer.sync_repo(repo, conduit, configuration)
         # Verify
         unit = collection.find_one({'N': 0})
+        self.assertEqual(unit['age'], 42)
+        unit = collection.find_one({'N': 1})
         self.assertEqual(unit['age'], 42)
