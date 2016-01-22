@@ -76,7 +76,15 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE'],
                          celery_instance.CELERYBEAT_SCHEDULE)
+
+
+class TestCelerySerializerConfig(unittest.TestCase):
+
+    def test_json_serializer_is_used(self):
         self.assertEqual(celery_instance.celery.conf['CELERY_TASK_SERIALIZER'], 'json')
+
+    def test_json_serializer_is_the_only_one_allowed(self):
+        self.assertEqual(celery_instance.celery.conf['CELERY_ACCEPT_CONTENT'], ['json'])
 
 
 def fake_get(new_config, section, key):
