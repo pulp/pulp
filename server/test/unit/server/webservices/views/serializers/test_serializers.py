@@ -411,6 +411,22 @@ class TestModelSerializer(unittest.TestCase):
         result = test_serializer._translate(mock_model, 'external')
         self.assertEqual(result, 'internal_db')
 
+    def test_translate_field_reverse(self):
+        """
+        Test that individual strings are translated correctly from external to internal repr.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+
+            class Meta:
+                remapped_fields = {'internal': 'external'}
+
+        mock_model = mock.MagicMock()
+        mock_model.internal.db_field = 'internal_db'
+        test_serializer = FakeSerializer()
+        result = test_serializer.translate_field_reverse('internal')
+        self.assertEqual(result, 'external')
+
     @mock.patch('pulp.server.db.model.criteria.Criteria.from_dict')
     @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate')
     @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate_filters')

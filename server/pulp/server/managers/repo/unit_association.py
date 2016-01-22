@@ -154,7 +154,26 @@ class RepoUnitAssociationManager(object):
         association_q = mongoengine.Q(__raw__=criteria.association_spec)
         if criteria.type_ids:
             association_q &= mongoengine.Q(unit_type_id__in=criteria.type_ids)
+            unit_type_ids = criteria.type_ids
+        else:
+            # don't need to limit the association_q by content type here
+            # since filtering for every content_type seen in the repo is
+            # achieved by limiting the query to the repo
+            unit_type_ids = repo_controller.get_repo_unit_type_ids(source_repo.repo_id)
+
+        # base unit_q, works as-is for non-mongoengine unit types
         unit_q = mongoengine.Q(__raw__=criteria.unit_spec)
+
+        # for mongoengine unit types, use the unit model's serializer to translate the unit spec
+        # for each possible content unit type as determined by the search criteria
+        for unit_type_id in unit_type_ids:
+            serializer = units_controller.get_model_serializer_for_type(unit_type_id)
+            if serializer:
+                unit_spec_t = serializer.translate_filters(serializer.model, criteria.unit_spec)
+                # after translating the fields, this spec is only good for this unit type
+                unit_spec_t['_content_type_id'] = unit_type_id
+                unit_q |= mongoengine.Q(__raw__=unit_spec_t)
+
         return repo_controller.find_repo_content_units(
             repository=source_repo,
             repo_content_unit_q=association_q,

@@ -5,8 +5,8 @@ import itertools
 
 import pymongo
 
-from pulp.plugins.loader.api import get_unit_model_by_id
 from pulp.plugins.types import database as types_db
+from pulp.server.controllers import units
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 
@@ -350,17 +350,12 @@ class RepoUnitAssociationQueryManager(object):
         :type associated_unit_ids: list
         :rtype: pymongo.cursor.Cursor
         """
-        model = get_unit_model_by_id(unit_type_id)
-        if model and hasattr(model, 'SERIALIZER'):
-            serializer = model.SERIALIZER()
-        else:
-            serializer = None
-
         collection = types_db.type_units_collection(unit_type_id)
+        serializer = units.get_model_serializer_for_type(unit_type_id)
 
         spec = criteria.unit_filters.copy()
         if spec and serializer:
-                spec = serializer.translate_filters(model, spec)
+                spec = serializer.translate_filters(serializer.model, spec)
 
         spec['_id'] = {'$in': associated_unit_ids}
 
@@ -374,7 +369,7 @@ class RepoUnitAssociationQueryManager(object):
             # translate incoming fields (e.g. id -> foo_id)
             if serializer:
                 for index, field in enumerate(fields):
-                    fields[index] = serializer.translate_field(model, field)
+                    fields[index] = serializer.translate_field(serializer.model, field)
 
         cursor = collection.find(spec, projection=fields)
 
@@ -385,7 +380,7 @@ class RepoUnitAssociationQueryManager(object):
         elif serializer:
             sort = list(sort)
             for index, (field, direction) in enumerate(sort):
-                sort[index] = (serializer.translate_field(model, field), direction)
+                sort[index] = (serializer.translate_field(serializer.model, field), direction)
 
         cursor.sort(sort)
 

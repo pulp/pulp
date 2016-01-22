@@ -12,7 +12,7 @@ from pulp.server import constants
 from pulp.server.auth import authorization
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.controllers import content
-from pulp.server.controllers import units
+from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.managers import factory
@@ -133,7 +133,7 @@ class OrphanTypeSubCollectionView(View):
         """
         try:
             # this tests if the type exists
-            units.get_unit_key_fields_for_type(content_type)
+            units_controller.get_unit_key_fields_for_type(content_type)
         except ValueError:
             raise MissingResource(content_type_id=content_type)
 
@@ -285,7 +285,12 @@ class ContentUnitSearch(search.SearchView):
         """
         Overrides the base class so additional information can optionally be added.
         """
+
         type_id = kwargs['type_id']
+        serializer = units_controller.get_model_serializer_for_type(type_id)
+        if serializer:
+            # if we have a model serializer, translate the filter for this content unit type
+            query['filters'] = serializer.translate_filters(serializer.model, query['filters'])
         units = list(search_method(type_id, query))
         units = [_process_content_unit(unit, type_id) for unit in units]
         if options.get('include_repos') is True:

@@ -4,7 +4,7 @@ Module for content serialization.
 import logging
 
 from pulp.common import dateutils
-from pulp.plugins.loader import api
+from pulp.server.controllers import units
 from pulp.server.webservices import http
 from pulp.server.webservices.views.serializers import db
 
@@ -17,9 +17,6 @@ def remap_fields_with_serializer(content_unit):
 
     :param content_unit: Content unit to modify
     :type content_unit: dict
-    :param remove_remapped: If True, remove remapped keys from content unit when remapping.
-                            Remapped keys are left in place and copied by default
-    :type remove_remapped: bool
 
     This is a small workaround to help in cases where REST views are returning the older objects
     coming out of pymongo, but still need to have their fields remapped according to the rules of
@@ -39,17 +36,21 @@ def remap_fields_with_serializer(content_unit):
                       '{0!r}'.format(content_unit))
         return
 
-    cu_document = api.get_unit_model_by_id(content_type_id)
+    serializer = units.get_model_serializer_for_type(content_type_id)
+    if serializer is None:
+        # No serializer, nothing to do
+        return
 
-    if hasattr(cu_document, 'SERIALIZER'):
-        for original_field, remapped_field in cu_document.SERIALIZER()._remapped_fields.items():
-            try:
-                content_unit[remapped_field] = content_unit.pop(original_field)
-            except KeyError:
-                # If the original field doesn't exist, log and move on
-                _logger.debug('original field not found when attempting to remap: {0}'
-                              '{0}'.format(original_field))
-                continue
+    # build the list of fields that need to be remapped
+    field_map = {}
+    for field in content_unit:
+        remapped_field = serializer.translate_field_reverse(field)
+        if remapped_field != field:
+            field_map[field] = remapped_field
+
+    # do the remapping
+    for original_field, remapped_field in field_map.items():
+        content_unit[remapped_field] = content_unit.pop(original_field)
 
 
 def content_unit_obj(content_unit):

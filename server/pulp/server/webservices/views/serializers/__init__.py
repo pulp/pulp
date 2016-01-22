@@ -171,11 +171,7 @@ class ModelSerializer(BaseSerializer):
         """
         document_dict = {}
         for field in instance._fields:
-            if field in self._remapped_fields:
-                document_dict[self._remapped_fields[field]] = getattr(instance, field)
-            else:
-                document_dict[field] = getattr(instance, field)
-
+            document_dict[self.translate_field_reverse(field)] = getattr(instance, field)
         return document_dict
 
     def _translate_filters(self, model, filters):
@@ -250,6 +246,20 @@ class ModelSerializer(BaseSerializer):
                 return getattr(model, internal).db_field
         else:
             return getattr(model, field).db_field
+
+    def translate_field_reverse(self, field):
+        """
+        Converts an internal db field name to the external representation of a field
+
+        :param field: field name (internal name)
+        :type  field: basestring
+
+        :return: the remapped field name to use in external representations
+        :rtype:  basestring
+        """
+        # If the field name is in the remapped_fields dict, return its value
+        # Otherwise, return the field name as-is
+        return self._remapped_fields.get(field, field)
 
     def translate_criteria(self, model, crit):
         """

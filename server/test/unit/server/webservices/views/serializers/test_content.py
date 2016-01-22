@@ -41,6 +41,7 @@ class TestRemapFieldsFromSerializer(TestCase):
             _ns = StringField(default='dummy_content_name')
             _content_type_id = StringField(required=True, default='content_type')
             unit_key_fields = ()
+            type_specific_id = StringField()
             SERIALIZER = ContentUnitHelperSerializer
         self.content_unit_model = ContentUnitHelper
 
@@ -54,5 +55,7 @@ class TestRemapFieldsFromSerializer(TestCase):
     def test_remap_fields(self, mock_get_model):
         mock_get_model.return_value = self.content_unit_model
         content.remap_fields_with_serializer(self.content_unit)
+        self.assertTrue('type_specific_id' not in self.content_unit,
+                        'type-specific ID field not remapped')
+        self.assertTrue('id' in self.content_unit)
         self.assertEqual(self.content_unit['id'], 'foo')
-        self.assertTrue('type_specific_id' not in self.content_unit)

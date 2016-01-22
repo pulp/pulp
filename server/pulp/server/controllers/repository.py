@@ -108,6 +108,21 @@ def get_unit_model_querysets(repo_id, model_class, repo_content_unit_q=None):
         yield model_class.objects(id__in=chunk)
 
 
+def get_repo_unit_type_ids(repo_id):
+    """
+    Retrieve all the content unit type ids associated with a given repository.
+
+    :param repo_id: ID of the repo whose unit models should be retrieved.
+    :type  repo_id: str
+
+    :return: A list of content unit type ids
+    :rtype:  list of str
+    """
+    unit_type_ids = model.RepositoryContentUnit.objects(
+        repo_id=repo_id).distinct('unit_type_id')
+    return unit_type_ids
+
+
 def get_repo_unit_models(repo_id):
     """
     Retrieve all the MongoEngine models for units in a given repository. If a unit
@@ -120,8 +135,7 @@ def get_repo_unit_models(repo_id):
     :return: A list of sub-classes of ContentUnit that define a unit model.
     :rtype:  list of pulp.server.db.model.ContentUnit
     """
-    unit_types = model.RepositoryContentUnit.objects(
-        repo_id=repo_id).distinct('unit_type_id')
+    unit_types = get_repo_unit_type_ids(repo_id)
     unit_models = [plugin_api.get_unit_model_by_id(type_id) for type_id in unit_types]
     # Filter any non-MongoEngine content types.
     return filter(None, unit_models)
