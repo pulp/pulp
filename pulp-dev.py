@@ -66,11 +66,14 @@ if sys.version_info >= (2, 6):
         '/usr/lib/pulp/plugins/types',
         '/var/lib/pulp/celery',
         '/var/lib/pulp/nodes/published',
+        '/var/lib/pulp/nodes/published/http',
+        '/var/lib/pulp/nodes/published/https',
         '/var/lib/pulp/published',
         '/var/lib/pulp/static',
         '/var/lib/pulp/uploads',
         '/var/log/pulp',
         '/var/www/pulp',
+        '/var/www/pulp/nodes',
         '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
     ])
 
@@ -96,8 +99,9 @@ if sys.version_info >= (2, 6):
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
         # Pulp Nodes
-        ('/var/lib/pulp/content', '/var/www/pulp/nodes'),
-        ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
+        ('/var/lib/pulp/content', '/var/www/pulp/nodes/content'),
+        ('/var/lib/pulp/nodes/published/http', '/var/www/pulp/nodes/http'),
+        ('/var/lib/pulp/nodes/published/https', '/var/www/pulp/nodes/https'),
         ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
         ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
          '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
