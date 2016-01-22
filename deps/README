@@ -114,13 +114,9 @@ python-mongoengine
 
 Team owner: rbarlow
 
-Pulp uses a vanilla version of mongoengine 0.9.0, except for one
-patch which removes Pillow as a setuptools dependency. Not
-having Pillow installed at runtime will disable the ImageField,
-but mongoengine will operate fully otherwise. At the time I built
-mongoengine 0.9.0, Pillow is not available on EL6.
+Pulp uses a vanilla version of mongoengine 0.10.5.
 
-python-mongoengine requires at least pymongo 2.7.1 at runtime.
+This version python-mongoengine requires pymongo 3.2 for compatibilty.
 
 The spec file was originally adapted from the spec file inside of
 python-mongoengine-0.8.4-3.el7.src.rpm [0].
@@ -143,10 +139,10 @@ python-pymongo
 
 Team owner: rbarlow
 
-Pulp currently uses a vanilla version of pymongo 2.7.2. That is
-the latest Z release for the pymongo 2.7 release stream.
+Pulp currently uses a vanilla version of pymongo 3.2. That is
+the latest release for the upstream pymongo.
 
-python-mongoengine requires at least pymongo 2.7.1 at runtime.
+pymongo 3.2 is compatible with python-mongoengine 0.10.5
 
 The spec file was originally adapted from the spec file inside of
 python-pymongo-2.5.2-7.fc23.src.rpm [0]. Thanks also to dgoodwin
