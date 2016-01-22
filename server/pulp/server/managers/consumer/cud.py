@@ -198,7 +198,7 @@ class ConsumerManager(object):
         :raises MissingResource: if a consumer with given id does not exist
         """
         consumer_coll = Consumer.get_collection()
-        consumer = consumer_coll.find_one({'id': id}, fields=fields)
+        consumer = consumer_coll.find_one({'id': id}, projection=fields)
         if not consumer:
             raise MissingResource(consumer=id)
         return consumer

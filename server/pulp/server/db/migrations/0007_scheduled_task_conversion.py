@@ -32,7 +32,7 @@ def move_scheduled_syncs(importer_collection, schedule_collection):
     """
 
     # iterate over all importers looking for those with scheduled syncs
-    for importer in importer_collection.find(fields=['scheduled_syncs', 'id', 'repo_id']):
+    for importer in importer_collection.find(projection=['scheduled_syncs', 'id', 'repo_id']):
         scheduled_syncs = importer.get('scheduled_syncs')
         if scheduled_syncs is None:
             continue
@@ -60,7 +60,8 @@ def move_scheduled_publishes(distributor_collection, schedule_collection):
     """
 
     # iterate over all distributors looking for those with scheduled publishes
-    for distributor in distributor_collection.find(fields=['scheduled_publishes', 'id', 'repo_id']):
+    for distributor in distributor_collection.find(
+            projection=['scheduled_publishes', 'id', 'repo_id']):
         scheduled_publishes = distributor.get('scheduled_publishes')
         if scheduled_publishes is None:
             continue

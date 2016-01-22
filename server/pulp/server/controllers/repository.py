@@ -514,9 +514,9 @@ def delete(repo_id):
         # to keep the database clean.
         model.Distributor.objects(repo_id=repo_id).delete()
         model.Importer.objects(repo_id=repo_id).delete()
-        RepoSyncResult.get_collection().remove({'repo_id': repo_id}, safe=True)
-        RepoPublishResult.get_collection().remove({'repo_id': repo_id}, safe=True)
-        RepoContentUnit.get_collection().remove({'repo_id': repo_id}, safe=True)
+        RepoSyncResult.get_collection().remove({'repo_id': repo_id})
+        RepoPublishResult.get_collection().remove({'repo_id': repo_id})
+        RepoContentUnit.get_collection().remove({'repo_id': repo_id})
     except Exception, e:
         msg = _('Error updating one or more database collections while removing repo [%(r)s]')
         msg = msg % {'r': repo_id}
@@ -780,7 +780,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         # Do an update instead of a save in case the importer has changed the scratchpad
         model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
-        sync_result_collection.save(sync_result, safe=True)
+        sync_result_collection.save(sync_result)
         # Ensure counts are updated
         rebuild_content_unit_counts(repo_obj)
 
@@ -973,7 +973,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
         result = RepoPublishResult.error_result(
             repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
             publish_start_timestamp, exception_timestamp, e, sys.exc_info()[2])
-        publish_result_coll.save(result, safe=True)
+        publish_result_coll.save(result)
 
         _logger.exception(
             _('Exception caught from plugin during publish for repo [%(r)s]'
@@ -996,7 +996,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     result = RepoPublishResult.expected_result(
         repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
         publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
-    publish_result_coll.save(result, safe=True)
+    publish_result_coll.save(result)
     return result
 
 

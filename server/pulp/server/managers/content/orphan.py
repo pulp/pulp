@@ -103,7 +103,7 @@ class OrphanManager(object):
         content_units_collection = content_types_db.type_units_collection(content_type_id)
         repo_content_units_collection = RepoContentUnit.get_collection()
 
-        for content_unit in content_units_collection.find({}, fields=fields):
+        for content_unit in content_units_collection.find({}, projection=fields):
 
             repo_content_units_cursor = repo_content_units_collection.find(
                 {'unit_id': content_unit['_id']})
@@ -225,7 +225,7 @@ class OrphanManager(object):
                 unit_id=content_unit['_id'],
                 unit_type_id=content_type_id
             ).delete()
-            content_units_collection.remove(content_unit['_id'], safe=False)
+            content_units_collection.remove(content_unit['_id'])
 
             storage_path = content_unit.get('_storage_path', None)
             if storage_path is not None:

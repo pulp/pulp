@@ -240,7 +240,7 @@ class RepoUnitAssociationQueryManager(object):
 
         collection = RepoContentUnit.get_collection()
 
-        cursor = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
+        cursor = collection.find({'repo_id': repo_id}, projection=['unit_type_id'])
 
         return [t for t in cursor.distinct('unit_type_id')]
 
@@ -265,7 +265,7 @@ class RepoUnitAssociationQueryManager(object):
 
         collection = RepoContentUnit.get_collection()
 
-        cursor = collection.find(spec, fields=criteria.association_fields)
+        cursor = collection.find(spec, projection=criteria.association_fields)
 
         if criteria.association_sort:
             cursor.sort(criteria.association_sort)
@@ -376,7 +376,7 @@ class RepoUnitAssociationQueryManager(object):
                 for index, field in enumerate(fields):
                     fields[index] = serializer.translate_field(model, field)
 
-        cursor = collection.find(spec, fields=fields)
+        cursor = collection.find(spec, projection=fields)
 
         sort = criteria.unit_sort
 
