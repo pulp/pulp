@@ -5,7 +5,7 @@
 %define srcname mongoengine
 
 Name:           python-%{srcname}
-Version:        0.9.0
+Version:        0.10.5
 Release:        1%{?dist}
 Summary:        A Python Document-Object Mapper for working with MongoDB
 
@@ -14,21 +14,13 @@ License:        MIT
 URL:            https://github.com/MongoEngine/mongoengine
 Source0:        %{srcname}-%{version}.tar.gz
 
-Patch0:         remove-Pillow-as-test-requirement.patch
-
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-sphinx
-BuildRequires:  python-dateutil
 BuildRequires:  python-pymongo
 BuildRequires:  python-pymongo-gridfs
-BuildRequires:  mongodb-server
-BuildRequires:  mongodb
-BuildRequires:  python-blinker
-BuildRequires:  python-coverage
-BuildRequires:  python-nose
 
 %if 0%{?rhel} == 6
 BuildRequires:  Django14
@@ -36,8 +28,8 @@ BuildRequires:  Django14
 BuildRequires:  python-django
 %endif
 
-Requires:       python-pymongo >= 2.7.1
-Requires:       python-pymongo-gridfs >= 2.7.1
+Requires:       python-pymongo >= 3.2
+Requires:       python-pymongo-gridfs >= 3.2
 Requires:       python-blinker
 
 
@@ -46,7 +38,6 @@ MongoEngine is an ORM-like layer on top of PyMongo.
 
 %prep
 %setup -q -n %{srcname}-%{version}
-%patch0 -p1
 
 
 %build
@@ -70,6 +61,10 @@ rm -rf $RPM_BUILD_ROOT
 # %{python_sitearch}/*
 
 %changelog
+* Fri Jan 22 2016 Ina Panova <ipanova@redhat.com> - 0.10.5-1
+- Updated to mongoengine to 0.10.5
+- Remove patch that is not currently used as check phase is disabled
+
 * Thu Jun 18 2015 Brian Bouterse <bbouters@redhat.com> - 0.9.0-1
 - Updated to mongoengine to 0.9.0
 - Created new patch to remove Pillow as a test requirement
