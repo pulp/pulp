@@ -66,3 +66,32 @@ def get_unit_key_fields_for_type(type_id):
         return tuple(type_def['unit_key'])
 
     raise ValueError
+
+
+def get_model_serializer_for_type(type_id):
+    """
+    Get a ModelSerializer instance associated with a given unit type id
+
+    Serializers are only needed with mongoengine models.
+
+    This will return None for pymongo models or mongoengine models that do not have a serializer.
+
+    :param type_id: unique ID for a unit type
+    :type  type_id: str
+
+    :return:    model serializer instance, if available
+    :rtype:     pulp.server.webservices.views.serializers.ModelSerializer or None
+
+    :raises ValueError: if the type ID is not found
+    """
+    model_class = plugin_api.get_unit_model_by_id(type_id)
+    # mongoengine models have a SERIALIZER attr, which is exposed via the serializer
+    # property as an instance with the associated model
+    if model_class is not None and hasattr(model_class, 'SERIALIZER'):
+        serializer = model_class.SERIALIZER
+        # model serializer methods currently take the model class as an arg
+        # so stash the model class on the serializer for now, and this all
+        # gets made better with https://pulp.plan.io/issues/1555
+        serializer.model = model_class
+        # instantiate the serializer before returning
+        return serializer()

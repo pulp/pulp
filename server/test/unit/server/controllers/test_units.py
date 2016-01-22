@@ -14,6 +14,18 @@ class DemoModel(model.ContentUnit):
     save = MagicMock()
 
 
+class DemoModelSerializer(object):
+    pass
+
+
+class DemoModelWithSerializer(model.ContentUnit):
+    key_field = mongoengine.StringField()
+    unit_key_fields = ('key_field',)
+    unit_type_id = 'demo_model'
+    objects = MagicMock()
+    SERIALIZER = DemoModelSerializer
+
+
 class FindUnitsTests(unittest.TestCase):
 
     @patch('pulp.server.controllers.units.misc.paginate')
@@ -92,3 +104,25 @@ class TestGetUnitKeyFieldsForType(unittest.TestCase):
         mock_type_def.return_value = None
 
         self.assertRaises(ValueError, units_controller.get_unit_key_fields_for_type, 'faketype')
+
+
+@patch('pulp.plugins.loader.api.get_unit_model_by_id', spec_set=True)
+class TestGetModelSerializerForType(unittest.TestCase):
+    def test_returns_serializer(self, mock_get_model):
+        mock_get_model.return_value = DemoModelWithSerializer
+
+        serializer = units_controller.get_model_serializer_for_type('demo_model')
+        self.assertTrue(isinstance(serializer, DemoModelSerializer))
+        self.assertTrue(hasattr(serializer, 'model'))
+
+    def test_returns_none_if_no_serializer(self, mock_get_model):
+        mock_get_model.return_value = DemoModel
+
+        serializer = units_controller.get_model_serializer_for_type('demo_model')
+        self.assertTrue(serializer is None)
+
+    def test_returns_none_if_no_model(self, mock_get_model):
+        mock_get_model.return_value = None
+
+        serializer = units_controller.get_model_serializer_for_type('demo_model')
+        self.assertTrue(serializer is None)
