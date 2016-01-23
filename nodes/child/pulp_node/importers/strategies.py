@@ -286,10 +286,10 @@ class ImporterStrategy(object):
             return
         container = ContentContainer()
         request.summary.sources = container.download(
-                request.cancel_event,
-                request.downloader,
-                download_list,
-                listener)
+            request.cancel_event,
+            request.downloader,
+            download_list,
+            listener)
         request.summary.errors.extend(listener.error_list)
 
     def _url_and_destination(self, base_url, unit):
