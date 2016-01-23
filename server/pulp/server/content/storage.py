@@ -97,8 +97,8 @@ class FileStorage(ContentStorage):
         return os.path.join(
             storage_dir,
             unit.type_id,
-            unit.id[0:4],
-            unit.id)
+            unit.unit_id[0:4],
+            unit.unit_id)
 
     def put(self, unit, path, location=None):
         """

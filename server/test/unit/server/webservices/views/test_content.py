@@ -351,6 +351,47 @@ class TestContentUnitSearch(unittest.TestCase):
         self.assertEqual(serialized_results, [mock_process.return_value, mock_process.return_value])
         mock_add_repo.assert_called_once_with([mock_process(), mock_process()], 'mock_type')
 
+    @mock.patch('pulp.server.webservices.views.content.units_controller')
+    @mock.patch('pulp.server.webservices.views.content.ContentUnitSearch._add_repo_memberships')
+    @mock.patch('pulp.server.webservices.views.content._process_content_unit')
+    def test_get_results_serializer_no_filters(self, mock_process, mock_add_repo, mock_ctrl):
+        """
+        Get results, ensure that if the query does not have filters, they are not translated.
+        """
+        m_serializer = mock_ctrl.get_model_serializer_for_type.return_value
+        content_search = ContentUnitSearch()
+        mock_query = {}
+        mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
+        serialized_results = content_search.get_results(
+            mock_query, mock_search, {'include_repos': True}, type_id='mock_type'
+        )
+        self.assertEqual(m_serializer.translate_filters.call_count, 0)
+        mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
+                                       mock.call('result_2', 'mock_type')])
+        self.assertEqual(serialized_results, [mock_process.return_value, mock_process.return_value])
+        mock_add_repo.assert_called_once_with([mock_process(), mock_process()], 'mock_type')
+
+    @mock.patch('pulp.server.webservices.views.content.units_controller')
+    @mock.patch('pulp.server.webservices.views.content.ContentUnitSearch._add_repo_memberships')
+    @mock.patch('pulp.server.webservices.views.content._process_content_unit')
+    def test_get_results_serializer_filters(self, mock_process, mock_add_repo, mock_ctrl):
+        """
+        Get results, ensure that filters are translated.
+        """
+        m_serial = mock_ctrl.get_model_serializer_for_type.return_value
+        content_search = ContentUnitSearch()
+        mock_query = {'filters': {'mock': 'filters'}}
+        mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
+        serialized_results = content_search.get_results(
+            mock_query, mock_search, {'include_repos': True}, type_id='mock_type'
+        )
+        m_serial.translate_filters.assert_called_once_with(m_serial.model, {'mock': 'filters'})
+        self.assertEqual(m_serial.translate_filters.call_count, 1)
+        mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
+                                       mock.call('result_2', 'mock_type')])
+        self.assertEqual(serialized_results, [mock_process.return_value, mock_process.return_value])
+        mock_add_repo.assert_called_once_with([mock_process(), mock_process()], 'mock_type')
+
 
 class TestContentUnitResourceView(unittest.TestCase):
     """

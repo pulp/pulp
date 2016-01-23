@@ -1,6 +1,8 @@
 """
 Module for content serialization.
 """
+from bson import json_util
+import json
 import logging
 
 from pulp.common import dateutils
@@ -60,6 +62,8 @@ def content_unit_obj(content_unit):
     serial = db.scrub_mongo_fields(content_unit)
     remap_fields_with_serializer(content_unit)
     last_updated = content_unit.get('_last_updated')
+    content_unit['id'] = str(content_unit['_id'])
+    content_unit['_id'] = json.loads(json_util.dumps(content_unit['_id']))
     if last_updated:
         content_unit['_last_updated'] = dateutils.format_iso8601_utc_timestamp(last_updated)
     return serial
