@@ -502,7 +502,7 @@ class ContentUnit(AutoRetryDocument):
     :type _storage_path: mongoengine.StringField
     """
 
-    id = StringField(primary_key=True, default=lambda: str(uuid.uuid4()))
+    unit_id = StringField(default=lambda: str(uuid.uuid4()))
     pulp_user_metadata = DictField()
     _last_updated = IntField(required=True)
     _storage_path = StringField()
