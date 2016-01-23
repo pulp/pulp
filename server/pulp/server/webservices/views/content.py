@@ -288,7 +288,7 @@ class ContentUnitSearch(search.SearchView):
 
         type_id = kwargs['type_id']
         serializer = units_controller.get_model_serializer_for_type(type_id)
-        if serializer:
+        if serializer and query.get('filters') is not None:
             # if we have a model serializer, translate the filter for this content unit type
             query['filters'] = serializer.translate_filters(serializer.model, query['filters'])
         units = list(search_method(type_id, query))
