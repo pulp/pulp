@@ -905,7 +905,7 @@ class ImporterTest(PluginTestBase):
             unit['age'] = 84  # this will be updated back to 42.
             unit['_last_updated'] -= 1
             unit['_storage_path'] = None
-            collection.update({'N': 0}, unit, safe=True)
+            collection.update({'N': 0}, unit)
             # N=1
             unit = collection.find_one({'N': 1})
             unit['age'] = 85   # this will be updated back to 42.

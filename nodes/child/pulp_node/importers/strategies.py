@@ -285,7 +285,6 @@ class ImporterStrategy(object):
             return
         container = ContentContainer()
         request.summary.sources = container.download(
-            request.cancel_event,
             request.downloader,
             download_list,
             listener)
