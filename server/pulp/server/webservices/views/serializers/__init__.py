@@ -1,6 +1,6 @@
 import copy
 
-from bson.objectid import ObjectId
+from bson.objectid import InvalidId, ObjectId
 from django.core.urlresolvers import reverse
 
 from pulp.server import exceptions
@@ -222,7 +222,10 @@ class ModelSerializer(BaseSerializer):
                     translated[key] = ObjectId(value)
                 # value is a list of string versions of ObjectIds
                 elif isinstance(value, list):
-                    translated[key] = [ObjectId(str_id) for str_id in value]
+                    try:
+                        translated[key] = [ObjectId(str_id) for str_id in value]
+                    except InvalidId:
+                        translated[key] = value
                 else:
                     raise exceptions.InvalidValue(err_msg)
             return translated
