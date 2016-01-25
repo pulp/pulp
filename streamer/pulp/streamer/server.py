@@ -6,6 +6,7 @@ import logging
 from mongoengine import DoesNotExist, NotUniqueError
 from nectar import listener as nectar_listener
 from nectar import request as nectar_request
+import requests
 from twisted.internet import reactor
 from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
@@ -119,6 +120,8 @@ class Streamer(resource.Resource):
         """
         resource.Resource.__init__(self)
         self.config = config
+        # Used to pool TCP connections for upstream requests.
+        self.session = requests.Session()
 
     def render_GET(self, request):
         """
@@ -187,6 +190,7 @@ class Streamer(resource.Resource):
         download_request = nectar_request.DownloadRequest(catalog_entry.url, responder, data=data)
         downloader = importer.get_downloader(config, catalog_entry.url,
                                              **catalog_entry.data)
+        downloader.session = self.session
         downloader.event_listener = StreamerListener(request, self.config)
         downloader.download_one(download_request, events=True)
         downloader.config.finalize()
