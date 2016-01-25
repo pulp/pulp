@@ -188,11 +188,12 @@ class ModelSerializer(BaseSerializer):
         """
         translated_dict = {}
         for key, value in filters.iteritems():
-            if key == '_id':
-                translated_dict['_id'] = self._translate__id(value)
-            elif key in self._remapped_fields.itervalues():
-                new_field = self._translate(model, key)
-                translated_dict[new_field] = value
+            if key in self._remapped_fields.itervalues():
+                if key == '_id':
+                    translated_dict['_id'] = self._translate__id(value)
+                else:
+                    new_field = self._translate(model, key)
+                    translated_dict[new_field] = value
             else:
                 translated_dict[key] = value
         return translated_dict

@@ -323,7 +323,8 @@ class TestModelSerializer(unittest.TestCase):
         """
 
         class FakeSerializer(serializers.ModelSerializer):
-            pass
+            class Meta:
+                remapped_fields = {'not_id': '_id'}
 
         mock_model = mock.MagicMock()
         filters = {'_id': 'translate me!'}
