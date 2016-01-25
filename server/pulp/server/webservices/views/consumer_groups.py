@@ -382,7 +382,6 @@ def verify_group_resources(group_id, repo_id, distributor_id):
     """
     missing_resources = {}
     group_manager = factory.consumer_group_query_manager()
-    distributor_manager = factory.repo_distributor_manager()
     try:
         group_manager.get_group(group_id)
     except pulp_exceptions.MissingResource:
@@ -391,7 +390,7 @@ def verify_group_resources(group_id, repo_id, distributor_id):
     if repo is None:
         missing_resources['repo_id'] = repo_id
     try:
-        distributor_manager.get_distributor(repo_id, distributor_id)
+        model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
     except pulp_exceptions.MissingResource:
         missing_resources['distributor_id'] = distributor_id
     return missing_resources
