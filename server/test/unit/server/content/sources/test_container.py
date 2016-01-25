@@ -409,12 +409,14 @@ class TestSerial(TestCase):
         downloader.download_one.return_value = report
         source = Mock()
         source.get_downloader.return_value = downloader
+        primary = Mock()
 
         # test
-        Serial._download(url, destination, source)
+        serial = Serial(primary, None, None, None)
+        serial._download(url, destination, source)
 
         # validation
-        source.get_downloader.assert_called_once_with()
+        source.get_downloader.assert_called_once_with(primary.session)
         request.assert_called_once_with(url, destination)
         downloader.download_one.assert_called_once_with(request.return_value, events=True)
 
@@ -427,12 +429,14 @@ class TestSerial(TestCase):
         downloader.download_one.return_value = report
         source = Mock()
         source.get_downloader.return_value = downloader
+        primary = Mock()
 
         # test
-        self.assertRaises(DownloadFailed, Serial._download, url, destination, source)
+        serial = Serial(primary, None, None, None)
+        self.assertRaises(DownloadFailed, serial._download, url, destination, source)
 
         # validation
-        source.get_downloader.assert_called_once_with()
+        source.get_downloader.assert_called_once_with(primary.session)
         request.assert_called_once_with(url, destination)
         downloader.download_one.assert_called_once_with(request.return_value, events=True)
 
@@ -541,13 +545,14 @@ class TestThreaded(TestCase):
         fake_source = Mock()
         fake_source.id = 'fake-id'
         fake_queue().downloader = Mock()
+        fake_primary = Mock()
 
         # test
-        batch = Threaded(None, None, None, None)
+        batch = Threaded(fake_primary, None, None, None)
         queue = batch._add_queue(fake_source)
 
         # validation
-        fake_queue.assert_called_with(fake_source)
+        fake_queue.assert_called_with(fake_source, fake_primary.session)
         fake_listener.assert_called_with(batch)
         fake_queue().start.assert_called_with()
         self.assertEqual(fake_queue().downloader.event_listener, fake_listener())
@@ -654,7 +659,7 @@ class TestRequestQueue(TestCase):
         source.max_concurrent = 10
 
         # test
-        queue = RequestQueue(source)
+        queue = RequestQueue(source, Mock())
         queue.setDaemon = Mock()
 
         # validation
@@ -669,7 +674,7 @@ class TestRequestQueue(TestCase):
     def test_put(self, fake_queue):
         # test
         item = Mock()
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.put(item)
 
         # validation
@@ -680,7 +685,7 @@ class TestRequestQueue(TestCase):
     def test_put_halted(self, fake_queue):
         # test
         item = Mock()
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.halt()
         queue.put(item)
 
@@ -694,7 +699,7 @@ class TestRequestQueue(TestCase):
 
         # test
         item = Mock()
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.put(item)
 
         # validation
@@ -706,7 +711,7 @@ class TestRequestQueue(TestCase):
         fake_queue().get.return_value = 123
 
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         item = queue.get()
 
         # validation
@@ -717,7 +722,7 @@ class TestRequestQueue(TestCase):
     @patch(MODULE + '.Queue')
     def test_get_halted(self, fake_queue):
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.halt()
         item = queue.get()
 
@@ -731,7 +736,7 @@ class TestRequestQueue(TestCase):
         fake_queue().get.side_effect = SideEffect([Empty(), Empty(), 123])
 
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         item = queue.get()
 
         # validation
@@ -743,7 +748,7 @@ class TestRequestQueue(TestCase):
     @patch(MODULE + '.NectarFeed')
     def test_run(self, fake_feed):
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.run()
 
         # validation
@@ -755,7 +760,7 @@ class TestRequestQueue(TestCase):
     @patch(MODULE + '.NectarFeed')
     def test_run_with_exception(self, fake_feed, fake_drain):
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.downloader.download.side_effect = ValueError()
         queue.run()
 
@@ -773,7 +778,7 @@ class TestRequestQueue(TestCase):
         fake_from.side_effect = queued
 
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.drain()
 
         # validation
@@ -789,7 +794,7 @@ class TestRequestQueue(TestCase):
     @patch(MODULE + '.Queue', Mock())
     def test_halt(self):
         # test
-        queue = RequestQueue(Mock())
+        queue = RequestQueue(Mock(), Mock())
         queue.halt()
 
         # validation
