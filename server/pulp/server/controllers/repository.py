@@ -994,7 +994,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
               % {'r': repo_obj.repo_id}))
         raise
 
-    publish_end_timestamp = _now_timestamp()
+    publish_end_timestamp = _now_timestamp(string=False)
 
     # Reload the distributor in case the scratchpad is set by the plugin
     dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id, distributor_id=dist_id)
@@ -1046,7 +1046,7 @@ def publish_history(start_date, end_date, repo_id, distributor_id):
     return RepoPublishResult.get_collection().find(search_params)
 
 
-def _now_timestamp():
+def _now_timestamp(string=True):
     """
     Return a current timestamp in iso8601 format.
 
@@ -1054,8 +1054,10 @@ def _now_timestamp():
     :rtype:  str
     """
     now = dateutils.now_utc_datetime_with_tzinfo()
-    now_in_iso_format = dateutils.format_iso8601_datetime(now)
-    return now_in_iso_format
+    if string:
+        return dateutils.format_iso8601_datetime(now)
+    else:
+        return now
 
 
 def queue_download_deferred():

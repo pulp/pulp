@@ -61,3 +61,8 @@ class TestUTCDateTimeField(unittest.TestCase):
         self.assertEqual(model.timestamp.hour, 18)
         self.assertEqual(model.timestamp.tzinfo.utcoffset(model.timestamp), timedelta(0))
         self.assertEqual(timestamp, model.timestamp)
+
+    def test_string_raises_error(self):
+        time_field = fields.UTCDateTimeField()
+        timestamp = "2016-01-24T20:46:25Z"
+        self.assertRaises(mongoengine.errors.ValidationError, time_field.validate, timestamp)

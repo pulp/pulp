@@ -50,12 +50,22 @@ class RepoPublishConduitTests(base.PulpServerTests):
         Tests retrieving the last publish time in both the unpublish and previously published cases.
         """
 
+        class GMT5(datetime.tzinfo):
+            def utcoffset(self, dt):
+                return datetime.timedelta(hours=5, minutes=30)
+
+            def tzname(self, dt):
+                return "GMT +5"
+
+            def dst(self, dt):
+                return datetime.timedelta(0)
+
         # Test - Unpublished
         unpublished = self.conduit.last_publish()
         self.assertTrue(unpublished is None)
 
         # Setup - Previous publish
-        last_publish = datetime.datetime(2015, 4, 29, 20, 23, 56, 0)
+        last_publish = datetime.datetime(2015, 4, 29, 20, 23, 56, 0, tzinfo=GMT5())
         repo_dist = model.Distributor.objects.get_or_404(repo_id='repo-1')
         repo_dist['last_publish'] = last_publish
         repo_dist.save()
@@ -65,7 +75,7 @@ class RepoPublishConduitTests(base.PulpServerTests):
         self.assertTrue(isinstance(found, datetime.datetime))  # check returned format
 
         self.assertEqual(found.tzinfo, dateutils.utc_tz())
-        self.assertEqual(repo_dist['last_publish'], found.replace(tzinfo=None))
+        self.assertEqual(repo_dist['last_publish'], found)
 
     @mock.patch('pulp.plugins.conduits.repo_publish.model.Distributor.objects')
     def test_last_publish_with_error(self, m_dist_qs):
