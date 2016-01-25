@@ -5,8 +5,10 @@ Each field class is inherited from one or more mongoengine fields
 and it provides it's own validation code.
 """
 
+from datetime import datetime
 from isodate import ISO8601Error
 from mongoengine import StringField, DateTimeField
+from mongoengine.errors import ValidationError
 
 from pulp.common import dateutils
 
@@ -48,3 +50,18 @@ class UTCDateTimeField(DateTimeField):
         """
         ret = super(UTCDateTimeField, self).to_python(value)
         return dateutils.ensure_tz(ret)
+
+    def validate(self, value, **kwargs):
+        """
+        Ensures that the value is a datetime.datetime object.
+
+        :param value: The value to validate for this field
+        :type value: datetime.datetime
+
+        :raises: mongoengine.errors.ValidationError
+        """
+
+        if value and not isinstance(value, datetime):
+            raise ValidationError('Value must be a datetime object.', field_name=self.name)
+
+        super(UTCDateTimeField, self).validate(value)
