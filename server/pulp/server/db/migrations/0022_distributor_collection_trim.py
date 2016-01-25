@@ -15,6 +15,6 @@ def migrate(*args, **kwargs):
     """
     db = connection.get_database()
     collection = db['repo_distributors']
+    collection.drop_index("repo_id_-1_id_-1")
     collection.update({}, {"$rename": {"id": "distributor_id"}}, multi=True)
     collection.update({}, {"$unset": {"scheduled_publishes": ""}}, multi=True)
-    collection.drop_index("repo_id_-1_id_-1")
