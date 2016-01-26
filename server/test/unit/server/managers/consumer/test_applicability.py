@@ -8,6 +8,7 @@ from pulp.server.db import model
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model import Repository
 from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
@@ -321,6 +322,131 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         mock_repo.content_unit_counts = {'mock_type_1': 4, 'mock_type_2': 8}
         content_types = self.old_get_existing('repo')
         self.assertListEqual(content_types, ['mock_type_2', 'mock_type_1'])
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regen_applicability_for_repos_with_different_consumer_profiles(self,
+                                                                                   mock_repo_qs):
+        # Setup
+        self.populate_consumers_different_profiles()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 4)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['applicability'], expected_applicability)
+            self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regenerate_applicability_for_repos_with_same_consumer_profiles(self,
+                                                                                   mock_repo_qs):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regenerate_applicability_for_empty_repo_criteria(self, mock_repo_qs):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        manager.regenerate_applicability_for_repos(Criteria())
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 2)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', u'errata-2']}
+        for applicability in applicability_list:
+            self.assertEqual(applicability['profile'], self.PROFILE1)
+            self.assertEqual(applicability['applicability'], expected_applicability)
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regenerate_applicability_for_repo_criteria_no_bindings(self, mock_repo_qs):
+        # Setup
+        self.populate_repos()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(applicability_list, [])
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regenerate_applicability_for_repos_profiler_notfound(self, mock_repo_qs):
+        # Setup
+        self.populate_consumers()
+        self.populate_bindings()
+        profiler, cfg = plugins.get_profiler_by_type('rpm')
+        profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 0)
+
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_linear_regenerate_applicability_for_repos_consumer_profile_updated(self, mock_repo_qs):
+        # Setup
+        factory.consumer_manager().register(self.CONSUMER_IDS[0])
+        factory.consumer_profile_manager().create(self.CONSUMER_IDS[0], 'rpm', self.PROFILE1)
+        dist_controller.add_distributor(self.REPO_IDS[0],
+                                        'mock-distributor',
+                                        {},
+                                        True,
+                                        self.YUM_DISTRIBUTOR_ID)
+        factory.consumer_bind_manager().bind(self.CONSUMER_IDS[0],
+                                             self.REPO_IDS[0],
+                                             self.YUM_DISTRIBUTOR_ID,
+                                             False,
+                                             {})
+
+        # Request applicability generation for the consumer
+        applicability_manager = factory.applicability_regeneration_manager()
+        applicability_manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Update the consumer profile
+        profile_manager = factory.consumer_profile_manager()
+        profile_manager.update(self.CONSUMER_IDS[0], 'rpm', {'name': 'zsh', 'version': '1.0'})
+        # Request applicability regeneration for the repo and assert that no exception is raised
+        applicability_manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 1)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', 'errata-2']}
+        self.assertEqual(applicability_list[0]['profile'], self.PROFILE1)
+        self.assertEqual(applicability_list[0]['applicability'], expected_applicability)
+
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    @mock.patch('pulp.server.db.model.consumer.RepoProfileApplicability.get_collection')
+    def test_linear_regen_applicability_for_repos_batch_size(self, mock_get_collection,
+                                                             mock_objects):
+
+        factory.initialize()
+        applicability_manager = ApplicabilityRegenerationManager()
+        repo_criteria = {'filters': None, 'sort': None, 'limit': None,
+                         'skip': None, 'fields': None}
+        mock_objects.find_by_criteria.return_value = [Repository(repo_id='fake-repo')]
+
+        applicability_manager.regenerate_applicability_for_repos(repo_criteria)
+
+        # validate that batch size of 5 is used
+        mock_get_collection.return_value.find.return_value.batch_size.assert_called_with(5)
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):

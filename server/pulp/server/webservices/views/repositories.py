@@ -12,7 +12,8 @@ from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
+from pulp.server.managers.consumer.applicability import (ApplicabilityRegenerationManager,
+                                                         regenerate_applicability_for_repos)
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.webservices.views import search, serializers
@@ -889,6 +890,8 @@ class ContentApplicabilityRegenerationView(View):
                 return self
 
         repo_criteria_body = request.body_as_json.get('repo_criteria', None)
+        parallel = request.body_as_json.get('parallel', False)
+
         if repo_criteria_body is None:
             raise exceptions.MissingValue('repo_criteria')
         try:
@@ -898,13 +901,22 @@ class ContentApplicabilityRegenerationView(View):
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
-        async_result = ApplicabilityRegenerationManager.queue_regenerate_applicability_for_repos(
-            repo_criteria.as_dict())
-        ret = GroupCallReport()
-        ret['group_id'] = str(async_result)
-        ret['_href'] = reverse('task_group', kwargs={'group_id': str(async_result)})
+        if parallel:
+            if type(parallel) is not bool:
+                raise exceptions.InvalidValue('parallel')
 
-        raise exceptions.OperationPostponed(ret)
+            async_result = ApplicabilityRegenerationManager.\
+                queue_regenerate_applicability_for_repos(repo_criteria.as_dict())
+            ret = GroupCallReport()
+            ret['group_id'] = str(async_result)
+            ret['_href'] = reverse('task_group', kwargs={'group_id': str(async_result)})
+            raise exceptions.OperationPostponed(ret)
+
+        regeneration_tag = tags.action_tag('content_applicability_regeneration')
+        async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE, tags.RESOURCE_ANY_ID,
+            (repo_criteria.as_dict(),), tags=[regeneration_tag])
+        raise exceptions.OperationPostponed(async_result)
 
 
 class HistoryView(View):

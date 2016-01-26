@@ -59,11 +59,21 @@ to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
 the `Query Content Applicability` API described below.
 
-The API will return a :ref:`group_call_report`. Users can check whether the applicability
-generation is completed using group id in the :ref:`group_call_report`. The `_href` in the
-:ref:`group_call_report` will point to the root of `task_group` resource. However, this API
-endpoint currently returns 404 in all cases. You can append '/state-summary/' to the URL and
-perform a GET request to retrieve a :ref:`task_group_summary`.
+There are two ways to regenerate applicability for consumers bound to a set of repositories. The
+computation can be done linearly or in parallel. The default is linear, but an optional `parallel`
+argument can enable `parallel` calculation.
+
+When computing applicability linearly, the API will return a :ref:`call_report` when parallel is
+False or not present. In this case, users can check whether the applicability generation is
+completed using task id in the :ref:`call_report`. You can run a single applicability generation
+task at a time. If an applicability generation task is running, any new applicability generation
+tasks requested are queued and postponed until the current task is completed.
+
+When computing applicability in `parallel`, the API will return a :ref:`group_call_report`. Users
+can check whether the applicability generation is completed using `group id` field in the
+:ref:`group_call_report`. The `_href` in the :ref:`group_call_report` will point to the root of
+`task_group` resource which currently returns 404 in all cases. Append '/state-summary/' to the
+URL and perform a GET request to retrieve the :ref:`task_group_summary`.
 
 | :method:`post`
 | :path:`/v2/repositories/actions/content/regenerate_applicability/`
@@ -71,19 +81,24 @@ perform a GET request to retrieve a :ref:`task_group_summary`.
 | :param_list:`post`
 
 * :param:`repo_criteria,object,a repository criteria object defined in` :ref:`search_criteria`
+* :param:`parallel,boolean,a boolean to specify whether the task should be executed in parallel as`
+   `a task group. When False, calculation is performed as a single long running task. Defaults to`
+   `False. (optional)`
 
 | :response_list:`_`
 
 * :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return: a :ref:`group_call_report` representing the current state of the applicability regeneration
+| :return:`When ``parallel`` is ``False`` or not present a :ref:`call_report`
+| :return:`When ``parallel`` is ``True`` a :ref:`group_call_report` representing the current state of the applicability regeneration
 
 :sample_request:`_` ::
 
  { 
   "repo_criteria": {
-   "filters": {"id": {"$in": ["test-repo", "test-errata"]}}
+   "filters": {"id": {"$in": ["test-repo", "test-errata"]}},
+   "parallel": true
   }
  }
 

@@ -1425,7 +1425,7 @@ class TestContentApplicabilityRegenerationView(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({'repo_criteria': {}})
+        mock_request.body = json.dumps({'repo_criteria': {}, 'parallel': True})
         content_app_regen = ContentApplicabilityRegenerationView()
         try:
             content_app_regen.post(mock_request)
