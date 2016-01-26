@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.24
-Release:        10.pulp%{?dist}
+Release:        11.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -23,6 +23,7 @@ Patch0:         1212200.patch
 Patch1:         qpid_fixes.patch
 Patch2:         1168.patch
 Patch3:         1245.patch
+Patch4:         1564.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -122,6 +123,7 @@ This subpackage is for python3
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -178,8 +180,24 @@ popd
 %endif # with_python3
 
 %changelog
-* Tue Nov 24 2015 Brian Bouterse <bbouters@redhat.com> 3.0.24-10.pulp
-- rebuild for 3.0.24-10
+* Mon Jan 25 2016 Brian Bouterse <bbouters@redhat.com> 3.0.24-11.pulp
+- Upgrades kombu to 3.0.24-11 (bbouters@redhat.com)
+- Adds upstream equivalent patch for kombu/celery#563
+- Adds fc23 to dist_list.txt config and removes fc21. (dkliban@redhat.com)
+- Upgrades kombu to 3.0.24-10 (bbouters@redhat.com)
+- Patches downstream Kombu with login_method support (bbouters@redhat.com)
+- Adjusts Qpid broker string and includes Kombu SASL fixes.
+  (bbouters@redhat.com)
+- Remove FC20 from dist_lists.txt (dkliban@redhat.com)
+- Added fc22 to dist_list.txt for pulp and dependencies (dkliban@redhat.com)
+- Removed F22 from dist_list (dkliban@redhat.com)
+- Fixes 917 and 1006 by stopping an thread that should have exited
+  (bbouters@redhat.com)
+- Added Fedora 22 to the dist list (dkliban@redhat.com)
+- Fixes a file descriptor leak in python-kombu (bbouters@redhat.com)
+- Kombu SASL connection, connection closing, and python dep fixes
+  (bbouters@redhat.com)
+
 * Tue Feb 03 2015 Brian Bouterse 3.0.24-5.pulp
 - 1174361 - Revert patch introduced with b0f2319. It is not needed.
   (bbouters@redhat.com)

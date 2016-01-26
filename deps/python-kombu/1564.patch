@@ -1,0 +1,38 @@
+--- /kombu/transport/qpid.py	2016-01-22 11:55:33.670000000 +0000
++++ /kombu/transport/qpid.py	2016-01-22 12:01:10.283000000 +0000
+@@ -89,6 +89,7 @@
+ import sys
+ import threading
+ import time
++import uuid
+ 
+ from itertools import count
+ from gettext import gettext as _
+@@ -1136,7 +1137,7 @@
+         props = message['properties']
+         props.update(
+             body_encoding=body_encoding,
+-            delivery_tag=next(self._delivery_tags),
++            delivery_tag=uuid.uuid4(),
+         )
+         props['delivery_info'].update(
+             exchange=exchange,
+--- /kombu/tests/transport/test_qpid.py	2016-01-22 11:55:33.669000000 +0000
++++ /kombu/tests/transport/test_qpid.py	2016-01-22 12:05:42.468000000 +0000
+@@ -6,6 +6,7 @@
+ import sys
+ import threading
+ import time
++import uuid
+ 
+ from collections import Callable
+ from itertools import count
+@@ -1364,7 +1365,7 @@
+             mock_message['properties']['body_encoding'], mock_body_encoding,
+         )
+         self.assertIsInstance(
+-            mock_message['properties']['delivery_tag'], int,
++            mock_message['properties']['delivery_tag'], uuid.UUID,
+         )
+         self.assertIs(
+             mock_message['properties']['delivery_info']['exchange'],
