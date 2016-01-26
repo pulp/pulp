@@ -89,7 +89,7 @@ class Request(object):
         :param primary: The primary content source.
         :type primary: ContentSource
         :param alternates: A list of alternative sources.
-        :type list of: ContentSource
+        :type alternates: dict
         """
         resolved = [(primary, self.url)]
         catalog = managers.content_catalog_manager()
@@ -276,17 +276,22 @@ class ContentSource(object):
         plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
         return plugin
 
-    def get_downloader(self):
+    def get_downloader(self, session=None):
         """
         Get a fully configured nectar downloader.
         The returned downloader is configured using properties defined
         in the descriptor.
+        :param session: An optional http session.
+        :type session: requests.Session
         :return: A nectar downloader.
         :rtype: nectar.downloaders.Downloader.
         """
         conduit = self.get_conduit()
         plugin = self.get_cataloger()
-        return plugin.get_downloader(conduit, self.descriptor, self.base_url)
+        downloader = plugin.get_downloader(conduit, self.descriptor, self.base_url)
+        if session:
+            downloader.session = session
+        return downloader
 
     def refresh(self):
         """
@@ -356,6 +361,16 @@ class PrimarySource(ContentSource):
         self._downloader = downloader
 
     @property
+    def session(self):
+        """
+        The optional http session associated with the downloader.
+        Not all downloaders have session attributes.
+        :return: The http session.
+        :rtype: requests.Session
+        """
+        return getattr(self._downloader, 'session', None)
+
+    @property
     def priority(self):
         """
         Must be last.
@@ -371,11 +386,13 @@ class PrimarySource(ContentSource):
         """
         return int(DEFAULT[constants.MAX_CONCURRENT])
 
-    def get_downloader(self):
+    def get_downloader(self, session=None):
         """
         Get the wrapped downloader.
         :return: The wrapped (primary) downloader.
         :rtype: nectar.downloaders.base.Downloader.
+        :param session: An optional http session.
+        :type session: requests.Session
         """
         return self._downloader
 

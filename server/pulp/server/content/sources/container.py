@@ -175,9 +175,9 @@ class Batch(object):
     """
     Provides batch processing of a collection of content download requests.
 
-    :ivar primary: A primary nectar downloader.  Used to download the
-        requested content unit when it cannot be achieved using alternate content sources.
-    :type primary: nectar.downloaders.base.Downloader
+    :ivar primary: The *primary* content source used when requested content
+        download requests cannot be satisfied using alternate content sources.
+    :type primary: PrimarySource
     :ivar container: A content container.
     :type container: ContentContainer
     :ivar requests: An iterable of: pulp.server.content.sources.model.Request.
@@ -270,8 +270,7 @@ class Serial(Batch):
             event(self.listener)
         return report
 
-    @staticmethod
-    def _download(url, destination, source):
+    def _download(self, url, destination, source):
         """
         Download the URL using the source.
 
@@ -285,8 +284,8 @@ class Serial(Batch):
         :return: The result: (succeeded, error-message)
         :rtype: tuple
         """
-        downloader = source.get_downloader()
         request = DownloadRequest(url, destination)
+        downloader = source.get_downloader(self.primary.session)
         report = downloader.download_one(request, events=True)
         if report.state == DOWNLOAD_SUCCEEDED:
             # All good
@@ -403,7 +402,7 @@ class Threaded(Batch):
         :return: The added queue.
         :rtype: RequestQueue
         """
-        queue = RequestQueue(source)
+        queue = RequestQueue(source, self.primary.session)
         queue.downloader.event_listener = NectarListener(self)
         self.queues[source.id] = queue
         queue.start()
@@ -466,15 +465,17 @@ class RequestQueue(Thread):
     :type downloader: nectar.downloaders.base.Downloader
     """
 
-    def __init__(self, source):
+    def __init__(self, source, session):
         """
         :param source: A content source.
         :type source: ContentSource
+        :param session: An http session.
+        :type session: requests.Session
         """
         super(RequestQueue, self).__init__(name=source.id)
         self._halted = False
         self.queue = Queue(source.max_concurrent)
-        self.downloader = source.get_downloader()
+        self.downloader = source.get_downloader(session)
         self.setDaemon(True)
 
     def put(self, item):

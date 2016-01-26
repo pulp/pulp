@@ -350,7 +350,7 @@ class TestContentSource(TestCase):
 
         self.assertEqual(urls, expected)
 
-    def test_conduit(self):
+    def test_get_conduit(self):
         source = ContentSource('s-1', {constants.EXPIRES: '1h'})
 
         conduit = source.get_conduit()
@@ -360,7 +360,7 @@ class TestContentSource(TestCase):
         self.assertTrue(isinstance(conduit, CatalogerConduit))
 
     @patch('pulp.server.content.sources.model.plugins')
-    def test_cataloger(self, fake_plugins):
+    def test_get_cataloger(self, fake_plugins):
         plugin = Mock()
         fake_plugins.get_cataloger_by_id.return_value = plugin, {}
 
@@ -374,8 +374,9 @@ class TestContentSource(TestCase):
         fake_plugins.get_cataloger_by_id.assert_called_with(1234)
         self.assertEqual(plugin, cataloger)
 
-    def test_downloader(self):
+    def test_get_downloader(self):
         url = 'http://xyz.com'
+        session = Mock()
         fake_conduit = Mock()
         fake_cataloger = Mock()
         fake_downloader = Mock()
@@ -386,12 +387,13 @@ class TestContentSource(TestCase):
         source.get_cataloger = Mock(return_value=fake_cataloger)
 
         # test
-        downloader = source.get_downloader()
+        downloader = source.get_downloader(session)
 
         # validation
         source.get_cataloger.assert_called_with()
         fake_cataloger.get_downloader.assert_called_with(fake_conduit, source.descriptor, url)
         self.assertEqual(downloader, fake_downloader)
+        self.assertEqual(downloader.session, session)
 
     @patch('pulp.server.content.sources.model.ContentSource.urls')
     def test_refresh(self, fake_urls):
@@ -522,6 +524,15 @@ class TestPrimarySource(TestCase):
         downloader = Mock()
         primary = PrimarySource(downloader)
         self.assertEqual(primary.get_downloader(), downloader)
+
+    def test_session_no_attribute(self):
+        primary = PrimarySource(None)
+        self.assertEqual(primary.session, None)
+
+    def test_session_has_attribute(self):
+        downloader = Mock()
+        primary = PrimarySource(downloader)
+        self.assertEqual(primary.session, downloader.session)
 
     def test_refresh(self):
         # just added for coverage
