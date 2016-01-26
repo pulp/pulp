@@ -18,6 +18,24 @@ from pulp.plugins.loader.exceptions import PluginNotFound
 
 logger = logging.getLogger(__name__)
 
+# These HTTP/1.1 headers are defined as being hop-by-hop and should
+# not be passed back to clients. All other headers defined by
+# HTTP/1.1 are end-to-end headers and should be passed back to the
+# client. See RFC 2068, section 13.5.1 for more information.
+#
+# Headers are lowercase since `lower` is called in the nectar-provided
+# headers when checking to see if they're in this list. Twisted also
+# returns all its headers with `lower` called on them, so this is for
+# consistency reasons only.
+HOP_BY_HOP_HEADERS = [
+    'connection',
+    'keep-alive',
+    'public',
+    'proxy-authenticate',
+    'transfer-encoding',
+    'upgrade',
+]
+
 
 class StreamerListener(nectar_listener.DownloadEventListener):
     """
@@ -44,19 +62,21 @@ class StreamerListener(nectar_listener.DownloadEventListener):
 
     def download_headers(self, report):
         """
-        Modify incoming headers to include the cache timeout value from the Pulp
-        server configuration. This is used by Squid to determine what content
-        can be removed from its cache when its reaper runs.
+        Forward a subset of the HTTP headers received from the upstream server as
+        well as set the cache-control header to the value specified by the streamer
+        configuration file. This header is used by clients to determine how to
+        cache the response.
 
         :param report: The download report for this request.
         :type  report: nectar.report.DownloadReport
         """
         for header_key, header_value in report.headers.items():
-            self.request.setHeader(header_key, header_value)
+            if header_key.lower() not in HOP_BY_HOP_HEADERS:
+                self.request.setHeader(header_key, header_value)
 
         max_age = {'max_age': self.streamer_config.get('streamer', 'cache_timeout')}
         cache_header = 'public, s-maxage=%(max_age)s, max-age=%(max_age)s' % max_age
-        self.request.setHeader('cache-control', cache_header)
+        self.request.setHeader('Cache-Control', cache_header)
 
     def download_failed(self, report):
         """
@@ -76,7 +96,6 @@ class StreamerListener(nectar_listener.DownloadEventListener):
 
         # Currently Nectar returns headers with a content-length even
         # when it doesn't download anything.
-        self.request.setHeader('Connection', 'close')
         self.request.setHeader('Content-Length', '0')
         if 'response_code' in report.error_report:
             self.request.setResponseCode(report.error_report['response_code'])

@@ -14,23 +14,50 @@ MODULE_PREFIX = 'pulp.streamer.server.'
 
 class TestStreamerListener(unittest.TestCase):
 
-    def test_download_headers(self):
+    def test_download_headers_cache_control(self):
         """
         The cache-control headers are set appropriately.
         """
         mock_config = Mock()
         mock_config.get.return_value = '1'
         mock_report = Mock()
-        mock_report.headers = {'key': 'value', 'key2': 'value2'}
-        expected_headers = mock_report.headers.copy()
-        expected_headers['cache-control'] = 'public, s-maxage=1, max-age=1'
+        mock_report.headers = {}
         listener = StreamerListener(Mock(), mock_config)
 
         listener.download_headers(mock_report)
-        self.assertEqual(3, listener.request.setHeader.call_count)
-        for expected, actual in zip(expected_headers.items(),
-                                    listener.request.setHeader.call_args_list):
-            self.assertEqual(expected, actual[0])
+        listener.request.setHeader.assert_called_once_with(
+            'Cache-Control',
+            'public, s-maxage=1, max-age=1',
+        )
+
+    def test_download_headers_hop(self):
+        """
+        The cache-control headers are set appropriately.
+        """
+        mock_config = Mock()
+        mock_config.get.return_value = '1'
+        mock_report = Mock()
+        mock_report.headers = {
+            'Content-Length': '1234',
+            'Connection': 'close-if-you-want',
+            'Keep-Alive': 'timeout=UINT_MAX, max=UINT_MAX',
+            'Public': 'True',
+            'Proxy-Authenticate': 'username=alot, password=hunter2',
+            'Transfer-Encoding': 'Braille',
+            'Upgrade': 'True',
+            'Some-Header': 'value'
+        }
+        expected_headers = (
+            ('Content-Length', '1234'),
+            ('Some-Header', 'value'),
+            ('Cache-Control', 'public, s-maxage=1, max-age=1'),
+        )
+        listener = StreamerListener(Mock(), mock_config)
+
+        listener.download_headers(mock_report)
+        actual_headers = [c[0] for c in listener.request.setHeader.call_args_list]
+        for expected, actual in zip(expected_headers, actual_headers):
+            self.assertEqual(expected, actual)
 
     def test_download_failed(self):
         """
@@ -43,10 +70,8 @@ class TestStreamerListener(unittest.TestCase):
         listener = StreamerListener(Mock(), Mock())
 
         listener.download_failed(mock_report)
-        self.assertEqual(('Connection', 'close'),
-                         listener.request.setHeader.call_args_list[0][0])
         self.assertEqual(('Content-Length', '0'),
-                         listener.request.setHeader.call_args_list[1][0])
+                         listener.request.setHeader.call_args_list[0][0])
         listener.request.setResponseCode.assert_called_once_with('418')
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
