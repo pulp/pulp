@@ -50,13 +50,9 @@ class TaskGroupSummaryView(View):
 
         :return: Response containing a serialized dict of the task group summary
         :rtype : django.http.HttpResponse
-        :raises MissingResource: if group id is not found
         """
         tasks = TaskStatus.objects(group_id=group_id)
         task_group_total = tasks.count()
-
-        if task_group_total == 0:
-            raise MissingResource(group_id)
 
         summary = {'total': task_group_total}
         for state in CALL_STATES:
