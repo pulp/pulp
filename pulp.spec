@@ -157,12 +157,14 @@ mkdir -p %{buildroot}/%{_var}/www/streamer/
 mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
 mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
-mkdir -p %{buildroot}/srv/%{name}/
+mkdir -p %{buildroot}/%{_datadir}/%{name}/wsgi
 
 cp streamer/etc/pulp/streamer.conf %{buildroot}/%{_sysconfdir}/%{name}/streamer.conf
-cp streamer/etc/httpd/conf.d/pulp_streamer.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
-cp streamer/srv/pulp/streamer.tac %{buildroot}/srv/%{name}/streamer.tac
-cp streamer/srv/pulp/streamer_auth.wsgi %{buildroot}/srv/%{name}/streamer_auth.wsgi
+cp streamer/etc/httpd/conf.d/pulp_streamer.conf \
+    %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
+cp streamer/usr/share/pulp/wsgi/streamer.tac %{buildroot}/%{_datadir}/%{name}/wsgi/streamer.tac
+cp streamer/usr/share/pulp/wsgi/streamer_auth.wsgi \
+    %{buildroot}/%{_datadir}/%{name}/wsgi/streamer_auth.wsgi
 
 # Server init scripts/unit files and environment files
 %if %{pulp_systemd} == 0
@@ -206,7 +208,7 @@ do
 done
 
 # These directories are specific to the server
-mkdir -p %{buildroot}/srv
+mkdir -p %{buildroot}/%{_datadir}/pulp/wsgi
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
@@ -254,7 +256,7 @@ cp server/usr/lib/tmpfiles.d/* %{buildroot}/%{_usr}/lib/tmpfiles.d/
 %endif
 
 # Pulp Web Services
-cp -R server/srv %{buildroot}
+cp -R server/usr/share/pulp/wsgi %{buildroot}/%{_datadir}/pulp
 
 # Web Content
 ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
@@ -401,9 +403,9 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
 %dir %{_sysconfdir}/%{name}/vhosts80
-%dir /srv/%{name}
-/srv/%{name}/webservices.wsgi
-/srv/%{name}/content.wsgi
+%dir %{_datadir}/%{name}/wsgi
+%{_datadir}/%{name}/wsgi/webservices.wsgi
+%{_datadir}/%{name}/wsgi/content.wsgi
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
@@ -664,8 +666,8 @@ The streamer component of the Pulp Lazy Sync feature.
 %config(noreplace) %{_sysconfdir}/%{name}/streamer.conf
 %config(noreplace) %{_sysconfdir}/default/pulp_streamer
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
-/srv/%{name}/streamer.tac
-/srv/%{name}/streamer_auth.wsgi
+%{_datadir}%{name}/wsgi/streamer.tac
+%{_datadir}%{name}/wsgi/streamer_auth.wsgi
 
 %if %{pulp_systemd} == 0
 # Install the init scripts
@@ -1003,7 +1005,7 @@ Cert-based repo authentication for Pulp
 %files -n python-pulp-repoauth
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-/srv/%{name}/repo_auth.wsgi
+%{_datadir}/%{name}/wsgi/repo_auth.wsgi
 %{python_sitelib}/%{name}/repoauth/
 %{python_sitelib}/pulp_repoauth*.egg-info
 

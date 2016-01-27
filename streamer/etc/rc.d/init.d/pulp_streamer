@@ -24,7 +24,7 @@ TWISTD_PID_DIR="/var/run/pulp"
 TWISTD_LOG_FILE="/var/log/pulp/pulp_streamer.log"
 TWISTD_LOG_DIR="/var/log/pulp"
 TWISTD_OPTS="--pidfile=$TWISTD_PID_FILE --syslog \
- --prefix=pulp_streamer --python /srv/pulp/streamer.tac"
+ --prefix=pulp_streamer --python /usr/share/pulp/wsgi/streamer.tac"
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 

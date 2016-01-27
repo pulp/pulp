@@ -1,7 +1,7 @@
 /etc/pki/pulp(/.*)? gen_context(system_u:object_r:pulp_cert_t,s0)
 /etc/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_content_t,s0)
 
-/srv/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_content_t,s0)
+/usr/share/pulp/wsgi(/.*)? gen_context(system_u:object_r:httpd_sys_content_t,s0)
 
 /var/lib/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
 
