@@ -9,6 +9,7 @@ from twisted.web import server
 
 from pulp.server.logs import CompliantSysLogHandler
 from pulp.server.db.connection import initialize as mongo_initialize
+from pulp.server.managers import factory as manager_factory
 from pulp.streamer import Streamer, load_configuration, DEFAULT_CONFIG_FILES
 from pulp.plugins.loader import api as plugin_api
 
@@ -52,6 +53,7 @@ start_logging(streamer_config)
 mongo_initialize()
 mongoengine.connect('pulp_database')
 plugin_api.initialize()
+manager_factory.initialize()
 
 # Configure the twisted application itself.
 application = service.Application('Pulp Streamer')
