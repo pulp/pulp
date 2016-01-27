@@ -107,6 +107,44 @@ class ApplicabilityRegenerationManager(object):
             manager.regenerate_applicability(profile_hash, content_type, profile_id, repo_id)
 
     @staticmethod
+    def regenerate_applicability_for_repos(repo_criteria):
+        """
+        Regenerate and save applicability data affected by given updated repositories.
+
+        :param repo_criteria: The repo selection criteria
+        :type repo_criteria: dict
+        """
+        repo_criteria = Criteria.from_dict(repo_criteria)
+
+        # Process repo criteria
+        repo_criteria.fields = ['id']
+        repo_ids = [r.repo_id for r in model.Repository.objects.find_by_criteria(repo_criteria)]
+
+        for repo_id in repo_ids:
+            # Find all existing applicabilities for given repo_id. Setting batch size of 5 ensures
+            # the MongoDB cursor does not time out. See https://pulp.plan.io/issues/998#note-6 for
+            # more details.
+            existing_applicabilities = RepoProfileApplicability.get_collection().find(
+                {'repo_id': repo_id}).batch_size(5)
+            for existing_applicability in existing_applicabilities:
+                existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
+                profile_hash = existing_applicability['profile_hash']
+                unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
+                                                                     projection=['id',
+                                                                                 'content_type'])
+                if unit_profile is None:
+                    # Unit profiles change whenever packages are installed or removed on consumers,
+                    # and it is possible that existing_applicability references a UnitProfile
+                    # that no longer exists. This is harmless, as Pulp has a monthly cleanup task
+                    # that will identify these dangling references and remove them.
+                    continue
+
+                # Regenerate applicability data for given unit_profile and repo id
+                ApplicabilityRegenerationManager.regenerate_applicability(
+                    profile_hash, unit_profile['content_type'], unit_profile['id'], repo_id,
+                    existing_applicability)
+
+    @staticmethod
     def queue_regenerate_applicability_for_repos(repo_criteria):
         """
         Queue a group of tasks to generate and save applicability data affected by given updated
@@ -292,6 +330,9 @@ class ApplicabilityRegenerationManager(object):
 
 regenerate_applicability_for_consumers = task(
     ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
+    ignore_result=True)
+regenerate_applicability_for_repos = task(
+    ApplicabilityRegenerationManager.regenerate_applicability_for_repos, base=Task,
     ignore_result=True)
 batch_regenerate_applicability_task = task(
     ApplicabilityRegenerationManager.batch_regenerate_applicability, base=Task,
