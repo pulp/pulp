@@ -1026,6 +1026,13 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Thu Jan 28 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.4.beta
+- 1542 - Repository (un)binding for consumer_groups fails (ttereshc@redhat.com)
+- 824 - Retrieve binding by consumer and repository url should accept only GET
+  (ttereshc@redhat.com)
+- 1541 - Retrieve bindings by consumer and repository call fails
+  (ttereshc@redhat.com)
+
 * Tue Jan 19 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.3.beta
 - 1356 - Pulp returns HTTP 500 when a bad request is made during repo creation.
   (ttereshc@redhat.com)
