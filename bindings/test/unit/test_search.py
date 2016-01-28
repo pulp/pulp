@@ -1,8 +1,7 @@
-import unittest
-
 import mock
 
 from pulp.bindings.search import SearchAPI, Operator, IntOperator, CSVOperator
+from pulp.common.compat import unittest
 
 
 class TestSearchAPI(unittest.TestCase):

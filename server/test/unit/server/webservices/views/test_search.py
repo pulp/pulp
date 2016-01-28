@@ -1,13 +1,12 @@
 """
 This module contains tests for the pulp.server.webservices.views.search module.
 """
-import unittest
-
 import mock
 from django import http
 from pymongo.errors import OperationFailure
 
 from base import assert_auth_READ
+from pulp.common.compat import unittest
 from pulp.server import exceptions
 from pulp.server.webservices.views import search
 
@@ -114,20 +113,20 @@ class TestSearchView(unittest.TestCase):
 
         request = mock.MagicMock()
         request.GET = http.QueryDict('field=name&field=id&filters={"name":"admin"}')
+        from_client_input.return_value = {}
         view = FakeSearchView()
-        view.model.SERIALIZER.return_value.data = {'serialized': 'content'}
+        view.model.SERIALIZER.return_value.data = [{'serialized': 'content'}]
 
         with mock.patch.object(FakeSearchView, '_generate_response',
                                side_effect=FakeSearchView._generate_response) as _generate_response:
             results = view.get(request)
 
         self.assertEqual(type(results), http.HttpResponse)
-        self.assertEqual(results.content, '{"serialized": "content"}')
+        self.assertEqual(results.content, '[{"serialized": "content"}]')
         self.assertEqual(results.status_code, 200)
 
         _generate_response.assert_called_once_with(
-            {'fields': ['name', 'id'], 'filters': {"name": "admin"}}, {})
-
+            {'fields': ['name', 'id'], 'filters': {'name': 'admin'}}, {})
         from_client_input.assert_called_once_with(
             {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
 
@@ -323,6 +322,56 @@ class TestSearchView(unittest.TestCase):
         FakeSearchView.model.objects.find_by_criteria.side_effect = OperationFailure('dang')
         self.assertRaises(exceptions.InvalidValue, FakeSearchView._generate_response, query, {})
 
+    def test_get_results_serializer(self):
+        """
+        Ensure that if a class has an old style serializer, it is used.
+        """
+        m_serial = mock.MagicMock()
+
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+            serializer = m_serial
+
+        m_method = mock.MagicMock(return_value=['list', 'of', 'things'])
+
+        results = FakeSearchView.get_results({'search': 'q'}, m_method, {'additional': 'options'})
+        self.assertEqual(results, [m_serial(), m_serial(), m_serial()])
+
+    def test_get_results_model_serializer(self):
+        """
+        Ensure that if class has a model.serializer, it is used.
+        """
+        m_serial = mock.MagicMock()
+
+        class FakeSearchView(search.SearchView):
+            model = mock.MagicMock()
+            model.SERIALIZER = m_serial
+
+        m_method = mock.MagicMock(return_value=['list', 'of', 'things'])
+
+        results = FakeSearchView.get_results({'search': 'q'}, m_method, {'additional': 'options'})
+        self.assertEqual(results, m_serial.return_value.data)
+        m_serial.assert_called_once_with(['list', 'of', 'things'], multiple=True)
+
+    @mock.patch('pulp.server.webservices.views.search._trim_results')
+    def test_get_results_model_restricted_fields(self, m_trim):
+        """
+        Ensure that queries that restrict fields on a class with a model use _trim_results.
+        """
+        m_serial = mock.MagicMock()
+        m_model = mock.MagicMock()
+
+        class FakeSearchView(search.SearchView):
+            model = m_model
+            model.SERIALIZER = m_serial
+
+        m_method = mock.MagicMock(return_value=['list', 'of', 'things'])
+
+        results = FakeSearchView.get_results({'fields': ['f1', 'f2']}, m_method, {})
+        self.assertEqual(results, m_serial.return_value.data)
+        m_serial.assert_called_once_with(['list', 'of', 'things'], multiple=True)
+        m_trim.assert_called_once_with(m_model, m_serial().data, ['f1', 'f2'])
+
 
 class TestParseArgs(unittest.TestCase):
     class FakeSearchView(search.SearchView):
@@ -394,3 +443,21 @@ class TestParseArgs(unittest.TestCase):
         params, options = self.fake_search._parse_args(args)
 
         self.assertTrue(options['opt_bool'] is False)
+
+
+class TestTrimResults(unittest.TestCase):
+    """
+    Tests the helper function for removing all non-required non-requested fields.
+    """
+    def test_expected(self):
+        """
+        Ensure that required, requested, and standard fields remain while extras are removed.
+        """
+        m_model = mock.MagicMock()
+        m_model._fields = {'required': mock.MagicMock(required=True)}
+        results = [{'extra': 'f', 'required': 'f', 'requested': 'f', '_id': 'always'}]
+
+        search._trim_results(m_model, results, ['requested'])
+
+        self.assertEqual(len(results), 1)
+        self.assertDictEqual(results[0], {'required': 'f', 'requested': 'f', '_id': 'always'})
