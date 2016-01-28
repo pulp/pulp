@@ -131,11 +131,15 @@ class ContentView(View):
             # Not Authorized
             return HttpResponseForbidden()
 
+        # Immediately 404 if the symbolic link doesn't even exist
+        if not os.path.lexists(request.path_info):
+            return HttpResponseNotFound(request.path_info)
+
         # Already downloaded
         if os.path.exists(path):
             return self.x_send(path)
 
-        # Redirect
+        # Redirect if lazy is on
         if lazy_enabled:
             return self.redirect(request, self.key)
 

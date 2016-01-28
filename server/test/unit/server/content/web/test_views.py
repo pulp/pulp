@@ -107,6 +107,7 @@ class TestContentView(TestCase):
         redirect.assert_called_once_with(str(url.return_value.sign.return_value))
         self.assertEqual(reply, redirect.return_value)
 
+    @patch('os.path.lexists', Mock(return_value=True))
     @patch('os.path.realpath')
     @patch('os.path.exists')
     @patch(MODULE + '.allow_access')
@@ -134,6 +135,7 @@ class TestContentView(TestCase):
         x_send.assert_called_once_with(path.upper())
         self.assertEqual(reply, x_send.return_value)
 
+    @patch('os.path.lexists', Mock(return_value=True))
     @patch('os.path.realpath')
     @patch('os.path.exists')
     @patch(MODULE + '.pulp_conf.get', return_value='True')
@@ -163,6 +165,7 @@ class TestContentView(TestCase):
         redirect.assert_called_once_with(request, view.key)
         self.assertEqual(reply, redirect.return_value)
 
+    @patch('os.path.lexists', Mock(return_value=True))
     @patch('os.path.realpath')
     @patch('os.path.exists')
     @patch(MODULE + '.pulp_conf')
@@ -198,6 +201,35 @@ class TestContentView(TestCase):
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
         exists.assert_called_once_with(path.upper())
+        not_found.assert_called_once_with(path)
+        self.assertEqual(reply, not_found.return_value)
+
+    @patch('os.path.lexists', Mock(return_value=False))
+    @patch('os.path.realpath', Mock())
+    @patch(MODULE + '.allow_access', Mock(return_value=True))
+    @patch(MODULE + '.Key.load', Mock())
+    @patch(MODULE + '.pulp_conf')
+    @patch(MODULE + '.HttpResponseNotFound')
+    def test_get_not_found_no_link(self, not_found, pulp_conf):
+        host = 'localhost'
+        path = '/pulp/content'
+        request = Mock(path_info=path)
+        request.get_host.return_value = host
+        conf = {
+            'authentication': {
+                'rsa_key': '/tmp/key'
+            },
+            'lazy': {
+                'enabled': 'false',
+            }
+        }
+        pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
+
+        # test
+        view = ContentView()
+        reply = view.get(request)
+
+        # validation
         not_found.assert_called_once_with(path)
         self.assertEqual(reply, not_found.return_value)
 
