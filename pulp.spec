@@ -666,8 +666,8 @@ The streamer component of the Pulp Lazy Sync feature.
 %config(noreplace) %{_sysconfdir}/%{name}/streamer.conf
 %config(noreplace) %{_sysconfdir}/default/pulp_streamer
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_streamer.conf
-%{_datadir}%{name}/wsgi/streamer.tac
-%{_datadir}%{name}/wsgi/streamer_auth.wsgi
+%{_datadir}/%{name}/wsgi/streamer.tac
+%{_datadir}/%{name}/wsgi/streamer_auth.wsgi
 
 %if %{pulp_systemd} == 0
 # Install the init scripts
