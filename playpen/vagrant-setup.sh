@@ -59,7 +59,7 @@ if [ -d pulp-smash ]; then
     cat << EOF > $HOME/.config/pulp_smash/settings.json
 {
     "default": {
-        "base_url": "https://dev.example.com",
+        "base_url": "https://$(hostname)",
         "auth": ["admin", "admin"],
         "verify": false
     }
