@@ -3,8 +3,9 @@
   dnf: name={{ item }} state=present
   with_items:
       - bash-completion
-      - vim-enhanced
       - screen
+      - tmux
+      - vim-enhanced
 
 - name: Install packages requires to gather Pulp facts
   dnf: name={{ item }} state=present
