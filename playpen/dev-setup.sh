@@ -34,10 +34,12 @@ if [ "$GITHUB_USERNAME" = "" ]; then
 fi
 echo "Choosing $GITHUB_USERNAME as your GitHub username."
 
-read -p 'Which repos would you like to clone from your GitHub account? [crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash] ' REPOS
+read -p 'Which plugin repos would you like to clone from your GitHub account? [crane pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash] ' REPOS
 if [ "$REPOS" = "" ]; then
-    REPOS="crane pulp pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash"
+    REPOS="crane pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash"
 fi
+# pulp is required and must be installed first so let's prepend it.
+REPOS="pulp $REPOS"
 echo "These repos will be cloned into your development path: $REPOS"
 
 if [ $# = 0 ]; then
