@@ -661,6 +661,7 @@ The streamer component of the Pulp Lazy Sync feature.
 
 %files -n python-pulp-streamer
 %defattr(-,root,root,-)
+%{_bindir}/pulp_streamer
 %{python_sitelib}/%{name}/streamer/
 %{python_sitelib}/pulp_streamer*.egg-info
 %config(noreplace) %{_sysconfdir}/%{name}/streamer.conf

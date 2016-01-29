@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=apache
-ExecStart=/usr/bin/twistd --nodaemon --syslog --prefix=pulp_streamer --pidfile= --python /usr/share/pulp/wsgi/streamer.tac
+ExecStart=/usr/bin/pulp_streamer --nodaemon --syslog --prefix=pulp_streamer --pidfile= --python /usr/share/pulp/wsgi/streamer.tac
 
 [Install]
 WantedBy=multi-user.target

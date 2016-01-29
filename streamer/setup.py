@@ -13,5 +13,10 @@ setup(
         'nectar >= 1.4.0',
         'setuptools',
         'twisted',
-    ]
+    ],
+    entry_points={
+        'console_scripts': [
+            'pulp_streamer = twisted.scripts.twistd:run'
+        ]
+    }
 )
