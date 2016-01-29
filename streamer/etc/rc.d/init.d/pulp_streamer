@@ -16,7 +16,7 @@
 # Short-Description: pulp's lazy content streamer service
 ### END INIT INFO
 
-TWISTD="/usr/bin/twistd"
+TWISTD="/usr/bin/pulp_streamer"
 TWISTD_USER="apache"
 TWISTD_GROUP="apache"
 TWISTD_PID_FILE="/var/run/pulp/pulp_streamer.pid"
