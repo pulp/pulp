@@ -65,8 +65,8 @@ section.
 Once the Pulp server is configured, the Apache reverse proxy, Squid, and the Pulp streamer
 require configuration. A default configuration for Apache is provided by the
 ``python-pulp-streamer`` package and documentation can be found inline. Squid requires more
-configuration which is up to the user. However, the following is a basic configuration with
-inline documentation::
+configuration which is up to the user. To configure squid, edit ``/etc/squid/squid.conf``. The
+following is a basic configuration with inline documentation::
 
  # Recommended minimum configuration. It is important to note that order
  # matters in Squid's configuration; the configuration is applied top to bottom.
