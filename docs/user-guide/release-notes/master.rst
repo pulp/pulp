@@ -86,6 +86,8 @@ Rest API Changes
 * The API for regenerating content applicability for updated repositories no longer returns a
   :ref:`call_report`. Instead a :ref:`group_call_report` is returned.
 
+* Task Groups with tasks having incomplete states can now be canceled.
+
 Binding API Changes
 -------------------
 

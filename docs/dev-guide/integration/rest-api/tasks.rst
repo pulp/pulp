@@ -184,6 +184,29 @@ Task Group Management
 
 .. _task_group_summary:
 
+Cancelling Tasks in a Task Group
+------------------------------
+
+All asynchronous tasks in a particular task group may be canceled by the user before they complete. A
+task must be in the *waiting* or *running* state in order to be canceled.
+
+.. Note::
+
+   It is possible for a task to complete or experience an error before the cancellation request is
+   processed, so it is not guaranteed that a task's final state will be 'canceled' as a result of
+   this call. In these instances this method call will still return a response code of 200.
+
+| :method:`delete`
+| :path:`/v2/task_groups/<group_id>/`
+| :permission:`delete`
+
+| :response_list:`_`
+
+* :response_code:`200, if the task group cancellation request was successfully received`
+* :response_code:`404, if the task group is not found`
+
+| :return:`null`
+
 Task Group Summary
 ------------------
 
