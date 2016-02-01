@@ -88,7 +88,10 @@ done
 echo "Disabling SSL verification on dev setup"
 sudo sed -i 's/# verify_ssl: True/verify_ssl: False/' /etc/pulp/admin/admin.conf
 
-preset
+sudo -u apache pulp-manage-db;
+setup_crane_links;
+pstart;
+ppopulate;
 
 # Give the user some use instructions
 if [ $USER = "vagrant" ]; then
