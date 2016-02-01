@@ -39,7 +39,7 @@ if [ -d crane ]; then
 [general]
 data_dir: $HOME/devel/crane/metadata
 debug: true
-endpoint: pulp-devel:5001
+endpoint: $(hostname):5001
 EOF
 
     deactivate
