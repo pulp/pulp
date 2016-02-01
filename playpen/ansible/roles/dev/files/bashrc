@@ -51,7 +51,7 @@ preset() {
     mongo pulp_database ~/drop_database.js;
     sudo rm -rf /var/lib/pulp/*;
     find ~/devel/pulp* -name '*.py[co]' -delete;
-    rm ~/.pulp/user-cert.pem
+    rm -f ~/.pulp/user-cert.pem
 
     # Re-install and relink development files
     for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
