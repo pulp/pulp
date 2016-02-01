@@ -59,8 +59,7 @@ Configuration
 
 In addition to configuring the services listed above, alternate download policies must be
 enabled in the Pulp server configuration. This is located by default in ``/etc/pulp/server.conf``
-and is documented inline. All relevant settings are contained in the ``deferred_downloads``
-section.
+and is documented inline. All relevant settings are contained in the ``lazy`` section.
 
 Once the Pulp server is configured, the Apache reverse proxy, Squid, and the Pulp streamer
 require configuration. A default configuration for Apache is provided by the
