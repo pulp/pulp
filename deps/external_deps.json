@@ -57,6 +57,6 @@
     {
         "name": "python-requests-toolbelt",
         "version": "0.6.0-1",
-        "platform": [ "fc22" ]
+        "platform": [ "el6", "el7", "fc22", "fc23" ]
     }
 ]
