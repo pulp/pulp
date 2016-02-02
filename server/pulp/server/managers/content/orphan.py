@@ -287,6 +287,10 @@ class OrphanManager(object):
         @param path: absolute path to the file to delete
         @type  path: str
         """
+        if not os.path.lexists(path):
+            _logger.debug(_('Path: {p} does not exist').format(p=path))
+            return
+
         _logger.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
 
         if not os.path.isabs(path):
