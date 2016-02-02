@@ -39,7 +39,7 @@ def _send_post(notifier_config, data):
                             contain the 'url' key, and optional 'username' and
                             'password' keys.
     :type notifier_config:  dict
-    :param data:            The POST data as a Python dictionary.
+    :param data:            The POST data as a Python dictionary that is JSON serializable.
     :param data:            dict
     """
     if 'url' not in notifier_config or not notifier_config['url']:
@@ -53,7 +53,7 @@ def _send_post(notifier_config, data):
     else:
         auth = None
 
-    response = post(url, data=data, auth=auth)
+    response = post(url, json=data, auth=auth)
     if response.status_code != 200:
         _logger.error(_('Received HTTP {code} from HTTP notifier to {url}.').format(
             code=response.status_code, url=url))
