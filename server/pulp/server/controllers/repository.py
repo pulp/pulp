@@ -34,7 +34,7 @@ from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, T
 from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.content.sources.constants import MAX_CONCURRENT, HEADERS, SSL_VALIDATION
-from pulp.server.content.storage import FileStorage, mkdir
+from pulp.server.content.storage import mkdir
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
@@ -1412,16 +1412,13 @@ class LazyUnitDownloadStep(DownloadEventListener):
                 catalog_entry.checksum
             )
 
-            relative_path = os.path.relpath(
-                catalog_entry.path,
-                FileStorage.get_path(content_unit)
-            )
             if len(report.data[UNIT_FILES]) == 1:
-                # If the unit is single-file, update the storage path to point to the file
-                content_unit.set_storage_path(relative_path)
-                unit_qs.update_one(set___storage_path=content_unit._storage_path)
                 content_unit.import_content(report.destination)
             else:
+                relative_path = os.path.relpath(
+                    catalog_entry.path,
+                    content_unit.storage_path,
+                )
                 content_unit.import_content(report.destination, location=relative_path)
             self.progress_successes += 1
             path_entry[PATH_DOWNLOADED] = True

@@ -1656,17 +1656,12 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
 
         # Test
         self.step.download_succeeded(self.report)
-        unit.set_storage_path.assert_called_once_with('filename')
-        self.assertEqual(
-            {'set___storage_path': unit._storage_path},
-            model_qs.objects.filter.return_value.update_one.call_args_list[0][1]
-        )
         unit.import_content.assert_called_once_with(self.report.destination)
         self.assertEqual(1, self.step.progress_successes)
         self.assertEqual(0, self.step.progress_failures)
         self.assertEqual(
             {'set__downloaded': True},
-            model_qs.objects.filter.return_value.update_one.call_args_list[1][1]
+            model_qs.objects.filter.return_value.update_one.call_args_list[0][1]
         )
 
     @patch(MODULE + 'os.path.relpath', Mock(return_value='a/filename'))
