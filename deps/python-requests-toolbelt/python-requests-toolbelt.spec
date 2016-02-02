@@ -40,5 +40,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Feb 02 2016 Patrick Creech <pcreech@redhat.com> 0.6.0-1
+- new package built with tito
+
+* Tue Feb 02 2016 Patrick Creech <pcreech@redhat.com> 0.6.0-1
 - Add requests-toolbelt dependency
 
