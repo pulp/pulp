@@ -5,13 +5,15 @@ import logging
 
 from mongoengine import DoesNotExist, NotUniqueError
 from nectar import listener as nectar_listener
-from nectar import request as nectar_request
 import requests
 from twisted.internet import reactor
 from twisted.web import resource
 from twisted.web.server import NOT_DONE_YET
 
+from pulp.plugins.loader import api as plugins_api
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
+from pulp.server.content.sources import container as content_container
+from pulp.server.content.sources import model as content_models
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -45,7 +47,7 @@ class StreamerListener(nectar_listener.DownloadEventListener):
     streamer configuration file.
     """
 
-    def __init__(self, request, streamer_config):
+    def __init__(self, request, streamer_config, catalog_entry, pulp_request=False):
         """
         Initialize a StreamerNectarListener.
 
@@ -53,12 +55,16 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         :type  request:         twisted.web.server.Request
         :param streamer_config: The configuration for this streamer instance.
         :type  streamer_config: ConfigParser.SafeConfigParser
+        :param catalog_entry:   Catalog entry for the file requested.
+        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
+        :param pulp_request:    True if this request originated from Pulp.
+        :type  pulp_request:    bool
         """
         super(StreamerListener, self).__init__()
         self.request = request
         self.streamer_config = streamer_config
-        logger.debug(_('Using {timeout} as the cache timeout value.'.format(
-            timeout=streamer_config.get('streamer', 'cache_timeout'))))
+        self.catalog_entry = catalog_entry
+        self.pulp_request = pulp_request
 
     def download_headers(self, report):
         """
@@ -107,13 +113,11 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         :param report: The download report for this request.
         :type  report: nectar.report.DownloadReport
         """
-        catalog_entry = report.data['catalog_entry']
-        pulp_request = report.data['client_request'].getHeader(PULP_STREAM_REQUEST_HEADER)
-        if not pulp_request:
+        if not self.pulp_request:
             try:
                 download = model.DeferredDownload(
-                    unit_id=catalog_entry.unit_id,
-                    unit_type_id=catalog_entry.unit_type_id
+                    unit_id=self.catalog_entry.unit_id,
+                    unit_type_id=self.catalog_entry.unit_type_id
                 )
                 download.save()
             except NotUniqueError:
@@ -204,15 +208,29 @@ class Streamer(resource.Resource):
         :param responder:       The file-like object that nectar should write to.
         :type  responder:       Responder
         """
+        # Configure the primary downloader for alternate content sources
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
-        data = {'catalog_entry': catalog_entry, 'client_request': request}
-        download_request = nectar_request.DownloadRequest(catalog_entry.url, responder, data=data)
-        downloader = importer.get_downloader(config, catalog_entry.url,
-                                             **catalog_entry.data)
-        downloader.session = self.session
-        downloader.event_listener = StreamerListener(request, self.config)
-        downloader.download_one(download_request, events=True)
-        downloader.config.finalize()
+        primary_downloader = importer.get_downloader(config, catalog_entry.url,
+                                                     **catalog_entry.data)
+        pulp_request = request.getHeader(PULP_STREAM_REQUEST_HEADER)
+        listener = StreamerListener(request, self.config, catalog_entry, pulp_request)
+        primary_downloader.session = self.session
+        primary_downloader.event_listener = listener
+
+        # Build the alternate content source download request
+        unit_model = plugins_api.get_unit_model_by_id(catalog_entry.unit_type_id)
+        qs = unit_model.objects.filter(id=catalog_entry.unit_id).only(*unit_model.unit_key_fields)
+        unit = qs.get()
+        download_request = content_models.Request(
+            catalog_entry.unit_type_id,
+            unit.unit_key,
+            catalog_entry.url,
+            responder
+        )
+
+        alt_content_container = content_container.ContentContainer(threaded=False)
+        alt_content_container.download(primary_downloader, [download_request], listener)
+        primary_downloader.config.finalize()
 
 
 class Responder(object):

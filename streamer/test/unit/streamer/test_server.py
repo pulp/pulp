@@ -14,18 +14,23 @@ MODULE_PREFIX = 'pulp.streamer.server.'
 
 class TestStreamerListener(unittest.TestCase):
 
+    def setUp(self):
+        self.mock_config = Mock()
+        self.mock_config.get.return_value = '1'
+        self.mock_report = Mock()
+        self.mock_report.headers = {}
+        self.listener = StreamerListener(
+            Mock(),
+            self.mock_config,
+            Mock(unit_id='abc', unit_type_id='123'),
+        )
+
     def test_download_headers_cache_control(self):
         """
         The cache-control headers are set appropriately.
         """
-        mock_config = Mock()
-        mock_config.get.return_value = '1'
-        mock_report = Mock()
-        mock_report.headers = {}
-        listener = StreamerListener(Mock(), mock_config)
-
-        listener.download_headers(mock_report)
-        listener.request.setHeader.assert_called_once_with(
+        self.listener.download_headers(self.mock_report)
+        self.listener.request.setHeader.assert_called_once_with(
             'Cache-Control',
             'public, s-maxage=1, max-age=1',
         )
@@ -34,10 +39,7 @@ class TestStreamerListener(unittest.TestCase):
         """
         The cache-control headers are set appropriately.
         """
-        mock_config = Mock()
-        mock_config.get.return_value = '1'
-        mock_report = Mock()
-        mock_report.headers = {
+        self.mock_report.headers = {
             'Content-Length': '1234',
             'Connection': 'close-if-you-want',
             'Keep-Alive': 'timeout=UINT_MAX, max=UINT_MAX',
@@ -52,10 +54,9 @@ class TestStreamerListener(unittest.TestCase):
             ('Some-Header', 'value'),
             ('Cache-Control', 'public, s-maxage=1, max-age=1'),
         )
-        listener = StreamerListener(Mock(), mock_config)
 
-        listener.download_headers(mock_report)
-        actual_headers = [c[0] for c in listener.request.setHeader.call_args_list]
+        self.listener.download_headers(self.mock_report)
+        actual_headers = [c[0] for c in self.listener.request.setHeader.call_args_list]
         for expected, actual in zip(expected_headers, actual_headers):
             self.assertEqual(expected, actual)
 
@@ -64,31 +65,18 @@ class TestStreamerListener(unittest.TestCase):
         The content-length is corrected since Nectar does not download anything if
         it receives a non-200 response.
         """
-        mock_report = Mock()
-        mock_report.error_report = {'response_code': '418', 'response_msg': 'I am a teapot.'}
-        mock_report.url = 'https://example.com/teapot/'
-        listener = StreamerListener(Mock(), Mock())
+        self.mock_report.error_report = {'response_code': '418', 'response_msg': 'I am a teapot.'}
+        self.mock_report.url = 'https://example.com/teapot/'
 
-        listener.download_failed(mock_report)
+        self.listener.download_failed(self.mock_report)
         self.assertEqual(('Content-Length', '0'),
-                         listener.request.setHeader.call_args_list[0][0])
-        listener.request.setResponseCode.assert_called_once_with('418')
+                         self.listener.request.setHeader.call_args_list[0][0])
+        self.listener.request.setResponseCode.assert_called_once_with('418')
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
     def test_download_succeeded(self, mock_deferred_download):
         """Assert a deferred download entry is made."""
-        # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = None
-        mock_catalog_entry = Mock()
-        mock_catalog_entry.unit_id = 'abc'
-        mock_catalog_entry.unit_type_id = '123'
-        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
-        mock_report = Mock(data=mock_data)
-        listener = StreamerListener(Mock(), Mock())
-
-        # Test
-        listener.download_succeeded(mock_report)
+        self.listener.download_succeeded(None)
         mock_deferred_download.assert_called_once_with(unit_id='abc', unit_type_id='123')
         mock_deferred_download.return_value.save.assert_called_once_with()
 
@@ -96,32 +84,19 @@ class TestStreamerListener(unittest.TestCase):
     def test_download_succeeded_entry_not_unique(self, mock_deferred_download):
         """Assert NotUniqueError exceptions are ignored."""
         # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = None
-        mock_catalog_entry = Mock()
         mock_deferred_download.return_value.save.side_effect = NotUniqueError()
-        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
-        mock_report = Mock(data=mock_data)
-        listener = StreamerListener(Mock(), Mock())
 
         # Test
-        listener.download_succeeded(mock_report)
+        self.listener.download_succeeded(None)
         mock_deferred_download.return_value.save.assert_called_once_with()
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload', autospec=True)
     def test_download_succeeded_pulp_request(self, mock_deferred_download):
         # Setup
-        mock_request = Mock()
-        mock_request.getHeader.return_value = 'True'
-        mock_catalog_entry = Mock()
-        mock_catalog_entry.unit_id = 'abc'
-        mock_catalog_entry.unit_type_id = '123'
-        mock_data = {'catalog_entry': mock_catalog_entry, 'client_request': mock_request}
-        mock_report = Mock(data=mock_data)
-        listener = StreamerListener(Mock(), Mock())
+        self.listener.pulp_request = True
 
         # Test
-        listener.download_succeeded(mock_report)
+        self.listener.download_succeeded(None)
         self.assertEqual(0, mock_deferred_download.call_count)
 
 
@@ -210,34 +185,27 @@ class TestStreamer(unittest.TestCase):
                                                       'handling the request.')
         self.request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
 
-    @patch(MODULE_PREFIX + 'nectar_request.DownloadRequest')
+    @patch(MODULE_PREFIX + 'content_container.ContentContainer')
+    @patch(MODULE_PREFIX + 'plugins_api.get_unit_model_by_id')
     @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
-    def test_download(self, mock_repo_controller, mock_dl_request):
+    def test_download(self, mock_repo_controller, mock_get_unit_model, mock_container):
         # Setup
-        mock_catalog = Mock()
-        mock_catalog.importer_id = 'mock_id'
-        mock_catalog.url = 'http://dev.null/'
-        mock_catalog.data = {'k': 'v'}
+        mock_catalog = Mock(importer_id='mock_id', url='http://dev.null/', data={'k': 'v'})
         mock_request = Mock()
-        mock_data = {'catalog_entry': mock_catalog, 'client_request': mock_request}
         mock_responder = Mock()
         mock_importer = Mock()
         mock_importer_config = Mock()
-        mock_downloader = mock_importer.get_downloader.return_value
         mock_repo_controller.get_importer_by_id.return_value = (mock_importer,
                                                                 mock_importer_config)
+        mock_get_unit_model.return_value.unit_key_fields = tuple()
 
         # Test
         self.streamer._download(mock_catalog, mock_request, mock_responder)
         mock_repo_controller.get_importer_by_id.assert_called_once_with(mock_catalog.importer_id)
-        mock_dl_request.assert_called_once_with(mock_catalog.url, mock_responder, data=mock_data)
         mock_importer.get_downloader.assert_called_once_with(
             mock_importer_config, mock_catalog.url, **mock_catalog.data)
-        self.assertEqual(mock_request, mock_downloader.event_listener.request)
-        self.assertEqual(self.config, mock_downloader.event_listener.streamer_config)
-        mock_downloader.download_one.assert_called_once_with(mock_dl_request.return_value,
-                                                             events=True)
-        mock_downloader.config.finalize.assert_called_once_with()
+
+        mock_container.return_value.download.assert_called_once()
 
 
 class TestResponder(unittest.TestCase):
