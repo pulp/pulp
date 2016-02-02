@@ -53,5 +53,10 @@
         "name": "python-rhsm",
         "version": "1.8.0-2.pulp",
         "platform": [ "el6"]
+    },
+    {
+        "name": "python-requests-toolbelt",
+        "version": "0.6.0-1",
+        "platform": [ "fc22" ]
     }
 ]
