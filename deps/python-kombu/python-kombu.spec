@@ -169,6 +169,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed Feb 03 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-1.pulp
+- Upgrade python-kombu dep to 3.0.33 (pcreech@redhat.com)
+
 * Mon Jan 25 2016 Brian Bouterse <bbouters@redhat.com> 3.0.24-11.pulp
 - Upgrades kombu to 3.0.24-11 (bbouters@redhat.com)
 - Adds upstream equivalent patch for kombu/celery#563
