@@ -32,7 +32,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
         http._send_post(notifier_config, data)
         mock_post.assert_called_once_with(
             'https://localhost/api/',
-            data=data, auth=None
+            json=data, auth=None
         )
 
     @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
@@ -48,7 +48,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
         http._send_post(notifier_config, data)
         mock_post.assert_called_once_with(
             'https://localhost/api/',
-            data=data,
+            json=data,
             auth=mock_basic_auth.return_value
         )
         mock_basic_auth.assert_called_once_with('jcline', 'hunter2')
@@ -80,7 +80,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
         http._send_post(notifier_config, data)
         mock_post.assert_called_once_with(
             'https://localhost/api/',
-            data=data,
+            json=data,
             auth=mock_basic_auth.return_value
         )
         mock_log.error.assert_called_once_with(expected_log)
