@@ -22,7 +22,7 @@ from pulp.server.compat import digestmod
 from pulp.server.db.fields import ISO8601StringField, UTCDateTimeField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.model import base
-from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
+from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet, RepositoryContentUnitQuerySet
 from pulp.server.managers import factory
 from pulp.server.util import Singleton
 from pulp.server.webservices.views import serializers
@@ -217,7 +217,9 @@ class RepositoryContentUnit(AutoRetryDocument):
                     # Used for reverse lookup of units to repositories
                     'fields': ['unit_id']
                 }
-            ]}
+            ],
+            'queryset_class': RepositoryContentUnitQuerySet
+            }
 
 
 class Importer(AutoRetryDocument):

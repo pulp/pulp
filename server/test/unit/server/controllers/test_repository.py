@@ -868,6 +868,12 @@ class TestSync(unittest.TestCase):
         sync_func = mock_reg_sig.return_value
         sync_func.return_value = m_sync_result
         m_sync_result.canceled_flag = True
+        m_before_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_added = m_model.RepositoryContentUnit.objects.num_created.return_value
+        m_after_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_all_updated = m_model.RepositoryContentUnit.objects.num_updated.return_value
+        m_updated = m_all_updated - m_added
+        m_removed = m_after_count - m_before_count - m_added
 
         mock_result.RESULT_CANCELED = 'canceled'
         m_repo = m_model.Repository.objects.get_repo_or_missing_resource.return_value
@@ -878,9 +884,8 @@ class TestSync(unittest.TestCase):
         actual_result = repo_controller.sync('mock_id')
         mock_result.expected_result.assert_called_once_with(
             m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
-            mock_now(), mock_now(), m_sync_result.added_count, m_sync_result.updated_count,
-            m_sync_result.removed_count, m_sync_result.summary, m_sync_result.details,
-            'canceled'
+            mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
+            m_sync_result.details, 'canceled'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
@@ -909,6 +914,12 @@ class TestSync(unittest.TestCase):
         sync_func.return_value = m_sync_result
         m_sync_result.canceled_flag = False
         m_sync_result.success_flag = True
+        m_before_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_added = m_model.RepositoryContentUnit.objects.num_created.return_value
+        m_after_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_all_updated = m_model.RepositoryContentUnit.objects.num_updated.return_value
+        m_updated = m_all_updated - m_added
+        m_removed = m_after_count - m_before_count - m_added
 
         mock_result.RESULT_SUCCESS = 'success'
         m_repo = m_model.Repository.objects.get_repo_or_missing_resource.return_value
@@ -919,9 +930,8 @@ class TestSync(unittest.TestCase):
         actual_result = repo_controller.sync('mock_id')
         mock_result.expected_result.assert_called_once_with(
             m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
-            mock_now(), mock_now(), m_sync_result.added_count, m_sync_result.updated_count,
-            m_sync_result.removed_count, m_sync_result.summary, m_sync_result.details,
-            'success'
+            mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
+            m_sync_result.details, 'success'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
@@ -950,6 +960,12 @@ class TestSync(unittest.TestCase):
         sync_func.return_value = m_sync_result
         m_sync_result.canceled_flag = False
         m_sync_result.success_flag = False
+        m_before_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_added = m_model.RepositoryContentUnit.objects.num_created.return_value
+        m_after_count = m_model.RepositoryContentUnit.objects().count.return_value
+        m_all_updated = m_model.RepositoryContentUnit.objects.num_updated.return_value
+        m_updated = m_all_updated - m_added
+        m_removed = m_after_count - m_before_count - m_added
 
         m_repo = m_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
@@ -959,9 +975,8 @@ class TestSync(unittest.TestCase):
         self.assertRaises(pulp_exceptions.PulpExecutionException, repo_controller.sync, 'mock_id')
         mock_result.expected_result.assert_called_once_with(
             m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
-            mock_now(), mock_now(), m_sync_result.added_count, m_sync_result.updated_count,
-            m_sync_result.removed_count, m_sync_result.summary, m_sync_result.details,
-            'failed'
+            mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
+            m_sync_result.details, 'failed'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
