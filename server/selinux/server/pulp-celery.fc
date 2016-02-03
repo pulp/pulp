@@ -3,3 +3,8 @@
 # Pulp celery workers need to manage temporary files in /var/cache/pulp
 /var/cache/pulp(/.*)? gen_context(system_u:object_r:pulp_var_cache_t,s0)
 /var/run/pulp(/.*)? gen_context(system_u:object_r:pulp_var_run_t,s0)
+
+# Label the Pulp streamer with the celery context. Eventually a policy should
+# be written for the streamer as needs fewer permissions than the celery policy
+# provides, but this allows it to run confined.
+/usr/bin/pulp_streamer -- gen_context(system_u:object_r:celery_exec_t,s0)
