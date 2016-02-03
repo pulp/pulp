@@ -10,8 +10,8 @@
 Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
-Version:        3.0.24
-Release:        11.pulp%{?dist}
+Version:        3.0.33
+Release:        1.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,11 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
-Patch0:         1212200.patch
-Patch1:         qpid_fixes.patch
-Patch2:         1168.patch
-Patch3:         1245.patch
-Patch4:         1564.patch
+Patch0:         563.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -51,7 +47,7 @@ BuildRequires:  python-nose
 BuildRequires:  python-setuptools
 
 # required for tests:
-BuildRequires: python-amqp >= 1.4.6
+BuildRequires: python-amqp >= 1.4.9
 BuildRequires: python-mock
 BuildRequires: python-msgpack
 BuildRequires: python-qpid
@@ -67,14 +63,14 @@ BuildRequires: python-unittest2
 BuildRequires: PyYAML
 
 %if 0%{?with_python3}
-BuildRequires: python3-amqp >= 1.4.6
+BuildRequires: python3-amqp >= 1.4.9
 %endif
 
 # For documentation
 #BuildRequires:  pymongo python-sphinx
 #This causes tests error, needs fixing upstream. Incompatible with python > 2.7
 #BuildRequires:  python-couchdb
-Requires: python-amqp >= 1.4.6
+Requires: python-amqp >= 1.4.9
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
 %if 0%{?rhel} == 6
@@ -98,7 +94,7 @@ Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-amqp >= 1.4.6
+Requires:       python3-amqp >= 1.4.9
 
 %description -n python3-kombu
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -116,14 +112,7 @@ This subpackage is for python3
 %prep
 %setup -q -n %{srcname}-%{version}
 
-%if 0%{?rhel} == 6
 %patch0 -p1
-%endif
-
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
