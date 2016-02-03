@@ -744,6 +744,8 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     fire_manager = manager_factory.event_fire_manager()
     fire_manager.fire_repo_sync_started(repo_id)
 
+    before_sync_unit_count = model.RepositoryContentUnit.objects(repo_id=repo_id).count()
+
     # Perform the sync
     sync_start_timestamp = _now_timestamp()
     sync_result = None
@@ -763,11 +765,17 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     else:
         sync_end_timestamp = _now_timestamp()
+
+        added_count = model.RepositoryContentUnit.objects.num_created(
+            sync_start_timestamp, sync_end_timestamp, repo_id)
+        all_updated_count = model.RepositoryContentUnit.objects.num_updated(
+            sync_start_timestamp, sync_end_timestamp, repo_id)
+        updated_count = all_updated_count - added_count
+        after_count = model.RepositoryContentUnit.objects(repo_id=repo_id).count()
+        removed_count = after_count - before_sync_unit_count - added_count
+
         # Need to be safe here in case the plugin is incorrect in its return
         if isinstance(sync_report, SyncReport):
-            added_count = sync_report.added_count
-            updated_count = sync_report.updated_count
-            removed_count = sync_report.removed_count
             summary = sync_report.summary
             details = sync_report.details
 

@@ -1,5 +1,7 @@
 from gettext import gettext as _
+import operator
 
+from mongoengine import Q
 from mongoengine.queryset import DoesNotExist, QuerySetNoCache
 from pymongo import ASCENDING
 
@@ -135,3 +137,70 @@ class RepoQuerySet(CriteriaQuerySet):
             return self.get(repo_id=repo_id)
         except DoesNotExist:
             raise pulp_exceptions.MissingResource(repository=repo_id)
+
+
+class RepositoryContentUnitQuerySet(CriteriaQuerySet):
+    """
+    Custom queryset for repository content units.
+    """
+
+    def _num_between(self, field, start=None, end=None, repo_id=None):
+        """
+        Helper function to query units of based on timestamps.
+
+        :param field: date field that will be searched
+        :type  field: str
+        :param start: find units in which the specified field is after this time
+        :type  start: str in ISO8601 format with timezone
+        :param end: find units in which the specified field is before this time
+        :type  end: str in ISO8601 format with timezone
+        :param repo_id: restrict search to this repo
+        :type  repo_id: str
+        :return: number of units in the repo in which the specified field is between start and end
+        :rtype:  int
+        """
+        q_dicts = []
+
+        if end is not None:
+            q_dicts.append({field + "__lte": end})
+
+        if start is not None:
+            q_dicts.append({field + "__gte": start})
+
+        if repo_id is not None:
+            q_dicts.append({"repo_id": repo_id})
+
+        Q_filters = [Q(**q_dict) for q_dict in q_dicts]
+        query = reduce(operator.and_, Q_filters)
+
+        return self(query).count()
+
+    def num_created(self, start=None, end=None, repo_id=None):
+        """
+        Find the number of content units that were created in between the start and end times.
+
+        :param start: find units created after this time
+        :type  start: str in ISO8601 format with timezone
+        :param end: find units created before this time
+        :type  end: str in ISO8601 format with timezone
+        :param repo_id: restrict search to this repo
+        :type  repo_id: str
+        :return: number of units created between start and end of the specified repo
+        :rtype:  int
+        """
+        return self._num_between("created", start, end, repo_id)
+
+    def num_updated(self, start=None, end=None, repo_id=None):
+        """
+        Find the number of content units that were updated in between the start and end times.
+
+        :param start: find units updated after this time
+        :type  start: str in ISO8601 format with timezone
+        :param end: find units updated before this time
+        :type  end: str in ISO8601 format with timezone
+        :param repo_id: restrict search to this repo
+        :type  repo_id: str
+        :return: number of units updated between start and end of the specified repo
+        :rtype:  int
+        """
+        return self._num_between("updated", start, end, repo_id)
