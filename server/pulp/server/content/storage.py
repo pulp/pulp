@@ -84,6 +84,9 @@ class FileStorage(ContentStorage):
     def get_path(unit):
         """
         Get the appropriate storage path for the specified unit.
+        The path is derived by hashing a string representation of the unit
+        key and combining it with the storage directory and unit type as follows:
+        <storage_dir>/content/units/<digest>[0:2]/<digest>[2:]/
 
         :param unit: A content unit.
         :type unit: pulp.server.db.model.FileContentUnit
@@ -94,11 +97,12 @@ class FileStorage(ContentStorage):
             config.get('server', 'storage_dir'),
             'content',
             'units')
+        digest = unit.unit_key_as_digest(sha256())
         return os.path.join(
             storage_dir,
             unit.type_id,
-            unit.id[0:4],
-            unit.id)
+            digest[0:2],
+            digest[2:])
 
     def put(self, unit, path, location=None):
         """
