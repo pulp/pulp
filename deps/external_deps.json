@@ -31,7 +31,7 @@
     },
     {
         "name": "python-kombu",
-        "version": "3.0.24-11.pulp",
+        "version": "3.0.33-1.pulp",
         "platform": [ "el6", "el7", "fc22", "fc23"]
     },
     {
