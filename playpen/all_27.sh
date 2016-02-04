@@ -43,8 +43,8 @@ sudo rm /etc/httpd/conf.d/pulp_streamer.conf
 # Pulp 2.7 is incompatible with python-mongoengine >= 3 and python-pymongo >=
 # 0.10.
 sudo dnf  -y remove python-{mongoengine,pymongo}
-sudo dnf config-manager --disablerepo pulp-nightlies
-sudo dnf config-manager --enablerepo pulp-2.7-beta
+sudo dnf config-manager --set-disabled pulp-nightlies
+sudo dnf config-manager --set-enabled pulp-2.7-beta
 sudo dnf -y install python-mongoengine-0.8.8 python-pymongo-2.5.2
 
 fmt <<EOF
