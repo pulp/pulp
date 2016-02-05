@@ -1,3 +1,4 @@
+import mimetypes
 import os
 
 from django.http import \
@@ -68,7 +69,13 @@ class ContentView(View):
         :rtype: django.http.HttpResponse
         """
         if os.access(path, os.R_OK):
-            reply = HttpResponse()
+            content_type = mimetypes.guess_type(path)[0]
+            # If the content type can't be detected by mimetypes, send it as arbitrary
+            # binary data. See https://tools.ietf.org/html/rfc2046#section-4.5.1 for
+            # more information.
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            reply = HttpResponse(content_type=content_type)
             reply['X-SENDFILE'] = path
         else:
             reply = HttpResponseForbidden()
