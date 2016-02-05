@@ -2,12 +2,17 @@ import mimetypes
 import os
 
 from django.http import \
-    HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
+    HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.shortcuts import render_to_response
 from django.views.generic import View
 
 from pulp.repoauth.wsgi import allow_access
 from pulp.server.lazy import URL, Key
 from pulp.server.config import config as pulp_conf
+
+
+# Make sure all requested paths fall under this directory.
+PUBLISH_DIR = '/var/lib/pulp/published'
 
 
 class ContentView(View):
@@ -136,12 +141,36 @@ class ContentView(View):
             # Not Authorized
             return HttpResponseForbidden()
 
+        if not path.startswith(PUBLISH_DIR):
+            # Someone is requesting something they shouldn't.
+            return HttpResponseForbidden()
+
         # Immediately 404 if the symbolic link doesn't even exist
         if not os.path.lexists(request.path_info):
-            return HttpResponseNotFound(request.path_info)
+            raise Http404
+
+        if os.path.isdir(path):
+            return self.directory_index(path)
 
         # Already downloaded
         if os.path.exists(path):
             return self.x_send(path)
 
         return self.redirect(request, self.key)
+
+    @staticmethod
+    def directory_index(path):
+        """
+        Render the given path to a directory index.
+
+        :param path: Absolute path to the directory to list.
+        :type  path: str
+
+        :return: HttpResponse
+        """
+        listing = os.listdir(path)
+        context = {
+            'dirs': sorted([f for f in listing if os.path.isdir(os.path.join(path, f))]),
+            'files': sorted([f for f in listing if os.path.isfile(os.path.join(path, f))]),
+        }
+        return render_to_response('directory_index.html', context)

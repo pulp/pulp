@@ -307,6 +307,9 @@ ln -s %{_var}/lib/pulp/nodes/published/http %{buildroot}/%{_var}/www/pulp/nodes
 ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 # End Nodes Configuration
 
+# Templates for Django
+install -p -D -m 644 server/usr/share/pulp/templates/* -t %{buildroot}/%{_datadir}/pulp/templates
+
 %endif # End server installation block
 
 # Everything else installation
@@ -404,6 +407,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
 %dir %{_sysconfdir}/%{name}/vhosts80
 %dir %{_datadir}/%{name}/wsgi
+%{_datadir}/%{name}/templates
 %{_datadir}/%{name}/wsgi/webservices.wsgi
 %{_datadir}/%{name}/wsgi/content.wsgi
 %{_bindir}/pulp-manage-db

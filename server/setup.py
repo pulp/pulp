@@ -28,5 +28,5 @@ setup(
     install_requires=[
         'blinker', 'celery >=3.1.0, <3.2.0', DJANGO_REQUIRES, 'httplib2', 'iniparse',
         'isodate>=0.5.0', 'm2crypto', 'mongoengine>=0.10.0', 'oauth2>=1.5.211', 'pymongo>=3.0.0',
-        'semantic_version>=2.2.0', 'setuptools']
+        'semantic_version>=2.2.0', 'setuptools'],
 )

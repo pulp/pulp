@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pulp Repository Index</title>
+</head>
+<body>
+    <h1>Pulp Repository Content</h1>
+    <a href="../">Parent Directory</a>
+
+    <ul style='list-style: none outside none; font-family: monospace'>
+        {% for d in dirs %}
+            <li><a href="{{ d }}/">{{ d }}/</a></li>
+        {% endfor %}
+        {% for f in files %}
+            <li><a href="{{ f }}">{{ f }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
