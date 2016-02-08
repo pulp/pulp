@@ -174,6 +174,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Feb 08 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-2.pulp
+- Add patch back to kombu (pcreech@redhat.com)
+
 * Wed Feb 03 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-1.pulp
 - Upgrade python-kombu dep to 3.0.33 (pcreech@redhat.com)
 
