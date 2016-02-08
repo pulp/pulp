@@ -42,16 +42,22 @@ class TestContentView(TestCase):
         self.assertEqual(joined, 'http://redhat.com:123http://host/my/path/?age=10')
 
     @patch('os.access')
-    @patch(MODULE + '.HttpResponse')
-    def test_x_send(self, response, access):
+    def test_x_send(self, access):
         path = '/my/path'
-        response.return_value = {}
         access.return_value = True
         reply = ContentView.x_send(path)
         access.assert_called_once_with(path, os.R_OK)
-        response.assert_called_once_with()
-        self.assertEqual(response.return_value['X-SENDFILE'], path)
-        self.assertEqual(reply, response.return_value)
+        self.assertEqual(reply['X-SENDFILE'], path)
+        self.assertEqual(reply['Content-Type'], 'application/octet-stream')
+
+    @patch('os.access')
+    def test_x_send_mime_type(self, access):
+        path = '/my/path.rpm'
+        access.return_value = True
+        reply = ContentView.x_send(path)
+        access.assert_called_once_with(path, os.R_OK)
+        self.assertEqual(reply['X-SENDFILE'], path)
+        self.assertEqual(reply['Content-Type'], 'application/x-rpm')
 
     @patch('os.access')
     @patch(MODULE + '.HttpResponseForbidden')
