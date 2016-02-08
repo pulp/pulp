@@ -165,7 +165,17 @@ def ensure_database_indexes():
 
     # Load all the model classes that the server knows about and ensure their indexes as well
     plugin_manager = PluginManager()
-    for model_class in plugin_manager.unit_models.itervalues():
+    for unit_type, model_class in plugin_manager.unit_models.items():
+        unit_key_index = {'fields': model_class.unit_key_fields, 'unique': True}
+        for index in model_class._meta['indexes']:
+            if isinstance(index, dict) and 'fields' in index:
+                if list(index['fields']) == list(unit_key_index['fields']):
+                    raise ValueError("Content unit type '%s' explicitly defines an index for its "
+                                     "unit key. This is not allowed because the platform handles"
+                                     "it for you." % unit_type)
+        model_class._meta['indexes'].append(unit_key_index)
+        model_class._meta['index_specs'] = \
+            model_class._build_index_specs(model_class._meta['indexes'])
         model_class.ensure_indexes()
 
 

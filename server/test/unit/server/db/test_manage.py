@@ -141,9 +141,30 @@ class TestManageDB(MigrationTest):
         the appropriate platform models
         """
         test_model = MagicMock()
-        mock_plugin_manager.return_value.unit_models.itervalues.return_value = [test_model]
+        mock_plugin_manager.return_value.unit_models.items.return_value = [('test-unit',
+                                                                            test_model)]
         manage.ensure_database_indexes()
         test_model.ensure_indexes.assert_called_once_with()
+
+    @patch.object(manage, 'PluginManager')
+    @patch.object(manage, 'model')
+    def test_ensure_database_indexes_throws_exception(self, mock_model, mock_plugin_manager):
+        """
+        Make sure that the ensure_indexes method is called for all
+        the appropriate platform models
+        """
+        test_model = MagicMock()
+        test_model.unit_key_fields = ('1', '2', '3')
+        unit_key_index = {'fields': test_model.unit_key_fields, 'unique': True}
+        test_model._meta.__getitem__.side_effect = [[unit_key_index]]
+        mock_plugin_manager.return_value.unit_models.items.return_value = [('test-unit',
+                                                                            test_model)]
+        with self.assertRaises(ValueError) as context:
+            manage.ensure_database_indexes()
+        self.assertEqual(context.exception.message, "Content unit type 'test-unit' explicitly "
+                                                    "defines an index for its unit key. This is "
+                                                    "not allowed because the platform handlesit "
+                                                    "for you.")
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')
