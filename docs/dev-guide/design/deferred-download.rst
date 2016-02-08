@@ -89,8 +89,9 @@ than the component diagram above:
    is first passed through a WSGIAccessScript in order to validate the URL signature. Once
    validated, Apache uses mod_rewrite to strip the signature from the URL. This occurs so that
    the URL does not differ for the same file so that Squid can retrieve the cached content for
-   subsequent requests. Apache acts as a reverse proxy and makes a plaintext request to Squid
-   on behalf of the client.
+   subsequent requests.
+
+#. Apache acts as a reverse proxy and makes a plaintext request to Squid on behalf of the client.
 
 #. Squid performs a cache lookup on the requested content. If it is available, it is served
    to Apache, which in turn serves it to the client. If the cache lookup results in a miss,
@@ -99,10 +100,15 @@ than the component diagram above:
 #. The Pulp Streamer determines the correct upstream URL and entitlement certificates by looking
    the requested content up in the content catalog in MongoDB.
 
-#. The Pulp Streamer downloads the content and streams it back to Squid.
+#. The Pulp Streamer makes a request to the upstream repository, using any entitlement
+   certificates necessary.
+
+#. The Pulp Streamer forwards the results of the request to Squid as it receives them.
 
 #. Squid streams content received from the Pulp Streamer to Apache and caches the content
    for future requests.
+
+#. The Apache reverse proxy streams the content back to the client.
 
 #. The Pulp Streamer adds an entry to the ``DeferredDownload`` database collection to
    indicate to the Pulp server that a content unit has been cached and is ready for retrieval
