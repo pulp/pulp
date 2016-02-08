@@ -176,13 +176,15 @@ class ApplicabilityRegenerationManager(object):
 
         :param repo_id: Repository id for which applicability is being calculated
         :type repo_id: str
-        :param existing_applicability_ids: Tuple of Object Ids for applicability profiles
+        :param existing_applicability_ids: Tuple of Object Ids for applicability profiles.
+                                           Don't pass too much of these, all the profile data
+                                           associated with these ids is loaded into the memory.
         :type existing_applicability_ids: tuple of dicts in form of {"_id": ObjectID('mongo-id')}
         """
         id_list = [id['_id'] for id in existing_applicability_ids]
         existing_applicabilities = RepoProfileApplicability.get_collection().find(
             {"_id": {"$in": id_list}})
-        for existing_applicability in existing_applicabilities:
+        for existing_applicability in list(existing_applicabilities):
                 # Convert cursor to RepoProfileApplicability object
             existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
             profile_hash = existing_applicability['profile_hash']
