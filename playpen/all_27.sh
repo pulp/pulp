@@ -8,6 +8,7 @@ set -euo pipefail
 # This associative array is incomplete. Patches welcome.
 declare -rA repos_branches=(
     [pulp]=2.7-dev
+    [pulp_docker]=1.0-dev
     [pulp_ostree]=1.0-dev
     [pulp_puppet]=2.7-dev
     [pulp_python]=1.0-dev
