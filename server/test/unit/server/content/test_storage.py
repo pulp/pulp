@@ -62,22 +62,26 @@ class TestContentStorage(TestCase):
 
 class TestFileStorage(TestCase):
 
+    @patch('pulp.server.content.storage.sha256')
     @patch('pulp.server.content.storage.config')
-    def test_get_path(self, config):
+    def test_get_path(self, config, sha256):
         storage_dir = '/tmp/storage'
+        digest = '0123456789'
         config.get = lambda s, p: {'server': {'storage_dir': storage_dir}}[s][p]
-        unit = Mock(id='0123456789', type_id='ABC')
+        unit = Mock(type_id='ABC')
+        unit.unit_key_as_digest.return_value = digest
 
         # test
         path = FileStorage.get_path(unit)
 
         # validation
+        unit.unit_key_as_digest.assert_called_once_with(sha256.return_value)
         self.assertEqual(
             path,
             os.path.join(storage_dir, 'content', 'units',
                          unit.type_id,
-                         unit.id[0:4],
-                         unit.id))
+                         digest[0:2],
+                         digest[2:]))
 
     @patch('pulp.server.content.storage.shutil')
     @patch('pulp.server.content.storage.mkdir')

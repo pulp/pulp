@@ -3,6 +3,7 @@
 """
 Tests for the pulp.server.db.model module.
 """
+from hashlib import sha256
 from mock import patch, Mock, call
 
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField,
@@ -84,7 +85,8 @@ class ContentUnitHelper(model.ContentUnit):
     """Used to test ContentUnit since it must be sub-classed to be used."""
     apple = StringField()
     pear = StringField()
-    unit_key_fields = ('apple', 'pear')
+    age = IntField()
+    unit_key_fields = ('apple', 'pear', 'age')
     _content_type_id = StringField(default='mock_type_id')
 
 
@@ -101,6 +103,44 @@ class TestContentUnit(unittest.TestCase):
         self.assertTrue(model.ContentUnit._last_updated.required)
         self.assertTrue(isinstance(model.ContentUnit._storage_path, StringField))
         self.assertTrue(isinstance(model.ContentUnit.pulp_user_metadata, DictField))
+
+    def test_unit_key_as_digest(self):
+        unit = ContentUnitHelper()
+        unit.apple = 'red'
+        unit.pear = 'yellow'
+        unit.age = 21
+        _hash = sha256()
+
+        # test
+        digest = unit.unit_key_as_digest(_hash)
+
+        # validation
+        _hash = sha256()
+        for key, value in sorted(unit.unit_key.items()):
+            _hash.update(key)
+            if not isinstance(value, basestring):
+                _hash.update(str(value))
+            else:
+                _hash.update(value)
+        self.assertEqual(digest, _hash.hexdigest())
+
+    def test__hash__(self):
+        unit = ContentUnitHelper()
+        unit.apple = 'red'
+        unit.pear = 'yellow'
+        unit.age = 21
+
+        with patch.object(unit, 'unit_key_as_digest') as unit_key_as_digest:
+            unit_key_as_digest.return_value = '1234'
+            value = hash(unit)
+            self.assertEqual(value, hash(unit.type_id + unit_key_as_digest.return_value))
+
+    def test_unit_key_str(self):
+        unit = ContentUnitHelper()
+        with patch.object(unit, 'unit_key_as_digest') as unit_key_as_digest:
+            s = unit.unit_key_str
+            unit_key_as_digest.assert_called_once_with()
+            self.assertEqual(s, unit_key_as_digest.return_value)
 
     @patch('pulp.server.db.model.uuid')
     def test_default_id(self, uuid):
@@ -166,10 +206,10 @@ class TestContentUnit(unittest.TestCase):
         self.assertEquals(n_tuple, ContentUnitHelper.NAMED_TUPLE(apple='foo', pear='bar'))
 
     def test_id_to_dict(self):
-        my_unit = ContentUnitHelper(apple='apple', pear='pear')
+        my_unit = ContentUnitHelper(apple='apple', pear='pear', age='age')
         ret = my_unit.to_id_dict()
         expected_dict = {
-            'unit_key': {'pear': u'pear', 'apple': u'apple'},
+            'unit_key': {'pear': u'pear', 'apple': u'apple', 'age': u'age'},
             'type_id': 'mock_type_id'
         }
         self.assertEqual(ret, expected_dict)

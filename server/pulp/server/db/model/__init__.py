@@ -5,6 +5,7 @@ import os
 import random
 import uuid
 from collections import namedtuple
+from hashlib import sha256
 from hmac import HMAC
 
 from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
@@ -633,7 +634,7 @@ class ContentUnit(AutoRetryDocument):
         """
         The unit key represented as a string ordered by unit key fields alphabetically
         """
-        return str(sorted([getattr(self, key) for key in self.unit_key_fields]))
+        return self.unit_key_as_digest()
 
     @property
     def unit_key_as_named_tuple(self):
@@ -669,12 +670,30 @@ class ContentUnit(AutoRetryDocument):
         """
         return self._content_type_id
 
+    def unit_key_as_digest(self, algorithm=None):
+        """
+        The digest (hash) of the unit key.
+
+        :param algorithm: A hashing algorithm object. Uses SHA256 when not specified.
+        :type algorithm: hashlib.algorithm
+        :return: The hex digest of the unit key.
+        :rtype: str
+        """
+        _hash = algorithm or sha256()
+        for key, value in sorted(self.unit_key.items()):
+            _hash.update(key)
+            if not isinstance(value, basestring):
+                _hash.update(str(value))
+            else:
+                _hash.update(value)
+        return _hash.hexdigest()
+
     def __hash__(self):
         """
         This should provide a consistent and unique hash where units of the same
         type and the same unit key will get the same hash value.
         """
-        return hash(self._content_type_id + self.unit_key_str)
+        return hash(self.type_id + self.unit_key_as_digest())
 
 
 class FileContentUnit(ContentUnit):
