@@ -5,20 +5,20 @@ import itertools
 import logging
 import ssl
 import time
+import warnings
+from contextlib import contextmanager
 from gettext import gettext as _
 
 import mongoengine
+import semantic_version
 from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector
 
 from pulp.common import error_codes
-
 from pulp.server import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpCodedException, PulpException
-
-import semantic_version
 
 
 _CONNECTION = None
@@ -166,6 +166,87 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         _CONNECTION = None
         _DATABASE = None
         raise
+
+
+@contextmanager
+def suppress_connect_warning(logger):
+    """
+    A context manager that will suppress pymongo's connect before fork warning
+
+    python's warnings module gives you a way to filter warnings (warnings.filterwarnings),
+    and a way to catch warnings (warnings.catch_warnings), but not a way to do both. This
+    context manager filters out the specific python warning about connecting before fork,
+    while allowing all other warnings to normally be issued, so they aren't covered up
+    by this context manager.
+
+    The behavior seen here is based on the warnings.catch_warnings context manager, which
+    also works by stashing the original showwarnings function and replacing it with a custom
+    function while the context is entered.
+
+    Outright replacement of functions in the warnings module is recommended by that module.
+
+    The logger from the calling module is used to help identify which call to
+    this context manager suppressed the pymongo warning.
+
+    :param logger: logger from the module using this context manager
+    :type logger: logging.Logger
+    """
+    try:
+        warning_func_name = warnings.showwarning.func_name
+    except AttributeError:
+        warning_func_name = None
+
+    # if the current showwarning func isn't already pymongo_suppressing_showwarning, replace it.
+    # checking this makes this context manager reentrant with itself, since it won't replace
+    # showwarning functions already replaced by this CM, but will replace all others
+    if warning_func_name != 'pymongo_suppressing_showwarning':
+        original_showwarning = warnings.showwarning
+
+        # this is effectively a functools.partial used to generate a version of the warning catcher
+        # using the passed-in logger and original showwarning function, but the logging module
+        # rudely checks the type before calling this, and does not accept partials
+        def pymongo_suppressing_showwarning(*args, **kwargs):
+            return _pymongo_warning_catcher(logger, original_showwarning, *args, **kwargs)
+
+        try:
+            # replace warnings.showwarning with our pymongo warning catcher,
+            # using the passed-in logger and the current showwarning function
+            warnings.showwarning = pymongo_suppressing_showwarning
+            yield
+        finally:
+            # whatever happens, restore the original showwarning function
+            warnings.showwarning = original_showwarning
+    else:
+        # showwarning already replaced outside this context manager, nothing to do
+        yield
+
+
+def _pymongo_warning_catcher(logger, showwarning, message, category, *args, **kwargs):
+    """
+    An implementation of warnings.showwarning that supresses pymongo's connect before work warning
+
+    This is intended to be wrapped with functools.partial by the mechanism that replaces
+    the warnings.showwarnings function, with the first two args being a list in which to store
+    the caught pymongo warning(s), and the second being the original warnings.showwarnings
+    function, through which all other warnings will be passed.
+
+    :param caught: list to be populated with caught warnings for inspection in the caller
+    :type caught: list
+    :param showwarning: The "real" warnings.showwarning function, for passing unrelated warnings
+    :type showwarning: types.FunctionType
+
+    All remaining args are the same as warnings.showwarning, and are only used here for filtering
+    """
+    message_expected = 'MongoClient opened before fork'
+    # message is an instance of category, which becomes the warning message when cast as str
+    if category is UserWarning and message_expected in str(message):
+        # warning is pymongo connect before fork warning, log it...
+        logger.debug('pymongo reported connection before fork, ignoring')
+        # ...and filter it out for the rest of this process's lifetime
+        warnings.filterwarnings('ignore', message_expected)
+    else:
+        # not interested in this warning, run it through the provided showwarning function
+        showwarning(message, category, *args, **kwargs)
 
 
 def _connect_to_one_of_seeds(connection_kwargs, seeds_list, db_name):
