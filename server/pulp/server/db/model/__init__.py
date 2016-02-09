@@ -954,8 +954,6 @@ class LazyCatalogEntry(AutoRetryDocument):
         """
         revisions = set([0])
         query = dict(
-            unit_id=self.unit_id,
-            unit_type_id=self.unit_type_id,
             importer_id=self.importer_id,
             path=self.path
         )
