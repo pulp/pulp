@@ -176,6 +176,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Feb 09 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-3.pulp
+- Add kombu patch for reconnect issue (pcreech@redhat.com)
+
 * Mon Feb 08 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-2.pulp
 - Add patch back to kombu (pcreech@redhat.com)
 
