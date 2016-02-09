@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.33
-Release:        2.pulp%{?dist}
+Release:        3.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -21,6 +21,7 @@ URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
 Patch0:         563.patch
 Patch1:         1212200.patch
+Patch2:         569.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -118,6 +119,7 @@ This subpackage is for python3
 %endif
 
 %patch0 -p1
+%patch2 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -174,6 +176,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Feb 09 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-3.pulp
+- Add kombu patch for reconnect issue (pcreech@redhat.com)
+
 * Mon Feb 08 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-2.pulp
 - Add patch back to kombu (pcreech@redhat.com)
 
