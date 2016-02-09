@@ -1153,7 +1153,10 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         Cancel the current step
         """
         super(DownloadStep, self).cancel()
-        self.downloader.cancel()
+        # If this step gets canceled before initialize() completes, the downloader may not exist
+        # yet.
+        if hasattr(self, 'downloader') and self.downloader:
+            self.downloader.cancel()
 
 
 class SaveUnitsStep(PluginStep):
