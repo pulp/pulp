@@ -279,17 +279,15 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
     @mock.patch('pulp.server.db.model.consumer.UnitProfile.get_collection')
     def test_batch_regenerate_applicability(self, mock_unit_profile_get_collection,
                                             mock_repo_profile_app_get_collection, mock_repo_qs):
-
         factory.initialize()
         applicability_manager = ApplicabilityRegenerationManager()
         mock_repo = mock.MagicMock()
         mock_repo.repo_id = 'fake-repo'
         mock_repo_qs.find_by_criteria.return_value = [mock_repo]
-        existing_ids = ({'_id': 'mock-object-id'}, {'_id': 'mock-object-id-2'})
-        applicability_manager.batch_regenerate_applicability('mock_repo', existing_ids)
-
-        # validate that batch size of 5 is used
-        expected_params = {'_id': {'$in': ['mock-object-id', 'mock-object-id-2']}}
+        profile_hashes = ({'profile_hash': 'mock-hash-1'}, {'profile_hash': 'mock-hash-2'})
+        applicability_manager.batch_regenerate_applicability('mock_repo', profile_hashes)
+        expected_params = {'profile_hash': {'$in': ['mock-hash-1', 'mock-hash-2']},
+                           'repo_id': 'mock_repo'}
         mock_repo_profile_app_get_collection.return_value.find.assert_called_with(expected_params)
 
     @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')

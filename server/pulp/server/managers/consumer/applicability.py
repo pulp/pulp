@@ -162,28 +162,28 @@ class ApplicabilityRegenerationManager(object):
         task_group_id = uuid4()
 
         for repo_id in repo_ids:
-            existing_applicability_ids = RepoProfileApplicability.get_collection().find(
-                {'repo_id': repo_id}, {'_id': 1})
-            for batch in paginate(existing_applicability_ids, 10):
+            profile_hashes = RepoProfileApplicability.get_collection().find(
+                {'repo_id': repo_id}, {'profile_hash': 1})
+            for batch in paginate(profile_hashes, 10):
                 batch_regenerate_applicability_task.apply_async((repo_id, batch),
                                                                 **{'group_id': task_group_id})
         return task_group_id
 
     @staticmethod
-    def batch_regenerate_applicability(repo_id, existing_applicability_ids):
+    def batch_regenerate_applicability(repo_id, profile_hashes):
         """
         Regenerate and save applicability data for a batch of existing applicabilities
 
         :param repo_id: Repository id for which applicability is being calculated
         :type repo_id: str
-        :param existing_applicability_ids: Tuple of Object Ids for applicability profiles.
-                                           Don't pass too much of these, all the profile data
-                                           associated with these ids is loaded into the memory.
-        :type existing_applicability_ids: tuple of dicts in form of {"_id": ObjectID('mongo-id')}
+        :param profile_hashes: Tuple of consumer profile hashes for applicability profiles.
+                               Don't pass too much of these, all the profile data
+                               associated with these hashes is loaded into the memory.
+        :type profile_hashes: tuple of dicts in form of {'profile_hash': str}
         """
-        id_list = [id['_id'] for id in existing_applicability_ids]
+        profile_hash_list = [phash['profile_hash'] for phash in profile_hashes]
         existing_applicabilities = RepoProfileApplicability.get_collection().find(
-            {"_id": {"$in": id_list}})
+            {"repo_id": repo_id, "profile_hash": {"$in": profile_hash_list}})
         for existing_applicability in list(existing_applicabilities):
                 # Convert cursor to RepoProfileApplicability object
             existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
