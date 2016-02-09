@@ -5,6 +5,7 @@
       - bash-completion
       - screen
       - tmux
+      - tree
       - vim-enhanced
 
 - name: Install packages requires to gather Pulp facts
