@@ -129,7 +129,6 @@ _default_values = {
         'login_method': '',
     },
     'lazy': {
-        'enabled': 'false',
         'redirect_host': socket.getfqdn(),
         'redirect_port': '',
         'redirect_path': '/streamer/',
