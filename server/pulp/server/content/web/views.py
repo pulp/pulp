@@ -5,7 +5,6 @@ from django.http import \
     HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
 from django.views.generic import View
 
-from pulp.common.config import parse_bool
 from pulp.repoauth.wsgi import allow_access
 from pulp.server.lazy import URL, Key
 from pulp.server.config import config as pulp_conf
@@ -131,7 +130,6 @@ class ContentView(View):
         """
         host = request.get_host()
         path = os.path.realpath(request.path_info)
-        lazy_enabled = parse_bool(pulp_conf.get('lazy', 'enabled'))
 
         # Authorization
         if not allow_access(request.environ, host):
@@ -146,9 +144,4 @@ class ContentView(View):
         if os.path.exists(path):
             return self.x_send(path)
 
-        # Redirect if lazy is on
-        if lazy_enabled:
-            return self.redirect(request, self.key)
-
-        # NotFound
-        return HttpResponseNotFound(request.path_info)
+        return self.redirect(request, self.key)
