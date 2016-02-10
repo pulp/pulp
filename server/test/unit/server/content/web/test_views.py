@@ -152,7 +152,7 @@ class TestContentView(TestCase):
     def test_get_redirected(self, redirect, allow_access, mock_conf_get, exists, realpath):
         allow_access.return_value = True
         exists.return_value = False
-        realpath.side_effect = lambda p: '/var/lib/pulp/published/content'
+        realpath.side_effect = lambda p: '/var/lib/pulp/content/rpm'
 
         host = 'localhost'
         path = '/var/www/pub/content'
@@ -167,7 +167,7 @@ class TestContentView(TestCase):
         # validation
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
-        exists.assert_has_call('/var/lib/pulp/published/content')
+        exists.assert_has_call('/var/lib/pulp/content/rpm')
         self.assertTrue(exists.call_count > 0)
         redirect.assert_called_once_with(request, view.key)
         self.assertEqual(reply, redirect.return_value)
