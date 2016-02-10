@@ -59,6 +59,7 @@ if sys.version_info >= (2, 6):
         '/etc/pulp/server/plugins.conf.d/nodes/distributor',
         '/etc/pulp/vhosts80',
         '/usr/share/pulp',
+        '/usr/share/pulp/templates',
         '/usr/share/pulp/wsgi',
         '/usr/lib/pulp/admin',
         '/usr/lib/pulp/admin/extensions',
@@ -103,6 +104,10 @@ if sys.version_info >= (2, 6):
         ('server/usr/share/pulp/wsgi/content.wsgi', '/usr/share/pulp/wsgi/content.wsgi'),
         ('server/usr/share/pulp/wsgi/repo_auth.wsgi',
          '/usr/share/pulp/wsgi/repo_auth.wsgi'),
+        ('server/usr/share/pulp/templates/404.html', '/usr/share/pulp/templates/404.html'),
+        ('server/usr/share/pulp/templates/500.html', '/usr/share/pulp/templates/500.html'),
+        ('server/usr/share/pulp/templates/directory_index.html',
+         '/usr/share/pulp/templates/directory_index.html'),
 
         # Apache
         ('server/etc/httpd/conf.d/pulp_content.conf', '/etc/httpd/conf.d/pulp_content.conf'),

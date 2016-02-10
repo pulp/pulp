@@ -4,6 +4,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 
+from pulp.server.content.web import views as content_views
 from pulp.server.content.web.views import ContentView
 
 
@@ -122,10 +123,10 @@ class TestContentView(TestCase):
     def test_get_x_send(self, x_send, allow_access, exists, realpath):
         allow_access.return_value = True
         exists.return_value = True
-        realpath.side_effect = lambda p: p.upper()
+        realpath.side_effect = lambda p: '/var/lib/pulp/published/content'
 
         host = 'localhost'
-        path = '/pulp/content'
+        path = '/var/www/pub/content'
 
         request = Mock(path_info=path)
         request.get_host.return_value = host
@@ -137,8 +138,8 @@ class TestContentView(TestCase):
         # validation
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
-        exists.assert_called_once_with(path.upper())
-        x_send.assert_called_once_with(path.upper())
+        exists.assert_called_once_with('/var/lib/pulp/published/content')
+        x_send.assert_called_once_with('/var/lib/pulp/published/content')
         self.assertEqual(reply, x_send.return_value)
 
     @patch('os.path.lexists', Mock(return_value=True))
@@ -151,10 +152,10 @@ class TestContentView(TestCase):
     def test_get_redirected(self, redirect, allow_access, mock_conf_get, exists, realpath):
         allow_access.return_value = True
         exists.return_value = False
-        realpath.side_effect = lambda p: p.upper()
+        realpath.side_effect = lambda p: '/var/lib/pulp/published/content'
 
         host = 'localhost'
-        path = '/pulp/content'
+        path = '/var/www/pub/content'
 
         request = Mock(path_info=path)
         request.get_host.return_value = host
@@ -166,7 +167,7 @@ class TestContentView(TestCase):
         # validation
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
-        exists.assert_has_call(path.upper())
+        exists.assert_has_call('/var/lib/pulp/published/content')
         self.assertTrue(exists.call_count > 0)
         redirect.assert_called_once_with(request, view.key)
         self.assertEqual(reply, redirect.return_value)
@@ -176,29 +177,21 @@ class TestContentView(TestCase):
     @patch(MODULE + '.allow_access', Mock(return_value=True))
     @patch(MODULE + '.Key.load', Mock())
     @patch(MODULE + '.pulp_conf')
-    @patch(MODULE + '.HttpResponseNotFound')
-    def test_get_not_found(self, not_found, pulp_conf):
+    def test_get_not_found(self, pulp_conf):
         host = 'localhost'
-        path = '/pulp/content'
+        path = '/var/lib/pulp/published/content'
         request = Mock(path_info=path)
         request.get_host.return_value = host
         conf = {
             'authentication': {
                 'rsa_key': '/tmp/key'
             },
-            'lazy': {
-                'enabled': 'false',
-            }
         }
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
         # test
         view = ContentView()
-        reply = view.get(request)
-
-        # validation
-        not_found.assert_called_once_with(path)
-        self.assertEqual(reply, not_found.return_value)
+        self.assertRaises(content_views.Http404, view.get, request)
 
     @patch(MODULE + '.allow_access')
     @patch(MODULE + '.HttpResponseForbidden')
@@ -207,7 +200,27 @@ class TestContentView(TestCase):
         allow_access.return_value = False
 
         host = 'localhost'
-        path = '/pulp/content'
+        path = '/var/lib/pulp/published/content'
+
+        request = Mock(path_info=path)
+        request.get_host.return_value = host
+
+        # test
+        view = ContentView()
+        reply = view.get(request)
+
+        # validation
+        allow_access.assert_called_once_with(request.environ, host)
+        self.assertEqual(reply, forbidden.return_value)
+
+    @patch(MODULE + '.allow_access')
+    @patch(MODULE + '.HttpResponseForbidden')
+    @patch(MODULE + '.Key.load', Mock())
+    def test_get_outside_pub(self, forbidden, allow_access):
+        allow_access.return_value = True
+
+        host = 'localhost'
+        path = '/etc/pki/tls/private/myprecious.key'
 
         request = Mock(path_info=path)
         request.get_host.return_value = host
