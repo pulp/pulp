@@ -12,6 +12,8 @@ from gettext import gettext as _
 import logging
 import threading
 
+from pulp.server.compat import json, json_util
+
 from requests import post
 from requests.auth import HTTPBasicAuth
 
@@ -24,14 +26,14 @@ _logger = logging.getLogger(__name__)
 def handle_event(notifier_config, event):
     # fire the actual http push function off in a separate thread to keep
     # pulp from blocking or deadlocking due to the tasking subsystem
-    data = event.data()
-    _logger.info(data)
-    thread = threading.Thread(target=_send_post, args=[notifier_config, data])
+    json_body = json.dumps(event.data(), default=json_util.default)
+    _logger.info(json_body)
+    thread = threading.Thread(target=_send_post, args=[notifier_config, json_body])
     thread.setDaemon(True)
     thread.start()
 
 
-def _send_post(notifier_config, data):
+def _send_post(notifier_config, json_body):
     """
     Sends a POST request with the given data to the configured notifier url.
 
@@ -39,8 +41,8 @@ def _send_post(notifier_config, data):
                             contain the 'url' key, and optional 'username' and
                             'password' keys.
     :type notifier_config:  dict
-    :param data:            The POST data as a Python dictionary that is JSON serializable.
-    :param data:            dict
+    :param json_body:       The POST data that has been serialized to JSON.
+    :param json_body:       dict
     """
     if 'url' not in notifier_config or not notifier_config['url']:
         _logger.error(_('HTTP notifier configured without a URL; cannot fire event'))
@@ -53,7 +55,7 @@ def _send_post(notifier_config, data):
     else:
         auth = None
 
-    response = post(url, json=data, auth=auth)
+    response = post(url, json=json_body, auth=auth)
     if response.status_code != 200:
         _logger.error(_('Received HTTP {code} from HTTP notifier to {url}.').format(
             code=response.status_code, url=url))

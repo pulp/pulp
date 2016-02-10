@@ -794,7 +794,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
             result_code = RepoSyncResult.RESULT_ERROR  # RESULT_UNKNOWN?
 
         sync_result = RepoSyncResult.expected_result(
-            repo_obj.repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+            repo_obj.repo_id, repo_importer.importer_type_id, repo_importer.importer_type_id,
             sync_start_timestamp, sync_end_timestamp, added_count, updated_count, removed_count,
             summary, details, result_code)
 

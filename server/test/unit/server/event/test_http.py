@@ -10,8 +10,10 @@ MODULE_PATH = 'pulp.server.event.http.'
 
 class TestHTTPNotifierTests(unittest.TestCase):
 
+    @mock.patch(MODULE_PATH + 'json')
+    @mock.patch(MODULE_PATH + 'json_util')
     @mock.patch(MODULE_PATH + 'threading.Thread')
-    def test_handle_event(self, mock_thread):
+    def test_handle_event(self, mock_thread, mock_jutil, mock_json):
         # Setup
         notifier_config = {'key': 'value'}
         mock_event = mock.Mock(spec=Event)
@@ -19,9 +21,10 @@ class TestHTTPNotifierTests(unittest.TestCase):
 
         # Test
         http.handle_event(notifier_config, mock_event)
+        mock_json.dumps.assert_called_once_with(event_data, default=mock_jutil.default)
         mock_thread.assert_called_once_with(
             target=http._send_post,
-            args=[notifier_config, event_data]
+            args=[notifier_config, mock_json.dumps.return_value]
         )
 
     @mock.patch(MODULE_PATH + 'post')
