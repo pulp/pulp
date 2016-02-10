@@ -20,12 +20,12 @@ from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
     PulpCodedException
+from pulp.server.db.connection import suppress_connect_warning
 from pulp.server.db.model import Worker, ReservedResource, TaskStatus
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers import factory as managers
 from pulp.server.managers.schedule import utils
-
 
 controller = control.Control(app=celery)
 _logger = logging.getLogger(__name__)
@@ -100,7 +100,8 @@ class PulpTask(CeleryTask):
         """
         args = self._type_transform(args)
         kwargs = self._type_transform(kwargs)
-        return super(PulpTask, self).__call__(*args, **kwargs)
+        with suppress_connect_warning(_logger):
+            return super(PulpTask, self).__call__(*args, **kwargs)
 
 
 @task(base=PulpTask, acks_late=True)
@@ -450,24 +451,27 @@ class Task(PulpTask, ReservedTaskMixin):
         This overrides PulpTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Check task status and skip running the task if task state is 'canceled'.
-        try:
-            task_status = TaskStatus.objects.get(task_id=self.request.id)
-        except DoesNotExist:
-            task_status = None
-        if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
-            _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
-            return
-        # Update start_time and set the task state to 'running' for asynchronous tasks.
-        # Skip updating status for eagerly executed tasks, since we don't want to track
-        # synchronous tasks in our database.
-        if not self.request.called_directly:
-            now = datetime.now(dateutils.utc_tz())
-            start_time = dateutils.format_iso8601_datetime(now)
-            # Using 'upsert' to avoid a possible race condition described in the apply_async method
-            # above.
-            TaskStatus.objects(task_id=self.request.id).update_one(
-                set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
+        with suppress_connect_warning(_logger):
+            # Check task status and skip running the task if task state is 'canceled'.
+            try:
+                task_status = TaskStatus.objects.get(task_id=self.request.id)
+            except DoesNotExist:
+                task_status = None
+            if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
+                _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+                return
+            # Update start_time and set the task state to 'running' for asynchronous tasks.
+            # Skip updating status for eagerly executed tasks, since we don't want to track
+            # synchronous tasks in our database.
+            if not self.request.called_directly:
+                now = datetime.now(dateutils.utc_tz())
+                start_time = dateutils.format_iso8601_datetime(now)
+                # Using 'upsert' to avoid a possible race condition described
+                # in the apply_async method above.
+                TaskStatus.objects(task_id=self.request.id).update_one(
+                    set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time,
+                    upsert=True)
+
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
@@ -491,34 +495,35 @@ class Task(PulpTask, ReservedTaskMixin):
                              % {'id': kwargs['scheduled_call_id']})
                 utils.reset_failure_count(kwargs['scheduled_call_id'])
         if not self.request.called_directly:
-            now = datetime.now(dateutils.utc_tz())
-            finish_time = dateutils.format_iso8601_datetime(now)
-            task_status = TaskStatus.objects.get(task_id=task_id)
-            task_status['finish_time'] = finish_time
-            task_status['result'] = retval
+            with suppress_connect_warning(_logger):
+                now = datetime.now(dateutils.utc_tz())
+                finish_time = dateutils.format_iso8601_datetime(now)
+                task_status = TaskStatus.objects.get(task_id=task_id)
+                task_status['finish_time'] = finish_time
+                task_status['result'] = retval
 
-            # Only set the state to finished if it's not already in a complete state. This is
-            # important for when the task has been canceled, so we don't move the task from canceled
-            # to finished.
-            if task_status['state'] not in constants.CALL_COMPLETE_STATES:
-                task_status['state'] = constants.CALL_FINISHED_STATE
-            if isinstance(retval, TaskResult):
-                task_status['result'] = retval.return_value
-                if retval.error:
-                    task_status['error'] = retval.error.to_dict()
-                if retval.spawned_tasks:
-                    task_list = []
-                    for spawned_task in retval.spawned_tasks:
-                        if isinstance(spawned_task, AsyncResult):
-                            task_list.append(spawned_task.task_id)
-                        elif isinstance(spawned_task, dict):
-                            task_list.append(spawned_task['task_id'])
-                    task_status['spawned_tasks'] = task_list
-            if isinstance(retval, AsyncResult):
-                task_status['spawned_tasks'] = [retval.task_id, ]
-                task_status['result'] = None
+                # Only set the state to finished if it's not already in a complete state.
+                # This is important for when the task has been canceled, so we don't move
+                # the task from canceled to finished.
+                if task_status['state'] not in constants.CALL_COMPLETE_STATES:
+                    task_status['state'] = constants.CALL_FINISHED_STATE
+                if isinstance(retval, TaskResult):
+                    task_status['result'] = retval.return_value
+                    if retval.error:
+                        task_status['error'] = retval.error.to_dict()
+                    if retval.spawned_tasks:
+                        task_list = []
+                        for spawned_task in retval.spawned_tasks:
+                            if isinstance(spawned_task, AsyncResult):
+                                task_list.append(spawned_task.task_id)
+                            elif isinstance(spawned_task, dict):
+                                task_list.append(spawned_task['task_id'])
+                        task_status['spawned_tasks'] = task_list
+                if isinstance(retval, AsyncResult):
+                    task_status['spawned_tasks'] = [retval.task_id, ]
+                    task_status['result'] = None
 
-            task_status.save()
+                task_status.save()
             common_utils.delete_working_directory()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):

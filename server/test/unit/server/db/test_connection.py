@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 from mock import call, patch, MagicMock, Mock
 from pymongo.errors import AutoReconnect
@@ -908,3 +909,80 @@ class TestUnsafeRetry(unittest.TestCase):
         final_answer = mock_func()
         m_logger.error.assert_called_once_with('mock_func operation failed on mock_coll')
         self.assertTrue(final_answer is 'final')
+
+
+@patch('warnings.showwarning', autospec=True)
+class TestSuppressBeforeForkWarning(unittest.TestCase):
+    def test_warning_suppressed(self, showwarning):
+        logger = Mock()
+
+        with connection.suppress_connect_warning(logger):
+            self.assertTrue(warnings.showwarning is not warnings._show_warning)
+            # The string to match is in this warning...
+            warnings.warn('MongoClient opened before fork mock warning')
+            # ...but not this warning
+            warnings.warn('Mock warning unrelated to MongoClient')
+
+        # two warnings were raised in-context: one should emit a debug log message,
+        # the other should have called showwarning as-normal
+        self.assertEqual(logger.debug.call_count, 1)
+        self.assertEqual(showwarning.call_count, 1)
+
+    def test_warning_restored(self, showwarning):
+        logger = Mock()
+
+        with connection.suppress_connect_warning(logger):
+            # inside the context, warnings.showwarning has been replaced
+            self.assertTrue(warnings.showwarning is not showwarning)
+
+        # upon leaving the context, warnings.showwarning is restored
+        self.assertTrue(warnings.showwarning is showwarning)
+
+    def test_warning_restored_after_exception(self, showwarning):
+        logger = Mock()
+        showwarning.side_effect = Exception('Oh no!')
+
+        with connection.suppress_connect_warning(logger):
+            self.assertTrue(warnings.showwarning is not showwarning)
+            self.assertRaises(Exception, warnings.warn, 'This will explode.')
+
+        # despite the exception warnings.showwarning is restored,
+        # even if an exception was raised
+        self.assertTrue(warnings.showwarning is showwarning)
+
+    def test_reentrant(self, showwarning):
+        logger = Mock()
+
+        with connection.suppress_connect_warning(logger):
+            self.assertTrue(warnings.showwarning is not showwarning)
+            suppressing_showwarning = warnings.showwarning
+            with connection.suppress_connect_warning(logger):
+                self.assertTrue(warnings.showwarning is not showwarning)
+
+                # showwarning should not be replaced in this inner context, so the version
+                # seen in the outer context should still be the current version seen
+                self.assertTrue(warnings.showwarning is suppressing_showwarning)
+
+        # nesting suppress_connect_warning contexts does not implode the universe,
+        # but does still restore showwarning
+        self.assertTrue(warnings.showwarning is showwarning)
+
+    def test_warnings_ignored(self, showwarning):
+        logger = Mock()
+
+        with connection.suppress_connect_warning(logger):
+            warnings.warn('MongoClient opened before fork mock warning')
+        self.assertEqual(showwarning.call_count, 0)
+
+        # after catching and logging the connect before fork warning, future warnings should be
+        # ignored. verify this first by snooping around in warnings.filters and checking that
+        # the first filter (and therefore newest, based on warnings.filterwarnings behavior)
+        # is the one added by the suppress_connect_warning context manager
+        action, regex = warnings.filters[0][:2]
+        self.assertEqual(action, 'ignore')
+        self.assertEqual(regex.pattern, 'MongoClient opened before fork')
+
+        # also very this by issuing a matching warning outside of the suppressing context,
+        # and seeing that showwarning is not called
+        warnings.warn('MongoClient opened before fork mock warning')
+        self.assertEqual(showwarning.call_count, 0)
