@@ -36,7 +36,7 @@ require {
 # tcp_socket { shutdown } is needed for CentOS 6 `sudo service pulp_workers restart`
 #
 
-allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
+allow celery_t self:netlink_route_socket r_netlink_socket_perms;
 allow celery_t self:process { signal signull };
 allow celery_t self:udp_socket { ioctl getattr create connect write read };
 allow celery_t self:unix_dgram_socket { create connect };
