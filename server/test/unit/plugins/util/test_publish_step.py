@@ -1036,6 +1036,20 @@ class DownloadStepTests(unittest.TestCase):
 
         self.assertTrue(dlstep.downloader.is_canceled)
 
+    def test_cancel_before_intitialize(self):
+        """
+        There was a bug wherein cancel() did not guard against self.downloader not being defined,
+        which meant that any cancel() called before initialize() would cause a traceback. This test
+        asserts that cancel() doesn't raise any exception when downloader is not yet defined.
+
+        https://pulp.plan.io/issues/1645
+        """
+        dlstep = publish_step.DownloadStep('fake-step')
+        dlstep.parent = MagicMock()
+
+        # This should not raise an Exception.
+        dlstep.cancel()
+
 
 @patch('pulp.plugins.util.publish_step.repo_controller.associate_single_unit')
 @patch('pulp.plugins.util.publish_step.units_controller.find_units')
