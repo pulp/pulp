@@ -308,7 +308,8 @@ ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 # End Nodes Configuration
 
 # Templates for Django
-install -p -D -m 644 server/usr/share/pulp/templates/* -t %{buildroot}/%{_datadir}/pulp/templates
+mkdir -p %{buildroot}/%{_datadir}/pulp/templates
+cp server/usr/share/pulp/templates/* %{buildroot}/%{_datadir}/pulp/templates/
 
 %endif # End server installation block
 
