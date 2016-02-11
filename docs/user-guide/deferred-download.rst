@@ -26,21 +26,33 @@ with the Pulp core services.
 
 Deferred downloading relies on three services:
 
-* ``httpd`` - The Apache web server acts as a TLS termination point and reverse proxy.
-  This service handles the incoming client requests and forwards them to Squid.
+* A reverse proxy that terminates the TLS connection. In this guide Apache httpd is configured
+  to act as the reverse proxy, but any reverse proxy that is capable of running a WSGI
+  application should work. This service proxies the requests to the next service, a caching
+  proxy server.
 
-* ``squid`` - The Squid process caches content and de-duplicates client requests so that
-  the content is only downloaded one time.
+* A caching proxy server. In this guide Squid is used, but a simple Varnish configuration is
+  also provided. This service de-duplicates client requests and caches content for Pulp to
+  eventually save to permanent storage. It proxies requests on to the last service, the
+  ``pulp_streamer``
 
-* ``pulp_streamer`` - The pulp_streamer process interacts with Pulp's core services to determine
-  where the content is located and how to download it. It streams the content back to the client
-  through Squid and Apache as it is downloaded.
+* The ``pulp_streamer`` is a streaming proxy service that translates the files in Pulp
+  repositories to their locations in upstream repositories. This service interacts with
+  Pulp's core services to determine where the content is located and how to download it.
+  It streams the content back to the client through Squid and Apache httpd as it is downloaded.
 
 Clients request the :term:`content unit` from Pulp's core services. If the content has not been
-downloaded, Pulp redirects the client to the Apache reverse proxy. Once the content has
-been downloaded, Pulp is informed that a new content unit has been downloaded and cached
-by Squid. At regular intervals, Pulp fetches the cached content and saves it so that when
-a client next requests it, Pulp can serve it directly.
+downloaded, Pulp redirects the client to the reverse proxy. Once the content has been
+downloaded, Pulp is informed that a new content unit has been downloaded and cached.
+At regular intervals, Pulp fetches the cached content and saves it so that when a client next
+requests it, Pulp can serve it directly.
+
+.. note::
+
+  Although all three of these services must run together on the same host, they are not required
+  to be on the same host(s) as the Pulp server. The one caveat to this is that the host must have
+  the Pulp server configuration file, ``/etc/pulp/server.conf`` by default, and the RSA public
+  key configured in that configuration file.
 
 
 Installation
@@ -53,19 +65,45 @@ The packages necessary for deferred downloading can be installed with the follow
 Ensure that the ``httpd``, ``squid``, and ``pulp_streamer`` services are running and enabled
 to start at boot.
 
+.. note::
+
+  If you wish, you can replace ``httpd`` and ``squid`` with the reverse proxy and caching
+  proxy of your choice. However, you will still need the ``python-pulp-streamer``.
+
 
 Configuration
 -------------
 
-In addition to configuring the services listed above, alternate download policies must be
-enabled in the Pulp server configuration. This is located by default in ``/etc/pulp/server.conf``
-and is documented inline. All relevant settings are contained in the ``lazy`` section.
+If you have chosen to use the same host as the Pulp server, all the default settings in the
+``lazy`` section of ``/etc/pulp/server.conf`` should work for you. If not, you will need to
+make some configuration adjustments so that Pulp redirects clients to the correct host.
+All configuration options are documented inline. Once the Pulp server is configured, the
+Apache httpd reverse proxy, Squid, and the Pulp streamer require configuration.
 
-Once the Pulp server is configured, the Apache reverse proxy, Squid, and the Pulp streamer
-require configuration. A default configuration for Apache is provided by the
-``python-pulp-streamer`` package and documentation can be found inline. Squid requires more
-configuration which is up to the user. To configure squid, edit ``/etc/squid/squid.conf``. The
-following is a basic configuration with inline documentation::
+Reverse Proxy
+^^^^^^^^^^^^^
+
+A default configuration for Apache httpd is provided by the ``python-pulp-streamer`` package
+and is installed to ``/etc/httpd/conf.d/pulp_streamer.conf``, but it is also reproduced
+below for reference:
+
+.. include:: ../../streamer/etc/httpd/conf.d/pulp_streamer.conf
+   :literal:
+
+
+Caching Proxy
+^^^^^^^^^^^^^
+
+There are many caching proxies and the only requirement Pulp has is that they should support
+(and enable) pre-fetching the entire requested file when they receive a request with the
+HTTP Range header.
+
+
+Squid
++++++
+
+Squid requires significantly more configuration which is up to the user. To configure squid,
+edit ``/etc/squid/squid.conf``. The following is a basic configuration with inline documentation::
 
  # Recommended minimum configuration. It is important to note that order
  # matters in Squid's configuration; the configuration is applied top to bottom.
@@ -73,13 +111,13 @@ following is a basic configuration with inline documentation::
   # Listen on port 3128 in Accelerator (caching) mode.
   http_port 3128 accel
 
-  # Only accept connections from the local host. If the Apache reverse
+  # Only accept connections from the local host. If the Apache httpd reverse
   # proxy is running on a different host, adjust this accordingly.
   http_access allow localhost
 
   # Allow requests with a destination that matches the port squid
   # listens on, and deny everything else. This is okay because we
-  # only handle requests from the Apache reverse proxy.
+  # only handle requests from the Apache httpd reverse proxy.
   acl Safe_ports port 3128
   http_access deny !Safe_ports
 
@@ -192,6 +230,28 @@ following is a basic configuration with inline documentation::
 
 
 For more information about a configuration option, please consult the Squid documentation.
+
+
+Varnish
++++++++
+
+If you choose to use Varnish instead of Squid, there are two configuration files to look at.
+The first is ``/etc/varnish/default.vcl``, where you will need to change the port Varnish
+proxies to::
+
+  # Default backend definition. Set this to point to the Pulp streamer, which is port 8751
+  # by default.
+  backend default {
+      .host = "127.0.0.1";
+      .port = "8751";
+  }
+
+The second is ``/etc/varnish/varnish.params`` where, among other things, the cache size
+and location is set.
+
+
+Pulp Streamer
+^^^^^^^^^^^^^
 
 Finally, the Pulp streamer has several configuration options available in its configuration
 file, found by default in ``/etc/pulp/streamer.conf``.
