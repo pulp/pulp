@@ -61,6 +61,7 @@ if [ -d pulp-smash ]; then
     "default": {
         "base_url": "https://$(hostname)",
         "auth": ["admin", "admin"],
+        "cli_transport": "local",
         "verify": false
     }
 }
