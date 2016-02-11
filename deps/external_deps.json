@@ -1,5 +1,10 @@
 [
     {
+        "name": "createrepo",
+        "version": "0.9.9-21.2.pulp",
+        "platform": ["el6"]
+    },
+    {
         "name": "python-qpid",
         "version": "0.18-10",
         "platform": ["el5"]
@@ -28,6 +33,11 @@
         "name": "python-celery",
         "version": "3.1.11-1",
         "platform": ["el6", "el7", "fc22", "fc23"]
+    },
+    {
+        "name": "python-isodate",
+        "version": "0.5.0-4.pulp",
+        "platform": [ "el6", "el7"]
     },
     {
         "name": "python-kombu",
