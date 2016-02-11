@@ -11,8 +11,9 @@ from pulp.server.lazy import URL, Key
 from pulp.server.config import config as pulp_conf
 
 
-# Make sure all requested paths fall under this directory.
+# Make sure all requested paths fall under these directories.
 PUBLISH_DIR = '/var/lib/pulp/published'
+CONTENT_DIR = '/var/lib/pulp/content'
 
 
 class ContentView(View):
@@ -141,7 +142,7 @@ class ContentView(View):
             # Not Authorized
             return HttpResponseForbidden()
 
-        if not path.startswith(PUBLISH_DIR):
+        if not path.startswith(PUBLISH_DIR) and not path.startswith(CONTENT_DIR):
             # Someone is requesting something they shouldn't.
             return HttpResponseForbidden()
 
