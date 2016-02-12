@@ -11,8 +11,18 @@ New Features
 * Multiple instances of ``pulp_celerybeat`` can now run simultaneously.
   If one of them goes down, another instance will dispatch scheduled tasks as usual.
 
-* Pulp now supports lazy content loading. As part of this support a new package,
-  ``pulp-streamer``, is now available.
+* Pulp now supports configuring repositories to download content on-demand when it
+  is requested by a client, or in the background after a sync and publish has occurred.
+  This feature requires several additional packages and services, and is not supported
+  on all content types. As part of this feature we now provide a new package,
+  ``python-pulp-streamer``. More information on these alternate
+  :term:`download policies <download policy>` can be found in the
+  :ref:`alternate download policies documentation <alternate-download-policies>`.
+
+* Several changes have been made to the provided Apache httpd configuration files.
+  In addition to these changes, a new Apache httpd configuration file is provided
+  by Pulp. This configuration file, ``pulp_content.conf``, is used to configure the
+  new WSGI application used to serve content.
 
 * When downloading content, Pulp now uses the system certificate authority trust
   store rather than the certificate authority trust store bundled with
@@ -29,6 +39,7 @@ Dependency/Platform Changes
 * If run on CentOS or Red Hat Enterprise Linux, the Pulp server now requires either
   version 7.1+ or 6.7+.
 * pymongo >= 3.0.0 is now required.
+* mod_xsendfile >= 0.12 is now required.
 
 Client Changes
 --------------
