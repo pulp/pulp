@@ -162,6 +162,7 @@ class PluginTestBase(ServerTests):
         self.parentfs = self.tmpdir('parent-')
         self.childfs = self.tmpdir('child-')
         self.alias = (self.parentfs, self.parentfs)
+        self.temp_dir = tempfile.mkdtemp()
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         model.Repository.objects.delete()
@@ -184,6 +185,7 @@ class PluginTestBase(ServerTests):
         ServerTests.tearDown(self)
         shutil.rmtree(self.parentfs)
         shutil.rmtree(self.childfs)
+        shutil.rmtree(self.temp_dir)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
         model.Repository.objects.delete()
@@ -641,9 +643,11 @@ class ImporterTest(PluginTestBase):
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
-    def test_import(self, *mocks):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import(self, mock_get_working, *mocks):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         max_concurrency = 5
         max_bandwidth = 12345
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
@@ -681,9 +685,11 @@ class ImporterTest(PluginTestBase):
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
-    def test_import_cached_manifest_matched(self, mock_fetch, *unused):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_cached_manifest_matched(self, mock_get_working, mock_fetch, *unused):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -721,9 +727,11 @@ class ImporterTest(PluginTestBase):
             self.assertFalse(mock_fetch.called)
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
-    def test_import_cached_manifest_missing_units(self, *unused):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_cached_manifest_missing_units(self, mock_get_working, *unused):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -758,9 +766,11 @@ class ImporterTest(PluginTestBase):
             self.assertEquals(len(units), self.NUM_UNITS)
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
-    def test_import_cached_manifest_units_invalid(self, *unused):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_cached_manifest_units_invalid(self, mock_get_working, *unused):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -799,9 +809,11 @@ class ImporterTest(PluginTestBase):
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
-    def test_import_unit_files_already_exist(self, *mocks):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_unit_files_already_exist(self, mock_get_working, *mocks):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -839,9 +851,11 @@ class ImporterTest(PluginTestBase):
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
-    def test_import_unit_files_already_exist_size_mismatch(self, *mocks):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_unit_files_already_exist_size_mismatch(self, mock_get_working, *mocks):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             working_dir = os.path.join(self.childfs, 'working_dir')
@@ -885,9 +899,11 @@ class ImporterTest(PluginTestBase):
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
-    def test_import_modified_units(self, *mocks):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_import_modified_units(self, mock_get_working, *mocks):
         # Setup
         self.populate()
+        mock_get_working.return_value = self.temp_dir
         max_concurrency = 5
         max_bandwidth = 12345
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):

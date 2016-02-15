@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains functions related to working with the Nectar downloading library.
 """
@@ -19,6 +7,7 @@ from functools import partial
 from nectar.config import DownloaderConfig
 
 from pulp.common.plugins import importer_constants as constants
+from pulp.server.managers.repo import _common as common_utils
 
 
 def importer_config_to_nectar_config(importer_config):
@@ -51,7 +40,7 @@ def importer_config_to_nectar_config(importer_config):
         (constants.KEY_MAX_SPEED, 'max_speed'),
     )
 
-    download_config_kwargs = {}
+    download_config_kwargs = {'working_dir': common_utils.get_working_directory()}
     adder = partial(_safe_add_arg, importer_config, download_config_kwargs)
     map(adder, translations)
 

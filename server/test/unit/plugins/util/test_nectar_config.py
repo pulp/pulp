@@ -1,4 +1,8 @@
+import shutil
+import tempfile
 import unittest
+
+from mock import patch
 
 from nectar.config import DownloaderConfig
 
@@ -8,8 +12,16 @@ from pulp.plugins.util import nectar_config
 
 class ConfigTranslationTests(unittest.TestCase):
 
-    def test_importer_config_to_nectar_config_complete(self):
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_importer_config_to_nectar_config_complete(self, mock_get_working):
         # Setup
+        mock_get_working.return_value = self.temp_dir
         importer_config = {
             constants.KEY_SSL_CA_CERT: 'ca_cert',
             constants.KEY_SSL_VALIDATION: True,
@@ -46,8 +58,10 @@ class ConfigTranslationTests(unittest.TestCase):
         self.assertEqual(download_config.max_concurrent, 10)
         self.assertEqual(download_config.max_speed, 1024)
 
-    def test_importer_config_to_download_config_partial(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_importer_config_to_download_config_partial(self, mock_get_working):
         # Setup
+        mock_get_working.return_value = self.temp_dir
         importer_config = {
             constants.KEY_SSL_CA_CERT: 'ca_cert',
             constants.KEY_PROXY_HOST: 'proxy',

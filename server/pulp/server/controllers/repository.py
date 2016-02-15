@@ -764,22 +764,13 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         raise
 
     else:
-        sync_end_timestamp = _now_timestamp()
-
-        added_count = model.RepositoryContentUnit.objects.num_created(
-            sync_start_timestamp, sync_end_timestamp, repo_id)
-        all_updated_count = model.RepositoryContentUnit.objects.num_updated(
-            sync_start_timestamp, sync_end_timestamp, repo_id)
-        updated_count = all_updated_count - added_count
-        after_count = model.RepositoryContentUnit.objects(repo_id=repo_id).count()
-        removed_count = after_count - before_sync_unit_count - added_count
-
         # Need to be safe here in case the plugin is incorrect in its return
         if isinstance(sync_report, SyncReport):
             summary = sync_report.summary
             details = sync_report.details
 
             if sync_report.canceled_flag:
+                # need to leave this in case cancel_sync_repo() was not called from parent
                 result_code = RepoSyncResult.RESULT_CANCELED
             elif sync_report.success_flag:
                 result_code = RepoSyncResult.RESULT_SUCCESS
@@ -789,16 +780,22 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         else:
             msg = _('Plugin type [%s] on repo [%s] did not return a valid sync report')
             _logger.warn(msg % (repo_importer['importer_type_id'], repo_obj.repo_id))
-            added_count = updated_count = removed_count = -1  # None?
             summary = details = msg
             result_code = RepoSyncResult.RESULT_ERROR  # RESULT_UNKNOWN?
 
-        sync_result = RepoSyncResult.expected_result(
-            repo_obj.repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-            sync_start_timestamp, sync_end_timestamp, added_count, updated_count, removed_count,
-            summary, details, result_code)
+        sync_result, sync_end_timestamp = _reposync_result(repo_obj, repo_importer,
+                                                           sync_start_timestamp, summary, details,
+                                                           result_code, before_sync_unit_count)
 
     finally:
+        if sync_result is None:
+            msg = _('Sync was cancelled')
+            summary = details = msg
+            result_code = RepoSyncResult.RESULT_CANCELED
+            sync_result, sync_end_timestamp = _reposync_result(repo_obj, repo_importer,
+                                                               sync_start_timestamp, summary,
+                                                               details, result_code,
+                                                               before_sync_unit_count)
         # Do an update instead of a save in case the importer has changed the scratchpad
         model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
@@ -815,6 +812,51 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     if download_policy == importer_constants.DOWNLOAD_BACKGROUND:
         spawned_tasks.append(queue_download_repo(repo_obj.repo_id).task_id)
     return TaskResult(sync_result, spawned_tasks=spawned_tasks)
+
+
+def _reposync_result(repo, importer, sync_start, summary, details, result_code, initial_unit_count):
+    """
+    Creates repo sync result.
+
+    :param repo_obj: repository object
+    :type  repo_obj: pulp.server.db.model.Repository
+    :param importer: importer object
+    :type  importer: pulp.server.db.model.Importer
+    :param sync_start: iso8601 formatted timestamp when the sync was begun
+    :type sync_start: str
+    :param summary: short log output from the plugin of the sync
+    :type summary: any serializable
+    :param details: long log output from the plugin of the sync
+    :type details: any serializable
+    :param result_code: result of the sync
+    :type result_code: str
+    :param initial_unit_count: number of units before the sync
+    :type initial_unit_count: int
+
+    :return: A 2-tuple. The first element of the tuple is a RepoSyncResult.
+             The second element is an iso8601 formatted timestamp when the sync completed
+    :rtype:  tuple
+    """
+
+    sync_end = _now_timestamp()
+
+    if result_code == 'error':
+        added_count = updated_count = removed_count = -1  # None?
+    else:
+        added_count = model.RepositoryContentUnit.objects.num_created(
+            sync_start, sync_end, repo.repo_id)
+        all_updated_count = model.RepositoryContentUnit.objects.num_updated(
+            sync_start, sync_end, repo.repo_id)
+        updated_count = all_updated_count - added_count
+        after_count = model.RepositoryContentUnit.objects(repo_id=repo.repo_id).count()
+        removed_count = after_count - initial_unit_count - added_count
+
+    sync_result = RepoSyncResult.expected_result(
+        repo.repo_id, importer['id'], importer['importer_type_id'],
+        sync_start, sync_end, added_count, updated_count,
+        removed_count, summary, details, result_code)
+
+    return sync_result, sync_end
 
 
 def _queue_auto_publish_tasks(repo_id, scheduled_call_id=None):

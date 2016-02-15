@@ -293,3 +293,19 @@ defined by the `working_directory` config in `server` section of `/etc/pulp/serv
 default value is `/var/cache/pulp`. Any user defined path needs to be owned by user and group
 `apache`. If running with SELinux in Enforcing mode, the path also needs to have
 `system_u:object_r:pulp_var_cache_t` security context. 
+
+Celery terminates the worker in case of sync cancellation.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For some plugin types, if the syncronization of the repo is cancelled, the worker process exits
+immediately with sys.exit(). A new worker process is created immediately, so further tasks are
+normally picked up and executed.
+
+Celery logs this behaviour and you can observe the traceback, which states that no further work can
+be done by that worker. This is normal for cancellation and is not a cause for concern. ::
+
+ celery.worker.job:ERROR: (15328-02560) Task pulp.server.managers.repo.sync.sync[049a534c-6bb1-4329-87c1-66b453348ba4] raised unexpected: Terminated(0,)
+ celery.worker.job:ERROR: (15328-02560) Traceback (most recent call last):
+ celery.worker.job:ERROR: (15328-02560)   File "/usr/lib64/python2.7/site-packages/billiard/pool.py", line 1673, in _set_terminated
+ celery.worker.job:ERROR: (15328-02560)     raise Terminated(-(signum or 0))
+ celery.worker.job:ERROR: (15328-02560) Terminated: 0
