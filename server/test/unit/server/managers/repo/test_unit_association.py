@@ -31,6 +31,17 @@ class TestUnitsFromCriteria(unittest.TestCase):
         self.manager = association_manager.RepoUnitAssociationManager()
         self.repo = me_model.Repository(repo_id='repo1')
 
+    def test_criteria_unit_fields(self, mock_find):
+        """
+        Ensure that the criteria unit_fields are passed on to the find_repo_content_units function.
+        """
+        criteria = UnitAssociationCriteria(unit_fields=['secret_location', 'pasword'])
+
+        self.manager._units_from_criteria(self.repo, criteria)
+
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertEqual(mock_find.mock_calls[0][2]['unit_fields'], ['secret_location', 'pasword'])
+
     def test_limits_by_type(self, mock_find):
         criteria = UnitAssociationCriteria(type_ids=['foo'])
 

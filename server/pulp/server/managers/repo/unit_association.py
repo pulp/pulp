@@ -178,6 +178,7 @@ class RepoUnitAssociationManager(object):
             repository=source_repo,
             repo_content_unit_q=association_q,
             units_q=unit_q,
+            unit_fields=criteria['unit_fields'],
             yield_content_unit=True)
 
     @classmethod
