@@ -17,7 +17,7 @@ declare -rA repos_branches=(
 
 # Reinstall plugins we know how to handle, and uninstall all others.
 pushd ~/devel
-for repo in pulp*; do
+for repo in pulp pulp_*; do
     # Defend against e.g. a file named "pulp_log.txt".
     if [ ! -d "$repo" ]; then
         continue
