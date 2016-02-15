@@ -226,6 +226,9 @@ class BaseTasksSection(PulpCliSection):
         actions = []
         resources = []
 
+        if task.tags is None:
+            return actions, resources
+
         for t in task.tags:
             if tag_utils.is_resource_tag(t):
                 resource_type, resource_id = tag_utils.parse_resource_tag(t)
