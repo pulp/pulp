@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE_NAMES=( "pulp-server" "pulp-celery" )
+PACKAGE_NAMES=( "pulp-server" "pulp-celery" "pulp-streamer")
 SELINUX_VARIANTS="targeted"
 
 #This script will be called from pulp RPM and needs the ability to use the specified macro
