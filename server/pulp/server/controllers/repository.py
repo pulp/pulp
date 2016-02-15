@@ -571,7 +571,7 @@ def delete(repo_id):
 
 def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_configs):
     """
-    Update a reposiory and its related collections.
+    Update a repository and its related collections.
 
     All details do not need to be specified; if a piece is omitted it's configuration is not
     touched, nor is it removed from the repository. The same holds true for the distributor_configs
@@ -642,7 +642,7 @@ def update_unit_count(repo_id, unit_type_id, delta):
     :param delta: amount by which to increment the total count
     :type  delta: int
 
-    :raises pulp_exceptions.PulpCodedException: if there is an error in the update
+    :raises pulp_exceptions.PulpExecutionException: if there is an error in the update
     """
     atomic_inc_key = 'inc__content_unit_counts__{unit_type_id}'.format(unit_type_id=unit_type_id)
     if delta:

@@ -94,16 +94,9 @@ PLP0031 = Error("PLP0031", _("Content source %(id)s could not be found at %(url)
 PLP0032 = Error(
     "PLP0032", _("Task %(task_id)s encountered one or more failures during execution."),
     ['task_id'])
-PLP0033 = Error("PLP0033", _("Working Directory requested outside of asynchronous task. "), [])
 PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
                              "publishing repository %(repository_id)s."),
                 ['distributor_id', 'repository_id'])
-PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed to define the "
-                             "attribute %(field_name)s correctly"), ['class_name', 'field_name'])
-PLP0036 = Error(
-    "PLP0036",
-    _("Content unit must be saved before associated content files can be imported."),
-    [])
 PLP0037 = Error(
     "PLP0037",
     _("Content import of %(path)s failed - must be an existing file."),
@@ -111,9 +104,6 @@ PLP0037 = Error(
 PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
                              "%(model_class)s failed to register. Another model has already "
                              "been registered with the same id."), ['model_id', 'model_class'])
-PLP0039 = Error("PLP0039", _("The unit model with the id %(model_id)s failed to register. The "
-                             "class %(model_class)s is not a subclass of ContentUnit."),
-                ['model_id', 'model_class'])
 PLP0040 = Error("PLP0040", _("Database 'seeds' config must include at least one hostname:port "
                              "value. Refer to /etc/pulp/server.conf for proper use."), [])
 PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified when more than one "
@@ -122,6 +112,7 @@ PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified wh
 PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
 PLP0043 = Error("PLP0043", _("Database 'write_concern' config can only be 'majority' or 'all'. "
                              "Refer to /etc/pulp/server.conf for proper use."), [])
+PLP0044 = Error("PLP0033", _("The target importer does not support the types from the source"), [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

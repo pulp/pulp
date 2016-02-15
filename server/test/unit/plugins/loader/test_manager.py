@@ -67,7 +67,7 @@ class TestPluginManager(unittest.TestCase):
     def test_load_unit_models_non_content_unit(self, mock_entry_points_iter):
         """
         Test loading of the unit models that don't subclass ContentUnit
-        raise PLP0039
+        raise TypeError
         """
         req = pkg_resources.Requirement.parse('pulp-devel')
         dist = pkg_resources.working_set.find(req)
@@ -77,6 +77,8 @@ class TestPluginManager(unittest.TestCase):
 
         try:
             manager.PluginManager()
-            self.fail("This should have raised PLP0039")
-        except exceptions.PulpCodedException, e:
-            self.assertEquals(e.error_code, error_codes.PLP0039)
+            self.fail("This should have raised TypeError")
+        except TypeError, e:
+            msg = "The unit model with the id foo failed to register." \
+                  " The class __builtin__.type is not a subclass of ContentUnit."
+            self.assertEquals(e.message, msg)
