@@ -19,6 +19,9 @@ source /usr/bin/virtualenvwrapper.sh
 
 alias phttp="http --verify no --cert ~/.pulp/user-cert.pem"
 
+REPOS=("pulp" "pulp_deb" "pulp_docker" "pulp_openstack" "pulp_ostree" "pulp_puppet" "pulp_python" "pulp_rpm")
+SERVICES=("goferd" "httpd" "pulp_workers" "pulp_celerybeat" "pulp_resource_manager" "pulp_streamer")
+
 pstart() {
     _paction start
 }
@@ -46,24 +49,26 @@ pclean() {
     pstop;
 
     pushd ~/devel/
-    # Remove and unlink all development files
-    for r in {pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm,pulp}; do
-        if [ -d $r ]; then
-            pushd $r
+    # Remove and unlink all development files in reverse order (uninstall pulp last)
+    for (( idx=${#REPOS[@]} ; idx>0 ; idx-- )) ; do
+        repo="${REPOS[idx-1]}"
+        if [ -d $repo ]; then
+            pushd $repo
             sudo ./pulp-dev.py -U
             popd
         fi
     done
 
+    # Destroy mongo DB and clean up pulp-related files
     mongo pulp_database ~/drop_database.js;
     sudo rm -rf /var/lib/pulp/*;
     find ~/devel/pulp* -name '*.py[co]' -delete;
     rm -f ~/.pulp/user-cert.pem
 
     # Re-install and relink development files
-    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
-        if [ -d $r ]; then
-            pushd $r
+    for repo in ${REPOS[@]}; do
+        if [ -d $repo ]; then
+            pushd $repo
             sudo ./pulp-dev.py -I
             popd
         fi
@@ -78,10 +83,10 @@ pclean() {
 
 ptests() {
     pushd $HOME/devel;
-    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
-        if [ -d $r ]; then
-            pushd $r;
-            workon $r;
+    for repo in ${REPOS[@]}; do
+        if [ -d $repo ]; then
+            pushd $repo;
+            workon $repo;
             ./run-tests.py -x --enable-coverage;
             deactivate;
             popd;
@@ -91,7 +96,7 @@ ptests() {
 }
 
 _paction() {
-    sudo systemctl $1 goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager pulp_streamer
+    sudo systemctl $1 ${SERVICES[@]}
 }
 
 psmash() {
