@@ -321,3 +321,159 @@ downloading.
     must be valid for the host running ``pulp_streamer``. If ``pulp_streamer`` is running
     on a different host than the core Pulp services, the ``pulp_streamer`` host should have
     access to both the Content Sources configuration directory and the ``file://`` URL.
+
+
+Troubleshooting
+---------------
+
+When troubleshooting, it is best to have a repository that has been configured with the
+``on_demand`` :term:`deferred download policies <deferred download policies>`. This repository
+should be synced and published before you begin. To determine the correct URL for a package in
+your test repository, you can inspect the filesystem::
+
+ $ sudo tree /var/lib/pulp/published/yum/https/
+  /var/lib/pulp/published/yum/https
+  └── repos
+      ├── listing
+      └── zoo -> /var/lib/pulp/published/yum/master/yum_distributor/zoo/1455306817.77
+          ├── bear-4.1-1.noarch.rpm -> /var/lib/pulp/content/units/rpm/76/78177c241777af22235092f21c3932dd4f0664e1624e5a2c77a201ec70f930/bear-4.1-1.noarch.rpm
+          ├── penguin-0.9.1-1.noarch.rpm -> /var/lib/pulp/content/units/rpm/bb/a187163c14f7e124009157c58e615cccf9eda81a8c09949bf4de2398a53bbe/penguin-0.9.1-1.noarch.rpm
+          ├── pike-2.2-1.noarch.rpm -> /var/lib/pulp/content/units/rpm/41/b650e4f1780e67eeb83357d552cc0aacde317f7305b610cbd2ac01b3c6ab4b/pike-2.2-1.noarch.rpm
+          ├── repodata
+          │   ├── 06344f163d806c2e2ef2659d9b4901489001fa86f11fbf2296f5f0aa0bc4aa08-updateinfo.xml.gz
+          │   ├── 1a186f16ca6545f8f5f08c93faab0ec6943b9e549be58c1d5512ac6f06244f7f-other.xml.gz
+          │   ├── 1f3a7be8dc71f12871909ffc8d3aa3c28d13363001f07be0eb3bf268ee1fa9b8-filelists.xml.gz
+          │   ├── 9ab1052ece4a7818d385abca3a96e053bb6396a4380ea00df20aeb420c0ae3c7-comps.xml
+          │   ├── cce58258de4672edc22a3eefa3bc177a8fa90d716f609c82a33454d1c07abae0-primary.xml.gz
+          │   └── repomd.xml
+          └── zebra-0.1-2.noarch.rpm -> /var/lib/pulp/content/units/rpm/38/0ef86bf1d303febdd2b990fe971611ee49ab9b267077568f23d81babe96dfc/zebra-0.1-2.noarch.rpm
+
+
+Assuming you have not modified the provided Apache httpd configurations, the URL for
+``/var/lib/pulp/published/yum/https/repos/zoo/duck-0.6-1.noarch.rpm`` is, assuming the
+fully-qualified domain name of Pulp is ``dev.example.com``,
+``https://dev.example.com/pulp/repos/zoo/duck-0.6-1.noarch.rpm``.
+
+Pulp is not redirecting
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To ensure Pulp is redirecting to the reverse proxy server, cURL the URL you obtained above.
+If something is wrong, you may see something like::
+
+  $ curl -O -k -v "https://dev.example.com/pulp/repos/zoo/duck-0.6-1.noarch.rpm"
+  * Connected to dev.example.com (127.0.0.1) port 443 (#0)
+  * Initializing NSS with certpath: sql:/etc/pki/nssdb
+  * skipping SSL peer certificate verification
+  * ALPN, server accepted to use http/1.1
+  * SSL connection using TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+  * Server certificate:
+  *       subject: E=root@dev,CN=dev,OU=SomeOrganizationalUnit,O=SomeOrganization,L=SomeCity,ST=SomeState,C=--
+  *       start date: Feb 01 14:00:37 2016 GMT
+  *       expire date: Jan 31 14:00:37 2017 GMT
+  *       common name: dev
+  *       issuer: E=root@dev,CN=dev,OU=SomeOrganizationalUnit,O=SomeOrganization,L=SomeCity,ST=SomeState,C=--
+  > GET /pulp/repos/zoo/duck-0.6-1.noarch.rpm HTTP/1.1
+  > Host: dev.example.com
+  > User-Agent: curl/7.43.0
+  > Accept: */*
+  >
+  * skipping SSL peer certificate verification
+  * NSS: client certificate not found (nickname not specified)
+  * ALPN, server accepted to use http/1.1
+  * skipping SSL peer certificate verification
+  * ALPN, server accepted to use http/1.1
+  < HTTP/1.1 404 NOT FOUND
+  < Date: Tue, 02 Feb 2016 15:48:07 GMT
+  < Server: Apache/2.4.18 (Fedora) OpenSSL/1.0.2f-fips mod_wsgi/4.4.8 Python/2.7.10
+  < Content-Length: 54
+  < Content-Type: text/html; charset=utf-8
+
+Note the ``404 NOT FOUND`` response. This can occur for a few reasons:
+ * ``/etc/httpd/conf.d/pulp_content.conf`` is not present or is failing to load and run
+   the WSGI application found at ``/usr/share/pulp/wsgi/content.wsgi``
+
+ * The rewrite rules provided by each plugin are not present. For example,
+   ``/etc/httpd/conf.d/pulp_rpm.conf`` contains rewrite rules for RPM content.
+
+ * The URL you used does not correspond to a file in the repository.
+
+Ensure both these configuration files are present and that the rewrite is occurring. To check
+the rewrite is occurring, consult the documentation for the version of ``mod_rewrite`` you have
+installed. The documentation for the most recent release can be found
+`here <https://httpd.apache.org/docs/current/mod/mod_rewrite.html>`_. Please note that changes
+occurred to the logging directives between the 2.2 and 2.4 releases of Apache httpd.
+
+
+503 Service Unavailable
+^^^^^^^^^^^^^^^^^^^^^^^
+
+If you are seeing HTTP 503: Service Unavailable errors, it is likely a problem with the
+caching proxy you are using or the Pulp streamer. For example, when Squid is down, you
+will see something like::
+
+  $ curl -O -v -k -L "https://dev.example.com/pulp/repos/zoo/duck-0.6-1.noarch.rpm"
+  * Connected to dev.example.com (127.0.0.1) port 443 (#0)
+  * Initializing NSS with certpath: sql:/etc/pki/nssdb
+  * skipping SSL peer certificate verification
+  * ALPN, server accepted to use http/1.1
+  * SSL connection using TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+  * Server certificate:
+  *       subject: E=root@dev,CN=dev,OU=SomeOrganizationalUnit,O=SomeOrganization,L=SomeCity,ST=SomeState,C=--
+  *       start date: Feb 12 19:47:34 2016 GMT
+  *       expire date: Feb 11 19:47:34 2017 GMT
+  *       common name: dev
+  *       issuer: E=root@dev,CN=dev,OU=SomeOrganizationalUnit,O=SomeOrganization,L=SomeCity,ST=SomeState,C=--
+  > GET /pulp/repos/zoo/duck-0.6-1.noarch.rpm HTTP/1.1
+  > Host: dev.example.com
+  > User-Agent: curl/7.43.0
+  > Accept: */*
+  >
+  * skipping SSL peer certificate verification
+  * NSS: client certificate not found (nickname not specified)
+  * ALPN, server accepted to use http/1.1
+  * skipping SSL peer certificate verification
+  * ALPN, server accepted to use http/1.1
+  < HTTP/1.1 302 FOUND
+  < Date: Fri, 12 Feb 2016 20:41:36 GMT
+  < Server: Apache/2.4.18 (Fedora) OpenSSL/1.0.2f-fips mod_wsgi/4.4.8 Python/2.7.10
+  < Content-Length: 0
+  < Location: https://dev.example.com:443/streamer/var/lib/pulp/content/units/rpm/f5/9c66767b6dc
+              94fb49dd3d707ea1761c69e54571e93a13fbfb3ea6b7a2a991a/duck-0.6-1.noarch.rpm?policy=...
+  < Content-Type: text/html; charset=utf-8
+  * Connected to dev.example.com (127.0.0.1) port 443 (#0)
+  > GET /streamer/var/lib/pulp/content/units/rpm/f5/9c66767b6dc94fb49dd3d707ea1761c69e54571e93
+        a13fbfb3ea6b7a2a991a/duck-0.6-1.noarch.rpm?policy=...
+  > Host: dev.example.com
+  > User-Agent: curl/7.43.0
+  > Accept: */*
+  >
+  < HTTP/1.1 503 Service Unavailable
+  < Date: Fri, 12 Feb 2016 20:41:36 GMT
+  < Server: Apache/2.4.18 (Fedora) OpenSSL/1.0.2f-fips mod_wsgi/4.4.8 Python/2.7.10
+  < Content-Length: 299
+  < Connection: close
+  < Content-Type: text/html; charset=iso-8859-1
+
+The ``Location`` URL has been trimmed for the sake of brevity. When 503 Service Unavailable
+occurs, the HTTP headers in the second request can often be helpful when determining what
+service is encountering problems. For example, when the Pulp streamer is not running and
+Squid fails to connect to it, the HTTP headers in the response will contain information
+about Squid's failure::
+
+  < HTTP/1.1 503 Service Unavailable
+  < Date: Fri, 12 Feb 2016 20:50:51 GMT
+  < Server: squid/3.5.9
+  < Mime-Version: 1.0
+  < Content-Type: text/html;charset=utf-8
+  < Content-Length: 4051
+  < X-Squid-Error: ERR_CONNECT_FAIL 111
+  < Vary: Accept-Language
+  < Content-Language: en
+  < X-Cache: MISS from dev
+  < X-Cache-Lookup: MISS from dev:3128
+  < Via: 1.1 dev (squid/3.5.9)
+  < Connection: close
+
+The ``X-Squid-Error: ERR_CONNECT_FAIL 111`` indicates that it is unable to connect to the Pulp
+streamer. In this case you should check to make sure ``pulp_streamer`` is running. If it is,
+Squid's configuration should be adjusted to ensure it can reach the Pulp streamer.
