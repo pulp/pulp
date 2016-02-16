@@ -36,6 +36,13 @@ pstatus() {
 }
 
 preset() {
+    echo "Due to its similarity to 'prestart', 'preset' has been renamed to 'pclean'."
+    echo "Please use 'pclean' instead, and remember to update any script that might be calling it."
+    sleep 3
+    pclean
+}
+
+pclean() {
     pstop;
 
     pushd ~/devel/
