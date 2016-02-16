@@ -137,10 +137,13 @@ class ContentView(View):
         host = request.get_host()
         path = os.path.realpath(request.path_info)
 
-        # Authorization
-        if not allow_access(request.environ, host):
-            # Not Authorized
-            return HttpResponseForbidden()
+        # Check authorization if http isn't being used. This environ variable must
+        # be available in all implementations so it is not dependant on Apache httpd:
+        # https://www.python.org/dev/peps/pep-0333/#environ-variables
+        if request.environ['wsgi.url_scheme'] != 'http':
+            if not allow_access(request.environ, host):
+                # Not Authorized
+                return HttpResponseForbidden()
 
         if not path.startswith(PUBLISH_DIR) and not path.startswith(CONTENT_DIR):
             # Someone is requesting something they shouldn't.

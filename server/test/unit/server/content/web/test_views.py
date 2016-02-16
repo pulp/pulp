@@ -13,6 +13,37 @@ MODULE = 'pulp.server.content.web.views'
 
 class TestContentView(TestCase):
 
+    def setUp(self):
+        self.environ = {
+            # These values must be present in all requests unless they are
+            # allowed to be empty strings
+            'REQUEST_METHOD': 'GET',
+            'SCRIPT_NAME': '',  # Always present
+            'PATH_INFO': '/var/www/pub/yum/http/repos/repos/pulp/pulp/demo_repos/zoo/',
+            'QUERY_STRING': '',  # May or may not be present
+            'SERVER_NAME': 'dev.example.com',
+            'SERVER_PORT': '443',
+            'SERVER_PROTOCOL': 'HTTP/1.1',
+
+            # These represent client-supplied HTTP headers
+            'HTTP_USER_AGENT': 'Average Joe/1.0 (Wayland; Fedora; Linux x86_64)',
+            'HTTP_CONNECTION': 'keep-alive',
+            'HTTP_DNT': '1',
+            'HTTP_HOST': 'dev.example.com',
+            'HTTP_ACCEPT': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'HTTP_ACCEPT_LANGUAGE': 'en-US,en;q=0.5',
+            'HTTP_ACCEPT_ENCODING': 'gzip, deflate',
+
+            # These 'wsgi' variables are required by the WSGI standard.
+            'wsgi.version': (1, 0),
+            'wsgi.url_scheme': 'https',
+            'wsgi.input': Mock(),  # File-like object representing the request body
+            'wsgi.errors': Mock(),  # File-like object which errors can be written to.
+            'wsgi.multithread': True,
+            'wsgi.multiprocess': True,
+            'wsgi.run_once': False,
+        }
+
     @patch(MODULE + '.pulp_conf')
     @patch(MODULE + '.Key.load')
     def test_init(self, key_load, pulp_conf):
@@ -128,7 +159,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/var/www/pub/content'
 
-        request = Mock(path_info=path)
+        request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
 
         # test
@@ -141,6 +172,23 @@ class TestContentView(TestCase):
         exists.assert_called_once_with('/var/lib/pulp/published/content')
         x_send.assert_called_once_with('/var/lib/pulp/published/content')
         self.assertEqual(reply, x_send.return_value)
+
+    @patch(MODULE + '.Key.load', Mock())
+    @patch(MODULE + '.allow_access')
+    @patch('os.path.realpath')
+    def test_get_http(self, realpath, allow_access):
+        realpath.side_effect = lambda p: '/some/content'
+        host = 'localhost'
+        path = '/some/content/'
+        self.environ['wsgi.url_scheme'] = 'http'
+
+        request = Mock(path_info=path, environ=self.environ)
+        request.get_host.return_value = host
+
+        # test
+        view = ContentView()
+        view.get(request)
+        self.assertEqual(0, allow_access.call_count)
 
     @patch('os.path.lexists', Mock(return_value=True))
     @patch('os.path.realpath')
@@ -157,7 +205,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/var/www/pub/content'
 
-        request = Mock(path_info=path)
+        request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
 
         # test
@@ -180,7 +228,7 @@ class TestContentView(TestCase):
     def test_get_not_found(self, pulp_conf):
         host = 'localhost'
         path = '/var/lib/pulp/published/content'
-        request = Mock(path_info=path)
+        request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
         conf = {
             'authentication': {
@@ -202,7 +250,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/var/lib/pulp/published/content'
 
-        request = Mock(path_info=path)
+        request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
 
         # test
@@ -222,7 +270,7 @@ class TestContentView(TestCase):
         host = 'localhost'
         path = '/etc/pki/tls/private/myprecious.key'
 
-        request = Mock(path_info=path)
+        request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
 
         # test
