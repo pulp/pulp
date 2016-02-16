@@ -9,6 +9,8 @@ fi
 # export SYSTEMD_PAGER=
 
 # User specific aliases and functions
+# If adding new functions to this file, note that you can add help text to the function
+# by defining a variable with name _<function>_help containing the help text
 
 # Set up virtualenvwrapper
 export WORKON_HOME=$HOME/.virtualenvs
@@ -19,44 +21,61 @@ source /usr/bin/virtualenvwrapper.sh
 
 alias phttp="http --verify no --cert ~/.pulp/user-cert.pem"
 
+REPOS=("pulp" "pulp_deb" "pulp_docker" "pulp_openstack" "pulp_ostree" "pulp_puppet" "pulp_python" "pulp_rpm")
+SERVICES=("goferd" "httpd" "pulp_workers" "pulp_celerybeat" "pulp_resource_manager" "pulp_streamer")
+
 pstart() {
     _paction start
 }
+_pstart_help="Start all pulp-related services"
 
 pstop() {
     _paction stop
 }
+_pstop_help="Stop all pulp-related services"
 
 prestart() {
     _paction restart
 }
+_prestart_help="Restart all pulp-related services"
 
 pstatus() {
     _paction status
 }
+_pstatus_help="Report the status of all pulp-related services"
 
 preset() {
+    echo "Due to its similarity to 'prestart', 'preset' has been renamed to 'pclean'."
+    echo "Please use 'pclean' instead, and remember to update any script that might be calling it."
+    sleep 3
+    pclean
+}
+# intentionally undocumented, only list pclean in help for this
+
+pclean() {
     pstop;
 
     pushd ~/devel/
-    # Remove and unlink all development files
-    for r in {pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm,pulp}; do
-        if [ -d $r ]; then
-            pushd $r
+    # Remove and unlink all development files in reverse order (uninstall pulp last)
+    for (( idx=${#REPOS[@]} ; idx>0 ; idx-- )) ; do
+        repo="${REPOS[idx-1]}"
+        if [ -d $repo ]; then
+            pushd $repo
             sudo ./pulp-dev.py -U
             popd
         fi
     done
 
+    # Destroy mongo DB and clean up pulp-related files
     mongo pulp_database ~/drop_database.js;
     sudo rm -rf /var/lib/pulp/*;
     find ~/devel/pulp* -name '*.py[co]' -delete;
     rm -f ~/.pulp/user-cert.pem
 
     # Re-install and relink development files
-    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
-        if [ -d $r ]; then
-            pushd $r
+    for repo in ${REPOS[@]}; do
+        if [ -d $repo ]; then
+            pushd $repo
             sudo ./pulp-dev.py -I
             popd
         fi
@@ -68,13 +87,34 @@ preset() {
     pstart;
     ppopulate;
 }
+_pclean_help="Restore pulp to a clean-installed state"
+# can get away with not resetting terminal settings here since it gets reset in phelp
+_pclean_help="$_pclean_help - `setterm -foreground red -bold on`THIS DESTROYS YOUR PULP DATA"
+
+pjournal() {
+    # build up the journalctl cmdline per-unit
+    journal_cmd="journalctl"
+    for svc in ${SERVICES[@]}; do
+        journal_cmd="$journal_cmd -u $svc"
+    done
+
+    if [ -z $1 ]; then
+        # not passed any args, follow the units' journals by default
+        $journal_cmd -f
+    else
+        # passed some args, send all args through to journalctl
+        $journal_cmd $@
+    fi
+}
+_pjournal_help="Interact with the journal for pulp-related units
+    pjournal takes optional journalctl args e.g. 'pjournal -r', runs pjournal -f by default"
 
 ptests() {
     pushd $HOME/devel;
-    for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
-        if [ -d $r ]; then
-            pushd $r;
-            workon $r;
+    for repo in ${REPOS[@]}; do
+        if [ -d $repo ]; then
+            pushd $repo;
+            workon $repo;
             ./run-tests.py -x --enable-coverage;
             deactivate;
             popd;
@@ -82,9 +122,10 @@ ptests() {
     done;
     popd;
 }
+_ptests_help="Run tests for pulp and all installed plugins/services"
 
 _paction() {
-    sudo systemctl $1 goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager pulp_streamer
+    sudo systemctl $1 ${SERVICES[@]}
 }
 
 psmash() {
@@ -100,6 +141,7 @@ psmash() {
     deactivate;
     popd;
 }
+_psmash_help="Run pulp smash against the currently running pulp installation"
 
 ppopulate() {
     if [ ! -f $HOME/.pulp/user-cert.pem ]; then
@@ -128,24 +170,59 @@ ppopulate() {
             --package-names=pip
     fi
 }
+_ppopulate_help="Populate pulp with repositories"
 
 pprocs() {
-    printf "Pulp Worker processes:\n"
-    ps ax | grep "pulp.server.async.app -c 1" | grep -v grep | awk '{ print $1 }'
+    print_procs() {
+        # prints a header string with number of pids, list of pids, and a newline spacer
+        # $1 is the header string, $2 is a newline-separated list of pids, see usage below
+        echo "$1 ($(echo $2|wc -w)):"
+        echo $2
+        echo
+    }
 
-    printf "\nPulp Resource Manager processes:\n"
-    ps ax | grep "pulp.server.async.app -n resource_manager" | grep -v grep | awk '{ print $1 }'
-
-    printf "\nPulp Celerybeat processes:\n"
-    ps ax | grep "pulp.server.async.celery_instance.celery" | grep -v grep | awk '{ print $1 }'
-
-    printf "\nPulp WSGI processes:\n"
-    ps ax | grep "wsgi:pulp" | grep -v grep | awk '{ print $1 }'
+    # override IFS to prevent bash splitting pgrep output on newlines
+    IFS=''
+    print_procs "Pulp worker processes" `pgrep -f "pulp.server.async.app -c 1"`
+    print_procs "Pulp Resource Manager processes" `pgrep -f "pulp.server.async.app -n resource_manager"`
+    print_procs "Pulp Celerybeat processes:" `pgrep -f "pulp.server.async.celery_instance.celery"`
+    print_procs "Pulp WSGI processes:" `pgrep -f "wsgi:pulp"`
+    unset IFS
 }
+_pprocs_help="Print running pulp processes IDs"
 
 pdebug() {
     telnet 127.0.0.1 4444
 }
+_pdebug_help="Telnet to a debugger listening locally on port 4444"
+
+phelp() {
+    # get a list of declared functions, filter out ones with leading underscores as "private"
+    funcs=$(declare -F | awk '{ print $3 }'| grep -v ^_)
+
+    # for each func, if a help string is defined, assume it's a pulp function and print its help
+    # (this is bash introspection via variable variables)
+    for func in $funcs; do
+        # get the "help" variable name for this function
+        help_var="_${func}_help"
+        # use ${!<varname>} syntax to eval the help_var
+        help=${!help_var}
+        # If the help var had a value, echo its value here (the value is function help text)
+        if [ ! -z "$help" ]; then
+            # make the function name easy to spot
+            setterm -foreground yellow -bold on
+            echo -n "$func"
+            # reset terminal formatting before printing the help text
+            # (implicitly format it as normal text)
+            setterm -default
+            echo ": $help"
+        fi
+    done
+
+    # explicitly restore terminal formatting is reset before exiting function
+    setterm -default
+}
+_phelp_help="Print this help"
 
 setup_crane_links() {
     # If Crane is present, let's set up the publishing symlinks so that the app files can be used
