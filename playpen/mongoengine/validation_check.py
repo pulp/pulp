@@ -121,7 +121,7 @@ class ValidationCheck:
 
     def _load_plugin_models(self):
         for entry_point in pkg_resources.iter_entry_points(MODEL_ENTRY_POINT):
-            MONGOENGINE_MODELS.append(entry_point.resolve())
+            MONGOENGINE_MODELS.append(entry_point.load())
 
 if __name__ == '__main__':
     call(["pulp-manage-db"])
