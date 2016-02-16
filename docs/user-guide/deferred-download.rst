@@ -1,3 +1,5 @@
+.. _alternate-download-policies:
+
 Alternate Download Policies
 ===========================
 
