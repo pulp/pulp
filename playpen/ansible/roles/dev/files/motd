@@ -16,18 +16,9 @@ Here are some tips:
 
 * Each project has a "run-tests.py" to run the unit tests.
 
-* There are a set of bash functions in your .bashrc that are useful:
+* There are a set of bash functions in your .bashrc that are useful.
 
-    pstart:    Start all Pulp services
-    pstop:     Stop all Pulp services
-    prestart:  Restart all Pulp services
-    pstatus:   Report status on all Pulp services
-    ptests:    Run all unit test on all the Pulp repositories
-    psmash:    Run Pulp Smash!
-    preset:    Reset Pulp to a clean install state
-    ppopulate: Populate Pulp with test repositories of several types
-    pprocs:    List all Pulp-related process IDs
-    pdebug:    Start a remote PDB session on localhost
+  Run 'phelp' to list the available functions and what they do.
 
 * phttp is an alias that gives you authenticated access to the rest API using httpie:
 
