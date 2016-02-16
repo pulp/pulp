@@ -13,7 +13,8 @@ The OID structure follows the Red Hat model. Download URLs are found at:
 The * represents the product ID and is not used as part of this calculation.
 '''
 
-from ConfigParser import NoOptionError, SafeConfigParser
+from gettext import gettext as _
+from ConfigParser import NoOptionError, SafeConfigParser, NoSectionError
 
 from rhsm import certificate
 
@@ -29,14 +30,33 @@ def authenticate(environ, config=None):
     '''
     Framework hook method.
     '''
-    cert_pem = environ["mod_ssl.var_lookup"]("SSL_CLIENT_CERT")
+    # An output stream (file-like object) to which error output can be written.
+    # For many servers, this will output to the main error log. For more
+    # information, see PEP333.
+    wsgi_error_logger = environ["wsgi.errors"].write
 
     if config is None:
         config = _config()
 
+    # Attempt to retrieve the client certificate, and if it isn't available, reject.
+    cert_pem = ''
+    if 'SSL_CLIENT_CERT' in environ:
+        cert_pem = environ['SSL_CLIENT_CERT']
+    if not cert_pem and 'mod_ssl.var_lookup' in environ:
+        cert_pem = environ["mod_ssl.var_lookup"]("SSL_CLIENT_CERT")
+    if not cert_pem:
+        # Log the missing certificate if configured to do so.
+        try:
+            log_failed_cert = config.getboolean('main', 'log_failed_cert')
+        except (AttributeError, NoSectionError, NoOptionError, ValueError):
+            log_failed_cert = False
+        if log_failed_cert:
+            error = _('Authentication failed; no client certificate provided in request.\n')
+            wsgi_error_logger(error)
+        return False
+
     validator = OidValidator(config)
-    valid = validator.is_valid(environ["REQUEST_URI"], cert_pem,
-                               environ["wsgi.errors"].write)
+    valid = validator.is_valid(environ["REQUEST_URI"], cert_pem, wsgi_error_logger)
     return valid
 
 

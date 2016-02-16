@@ -35,7 +35,7 @@ def mock_environ(client_cert_pem, uri):
         def write(self, *args, **kwargs):
             pass
 
-    environ["wsgi.errors"] = Errors()
+    environ["wsgi.errors"] = mock.Mock(spec=file)
     return environ
 
 
@@ -658,9 +658,9 @@ class TestOidValidation(unittest.TestCase):
     @mock.patch("pulp.oid_validation.oid_validation._config")
     @mock.patch("pulp.oid_validation.oid_validation.OidValidator")
     def test_authenticate_loads_config(self, mock_validator, mock_config):
-        mock_environ = mock.MagicMock()
+        environ = mock_environ(FULL_CLIENT_CERT, 'https://nowhere/path/to')
 
-        oid_validation.authenticate(mock_environ)
+        oid_validation.authenticate(environ)
 
         mock_config.assert_called_once_with()
 
@@ -694,6 +694,41 @@ class TestOidValidation(unittest.TestCase):
 
         self.assertEquals(result, ["/pulp/repos", "/pulp/ostree/web"])
 
+    def test_no_mod_ssl_vars(self):
+        """
+        Test that if 'mod_ssl.var_lookup' is missing, it is handled gracefully.
+        """
+        environ = mock_environ(
+            FULL_CLIENT_CERT,
+            'https://localhost/some/repo/package.rpm'
+        )
+        environ.pop('mod_ssl.var_lookup')
+
+        self.assertFalse(oid_validation.authenticate(environ))
+        environ['wsgi.errors'].write.assert_called_once_with(
+            'Authentication failed; no client certificate provided in request.\n'
+        )
+
+    @mock.patch('pulp.oid_validation.oid_validation.OidValidator')
+    def test_ssl_client_cert_set(self, mock_oid_validation):
+        """
+        Test that if the client cert is in SSL_CLIENT_CERT, that certificate is used.
+
+        It may be the case that 'SSL_CLIENT_CERT' is set in the 'environ' dictionary.
+        It might also be the case that 'mod_ssl.var_lookup' is not set, and we should
+        handle that case.
+        """
+        environ = mock_environ(
+            FULL_CLIENT_CERT,
+            'https://localhost/some/repo/package.rpm'
+        )
+        environ['SSL_CLIENT_CERT'] = FULL_CLIENT_CERT
+        environ.pop('mod_ssl.var_lookup')
+        mock_oid_validation.return_value.is_valid.return_value = True
+
+        self.assertTrue(oid_validation.authenticate(environ))
+        mock_oid_validation.return_value.is_valid.assert_called_once_with(
+            '/some/repo/package.rpm', FULL_CLIENT_CERT, environ['wsgi.errors'].write)
 
 # -- test data ---------------------------------------------------------------------
 
