@@ -81,6 +81,22 @@ pclean() {
     ppopulate;
 }
 
+pjournal() {
+    # build up the journalctl cmdline per-unit
+    journal_cmd="journalctl"
+    for svc in ${SERVICES[@]}; do
+        journal_cmd="$journal_cmd -u $svc"
+    done
+
+    if [ -z $1 ]; then
+        # not passed any args, follow the units' journals by default
+        $journal_cmd -f
+    else
+        # passed some args, send all args through to journalctl
+        $journal_cmd $@
+    fi
+}
+
 ptests() {
     pushd $HOME/devel;
     for repo in ${REPOS[@]}; do
