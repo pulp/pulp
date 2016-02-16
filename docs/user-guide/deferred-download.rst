@@ -105,10 +105,18 @@ Squid
 +++++
 
 Squid requires significantly more configuration which is up to the user. To configure squid,
-edit ``/etc/squid/squid.conf``. The following is a basic configuration with inline documentation::
+edit ``/etc/squid/squid.conf``. The following is a basic configuration with inline documentation
+that should work for Squid 3.2 or greater. Since Red Hat Enterprise Linux 6 and CentOS 6 ships
+with Squid 3.1, users of those platforms will need to uncomment a few configuration options::
 
  # Recommended minimum configuration. It is important to note that order
  # matters in Squid's configuration; the configuration is applied top to bottom.
+
+  # Squid 3.1 doesn't define these Access Control Lists by default. RHEL/CentOS 6
+  # users should uncomment the following acl definitions.
+  # acl manager proto cache_object
+  # acl localhost src 127.0.0.1/32 ::1
+  # acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
 
   # Listen on port 3128 in Accelerator (caching) mode.
   http_port 3128 accel
