@@ -158,17 +158,21 @@ ppopulate() {
 }
 
 pprocs() {
-    printf "Pulp Worker processes:\n"
-    ps ax | grep "pulp.server.async.app -c 1" | grep -v grep | awk '{ print $1 }'
+    print_procs() {
+        # prints a header string with number of pids, list of pids, and a newline spacer
+        # $1 is the header string, $2 is a newline-separated list of pids, see usage below
+        echo "$1 ($(echo $2|wc -w)):"
+        echo $2
+        echo
+    }
 
-    printf "\nPulp Resource Manager processes:\n"
-    ps ax | grep "pulp.server.async.app -n resource_manager" | grep -v grep | awk '{ print $1 }'
-
-    printf "\nPulp Celerybeat processes:\n"
-    ps ax | grep "pulp.server.async.celery_instance.celery" | grep -v grep | awk '{ print $1 }'
-
-    printf "\nPulp WSGI processes:\n"
-    ps ax | grep "wsgi:pulp" | grep -v grep | awk '{ print $1 }'
+    # override IFS to prevent bash splitting pgrep output on newlines
+    IFS=''
+    print_procs "Pulp worker processes" `pgrep -f "pulp.server.async.app -c 1"`
+    print_procs "Pulp Resource Manager processes" `pgrep -f "pulp.server.async.app -n resource_manager"`
+    print_procs "Pulp Celerybeat processes:" `pgrep -f "pulp.server.async.celery_instance.celery"`
+    print_procs "Pulp WSGI processes:" `pgrep -f "wsgi:pulp"`
+    unset IFS
 }
 
 pdebug() {
