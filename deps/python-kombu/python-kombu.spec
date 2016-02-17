@@ -178,6 +178,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed Feb 17 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-4.pulp
+- Update Qpid transport patch (pcreech@redhat.com)
+
 * Tue Feb 09 2016 Patrick Creech <pcreech@redhat.com> 3.0.33-3.pulp
 - Add kombu patch for reconnect issue (pcreech@redhat.com)
 
