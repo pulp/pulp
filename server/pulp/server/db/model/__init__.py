@@ -531,61 +531,63 @@ class ContentUnit(AutoRetryDocument):
         """
         Validate that all subclasses of ContentType define required fields correctly.
 
-        Ensure a field named `_content_type_id` is defined and raise a ValidationError if not. Each
+        Ensure a field named `_content_type_id` is defined and raise an AttributeError if not. Each
         subclass of ContentUnit must have the content type id stored in the `_content_type_id`
         field as a StringField. The field must be marked as required and have a default set. For
         example:
 
            _content_type_id = StringField(required=True, default='rpm')
 
-        Ensure a field named `unit_key_fields` is defined and raise a ValidationError if not. Each
+        Ensure a field named `unit_key_fields` is defined and raise an AttributeError if not. Each
         subclass of ContentUnit must have the content type id stored in the `unit_key_fields`
         field as a tuple and must not be empty.
 
            unit_key_fields = ('author', 'name', 'version')
 
-        :raises: PLP0035 if a field or attribute is incorrectly defined
+        :raises: AttributeError if a field or attribute is not defined
+        :raises: ValueError if a field or attribute have incorrect values
+        :raises: TypeError if a field or attribute has invalid type
         """
         # Validate the 'unit_key_fields' attribute
 
         if not hasattr(cls, 'unit_key_fields'):
-            msg = _("The class %(class_name)s must define a 'unit_key_fields' attribute")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='unit_key_fields')
+            msg = _("The class %(class_name)s must define a 'unit_key_fields' attribute")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise AttributeError(msg)
         if not isinstance(cls.unit_key_fields, tuple):
-            msg = _("The class %(class_name)s must define 'unit_key_fields' to be a tuple")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='unit_key_fields')
+            msg = _("The class %(class_name)s must define 'unit_key_fields' to be a tuple")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise TypeError(msg)
         if len(cls.unit_key_fields) == 0:
-            msg = _("The field 'unit_key_fields' on class %(class_name)s must have length > 0")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='unit_key_fields')
+            msg = _("The field 'unit_key_fields' on class %(class_name)s must have length > 0")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise ValueError(msg)
 
         # Validate the '_content_type_id' field
         if not hasattr(cls, '_content_type_id'):
-            msg = _("The class %(class_name)s must define a '_content_type_id' attribute")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='_content_type_id')
+            msg = _("The class %(class_name)s must define a '_content_type_id' attribute")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise AttributeError(msg)
+
         if not isinstance(cls._content_type_id, StringField):
-            msg = _("The class %(class_name)s must define '_content_type_id' to be a StringField")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='_content_type_id')
+            msg = _("The class %(class_name)s must define '_content_type_id' to be a StringField")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise TypeError(msg)
         if cls._content_type_id.default is None:
             msg = _("The class %(class_name)s must define a default value "
-                    "for the '_content_type_id' field")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='_content_type_id')
+                    "for the '_content_type_id' field") % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise ValueError(msg)
         if cls._content_type_id.required is False:
-            msg = _("The class %(class_name)s must require the '_content_type_id' field")
-            _logger.error(msg, {'class_name': cls.__name__})
-            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=cls.__name__,
-                                                field_name='_content_type_id')
+            msg = _("The class %(class_name)s must require the '_content_type_id' field")\
+                % {'class_name': cls.__name__}
+            _logger.error(msg)
+            raise ValueError(msg)
 
     @classmethod
     def pre_save_signal(cls, sender, document, **kwargs):
@@ -774,11 +776,12 @@ class FileContentUnit(ContentUnit):
             where the content is to be stored.
         :type location: str
 
-        :raises PulpCodedException: PLP0036 if the unit has not been saved.
+        :raises ImportError: if the unit has not been saved.
         :raises PulpCodedException: PLP0037 if *path* is not an existing file.
         """
         if not self._last_updated:
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036)
+            raise ImportError("Content unit must be saved before associated content"
+                              " files can be imported.")
         if not os.path.isfile(path):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
         with FileStorage() as storage:

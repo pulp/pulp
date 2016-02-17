@@ -9,9 +9,9 @@ from mock import patch, Mock, call
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField,
                          Document, IntField, ListField, StringField, QuerySetNoCache)
 
-from pulp.common import error_codes, dateutils
+from pulp.common import dateutils
 from pulp.common.compat import unittest
-from pulp.common.error_codes import PLP0036, PLP0037
+from pulp.common.error_codes import PLP0037
 from pulp.server import exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
@@ -316,10 +316,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except AttributeError as raised_error:
+            msg = "The class ContentUnitHelper must define a '_content_type_id' attribute"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when__content_type_id_field_is_wrong_type(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -329,10 +328,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except TypeError as raised_error:
+            msg = "The class ContentUnitHelper must define '_content_type_id' to be a StringField"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when__content_type_id_field_default_is_not_defined(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -342,10 +340,10 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except ValueError as raised_error:
+            msg = "The class ContentUnitHelper must define a default value" \
+                  " for the '_content_type_id' field"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when__content_type_id_field_is_not_required(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -355,10 +353,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': '_content_type_id'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except ValueError as raised_error:
+            msg = "The class ContentUnitHelper must require the '_content_type_id' field"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when_unit_key_fields_is_not_defined(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -367,10 +364,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except AttributeError as raised_error:
+            msg = "The class ContentUnitHelper must define a 'unit_key_fields' attribute"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when_unit_key_fields_is_wrong_type(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -380,10 +376,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except TypeError as raised_error:
+            msg = "The class ContentUnitHelper must define 'unit_key_fields' to be a tuple"
+            self.assertEqual(raised_error.message, msg)
 
     def test_clean_raises_ValidationError_when_unit_key_fields_is_empty(self):
         class ContentUnitHelper(model.ContentUnit):
@@ -393,10 +388,9 @@ class TestContentUnitValidateModelDefinition(unittest.TestCase):
 
         try:
             ContentUnitHelper.validate_model_definition()
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
-            expected_dict = {'class_name': 'ContentUnitHelper', 'field_name': 'unit_key_fields'}
-            self.assertEqual(raised_error.error_data, expected_dict)
+        except ValueError as raised_error:
+            msg = "The field 'unit_key_fields' on class ContentUnitHelper must have length > 0"
+            self.assertEqual(raised_error.message, msg)
 
 
 class TestFileContentUnit(unittest.TestCase):
@@ -505,8 +499,10 @@ class TestFileContentUnit(unittest.TestCase):
             unit = TestFileContentUnit.TestUnit()
             unit.import_content('')
             self.fail('Expected coded exception')
-        except PulpCodedException, e:
-            self.assertEqual(e.error_code, PLP0036)
+        except ImportError, e:
+            msg = "Content unit must be saved before associated" \
+                  " content files can be imported."
+            self.assertEqual(e.message, msg)
 
     @patch('os.path.isfile')
     def test_import_content_not_existing_file(self, isfile):

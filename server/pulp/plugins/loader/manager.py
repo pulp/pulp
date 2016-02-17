@@ -40,8 +40,8 @@ class PluginManager(object):
         Attach the signals to the models here since the mongoengine signals will not be
         sent correctly if they are attached to the base class.
 
+        :raises: TypeError if a model is not a subclass of ContentUnit
         :raises: PLP0038 if two models are defined with the same id
-        :raises: PLP0039 if a model is not a subclass of ContentUnit
         """
         _logger.debug(_("Loading Unit Models"))
         for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_UNIT_MODELS):
@@ -51,10 +51,10 @@ class PluginManager(object):
             model_class = entry_point.load()
             class_name = model_class.__class__.__module__ + "." + model_class.__class__.__name__
             if not issubclass(model_class, ContentUnit):
-                raise PulpCodedException(error_code=error_codes.PLP0039,
-                                         model_id=model_id,
-                                         model_class=class_name)
-
+                msg = "The unit model with the id %(model_id)s failed to register." \
+                      " The class %(model_class)s is not a subclass of ContentUnit." %\
+                      {'model_id': model_id, 'model_class': class_name}
+                raise TypeError(msg)
             if model_id in self.unit_models:
                 raise PulpCodedException(error_code=error_codes.PLP0038,
                                          model_id=model_id,

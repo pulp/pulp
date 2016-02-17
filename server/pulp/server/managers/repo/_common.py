@@ -18,10 +18,8 @@ import stat
 
 from celery import task
 
-from pulp.common import error_codes
 from pulp.plugins.model import RelatedRepository, RepositoryGroup, RelatedRepositoryGroup
 from pulp.server import config as pulp_config
-from pulp.server.exceptions import PulpCodedException
 
 
 def to_related_repo(repo_data, configs):
@@ -162,7 +160,7 @@ def get_working_directory():
         return working_dir_root
     else:
         # If path is None, this method is called outside of an asynchronous task
-        raise PulpCodedException(error_codes.PLP0033)
+        raise RuntimeError("Working Directory requested outside of asynchronous task.")
 
 
 def delete_working_directory():
