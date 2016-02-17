@@ -3,96 +3,73 @@
 policy_module(pulp-streamer, 0.0.0)
 type streamer_t;
 type streamer_exec_t;
-init_daemon_domain(streamer_t, streamer_exec_t)
+init_daemon_domain(streamer_t, streamer_exec_t);
 
 require {
         type streamer_t;
         type proc_t;
         type celery_exec_t;
+        type squid_t;
+        type rpm_exec_t;
 }
 
-#============= streamer_t ==============
-#
-allow streamer_t self:netlink_route_socket r_netlink_socket_perms;
 
-allow streamer_t self:tcp_socket create_stream_socket_perms;
-allow streamer_t self:udp_socket create_socket_perms;
+##### getattr Files #####
 
-# Read from a socket in proc
-allow streamer_t proc_t:file read_sock_file_perms;
-
-# Read /usr/bin/celery for some reason?
+# { getattr } on /usr/bin/celery
 allow streamer_t celery_exec_t:file getattr_file_perms;
 
+# { getattr } on /usr/bin/yum
+allow streamer_t rpm_exec_t:file getattr_file_perms;
 
-## Send messages to kernel unix datagram sockets
-kernel_dgram_send(streamer_t)
+
+##### Kernel Related #####
+
+## Read from /proc/meminfo
+kernel_read_system_state(streamer_t);
 
 
-##### Network Related #####
+##### Network #####
 
-## Read the network config files
-sysnet_read_config(streamer_t)
+## Use nsswitch to look up user, password, group, or host information
+auth_use_nsswitch(streamer_t);
 
 ## Fetching remote content
-corenet_tcp_connect_all_ports(streamer_t)
+corenet_tcp_connect_all_ports(streamer_t);
 
 ## Listens on 8751
-corenet_tcp_bind_unreserved_ports(streamer_t)
-corenet_tcp_bind_generic_node(streamer_t)
-
-## Interact with mongodb directly
-corenet_tcp_connect_mongod_port(streamer_t)
+allow streamer_t self:tcp_socket { listen accept};
+corenet_tcp_bind_all_unreserved_ports(streamer_t);
+corenet_tcp_bind_generic_node(streamer_t);
 
 
-##### Content Related #####
-
-## Reads certs while fetching content
-miscfiles_read_generic_certs(streamer_t)
+##### Content #####
 
 ## Read /tmp
-files_list_tmp(streamer_t)
+files_list_tmp(streamer_t);
 
 ## Read Pulp content
-apache_read_sys_content(streamer_t)
+apache_read_sys_content(streamer_t);
 
 
-##### Execute Priviledges #####
+##### Execute Privileges #####
+
 ## Exec files in system bin directories
-corecmd_exec_bin(streamer_t)
+corecmd_exec_bin(streamer_t);
 
-## Execute ldconfig
-libs_exec_ldconfig(streamer_t)
-
-
-##### Entry Points  #####
-# An entry point allows a transition to streamer_t from
-# another context. For example: shell_exec_t and rpm_exec_t
-
-## Make rpm_exec_t an entry point
-rpm_entry_type(streamer_t)
-
-## Make the shell an entry point
-corecmd_shell_entry_type(streamer_t)
+## Execute ldconfig shared libraries
+libs_exec_ldconfig(streamer_t);
 
 
 ##### Logging #####
 
-## Connect to the syslog control unix stream socket
-logging_create_devlog_dev(streamer_t)
-
-## Allow domain to read the syslog pid files.
-logging_read_syslog_pid(streamer_t)
-
 ## send logs to syslog
-logging_send_syslog_msg(streamer_t)
+logging_send_syslog_msg(streamer_t);
 
 
-##### Startup/Shutdown #####
+##### Squid #####
 
-# systemd start/stop/restart related
-# EL6 does not use systemd
-
-ifndef(`distro_rhel6', `
-    auth_read_passwd(streamer_t)
-')
+# Squid needs tmpfs access to start
+# http://bugs.squid-cache.org/show_bug .cgi?id=4444
+fs_rw_inherited_tmpfs_files(squid_t);
+fs_read_tmpfs_files(squid_t);
