@@ -37,7 +37,7 @@
     {
         "name": "python-isodate",
         "version": "0.5.0-4.pulp",
-        "platform": [ "el6", "el7"]
+        "platform": [ "el5", "el6", "el7"]
     },
     {
         "name": "python-kombu",
