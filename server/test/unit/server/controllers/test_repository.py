@@ -883,7 +883,7 @@ class TestSync(unittest.TestCase):
 
         actual_result = repo_controller.sync('mock_id')
         mock_result.expected_result.assert_called_once_with(
-            m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
+            m_repo.repo_id, mock_imp_inst.importer_type_id, mock_imp_inst.importer_type_id,
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'canceled'
         )
@@ -929,7 +929,7 @@ class TestSync(unittest.TestCase):
 
         actual_result = repo_controller.sync('mock_id')
         mock_result.expected_result.assert_called_once_with(
-            m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
+            m_repo.repo_id, mock_imp_inst.importer_type_id, mock_imp_inst.importer_type_id,
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'success'
         )
@@ -974,7 +974,7 @@ class TestSync(unittest.TestCase):
 
         self.assertRaises(pulp_exceptions.PulpExecutionException, repo_controller.sync, 'mock_id')
         mock_result.expected_result.assert_called_once_with(
-            m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
+            m_repo.repo_id, mock_imp_inst.importer_type_id, mock_imp_inst.importer_type_id,
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'failed'
         )
@@ -1008,7 +1008,7 @@ class TestSync(unittest.TestCase):
 
         result = repo_controller.sync('mock_id')
         mock_result.expected_result.assert_called_once_with(
-            m_repo.repo_id, mock_imp_inst['id'], mock_imp_inst['importer_type_id'],
+            m_repo.repo_id, mock_imp_inst.importer_type_id, mock_imp_inst.importer_type_id,
             mock_now(), mock_now(), -1, -1, -1, mock_gettext(), mock_gettext(),
             'err'
         )

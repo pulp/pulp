@@ -68,11 +68,11 @@ class EventFireManager(object):
         # For each listener, retrieve the notifier and invoke it. Be sure that
         # an exception from a notifier is logged but does not interrupt the
         # remainder of the firing, nor bubble up.
-        for l in listeners:
-            notifier_type_id = l['notifier_type_id']
+        for listener in listeners:
+            notifier_type_id = listener['notifier_type_id']
             f = notifiers.get_notifier_function(notifier_type_id)
 
             try:
-                f(l['notifier_config'], event)
+                f(listener['notifier_config'], event)
             except Exception:
                 _logger.exception('Exception from notifier of type [%s]' % notifier_type_id)
