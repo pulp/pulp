@@ -49,7 +49,7 @@ fi
 if [ -d pulp-smash ]; then
     echo "installing pulp-smash and its dependencies"
     pushd pulp-smash
-    ! mkvirtualenv --system-site-packages pulp-smash
+    ! mkvirtualenv pulp-smash
     workon pulp-smash
     setvirtualenvproject
     # Install dependencies
