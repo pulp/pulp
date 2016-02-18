@@ -364,6 +364,7 @@ class TestManageDB(MigrationTest):
         initialize.assert_called_once_with(max_timeout=1)
 
     @patch('pulp.plugins.types.database._drop_indexes')
+    @patch('pulp.plugins.loader.api._generate_plugin_definitions', return_value=[])
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db"])
@@ -371,7 +372,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.manage._start_logging')
     @patch('pulp.server.db.manage.connection.initialize')
     def test_pulp_manage_db_loads_types(self, initialize, start_logging_mock, listdir_mock,
-                                        mock_drop_indices):
+                                        mock_plugin_definitions, mock_drop_indices):
         """
         Test calling pulp-manage-db imports types on a clean types database.
         """

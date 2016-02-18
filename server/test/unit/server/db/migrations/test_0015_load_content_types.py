@@ -63,12 +63,14 @@ migration = _import_all_the_way('pulp.server.db.migrations.0015_load_content_typ
 
 class TestMigrate(unittest.TestCase):
     @patch('pulp.plugins.types.database._drop_indexes')
+    @patch('pulp.plugins.loader.api._generate_plugin_definitions', return_value=[])
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('sys.stdout', MagicMock())
     @patch('pulp.server.db.manage._start_logging')
-    def test_migrate(self, start_logging_mock, listdir_mock, mock_drop_indices):
+    def test_migrate(self, start_logging_mock, listdir_mock, mock_plugin_definitions,
+                     mock_drop_indices):
         """
         Ensure that migrate() imports types on a clean types database.
         """

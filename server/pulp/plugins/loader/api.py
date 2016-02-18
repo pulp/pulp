@@ -6,7 +6,7 @@ from pulp.plugins.loader import exceptions as loader_exceptions
 from pulp.plugins.loader import loading
 from pulp.plugins.loader.manager import PluginManager
 from pulp.plugins.types import database, parser
-from pulp.plugins.types.model import TypeDescriptor
+from pulp.plugins.types.model import TypeDescriptor, TypeDefinition
 
 
 _logger = logging.getLogger(__name__)
@@ -411,17 +411,36 @@ def get_cataloger_by_id(catloger_id):
 
 def load_content_types(types_dir=_TYPES_DIR, dry_run=False, drop_indices=False):
     """
-    :type types_dir: str
+    Check or update database with content unit types information.
+
+    :param types_dir: path to content unit type JSON files,
+                      currently used only for node.json
+    :type  types_dir:  str
+    :param dry_run: if True, no modifications to database will be made, defaults to False
+    :type  dry_run:  bool
+    :param drop_indices: if True, indices for the collections of modified unit types
+                         will be dropped, defaults to False
+    :type  drop_indices:  bool
+    :return: None if dry_run is set to False,
+             list of content unit types to be created or updated, if dry_run is set to True
+    :rtype:  None or list of TypeDefinition
     """
     if not os.access(types_dir, os.F_OK | os.R_OK):
         msg = _('Cannot load types: path does not exist or cannot be read: %(p)s')
         _logger.critical(msg % {'p': types_dir})
         raise IOError(msg % {'p': types_dir})
+
+    # to handle node.json only
     descriptors = _load_type_descriptors(types_dir)
+    definitions = parser.parse(descriptors)
+
+    # get information about content unit types from entry points
+    definitions += _generate_plugin_definitions()
+
     if dry_run:
-        return _check_content_definitions(descriptors)
+        return _check_content_definitions(definitions)
     else:
-        _load_type_definitions(descriptors, drop_indices=drop_indices)
+        database.update_database(definitions, drop_indices=drop_indices)
 
 # initialization methods -------------------------------------------------------
 
@@ -438,19 +457,17 @@ def _create_manager():
     _MANAGER = PluginManager()
 
 
-def _check_content_definitions(descriptors):
+def _check_content_definitions(definitions):
     """
     Check whether the given content definitions exist in the database. This method
     does not make any changes to the content definitions or any indexes.
 
-    :param descriptors: A list of content descriptors
-    :type  descriptors: list of TypeDescriptor
+    :param definitions: A list of content definitions
+    :type  definitions: list of TypeDefinition
 
-    :return: A list of content types that would have been created or updated by
-             _load_type_definitions
+    :return: A list of content types that would have been created or updated
     :rtype:  list of TypeDefinition
     """
-    definitions = parser.parse(descriptors)
     old_content_types = []
 
     # Ensure all the content types exist and match the definitions
@@ -471,6 +488,10 @@ def _check_content_definitions(descriptors):
 
 def _load_type_descriptors(path):
     """
+    Load files from indicated path for futher processing.
+
+    NOTE: it is used only for loading node.json
+
     :type path: str
     :rtype: list [TypeDescriptor, ...]
     """
@@ -484,12 +505,26 @@ def _load_type_descriptors(path):
     return descriptors
 
 
-def _load_type_definitions(descriptors, drop_indices=False):
+def _generate_plugin_definitions():
     """
-    :type descriptors: list [TypeDescriptor, ...]
+    Use entry points to get the information about available content unit types
+
+    :return: A list of content unit types
+    :rtype:  list of TypeDefinition
     """
-    definitions = parser.parse(descriptors)
-    database.update_database(definitions, drop_indices=drop_indices)
+    definitions = []
+    plugin_manager = PluginManager()
+    for unit_type, model_class in plugin_manager.unit_models.items():
+        content_type_id = unit_type
+        display_name = getattr(model_class, 'unit_display_name', unit_type)
+        description = getattr(model_class, 'unit_description', '')
+        referenced_types = getattr(model_class, 'unit_referenced_types', [])
+        unit_key = list(getattr(model_class, 'unit_key_fields', []))
+        search_indexes = list(model_class._meta.get('indexes', []))
+        definition = TypeDefinition(content_type_id, display_name, description,
+                                    unit_key, search_indexes, referenced_types)
+        definitions.append(definition)
+    return definitions
 
 
 def _validate_importers():
