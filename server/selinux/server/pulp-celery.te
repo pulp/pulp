@@ -65,13 +65,11 @@ ifndef(`distro_rhel6', `
     fs_getattr_xattr_fs(celery_t)
 ')
 
-######################################
-#
-#
-#
+##### Certs #####
 
-allow celery_t pulp_cert_t:dir { getattr search };
-allow celery_t pulp_cert_t:file { read write getattr open };
+## Repo deletion requires custom certs to be removed in tasks
+manage_dirs_pattern(celery_t, pulp_cert_t, pulp_cert_t)
+manage_files_pattern(celery_t, pulp_cert_t, pulp_cert_t)
 
 # custom SSL certificates reading
 ifdef(`distro_rhel6', `
