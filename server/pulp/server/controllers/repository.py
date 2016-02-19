@@ -1109,13 +1109,14 @@ def _now_timestamp(string=True):
         return now
 
 
+@celery.task(base=PulpTask)
 def queue_download_deferred():
     """
     Queue a task to download all content units with entries in the DeferredDownload
     collection.
     """
     task_tags = [tags.action_tag(tags.ACTION_DEFERRED_DOWNLOADS_TYPE)]
-    return download_deferred.apply_async(tags=task_tags)
+    download_deferred.apply_async(tags=task_tags)
 
 
 def queue_download_repo(repo_id, verify_all_units=False):
