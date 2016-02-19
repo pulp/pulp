@@ -1,0 +1,1 @@
+/usr/bin/pulp_streamer -- gen_context(system_u:object_r:streamer_exec_t,s0)

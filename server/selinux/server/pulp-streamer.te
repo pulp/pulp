@@ -1,0 +1,75 @@
+# When built from RPM, the below version of "0.0.0" will be
+# replaced with the version in the spec file
+policy_module(pulp-streamer, 0.0.0)
+type streamer_t;
+type streamer_exec_t;
+init_daemon_domain(streamer_t, streamer_exec_t);
+
+require {
+        type streamer_t;
+        type proc_t;
+        type celery_exec_t;
+        type squid_t;
+        type rpm_exec_t;
+}
+
+
+##### getattr Files #####
+
+# { getattr } on /usr/bin/celery
+allow streamer_t celery_exec_t:file getattr_file_perms;
+
+# { getattr } on /usr/bin/yum
+allow streamer_t rpm_exec_t:file getattr_file_perms;
+
+
+##### Kernel Related #####
+
+## Read from /proc/meminfo
+kernel_read_system_state(streamer_t);
+
+
+##### Network #####
+
+## Use nsswitch to look up user, password, group, or host information
+auth_use_nsswitch(streamer_t);
+
+## Fetching remote content
+corenet_tcp_connect_all_ports(streamer_t);
+
+## Listens on 8751
+allow streamer_t self:tcp_socket { listen accept};
+corenet_tcp_bind_all_unreserved_ports(streamer_t);
+corenet_tcp_bind_generic_node(streamer_t);
+
+
+##### Content #####
+
+## Read /tmp
+files_list_tmp(streamer_t);
+
+## Read Pulp content
+apache_read_sys_content(streamer_t);
+
+
+##### Execute Privileges #####
+
+## Exec files in system bin directories
+corecmd_exec_bin(streamer_t);
+
+## Execute ldconfig shared libraries
+libs_exec_ldconfig(streamer_t);
+
+
+##### Logging #####
+
+## send logs to syslog
+logging_send_syslog_msg(streamer_t);
+
+
+##### Squid #####
+
+# Squid needs tmpfs access to start
+# http://bugs.squid-cache.org/show_bug .cgi?id=4444
+fs_rw_inherited_tmpfs_files(squid_t);
+fs_read_tmpfs_files(squid_t);

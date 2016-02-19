@@ -8,4 +8,3 @@
 # Pulp uses python logging to handle logrotate, this requires
 # write/unlink and httpd_log_t only allows httpd_t to append
 /var/log/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
-

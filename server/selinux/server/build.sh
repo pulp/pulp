@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE_NAMES=( "pulp-server" "pulp-celery" )
+PACKAGE_NAMES=( "pulp-server" "pulp-celery" "pulp-streamer" )
 SELINUX_VARIANTS="targeted"
 
 for selinuxvariant in ${SELINUX_VARIANTS}

@@ -167,8 +167,8 @@ ifndef(`distro_rhel6', `
 
 ######################################
 #
-# We can't include this reference policy statement in EL6 because it doesn't know this definition
-# I'm not sure why the allow statements provided by the auth_read_passwd are not needed on EL6
+# systemd start/stop/restart related
+# EL6 does not use systemd
 #
 
 ifndef(`distro_rhel6', `
