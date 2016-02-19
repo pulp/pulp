@@ -32,7 +32,7 @@ class Importer(object):
         :raise ValueError: when the URL scheme is not supported.
         """
         url = urlparse(url)
-        nectar_config = importer_config_to_nectar_config(config.flatten())
+        nectar_config = importer_config_to_nectar_config(config.flatten(), working_dir='/tmp')
         scheme = url.scheme.lower()
         if scheme == 'file':
             return LocalFileDownloader(nectar_config)
