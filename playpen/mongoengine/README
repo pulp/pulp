@@ -1,0 +1,48 @@
+The run.sh script will test your data from pulp < 2.8 to ensure that the
+upgrade process will succeed. It requires you to creata a database dump. It
+does not modify data in your running pulp server, nor does it modify the
+contents of the database dump you provide.
+
+The script starts a docker container running mongodb. It then starts a second
+container that loads your database dump into the mongodb container, and then
+runs the upgrade test script. At the end, both containers are stopped and
+removed.
+
+
+Requirements
+------------
+
+Docker
+Dump of pulp database from mongodb
+
+
+Usage
+-----
+
+1. Create an empty directory, and use it as the working directory for all further steps.
+
+2. Download the run.sh script found near this README.
+
+3. Use mongodump to create a dump of your pulp database. This will create a
+subdirectory called "dump". On EL6 and EL7, mongodump is found in package
+"mongodb".  On Fedora, it is in package "mongo-tools".
+
+For usage, see the documentation link below. In the simplest use case:
+mongodump --db pulp_database
+
+4. If selinux is enforcing, run this command so the docker container will have
+access to the dumped files: sudo chcon -Rt svirt_sandbox_file_t dump 
+
+5. sudo ./run.sh
+
+Progress information will appear on your screen, and that same data will be
+written to disk in a file whose name starts with "upgrade_validation-". If there are any errors,
+please share that log file with the pulp team. You can file an issue here:
+
+https://pulp.plan.io/
+
+
+References
+----------
+
+https://docs.mongodb.org/v2.6/reference/program/mongodump/

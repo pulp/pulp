@@ -1,0 +1,10 @@
+# Place this file in your /etc/yum.repos.d/ directory
+
+# Version 2.8 Nightly Builds
+[pulp-v2-nightly]
+name=Pulp 2.8 Nightly Builds
+baseurl=http://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/2.8/dev/7Server/$basearch/
+enabled=1
+skip_if_unavailable=0
+gpgcheck=0
+gpgkey=https://repos.fedorapeople.org/repos/pulp/pulp/GPG-RPM-KEY-pulp-2
