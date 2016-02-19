@@ -135,9 +135,6 @@ class NodesHttpImporter(Importer):
             strategy.synchronize(request)
         except Exception, e:
             summary_report.errors.append(CaughtException(e, repo.id))
-        finally:
-            if downloader is not None:
-                downloader.config.finalize()
 
         summary_report.errors.update(repo_id=repo.id)
         report = conduit.build_success_report({}, summary_report.dict())

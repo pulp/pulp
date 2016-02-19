@@ -872,6 +872,7 @@ class DownloadStepTests(unittest.TestCase):
         return sync_conduit
 
     def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
 
         conf_dict = {
             importer_constants.KEY_FEED: 'http://fake.com/file_feed/',
@@ -899,6 +900,9 @@ class DownloadStepTests(unittest.TestCase):
             config=self.mock_config, working_dir=self.mock_working_dir,
             plugin_type="fake plugin", description='foo')
 
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
     def test_init(self):
         self.assertEquals(self.dlstep.get_repo(), self.mock_repo)
         self.assertEquals(self.dlstep.get_conduit(), self.mock_conduit)
@@ -907,7 +911,9 @@ class DownloadStepTests(unittest.TestCase):
         self.assertEquals(self.dlstep.get_plugin_type(), "fake plugin")
         self.assertEqual(self.dlstep.description, 'foo')
 
-    def test_initalize(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_initalize(self, mock_get_working):
+        mock_get_working.return_value = self.temp_dir
         # override mock config with real config dict
         self.dlstep.config = self.real_config
         self.dlstep.conduit = self.get_sync_conduit()
@@ -938,10 +944,12 @@ class DownloadStepTests(unittest.TestCase):
         for key, value in expected_downloader_config.items():
             self.assertEquals(getattr(downloader.config, key), value)
 
-    def test__init___with_feed_lacking_trailing_slash(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test__init___with_feed_lacking_trailing_slash(self, mock_get_working):
         """
         tests https://bugzilla.redhat.com/show_bug.cgi?id=949004
         """
+        mock_get_working.return_value = self.temp_dir
         slash_config = self.get_basic_config(
             **{importer_constants.KEY_FEED: 'http://fake.com/no_trailing_slash'})
 
@@ -952,7 +960,10 @@ class DownloadStepTests(unittest.TestCase):
         # should now have a trailing slash
         self.assertEqual(self.dlstep._repo_url, 'http://fake.com/no_trailing_slash/')
 
-    def test__init___file_downloader(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test__init___file_downloader(self, mock_get_working):
+
+        mock_get_working.return_value = self.temp_dir
         slash_config = self.get_basic_config(
             **{importer_constants.KEY_FEED: 'file:///some/path/'})
         # override mock config with real config dict
@@ -960,10 +971,12 @@ class DownloadStepTests(unittest.TestCase):
         self.dlstep.initialize()
         self.assertTrue(isinstance(self.dlstep.downloader, LocalFileDownloader))
 
-    def test__init___ssl_validation(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test__init___ssl_validation(self, mock_get_working):
         """
         Make sure the SSL validation is on by default.
         """
+        mock_get_working.return_value = self.temp_dir
         # It should default to True
         self.dlstep.config = self.get_basic_config(
             **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/'})
@@ -1027,7 +1040,9 @@ class DownloadStepTests(unittest.TestCase):
         self.assertEqual(len(downloads), 1)
         self.assertTrue(isinstance(downloads[0], DownloadRequest))
 
-    def test_cancel(self):
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_cancel(self, mock_get_working):
+        mock_get_working.return_value = self.temp_dir
         dlstep = publish_step.DownloadStep('fake-step')
         dlstep.parent = MagicMock()
         dlstep.initialize()

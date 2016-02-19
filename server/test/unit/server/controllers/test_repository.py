@@ -999,7 +999,7 @@ class TestSync(unittest.TestCase):
         mock_spawn_auto_pub.return_value = []
         mock_fire_man = m_factory.event_fire_manager()
         m_repo = m_model.Repository.objects.get_repo_or_missing_resource.return_value
-        mock_result.RESULT_ERROR = 'err'
+        mock_result.RESULT_ERROR = 'error'
 
         m_repo = m_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_imp = mock.MagicMock()
@@ -1010,7 +1010,7 @@ class TestSync(unittest.TestCase):
         mock_result.expected_result.assert_called_once_with(
             m_repo.repo_id, mock_imp_inst.importer_type_id, mock_imp_inst.importer_type_id,
             mock_now(), mock_now(), -1, -1, -1, mock_gettext(), mock_gettext(),
-            'err'
+            'error'
         )
         m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
