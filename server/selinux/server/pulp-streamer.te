@@ -68,8 +68,11 @@ logging_send_syslog_msg(streamer_t);
 
 
 ##### Squid #####
+# Temporary workaround to allow Squid to run with SELinux enabled
+# Remove once the packaging bug is resolved
+# https://bugzilla.redhat.com/show_bug.cgi?id=1310198
 
-# Squid needs tmpfs access to start
-# http://bugs.squid-cache.org/show_bug .cgi?id=4444
-fs_rw_inherited_tmpfs_files(squid_t);
-fs_read_tmpfs_files(squid_t);
+ifdef(`distro_fedora23', `
+    fs_rw_inherited_tmpfs_files(squid_t);
+    fs_read_tmpfs_files(squid_t);
+')
