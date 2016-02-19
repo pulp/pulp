@@ -12,7 +12,7 @@ import mock
 from pulp.server.async import celery_instance
 from pulp.server.config import config, _default_values
 from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
-from pulp.server.controllers.repository import download_deferred
+from pulp.server.controllers.repository import queue_download_deferred
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
@@ -61,7 +61,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         Make sure the monthly maintenance Task is present and properly configured.
         """
         expected_download_deferred = {
-            'task': download_deferred.name,
+            'task': queue_download_deferred.name,
             'schedule': timedelta(minutes=config.getint('lazy', 'download_interval')),
             'args': tuple(),
         }
