@@ -210,7 +210,7 @@ class Streamer(resource.Resource):
         """
         # Configure the primary downloader for alternate content sources
         importer, config = repo_controller.get_importer_by_id(catalog_entry.importer_id)
-        primary_downloader = importer.get_downloader(config, catalog_entry.url,
+        primary_downloader = importer.get_downloader(config, catalog_entry.url, working_dir='/tmp',
                                                      **catalog_entry.data)
         pulp_request = request.getHeader(PULP_STREAM_REQUEST_HEADER)
         listener = StreamerListener(request, self.config, catalog_entry, pulp_request)

@@ -17,7 +17,7 @@ class Importer(object):
     """
 
     @staticmethod
-    def get_downloader(config, url, **options):
+    def get_downloader(config, url, working_dir=None, **options):
         """
         Get a configured downloader.
 
@@ -25,6 +25,8 @@ class Importer(object):
         :type config: pulp.plugins.config.PluginCallConfiguration
         :param url: A URL.
         :type url: str
+        :param working_dir: Allow the caller to override the working directory used.
+        :type working_dir: str
         :param options: Extended configuration.
         :type options: dict
         :return: A configured downloader.
@@ -32,7 +34,7 @@ class Importer(object):
         :raise ValueError: when the URL scheme is not supported.
         """
         url = urlparse(url)
-        nectar_config = importer_config_to_nectar_config(config.flatten(), working_dir='/tmp')
+        nectar_config = importer_config_to_nectar_config(config.flatten(), working_dir=working_dir)
         scheme = url.scheme.lower()
         if scheme == 'file':
             return LocalFileDownloader(nectar_config)

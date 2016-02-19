@@ -17,6 +17,8 @@ def importer_config_to_nectar_config(importer_config, working_dir=None):
     :param importer_config: use the PluginCallConfiguration.flatten method to retrieve a
            single dict view on the configuration
     :type  importer_config: dict
+    :param working_dir: Allow the caller to override the working directory used
+    :type working_dir: str
 
     :rtype: nectar.config.DownloaderConfig
     """
