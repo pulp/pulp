@@ -93,6 +93,7 @@ cd server/selinux/server
 %endif
 sed -i "s/policy_module(pulp-server, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server, %{version})/" pulp-server.te
 sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-celery, %{version})/" pulp-celery.te
+sed -i "s/policy_module(pulp-streamer, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-streamer, %{version})/" pulp-streamer.te
 ./build.sh ${distver}
 cd -
 %endif # end of the pulp-server build block
@@ -988,8 +989,10 @@ exit 0
 %{_datadir}/pulp/selinux/server/*
 %{_datadir}/selinux/*/pulp-server.pp
 %{_datadir}/selinux/*/pulp-celery.pp
+%{_datadir}/selinux/*/pulp-streamer.pp
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-celery.if
+%{_datadir}/selinux/devel/include/%{moduletype}/pulp-streamer.if
 
 %endif # End selinux if block
 
