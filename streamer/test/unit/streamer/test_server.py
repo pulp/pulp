@@ -190,7 +190,8 @@ class TestStreamer(unittest.TestCase):
     @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
     def test_download(self, mock_repo_controller, mock_get_unit_model, mock_container):
         # Setup
-        mock_catalog = Mock(importer_id='mock_id', url='http://dev.null/', data={'k': 'v'})
+        mock_catalog = Mock(importer_id='mock_id', url='http://dev.null/', working_dir='/tmp',
+                            data={'k': 'v'})
         mock_request = Mock()
         mock_responder = Mock()
         mock_importer = Mock()
@@ -203,7 +204,10 @@ class TestStreamer(unittest.TestCase):
         self.streamer._download(mock_catalog, mock_request, mock_responder)
         mock_repo_controller.get_importer_by_id.assert_called_once_with(mock_catalog.importer_id)
         mock_importer.get_downloader.assert_called_once_with(
-            mock_importer_config, mock_catalog.url, **mock_catalog.data)
+            mock_importer_config,
+            mock_catalog.url,
+            working_dir=mock_catalog.working_dir,
+            **mock_catalog.data)
 
         mock_container.return_value.download.assert_called_once()
 

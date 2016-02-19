@@ -19,7 +19,7 @@ class TestImporter(TestCase):
         downloader = Importer.get_downloader(config, url)
 
         # validation
-        to_nectar.assert_called_once_with(config.flatten.return_value)
+        to_nectar.assert_called_once_with(config.flatten.return_value, working_dir=None)
         local.assert_called_once_with(to_nectar.return_value)
         self.assertEqual(downloader, local.return_value)
 
@@ -33,7 +33,7 @@ class TestImporter(TestCase):
         downloader = Importer.get_downloader(config, url)
 
         # validation
-        to_nectar.assert_called_once_with(config.flatten.return_value)
+        to_nectar.assert_called_once_with(config.flatten.return_value, working_dir=None)
         http.assert_called_once_with(to_nectar.return_value)
         self.assertEqual(downloader, http.return_value)
 
@@ -47,7 +47,7 @@ class TestImporter(TestCase):
         downloader = Importer.get_downloader(config, url)
 
         # validation
-        to_nectar.assert_called_once_with(config.flatten.return_value)
+        to_nectar.assert_called_once_with(config.flatten.return_value, working_dir=None)
         http.assert_called_once_with(to_nectar.return_value)
         self.assertEqual(downloader, http.return_value)
 
