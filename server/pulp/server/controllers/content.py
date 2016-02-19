@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from gettext import gettext as _
 from logging import getLogger
-import threading
 
 import celery
 
@@ -70,9 +69,8 @@ class ContentSourcesRefreshStep(Step):
     def process_main(self, item=None):
         if item:
             self.progress_description = item.descriptor['name']
-            e = threading.Event()
             self.progress_details = self.progress_description
-            report = item.refresh(e)[0]
+            report = item.refresh()[0]
             if not report.succeeded:
                 raise PulpCodedTaskException(error_code=error_codes.PLP0031, id=report.source_id,
                                              url=report.url)
