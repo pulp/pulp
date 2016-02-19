@@ -10,7 +10,7 @@ from pulp.common.plugins import importer_constants as constants
 from pulp.server.managers.repo import _common as common_utils
 
 
-def importer_config_to_nectar_config(importer_config):
+def importer_config_to_nectar_config(importer_config, working_dir=None):
     """
     Translates the Pulp standard importer configuration into a DownloaderConfig instance.
 
@@ -39,8 +39,10 @@ def importer_config_to_nectar_config(importer_config):
         (constants.KEY_MAX_DOWNLOADS, 'max_concurrent'),
         (constants.KEY_MAX_SPEED, 'max_speed'),
     )
+    if working_dir is None:
+        working_dir = common_utils.get_working_directory()
 
-    download_config_kwargs = {'working_dir': common_utils.get_working_directory()}
+    download_config_kwargs = {'working_dir': working_dir}
     adder = partial(_safe_add_arg, importer_config, download_config_kwargs)
     map(adder, translations)
 
