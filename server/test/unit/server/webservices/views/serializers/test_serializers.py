@@ -451,6 +451,21 @@ class TestModelSerializer(unittest.TestCase):
              mock.call(mock_model, 'f2')])
         mock_new_crit.assert_called_once_with(expected_crit_dict)
 
+    def test_translate_nonexistent_field(self):
+        """
+        Test that attempting to translate nonexistent fields raises the correct exception
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        mock_model = mock.MagicMock()
+        # 'del' the field attribute so the mock throws the required AttributeError on access
+        del(mock_model.nonexistent_field)
+        test_serializer = FakeSerializer()
+        self.assertRaises(exceptions.InvalidValue, test_serializer.translate_field,
+                          mock_model, 'nonexistent_field')
+
 
 class TestRepository(unittest.TestCase):
     """
