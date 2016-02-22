@@ -32,26 +32,26 @@ class DemoModel(model.ContentUnit):
 class TestGetAssociatedUnitIDs(unittest.TestCase):
     def setUp(self):
         self.associations = [
-            model.RepositoryContentUnit(repo_id='repo1', unit_id='a', unit_type_id='demo_model'),
-            model.RepositoryContentUnit(repo_id='repo1', unit_id='b', unit_type_id='demo_model'),
+            dict(repo_id='repo1', unit_id='a', unit_type_id='demo_model'),
+            dict(repo_id='repo1', unit_id='b', unit_type_id='demo_model'),
         ]
 
     def test_returns_ids(self, mock_objects):
-        mock_objects.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value.as_pymongo.return_value = self.associations
 
         ret = list(repo_controller.get_associated_unit_ids('repo1', 'demo_model'))
 
         self.assertEqual(ret, ['a', 'b'])
 
     def test_returns_generator(self, mock_objects):
-        mock_objects.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value.as_pymongo.return_value = self.associations
 
         ret = repo_controller.get_associated_unit_ids('repo1', 'demo_model')
 
         self.assertTrue(inspect.isgenerator(ret))
 
     def test_uses_q(self, mock_objects):
-        mock_objects.return_value.only.return_value = self.associations
+        mock_objects.return_value.only.return_value.as_pymongo.return_value = self.associations
         q = mongoengine.Q(foo='bar')
 
         list(repo_controller.get_associated_unit_ids('repo1', 'demo_model', q))
