@@ -20,5 +20,5 @@ class TestMigrate(unittest.TestCase):
         mock_get_database.return_value.collection_names.return_value = []
         collection = mock_get_database.return_value['archived_calls']
         migration.migrate()
-        collection.update.assert_called_once_with({}, {"$rename": {"id": "repo_id"}})
+        collection.update.assert_called_once_with({}, {"$rename": {"id": "repo_id"}}, multi=True)
         collection.drop_index.assert_called_once_with("id_-1")

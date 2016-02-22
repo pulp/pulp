@@ -15,5 +15,5 @@ def migrate(*args, **kwargs):
     """
     db = connection.get_database()
     collection = db['repos']
-    collection.update({}, {"$rename": {"id": "repo_id"}})
     collection.drop_index("id_-1")
+    collection.update({}, {"$rename": {"id": "repo_id"}}, multi=True)
