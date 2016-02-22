@@ -106,9 +106,9 @@ class TestContentView(TestCase):
     @patch(MODULE + '.HttpResponseRedirect')
     def test_redirect(self, redirect, pulp_conf, url):
         remote_ip = '172.10.08.20'
-        scheme = 'http'
+        scheme = 'https'
         host = 'localhost'
-        port = 80
+        port = 443
         path = '/var/pulp/content/zoo/lion'
         redirect_path = '/streamer'
         query = 'arch=x86'
@@ -124,15 +124,9 @@ class TestContentView(TestCase):
             }
         }
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
-        environ = {
-            'REQUEST_SCHEME': scheme,
-            'SERVER_NAME': host,
-            'SERVER_PORT': port,
-            'REDIRECT_URL': redirect_path,
-            'QUERY_STRING': query,
-            'REMOTE_ADDR': remote_ip
-        }
-        request = Mock(environ=environ, path_info=path)
+        self.environ['QUERY_STRING'] = query
+        self.environ['REMOTE_ADDR'] = remote_ip
+        request = Mock(environ=self.environ, path_info=path)
         key = Mock()
 
         # test
