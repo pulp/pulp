@@ -74,8 +74,8 @@ def get_associated_unit_ids(repo_id, unit_type, repo_content_unit_q=None):
     qs = model.RepositoryContentUnit.objects(q_obj=repo_content_unit_q,
                                              repo_id=repo_id,
                                              unit_type_id=unit_type)
-    for assoc in qs.only('unit_id'):
-        yield assoc.unit_id
+    for assoc in qs.only('unit_id').as_pymongo():
+        yield assoc['unit_id']
 
 
 def get_unit_model_querysets(repo_id, model_class, repo_content_unit_q=None):
