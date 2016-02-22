@@ -53,6 +53,8 @@ Other Changes
 * Pulp `used to store WSGI files under /srv<https://pulp.plan.io/issues/1496>`_, which was
   a violation of FHS. These files have been moved to /usr/share/pulp/wsgi.
 
+* Pulp platform now automatically calculates the `added_count`, `removed_count`, and `updated_count` fields of repository sync task output.
+
 Agent Changes
 -------------
 
