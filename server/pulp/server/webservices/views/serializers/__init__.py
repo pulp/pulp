@@ -174,7 +174,7 @@ class ModelSerializer(BaseSerializer):
             document_dict[self.translate_field_reverse(field)] = getattr(instance, field)
         return document_dict
 
-    def _translate_filters(self, model, filters):
+    def translate_filters(self, model, filters):
         """
         Iterate through the filters and translate them to use our internal db representation.
 
@@ -192,7 +192,7 @@ class ModelSerializer(BaseSerializer):
                 if key == '_id':
                     translated_dict['_id'] = self._translate__id(value)
                 else:
-                    new_field = self._translate(model, key)
+                    new_field = self.translate_field(model, key)
                     translated_dict[new_field] = value
             else:
                 translated_dict[key] = value
@@ -230,7 +230,7 @@ class ModelSerializer(BaseSerializer):
         else:
             raise exceptions.InvalidValue(err_msg)
 
-    def _translate(self, model, field):
+    def translate_field(self, model, field):
         """
         Converts an external representation of a field to the Mongoengine db_field.
 
@@ -290,18 +290,13 @@ class ModelSerializer(BaseSerializer):
         from pulp.server.db.model.criteria import Criteria
         crit_dict = crit.as_dict()
         if crit.filters:
-            crit_dict['filters'] = self._translate_filters(model, crit.filters)
+            crit_dict['filters'] = self.translate_filters(model, crit.filters)
         if crit.sort:
-            sort = [(self._translate(model, field), direc) for field, direc in crit.sort]
+            sort = [(self.translate_field(model, field), direc) for field, direc in crit.sort]
             crit_dict['sort'] = sort
         if crit.fields:
-            crit_dict['fields'] = [self._translate(model, field) for field in crit.fields]
+            crit_dict['fields'] = [self.translate_field(model, field) for field in crit.fields]
         return Criteria.from_dict(crit_dict)
-
-    # expose these "private" methods as public, pending a more in-depth refactor
-    # https://pulp.plan.io/issues/1555
-    translate_field = _translate
-    translate_filters = _translate_filters
 
 
 class Repository(ModelSerializer):
@@ -410,7 +405,7 @@ class User(ModelSerializer):
         """
         return reverse('user_resource', kwargs={'login': instance.login})
 
-    def _translate_filters(self, model, filters):
+    def translate_filters(self, model, filters):
         """
         Override the parent class to handle the case of a user provided filter including `id`.
         Since this is no longer in the database we stay backwards compatible by instead searching
@@ -426,4 +421,4 @@ class User(ModelSerializer):
         """
         if filters and filters.get('id'):
             filters['_id'] = filters.pop('id')
-        return super(User, self)._translate_filters(model, filters)
+        return super(User, self).translate_filters(model, filters)
