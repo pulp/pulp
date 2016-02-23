@@ -313,7 +313,7 @@ class TestModelSerializer(unittest.TestCase):
         mock_model.internal.db_field = 'internal_db'
         filters = {'external': 'was external', 'leave': 'should not change'}
         test_serializer = FakeSerializer()
-        result = test_serializer._translate_filters(mock_model, filters)
+        result = test_serializer.translate_filters(mock_model, filters)
         self.assertDictEqual(result, {'internal_db': 'was external', 'leave': 'should not change'})
 
     @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate__id')
@@ -329,7 +329,7 @@ class TestModelSerializer(unittest.TestCase):
         mock_model = mock.MagicMock()
         filters = {'_id': 'translate me!'}
         test_serializer = FakeSerializer()
-        result = test_serializer._translate_filters(mock_model, filters)
+        result = test_serializer.translate_filters(mock_model, filters)
         self.assertDictEqual(result, {'_id': mock_trans_id.return_value})
         mock_trans_id.assert_called_once_with('translate me!')
 
@@ -396,7 +396,7 @@ class TestModelSerializer(unittest.TestCase):
         test_serializer = FakeSerializer()
         self.assertRaises(exceptions.InvalidValue, test_serializer._translate__id, search_term)
 
-    def test_translate(self):
+    def test_translate_field(self):
         """
         Test that individual strings are translated correctly from external to internal repr.
         """
@@ -409,7 +409,7 @@ class TestModelSerializer(unittest.TestCase):
         mock_model = mock.MagicMock()
         mock_model.internal.db_field = 'internal_db'
         test_serializer = FakeSerializer()
-        result = test_serializer._translate(mock_model, 'external')
+        result = test_serializer.translate_field(mock_model, 'external')
         self.assertEqual(result, 'internal_db')
 
     def test_translate_field_reverse(self):
@@ -429,8 +429,8 @@ class TestModelSerializer(unittest.TestCase):
         self.assertEqual(result, 'external')
 
     @mock.patch('pulp.server.db.model.criteria.Criteria.from_dict')
-    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate')
-    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate_filters')
+    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer.translate_field')
+    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer.translate_filters')
     def test_translate_criteria(self, mock_translate_filters, mock_translate, mock_new_crit):
         """
         Test that each fo the fields of criteria are translated appropriately.
@@ -450,6 +450,21 @@ class TestModelSerializer(unittest.TestCase):
             [mock.call(mock_model, 'field'), mock.call(mock_model, 'f1'),
              mock.call(mock_model, 'f2')])
         mock_new_crit.assert_called_once_with(expected_crit_dict)
+
+    def test_translate_nonexistent_field(self):
+        """
+        Test that attempting to translate nonexistent fields raises the correct exception
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            pass
+
+        mock_model = mock.MagicMock()
+        # 'del' the field attribute so the mock throws the required AttributeError on access
+        del(mock_model.nonexistent_field)
+        test_serializer = FakeSerializer()
+        self.assertRaises(exceptions.InvalidValue, test_serializer.translate_field,
+                          mock_model, 'nonexistent_field')
 
 
 class TestRepository(unittest.TestCase):
