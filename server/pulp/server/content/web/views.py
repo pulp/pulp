@@ -99,7 +99,7 @@ class ContentView(View):
         :rtype: django.http.HttpResponse
         """
         path = os.path.realpath(request.path_info)
-        scheme = request.environ['REQUEST_SCHEME']
+        scheme = request.environ['wsgi.url_scheme']
         host = request.environ['SERVER_NAME']
         port = request.environ['SERVER_PORT']
         query = request.environ['QUERY_STRING']
