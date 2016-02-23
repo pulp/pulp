@@ -130,7 +130,10 @@ _paction() {
 
 psmash() {
     # We start and end with {push,pop}d because workon changes CWD and we don't want to user's CWD
-    # to be altered when they type pulp-smash.
+    # to be altered when they type pulp-smash. We also want to maintain their active venv.
+    if [ ! -z $VIRTUAL_ENV ]; then
+        _original_venv=`basename $VIRTUAL_ENV`
+    fi
     pushd ~;
     workon pulp-smash;
     prestart;
@@ -138,7 +141,11 @@ psmash() {
     then
         python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
     fi
-    deactivate;
+    if [ -z $_original_venv ]; then
+        deactivate;
+    else
+        workon $_original_venv
+    fi
     popd;
 }
 _psmash_help="Run pulp smash against the currently running pulp installation"
