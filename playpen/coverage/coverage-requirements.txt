@@ -1,0 +1,3 @@
+# list additional deps for coverage reporting here
+# avoid overlapping with deps already installed by ansible or other setup scripts
+coverage
