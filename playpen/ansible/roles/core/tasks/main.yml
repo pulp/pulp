@@ -3,6 +3,7 @@
   dnf: name={{ item }} state=present
   with_items:
       - bash-completion
+      - fedora-easy-karma
       - htop
       - screen
       - tmux
