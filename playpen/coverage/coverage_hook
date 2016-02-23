@@ -1,0 +1,495 @@
+#!/usr/bin/env python2
+"""
+coverage hook management script
+
+In addition to calling %(prog)s with --help, each subcommand has its own options
+that can also be seen by passing --help after the subcommand, e.g. %(prog)s <command> --help
+"""
+import argparse
+import hashlib
+import glob
+import os
+import shutil
+import sys
+import warnings
+
+import coverage.files
+from distutils.sysconfig import get_python_lib
+
+# a list consisting of either an importable module name or a path to module that contains
+# a pulp entry point that doesn't get covered with the generic pulp package hook.
+# this includes modules containing WSGI applications, celery workers, or other services.
+# if coverage is suspiciously missing for a service, this list probably needs a new item
+_entry_modules = [
+    # celerty task workers
+    'pulp.server.async.app',
+    # wsgi app modules -- the wsgi files themselves don't always work as hook points;
+    # the sitecustomize import needs to happen in the file where the wsgi application is def'd.
+    'pulp.server.content.web',
+    'pulp_puppet.forge.wsgi',
+    'pulp.repoauth.wsgi',
+    'pulp.server.webservices.application',
+    # streamer auth application and server
+    '/usr/share/pulp/wsgi/streamer_auth.wsgi',
+    '/usr/share/pulp/wsgi/streamer.tac',
+]
+
+# help strings for the argument parser subparsers
+_install_help = """\
+install the coverage-enabling sitecustomize file to a site-wide python packages dir
+
+If the sitecustomize file already exists and is not the one installed
+by this script, an error will be raised unless --force is used.
+
+If --deps is specified, install the requirements listed in coverage-requirements.txt
+"""
+_uninstall_help = """\
+remove the coverage-enabling sitecustomize file from a site-wide python packages dir
+
+If the sitecustomize file is not the one installed by this script, an
+error will be raised unless --force is used.
+
+If --deps is specified, uninstall the requirements listed in coverage-requirements.txt
+"""
+_report_help = """\
+report the saved coverage reports and write the output to the specified directory
+
+report will fail if coverage has not yet been installed
+"""
+_root_epilog = "This script is intended to be run with root privileges."
+
+
+def _files():
+    """
+    files used by both install and uninstall
+
+    DRY function since we need these filenames for multiple subcommands
+    """
+    this_script = os.path.abspath(__file__)
+    script_dir = os.path.dirname(this_script)
+    requirements = os.path.join(script_dir, 'coverage-requirements.txt')
+    pulp_sitecustomize = os.path.join(script_dir, '_sitecustomize.py')
+    target_sitecustomize = os.path.join(get_python_lib(), 'sitecustomize.py')
+    return {
+        'pulp_coverage': this_script,
+        'pulp_coverage_requirements': requirements,
+        'pulp_sitecustomize': pulp_sitecustomize,
+        'target_sitecustomize': target_sitecustomize,
+    }
+
+
+def _hash(filename):
+    """
+    given a filename, return the string hash of a file
+
+    Used in this module to determine if an installed sitecustomize file
+    is the same one to install/uninstall.
+
+    Args:
+        filename: path of file to hash
+    """
+    # good old md5, you're still useful for this...
+    hasher = hashlib.md5()
+    # feed the file bits to the hasher, spit out the hash
+    with open(filename, 'rb') as file:
+        hasher.update(file.read())
+    return hasher.hexdigest()
+
+
+def _pip(action, requirements_file):
+    """
+    basic wrapper around pip
+
+    rudely assumes that pip is installed and on the PATH,
+    installs and uninstalls without confirmation
+
+    Args:
+        action (str): One of 'install' or 'uninstall'
+        requirements_file: path to requirement text file for pip to parse and act on
+    """
+    flags = '-Ur' if action == 'install' else '-yr'
+    # the rare case where os.system does exactly what we want
+    os.system('pip {} {} {}'.format(action, flags, requirements_file))
+
+
+def _touch_all_source_files(abspath, coverage_data):
+    """
+    make sure all python source files at a path are included in coverage reporting
+
+    Args:
+        abspath: absolute path to a package or module to include
+        coverage_data (coverage.data.CoverageData): coverage data that will be
+            informed of source files to include in the coverage report
+
+    Returns None -- coverage data is modified in-place.
+    """
+    # use os.walk to recursively add files in package dirs
+    for root, dirs, files in os.walk(abspath):
+        for file in files:
+            if root.endswith('/pulp/devel'):
+                # filter out pulp.devel code
+                continue
+            if file.endswith('.py'):
+                # got a py file, make sure it's tracked by the coverage reporter
+                filepath = os.path.join(root, file)
+                coverage_data.touch_file(filepath)
+
+    # directly add modules if abspath is a python source file
+    if os.path.isfile(abspath) and abspath.endswith('.py'):
+        coverage_data.touch_file(filepath)
+
+
+def _patch_entry_module(install):
+    """
+    ensure that modules listed in _entry_modules are patched to import the coverage hook
+
+    Args:
+        install (bool): If True, install the patch. If False, uninstall the patch.
+    """
+    patch_filenames = []
+    for entry_mod in _entry_modules:
+        msg = None
+        if '/' in entry_mod:
+            # slash in the entry means this is a path
+            if os.path.exists(entry_mod):
+                patch_filenames.append(entry_mod)
+            else:
+                msg = 'File {} not found'.format(entry_mod)
+        else:
+            # no slash means this is an importable module
+            try:
+                mod = __import__(entry_mod)
+                # the __file__ attr for the module is the compiled version,
+                # so turn the .pyc/.pyo extension back to .py
+                entry_mod_file = mod.__file__.rstrip('co')
+                patch_filenames.append(entry_mod_file)
+            except ImportError:
+                msg = 'Module {} import failed'.format(entry_mod)
+        if msg:
+            print >>sys.stderr, msg + ', coverage reporting may be incomplete.'
+
+    for filename in patch_filenames:
+        # open the file and get its contents to decide what needs to happen
+        with open(filename) as file:
+            lines = file.readlines()
+
+        sitecustomize_installed = any('sitecustomize' in line for line in lines)
+
+        # handle the matrix of cases generated by the two bools:
+        # whether to install or uninstall, and whether sitecustomize is already installed.
+        # this conditional is written out with a some verbosity so you don't have to
+        # draw out a truth table to figure out what's going to happen
+        if (install and sitecustomize_installed) or (not install and not sitecustomize_installed):
+            # we're trying to install but sitecustomize is already installed
+            # or we're trying to uninstall but sitecustomize isn't already installed
+            pass
+        else:
+            # a change definitely needs to be made to the file, figure out which one
+            import_statement = 'import sitecustomize'
+            if install:
+                # things like shebangs and codings need to be skipped so we don't break parsing,
+                # so find the first line without a comment, then inject the import there
+                for i, line in enumerate(lines):
+                    if not line.startswith('#'):
+                        break
+                lines = lines[:i] + [import_statement + os.linesep] + lines[i:]
+            else:
+                # uninstalling means we filter out the sitecustomize import
+                lines = filter(lambda line: import_statement not in line, lines)
+
+            with open(filename, 'w') as file:
+                file.writelines(lines)
+
+
+def parse_args():
+    """
+    Parse commandline arguments.
+
+    Returns:
+        Parsed arguments as a dict, since they will always be passed to the action function
+        as **keyword args
+    """
+    # create and configure the base parser
+    parser = argparse.ArgumentParser()
+    parser.description = __doc__
+    parser.epilog = _root_epilog
+
+    # set up subparsers for each major command and set their handler function.
+    # all subparsers much have an action function defined, and use the same text
+    # for help and description -- help should up in the main process help, description
+    # shows up in the subcommand help
+    subparsers = parser.add_subparsers()
+    install_parser = subparsers.add_parser('install', help=_install_help.splitlines()[0],
+                                           description=_install_help)
+    install_parser.set_defaults(action=install)
+
+    uninstall_parser = subparsers.add_parser('uninstall', help=_uninstall_help.splitlines()[0],
+                                             description=_uninstall_help)
+    uninstall_parser.set_defaults(action=uninstall)
+
+    report_parser = subparsers.add_parser('report', help=_report_help.splitlines()[0],
+                                          description=_report_help)
+    report_parser.set_defaults(action=report)
+
+    for p in [parser] + subparsers.choices.values():
+        p.formatter_class = argparse.RawTextHelpFormatter
+
+    # install and uninstall common args
+    for subparser in install_parser, uninstall_parser:
+        subparser.add_argument(
+            '--force', action='store_true', default=False)
+        subparser.add_argument(
+            '--deps', action='store_true', default=False)
+
+    # output dir is required for report
+    report_parser.add_argument(
+        'output_directory', help='Output directory for coverage report')
+    report_parser.add_argument(
+        '--html', action='store_true', default=False,
+        help='Also generate an html report')
+    report_parser.add_argument(
+        '--xml', action='store_true', default=False,
+        help='Also generate a cobertura-style xml report')
+    report_parser.add_argument(
+        '--erase', action='store_true', default=False,
+        help='Erase coverage source files after generating report')
+    return vars(parser.parse_args())
+
+
+def install(force=False, deps=False):
+    """
+    install pulp coverage sitecustomize hook and dependencies
+
+    Installs pulp coverage sitecustomize.py hook if an existing hook is not already installed.
+
+    Args:
+        force: If True, install sitecustomize module unconditionally (default False)
+        deps: If True, install all packages listed in coverage requirements file (default False)
+    """
+    files = _files()
+
+    if deps:
+        _pip('install', files['pulp_coverage_requirements'])
+
+    if os.path.exists(files['target_sitecustomize']):
+        pulp_hash = _hash(files['pulp_sitecustomize'])
+        target_hash = _hash(files['target_sitecustomize'])
+        if target_hash != pulp_hash:
+            if force:
+                print 'forcing overwrite of {}'.format(files['target_sitecustomize'])
+            else:
+                print >>sys.stderr, '{} exists, not overwriting without --force'.format(
+                    files['target_sitecustomize'])
+                sys.exit(1)
+        else:
+            print 'pulp coverage hook already installed at {}'.format(files['target_sitecustomize'])
+            if not force:
+                sys.exit(0)
+
+    # clear to install the sitecustomize file if the code gets here
+    shutil.copy(files['pulp_sitecustomize'], files['target_sitecustomize'])
+    print 'coverage hook installed to {}'.format(files['target_sitecustomize'])
+
+    # verify the install
+    import sitecustomize
+    # in the event that we blew away an existing sitecustomize file, a reload is required
+    reload(sitecustomize)
+
+    # _pulp_coverage should be importable now
+    import _pulp_coverage
+
+    # if that succeeded, also ensure the coverage root exists
+    if not os.path.isdir(_pulp_coverage.root):
+        os.makedirs(_pulp_coverage.root)
+        # normal /tmp permissions, allows all users to write coverage data where needed
+        os.chmod(_pulp_coverage.root, 01777)
+
+    # alter pulp to explicitly import sitecustomize, since some scripts (such as WSGI
+    # applications) don't do this automatically.
+    _patch_entry_module(True)
+
+
+def uninstall(force=False, deps=False):
+    """
+    uninstall pulp coverage sitecustomize hook and dependencies
+
+    If the installed sitecustomize.py matches the one installed by this script, uninstall it.
+    Otherwise, refuse to make any changes unless forced to do so.
+
+    Args:
+        force: If True, remove sitecustomize module unconditionally (default False)
+        deps: If True, remove all packages listed in coverage requirements file (default False)
+    """
+    files = _files()
+
+    if deps:
+        _pip('uninstall', files['pulp_coverage_requirements'])
+
+    if os.path.exists(files['target_sitecustomize']):
+        pulp_hash = _hash(files['pulp_sitecustomize'])
+        target_hash = _hash(files['target_sitecustomize'])
+        if target_hash != pulp_hash:
+            if force:
+                print 'forcing removal of unknown sitecustomize file {}'.format(
+                    files['target_sitecustomize'])
+            else:
+                print >>sys.stderr, 'refusing to remove unknown sitecustomize file {}'.format(
+                    files['target_sitecustomize'])
+                sys.exit(0)
+    else:
+        print 'coverage hook not installed at {}'.format(files['target_sitecustomize'])
+        sys.exit(0)
+
+    # clear to remove the file if the code gets here
+    os.remove(files['target_sitecustomize'])
+
+    # glob to match .py, .pyc, .pyo, etc...
+    sitecustomize_files = glob.glob(files['target_sitecustomize'] + '*')
+    for sitecustomize_file in sitecustomize_files:
+        os.remove(sitecustomize_file)
+
+    _patch_entry_module(False)
+
+    print 'coverage hook {} uninstalled'.format(files['target_sitecustomize'])
+
+
+def report(output_directory, html=False, xml=False, erase=False):
+    """
+    generate coverage report(s). A text-only coverage report will always be written.
+
+    Args:
+        output_directory: Directory in which to write the report(s). This function assumes
+            that the output directory either doesn't exist (and will be created), or if it
+            does exist, that it is a writable directory.
+        html: If True, also generate an html report (default False)
+        xml: If True, also generate an xml report (default False)
+        erase: If True, erase coverage data files used to generate report(s) (default False)
+
+    Returns:
+        A tuple containing four items handy for reporting the coverage results:
+            covered_percent, a float between 0 and 100 of the reported coverage percent
+            packages_covered, a list of packages included in the coverage report
+            packages_not_installed, a list of packages not included in the coverage report
+                because they are not installed
+            paths: a dict of report types mapped to the filesystem paths to which they were
+                written. In the case of 'text' and 'xml' report types,, this is the actual
+                report file.  In the case of 'html', it is a directory containing an index.html
+                document and several individual report files. If a report is not generated,
+                its value will be None.
+    """
+    try:
+        import _pulp_coverage
+    except ImportError:
+        print >>sys.stderr, 'coverage hook must be installed before combining reports'
+        sys.exit(1)
+
+    # Resolve the absolute path to the report output directory
+    report_dir_abspath = os.path.abspath(output_directory)
+
+    # create the directory if it does not yet exist
+    if not os.path.exists(report_dir_abspath):
+        os.makedirs(report_dir_abspath)
+
+    # report is always generated, generate the filename now
+    report_outfile = os.path.join(report_dir_abspath, 'report')
+
+    print 'Generating coverage report with data files in', _pulp_coverage.root
+
+    # path mapping for returning report locations to callers
+    # types other than 'report' are built conditionally, default them to None
+    paths = {
+        'html': None,
+        'xml': None,
+        'text': report_outfile,
+    }
+
+    # loop result lists for tracking package information
+    package_paths = []
+    packages_covered = []
+    packages_not_installed = []
+
+    # track a list of package paths to give to the reports to include only pulp files
+    # also track what packages were importable (and thus covered) for reporting at the end
+    for package_name in _pulp_coverage.packages:
+        # If the package is installed,
+        try:
+            package = __import__(package_name)
+            try:
+                package_path_list = package.__path__
+            except AttributeError:
+                # just a module, add its file path
+                package_path_list = [package.__file__]
+
+            package_paths.extend(package_path_list)
+            packages_covered.append(package_name)
+        except ImportError:
+            # package not installed, stash it and skip it
+            packages_not_installed.append(package_name)
+            continue
+
+    # get a common prefix for all the paths, if possible
+    # this helps make a cleaner report, since all paths will be relative
+    # the common_prefix should end with "/pulp", so run it through dirname
+    # to get all the plugins
+    common_prefix = os.path.dirname(os.path.commonprefix(package_paths))
+
+    # set the current working directory to the common prefix and then reset coverage's relative
+    # path, which should result in clean and easy to read relative paths in the final reports,
+    # rather than absolute paths. This assumes that pulp and its plugs are all installed in the
+    # same place, which should normally be true.
+    os.chdir(common_prefix)
+    coverage.files.set_relative_directory()
+
+    # merge all coverage reports (combine) and make sure the coverage data has data (load)
+    _pulp_coverage.cov.combine()
+    _pulp_coverage.cov.load()
+
+    # grab the coverage data class for manipulation in the package paths loop
+    coverage_data = _pulp_coverage.cov.get_data()
+
+    for i, path in enumerate(package_paths):
+        # for each package path, make sure all source files are tracked for coverage, even if
+        # they never get touched during the course of testing. This likely results in several
+        # 0% covered files in the final report, but gives a complete coverage picture.
+        _touch_all_source_files(path, coverage_data)
+
+        # glob the path to include all source files in coverage reporting output
+        package_paths[i] = os.path.join(path, '*')
+
+    # text-based coverage report is always generated
+    with open(report_outfile, 'w') as file:
+        covered_percent = _pulp_coverage.cov.report(include=package_paths, file=file)
+
+    # go through the rest of the options and do the needful
+    if html:
+        html_dir = os.path.join(report_dir_abspath, 'html')
+        _pulp_coverage.cov.html_report(include=package_paths, directory=html_dir)
+        paths['html'] = html_dir
+
+    if xml:
+        xml_file = os.path.join(report_dir_abspath, 'report.xml')
+        _pulp_coverage.cov.xml_report(include=package_paths, outfile=xml_file)
+        paths['xml'] = xml_file
+
+    if erase:
+        _pulp_coverage.cov.erase()
+
+    # drop out a quick bottom-line summary of what was generated
+    # package_covered should always have at least one element, or the call(s) to generate
+    # reports above would have exploded with no data found
+    print 'Packages covered:\t{}'.format(', '.join(packages_covered))
+    if packages_not_installed:
+        print 'Packages missing:\t{}'.format(', '.join(packages_not_installed))
+    print 'Coverage percent:\t{:.2f}%'.format(covered_percent)
+    for report_type, path in paths.items():
+        if path is not None:
+            print '{} coverage report written to {}'.format(report_type, path)
+
+
+if __name__ == '__main__':
+    parsed = parse_args()
+    # if parsing succeeds, check for root privileges and warn if the effective UID is not 0
+    if os.geteuid() != 0:
+        warnings.warn('Effective UID is not 0 (you should probably use sudo)')
+    action = parsed.pop('action')
+    action(**parsed)
