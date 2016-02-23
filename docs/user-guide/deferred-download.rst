@@ -112,14 +112,17 @@ with Squid 3.1, users of those platforms will need to uncomment a few configurat
  # Recommended minimum configuration. It is important to note that order
  # matters in Squid's configuration; the configuration is applied top to bottom.
 
+  # Listen on port 3128 in Accelerator (caching) mode. Squid 3.1 users should use
+  # the commented out version of this statement and update the default site if the
+  # Pulp streamer isn't listening on 127.0.0.1:8751.
+  # http_port 3128 accel defaultsite=127.0.0.1:8751
+  http_port 3128 accel
+
   # Squid 3.1 doesn't define these Access Control Lists by default. RHEL/CentOS 6
   # users should uncomment the following acl definitions.
   # acl manager proto cache_object
   # acl localhost src 127.0.0.1/32 ::1
   # acl to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1
-
-  # Listen on port 3128 in Accelerator (caching) mode.
-  http_port 3128 accel
 
   # Only accept connections from the local host. If the Apache httpd reverse
   # proxy is running on a different host, adjust this accordingly.
