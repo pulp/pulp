@@ -79,6 +79,12 @@ Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
       $ vagrant up
       $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
 
+   .. note::
+
+      If you want to do a vagrant up without having to enter your sudo password, please follow the
+      instructions mentioned in the 'Root Privilege Requirement' section of
+      `Vagrant docs <https://www.vagrantup.com/docs/synced-folders/nfs.html>`_.
+
 #. Once you have followed the steps above, you should have a running deployed Pulp development
    machine. ssh into your Vagrant environment::
 
