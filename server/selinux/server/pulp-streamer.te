@@ -11,6 +11,7 @@ require {
         type celery_exec_t;
         type squid_t;
         type rpm_exec_t;
+        type pulp_var_run_t;
 }
 
 
@@ -27,6 +28,9 @@ allow streamer_t rpm_exec_t:file getattr_file_perms;
 
 ## Read from /proc/meminfo
 kernel_read_system_state(streamer_t);
+
+## Read from pseudo random number generator devices (e.g., /dev/urandom).
+dev_read_urand(streamer_t)
 
 
 ##### Network #####
@@ -75,4 +79,23 @@ logging_send_syslog_msg(streamer_t);
 ifdef(`distro_fedora23', `
     fs_rw_inherited_tmpfs_files(squid_t);
     fs_read_tmpfs_files(squid_t);
+')
+
+
+##### Pulp stuff #####
+
+## Allow access to /var/run/pulp for EL 6
+ifdef(`distro_rhel6', `
+    allow streamer_t pulp_var_run_t:file manage_file_perms;
+    # dir access needed when the streamer searches for existing pid files on startup
+    allow streamer_t pulp_var_run_t:dir manage_dir_perms;
+    files_pid_filetrans(streamer_t, pulp_var_run_t, file)
+')
+
+
+##### Miscellaneous #####
+
+## Allow process to read localization information on EL 6
+ifdef(`distro_rhel6', `
+    miscfiles_read_localization(streamer_t)
 ')
