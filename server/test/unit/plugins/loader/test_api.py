@@ -64,7 +64,7 @@ class LoaderApiTests(base.PulpServerTests):
     This class tests the pulp.plugins.loader.api module.
     """
 
-    @mock.patch('pulp.plugins.loader.api._load_type_definitions', autospec=True)
+    @mock.patch('pulp.plugins.types.database.update_database', autospec=True)
     @mock.patch('pulp.plugins.loader.api._check_content_definitions', autospec=True)
     def test_load_content_types_dry_run(self, mock_check_content, mock_load_type):
         """
@@ -93,14 +93,12 @@ class LoaderApiTests(base.PulpServerTests):
         mock_type_definition.return_value = fake_type
         type_definition = TypeDefinition('steve_holt', 'STEVE HOLT!', 'STEVE HOLT!', 'STEVE HOLT!',
                                          'STEVE HOLT!', 'STEVE HOLT!')
-        mock_parser.return_value = [type_definition]
 
-        result = api._check_content_definitions([])
+        result = api._check_content_definitions([type_definition])
         self.assertEquals(0, len(result))
 
-    @mock.patch('pulp.plugins.types.parser.parse', autospec=True)
     @mock.patch('pulp.plugins.types.database.type_definition', autospec=True)
-    def test_check_content_definitions_old(self, mock_type_definition, mock_parser):
+    def test_check_content_definitions_old(self, mock_type_definition):
         """
         Test that when the content type from the database doesn't match the TypeDefinition,
         the list contains that content type.
@@ -116,9 +114,8 @@ class LoaderApiTests(base.PulpServerTests):
         mock_type_definition.return_value = fake_type
         type_definition = TypeDefinition('gob', 'STEVE HOLT!', 'STEVE HOLT!', 'STEVE HOLT!',
                                          'STEVE HOLT!', 'STEVE HOLT!')
-        mock_parser.return_value = [type_definition]
 
-        result = api._check_content_definitions([])
+        result = api._check_content_definitions([type_definition])
         self.assertEquals(1, len(result))
         self.assertEquals(result[0], type_definition)
 
