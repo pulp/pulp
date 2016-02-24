@@ -137,9 +137,11 @@ psmash() {
     pushd ~;
     workon pulp-smash;
     prestart;
+    _return_code=1
     if make lint test
     then
         python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
+        _return_code=$?
     fi
     if [ -z $_original_venv ]; then
         deactivate;
@@ -147,6 +149,7 @@ psmash() {
         workon $_original_venv
     fi
     popd;
+    return $_return_code
 }
 _psmash_help="Run pulp smash against the currently running pulp installation"
 
