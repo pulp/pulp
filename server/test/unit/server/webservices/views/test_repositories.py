@@ -962,6 +962,8 @@ class TestRepoSyncSchedulesView(unittest.TestCase):
         self.assertTrue(response.error_code is error_codes.PLP0017)
 
 
+@mock.patch('pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
+@mock.patch('pulp.server.webservices.views.repositories.importer_controller.get_valid_importer')
 class TestRepoSyncScheduleResourceView(unittest.TestCase):
     """
     Tests for the RepoSyncScheduleResourceView.
@@ -970,10 +972,8 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repositories.RepoSyncScheduleResourceView._get')
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
     @mock.patch('pulp.server.webservices.views.repositories.reverse')
-    def test_get_sync_schedule(self, mock_rev, mock_manager, mock_get):
+    def test_get_sync_schedule(self, mock_rev, mock_get, m_validate, mock_manager):
         """
         Retrieve a single schedule.
         """
@@ -981,8 +981,6 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
         mock_request = mock.MagicMock()
         sync_resource = RepoSyncScheduleResourceView()
         response = sync_resource.get(mock_request, 'mock_repo', 'mock_importer', 'mock_schedule')
-        sync_resource.manager.validate_importer.assert_called_once_with('mock_repo',
-                                                                        'mock_importer')
         mock_rev.assert_called_once_with('repo_sync_schedule_resource', kwargs={
             'importer_id': 'mock_importer', 'schedule_id': 'mock_schedule', 'repo_id': 'mock_repo'})
         mock_get.assert_called_once_with('mock_schedule', mock_rev.return_value)
@@ -991,9 +989,7 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_json_response')
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
-    def test_delete_sync_schedule(self, mock_manager, mock_resp):
+    def test_delete_sync_schedule(self, mock_resp, m_validate, mock_manager):
         """
         Delete a single schedule.
         """
@@ -1008,9 +1004,7 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
-    def test_delete_sync_schedule_invalid_schedule(self, mock_manager):
+    def test_delete_sync_schedule_invalid_schedule(self, m_validate, mock_manager):
         """
         Attempt to delete a scheduled sync passing an invalid schedule id.
         """
@@ -1033,11 +1027,9 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repositories.reverse')
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
-    def test_update_sync_schedule_no_schedule_param(self, mock_manager, mock_rev, mock_resp):
+    def test_update_sync_sched_no_sched_param(self, mock_rev, mock_resp, m_validate, mock_manager):
         """
-        Attempt to update a dschedueld sync while missing the required schedule parameter.
+        Attempt to update a schedueld sync while missing the required schedule parameter.
         """
 
         mock_request = mock.MagicMock()
@@ -1056,9 +1048,7 @@ class TestRepoSyncScheduleResourceView(unittest.TestCase):
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repositories.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repositories.reverse')
-    @mock.patch(
-        'pulp.server.webservices.views.repositories.manager_factory.repo_sync_schedule_manager')
-    def test_update_sync_schedule_with_schedule_param(self, mock_manager, mock_rev, mock_resp):
+    def test_update_sync_sched_with_req_params(self, mock_rev, mock_resp, m_validate, mock_manager):
         """
         Update a schedueld sync with all required parameters.
         """
@@ -1302,11 +1292,12 @@ class TestRepoPublishScheduleResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.repositories.model.Distributor.objects')
     @mock.patch('pulp.server.webservices.views.repositories.RepoPublishScheduleResourceView._get')
     @mock.patch(
         'pulp.server.webservices.views.repositories.manager_factory.repo_publish_schedule_manager')
     @mock.patch('pulp.server.webservices.views.repositories.reverse')
-    def test_get_publish_schedule(self, mock_rev, mock_manager, mock_get):
+    def test_get_publish_schedule(self, mock_rev, mock_manager, mock_get, m_dist_qs):
         """
         Test retrieval of a single scheduled publish.
         """
@@ -1317,7 +1308,6 @@ class TestRepoPublishScheduleResourceView(unittest.TestCase):
 
         mock_rev.assert_called_once_with('repo_publish_schedule_resource', kwargs={
             'schedule_id': 'mock_schedule', 'repo_id': 'repo', 'distributor_id': 'dist'})
-        publish_resource.manager.validate_distributor.assert_called_once_with('repo', 'dist')
         mock_get.assert_called_once_with('mock_schedule', mock_rev.return_value)
         self.assertTrue(response is mock_get.return_value)
 

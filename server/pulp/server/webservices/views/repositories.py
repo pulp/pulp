@@ -516,8 +516,7 @@ class RepoSyncScheduleResourceView(ScheduleResource):
         :return: information about the requested scheduled sync
         :rtype: django.http.HttpResponse
         """
-
-        self.manager.validate_importer(repo_id, importer_id)
+        importer_controller.get_valid_importer(repo_id, importer_id)
         resource_href = reverse('repo_sync_schedule_resource',
                                 kwargs={'repo_id': repo_id, 'importer_id': importer_id,
                                         'schedule_id': schedule_id})
@@ -806,7 +805,7 @@ class RepoPublishScheduleResourceView(ScheduleResource):
         :rtype : django.http.HttpResponse
         """
 
-        self.manager.validate_distributor(repo_id, distributor_id)
+        model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=distributor_id)
         resource_href = reverse('repo_publish_schedule_resource', kwargs={
             'repo_id': repo_id, 'distributor_id': distributor_id, 'schedule_id': schedule_id
         })
