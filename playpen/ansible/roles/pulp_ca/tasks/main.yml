@@ -1,0 +1,56 @@
+---
+- name: Create Pulp Certificate Authority
+  command: >
+    /usr/bin/openssl req -x509 -newkey rsa:2048 -keyout private/cakey.pem -nodes -days 3650 \
+     -out cacert.pem -subj '/C=US/ST=North Carolina/L=Raleigh/O=Pulp/OU=Development/CN=PulpCA'
+  args:
+    chdir: /etc/pki/CA/
+    creates: cacert.pem
+
+- name: Create CA index.txt
+  command: /usr/bin/touch /etc/pki/CA/index.txt creates=/etc/pki/CA/index.txt
+
+- name: Add CA to trust store
+  shell: >
+    /usr/bin/cp /etc/pki/CA/cacert.pem /etc/pki/ca-trust/source/anchors/cacert.pem && \
+    /usr/bin/update-ca-trust
+  args:
+    creates: /etc/pki/ca-trust/source/anchors/cacert.pem
+
+- name: Configure openssl subjectAltName
+  lineinfile: dest=/etc/pki/tls/openssl.cnf
+              insertafter="^\[ usr_cert \]"
+              line="subjectAltName=DNS:{{ansible_hostname}},DNS:{{ansible_fqdn}}"
+
+- name: Create Apache certificate request
+  command: >
+    /usr/bin/openssl req -newkey rsa:2048 -keyout private/apachekey.pem -nodes -days 365 \
+    -out certs/apachereq.pem \
+    -subj '/C=US/ST=North Carolina/L=Raleigh/O=Pulp/OU=Development/CN={{ansible_hostname}}'
+  args:
+    chdir: /etc/pki/tls/
+    creates: certs/apachereq.pem
+
+- name: Sign Apache certificate
+  command: >
+    /usr/bin/openssl ca -create_serial -in /etc/pki/tls/certs/apachereq.pem \
+    -out /etc/pki/tls/certs/apachecert.pem -days 365 -keyfile /etc/pki/CA/private/cakey.pem -batch
+  args:
+    chdir: /etc/pki/tls/
+    creates: certs/apachecert.pem
+
+# In the distant future when Ansible sets everything up, this should notify httpd
+- name: Configure Apache TLS certificate
+  lineinfile:
+      backrefs: yes
+      dest: /etc/httpd/conf.d/ssl.conf
+      regexp: "^SSLCertificateFile "
+      line: "SSLCertificateFile /etc/pki/tls/certs/apachecert.pem"
+
+- name: Configure Apache TLS private key
+  lineinfile:
+      backrefs: yes
+      dest: /etc/httpd/conf.d/ssl.conf
+      regexp: "^SSLCertificateKeyFile "
+      line: "SSLCertificateKeyFile /etc/pki/tls/private/apachekey.pem"
+

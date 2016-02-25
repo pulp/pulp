@@ -8,3 +8,4 @@
     - qpidd
     - dev
     - lazy
+    - pulp_ca
