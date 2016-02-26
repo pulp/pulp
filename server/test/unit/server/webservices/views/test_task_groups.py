@@ -3,10 +3,11 @@ This module contains tests for the pulp.server.webservices.views.task_groups mod
 """
 import mock
 
-from .base import assert_auth_READ
+from .base import assert_auth_DELETE, assert_auth_READ
 from pulp.common.compat import unittest
+from pulp.server.exceptions import MissingResource
 
-from pulp.server.webservices.views.task_groups import TaskGroupSummaryView
+from pulp.server.webservices.views.task_groups import TaskGroupView, TaskGroupSummaryView
 
 
 class MockQuerySet(object):
@@ -25,6 +26,51 @@ class MockQuerySet(object):
             if item['state'] == state:
                 filtered_list.append(item)
         return MockQuerySet(filtered_list)
+
+
+class TestTaskGroupView(unittest.TestCase):
+    """
+    Tests for TaskGroupView
+    """
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.task_groups.TaskStatus.objects')
+    @mock.patch('pulp.server.webservices.views.task_groups.tasks')
+    def test_delete_task_resource_nonexistant(self, mock_task, mock_objects):
+        """
+        Test delete task_group with no tasks
+        """
+        mock_request = mock.MagicMock()
+
+        mock_objects.only.return_value.filter.return_value = []
+        task_resource = TaskGroupView()
+
+        self.assertRaises(MissingResource, task_resource.delete, mock_request, 'mock_task')
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.task_groups.TaskStatus.objects')
+    @mock.patch('pulp.server.webservices.views.task_groups.tasks')
+    @mock.patch(
+        'pulp.server.webservices.views.task_groups.generate_json_response')
+    def test_delete_task_resource(self, mock_resp, mock_task, mock_objects):
+        """
+        Test delete task_group with one task
+        """
+        mock_request = mock.MagicMock()
+        task1 = mock.Mock(task_id='test_foo_path')
+        task2 = mock.Mock(task_id='test_foo_path1')
+        mock_objects.only.return_value.filter.return_value = [task1, task2]
+
+        task_resource = TaskGroupView()
+
+        response = task_resource.delete(mock_request, 'mock_task')
+
+        self.assertEqual(mock_task.cancel.call_count, 2)
+
+        mock_task.cancel.assert_any_call('test_foo_path')
+        mock_task.cancel.assert_any_call('test_foo_path1')
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestTaskGroupSummary(unittest.TestCase):
