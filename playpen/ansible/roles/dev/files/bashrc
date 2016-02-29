@@ -140,7 +140,7 @@ psmash() {
     _return_code=1
     if make lint test
     then
-        python -m unittest2 discover ~/devel/pulp-smash/pulp_smash;
+        py.test ~/devel/pulp-smash/pulp_smash;
         _return_code=$?
     fi
     if [ -z $_original_venv ]; then
