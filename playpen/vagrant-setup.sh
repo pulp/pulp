@@ -86,8 +86,6 @@ for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
   sudo systemctl enable $s
 done
 
-echo "Disabling SSL verification on dev setup"
-sudo sed -i 's/# verify_ssl: True/verify_ssl: False/' /etc/pulp/admin/admin.conf
 
 sudo -u apache pulp-manage-db;
 setup_crane_links;
