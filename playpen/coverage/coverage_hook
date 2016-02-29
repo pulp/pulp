@@ -13,7 +13,6 @@ import shutil
 import sys
 import warnings
 
-import coverage.files
 from distutils.sysconfig import get_python_lib
 
 # a list consisting of either an importable module name or a path to module that contains
@@ -379,8 +378,10 @@ def report(output_directory, html=False, xml=False, erase=False):
     """
     try:
         import _pulp_coverage
+        import coverage.files
     except ImportError:
-        print >>sys.stderr, 'coverage hook must be installed before combining reports'
+        print >>sys.stderr, (
+            'coverage hook and requirements must be installed before combining reports')
         sys.exit(1)
 
     # Resolve the absolute path to the report output directory
