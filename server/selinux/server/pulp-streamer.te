@@ -5,6 +5,9 @@ type streamer_t;
 type streamer_exec_t;
 init_daemon_domain(streamer_t, streamer_exec_t);
 
+type pulp_streamer_tmp_t;
+files_tmp_file(pulp_streamer_tmp_t)
+
 require {
         type streamer_t;
         type proc_t;
@@ -12,6 +15,7 @@ require {
         type squid_t;
         type rpm_exec_t;
         type pulp_var_run_t;
+        type pulp_streamer_tmp_t;
 }
 
 
@@ -24,10 +28,20 @@ allow streamer_t celery_exec_t:file getattr_file_perms;
 allow streamer_t rpm_exec_t:file getattr_file_perms;
 
 
+##### Manage its own tmp files and dirs #####
+# nectar usage in the streamer uses /tmp for writing certificates
+
+allow streamer_t pulp_streamer_tmp_t:dir manage_dir_perms;
+files_tmp_filetrans(streamer_t, pulp_streamer_tmp_t, dir)
+
+allow streamer_t pulp_streamer_tmp_t:file manage_file_perms;
+files_tmp_filetrans(streamer_t, pulp_streamer_tmp_t, file)
+
+
 ##### Kernel Related #####
 
 ## Read from /proc/meminfo
-kernel_read_system_state(streamer_t);
+kernel_read_system_state(streamer_t)
 
 ## Read from pseudo random number generator devices (e.g., /dev/urandom).
 dev_read_urand(streamer_t)
@@ -36,39 +50,39 @@ dev_read_urand(streamer_t)
 ##### Network #####
 
 ## Use nsswitch to look up user, password, group, or host information
-auth_use_nsswitch(streamer_t);
+auth_use_nsswitch(streamer_t)
 
 ## Fetching remote content
-corenet_tcp_connect_all_ports(streamer_t);
+corenet_tcp_connect_all_ports(streamer_t)
 
 ## Listens on 8751
-allow streamer_t self:tcp_socket { listen accept};
-corenet_tcp_bind_all_unreserved_ports(streamer_t);
-corenet_tcp_bind_generic_node(streamer_t);
+allow streamer_t self:tcp_socket { listen accept };
+corenet_tcp_bind_all_unreserved_ports(streamer_t)
+corenet_tcp_bind_generic_node(streamer_t)
 
 
 ##### Content #####
 
 ## Read /tmp
-files_list_tmp(streamer_t);
+files_list_tmp(streamer_t)
 
 ## Read Pulp content
-apache_read_sys_content(streamer_t);
+apache_read_sys_content(streamer_t)
 
 
 ##### Execute Privileges #####
 
 ## Exec files in system bin directories
-corecmd_exec_bin(streamer_t);
+corecmd_exec_bin(streamer_t)
 
 ## Execute ldconfig shared libraries
-libs_exec_ldconfig(streamer_t);
+libs_exec_ldconfig(streamer_t)
 
 
 ##### Logging #####
 
 ## send logs to syslog
-logging_send_syslog_msg(streamer_t);
+logging_send_syslog_msg(streamer_t)
 
 
 ##### Squid #####
@@ -77,8 +91,8 @@ logging_send_syslog_msg(streamer_t);
 # https://bugzilla.redhat.com/show_bug.cgi?id=1310198
 
 ifdef(`distro_fedora23', `
-    fs_rw_inherited_tmpfs_files(squid_t);
-    fs_read_tmpfs_files(squid_t);
+    fs_rw_inherited_tmpfs_files(squid_t)
+    fs_read_tmpfs_files(squid_t)
 ')
 
 
@@ -87,8 +101,10 @@ ifdef(`distro_fedora23', `
 ## Allow access to /var/run/pulp for EL 6
 ifdef(`distro_rhel6', `
     allow streamer_t pulp_var_run_t:file manage_file_perms;
+
     # dir access needed when the streamer searches for existing pid files on startup
     allow streamer_t pulp_var_run_t:dir manage_dir_perms;
+
     files_pid_filetrans(streamer_t, pulp_var_run_t, file)
 ')
 
