@@ -56,7 +56,7 @@
     },
     {
         "name": "python-nectar",
-        "version": "1.4.5-1",
+        "version": "1.5.0-1",
         "platform": [ "el6", "el7", "fc22", "fc23"]
     },
     {

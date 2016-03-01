@@ -364,7 +364,7 @@ Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-qpid
-Requires: python-nectar >= 1.4.5
+Requires: python-nectar >= 1.5.0
 Requires: python-semantic_version >= 2.2.0
 Requires: httpd
 Requires: mod_ssl
@@ -581,7 +581,7 @@ Group: Development/Languages
 Requires: %{name}-nodes-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: python-nectar >= 1.4.5
+Requires: python-nectar >= 1.5.0
 
 %description nodes-child
 Pulp child nodes support.
@@ -649,7 +649,7 @@ Group: Development/Languages
 Requires: httpd
 Requires: pulp-server
 Requires: python-mongoengine
-Requires: python-nectar >= 1.4.5
+Requires: python-nectar >= 1.5.0
 %if 0%{?rhel}
 Requires: python-twisted-core
 Requires: python-twisted-web
