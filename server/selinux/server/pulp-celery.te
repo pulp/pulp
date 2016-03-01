@@ -65,6 +65,19 @@ ifndef(`distro_rhel6', `
     fs_getattr_xattr_fs(celery_t)
 ')
 
+
+######################################
+#
+# pulp_ostree sync call on F23 calls out to gpg
+# temporary workaround for https://pulp.plan.io/issues/1731
+
+ifdef(`distro_fedora23', `
+    allow celery_t self:process { setrlimit };
+')
+
+######################################
+
+
 ##### Certs #####
 
 ## Repo deletion requires custom certs to be removed in tasks
