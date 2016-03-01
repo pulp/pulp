@@ -16,7 +16,7 @@
     },
     {
         "name": "gofer",
-        "version": "2.6.6-2",
+        "version": "2.7.5-1",
         "platform": ["el5", "el6", "el7", "fc22", "fc23"]
     },
     {
