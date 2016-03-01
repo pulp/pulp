@@ -1,12 +1,14 @@
 ---
 - hosts: all
-  sudo: true
+  become: true
+  become_method: sudo
   vars:
   roles:
     - core
 
 - hosts: dev
-  sudo: true
+  become: true
+  become_method: sudo
   vars:
   roles:
     - db
