@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.4.5
+Version:        1.5.0
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -46,6 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Tue Mar 01 2016 Ina Panova <ipanova@redhat.com> 1.5.0-1
+- Use urllib3's retry functionality for failed connections. (jeremy@jcline.org)
+
 * Fri Feb 19 2016 Ina Panova <ipanova@redhat.com> 1.4.5-1
 - 1626 - Fix yum repo sync cancellation. (ipanova@redhat.com)
 - Log the specific ConnectionError. (jeremy@jcline.org)
