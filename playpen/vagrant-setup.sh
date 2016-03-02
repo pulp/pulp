@@ -49,12 +49,13 @@ fi
 if [ -d pulp-smash ]; then
     echo "installing pulp-smash and its dependencies"
     pushd pulp-smash
-    ! mkvirtualenv pulp-smash
+    ! mkvirtualenv pulp-smash --python=python3
     workon pulp-smash
     setvirtualenvproject
     # Install dependencies
     pip install -r requirements.txt -r requirements-dev.txt
-    python setup.py develop
+    pip install pytest
+    python3 setup.py develop
     mkdir -p $HOME/.config/pulp_smash/
     cat << EOF > $HOME/.config/pulp_smash/settings.json
 {
