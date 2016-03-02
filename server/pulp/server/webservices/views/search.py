@@ -48,7 +48,7 @@ class SearchView(generic.View):
     :vartype serializer:       staticmethod
     """
 
-    response_builder = staticmethod(util.generate_json_response)
+    response_builder = staticmethod(util.generate_json_response_with_pulp_encoder)
     optional_string_fields = tuple()
     optional_bool_fields = tuple()
 
