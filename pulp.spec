@@ -1035,6 +1035,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Wed Mar 02 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.6.beta
+- Pulp rebuild
+
 * Fri Feb 19 2016 Dennis Kliban <dkliban@redhat.com> 2.8.0-0.5.beta
 - 1705 - Pulp streamer throws exception when downloading content.
   (ipanova@redhat.com)
