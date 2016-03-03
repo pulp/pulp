@@ -432,15 +432,18 @@ def load_content_types(types_dir=_TYPES_DIR, dry_run=False, drop_indices=False):
 
     # to handle node.json only
     descriptors = _load_type_descriptors(types_dir)
-    definitions = parser.parse(descriptors)
+    pre_mongoengine_definitions = parser.parse(descriptors)
 
     # get information about content unit types from entry points
-    definitions += _generate_plugin_definitions()
+    mongoengine_definitions = _generate_plugin_definitions()
 
     if dry_run:
-        return _check_content_definitions(definitions)
+        return _check_content_definitions(pre_mongoengine_definitions + mongoengine_definitions)
     else:
-        database.update_database(definitions, drop_indices=drop_indices)
+        database.update_database(pre_mongoengine_definitions, drop_indices=drop_indices,
+                                 create_indexes=True)
+        database.update_database(mongoengine_definitions, drop_indices=drop_indices,
+                                 create_indexes=False)
 
 # initialization methods -------------------------------------------------------
 
