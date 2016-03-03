@@ -48,18 +48,21 @@ class MissingDefinitions(Exception):
         return 'MissingDefinitions [%s]' % ', '.join(self.missing_type_ids)
 
 
-def update_database(definitions, error_on_missing_definitions=False, drop_indices=False):
+def update_database(definitions, error_on_missing_definitions=False, drop_indices=False,
+                    create_indexes=True):
     """
     Brings the database up to date with the types defined in the given
     descriptors.
 
-    @param definitions: set of all definitions
-    @type  definitions: list of L{TypeDefinitions}
+    :param definitions: set of all definitions
+    :type  definitions: list of L{TypeDefinitions}
 
-    @param error_on_missing_definitions: if True, an exception will be raised
+    :param error_on_missing_definitions: if True, an exception will be raised
            if there is one or more type collections already in the database
            that are not represented in the given descriptors; defaults to False
-    @type  error_on_missing_definitions: bool
+    :type  error_on_missing_definitions: bool
+    :param create_indexes: If True, ensure indexes of pre-mongoengine collections
+    :type  create_indexes: bool
     """
 
     all_type_ids = [d.id for d in definitions]
@@ -101,19 +104,20 @@ def update_database(definitions, error_on_missing_definitions=False, drop_indice
                 error_defs.append(type_def)
                 continue
 
-        try:
-            _update_unit_key(type_def)
-        except Exception:
-            _logger.exception('Exception updating unit key for type [%s]' % type_def.id)
-            error_defs.append(type_def)
-            continue
+        if create_indexes:
+            try:
+                _update_unit_key(type_def)
+            except Exception:
+                _logger.exception('Exception updating unit key for type [%s]' % type_def.id)
+                error_defs.append(type_def)
+                continue
 
-        try:
-            _update_search_indexes(type_def)
-        except Exception:
-            _logger.exception('Exception updating search indexes for type [%s]' % type_def.id)
-            error_defs.append(type_def)
-            continue
+            try:
+                _update_search_indexes(type_def)
+            except Exception:
+                _logger.exception('Exception updating search indexes for type [%s]' % type_def.id)
+                error_defs.append(type_def)
+                continue
 
     if len(error_defs) > 0:
         raise UpdateFailed(error_defs)
