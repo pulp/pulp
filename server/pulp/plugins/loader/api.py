@@ -432,15 +432,16 @@ def load_content_types(types_dir=_TYPES_DIR, dry_run=False, drop_indices=False):
 
     # to handle node.json only
     descriptors = _load_type_descriptors(types_dir)
-    definitions = parser.parse(descriptors)
+    old_definitions = parser.parse(descriptors)
 
     # get information about content unit types from entry points
-    definitions += _generate_plugin_definitions()
+    new_definitions = _generate_plugin_definitions()
 
     if dry_run:
-        return _check_content_definitions(definitions)
+        return _check_content_definitions(old_definitions + new_definitions)
     else:
-        database.update_database(definitions, drop_indices=drop_indices)
+        database.update_database(old_definitions, drop_indices=drop_indices, create_indexes=True)
+        database.update_database(new_definitions, drop_indices=drop_indices, create_indexes=False)
 
 # initialization methods -------------------------------------------------------
 

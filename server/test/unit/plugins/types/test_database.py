@@ -28,7 +28,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         # Test
         defs = [DEF_1, DEF_2, DEF_3, DEF_4]
-        types_db.update_database(defs)
+        types_db.update_database(defs, create_indexes=True)
 
         # Verify
         all_collection_names = types_db.all_type_collection_names()
@@ -57,7 +57,7 @@ class TypesDatabaseTests(base.PulpServerTests):
         # Test
         # no real reason for this, just felt better than using the previous list
         same_defs = [DEF_4, DEF_3, DEF_2, DEF_1]
-        types_db.update_database(same_defs)
+        types_db.update_database(same_defs, create_indexes=True)
 
         # Verify
         all_collection_names = types_db.all_type_collection_names()
@@ -81,11 +81,11 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         # Setup
         defs = [DEF_1, DEF_2, DEF_3]
-        types_db.update_database(defs)
+        types_db.update_database(defs, create_indexes=True)
 
         # Test
         new_defs = [DEF_4]
-        types_db.update_database(new_defs)
+        types_db.update_database(new_defs, create_indexes=True)
 
         # Verify
         all_collection_names = types_db.all_type_collection_names()
