@@ -1,3 +1,5 @@
+from gettext import gettext as _
+import logging
 import mimetypes
 import os
 
@@ -10,6 +12,8 @@ from pulp.repoauth.wsgi import allow_access
 from pulp.server.lazy import URL, Key
 from pulp.server.config import config as pulp_conf
 
+
+logger = logging.getLogger(__name__)
 
 # Make sure all requested paths fall under these directories.
 PUBLISH_DIR = '/var/lib/pulp/published'
@@ -143,23 +147,31 @@ class ContentView(View):
         if request.environ['wsgi.url_scheme'] != 'http':
             if not allow_access(request.environ, host):
                 # Not Authorized
+                logger.info(_('Denying {host} access to {path} because one or more'
+                              ' authenticators failed.').format(host=host, path=path))
                 return HttpResponseForbidden()
 
         if not path.startswith(PUBLISH_DIR) and not path.startswith(CONTENT_DIR):
             # Someone is requesting something they shouldn't.
+            logger.debug(_('Denying {host} request to {path} as it does not resolve to'
+                           'a Pulp content path.').format(host=host, path=path))
             return HttpResponseForbidden()
 
         # Immediately 404 if the symbolic link doesn't even exist
         if not os.path.lexists(request.path_info):
+            logger.debug(_('Symbolic link to {path} does not exist.').format(path=path))
             raise Http404
 
         if os.path.isdir(path):
+            logger.debug(_('Rendering directory index for {path}.').format(path=path))
             return self.directory_index(path)
 
         # Already downloaded
         if os.path.exists(path):
+            logger.debug(_('Serving {path} with mod_xsendfile.').format(path=path))
             return self.x_send(path)
 
+        logger.debug(_('Redirecting request for {path}.').format(path=path))
         return self.redirect(request, self.key)
 
     @staticmethod
