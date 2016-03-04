@@ -677,7 +677,7 @@ def update_last_unit_removed(repo_id):
     repo_obj.save()
 
 
-@celery.task(base=PulpTask)
+@celery.task(base=PulpTask, name='pulp.server.tasks.repository.sync_with_auto_publish')
 def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
     """
     Sync a repository and upon successful completion, publish any distributors that are configured
