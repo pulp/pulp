@@ -159,8 +159,10 @@ ppopulate() {
     fi
 
     if [ -d $HOME/devel/pulp_docker ]; then
-        pulp-admin docker repo create --repo-id busybox --feed https://index.docker.io \
-            --upstream-name busybox
+        pulp-admin docker repo create --repo-id busybox-v1 --feed https://index.docker.io \
+            --upstream-name busybox --enable-v1 true --enable-v2 false
+        pulp-admin docker repo create --repo-id busybox --feed https://registry-1.docker.io \
+            --upstream-name busybox --enable-v1 false --enable-v2 true
     fi
 
     if [ -d $HOME/devel/pulp_rpm ]; then
