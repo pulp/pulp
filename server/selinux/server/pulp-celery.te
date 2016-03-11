@@ -120,6 +120,7 @@ sysnet_read_config(celery_t)
 ######################################
 #
 # Pulp workers do network related things including:
+#  - perform DNS queries
 #  - connect to mongod and amqp. This is required for correct processing of tasks
 #  - sync data to/from remote hosts via HTTP/HTTPS
 #  - send e-mail using SMTP for notification purposes
@@ -131,6 +132,7 @@ sysnet_read_config(celery_t)
 #
 
 allow celery_t self:tcp_socket create_stream_socket_perms;
+auth_use_nsswitch(celery_t)
 corenet_tcp_connect_all_ports(celery_t)
 corenet_tcp_bind_all_ports(celery_t)
 corenet_tcp_bind_generic_node(celery_t)
