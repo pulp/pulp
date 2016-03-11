@@ -5,6 +5,11 @@ if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
 
+# Source independant bashrc additions if they exist
+if [ -f $HOME/devel/.localrc ]; then
+    . $HOME/devel/.localrc
+fi
+
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
 
