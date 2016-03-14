@@ -11,7 +11,7 @@ from pulp.plugins.conduits.upload import UploadConduit
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import model
 from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
-                                    InvalidValue)
+                                    InvalidValue, PulpCodedException)
 from pulp.server.managers.content.upload import ContentUploadManager
 import pulp.server.managers.factory as manager_factory
 
@@ -169,7 +169,7 @@ class ContentUploadManagerTests(base.PulpServerTests):
         metadata = {'k1': 'v1'}
 
         mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
-        importer_return_report = object()
+        importer_return_report = {'success_flag': True, 'summary': '', 'details': {}}
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = importer_return_report
 
         upload_id = self.upload_manager.initialize_upload()
@@ -222,6 +222,18 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
         self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u',
                           'mock-type', {}, {}, upload_id)
+
+    @mock.patch('pulp.server.controllers.importer.model.Repository.objects')
+    def test_import_uploaded_unit_success_flag_false(self, mock_repo_qs):
+        """Test that exception is raised if upload report indicates failure."""
+        importer_controller.set_importer('repo-u', 'mock-importer', {})
+        importer_return_report = {'success_flag': False, 'summary': '', 'details': {}}
+        mock_plugins.MOCK_IMPORTER.upload_unit.side_effect = None
+        mock_plugins.MOCK_IMPORTER.upload_unit.return_value = importer_return_report
+        upload_id = self.upload_manager.initialize_upload()
+        with self.assertRaises(PulpCodedException) as cm:
+            self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', {}, {}, upload_id)
+        self.assertEqual('PLP0044', cm.exception.error_code.code)
 
     def test_upload_dir_auto_created(self):
         # Setup

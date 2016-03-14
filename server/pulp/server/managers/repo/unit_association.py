@@ -235,7 +235,7 @@ class RepoUnitAssociationManager(object):
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
         if not source_repo_unit_types.issubset(supported_type_ids):
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0044)
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0033)
         transfer_units = None
         # if all source types have been converted to mongo - search via new style
         if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
