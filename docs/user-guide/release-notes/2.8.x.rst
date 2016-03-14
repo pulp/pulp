@@ -1,9 +1,9 @@
-=========================
-Pulp master Release Notes
-=========================
+======================
+Pulp 2.8 Release Notes
+======================
 
-Pulp master
-===========
+Pulp
+====
 
 New Features
 ------------
@@ -73,8 +73,8 @@ can read about how to perform the test here:
 
 https://raw.githubusercontent.com/pulp/pulp/pulp-2.8.0-1/playpen/mongoengine/README
 
-Upgrade Instructions for 2.7.x --> master
------------------------------------------
+Upgrade Instructions for 2.7.x --> 2.8.x
+----------------------------------------
 
 Upgrade the packages using::
 
