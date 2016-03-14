@@ -95,8 +95,8 @@ PLP0032 = Error(
     "PLP0032", _("Task %(task_id)s encountered one or more failures during execution."),
     ['task_id'])
 PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
-                             "publishing repository %(repository_id)s."),
-                ['distributor_id', 'repository_id'])
+                             "publishing repository %(repo_id)s."),
+                ['distributor_id', 'repo_id'])
 PLP0037 = Error(
     "PLP0037",
     _("Content import of %(path)s failed - must be an existing file."),
@@ -117,6 +117,9 @@ PLP0045 = Error("PLP0045", _("The repository cannot be exported because some uni
                              "not downloaded."), [])
 PLP0046 = Error("PLP0046", _("The repository group cannot be exported because these repos have "
                              "units that are not downloaded: %(repos)s"), ['repos'])
+PLP0047 = Error("PLP0047", _("The importer %(importer_id)s indicated a failed response when "
+                             "uploading %(unit_type)s unit to repository %(repo_id)s."),
+                ['importer_id', 'unit_type', 'repo_id'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

@@ -1025,7 +1025,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
                 and not publish_report.success_flag:
             _logger.info(publish_report.summary)
             raise pulp_exceptions.PulpCodedException(
-                error_code=error_codes.PLP0034, repository_id=repo_obj.repo_id,
+                error_code=error_codes.PLP0034, repo_id=repo_obj.repo_id,
                 distributor_id=dist_id, summary=publish_report.summary
             )
 

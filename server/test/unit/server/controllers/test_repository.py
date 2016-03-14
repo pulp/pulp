@@ -1159,7 +1159,7 @@ class TestDoPublish(unittest.TestCase):
         e = assertion.exception
         self.assertEqual(e.error_code, error_codes.PLP0034)
         self.assertEqual(e.error_data['distributor_id'], 'dist')
-        self.assertEqual(e.error_data['repository_id'], fake_repo.repo_id)
+        self.assertEqual(e.error_data['repo_id'], fake_repo.repo_id)
         self.assertEqual(e.error_data['summary'], fake_report.summary)
 
 
