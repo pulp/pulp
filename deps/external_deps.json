@@ -74,9 +74,4 @@
         "version": "3.4-2.pulp",
         "platform": [ "el6"]
     },
-    {
-        "name": "python-requests-toolbelt",
-        "version": "0.6.0-1",
-        "platform": [ "el6", "el7", "fc22", "fc23" ]
-    }
 ]

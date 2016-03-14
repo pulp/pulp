@@ -172,11 +172,3 @@ This is not currently in epel <= 7 or fedora <= 20.
 There are no known restrictions on what version to use.
 
 The plan is to get this into Fedora and EPEL. Review request: https://bugzilla.redhat.com/show_bug.cgi?id=1077030
-
-
-python-requests-toolbelt
-------------------------
-Team owner: pcreech
-
-nectar requires version >= 0.6.0, which is not in fc22
-
