@@ -1,4 +1,4 @@
-from httplib import INTERNAL_SERVER_ERROR, NOT_FOUND
+from httplib import INTERNAL_SERVER_ERROR, NOT_FOUND, SERVICE_UNAVAILABLE
 
 from mock import Mock, patch
 from mongoengine import NotUniqueError
@@ -72,6 +72,19 @@ class TestStreamerListener(unittest.TestCase):
         self.assertEqual(('Content-Length', '0'),
                          self.listener.request.setHeader.call_args_list[0][0])
         self.listener.request.setResponseCode.assert_called_once_with('418')
+
+    def test_download_failed_no_response(self):
+        """
+        The content-length is corrected since Nectar does not download anything if
+        it receives a non-200 response.
+        """
+        self.mock_report.error_report = {}
+        self.mock_report.url = 'https://example.com/no_response_for_you'
+
+        self.listener.download_failed(self.mock_report)
+        self.assertEqual(('Content-Length', '0'),
+                         self.listener.request.setHeader.call_args_list[0][0])
+        self.listener.request.setResponseCode.assert_called_once_with(SERVICE_UNAVAILABLE)
 
     @patch(MODULE_PREFIX + 'model.DeferredDownload')
     def test_download_succeeded(self, mock_deferred_download):

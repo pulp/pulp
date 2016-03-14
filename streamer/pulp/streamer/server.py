@@ -1,5 +1,5 @@
 from gettext import gettext as _
-from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR
+from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE
 from urlparse import urlparse
 import logging
 
@@ -95,16 +95,15 @@ class StreamerListener(nectar_listener.DownloadEventListener):
         :param report: The download report for this request.
         :type  report: nectar.report.DownloadReport
         """
-        error_report = report.error_report.copy()
-        error_report['url'] = report.url
-        logger.info(_('Download of %(url)s failed: HTTP %(response_code)s '
-                      '%(response_msg)s' % error_report))
-
         # Currently Nectar returns headers with a content-length even
         # when it doesn't download anything.
         self.request.setHeader('Content-Length', '0')
         if 'response_code' in report.error_report:
             self.request.setResponseCode(report.error_report['response_code'])
+        else:
+            # Nectar doesn't give us a good way to know exactly went wrong; return
+            # a generic HTTP 503 and hope Nectar logged enough to be useful
+            self.request.setResponseCode(SERVICE_UNAVAILABLE)
 
     def download_succeeded(self, report):
         """
