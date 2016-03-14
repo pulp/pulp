@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.5.0
+Version:        1.5.1
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -17,7 +17,6 @@ BuildRequires:  python-setuptools
 
 Requires:       python-isodate >= 0.4.9
 Requires:       python-requests >= 2.4.3
-Requires:       python-requests-toolbelt >= 0.6.0
 
 %description
 Nectar is a download library that abstracts the workflow of making and tracking
@@ -46,6 +45,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Mon Mar 14 2016 Ina Panova <ipanova@redhat.com> 1.5.1-1
+- Revert changes for digest proxy (pcreech@redhat.com)
+
 * Tue Mar 01 2016 Ina Panova <ipanova@redhat.com> 1.5.0-1
 - Use urllib3's retry functionality for failed connections. (jeremy@jcline.org)
 
