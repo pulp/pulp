@@ -64,6 +64,14 @@ Bugs
 Known Issues
 ------------
 
+Before Upgrade
+--------------
+
+The Pulp team added stronger data validation in 2.8. To ensure that your data gets smoothly
+upgraded, please test your data with the provided testing tool before attempting an upgrade. You
+can read about how to perform the test here:
+
+https://raw.githubusercontent.com/pulp/pulp/pulp-2.8.0-1/playpen/mongoengine/README
 
 Upgrade Instructions for 2.7.x --> master
 -----------------------------------------
