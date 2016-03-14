@@ -163,7 +163,6 @@ class TestContentView(TestCase):
         # validation
         allow_access.assert_called_once_with(request.environ, host)
         realpath.assert_called_once_with(path)
-        exists.assert_called_once_with('/var/lib/pulp/published/content')
         x_send.assert_called_once_with('/var/lib/pulp/published/content')
         self.assertEqual(reply, x_send.return_value)
 
