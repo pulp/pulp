@@ -55,7 +55,7 @@ def _send_post(notifier_config, json_body):
     else:
         auth = None
 
-    response = post(url, json=json_body, auth=auth)
+    response = post(url, data=json_body, auth=auth, headers={'Content-Type': 'application/json'})
     if response.status_code != 200:
         _logger.error(_('Received HTTP {code} from HTTP notifier to {url}.').format(
             code=response.status_code, url=url))
