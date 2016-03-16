@@ -2,8 +2,8 @@
 Pulp 2.8 Release Notes
 ======================
 
-Pulp
-====
+Pulp 2.8.0
+==========
 
 New Features
 ------------
