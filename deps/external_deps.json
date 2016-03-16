@@ -62,7 +62,7 @@
     {
         "name": "python-rhsm",
         "version": "1.8.0-2.pulp",
-        "platform": [ "el6"]
+        "platform": [ "el6", "el7"]
     },
     {
         "name": "python-semantic_version",
