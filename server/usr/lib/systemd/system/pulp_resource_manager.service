@@ -1,6 +1,7 @@
 [Unit]
 Description=Pulp Resource Manager
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 EnvironmentFile=/etc/default/pulp_resource_manager
