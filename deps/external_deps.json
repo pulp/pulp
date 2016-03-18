@@ -73,5 +73,5 @@
         "name": "mod_wsgi",
         "version": "3.4-2.pulp",
         "platform": [ "el6"]
-    },
+    }
 ]
