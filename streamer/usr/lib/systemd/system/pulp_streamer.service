@@ -1,6 +1,7 @@
 [Unit]
 Description=The Pulp lazy content loading streamer
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 User=apache
