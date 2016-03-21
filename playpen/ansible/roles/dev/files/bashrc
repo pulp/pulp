@@ -82,6 +82,13 @@ pclean() {
     done
     popd
 
+    # Scrub out the Squid cache
+    if [ -d /var/spool/squid ]; then
+        sudo systemctl stop squid
+        sudo bash -c "rm -rf /var/spool/squid/*"
+        sudo systemctl start squid
+    fi
+
     sudo -u apache pulp-manage-db;
     setup_crane_links;
     pstart;
