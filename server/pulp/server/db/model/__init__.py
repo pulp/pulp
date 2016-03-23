@@ -1,10 +1,11 @@
 import copy
-from gettext import gettext as _
 import logging
 import os
 import random
+import shutil
 import uuid
 from collections import namedtuple
+from gettext import gettext as _
 from hashlib import sha256
 from hmac import HMAC
 
@@ -13,9 +14,11 @@ from mongoengine import (BooleanField, DictField, Document, DynamicField, IntFie
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
+from pulp.common.plugins import importer_constants
 from pulp.plugins.model import Repository as plugin_repo
+from pulp.plugins.util import misc
 from pulp.server import exceptions
-from pulp.server.constants import SUPER_USER_ROLE
+from pulp.server.constants import LOCAL_STORAGE, SUPER_USER_ROLE
 from pulp.server.content.storage import FileStorage, SharedStorage
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.connection import UnsafeRetry
@@ -256,6 +259,92 @@ class Importer(AutoRetryDocument):
         _logger.debug(_('Deleting lazy catalog entries for the {repo} repository.').format(
             repo=document.repo_id))
         query_set.delete()
+
+    def delete(self):
+        """
+        Delete the Importer. Remove any documents it has stored.
+        """
+        if os.path.exists(self._local_storage_path):
+            shutil.rmtree(self._local_storage_path)
+        super(Importer, self).delete()
+
+    def save(self):
+        """
+        Save the Importer. Additionally, write any pki documents from its config into disk storage
+        for use by requests.
+        """
+        super(Importer, self).save()
+        # A map of Importer config key names to file paths for the TLS PEM settings.
+        pem_keys_paths = (
+            (importer_constants.KEY_SSL_CA_CERT, self.tls_ca_cert_path),
+            (importer_constants.KEY_SSL_CLIENT_CERT, self.tls_client_cert_path),
+            (importer_constants.KEY_SSL_CLIENT_KEY, self.tls_client_key_path))
+        for key, path in pem_keys_paths:
+            self._write_pem_file(key, path)
+
+    @property
+    def tls_ca_cert_path(self):
+        """
+        Return the path where the TLS CA certificate should be stored for this Importer.
+
+        :rtype: basestring
+        """
+        return os.path.join(self._pki_path, 'ca.crt')
+
+    @property
+    def tls_client_cert_path(self):
+        """
+        Return the path where the TLS client certificate should be stored for this Importer.
+
+        :rtype: basestring
+        """
+        return os.path.join(self._pki_path, 'client.crt')
+
+    @property
+    def tls_client_key_path(self):
+        """
+        Return the path where the TLS client key should be stored for this Importer.
+
+        :rtype: basestring
+        """
+        return os.path.join(self._pki_path, 'client.key')
+
+    @property
+    def _local_storage_path(self):
+        """
+        Return the path that the Importer should use for local storage.
+
+        :rtype: basestring
+        """
+        return os.path.join(
+            LOCAL_STORAGE, 'importers',
+            '{}-{}'.format(self.repo_id, self.importer_type_id))
+
+    @property
+    def _pki_path(self):
+        """
+        Return the path that all pki files should be stored within for this Importer.
+
+        :rtype: basestring
+        """
+        return os.path.join(self._local_storage_path, 'pki')
+
+    def _write_pem_file(self, config_key, path):
+        """
+        Write the PEM data from self.config[config_key] to the given path, if the key is defined and
+        is "truthy".
+
+        :param config_key: The key corresponding to a value in self.config to write to path.
+        :type  config_key: basestring
+        :param path:       The path to write the PEM data to.
+        :type  path:       basestring
+        """
+        if config_key in self.config and self.config[config_key]:
+            if not os.path.exists(self._pki_path):
+                misc.mkdir(os.path.dirname(self._pki_path))
+                os.mkdir(self._pki_path, 0700)
+            with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT, 0600), 'w') as pem_file:
+                pem_file.write(self.config[config_key])
 
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)

@@ -1342,7 +1342,7 @@ class TestGetImporterById(unittest.TestCase):
         plugin_api.get_importer_by_id.return_value = (plugin, cfg)
 
         # test
-        _plugin, _conf = repo_controller.get_importer_by_id(_id)
+        _plugin, _conf, _db_plugin = repo_controller.get_importer_by_id(_id)
 
         # validation
         object_id.assert_called_once_with(_id)
@@ -1350,6 +1350,7 @@ class TestGetImporterById(unittest.TestCase):
         call_conf.assert_called_once_with(cfg, document.config)
         self.assertEqual(_plugin, plugin)
         self.assertEqual(_conf, call_conf.return_value)
+        self.assertEqual(_db_plugin, document)
 
     @patch('pulp.server.controllers.repository.ObjectId', MagicMock())
     @patch('pulp.server.db.model.Importer')

@@ -454,14 +454,17 @@ def queue_delete(repo_id):
 
 def get_importer_by_id(object_id):
     """
-    Get a plugin and call configuration using the document ID
+    Get a plugin, call configuration, and Importer document object using the document ID
     of the repository-importer association document.
 
     :param object_id: The document ID.
-    :type object_id: str
+    :type  object_id: str
+
     :return: A tuple of:
-        (pulp.plugins.importer.Importer, pulp.plugins.config.PluginCallConfiguration)
-    :rtype: tuple
+        (pulp.plugins.importer.Importer, pulp.plugins.config.PluginCallConfiguration,
+         pulp.server.db.model.Importer)
+    :rtype:  tuple
+
     :raise pulp.plugins.loader.exceptions.PluginNotFound: not found.
     """
     try:
@@ -474,7 +477,7 @@ def get_importer_by_id(object_id):
         raise plugin_exceptions.PluginNotFound()
     plugin, cfg = plugin_api.get_importer_by_id(document.importer_type_id)
     call_conf = PluginCallConfiguration(cfg, document.config)
-    return plugin, call_conf
+    return plugin, call_conf, document
 
 
 @celery.task(base=Task, name='pulp.server.tasks.repository.delete')

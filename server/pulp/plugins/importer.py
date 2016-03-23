@@ -6,7 +6,8 @@ from urlparse import urlparse
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
-from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+from pulp.plugins.util.nectar_config import (importer_config_to_nectar_config,
+                                             importer_to_nectar_config)
 
 
 class Importer(object):
@@ -17,8 +18,32 @@ class Importer(object):
     """
 
     @staticmethod
+    def build_downloader(url, nectar_config):
+        """
+        Return a Nectar downloader for a URL with the given nectar config.
+
+        :param url:           The URL is used to determine the scheme so the correct type of
+                              downloader can be created.
+        :type  url:           basestring
+        :param nectar_config: The configuration that should be used with the downloader
+        :type  nectar_config: nectar.config.DownloaderConfig
+        :return:              A configured downloader.
+        :rtype:               nectar.downloaders.base.Downloader
+        :raise ValueError:    When the URL scheme is not supported.
+        """
+        url = urlparse(url)
+        scheme = url.scheme.lower()
+        if scheme == 'file':
+            return LocalFileDownloader(nectar_config)
+        if scheme in ('http', 'https'):
+            return HTTPThreadedDownloader(nectar_config)
+        raise ValueError(_('Scheme "{s}" not supported').format(s=url.scheme))
+
+    @staticmethod
     def get_downloader(config, url, working_dir=None, **options):
         """
+        DEPRECATED. Use get_downloader_for_db_importer instead.
+
         Get a configured downloader.
 
         :param config: A plugin configuration.
@@ -33,14 +58,29 @@ class Importer(object):
         :rtype: nectar.downloaders.base.Downloader
         :raise ValueError: when the URL scheme is not supported.
         """
-        url = urlparse(url)
         nectar_config = importer_config_to_nectar_config(config.flatten(), working_dir=working_dir)
-        scheme = url.scheme.lower()
-        if scheme == 'file':
-            return LocalFileDownloader(nectar_config)
-        if scheme in ('http', 'https'):
-            return HTTPThreadedDownloader(nectar_config)
-        raise ValueError(_('Scheme "{s}" not supported').format(s=url.scheme))
+        return Importer.build_downloader(url, nectar_config)
+
+    @staticmethod
+    def get_downloader_for_db_importer(importer, url, working_dir=None, **options):
+        """
+        Get a configured downloader for the given DB model of an Importer.
+
+        :param importer:    The database representation of an Importer for which we need a
+                            downloader.
+        :type  importer:    pulp.server.db.model.Importer
+        :param url:         A URL.
+        :type url:          str
+        :param working_dir: Allow the caller to override the working directory used.
+        :type  working_dir: str
+        :param options:     Extended configuration.
+        :type options:      dict
+        :return:            A configured downloader.
+        :rtype:             nectar.downloaders.base.Downloader
+        :raise ValueError:  When the URL scheme is not supported.
+        """
+        nectar_config = importer_to_nectar_config(importer, working_dir=working_dir)
+        return Importer.build_downloader(url, nectar_config)
 
     # -- plugin lifecycle -----------------------------------------------------
 

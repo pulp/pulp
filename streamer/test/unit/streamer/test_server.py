@@ -209,18 +209,18 @@ class TestStreamer(unittest.TestCase):
         mock_responder = Mock()
         mock_importer = Mock()
         mock_importer_config = Mock()
-        mock_repo_controller.get_importer_by_id.return_value = (mock_importer,
-                                                                mock_importer_config)
+        mock_db_importer = Mock()
+        mock_repo_controller.get_importer_by_id.return_value = (
+            mock_importer, mock_importer_config, mock_db_importer)
         mock_get_unit_model.return_value.unit_key_fields = tuple()
 
         # Test
         self.streamer._download(mock_catalog, mock_request, mock_responder)
         mock_repo_controller.get_importer_by_id.assert_called_once_with(mock_catalog.importer_id)
-        mock_importer.get_downloader.assert_called_once_with(
-            mock_importer_config,
+        mock_importer.get_downloader_for_db_importer.assert_called_once_with(
+            mock_db_importer,
             mock_catalog.url,
-            working_dir=mock_catalog.working_dir,
-            **mock_catalog.data)
+            working_dir=mock_catalog.working_dir)
 
         mock_container.return_value.download.assert_called_once()
 
