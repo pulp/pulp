@@ -176,27 +176,77 @@ class ModelSerializer(BaseSerializer):
 
     def translate_filters(self, model, filters):
         """
-        Iterate through the filters and translate them to use our internal db representation.
+        Recursively translate mongo queries from our external API to our internal db representation.
+
+        Mongo queries follow one of the following forms:
+            1. {"key": "value"} - ex. {"id": "thing1"}
+            2. {"key": {query}} - ex. {"id": {"$exists": 1}}
+            3. {"$key": [list of items] - ex. {'$in': ['this', 'or_this']
+            4. {"$key": [list of queries] - ex. {'$and': [{query_1}, {query_2}]
+            5. {"$key": {dict}} - ex. {"$elemMatch": {query}}
+
+        For cases 1 and 2, the key may need to be translated. Cases 3 - 5, the key does not need to
+        be translated because it is a mongo operator. For cases 2, 4, and 5, there may be nested
+        queries that will need to be translated. Possible nested queries are passed to the helper
+        function `_translate_nested_query` to recurse properly.
 
         :param model: the class that defines this document's fields
         :type  model: sublcass of mongoengine.Document
         :param filters: dict used to filter results
-        :type  filters: dict, following mongo syntax
+        :type  filters: dict, following mongo query syntax
 
-        :return: the same filters dictionary, with fields translated to the new db representation
-        :rtype:  dict, following mongo syntax
+        :return: filters dictionary, with fields translated
+        :rtype:  dict, following mongo query syntax
         """
         translated_dict = {}
         for key, value in filters.iteritems():
-            if key in self._remapped_fields.itervalues():
-                if key == '_id':
-                    translated_dict['_id'] = self._translate__id(value)
-                else:
-                    new_field = self.translate_field(model, key)
-                    translated_dict[new_field] = value
+            # Do not translate mongo operator keys, but value may contain queries (case 3-5)
+            if key.startswith('$'):
+                new_key = key
+                new_value = self._translate_nested_query(model, value)
             else:
-                translated_dict[key] = value
+                if key == '_id':  # _id is a special case
+                    new_key = '_id'
+                    new_value = self._translate__id(value)
+                else:
+                    # Case 1 and 2 keys may need to be translated
+                    remapped = self._remapped_fields.itervalues()
+                    new_key = self.translate_field(model, key) if key in remapped else key
+                    # Keep the value (case 1) or translate the nested query (case 2)
+                    new_value = self._translate_nested_query(model, value)
+            translated_dict[new_key] = new_value
         return translated_dict
+
+    def _translate_nested_query(self, model, query_piece):
+        """
+        Handle a nested piece of a query based on its type.
+
+        This function handles the following cases:
+            1. {"key": "value"}
+            2. {"key": {query}}
+            3. {"key": [list, of, items]}
+            4. {"key": [{list}, {of}, {queries}]
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param query_piece: part of a query, follows mongo syntax
+        :type  query_piece: any type. if dict or list, it will be translated
+        :return: translated query_piece
+        :rtype:  same as type(query_piece)
+        """
+        if isinstance(query_piece, list):  # Case 3 - 4
+            new_queries = []
+            for each in query_piece:
+                # Each nested query should be translated
+                if isinstance(each, dict):  # Case 4
+                    new_queries.append(self.translate_filters(model, each))
+                else:  # Case 3
+                    new_queries.append(each)
+            return new_queries
+        elif isinstance(query_piece, dict):  # Case 2
+            return self.translate_filters(model, query_piece)
+        else:  # Case 1
+            return query_piece
 
     def _translate__id(self, search_term):
         """
