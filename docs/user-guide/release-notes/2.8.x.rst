@@ -50,7 +50,7 @@ Client Changes
 Other Changes
 -------------
 
-* Pulp `used to store WSGI files under /srv<https://pulp.plan.io/issues/1496>`_, which was
+* Pulp `used to store WSGI files under /srv <https://pulp.plan.io/issues/1496>`_, which was
   a violation of FHS. These files have been moved to /usr/share/pulp/wsgi.
 
 * Pulp platform now automatically calculates the `added_count`, `removed_count`, and `updated_count` fields of repository sync task output.
@@ -64,6 +64,13 @@ Bugs
 Known Issues
 ------------
 
+* CentOS 7 users may experience a problem when upgrading. Please refer to note in upgrade
+  instructions for workaround.
+
+* Users that have the `/var/lib/pulp` directory or one of it's subdirectories symlinked will
+  experience a `problem <https://pulp.plan.io/issues/1791>`_. Replacing the symlink with a bind
+  mount will resolve the issue.
+
 Before Upgrade
 --------------
 
@@ -75,6 +82,18 @@ https://raw.githubusercontent.com/pulp/pulp/pulp-2.8.0-1/playpen/mongoengine/REA
 
 Upgrade Instructions for 2.7.x --> 2.8.x
 ----------------------------------------
+
+.. note::
+    When upgrading on CentOS 7, it is possible that your system has 'python-semantic-version'
+    package installed. As result you will experience a problem when updating Pulp packages. If this
+    package is present on your system you should remove it::
+
+        sudo yum remove python-semantic-version
+
+    This will remove a number of pulp packages also. You will install the new packages::
+
+        sudo yum update
+        sudo yum groupinstall pulp-server-qpid
 
 Upgrade the packages using::
 
