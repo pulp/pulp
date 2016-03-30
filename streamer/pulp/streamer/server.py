@@ -182,7 +182,7 @@ class Streamer(resource.Resource):
                     raise DoesNotExist()
                 self._download(catalog_entry, request, responder)
             except DoesNotExist:
-                logger.debug(_('Failed to find a catalog entry with path'
+                logger.error(_('Failed to find a catalog entry with path'
                                ' "{rel}".'.format(rel=catalog_path)))
                 request.setResponseCode(NOT_FOUND)
             except PluginNotFound:
@@ -220,17 +220,26 @@ class Streamer(resource.Resource):
         # Build the alternate content source download request
         unit_model = plugins_api.get_unit_model_by_id(catalog_entry.unit_type_id)
         qs = unit_model.objects.filter(id=catalog_entry.unit_id).only(*unit_model.unit_key_fields)
-        unit = qs.get()
-        download_request = content_models.Request(
-            catalog_entry.unit_type_id,
-            unit.unit_key,
-            catalog_entry.url,
-            responder
-        )
+        try:
+            unit = qs.get()
+            download_request = content_models.Request(
+                catalog_entry.unit_type_id,
+                unit.unit_key,
+                catalog_entry.url,
+                responder,
+            )
 
-        alt_content_container = content_container.ContentContainer(threaded=False)
-        alt_content_container.download(primary_downloader, [download_request], listener)
-        primary_downloader.config.finalize()
+            alt_content_container = content_container.ContentContainer(threaded=False)
+            alt_content_container.download(primary_downloader, [download_request], listener)
+        except DoesNotExist:
+            # A catalog entry is referencing a unit that doesn't exist which is bad.
+            msg = _('The catalog entry for {path} references {unit_type}:{id}, but '
+                    'that unit is not in the database.')
+            logger.error(msg.format(path=catalog_entry.path, unit_type=catalog_entry.unit_type_id,
+                                    id=catalog_entry.unit_id))
+            request.setResponseCode(NOT_FOUND)
+        finally:
+            primary_downloader.config.finalize()
 
 
 class Responder(object):
