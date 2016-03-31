@@ -30,9 +30,10 @@ CN=`hostname --fqdn`
 ORG="PULP"
 
 mkdir -p $TMP
+chmod 700 $TMP
 
 # create CA key
-openssl genrsa -out $TMP/ca.key 2048 &> /dev/null
+openssl genrsa -out $TMP/ca.key 4096 &> /dev/null
 
 # create signing request
 openssl req \
@@ -52,12 +53,13 @@ openssl x509 \
   -out $TMP/ca.crt &> /dev/null
 
 # install
-cp $TMP/ca.key $CA_KEY
-cp $TMP/ca.crt $CA_CRT
+mv $TMP/ca.key $CA_KEY
+mv $TMP/ca.crt $CA_CRT
+rm $TMP/ca.req
 chown root:apache $CA_KEY
 chown root:apache $CA_CRT
 chmod 640 $CA_KEY
 chmod 640 $CA_CRT
 
 # clean
-rm -rf $TMP
+rmdir $TMP
