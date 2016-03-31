@@ -49,9 +49,8 @@ class TestContentView(TestCase):
     def test_init(self, key_load, pulp_conf):
         key_path = '/tmp/rsa.key'
         conf = {
-            'authentication': {
-                'rsa_key': key_path
-            }
+            'authentication': {'rsa_key': key_path},
+            'server': {'storage_dir': '/var/lib/pulp'},
         }
 
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
@@ -162,10 +161,11 @@ class TestContentView(TestCase):
 
         # validation
         allow_access.assert_called_once_with(request.environ, host)
-        realpath.assert_called_once_with(path)
+        realpath.assert_called_with(path)
         x_send.assert_called_once_with('/var/lib/pulp/published/content')
         self.assertEqual(reply, x_send.return_value)
 
+    @patch('os.path.lexists', Mock(return_value=False))
     @patch(MODULE + '.Key.load', Mock())
     @patch(MODULE + '.allow_access')
     @patch('os.path.realpath')
@@ -180,7 +180,8 @@ class TestContentView(TestCase):
 
         # test
         view = ContentView()
-        view.get(request)
+        view.x_send = Mock()
+        self.assertRaises(content_views.Http404, view.get, request)
         self.assertEqual(0, allow_access.call_count)
 
     @patch('os.path.lexists', Mock(return_value=True))
@@ -207,7 +208,7 @@ class TestContentView(TestCase):
 
         # validation
         allow_access.assert_called_once_with(request.environ, host)
-        realpath.assert_called_once_with(path)
+        realpath.assert_called_with(path)
         exists.assert_has_call('/var/lib/pulp/content/rpm')
         self.assertTrue(exists.call_count > 0)
         redirect.assert_called_once_with(request, view.key)
@@ -224,9 +225,8 @@ class TestContentView(TestCase):
         request = Mock(path_info=path, environ=self.environ)
         request.get_host.return_value = host
         conf = {
-            'authentication': {
-                'rsa_key': '/tmp/key'
-            },
+            'authentication': {'rsa_key': '/tmp/key'},
+            'server': {'storage_dir': '/var/lib/pulp'}
         }
         pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
 
