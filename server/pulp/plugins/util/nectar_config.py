@@ -11,7 +11,7 @@ from pulp.server.managers.repo import _common as common_utils
 
 
 # Mapping of importer config key to downloader config key
-IMPORTER_DOWNLADER_CONFIG_MAP = (
+IMPORTER_DOWNLOADER_CONFIG_MAP = (
     (constants.KEY_SSL_CA_CERT, 'ssl_ca_cert'),
     (constants.KEY_SSL_VALIDATION, 'ssl_validation'),
     (constants.KEY_SSL_CLIENT_CERT, 'ssl_client_cert'),
@@ -92,7 +92,7 @@ def importer_config_to_nectar_config(importer_config, working_dir=None,
 
     download_config_kwargs['working_dir'] = working_dir
     adder = partial(_safe_add_arg, importer_config, download_config_kwargs)
-    map(adder, IMPORTER_DOWNLADER_CONFIG_MAP)
+    map(adder, IMPORTER_DOWNLOADER_CONFIG_MAP)
 
     download_config = DownloaderConfig(**download_config_kwargs)
     return download_config
