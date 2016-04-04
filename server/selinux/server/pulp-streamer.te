@@ -69,6 +69,13 @@ files_list_tmp(streamer_t)
 ## Read Pulp content
 apache_read_sys_content(streamer_t)
 
+## Read Pulp importer certs
+# There isn't a Refpol interface for read-only so we use
+# a read-write interface. Reading has a larger security impact than writing
+# so this is OK for now.
+# Long term fix is https://pulp.plan.io/issues/1811
+apache_manage_sys_content_rw(streamer_t)
+
 
 ##### Execute Privileges #####
 
