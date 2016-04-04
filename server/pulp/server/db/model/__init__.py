@@ -318,7 +318,7 @@ class Importer(AutoRetryDocument):
         """
         return os.path.join(
             LOCAL_STORAGE, 'importers',
-            '{}-{}'.format(self.repo_id, self.importer_type_id))
+            '{repo}-{importer_type}'.format(repo=self.repo_id, importer_type=self.importer_type_id))
 
     @property
     def _pki_path(self):
