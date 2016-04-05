@@ -71,9 +71,7 @@ ifndef(`distro_rhel6', `
 # pulp_ostree sync call on F23 calls out to gpg
 # temporary workaround for https://pulp.plan.io/issues/1731
 
-ifdef(`distro_fedora23', `
-    allow celery_t self:process { setrlimit };
-')
+allow celery_t self:process { setrlimit };
 
 ######################################
 

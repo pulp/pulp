@@ -228,6 +228,25 @@ class TestContentUnit(unittest.TestCase):
     def test_unit_key_fields_is_not_defined_on_abstract_class(self):
         self.assertFalse(hasattr(model.ContentUnit, 'unit_key_fields'))
 
+    @patch('os.path.isdir')
+    def test_list_files(self, isdir):
+        isdir.return_value = False
+        unit = TestFileContentUnit.TestUnit()
+        unit._storage_path = '/some/dir/'
+        self.assertEqual(unit.list_files(), [unit._storage_path])
+
+    @patch('os.path.isdir')
+    def test_list_files_no_path(self, isdir):
+        isdir.return_value = False
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [])
+
+    @patch('os.path.isdir')
+    def test_list_files_multi_file(self, isdir):
+        isdir.return_value = True
+        unit = TestFileContentUnit.TestUnit()
+        self.assertEqual(unit.list_files(), [])
+
 
 class TestContentUnitNamedTuple(unittest.TestCase):
     def setUp(self):
@@ -431,25 +450,6 @@ class TestFileContentUnit(unittest.TestCase):
         get_path.return_value = '/tmp'
         unit = TestFileContentUnit.TestUnit()
         self.assertRaises(ValueError, unit.set_storage_path, '/violation/test')
-
-    @patch('os.path.isdir')
-    def test_list_files(self, isdir):
-        isdir.return_value = False
-        unit = TestFileContentUnit.TestUnit()
-        unit._storage_path = '/some/dir/'
-        self.assertEqual(unit.list_files(), [unit._storage_path])
-
-    @patch('os.path.isdir')
-    def test_list_files_no_path(self, isdir):
-        isdir.return_value = False
-        unit = TestFileContentUnit.TestUnit()
-        self.assertEqual(unit.list_files(), [])
-
-    @patch('os.path.isdir')
-    def test_list_files_multi_file(self, isdir):
-        isdir.return_value = True
-        unit = TestFileContentUnit.TestUnit()
-        self.assertEqual(unit.list_files(), [])
 
     @patch('os.path.isfile')
     @patch('pulp.server.db.model.FileStorage')

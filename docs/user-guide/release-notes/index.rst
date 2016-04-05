@@ -6,7 +6,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   2.8.x
+   master
    2.7.x
    2.6.x
    2.5.x

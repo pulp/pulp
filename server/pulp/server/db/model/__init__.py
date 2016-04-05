@@ -690,6 +690,21 @@ class ContentUnit(AutoRetryDocument):
                 _hash.update(value)
         return _hash.hexdigest()
 
+    def list_files(self):
+        """
+        List absolute paths to files associated with this unit.
+
+        This *must* be overridden by multi-file unit subclasses. Units without files can use the
+        default implementation.
+
+        :return: A list of absolute file paths.
+        :rtype: list
+        """
+        if self._storage_path and not os.path.isdir(self._storage_path):
+            return [self._storage_path]
+        else:
+            return []
+
     def __hash__(self):
         """
         This should provide a consistent and unique hash where units of the same
@@ -747,19 +762,6 @@ class FileContentUnit(ContentUnit):
             else:
                 raise ValueError(_('must be relative path'))
         self._storage_path = path
-
-    def list_files(self):
-        """
-        List absolute paths to files associated with this unit.
-        This *must* be overridden by multi-file unit subclasses.
-
-        :return: A list of absolute file paths.
-        :rtype: list
-        """
-        if self._storage_path and not os.path.isdir(self._storage_path):
-            return [self._storage_path]
-        else:
-            return []
 
     def import_content(self, path, location=None):
         """

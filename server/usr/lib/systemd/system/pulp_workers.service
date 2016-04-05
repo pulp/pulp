@@ -1,6 +1,7 @@
 [Unit]
 Description=Pulp Celery Workers
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot

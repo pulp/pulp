@@ -82,6 +82,13 @@ pclean() {
     done
     popd
 
+    # Scrub out the Squid cache
+    if [ -d /var/spool/squid ]; then
+        sudo systemctl stop squid
+        sudo bash -c "rm -rf /var/spool/squid/*"
+        sudo systemctl start squid
+    fi
+
     sudo -u apache pulp-manage-db;
     setup_crane_links;
     pstart;
@@ -159,8 +166,10 @@ ppopulate() {
     fi
 
     if [ -d $HOME/devel/pulp_docker ]; then
-        pulp-admin docker repo create --repo-id busybox --feed https://index.docker.io \
-            --upstream-name busybox
+        pulp-admin docker repo create --repo-id busybox-v1 --feed https://index.docker.io \
+            --upstream-name busybox --enable-v1 true --enable-v2 false
+        pulp-admin docker repo create --repo-id busybox --feed https://registry-1.docker.io \
+            --upstream-name busybox --enable-v1 false --enable-v2 true
     fi
 
     if [ -d $HOME/devel/pulp_rpm ]; then

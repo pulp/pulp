@@ -45,6 +45,7 @@
       - jnettop
       - koji
       - httpie
+      - plantuml
       - python-django-bash-completion
       - python-gofer-qpid
       - python-ipdb
