@@ -279,6 +279,133 @@ class TestImporterSerializer(unittest.TestCase):
             'repo_importer_resource', kwargs={'repo_id': 'apple', 'importer_id': 'pear'})
 
 
+@mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate__id')
+class TestTranslateFilters(unittest.TestCase):
+    """
+    Test the translation of arbitrary Mongo queries from external API representation to new
+    internal database fields.
+    """
+
+    def setUp(self):
+        """
+        Creates and configures a model and serializer for all following tests.
+        """
+
+        class FakeSerializer(serializers.ModelSerializer):
+            """Create a fake serialzer for the tests."""
+
+            class Meta:
+                """Defines how fields should be remapped."""
+                remapped_fields = {'internal': 'external', 'id': '_id'}
+
+            def translate_field(self, *args, **kwargs):
+                """Overrides parent to test only the unit."""
+                return 'translated'
+
+        self.serializer = FakeSerializer()
+        self.mock_doc = mock.MagicMock()
+        self.mock_doc._fields = ['internal', 'do_not_change']
+        self.trans_value = 'the key for this value should be translated'
+        self.untrans_value = 'the key for this value should NOT have been translated'
+
+    def test_simple_key_value(self, mock_trans_id):
+        """Test translation of form `{key: value}`."""
+        to_translate = {'external': self.trans_value, 'do_not_change': self.untrans_value}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('translated' in result)
+        self.assertTrue(result['translated'] is self.trans_value)
+        self.assertTrue('do_not_change' in result)
+        self.assertTrue(result['do_not_change'] is self.untrans_value)
+
+    def test__id(self, mock_trans_id):
+        """Test translation of form `{_id: value}`."""
+        self._id_val = 'translate_me!'
+        to_translate = {'_id': self._id_val}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertDictEqual(result, {'_id': mock_trans_id.return_value})
+        mock_trans_id.assert_called_once_with(self._id_val)
+
+    def test_query_value(self, mock_trans_id):
+        """Test translation of form `{$key: value}`.
+
+        Note: This is not a valid query on its own, but can a leaf of nested queries.
+        """
+        to_translate = {'$is': self.untrans_value}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertDictEqual(to_translate, result)
+
+    def test_list_of_items(self, mock_trans_id):
+        """Test translation of form `{$key: [values]}`."""
+        value_list = ['value_1', 'value_2']
+        to_translate = {'$in': value_list}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('$in' in result)
+        self.assertEqual(result['$in'], value_list)
+
+    def test_list_of_queries(self, mock_trans_id):
+        """Test translation of form `{$key: [{query}, {query}]}`."""
+        query_1 = {"external": self.trans_value}
+        query_2 = {"do_not_change": self.untrans_value}
+        to_translate = {'$and': [query_1, query_2]}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('$and' in result)
+        self.assertTrue(type(result['$and']) is list)
+        self.assertTrue('translated' in result['$and'][0])
+        self.assertTrue(result['$and'][0]['translated'] is self.trans_value)
+        self.assertTrue('do_not_change' in result['$and'][1])
+        self.assertTrue(result['$and'][1]['do_not_change'] is self.untrans_value)
+
+    def test_nested_dict(self, mock_trans_id):
+        """Test translation of form `{$key: {query}}`."""
+        interior_dict = {'external': self.trans_value, 'do_not_change': self.untrans_value}
+        to_translate = {'$elemMatch': interior_dict}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('$elemMatch' in result)
+        self.assertTrue(type(result['$elemMatch']) is dict)
+        self.assertDictEqual({'translated': self.trans_value, 'do_not_change': self.untrans_value},
+                             result['$elemMatch'])
+
+    def test_nested_translated_dict(self, mock_trans_id):
+        """Test translation of form `{key: {query}}`."""
+        interior_dict = {'external': self.trans_value, 'do_not_change': self.untrans_value}
+        to_translate = {'external': interior_dict}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('translated' in result)
+        self.assertTrue(type(result['translated']) is dict)
+        self.assertDictEqual({'translated': self.trans_value, 'do_not_change': self.untrans_value},
+                             result['translated'])
+
+    def test_deep_nest(self, mock_trans_id):
+        """Test translation of a deeply nested query."""
+        interior_1 = {'external': self.trans_value, 'do_not_change': self.untrans_value}
+        interior_2 = {'$in': ['a', 'b', 'c']}
+        and_query = {'$and': [interior_1, interior_2]}
+        to_translate = {'$elemMatch': and_query}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('$elemMatch' in result)
+        self.assertTrue(type(result['$elemMatch']) is dict)
+        self.assertTrue('$and' in result['$elemMatch'])
+        self.assertTrue(type(result['$elemMatch']['$and']) is list)
+        self.assertDictEqual({'translated': self.trans_value, 'do_not_change': self.untrans_value},
+                             result['$elemMatch']['$and'][0])
+        self.assertDictEqual(result['$elemMatch']['$and'][1], interior_2)
+
+    def test_deeper_nest(self, mock_trans_id):
+        """Test translation of another deeply nested query."""
+        interior_1 = {'external': self.trans_value, 'do_not_change': self.untrans_value}
+        interior_2 = {'$in': ['a', 'b', 'c']}
+        and_query = {'$and': [interior_1, interior_2]}
+        to_translate = {'id': {'$elemMatch': and_query}}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertTrue('$elemMatch' in result['id'])
+        self.assertTrue(type(result['id']['$elemMatch']) is dict)
+        self.assertTrue('$and' in result['id']['$elemMatch'])
+        self.assertTrue(type(result['id']['$elemMatch']['$and']) is list)
+        self.assertDictEqual({'translated': self.trans_value, 'do_not_change': self.untrans_value},
+                             result['id']['$elemMatch']['$and'][0])
+        self.assertDictEqual(result['id']['$elemMatch']['$and'][1], interior_2)
+
+
 class TestModelSerializer(unittest.TestCase):
 
     def test_to_representation(self):
@@ -298,40 +425,6 @@ class TestModelSerializer(unittest.TestCase):
         test_serializer = FakeSerializer()
         result = test_serializer.to_representation(mock_doc)
         self.assertDictEqual(result, {'leave': 'should not change', 'external': 'was internal'})
-
-    def test_translate_filters(self):
-        """
-        Translate criteria objects' filters to from external to internal representation for search.
-        """
-
-        class FakeSerializer(serializers.ModelSerializer):
-
-            class Meta:
-                remapped_fields = {'internal': 'external'}
-
-        mock_model = mock.MagicMock()
-        mock_model.internal.db_field = 'internal_db'
-        filters = {'external': 'was external', 'leave': 'should not change'}
-        test_serializer = FakeSerializer()
-        result = test_serializer.translate_filters(mock_model, filters)
-        self.assertDictEqual(result, {'internal_db': 'was external', 'leave': 'should not change'})
-
-    @mock.patch('pulp.server.webservices.views.serializers.ModelSerializer._translate__id')
-    def test_translate_filters_with__id(self, mock_trans_id):
-        """
-        Translate criteria objects' filters to from external to internal representation for search.
-        """
-
-        class FakeSerializer(serializers.ModelSerializer):
-            class Meta:
-                remapped_fields = {'not_id': '_id'}
-
-        mock_model = mock.MagicMock()
-        filters = {'_id': 'translate me!'}
-        test_serializer = FakeSerializer()
-        result = test_serializer.translate_filters(mock_model, filters)
-        self.assertDictEqual(result, {'_id': mock_trans_id.return_value})
-        mock_trans_id.assert_called_once_with('translate me!')
 
     def test_transalte__id_str(self):
         """
