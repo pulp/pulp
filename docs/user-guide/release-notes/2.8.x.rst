@@ -2,6 +2,17 @@
 Pulp 2.8 Release Notes
 ======================
 
+Pulp 2.8.2
+==========
+
+Security Fixes
+--------------
+
+This release addresses a low impact security vulnerability
+related to the regeneration of pulp CA certificates:
+
+https://access.redhat.com/security/cve/cve-2016-3095
+
 Pulp 2.8.1
 ==========
 
