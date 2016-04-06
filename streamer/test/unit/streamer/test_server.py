@@ -178,7 +178,7 @@ class TestStreamer(unittest.TestCase):
             order_by('importer_id').first.return_value = None
 
         self.streamer._handle_get(self.request)
-        mock_logger.debug.assert_called_once_with('Failed to find a catalog entry '
+        mock_logger.error.assert_called_once_with('Failed to find a catalog entry '
                                                   'with path "/a/resource".')
         self.request.setResponseCode.assert_called_once_with(NOT_FOUND)
 
