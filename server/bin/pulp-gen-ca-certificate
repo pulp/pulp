@@ -12,6 +12,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+set -e
 
 READ_PULP_CONF=\
 $(cat << END
@@ -23,22 +24,24 @@ END
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 
-TMP=/tmp/$RANDOM
+# This temporary folder will contain the certificate signing request.
+TMP="$(mktemp -d)"
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 CN=`hostname --fqdn`
 ORG="PULP"
 
-mkdir -p $TMP
-chmod 700 $TMP
-
+OLD_UMASK="$(umask)"
+umask 027
 # create CA key
-openssl genrsa -out $TMP/ca.key 4096 &> /dev/null
+openssl genrsa -out $CA_KEY 4096 &> /dev/null
+# Allow httpd to read the key
+chgrp apache $CA_KEY
 
 # create signing request
 openssl req \
   -new \
-  -key $TMP/ca.key \
+  -key $CA_KEY \
   -out $TMP/ca.req \
   -subj "/CN=$CN/O=$ORG" &> /dev/null
 
@@ -48,18 +51,12 @@ openssl x509 \
   -days 7035 \
   -sha1 \
   -extensions ca  \
-  -signkey $TMP/ca.key \
+  -signkey $CA_KEY \
   -in $TMP/ca.req \
-  -out $TMP/ca.crt &> /dev/null
-
-# install
-mv $TMP/ca.key $CA_KEY
-mv $TMP/ca.crt $CA_CRT
-rm $TMP/ca.req
-chown root:apache $CA_KEY
-chown root:apache $CA_CRT
-chmod 640 $CA_KEY
-chmod 640 $CA_CRT
+  -out $CA_CRT &> /dev/null
+chgrp apache $CA_CRT
+umask $OLD_UMASK
 
 # clean
+rm $TMP/ca.req
 rmdir $TMP
