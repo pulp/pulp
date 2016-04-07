@@ -12,6 +12,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+set -e
 
 READ_PULP_CONF=\
 $(cat << END
@@ -23,14 +24,13 @@ END
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 
-TMP=/tmp/$RANDOM
+# Safely create a private working directory that can be used to generate the
+# CA private key.
+TMP="$(mktemp -d)" || exit 1
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 CN=`hostname --fqdn`
 ORG="PULP"
-
-mkdir -p $TMP
-chmod 700 $TMP
 
 # create CA key
 openssl genrsa -out $TMP/ca.key 4096 &> /dev/null
@@ -53,8 +53,8 @@ openssl x509 \
   -out $TMP/ca.crt &> /dev/null
 
 # install
-mv $TMP/ca.key $CA_KEY
-mv $TMP/ca.crt $CA_CRT
+mv -Z $TMP/ca.key $CA_KEY
+mv -Z $TMP/ca.crt $CA_CRT
 rm $TMP/ca.req
 chown root:apache $CA_KEY
 chown root:apache $CA_CRT
