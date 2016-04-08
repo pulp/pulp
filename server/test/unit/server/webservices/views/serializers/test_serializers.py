@@ -325,6 +325,15 @@ class TestTranslateFilters(unittest.TestCase):
         self.assertDictEqual(result, {'_id': mock_trans_id.return_value})
         mock_trans_id.assert_called_once_with(self._id_val)
 
+    def test__id_not_remapped(self, mock_trans_id):
+        """Test translation of form `{_id: value}` when '_id' has not been remapped."""
+        self.serializer._remapped_fields.pop('id')
+        self._id_val = 'do not translate_me!'
+        to_translate = {'_id': self._id_val}
+        result = self.serializer.translate_filters(self.mock_doc, to_translate)
+        self.assertDictEqual(result, to_translate)
+        self.assertFalse(mock_trans_id.called)
+
     def test_query_value(self, mock_trans_id):
         """Test translation of form `{$key: value}`.
 

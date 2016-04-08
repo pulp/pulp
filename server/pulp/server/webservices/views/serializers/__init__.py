@@ -205,12 +205,13 @@ class ModelSerializer(BaseSerializer):
                 new_key = key
                 new_value = self._translate_nested_query(model, value)
             else:
+                remapped = self._remapped_fields.itervalues()
                 if key == '_id':  # _id is a special case
                     new_key = '_id'
-                    new_value = self._translate__id(value)
+                    # Translate the value only if _id is in remapped_fields
+                    new_value = self._translate__id(value) if '_id' in remapped else value
                 else:
                     # Case 1 and 2 keys may need to be translated
-                    remapped = self._remapped_fields.itervalues()
                     new_key = self.translate_field(model, key) if key in remapped else key
                     # Keep the value (case 1) or translate the nested query (case 2)
                     new_value = self._translate_nested_query(model, value)
