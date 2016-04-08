@@ -181,6 +181,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
     files from /var/cache/pulp to /var/lib/pulp, we don't want to copy the SELinux security context
     labels.
 
+    After 100 errors, this function gives up and raises shutil.Error
+
     :param src: Source directory rooted at src
     :type  src: basestring
     :param dst: Destination directory, a new directory and any parent directories are created if
@@ -196,6 +198,9 @@ def copytree(src, dst, symlinks=False, ignore=None):
                    directory (i.e. a subset of the items in its second argument); these names will
                    then be ignored in the copy process.
     :type  ignore: Callable
+
+    :raises shutil.Error:   If there are one or more errors copying files. After 100 errors, the
+                            operation aborts and raises this exception with those errors.
     """
 
     names = os.listdir(src)
@@ -227,5 +232,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
         # continue with other files
         except Error as err:
             errors.extend(err.args[0])
+        # give up if there have been too many errors
+        if len(errors) >= 100:
+            break
     if errors:
         raise Error(errors)
