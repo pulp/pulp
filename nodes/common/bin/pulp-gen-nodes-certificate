@@ -68,7 +68,13 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $NODE_CRT
+cat $TMP/$BASE.key $TMP/$BASE.xx > $TMP/$BASE.crt
+chmod 640 $TMP/$BASE.crt
+chgrp apache $TMP/$BASE.crt
+mv -Z $TMP/$BASE.crt $NODE_CRT
 
 # clean
-rm -rf $TMP
+rm $TMP/$BASE.key
+rm $TMP/$BASE.req
+rm $TMP/$BASE.xx
+rmdir $TMP
