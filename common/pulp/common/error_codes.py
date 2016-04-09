@@ -94,6 +94,7 @@ PLP0031 = Error("PLP0031", _("Content source %(id)s could not be found at %(url)
 PLP0032 = Error(
     "PLP0032", _("Task %(task_id)s encountered one or more failures during execution."),
     ['task_id'])
+PLP0033 = Error("PLP0033", _("The target importer does not support the types from the source"), [])
 PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
                              "publishing repository %(repository_id)s."),
                 ['distributor_id', 'repository_id'])
@@ -112,7 +113,9 @@ PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified wh
 PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
 PLP0043 = Error("PLP0043", _("Database 'write_concern' config can only be 'majority' or 'all'. "
                              "Refer to /etc/pulp/server.conf for proper use."), [])
-PLP0044 = Error("PLP0033", _("The target importer does not support the types from the source"), [])
+PLP0044 = Error("PLP0044", _("The importer %(importer_id)s indicated a failed response when "
+                             "uploading %(unit_type)s unit to repository %(repository_id)s."),
+                ['importer_id', 'unit_type', 'repository_id'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

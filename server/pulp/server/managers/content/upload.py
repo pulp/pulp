@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from celery import task
 
+from pulp.common import error_codes
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
@@ -14,7 +15,7 @@ from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
-                                    PulpException)
+                                    PulpException, PulpCodedException)
 from pulp.server.controllers import repository as repo_controller
 
 
@@ -180,8 +181,12 @@ class ContentUploadManager(object):
         :type  unit_metadata: dict
         :param upload_id:     upload being imported
         :type  upload_id:     str
-        :return:              A SyncReport indicating the success or failure of the upload
-        :rtype:               pulp.plugins.model.SyncReport
+        :return:              A dictionary describing the success or failure of the upload. It must
+                              contain the following keys:
+                                'success_flag': bool. Indicates whether the upload was successful
+                                'summary':      json-serializable object, providing summary
+                                'details':      json-serializable object, providing details
+        :rtype:               dict
         """
         # If it doesn't raise an exception, it's good to go
         ContentUploadManager.is_valid_upload(repo_id, unit_type_id)
@@ -207,6 +212,13 @@ class ContentUploadManager(object):
         try:
             result = importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key,
                                                    unit_metadata, file_path, conduit, call_config)
+            if not result['success_flag']:
+                raise PulpCodedException(
+                    error_code=error_codes.PLP0044, repository_id=transfer_repo.id,
+                    importer_id=repo_importer['importer_type_id'],
+                    unit_type=unit_type_id, summary=result['summary'], details=result['details']
+                )
+
             repo_controller.rebuild_content_unit_counts(repo_obj)
             return result
 
