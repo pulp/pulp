@@ -476,8 +476,12 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
+  # Ensure the key generated is only readable by the owner.
+  OLD_UMASK=$(umask)
+  umask 077
   openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+  umask $OLD_UMASK
 fi
 chmod 640 $KEY_PATH
 chmod 644 $KEY_PATH_PUB
@@ -897,8 +901,12 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
+  # Ensure the key generated is only readable by the owner.
+  OLD_UMASK=$(umask)
+  umask 077
   openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+  umask $OLD_UMASK
 fi
 chmod 640 $KEY_PATH
 
