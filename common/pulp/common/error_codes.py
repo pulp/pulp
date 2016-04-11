@@ -112,7 +112,7 @@ PLP0041 = Error("PLP0041", _("Database 'replica_set' config must be specified wh
 PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
 PLP0043 = Error("PLP0043", _("Database 'write_concern' config can only be 'majority' or 'all'. "
                              "Refer to /etc/pulp/server.conf for proper use."), [])
-PLP0044 = Error("PLP0033", _("The target importer does not support the types from the source"), [])
+PLP0044 = Error("PLP0044", _("The target importer does not support the types from the source"), [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
