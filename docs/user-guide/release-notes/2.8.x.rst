@@ -108,12 +108,7 @@ Upgrade Instructions for 2.7.x --> 2.8.x
     package installed. As result you will experience a problem when updating Pulp packages. If this
     package is present on your system you should remove it::
 
-        sudo yum remove python-semantic-version
-
-    This will remove a number of pulp packages also. You will install the new packages::
-
-        sudo yum update
-        sudo yum groupinstall pulp-server-qpid
+        sudo rpm -e --nodeps python-semantic-version
 
 Upgrade the packages using::
 
