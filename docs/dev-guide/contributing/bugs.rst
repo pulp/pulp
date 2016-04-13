@@ -5,6 +5,8 @@
 
 .. _Prioritized Bugs query: https://pulp.plan.io/issues?query_id=33
 
+.. _Un-Triaged Bugs: https://pulp.plan.io/issues?query_id=30
+
 Bugs
 ====
 
@@ -84,17 +86,39 @@ Reviewer
 #. When done reviewing, assign the pull request back to the developer and ping them through
    other means.
 
-Triaging Bugs
--------------
+Triage Process
+--------------
 
-Once a week, a rotating subset of the Pulp team meets to sort through that
-week's new bugs. Bugs that need additional information will have notes put onto
-the issue asking for input. Unless a Redmine user specifically disabled e-mail
-support, adding a note will e-mail the reporter. Bugs with enough information
-will have their severity and priority set, as well as a component if appropriate.
-Also, a target release can be set during triage. An issue that has target release
-set during triage should block a release. Once triaged, the bug is included in the
-`Prioritized Bugs query`_ and awaits a developer to pick it up.
+Pulp holds bug triage as an IRC meeting on Fridays at 10:30 ET (either EST or EDT) in #pulp-dev on
+Freenode. We encourage bug filers and interested parties to join and give input.
+
+A quorum of at least 2 core developers is required to hold triage. Quorum must be established at
+the beginning of the meeting. Developers forming the quorum must stay for the entire duration of
+triage or the meeting must be suspended. Triage will be led by the "triage lead" which is a role
+that rotates on the 1st of each month. The "triage lead" is responsible for reaching out to other
+developers to ensure a quorum can be established.
+
+The triage lead will do the following:
+
+#. Start the meeting by confirming there is a quorum (of which they are 1 person of).
+#. Post the link to all `Un-Triaged Bugs`_.
+#. For each issue to be triaged, put the URL of the issue being discussed in the chat and
+   facilitate an agreement on the priority and severity from anyone in the chat. In cases where
+   there is not much feedback, at a minimum the triage lead needs an ack from the other quorum
+   member before moving on. If agreement cannot be reached within 1-2 minutes, skip the bug and let
+   interested parties post their thoughts on the bug.
+#. Update the issue as being triaged. Add any severity and priority changes, component/tag changes,
+   and add any comments that come in from the chat. It's preferred for comments to be left directly
+   versus having the triage lead leave comments made by others.
+
+Bugs that need additional information will have notes put onto the issue asking for input. Unless a
+Redmine user specifically disabled e-mail support, adding a note will e-mail the reporter. Bugs
+with enough information and an agreed upon severity and priority, will be triaged. Also any
+components or tags should be set.
+
+A target release can also be set during triage. An issue that has target release set during triage
+will block a release. Once triaged, the bug is included in the `Prioritized Bugs query`_ and awaits
+a developer to pick it up.
 
 The Pulp team uses some additional Tags to help keep track of bugs.
 
@@ -103,6 +127,7 @@ Tag Name           Usage
 ================   ===============================================================
 Documentation      The bug/story itself is documentation related.
 EasyFix            A bug that is simple to fix, at least in theory.
+SELinux            Indicates it is SELinux related
 ================   ===============================================================
 
 You may occasionally see discussion in #pulp or on the mailing list about "bug
