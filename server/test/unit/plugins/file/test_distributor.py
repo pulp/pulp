@@ -216,6 +216,55 @@ class FileDistributorTest(unittest.TestCase):
         expected_symlink_destination = os.path.join(DATA_DIR, self.unit.unit_key['name'])
         self.assertEqual(os.path.realpath(expected_symlink_path), expected_symlink_destination)
 
+    @patch('os.path.exists', return_value=False)
+    @patch('os.makedirs')
+    @patch('os.symlink')
+    def test__symlink_unit_with_subdir(self, mock_symlink, mock_makedirs, mock_exists):
+        """
+        Make sure that if the file being published has to go in a subdirectory, that subdirectory
+        gets created.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+
+        distributor._symlink_unit('/a/b/c/', self.unit, ['d/e/f.txt', ])
+
+        mock_makedirs.assert_called_once_with('/a/b/c/d/e')
+
+    @patch('os.path.exists', return_value=False)
+    @patch('os.makedirs')
+    @patch('os.symlink')
+    def test__symlink_unit_with_existing_subdir(self, mock_symlink, mock_makedirs, mock_exists):
+        """
+        Make sure that if the file being published has to go in a subdirectory, and that
+        subdirectory already exists, no exception is raised.
+        """
+        e = OSError()
+        e.errno = errno.EEXIST
+        mock_makedirs.side_effect = e
+        distributor = self.create_distributor_with_mocked_api_calls()
+
+        distributor._symlink_unit('/a/b/c/', self.unit, ['d/e/f.txt', ])
+
+        # Make sure the call happened, and otherwise we just care than no exception was raised.
+        mock_makedirs.assert_called_once_with('/a/b/c/d/e')
+
+    @patch('os.path.exists', return_value=False)
+    @patch('os.makedirs')
+    @patch('os.symlink')
+    def test__symlink_unit_with_subdir_exception(self, mock_symlink, mock_makedirs, mock_exists):
+        """
+        Make sure that if the an error other than "already exists" occurs when making the
+        sub directory, that exception bubbles up.
+        """
+        class MyException(Exception):
+            pass
+        mock_makedirs.side_effect = MyException
+        distributor = self.create_distributor_with_mocked_api_calls()
+
+        # make sure this exception was allowed to bubble up
+        self.assertRaises(MyException, distributor._symlink_unit,
+                          '/a/b/c/', self.unit, ['d/e/f.txt', ])
+
     @patch('os.symlink', side_effect=os.symlink)
     def test__symlink_units_existing_correct_link(self, symlink):
         """
