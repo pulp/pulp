@@ -84,12 +84,19 @@ Bugs
 Known Issues
 ------------
 
-* CentOS 7 users may experience a problem when upgrading. Please refer to note in upgrade
-  instructions for workaround.
+* RHEL 7 and CentOS 7 users may experience a problem when upgrading. Please refer to note in
+  upgrade instructions for workaround.
 
 * Users that have the `/var/lib/pulp` directory or one of it's subdirectories symlinked will
   experience a `problem <https://pulp.plan.io/issues/1791>`_. Replacing the symlink with a bind
   mount will resolve the issue.
+
+* RHEL 6 and CentOS 6 users who use Qpid as their broker need to be aware that the Qpid repository
+  has changed locations. The most recent Qpid repository definition file can be obtained from `Qpid
+  packaging docs <http://qpid.apache.org/packages.html#epel>`_. Using an older version of
+  `python-qpid` package will produce the following error in the logs::
+
+      AttributeError: Session instance has no attribute 'set_message_received_notify_handler'
 
 Before Upgrade
 --------------
