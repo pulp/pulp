@@ -88,7 +88,6 @@ is centered around updating only that metadata.
 * :param:`?delta,object,object containing keys with values that should be updated on the repository`
 * :param:`?importer_config,object,object containing keys with values that should be updated on the repository's importer config`
 * :param:`?distributor_configs,object,object containing keys that are distributor ids, and values that are objects containing plugin specific keys/value pairs`
-* :param:`?delta,object,object containing keys with values that will update the distributor object, currently only supports "auto_publish"`
 
 | :response_list:`_`
 
