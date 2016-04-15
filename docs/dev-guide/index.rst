@@ -13,4 +13,5 @@ Developer Guide
    contentauth
    integration/index
    glossary
+   debugging
    troubleshooting
