@@ -13,6 +13,10 @@
 
 import sys
 
+from pulp.common import error_codes
+from pulp.server import exceptions
+from pulp.server.controllers import repository as repo_controller
+
 
 class Distributor(object):
     """
@@ -187,6 +191,20 @@ class Distributor(object):
         """
         return {}
 
+    @staticmethod
+    def ensure_all_units_downloaded(repo_id):
+        """
+        Checks the database to make sure all units in the repo have been downloaded. If not, raises
+        an exception.
+
+        :param repo_id: repository id
+        :type  repo_id: basestring
+
+        :raises exceptions.PulpCodedException:  if any unit in the repo is un-downloaded
+        """
+        if not repo_controller.has_all_units_downloaded(repo_id):
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0045)
+
 
 class GroupDistributor(object):
     """
@@ -337,3 +355,20 @@ class GroupDistributor(object):
         :raise SystemExit: raised through a call to sys.exit()
         """
         sys.exit()
+
+    @staticmethod
+    def ensure_all_units_downloaded(repo_group):
+        """
+        Checks the database to make sure all units in the repos have been downloaded. If not, raises
+        an exception.
+
+        :param repo_group:  RepositoryGroup instance that should be checked
+        :type  repo_group:  pulp.plugins.model.RepositoryGroup
+
+        :raises exceptions.PulpCodedException:  if any unit in the group is un-downloaded
+        """
+        bad_repo_ids = filter(lambda x: not repo_controller.has_all_units_downloaded(x),
+                              repo_group.repo_ids or [])
+        if bad_repo_ids:
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0046,
+                                                repos=', '.join(bad_repo_ids))
