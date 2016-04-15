@@ -113,6 +113,10 @@ PLP0042 = Error("PLP0042", _("This request is forbidden."), [])
 PLP0043 = Error("PLP0043", _("Database 'write_concern' config can only be 'majority' or 'all'. "
                              "Refer to /etc/pulp/server.conf for proper use."), [])
 PLP0044 = Error("PLP0044", _("The target importer does not support the types from the source"), [])
+PLP0045 = Error("PLP0045", _("The repository cannot be exported because some units are "
+                             "not downloaded."), [])
+PLP0046 = Error("PLP0046", _("The repository group cannot be exported because these repos have "
+                             "units that are not downloaded: %(repos)s"), ['repos'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
