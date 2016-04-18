@@ -100,6 +100,7 @@ developers to ensure a quorum can be established.
 
 The triage lead will do the following:
 
+#. Announce the meeting in #pulp and #pulp-dev 5 minutes prior to beginning
 #. Start the meeting by confirming there is a quorum (of which they are 1 person of).
 #. Post the link to all `Un-Triaged Bugs`_.
 #. For each issue to be triaged, put the URL of the issue being discussed in the chat and
