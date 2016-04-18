@@ -1191,6 +1191,8 @@ class TestDistributor(unittest.TestCase):
         self.assertEqual(model.Distributor.auto_publish.default, False)
         self.assertTrue(isinstance(model.Distributor.last_publish, DateTimeField))
         self.assertFalse(model.Distributor.last_publish.required)
+        self.assertTrue(isinstance(model.Distributor.last_updated, DateTimeField))
+        self.assertFalse(model.Distributor.last_updated.required)
         self.assertTrue(isinstance(model.Distributor._ns, StringField))
         self.assertEqual(model.Distributor._ns.default, 'repo_distributors')
         self.assertTrue(isinstance(model.Distributor.scratchpad, DictField))
@@ -1221,6 +1223,25 @@ class TestDistributor(unittest.TestCase):
         indexes = model.Distributor._meta['indexes']
         self.assertDictEqual(
             indexes[0], {'fields': ['-repo_id', '-distributor_id'], 'unique': True})
+
+    @patch('pulp.server.db.model.dateutils.now_utc_datetime_with_tzinfo')
+    def test_pre_save_signal(self, mock_now_utc):
+        """
+        Test the pre_save signal handler
+        """
+        mock_now_utc.return_value = 'foo'
+        helper = model.Distributor()
+        helper.last_updated = 50
+
+        model.Distributor.pre_save_signal({}, helper)
+
+        self.assertIsNotNone(helper.last_updated)
+
+        # make sure the last updated time has been updated
+        self.assertEquals(helper.last_updated, 'foo')
+
+    def test_pre_save_connect(self):
+        self.assertTrue(model.signals.pre_save.has_receivers_for(model.Distributor))
 
 
 class TestCeleryBeatLock(unittest.TestCase):

@@ -205,6 +205,7 @@ class RepoPublishResult(Model, ReaperMixin):
     RESULT_SUCCESS = 'success'
     RESULT_FAILED = 'failed'
     RESULT_ERROR = 'error'
+    RESULT_SKIPPED = 'skipped'
 
     @classmethod
     def error_result(cls, repo_id, distributor_id, distributor_type_id, started, completed,
@@ -239,6 +240,38 @@ class RepoPublishResult(Model, ReaperMixin):
         r.error_message = str(exception)
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
+
+        return r
+
+    @classmethod
+    def skipped_result(cls, repo_id, distributor_id, distributor_type_id, started, completed,
+                       result_code):
+        """
+        Creates a new history entry for a skipped publish.
+
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+
+        @param distributor_id: identifies the repo's distributor
+        @type  distributor_id: str
+
+        @param distributor_type_id: identifies the type of distributor that did the publish
+        @type  distributor_type_id: str
+
+        @param started: iso8601 formatted timestamp when the publish was begun
+        @type  started: str
+
+        @param completed: iso8601 formatted timestamp when the publish completed
+        @type  completed: str
+
+        @param result_code: one of the RESULT_* constants in this class
+        @type  result_code: str
+        """
+
+        r = cls(repo_id, distributor_id, distributor_type_id, started, completed,
+                cls.RESULT_SKIPPED)
+        message = 'Skipped. Nothing changed since last publish'
+        r.summary = r.details = message
 
         return r
 

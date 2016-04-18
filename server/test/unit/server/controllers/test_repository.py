@@ -1028,13 +1028,13 @@ class TestPublish(unittest.TestCase):
     """
     Tests for publishing a repository.
     """
+    @mock.patch('pulp.server.controllers.repository.check_publish')
     @mock.patch('pulp.server.controllers.repository.common_utils')
-    @mock.patch('pulp.server.controllers.repository._do_publish')
     @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
     @mock.patch('pulp.server.controllers.repository.RepoPublishConduit')
     @mock.patch('pulp.server.controllers.repository._get_distributor_instance_and_config')
-    def test_expected(self, mock_get_dist_inst, mock_pub_conduit, mock_plug_call_conf, mock_do_pub,
-                      m_common, mock_f, m_repo_qs, m_dist_qs):
+    def test_expected(self, mock_get_dist_inst, mock_pub_conduit, mock_plug_call_conf,
+                      m_common, mock_check_pub, mock_f, m_repo_qs, m_dist_qs):
         """
         Test publish when all goes as expected.
         """
@@ -1048,12 +1048,12 @@ class TestPublish(unittest.TestCase):
             'conf', m_dist_qs.get_or_404.return_value.config, 'override')
         m_repo = m_repo_qs.get_repo_or_missing_resource.return_value
         mock_fire.fire_repo_publish_started.assert_called_once_with('repo', 'dist')
-        mock_do_pub.assert_called_once_with(m_repo, 'dist', 'inst', m_repo.to_transfer_repo(),
-                                            mock_pub_conduit(), mock_plug_call_conf())
-        mock_fire.fire_repo_publish_finished.assert_called_once_with(mock_do_pub())
+        mock_check_pub.assert_called_once_with(m_repo, 'dist', 'inst', m_repo.to_transfer_repo(),
+                                               mock_pub_conduit(), mock_plug_call_conf())
+        mock_fire.fire_repo_publish_finished.assert_called_once_with(mock_check_pub())
         self.assertTrue(
             m_repo.to_transfer_repo().working_dir is m_common.get_working_directory())
-        self.assertTrue(result is mock_do_pub())
+        self.assertTrue(result is mock_check_pub())
 
 
 class TestGetDistributorInstanceAndConfig(unittest.TestCase):
@@ -1073,6 +1073,66 @@ class TestGetDistributorInstanceAndConfig(unittest.TestCase):
         mock_plug_api.get_distributor_by_id.assert_called_once_with(
             m_dist_qs.get_or_404.return_value.distributor_type_id)
         self.assertEqual(result, mock_plug_api.get_distributor_by_id.return_value)
+
+
+@mock.patch('pulp.server.controllers.repository._logger.debug')
+@mock.patch('pulp.server.controllers.repository._now_timestamp')
+@mock.patch('pulp.server.controllers.repository.dateutils')
+@mock.patch('pulp.server.controllers.repository._do_publish')
+@mock.patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+@mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
+@mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
+@mock.patch('pulp.server.controllers.repository.RepoPublishResult')
+@mock.patch('pulp.server.controllers.repository.model.Distributor.objects')
+class TestCheckPublish(unittest.TestCase):
+
+    def test_no_op_publish(self, m_dist_qs, m_repo_pub_result, mock_call_conf, mock_conduit,
+                           mock_objects, mock_do_pub, mock_date, mock_now, mock_log):
+        """
+        Test that publish is no op when there were no changes made since last publish.
+        """
+        mock_call_conf.get.return_value = False
+        fake_repo = model.Repository(repo_id='repo1')
+        mock_objects.return_value.count.return_value = 0
+        mock_inst = mock.MagicMock()
+        m_dist = m_dist_qs.get_or_404.return_value
+        m_dist.last_updated = None
+
+        result = repo_controller.check_publish(fake_repo, 'dist', mock_inst,
+                                               fake_repo.to_transfer_repo(), mock_conduit,
+                                               mock_call_conf)
+        m_dist_qs.return_value.update.assert_called_once_with(set__last_publish=mock_now())
+        m_repo_pub_result.skipped_result.assert_called_once_with(
+            fake_repo.repo_id, m_dist.distributor_id, m_dist.distributor_type_id, mock_now(),
+            mock_now(), m_repo_pub_result.RESULT_SKIPPED
+        )
+        msg = 'publish skipped for repo [repo1] with distributor ID [dist]'
+        mock_log.assert_called_once_with(msg)
+        self.assertFalse(mock_do_pub.called)
+        m_repo_pub_result.get_collection().save.assert_called_once_with(
+            m_repo_pub_result.skipped_result())
+        self.assertTrue(result is m_repo_pub_result.skipped_result.return_value)
+
+    def test_force_publish(self, m_dist_qs, m_repo_pub_result, mock_call_conf, mock_conduit,
+                           mock_objects, mock_do_pub, mock_date, mock_now, mock_log):
+        """
+        Test that if force option specified, publish happens even if there were no changes made
+        since last publish.
+        """
+        mock_call_conf.get.return_value = True
+        fake_repo = model.Repository(repo_id='repo1')
+        mock_transfer = fake_repo.to_transfer_repo()
+        mock_objects.return_value.count.return_value = 0
+        mock_inst = mock.MagicMock()
+        m_dist = m_dist_qs.get_or_404.return_value
+        m_dist.last_updated = None
+
+        repo_controller.check_publish(fake_repo, 'dist', mock_inst, mock_transfer,
+                                      mock_conduit, mock_call_conf)
+        self.assertFalse(m_repo_pub_result.skipped_result.called)
+        self.assertTrue(mock_do_pub.called)
+        mock_do_pub.assert_called_once_with(fake_repo, 'dist', mock_inst, mock_transfer,
+                                            mock_conduit, mock_call_conf)
 
 
 @mock.patch('pulp.server.controllers.repository._')
@@ -1131,7 +1191,7 @@ class TestDoPublish(unittest.TestCase):
         result = repo_controller._do_publish(fake_repo, 'dist', mock_inst,
                                              fake_repo.to_transfer_repo(), 'conduit',
                                              'conf')
-        self.assertTrue(m_dist.last_publish is mock_now.return_value)
+        m_dist_qs.return_value.update.assert_called_once_with(set__last_publish=mock_now())
         m_repo_pub_result.expected_result.assert_called_once_with(
             fake_repo.repo_id, m_dist.distributor_id, m_dist.distributor_type_id, mock_now(),
             mock_now(), 'summary', 'details', m_repo_pub_result.RESULT_SUCCESS

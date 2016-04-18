@@ -1,0 +1,15 @@
+======================
+Pulp 2.9 Release Notes
+======================
+
+Pulp 2.9.0
+==========
+
+New Features
+------------
+
+* Re-publish of the repository will be a no operation by default if since the last publish, no units
+  were added/removed and there were no changes made to the distributor settings. A publish which
+  causes no operation has a skipped result and therefore does not re-create repodata files.
+  To force a re-publish, which does publish from sratch, use `force_full` option via API or
+  `--force-full` via CLI.
