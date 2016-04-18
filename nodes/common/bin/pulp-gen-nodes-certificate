@@ -12,6 +12,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+set -e
 
 READ_PULP_CONF=\
 $(cat << END
@@ -33,16 +34,16 @@ PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 NODE_CONF=(`python -c "$READ_NODE_CONF"`)
 
 
+# Safely create a temporary folder to be used to create the certificate authority.
+TMP=$(mktemp -d) || exit 1
 NODE_CRT=${NODE_CONF[0]}
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
-TMP=/tmp/$RANDOM
 CN=`hostname`
 ORG="PULP"
 ORG_UNIT="NODES"
 
-mkdir -p $TMP
 mkdir -p `dirname $NODE_CRT`
 
 # create client key
