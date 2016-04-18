@@ -46,7 +46,7 @@ mkdir -p $TMP
 mkdir -p `dirname $NODE_CRT`
 
 # create client key
-openssl genrsa -out $TMP/$BASE.key 2048 &> /dev/null
+openssl genrsa -out $TMP/$BASE.key 4096 &> /dev/null
 
 # create signing request for client
 openssl req \
