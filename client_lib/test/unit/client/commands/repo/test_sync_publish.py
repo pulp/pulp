@@ -397,7 +397,8 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         expected_option_keywords = set([options.OPTION_REPO_ID.keyword,
                                         polling.FLAG_BACKGROUND.keyword])
         expected_group_option_keywords = set([self.sample_option1.keyword,
-                                              self.sample_option2.keyword])
+                                              self.sample_option2.keyword,
+                                              sp.FLAG_FORCE_FULL.keyword])
 
         self.assertEqual(found_option_keywords, expected_option_keywords)
         self.assertEqual(found_group_option_keywords, expected_group_option_keywords)
@@ -417,7 +418,8 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when there are no incomplete publish tasks in queue.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
+                sp.FLAG_FORCE_FULL.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -443,7 +445,8 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when thre is already an incomplete publish operation.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
+                sp.FLAG_FORCE_FULL.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
@@ -472,7 +475,8 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         Test run() with the --bg flag is set.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: True,
+                sp.FLAG_FORCE_FULL.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
