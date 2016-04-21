@@ -12,6 +12,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+set -e
 
 READ_PULP_CONF=\
 $(cat << END
@@ -37,21 +38,25 @@ NODE_CRT=${NODE_CONF[0]}
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 BASE='nodes'
-TMP=/tmp/$RANDOM
+# This temporary folder will contain the certificate signing request.
+TMP="$(mktemp -d)"
 CN=`hostname`
 ORG="PULP"
 ORG_UNIT="NODES"
 
-mkdir -p $TMP
 mkdir -p `dirname $NODE_CRT`
 
 # create client key
-openssl genrsa -out $TMP/$BASE.key 4096 &> /dev/null
+OLD_UMASK="$(umask)"
+umask 0027
+openssl genrsa -out $NODE_CRT 4096 &> /dev/null
+chgrp apache $NODE_CRT
+umask $OLD_UMASK
 
 # create signing request for client
 openssl req \
   -new \
-  -key $TMP/$BASE.key \
+  -key $NODE_CRT \
   -out $TMP/$BASE.req \
   -subj "/CN=$CN/O=$ORG/OU=$ORG_UNIT" &> /dev/null
 
@@ -59,7 +64,7 @@ openssl req \
 openssl x509 \
   -req  \
   -in $TMP/$BASE.req \
-  -out $TMP/$BASE.xx \
+  -out $TMP/$BASE.crt \
   -sha1 \
   -CA $CA_CRT \
   -CAkey $CA_KEY \
@@ -68,7 +73,9 @@ openssl x509 \
   -days 3650 &> /dev/null
 
 # bundle
-cat $TMP/$BASE.key $TMP/$BASE.xx > $NODE_CRT
+cat $TMP/$BASE.crt >> $NODE_CRT
 
 # clean
-rm -rf $TMP
+rm $TMP/$BASE.req
+rm $TMP/$BASE.crt
+rmdir $TMP
