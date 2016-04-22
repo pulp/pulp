@@ -11,7 +11,7 @@ import sys
 from subprocess import call
 
 from bson.json_util import dumps
-from mongoengine import ValidationError
+from mongoengine import ValidationError, FieldDoesNotExist
 import pkg_resources
 
 from pulp.server.db import model as platform_models
@@ -61,12 +61,15 @@ class ValidationExceptionHandler:
         self._write_newline()
         self.error_file.write(ex.message)
         self._write_newline()
-        self.error_file.write(json.dumps(ex.to_dict()))
-        self._write_newline()
+        try:
+            self.error_file.write(json.dumps(ex.to_dict()))
+            self._write_newline()
+        except AttributeError: # ValidationException supports to_dict, others don't
+            pass
         self._write_newline()
         self.error_file.write("Data:")
         self._write_newline()
-        self.error_file.write(dumps(item.to_mongo()))
+        self.error_file.write(dumps(item))
         self._write_newline()
 
 
@@ -91,11 +94,13 @@ class ValidationCheck:
         :type model: mongoengine.Document
         """
         error_count = 0
-        for item in model.objects.all():
+        for item in model.objects.as_pymongo().all():
             try:
-                model.save(item)
+                json_item = dumps(item)
+                tmp_item = model.from_json(json_item)
+                model.save(tmp_item)
                 sys.stdout.write(".")
-            except ValidationError as ex:
+            except (ValidationError, FieldDoesNotExist) as ex:
                 error_count += 1
                 self.exception_handler.handle_exception(item, ex)
                 sys.stdout.write("E")
