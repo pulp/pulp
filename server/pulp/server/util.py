@@ -1,12 +1,17 @@
 """
 This module contains utility code to be used by pulp.server.
 """
+from contextlib import contextmanager
+import logging
 import os
 from shutil import copy, Error
 
 from gettext import gettext as _
 
 from pulp.server.exceptions import PulpExecutionException
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Singleton(type):
@@ -237,3 +242,25 @@ def copytree(src, dst, symlinks=False, ignore=None):
             break
     if errors:
         raise Error(errors)
+
+
+@contextmanager
+def deleting(path):
+    """
+    Remove the file at path if possible, but don't let any exceptions bubble up. This is useful
+    when you want to do something with a file, and delete it afterward no matter what. Example:
+
+    with util.deleting(path):
+        unit = MyUnit.from_file(path)
+        unit.save()
+
+    Like contextlib.closing, but more fun!
+
+    :param path:    full path to a file that should be deleted
+    :type  path:    basestring
+    """
+    yield
+    try:
+        os.remove(path)
+    except Exception as e:
+        _logger.warning(_('Could not remove file from location: {0}').format(e))
