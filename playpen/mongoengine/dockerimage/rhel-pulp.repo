@@ -4,6 +4,15 @@
 [pulp-v2-stable]
 name=Pulp 2.8 Stable Builds
 baseurl=http://repos.fedorapeople.org/repos/pulp/pulp/stable/2.8/7Server/$basearch/
+enabled=0
+skip_if_unavailable=0
+gpgcheck=1
+gpgkey=https://repos.fedorapeople.org/repos/pulp/pulp/GPG-RPM-KEY-pulp-2
+
+# Version 2.8 Beta Builds
+[pulp-v2-beta]
+name=Pulp 2.8 Beta Builds
+baseurl=http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.8/7Server/$basearch/
 enabled=1
 skip_if_unavailable=0
 gpgcheck=1
