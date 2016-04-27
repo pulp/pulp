@@ -165,3 +165,24 @@ class TestCopyTree(unittest.TestCase):
         # Assert everything except for symlink is checked if it is a directory
         mock_isdir.assert_has_calls([call('src/dir1'), call('src/dir2'), call('src/dir2/file2'),
                                      call('src/file3')])
+
+
+class TestPackageListenerDeleting(unittest.TestCase):
+    @patch('os.remove')
+    def test_removes_path(self, mock_remove):
+        path = '/a/b/c'
+
+        with util.deleting(path):
+            pass
+
+        mock_remove.assert_called_once_with(path)
+
+    @patch('os.remove', side_effect=IOError)
+    def test_squashes_exception(self, mock_remove):
+        path = '/a/b/c'
+
+        # this should not raise any exceptions
+        with util.deleting(path):
+            pass
+
+        mock_remove.assert_called_once_with(path)
