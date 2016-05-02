@@ -11,8 +11,9 @@ Pulp 2.8.3
     User action is required to address the CVEs associated with this upgrade! Read the upgrade
     instructions below.
 
-2.8.3 is a security and bugfix release. Included in the list of :fixedbugs:`2.8.3`
-are a number of CVEs:
+2.8.3 is a security and bugfix release. This release includes new migrations that need to be run.
+
+Included in the list of :fixedbugs:`2.8.3` are a number of CVEs:
 
     * `CVE-2016-3106 <https://pulp.plan.io/issues/1827>`_: Insecure creation of temporary directory
       when generating new CA key
@@ -33,10 +34,12 @@ upgraded from Pulp < 2.3.0 may still be vulnerable, action may be required.*
 Upgrade instructions
 --------------------
 
-Some of the CVEs require user interaction to remedy. Begin by upgrading to Pulp 2.8.3::
+Some of the CVEs require user interaction to remedy. Begin by upgrading to Pulp 2.8.3,
+and running migrations::
 
     $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat goferd
     $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
     $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat goferd
 
 
