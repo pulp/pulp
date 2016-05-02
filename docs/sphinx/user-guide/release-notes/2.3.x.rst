@@ -5,6 +5,40 @@ Pulp 2.3 Release Notes
 Pulp 2.3.0
 ==========
 
+CVE-2013-7450
+-------------
+
+Versions of Pulp < 2.3.0 distributed the same certificate authority key and
+certificate to all Pulp users[0]. This CA is used by the /login API call
+(pulp-admin login uses this call) to generate and sign a client certificate.
+This client certificate is then used for subsequent API calls.
+
+Due to this vulnerability, remote attackers are able to obtain the CA key
+from the Pulp git repository and use it to generate valid client certificates
+for any Pulp installations that use the default CA. The Pulp documentation
+did not emphasize the importance of replacing this CA for production
+deployments, so there may be users who use this common CA key in production
+environments.
+
+Users are urged to replace the CA certificate and key on any Pulp
+installations that began their life with a version less than 2.3.0. Upgrading
+alone is not sufficient, as Pulp upgrades do not replace existing CA key
+pairs. Versions of Pulp >= 2.3.0 do ship a utility (pulp-gen-ca-certificate)
+that is capable of generating a new CA keypair for you, but it should be
+noted that there are some known local attacks that this script is vulnerable
+to as well[1][2]. The best option is to generate your own CA certificate if
+you are concerned about these local attacks.
+
+Thanks to Sander Bos for notifying the Pulp team that we had neglected to
+acquire a CVE for this vulnerability at the time of its discovery.
+
+[0] CVE-2013-7450: https://bugzilla.redhat.com/show_bug.cgi?id=1003326
+[1] CVE-2016-3095 (fixed in Pulp >= 2.8.2):
+    http://www.openwall.com/lists/oss-security/2016/04/06/3
+[2] CVE-2016-3106 (fixed in Pulp >= 2.8.3):
+    https://pulp.plan.io/issues/1827
+
+
 New Features
 ------------
 
@@ -75,6 +109,17 @@ from the Pulp repository and run the database migrations::
 
    $ sudo yum upgrade
    $ sudo pulp-manage-db
+
+To address CVE-2013-7450, you will need to replace your CA certificate and key. As mentioned above,
+there are some known CVE's that the new ``pulp-gen-ca-certificate`` is vulnerable to. Thus, the
+recommended upgrade strategy is to generate a new CA certificate and key yourself, unless you
+upgrade all the way to Pulp 2.8.3 where CVE-2016-3095 and CVE-2016-3106 have been fixed. If you are
+not concerned about these local attacks, you can use ``pulp-gen-ca-certificate`` to regenerate the
+CA with the risk of a local user being able to read the private key. If you wish to use the script::
+
+    $ sudo pulp-gen-ca-certificate
+    # pulp-gen-ca-certificate in 2.3.0 does not install the files with the correct SELinux context
+    $ sudo restorecon -R /etc/pki/pulp
 
 
 Pulp 2.3.1
