@@ -13,3 +13,5 @@ New Features
   causes no operation has a skipped result and therefore does not re-create repodata files.
   To force a re-publish, which does publish from sratch, use `force_full` option via API or
   `--force-full` via CLI.
+
+* A new :ref:`security disclosures` process has been put in place.
