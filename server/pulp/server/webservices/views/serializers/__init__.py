@@ -294,6 +294,9 @@ class ModelSerializer(BaseSerializer):
         :rtype:  basestring
         """
         try:
+            # assumption: translation is not required for any dict fields
+            if "." in field:
+                return field
             for internal, external in self._remapped_fields.iteritems():
                 if external == field:
                     return getattr(model, internal).db_field

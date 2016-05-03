@@ -226,6 +226,16 @@ def _trim_results(model, results, only):
     min_fields = set(['_id', 'id', '_href'])
     required_fields = set([field for field, val in model._fields.items() if val.required])
     return_fields = set(only) | min_fields | required_fields
+    # remove subfield from return fields names
+    return_fields_list = list(return_fields)
+    for i in range(len(return_fields_list)):
+        f = return_fields_list[i]
+        if "." in f:
+            return_fields_list[i] = f.split(".")[0]
+    return_fields = set(return_fields_list)
+    # filter
+    # assumption: subfields of dict fields were already filtered beforehand,
+    # there is no need to filter them again here
     for result in results:
         for k, v in result.items():
             if k not in return_fields:
