@@ -25,7 +25,6 @@ fi
 PWDFILE="password"
 SEEDFILE="seed"
 INST_DIR='/etc/pki/pulp/qpid'
-DB_PASSWORD=$RANDOM
 VALID="12"
 CA_PATH=""
 CA_KEY_PATH=""
@@ -57,6 +56,8 @@ read -sp "Enter a password:" ans
 if [ "${#ans}" -gt 0 ]
 then
   DB_PASSWORD=$ans
+else
+  DB_PASSWORD=$(dd if=/dev/urandom bs=8192 count=1 | sha256sum | cut -d " " -f 1)
 fi
 echo ""
 echo "Using password: [$DB_PASSWORD]"
@@ -94,16 +95,6 @@ echo ""
 echo "Using hostname: [$HOST]"
 
 #
-# ========== KEY SEED ===========
-#
-touch $DIR/$SEEDFILE
-i=0
-while [ $i -lt 20 ]; do
-  echo $RANDOM >> $DIR/$SEEDFILE
-  i=`expr $i + 1`
-done
-
-#
 # ========== PASSWORD ===========
 #
 
@@ -133,6 +124,7 @@ if [ "${#CA_PATH}" -eq 0 ]
 then
   echo "Creating CA certificate:"
   SUBJECT="CN=redhat,O=pulp,ST=Alabama,C=US"
+  dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
   certutil -S -d $DIR -n "ca" -s $SUBJECT -t "TC,," -f $DIR/$PWDFILE -z $DIR/$SEEDFILE -x -v $VALID
   echo "CA created"
 else
@@ -153,6 +145,7 @@ certutil -L -d $DIR -n "ca" -a -o $DIR/ca.crt -f $DIR/$PWDFILE
 echo ""
 echo "Creating BROKER certificate:"
 SUBJECT="CN=$HOST,O=pulp,ST=Alabama,C=US"
+dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
 certutil -R -d $DIR -s $SUBJECT -a -o $DIR/broker.req -f $DIR/$PWDFILE -z $DIR/$SEEDFILE
 
 # sign the broker cert w/ CA
@@ -176,6 +169,7 @@ certutil -N -d $DIR/client -f $DIR/$PWDFILE
 echo ""
 echo "Creating CLIENT certificate:"
 SUBJECT="CN=client,O=pulp,ST=Alabama,C=US"
+dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
 certutil -R -d $DIR/client -s $SUBJECT -a -o $DIR/client.req -f $DIR/$PWDFILE -z $DIR/$SEEDFILE
 
 # sign the client cert w/ CA
