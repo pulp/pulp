@@ -968,8 +968,67 @@ def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=No
     # Fire events describing the publish state
     fire_manager = manager_factory.event_fire_manager()
     fire_manager.fire_repo_publish_started(repo_id, dist_id)
-    result = _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_config)
+    result = check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_config)
     fire_manager.fire_repo_publish_finished(result)
+    return result
+
+
+def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_config):
+    """
+    Check if the publish should be a no operation and therefore skipped.
+
+    :param repo_obj: repository object
+    :type  repo_obj: pulp.server.db.model.Repository
+    :param dist_id: identifies the distributor
+    :type  dist_id: str
+    :param dist_inst: instance of the distributor
+    :type  dist_inst: dict
+    :param transfer_repo: dict representation of a repo for the plugins to use
+    :type  transfer_repo: pulp.plugins.model.Repository
+    :param conduit: allows the plugin to interact with core pulp
+    :type  conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
+    :param call_config: allows the plugin to retrieve values
+    :type  call_config: pulp.plugins.config.PluginCallConfiguration
+
+    :return: publish result containing information about the publish
+    :rtype:  pulp.server.db.model.repository.RepoPublishResult
+    """
+
+    force_full = call_config.get('force_full', False)
+    last_published = conduit.last_publish()
+    last_unit_removed = repo_obj.last_unit_removed
+    if last_published:
+        the_timestamp = dateutils.format_iso8601_datetime(last_published)
+        last_updated = model.RepositoryContentUnit.objects(repo_id=repo_obj.repo_id,
+                                                           updated__gte=the_timestamp).count()
+        dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
+                                                    distributor_id=dist_id)
+
+        units_removed = last_unit_removed is not None and last_unit_removed > last_published
+        dist_updated = dist.last_updated > last_published
+
+    if last_published and not force_full and not last_updated and not units_removed and \
+            not dist_updated:
+
+        publish_result_coll = RepoPublishResult.get_collection()
+        publish_start_timestamp = _now_timestamp()
+        publish_end_timestamp = _now_timestamp(string=False)
+
+        # Use raw pymongo not to fire the signal hander
+        model.Distributor.objects(
+            repo_id=repo_obj.repo_id).update(set__last_publish=publish_end_timestamp)
+
+        result_code = RepoPublishResult.RESULT_SKIPPED
+        _logger.debug('publish skipped for repo [%s] with distributor ID [%s]' % (
+                      repo_obj.repo_id, dist_id))
+        result = RepoPublishResult.skipped_result(
+            repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
+            publish_start_timestamp, publish_end_timestamp, result_code)
+        publish_result_coll.save(result)
+
+    else:
+        result = _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_config)
+
     return result
 
 
@@ -1049,9 +1108,12 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     publish_end_timestamp = _now_timestamp(string=False)
 
     # Reload the distributor in case the scratchpad is set by the plugin
-    dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id, distributor_id=dist_id)
-    dist.last_publish = publish_end_timestamp
-    dist.save()
+    dist = model.Distributor.objects.get_or_404(
+        repo_id=repo_obj.repo_id, distributor_id=dist_id)
+
+    # Use raw pymongo not to fire the signal hander
+    model.Distributor.objects(
+        repo_id=repo_obj.repo_id).update(set__last_publish=publish_end_timestamp)
 
     # Add a publish entry
     summary = publish_report.summary

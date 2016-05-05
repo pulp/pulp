@@ -232,6 +232,12 @@ dictate how the distributor will function when it publishes content. The possibl
 configuration values are contingent on the type of distributor being added; each
 distributor type will support a different set of values relevant to how it functions.
 
+.. note::
+        There is an optional distributor configuration parameter that is usable
+        on all distributor plugin types called ``force_full``. If this parameter is set,
+        every publish of the repo using this distributor will be done from scratch.
+        More details are `here <http://pulp.readthedocs.org/en/latest/user-guide/release-notes/2.9.x.html#pulp-2-9-0>`_.
+
 Multiple distributors may be associated with a repository at a given time. There
 may be more than one distributor with the same type. The only restriction is
 that the distributor ID must be unique across all distributors for a given repository.

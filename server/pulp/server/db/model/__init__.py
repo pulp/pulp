@@ -1218,6 +1218,7 @@ class Distributor(AutoRetryDocument):
     config = DictField()
     auto_publish = BooleanField(default=False)
     last_publish = UTCDateTimeField()
+    last_updated = UTCDateTimeField()
     scratchpad = DictField()
 
     _ns = StringField(default='repo_distributors')
@@ -1236,6 +1237,20 @@ class Distributor(AutoRetryDocument):
         :rtype:  basestring
         """
         return 'pulp:distributor:{0}:{1}'.format(self.repo_id, self.distributor_id)
+
+    @classmethod
+    def pre_save_signal(cls, sender, document, **kwargs):
+        """
+        The signal that is triggered before distributor is saved.
+
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: Distributor
+        """
+        document.last_updated = dateutils.now_utc_datetime_with_tzinfo()
+
+signals.pre_save.connect(Distributor.pre_save_signal, sender=Distributor)
 
 
 class SystemUser(base.Model):
