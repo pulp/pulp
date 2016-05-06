@@ -4,7 +4,14 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+ # It is possible to use URLs to nightly images produced by the Fedora project here. You can find
+ # the nightly composes here: https://kojipkgs.fedoraproject.org/compose/
+ # Sometimes, a nightly compose is incomplete and does not contain a Vagrant image, so you may need
+ # to browse that repository a bit to find the latest successful Vagrant image. For example, at the
+ # time of this writing, I could set this setting like this for the latest F24 image:
+ # config.vm.box = "https://kojipkgs.fedoraproject.org/compose/24/Fedora-24-20160430.0/compose/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-24_Beta-1.4.x86_64.vagrant-libvirt.box"
  config.vm.box = "fedora/23-cloud-base"
+
  # By default, Vagrant wants to mount the code in /vagrant with NFSv3, which will fail. Let's
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
