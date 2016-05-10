@@ -203,10 +203,11 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
     # Create the connection and bindings
     verify_ssl = config.parse_bool(config['server']['verify_ssl'])
     ca_path = config['server']['ca_path']
+    path_prefix = config['server']['api_prefix']
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
         logger=cli_logger, api_responses_logger=api_logger, verify_ssl=verify_ssl,
-        ca_path=ca_path)
+        ca_path=ca_path, path_prefix=path_prefix)
     bindings = Bindings(conn)
 
     return bindings
