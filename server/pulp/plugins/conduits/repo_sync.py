@@ -35,6 +35,7 @@ from pulp.plugins.conduits.mixins import (
     ImporterScratchPadMixin, SingleRepoUnitsMixin, StatusMixin,
     SearchUnitsMixin)
 from pulp.plugins.model import SyncReport
+from pulp.server.db import model
 import pulp.server.managers.factory as manager_factory
 
 
@@ -189,3 +190,14 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
                        self._removed_count, summary, details)
         r.canceled_flag = True
         return r
+
+    def last_sync(self):
+        """
+        Returns the timestamp of the last time this repo was successfully synced. If the repo
+        was never synced, this call returns None.
+
+        :return: timestamp instance describing the last sync
+        :rtype:  datetime.datetime or None
+        """
+        importer = model.Importer.objects.only('last_sync').get_or_404(id=self.importer_object_id)
+        return importer.last_sync
