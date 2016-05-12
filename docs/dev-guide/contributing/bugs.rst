@@ -23,8 +23,7 @@ Bugs are one of the main ways that the Pulp team interacts with users
 You can `file a new bug or feature request <https://pulp.plan.io/projects/pulp/issues/new>`_.
 
 .. warning::
-  Security related bugs need to be marked as private when reported. Use the
-  private checkbox (top right) for this.
+  Is this security related? If so, please follow the `Security Disclosures`_ process.
 
 If you are filing an issue or defect, select ``Issue`` as the *Tracker*. If you
 are filing a feature request, select ``Story``.
@@ -48,6 +47,24 @@ Once a week, the Pulp team triages all new bugs, at which point its
 necessary, the bug may be commented on requesting more information or
 clarification from the reporter. When a bug has enough information, its
 *Priority* rating set and is marked as triaged using the *Triaged* boolean.
+
+.. _security disclosures:
+
+Security Disclosures
+--------------------
+
+We take security issues seriously and welcome responsible disclosure of security vulnerabilities
+in Pulp. Please email `pulp-security@redhat.com` (a private address for the Pulp Security Team)
+with all reports.
+
+Your report should include:
+
+* Pulp version
+* A vulnerability description
+* Reproduction steps
+
+Feel free to submit a patch with your disclosure. A member of the Pulp Security Team will confirm
+the vulnerability, determine its impact, and develop a fix.
 
 Fixing
 ------
