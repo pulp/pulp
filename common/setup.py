@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-common',
-    version='2.8.3c3',
+    version='2.8.3c4',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
