@@ -16,25 +16,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # explicitly mount the code using NFSv4.
  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
 
+ # You can speed up package installs in subsequent "vagrant up" operations by making the dnf
+ # cache a synced folder. This is essentially what the vagrant-cachier plugin would do for us
+ # if it supported dnf, and unfortunately that project is in need of maintainers so this might
+ # be the best we can do for now. Note that you'll have to manually create the '.dnf-cache'
+ # directory in the same directory as this Vagrantfile for this to work.
+ # config.vm.synced_folder ".dnf-cache", "/var/cache/dnf", type: "nfs", nfs_version: 4, nfs_udp: false
+
  # Comment out if you don't want Vagrant to add and remove entries from /etc/hosts for each VM.
  # requires the vagrant-hostmanager plugin to be installed
  if Vagrant.has_plugin?("vagrant-hostmanager")
      config.hostmanager.enabled = true
      config.hostmanager.manage_host = true
  end
-
- # vagrant-cachier is currently broken due to making yum-based assumptions
- #  https://github.com/fgrehm/vagrant-cachier/issues/163
- # It is included here as an example if you're still using a yum-based box
-
- # vagrant plugin install vagrant-cachier to cache packages installed by yum/dnf
- # if Vagrant.has_plugin?("vagrant-cachier")
- #    config.cache.scope = :box
- #    config.cache.synced_folder_opts = {
- #        type: :nfs,
- #        mount_options: ['rw', 'vers=4', 'tcp']
- #    }
- # end
 
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"
