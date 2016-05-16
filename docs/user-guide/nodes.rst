@@ -41,7 +41,7 @@ Node Topologies
 Pulp nodes may be associated to form tree structures. Intermediate nodes may be designated
 as both a parent and a child node.
 
-.. image:: images/node-topology.png
+.. image:: /_static/node-topology.png
 
 
 Node Anatomy
@@ -51,7 +51,7 @@ The anatomy of both parent and child nodes is simple. Parent nodes are Pulp serv
 that have the *Nodes* support installed. A Child node is a Pulp server with both the *Nodes*
 and *Consumer* support installed.
 
-.. image:: images/node-anatomy.png
+.. image:: /_static/node-anatomy.png
 
 
 Authentication

@@ -104,7 +104,7 @@ New Features
 
 - Pulp now allows user credentials to be read from user's ``~/.pulp/admin.conf``.
   This should allow pulp-admin to be automated more easily and more securely.
-  Please see our :ref:`Authentication` documentation for details.
+  Please see our :ref:`authentication` documentation for details.
 
 - Pulp no longer requires additional configuration of Qpid after installation.
   It now works with the ANONYMOUS authentication mechanism. Users can still use a

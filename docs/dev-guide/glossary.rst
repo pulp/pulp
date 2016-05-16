@@ -26,7 +26,7 @@ Glossary
     should use to access the Pulp Server or Pulp Agent.
 
   consumer
-    A managed system that is the consumer of content.  Consumption refers
+    A managed system that is the consumer of content. Consumption refers
     to the installation of software contained within a :term:`repository` and
     published by an associated :term:`distributor`.
 
@@ -85,6 +85,6 @@ Glossary
     multiple invocations. Each scratchpad is scoped to an individual plugin on a repository.
 
   unit profile
-    An array of :term:`content unit` installed on a :term:`consumer`.  The
-    structure and content of each item in the profile varies based on the
+    An array of :term:`content unit` entries installed on a :term:`consumer`.
+    The structure and content of each item in the profile varies based on the
     unit type.

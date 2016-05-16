@@ -51,7 +51,7 @@ Additionally, Pulp relies on other components:
 
 The diagram below shows an example default deployment.
 
-.. image:: images/pulp-exp1.png
+.. image:: /_static/pulp-exp1.png
 
 .. This section is still TODO.
 .. Sizing Considerations
