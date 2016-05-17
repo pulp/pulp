@@ -41,7 +41,7 @@ repositories with importers that are configured with ``download_policy=(backgrou
 Content that has already been downloaded will not be downloaded again.
 
 .. note::
-  This API requires that the :ref:`deferred downloading` features must be installed
+  This API requires that the :ref:`alternate-download-policies` features must be installed
   and configured to work. If it has not been configured, the task dispatched by this
   API does nothing.
 

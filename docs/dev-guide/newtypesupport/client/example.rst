@@ -121,7 +121,7 @@ The above snippet configures the ``--name`` option as required. The client
 framework will enforce that, displaying the usage text to the user in the event it
 is not specified.
 
-.. code-block:: python
+::
 
   $ pulp-admin example demo
   Command: demo

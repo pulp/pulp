@@ -24,6 +24,7 @@ will be assembled as part of a build. In addition it specifies the directory wit
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
 will be published. The file has the following format:
 ::
+
   koji-target-prefix: pulp-2.7
   rsync-target-dir: 2.7/dev
   repositories:

@@ -167,8 +167,6 @@ The output of the usage text for that command is as follows::
   --lte    - matches resources whose value for the specified field is less than
              or equal to the given value
 
-.. _unit_association_criteria:
-
 Unit Association Criteria
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
