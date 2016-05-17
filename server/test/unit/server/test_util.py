@@ -1,7 +1,8 @@
-import unittest
+import shutil
 
 from mock import Mock, patch, call
 
+from pulp.common.compat import unittest
 from pulp.server import util
 
 
@@ -59,6 +60,37 @@ class TestCopyTree(unittest.TestCase):
         mock_copy.assert_called_with('src/file', 'dst/file')
         self.assertFalse(mock_copy2.called)
         self.assertFalse(mock_copystat.called)
+
+    @patch('pulp.server.util.os.makedirs')
+    @patch('pulp.server.util.copy', autospec=True)
+    @patch('pulp.server.util.os.path.isdir')
+    @patch('pulp.server.util.os.listdir')
+    def test_error_limit(self, mock_list_dir, mock_isdir, mock_copy, mock_makedirs):
+        """
+        Make sure it doesn't collect an unbounded number of errors. 100 is the defined limit
+        after which it gives up.
+
+        https://pulp.plan.io/issues/1808
+        """
+        mock_list_dir.return_value = (str(x) for x in range(110))
+        mock_isdir.return_value = False
+        mock_copy.side_effect = OSError('oops')
+
+        with self.assertRaises(shutil.Error) as assertion:
+            util.copytree('src', 'dst')
+
+        errors = assertion.exception.args[0]
+        # there should be 100 errors exactly, because that is the limit
+        self.assertEqual(len(errors), 100)
+        # ensure each error has the correct data
+        for i, error in enumerate(errors):
+            src, dst, why = error
+            self.assertEqual('src/%d' % i, src)
+            self.assertEqual('dst/%d' % i, dst)
+            self.assertEqual('oops', why)
+        # make sure there are 10 more in the iterator, thus those copy operations were definitely
+        # not attempted.
+        self.assertEqual(len(list(mock_list_dir.return_value)), 10)
 
     @patch('pulp.server.util.copy', autospec=True)
     @patch('pulp.server.util.os.path.isdir')

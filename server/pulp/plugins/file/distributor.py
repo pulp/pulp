@@ -236,6 +236,15 @@ class FileDistributor(Distributor):
                     os.remove(symlink_filename)
             # If we've gotten here, we've removed any existing file at the symlink_filename path,
             # so now we should recreate it.
+            dir_path = os.path.dirname(symlink_filename)
+            # make sure any required subdirectory exists
+            if not os.path.exists(dir_path):
+                try:
+                    os.makedirs(dir_path)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+
             os.symlink(unit.storage_path, symlink_filename)
 
     def _rmtree_if_exists(self, path):

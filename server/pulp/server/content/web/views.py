@@ -9,15 +9,13 @@ from django.shortcuts import render_to_response
 from django.views.generic import View
 
 from pulp.repoauth.wsgi import allow_access
-from pulp.server.lazy import URL, Key
 from pulp.server.config import config as pulp_conf
+from pulp.server.lazy import URL, Key
 
 
 logger = logging.getLogger(__name__)
 
-# Make sure all requested paths fall under these directories.
-PUBLISH_DIR = '/var/lib/pulp/published'
-CONTENT_DIR = '/var/lib/pulp/content'
+SAFE_STORAGE_SUBDIRS = ('published', 'content', 'static')
 
 
 class ContentView(View):
@@ -128,6 +126,14 @@ class ContentView(View):
     def __init__(self, **kwargs):
         super(ContentView, self).__init__(**kwargs)
         self.key = Key.load(pulp_conf.get('authentication', 'rsa_key'))
+        # Make sure all requested paths fall under these sub-directories, otherwise
+        # we might find ourselves serving private keys to all and sundry.
+        local_storage = pulp_conf.get('server', 'storage_dir')
+        self.safe_serving_paths = [os.path.realpath(os.path.join(local_storage, subdir))
+                                   for subdir in SAFE_STORAGE_SUBDIRS]
+        logger.debug(_("Serving Pulp content from {paths}; ensure "
+                       "Apache's mod_xsendfile is configured to serve from "
+                       "these paths as well").format(paths=str(self.safe_serving_paths)))
 
     def get(self, request):
         """
@@ -151,10 +157,10 @@ class ContentView(View):
                               ' authenticators failed.').format(host=host, path=path))
                 return HttpResponseForbidden()
 
-        if not path.startswith(PUBLISH_DIR) and not path.startswith(CONTENT_DIR):
+        if not any([path.startswith(prefix) for prefix in self.safe_serving_paths]):
             # Someone is requesting something they shouldn't.
-            logger.debug(_('Denying {host} request to {path} as it does not resolve to'
-                           'a Pulp content path.').format(host=host, path=path))
+            logger.info(_('Denying {host} request to {path} as it does not resolve to'
+                          'a Pulp content path.').format(host=host, path=path))
             return HttpResponseForbidden()
 
         # Immediately 404 if the symbolic link doesn't even exist

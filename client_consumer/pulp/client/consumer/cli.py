@@ -178,7 +178,9 @@ class RegisterCommand(PulpCliCommand):
 
         id_cert_name = self.context.config['filesystem']['id_cert_filename']
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
-        fp = open(cert_filename, 'w')
+        # os.WRONLY opens the file for writing only; os.O_CREAT will create the
+        # file if it does not already exist.
+        fp = os.fdopen(os.open(cert_filename, os.O_WRONLY | os.O_CREAT, 0600), 'w')
         try:
             fp.write(certificate)
         finally:

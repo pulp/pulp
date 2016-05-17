@@ -71,10 +71,30 @@ Prerequisites
 Storage Requirements
 --------------------
 
+MongoDB
+^^^^^^^
+
 The MongoDB database can easily grow to 10GB or more in size, which vastly
 exceeds the amount of data actually stored in the database. This is normal
 (but admittedly surprising) behavior for MongoDB. As such, make sure you
 allocate plenty of storage within ``/var/lib/mongodb``.
+
+Pulp
+^^^^
+
+Pulp stores its content in ``/var/lib/pulp``. The size requirements of this
+directory vary depending on how much content you wish to download.
+
+.. note::
+   Making ``/var/lib/pulp`` a symbolic link to a different directory is possible,
+   but it is recommended that you use a bind mount instead. As of Pulp 2.8.0, using
+   a symbolic link requires you modify an Apache configuration. This configuration
+   is found by default in ``/etc/httpd/conf.d/pulp_content.conf``. In the
+   ``<Location /pulp/content/>`` section, you will need to add an entry for the target
+   of your symbolic link. For example, if you have ``/var/lib/pulp`` point to
+   ``/mnt/pulp``, you should add ``XSendFilePath`` entries for each directory you would
+   like Apache to be able to serve from. If you fail to make this configuration change,
+   you will receive an ``HTTP 403: Forbidden`` for all requests.
 
 Repositories
 ------------

@@ -5,6 +5,10 @@ Tests for the pulp.server.db.model module.
 """
 from hashlib import sha256
 from mock import patch, Mock, call
+import os
+import shutil
+import stat
+import tempfile
 
 from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField,
                          Document, IntField, ListField, StringField, QuerySetNoCache)
@@ -12,7 +16,9 @@ from mongoengine import (ValidationError, BooleanField, DateTimeField, DictField
 from pulp.common import dateutils
 from pulp.common.compat import unittest
 from pulp.common.error_codes import PLP0037
-from pulp.server import exceptions
+from pulp.common.plugins import importer_constants
+from pulp.plugins.util import misc
+from pulp.server import constants, exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
@@ -879,6 +885,9 @@ class TestImporter(unittest.TestCase):
     """
     Tests for the importer class.
     """
+    def tearDown(self):
+        model.Importer.objects.delete()
+
     def test_model_superclass(self):
         """
         Ensure that the class is a Mongoengine Document.
@@ -934,6 +943,225 @@ class TestImporter(unittest.TestCase):
 
     def test_pre_delete_connect(self):
         self.assertTrue(model.signals.pre_delete.has_receivers_for(model.Importer))
+
+    def test_delete_with_certs(self):
+        """
+        Ensure that the delete() method cleans up the Importer's local storage.
+        """
+        config = {
+            importer_constants.KEY_SSL_CA_CERT: 'CA Cert',
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                importer.save()
+
+                importer.delete()
+
+                self.assertFalse(os.path.exists(importer._local_storage_path))
+        finally:
+            shutil.rmtree(temp_path)
+        self.assertEqual(model.Importer.objects.count(), 0)
+
+    def test_delete_without_certs(self):
+        """
+        Ensure that the delete() method doesn't have any problems when there is no local storage to
+        clean up.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+
+        # This should not raise an Exception.
+        importer.delete()
+
+        self.assertEqual(model.Importer.objects.count(), 0)
+
+    def test_save_with_certs(self):
+        """
+        Ensure that the save() method writes the certificates to the local storage path.
+        """
+        config = {
+            importer_constants.KEY_SSL_CA_CERT: 'CA Cert',
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                importer.save()
+
+                with open(importer.tls_ca_cert_path) as ca_file:
+                    self.assertEqual(ca_file.read(), 'CA Cert')
+                with open(importer.tls_client_cert_path) as client_file:
+                    self.assertEqual(client_file.read(), 'Client Cert')
+                with open(importer.tls_client_key_path) as key_file:
+                    self.assertEqual(key_file.read(), 'Client Key')
+        finally:
+            shutil.rmtree(temp_path)
+        written_importer = model.Importer.objects.get(repo_id='coolcars')
+        self.assertEqual(written_importer.importer_type_id, 'supercar')
+
+    def test_save_without_certs(self):
+        """
+        Ensure that the save() method doesn't write anything to local storage when not needed.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+
+        importer.save()
+
+        self.assertFalse(os.path.exists(importer._local_storage_path))
+        written_importer = model.Importer.objects.get(repo_id='coolcars')
+        self.assertEqual(written_importer.importer_type_id, 'supercar')
+
+    def test_tls_ca_cert_path(self):
+        """
+        Ensure correctness of the tls_ca_cert_path property.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+        expected_path = os.path.join(constants.LOCAL_STORAGE, 'importers', 'coolcars-supercar',
+                                     'pki', 'ca.crt')
+
+        self.assertEqual(importer.tls_ca_cert_path, expected_path)
+
+    def test_tls_client_cert_path(self):
+        """
+        Ensure correctness of the tls_client_cert_path property.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+        expected_path = os.path.join(constants.LOCAL_STORAGE, 'importers', 'coolcars-supercar',
+                                     'pki', 'client.crt')
+
+        self.assertEqual(importer.tls_client_cert_path, expected_path)
+
+    def test_tls_client_key_path(self):
+        """
+        Ensure correctness of the tls_client_key_path property.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+        expected_path = os.path.join(constants.LOCAL_STORAGE, 'importers', 'coolcars-supercar',
+                                     'pki', 'client.key')
+
+        self.assertEqual(importer.tls_client_key_path, expected_path)
+
+    def test__local_storage_path(self):
+        """
+        Ensure correctness of the _local_storage_path property.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+        expected_path = os.path.join(constants.LOCAL_STORAGE, 'importers', 'coolcars-supercar')
+
+        self.assertEqual(importer._local_storage_path, expected_path)
+
+    def test__pki_path(self):
+        """
+        Ensure correctness of the _pki_path property.
+        """
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar')
+        importer.save()
+        expected_path = os.path.join(constants.LOCAL_STORAGE, 'importers', 'coolcars-supercar',
+                                     'pki')
+
+        self.assertEqual(importer._pki_path, expected_path)
+
+    def test__write_pem_file_key_falsy(self):
+        """
+        Test _write_pem_file() when the given config_key references a "falsy" value.
+        """
+        config = {
+            importer_constants.KEY_SSL_CA_CERT: '',
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                # The CA Cert is an empty string, so nothing should be written.
+                importer._write_pem_file(importer_constants.KEY_SSL_CA_CERT,
+                                         importer.tls_ca_cert_path)
+
+                self.assertFalse(os.path.exists(importer._local_storage_path))
+        finally:
+            shutil.rmtree(temp_path)
+
+    def test__write_pem_file_key_missing(self):
+        """
+        Test _write_pem_file() when the given config_key is not in the config.
+        """
+        config = {
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                # The CA Cert isn't in the config, so nothing should be written.
+                importer._write_pem_file(importer_constants.KEY_SSL_CA_CERT,
+                                         importer.tls_ca_cert_path)
+
+                self.assertFalse(os.path.exists(importer._local_storage_path))
+        finally:
+            shutil.rmtree(temp_path)
+
+    def test__write_pem_file_path_exists(self):
+        """
+        Test _write_pem_file() when the pki folder already exists.
+        """
+        config = {
+            importer_constants.KEY_SSL_CA_CERT: 'CA Cert',
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                # Create the pki_path, just to make sure that no problem results from it
+                # pre-existing
+                misc.mkdir(importer._pki_path)
+
+                importer._write_pem_file(importer_constants.KEY_SSL_CA_CERT,
+                                         importer.tls_ca_cert_path)
+
+                # Assert that the tls_ca_cert_path is a regular file, and that the permissions are
+                # set to 0600
+                self.assertEqual(os.stat(importer.tls_ca_cert_path)[stat.ST_MODE],
+                                 stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+                with open(importer.tls_ca_cert_path) as ca_file:
+                    self.assertEqual(ca_file.read(), 'CA Cert')
+        finally:
+            shutil.rmtree(temp_path)
+
+    def test__write_pem_file_path_missing(self):
+        """
+        Test _write_pem_file() when the pki folder does not exist.
+        """
+        config = {
+            importer_constants.KEY_SSL_CA_CERT: 'CA Cert',
+            importer_constants.KEY_SSL_CLIENT_CERT: 'Client Cert',
+            importer_constants.KEY_SSL_CLIENT_KEY: 'Client Key'}
+        importer = model.Importer(repo_id='coolcars', importer_type_id='supercar', config=config)
+        temp_path = tempfile.mkdtemp()
+        try:
+            with patch('pulp.server.db.model.LOCAL_STORAGE', temp_path):
+                importer._write_pem_file(importer_constants.KEY_SSL_CA_CERT,
+                                         importer.tls_ca_cert_path)
+
+                # Assert that the pki_path was created with the correct permissions (0700).
+                self.assertEqual(os.stat(importer._pki_path)[stat.ST_MODE],
+                                 stat.S_IFDIR | stat.S_IRWXU)
+                # Assert that the tls_ca_cert_path is a regular file, and that the permissions are
+                # set to 0600
+                self.assertEqual(os.stat(importer.tls_ca_cert_path)[stat.ST_MODE],
+                                 stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
+                with open(importer.tls_ca_cert_path) as ca_file:
+                    self.assertEqual(ca_file.read(), 'CA Cert')
+        finally:
+            shutil.rmtree(temp_path)
 
 
 class TestDistributor(unittest.TestCase):

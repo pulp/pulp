@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.8.2
+Version: 2.8.3
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -476,8 +476,12 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
+  # Ensure the key generated is only readable by the owner.
+  OLD_UMASK=$(umask)
+  umask 077
   openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+  umask $OLD_UMASK
 fi
 chmod 640 $KEY_PATH
 chmod 644 $KEY_PATH_PUB
@@ -897,8 +901,12 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
+  # Ensure the key generated is only readable by the owner.
+  OLD_UMASK=$(umask)
+  umask 077
   openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+  umask $OLD_UMASK
 fi
 chmod 640 $KEY_PATH
 
@@ -1035,6 +1043,18 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Tue May 17 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-1
+- Pulp rebuild
+
+* Mon May 16 2016 pulpbot <pulp-infra@redhat.com> 2.8.3-0.4.rc
+- Pulp rebuild
+
+* Tue May 10 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-0.3.rc
+- Pulp rebuild
+
+* Tue May 03 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-0.2.beta
+- Pulp rebuild
+
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 
