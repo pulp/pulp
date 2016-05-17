@@ -64,7 +64,7 @@ Sequence Diagram
 The following sequence diagram provides a more detailed view of how the services interact
 than the component diagram above:
 
-.. image:: ../images/deferred_download_sequence.png
+.. image:: /_diagrams/deferred_download_sequence.png
 
 #. The client requests a content unit from Pulp, just as it would without lazy content
    loading. This includes potentially offering a client certificate for content entitlement.
