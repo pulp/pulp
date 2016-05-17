@@ -40,6 +40,7 @@
       - git
       - dstat
       - fpaste
+      - graphviz
       - gcc
       - iotop
       - jnettop

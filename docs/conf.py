@@ -256,7 +256,7 @@ texinfo_documents = [
 # for more info.
 
 intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
-                       'deb':    ("http://pulp-deb.readthedocs.org/en/latest/", None),
+                       'python': ("http://pulp-python.readthedocs.org/en/latest/", None),
                        'docker': ("http://pulp-docker.readthedocs.org/en/latest/", None),
                        'puppet': ("http://pulp-puppet.readthedocs.org/en/latest/", None),
                        'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),

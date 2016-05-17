@@ -2,10 +2,11 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-PAPER         =
-BUILDDIR      = _build
+SPHINXOPTS           = -W -n
+SPHINXBUILD          = sphinx-build
+PAPER                =
+BUILDDIR             = _build
+DIAGRAM_BUILD_DIR    = _diagrams
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -19,6 +20,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
+	@echo "  diagrams   to make diagram images"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -39,16 +41,13 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	-rm -rf $(BUILDDIR)/*
+	rm -rf $(BUILDDIR)/*
+	rm -rf $(DIAGRAM_BUILD_DIR)/*
 
 diagrams:
-	plantuml user-guide/diagrams/*.dot
-	cp user-guide/diagrams/*.png user-guide/images/
-	rm user-guide/diagrams/*.png
-
-	plantuml dev-guide/diagrams/*.dot
-	cp dev-guide/diagrams/*.png dev-guide/images/
-	rm dev-guide/diagrams/*.png
+	mkdir -p $(DIAGRAM_BUILD_DIR)
+	plantuml diagrams_src/*.dot
+	mv diagrams_src/*.png $(DIAGRAM_BUILD_DIR)/
 
 html: diagrams
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

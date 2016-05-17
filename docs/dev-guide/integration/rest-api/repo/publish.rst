@@ -173,7 +173,6 @@ All of the scheduled publishes for a given distributor may be listed.
         "task": "pulp.server.tasks.repository.publish",
         "total_run_count": 1
     }
-]
 
 
 

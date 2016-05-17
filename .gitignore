@@ -15,7 +15,6 @@ dist
 .idea
 .coverage
 cover
-docs/_build
 .DS_Store
 *,cover
 tags
@@ -36,3 +35,7 @@ tags
 # Vagrant
 .vagrant
 Vagrantfile
+
+# Built documentation
+docs/_build
+docs/_diagrams

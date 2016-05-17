@@ -263,7 +263,7 @@ The details of the added distributor are returned from the call.
 | :param_list:`post`
 
 * :param:`distributor_type_id,string,indicates the type of distributor being associated with the repository; there must be a distributor installed in the Pulp server with this ID`
-* :param:`distributor_config,object,plugin specific configuration the repository will use to drive the behavior of the distributor.
+* :param:`distributor_config,object,plugin specific configuration the repository will use to drive the behavior of the distributor`
 * :param:`?distributor_id,string,if specified, this value will be used to refer to the distributor; if not specified, one will be randomly assigned to the distributor`
 * :param:`?auto_publish,boolean,if true, this distributor will automatically have its publish operation invoked after a successful repository sync. Defaults to false if unspecified`
 

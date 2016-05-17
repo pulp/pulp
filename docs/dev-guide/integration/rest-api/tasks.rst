@@ -132,7 +132,7 @@ This call returns response code 204 if successful or code 403 if the request is 
 | :path:`/v2/tasks/`
 | :permission:`delete`
 
-* :param:`?state,str,only states *finished, error, skipped* can be deleted.
+* :param:`?state,str,only delete tasks currently in this state`
 
 For example::
 
@@ -185,7 +185,7 @@ Task Group Management
 .. _task_group_summary:
 
 Cancelling Tasks in a Task Group
-------------------------------
+--------------------------------
 
 All asynchronous tasks in a particular task group may be canceled by the user before they complete. A
 task must be in the *waiting* or *running* state in order to be canceled.

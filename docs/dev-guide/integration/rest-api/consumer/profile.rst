@@ -156,8 +156,8 @@ Removes a profile associated with a consumer.
 Retrieve All Profiles By Consumer Id
 ------------------------------------
 
-Retrieves information on all :term:`unit profile`s associated with
-a :term:`consumer`.
+Retrieves information on all :term:`unit profile` entries associated
+with a :term:`consumer`.
 
 | :method:`get`
 | :path:`/v2/consumers/<consumer_id>/profiles/`
@@ -255,7 +255,7 @@ content type.
 Retrieve All Profiles
 ---------------------
 
-Retrieves information on all :term:`unit profile`s
+Retrieves information on all :term:`unit profile` entries.
 
 | :method:`get`
 | :path:`/v2/consumers/profile/search/`
