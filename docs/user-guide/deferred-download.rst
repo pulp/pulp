@@ -24,7 +24,7 @@ Overview of Deferred Downloading Components
 The diagram below provides a high-level overview of how the deferred download services interact
 with the Pulp core services.
 
-.. image:: /_diagrams/lazy_component.png
+.. image:: /_static/lazy_component.png
 
 Deferred downloading relies on three services:
 
