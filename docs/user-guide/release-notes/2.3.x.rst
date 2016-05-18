@@ -33,10 +33,8 @@ Thanks to Sander Bos for notifying the Pulp team that we had neglected to
 acquire a CVE for this vulnerability at the time of its discovery.
 
 [0] CVE-2013-7450: https://bugzilla.redhat.com/show_bug.cgi?id=1003326
-[1] CVE-2016-3095 (fixed in Pulp >= 2.8.2):
-    http://www.openwall.com/lists/oss-security/2016/04/06/3
-[2] CVE-2016-3106 (fixed in Pulp >= 2.8.3):
-    https://pulp.plan.io/issues/1827
+[1] CVE-2016-3095 (fixed in Pulp >= 2.8.2): http://www.openwall.com/lists/oss-security/2016/04/06/3
+[2] CVE-2016-3106 (fixed in Pulp >= 2.8.3): https://pulp.plan.io/issues/1827
 
 
 New Features
