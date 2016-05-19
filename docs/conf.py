@@ -260,6 +260,7 @@ intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
                        'docker': ("http://pulp-docker.readthedocs.org/en/latest/", None),
                        'puppet': ("http://pulp-puppet.readthedocs.org/en/latest/", None),
                        'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),
+                       'platform': ("http://pulp.readthedocs.org/en/latest/", None),
                        'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
 
 extlinks = {'redmine': ('https://pulp.plan.io/issues/%s', '#'),
