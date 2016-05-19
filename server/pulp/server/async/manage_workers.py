@@ -29,7 +29,7 @@ KillSignal=SIGQUIT
 
 def _get_concurrency():
     """
-    Process the /etc/default/pulp_celery_workers file to see if the user has specified a desired
+    Process the _ENVIRONMENT_FILE to see if the user has specified a desired
     concurrency setting there. If they have, return that value. Otherwise, return the number of
     processors detected.
 
