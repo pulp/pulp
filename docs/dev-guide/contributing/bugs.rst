@@ -7,6 +7,8 @@
 
 .. _Un-Triaged Bugs: https://pulp.plan.io/issues?query_id=30
 
+.. _Bugzilla Field Descriptions: https://bugzilla.redhat.com/page.cgi?id=fields.html
+
 Bugs
 ====
 
@@ -138,6 +140,46 @@ A target release can also be set during triage. An issue that has target release
 will block a release. Once triaged, the bug is included in the `Prioritized Bugs query`_ and awaits
 a developer to pick it up.
 
+Triage Issue Fields
+^^^^^^^^^^^^^^^^^^^
+
+The Priority field represents the order in which issues will be taken from the list of prioritized
+bugs, with higher priority issues generally being taken before lower priority issues.
+
+Priorities are defined as follows.
+
+========    ===============================================================================
+Priority    Description
+========    ===============================================================================
+Urgent      Extremely important, such as issues that must be fixed before the next release.
+High        Very important, but not blocking the next release.
+Normal      Average importance, generally worked on after High Priority issues.
+Low         Not very important, generally worked on after Normal Priorty issues.
+========    ===============================================================================
+
+The Severity field represents the impact this issue has on Pulp users.
+
+========    ========================================================================================
+Severity    Description
+========    ========================================================================================
+Urgent      **Catastrophic** issue which severly impacts the operations of an organization
+            (including the Pulp team itself), for which there is no workaround. Examples: Pulp can't
+            be installed or started as a result of a bug in the latest release, or Pulp is
+            destroying user data.
+High        Similar to Urgent, this issue severly impacts to operations of an organization, but
+            a workaround does exist. Examples: Pulp can only be installed if a certain package is
+            manually installed first, or an existing feature of Pulp has suffered a regression.
+Medium      Partial but non-critical functionality loss, or other loss of functionality where
+            users are still able to perform their critical tasks.
+Low         Little or no functionality impact, such as a usage question, or development work.
+========    ========================================================================================
+
+Severity is orthogonally related to the Priority field, so it is *possible* (though extremely
+unlikely) for an Urgent Priority issue to also be marked as Low Severity.
+
+The values for the Priority and Severity fields are inspired by the values found in Red Hat's
+`Bugzilla Field Descriptions`_.
+
 The Pulp team uses some additional Tags to help keep track of bugs.
 
 ================   ===============================================================
@@ -147,6 +189,9 @@ Documentation      The bug/story itself is documentation related.
 EasyFix            A bug that is simple to fix, at least in theory.
 SELinux            Indicates it is SELinux related
 ================   ===============================================================
+
+Grooming
+^^^^^^^^
 
 You may occasionally see discussion in #pulp or on the mailing list about "bug
 grooming". This simply means that someone is applying the rules above to
