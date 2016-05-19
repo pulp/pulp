@@ -45,7 +45,7 @@ by installing `cprofilev` from PyPi and running it::
 At this point, browse to http://localhost:4000/ to view profiling information.
 
 In addition, `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ can convert the profiling output
-into a dot graph. Make sure `graphviz <http://www.graphviz.org/Download.php>`_ is installed before using
+into a dot graph. Make sure `graphviz <http://www.graphviz.org/Download.php>`_ is installed by yum or dnf before using
 this tool. Then you can get statistics graph by installing `gprof2dot` from PyPi and running it::
 
     $ sudo pip install gprof2dot
