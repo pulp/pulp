@@ -11,7 +11,7 @@ from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
-from verification import CHECKSUM_FUNCTIONS
+from pulp.server.util import CHECKSUM_FUNCTIONS
 
 _LOG = logging.getLogger(__name__)
 BUFFER_SIZE = 1024

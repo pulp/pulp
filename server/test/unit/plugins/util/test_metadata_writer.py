@@ -14,7 +14,7 @@ from pulp.devel.unit.server.util import assert_validation_exception
 from pulp.plugins.util.metadata_writer import MetadataFileContext, JSONArrayFileContext
 from pulp.plugins.util.metadata_writer import XmlFileContext
 from pulp.plugins.util.metadata_writer import FastForwardXmlFileContext
-from pulp.plugins.util.verification import TYPE_SHA1
+from pulp.server.util import TYPE_SHA1
 
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data'))

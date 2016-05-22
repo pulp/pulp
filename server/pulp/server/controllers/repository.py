@@ -26,8 +26,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
 from pulp.plugins.util.misc import paginate
-from pulp.plugins.util.verification import (InvalidChecksumType, VerificationException,
-                                            verify_checksum)
+from pulp.plugins.util.verification import VerificationException, verify_checksum
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, TaskResult,
                                      get_current_task_id)
@@ -45,6 +44,7 @@ from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
+from pulp.server.util import InvalidChecksumType
 
 
 _logger = logging.getLogger(__name__)
