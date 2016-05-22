@@ -10,6 +10,12 @@ DEBUG = False
 
 TEMPLATE_DEBUG = False
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    },
+]
+
 ALLOWED_HOSTS = ['*']
 
 
