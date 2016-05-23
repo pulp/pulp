@@ -995,6 +995,7 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     """
 
     force_full = call_config.get('force_full', False)
+    config_override = call_config.override_config
     last_published = conduit.last_publish()
     last_unit_removed = repo_obj.last_unit_removed
     if last_published:
@@ -1006,9 +1007,15 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
 
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
+        same_override = dist.last_override_config == config_override
+        if not same_override:
+            # Use raw pymongo not to fire the signal hander
+            model.Distributor.objects(
+                repo_id=repo_obj.repo_id,
+                distributor_id=dist_id).update(set__last_override_config=config_override)
 
     if last_published and not force_full and not last_updated and not units_removed and \
-            not dist_updated:
+            not dist_updated and same_override:
 
         publish_result_coll = RepoPublishResult.get_collection()
         publish_start_timestamp = _now_timestamp()
@@ -1016,7 +1023,8 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
 
         # Use raw pymongo not to fire the signal hander
         model.Distributor.objects(
-            repo_id=repo_obj.repo_id).update(set__last_publish=publish_end_timestamp)
+            repo_id=repo_obj.repo_id,
+            distributor_id=dist_id).update(set__last_publish=publish_end_timestamp)
 
         result_code = RepoPublishResult.RESULT_SKIPPED
         _logger.debug('publish skipped for repo [%s] with distributor ID [%s]' % (

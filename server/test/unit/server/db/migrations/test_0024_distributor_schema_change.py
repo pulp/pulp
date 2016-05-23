@@ -7,7 +7,8 @@ from pulp.server.db.migrate.models import MigrationModule
 
 LAST_PUBLISH = 'last_publish'
 LAST_UPDATED = 'last_updated'
-MIGRATION = 'pulp.server.db.migrations.0024_distributor_last_updated'
+LAST_OVERRIDE_CONFIG = 'last_override_config'
+MIGRATION = 'pulp.server.db.migrations.0024_distributor_schema_change'
 
 
 class TestMigration(TestCase):
@@ -19,7 +20,7 @@ class TestMigration(TestCase):
     @patch('.'.join((MIGRATION, 'get_collection')))
     def test_migrate(self, m_get_collection, now_utc_datetime):
         """
-        Test last_updated field added.
+        Test last_updated and last_override_config fields added.
         """
         collection = Mock()
         found = [
@@ -39,5 +40,6 @@ class TestMigration(TestCase):
         collection.find.assert_called_once_with()
         now_utc_datetime.assert_called_once_with()
         self.assertTrue(LAST_UPDATED in dist for dist in collection.save.call_args_list)
+        self.assertTrue(LAST_OVERRIDE_CONFIG in dist for dist in collection.save.call_args_list)
         self.assertEqual(
             len(collection.save.call_args_list), 2)

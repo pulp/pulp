@@ -1193,6 +1193,8 @@ class TestDistributor(unittest.TestCase):
         self.assertFalse(model.Distributor.last_publish.required)
         self.assertTrue(isinstance(model.Distributor.last_updated, DateTimeField))
         self.assertFalse(model.Distributor.last_updated.required)
+        self.assertTrue(isinstance(model.Distributor.last_override_config, DictField))
+        self.assertFalse(model.Distributor.last_override_config.required)
         self.assertTrue(isinstance(model.Distributor._ns, StringField))
         self.assertEqual(model.Distributor._ns.default, 'repo_distributors')
         self.assertTrue(isinstance(model.Distributor.scratchpad, DictField))
