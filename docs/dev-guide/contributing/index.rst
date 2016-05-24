@@ -76,4 +76,5 @@ Developer Guide
    merging
    documenting
    bugs
+   features
    building

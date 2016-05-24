@@ -1,8 +1,6 @@
 
 .. _existing bugs: https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=status_id&op%5Bstatus_id%5D=o&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=1&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=subject&c%5B%5D=assigned_to&c%5B%5D=updated_on&group_by=
 
-.. _existing stories: https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=status_id&op%5Bstatus_id%5D=o&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=3&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=subject&c%5B%5D=assigned_to&c%5B%5D=updated_on&group_by=
-
 .. _Prioritized Bugs query: https://pulp.plan.io/issues?query_id=33
 
 .. _Un-Triaged Bugs: https://pulp.plan.io/issues?query_id=30
@@ -10,9 +8,7 @@
 Bugs
 ====
 
-All bugs and feature requests (stories) are tracked in
-`Pulp's Redmine instance <https://pulp.plan.io/>`_. You can view `existing bugs`_ or
-`existing stories`_.
+All bugs are tracked in Redmine as an Issue. You can view `existing bugs`_ as examples.
 
 How to file a bug
 -----------------
@@ -20,7 +16,7 @@ How to file a bug
 Bugs are one of the main ways that the Pulp team interacts with users
 (pulp-list@redhat.com and the #pulp IRC channel being the other methods).
 
-You can `file a new bug or feature request <https://pulp.plan.io/projects/pulp/issues/new>`_.
+You can `file a new bug <https://pulp.plan.io/projects/pulp/issues/new>`_.
 
 .. warning::
   Security related bugs need to be marked as private when reported. Use the
