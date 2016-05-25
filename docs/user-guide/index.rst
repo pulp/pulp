@@ -8,7 +8,8 @@ Contents:
 
    introduction
    release-notes/index
-   installation
+   installation/index
+   installation/extra_configuration
    scaling
    tuning
    broker-settings
