@@ -458,13 +458,13 @@ Pulp provides replication, access, and accounting for software repositories.
 # If we are upgrading
 if [ $1 -gt 1 ] ; then
     %if %{pulp_systemd} == 1
-        /bin/systemctl stop pulp_workers > /dev/null 2>&1
-        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1
-        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1
+        /bin/systemctl stop pulp_workers > /dev/null 2>&1 || :
+        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1 || :
+        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1 || :
     %else
-        /sbin/service pulp_workers stop > /dev/null 2>&1
-        /sbin/service pulp_celerybeat stop > /dev/null 2>&1
-        /sbin/service pulp_resource_manager stop > /dev/null 2>&1
+        /sbin/service pulp_workers stop > /dev/null 2>&1 || :
+        /sbin/service pulp_celerybeat stop > /dev/null 2>&1 || :
+        /sbin/service pulp_resource_manager stop > /dev/null 2>&1 || :
     %endif
 fi
 
@@ -500,13 +500,13 @@ fi
 # If we are uninstalling
 if [ $1 -eq 0 ] ; then
     %if %{pulp_systemd} == 1
-        /bin/systemctl stop pulp_workers > /dev/null 2>&1
-        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1
-        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1
+        /bin/systemctl stop pulp_workers > /dev/null 2>&1 || :
+        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1 || :
+        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1 || :
     %else
-        /sbin/service pulp_workers stop > /dev/null 2>&1
-        /sbin/service pulp_celerybeat stop > /dev/null 2>&1
-        /sbin/service pulp_resource_manager stop > /dev/null 2>&1
+        /sbin/service pulp_workers stop > /dev/null 2>&1 || :
+        /sbin/service pulp_celerybeat stop > /dev/null 2>&1 || :
+        /sbin/service pulp_resource_manager stop > /dev/null 2>&1 || :
     %endif
 fi
 
@@ -697,9 +697,9 @@ The streamer component of the Pulp Lazy Sync feature.
 %preun -n python-pulp-streamer
 if [ $1 -eq 0 ] ; then
     %if %{pulp_systemd} == 1
-        /bin/systemctl stop pulp_streamer > /dev/null 2>&1
+        /bin/systemctl stop pulp_streamer > /dev/null 2>&1 || :
     %else
-        /sbin/service pulp_streamer stop > /dev/null 2>&1
+        /sbin/service pulp_streamer stop > /dev/null 2>&1 || :
     %endif
 fi
 %if %{pulp_systemd} == 1
