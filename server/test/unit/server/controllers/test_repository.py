@@ -1092,11 +1092,13 @@ class TestCheckPublish(unittest.TestCase):
         Test that publish is no op when there were no changes made since last publish.
         """
         mock_call_conf.get.return_value = False
+        mock_call_conf.override_config = {}
         fake_repo = model.Repository(repo_id='repo1')
         mock_objects.return_value.count.return_value = 0
         mock_inst = mock.MagicMock()
         m_dist = m_dist_qs.get_or_404.return_value
         m_dist.last_updated = None
+        m_dist.last_override_config = {}
 
         result = repo_controller.check_publish(fake_repo, 'dist', mock_inst,
                                                fake_repo.to_transfer_repo(), mock_conduit,

@@ -1219,6 +1219,7 @@ class Distributor(AutoRetryDocument):
     auto_publish = BooleanField(default=False)
     last_publish = UTCDateTimeField()
     last_updated = UTCDateTimeField()
+    last_override_config = DictField()
     scratchpad = DictField()
 
     _ns = StringField(default='repo_distributors')
