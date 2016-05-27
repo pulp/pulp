@@ -998,21 +998,21 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     config_override = call_config.override_config
     last_published = conduit.last_publish()
     last_unit_removed = repo_obj.last_unit_removed
+    dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
+                                                distributor_id=dist_id)
     if last_published:
         the_timestamp = dateutils.format_iso8601_datetime(last_published)
         last_updated = model.RepositoryContentUnit.objects(repo_id=repo_obj.repo_id,
                                                            updated__gte=the_timestamp).count()
-        dist = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
-                                                    distributor_id=dist_id)
-
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
-        same_override = dist.last_override_config == config_override
-        if not same_override:
-            # Use raw pymongo not to fire the signal hander
-            model.Distributor.objects(
-                repo_id=repo_obj.repo_id,
-                distributor_id=dist_id).update(set__last_override_config=config_override)
+
+    same_override = dist.last_override_config == config_override
+    if not same_override:
+        # Use raw pymongo not to fire the signal hander
+        model.Distributor.objects(
+            repo_id=repo_obj.repo_id,
+            distributor_id=dist_id).update(set__last_override_config=config_override)
 
     if last_published and not force_full and not last_updated and not units_removed and \
             not dist_updated and same_override:
