@@ -120,6 +120,8 @@ PLP0046 = Error("PLP0046", _("The repository group cannot be exported because th
 PLP0047 = Error("PLP0047", _("The importer %(importer_id)s indicated a failed response when "
                              "uploading %(unit_type)s unit to repository %(repo_id)s."),
                 ['importer_id', 'unit_type', 'repo_id'])
+PLP0048 = Error("PLP0048", _("The file is expected to be present, but is not, for unit %(unit)s"),
+                ['unit'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
