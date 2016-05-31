@@ -122,8 +122,12 @@ class TestSchedulerTick(unittest.TestCase):
 
         sched_instance.tick()
 
-        expected_event = {'timestamp': 1449261335.275528, 'local_received': 1449261335.275528,
-                          'type': 'scheduler-event', 'hostname': 'scheduler@some_host'}
+        expected_event = {
+            'timestamp': 1449261335.275528,
+            'local_received': 1449261335.275528,
+            'type': 'scheduler-event',
+            'hostname': SCHEDULER_WORKER_NAME + '@some_host'
+        }
         mock_worker_watcher.handle_worker_heartbeat.assert_called_once_with(expected_event)
         mock_worker_watcher.assert_called_once()
 
@@ -139,7 +143,7 @@ class TestSchedulerTick(unittest.TestCase):
         sched_instance.tick()
 
         lock_timestamp = mock_timestamp.utcnow()
-        celerybeat_name = "scheduler" + "@" + platform.node()
+        celerybeat_name = SCHEDULER_WORKER_NAME + "@" + platform.node()
 
         mock_celerybeatlock.assert_called_once_with(
             timestamp=lock_timestamp, celerybeat_name=celerybeat_name)
