@@ -352,6 +352,7 @@ rm -rf %{buildroot}
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
+Requires: pulp-selinux
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-repoauth = %{pulp_version}
 Requires: python-blinker
