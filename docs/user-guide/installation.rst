@@ -26,19 +26,19 @@ Supported Operating Systems
 Server
 
 * RHEL Server 6 & 7
-* Fedora 21 & 22
+* Fedora 22, 23, 24, and Rawhide
 * CentOS Server 6 & 7
 
 Consumer
 
 * RHEL 5, 6, & 7
-* Fedora 21 & 22
+* Fedora 22, 23, 24, and Rawhide
 * CentOS 5, 6 & 7
 
 Admin Client
 
 * RHEL 6 & 7
-* Fedora 21 & 22
+* Fedora 22, 23, 24, and Rawhide
 * CentOS 6 & 7
 
 Prerequisites
