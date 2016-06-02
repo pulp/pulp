@@ -26,11 +26,7 @@ class MetadataWriterTests(unittest.TestCase):
         self.metadata_file_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        # some tests change dir permissions, so recursively
-        # fix dir permissions before cleaning up the tmp dir
-        for dirname, __, __ in os.walk(self.metadata_file_dir):
-            os.chmod(dirname, 0700)
-        os.chmod(self.metadata_file_dir, 0700)
+        shutil.rmtree(self.metadata_file_dir)
 
     def test_metadata_instantiation(self):
         try:
@@ -71,6 +67,7 @@ class MetadataWriterTests(unittest.TestCase):
 
         os.makedirs(parent_path, mode=0000)
         self.assertRaises(RuntimeError, context._open_metadata_file_handle)
+        os.chmod(parent_path, 0777)
 
     def test_open_handle_file_exists(self):
 
@@ -80,12 +77,7 @@ class MetadataWriterTests(unittest.TestCase):
         with open(path, 'w') as h:
             h.flush()
 
-        try:
-            context._open_metadata_file_handle()
-        except Exception, e:
-            self.fail(e.message)
-        else:
-            context._close_metadata_file_handle()
+        context._open_metadata_file_handle()
 
     def test_open_handle_bad_file_permissions(self):
 
@@ -107,7 +99,7 @@ class MetadataWriterTests(unittest.TestCase):
 
         self.assertTrue(os.path.exists(path))
 
-        context._write_xml_header()
+        context._write_file_header()
         context._close_metadata_file_handle()
 
         try:
@@ -118,23 +110,6 @@ class MetadataWriterTests(unittest.TestCase):
 
         h.close()
 
-    def test_write_xml_header(self):
-
-        path = os.path.join(self.metadata_file_dir, 'header.xml')
-        context = MetadataFileContext(path)
-
-        context._open_metadata_file_handle()
-        context._write_xml_header()
-        context._close_metadata_file_handle()
-
-        self.assertTrue(os.path.exists(path))
-
-        with open(path) as h:
-            content = h.read()
-
-        expected_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        self.assertEqual(content, expected_content)
-
     def test_init_invalid_checksum(self):
         path = os.path.join(self.metadata_file_dir, 'foo', 'header.xml')
         assert_validation_exception(MetadataFileContext, [PLP1005], path, checksum_type='invalid')
@@ -144,11 +119,11 @@ class MetadataWriterTests(unittest.TestCase):
         path = os.path.join(self.metadata_file_dir, 'foo', 'header.xml')
         context = MetadataFileContext(path)
 
-        context._write_root_tag_open = Mock()
+        context._write_file_header = Mock()
 
         context.initialize()
 
-        context._write_root_tag_open.assert_called_once_with()
+        context._write_file_header.assert_called_once_with()
         self.assertTrue(os.path.exists(path))
 
         with open(path) as h:
@@ -159,15 +134,14 @@ class MetadataWriterTests(unittest.TestCase):
     def test_initialize_double_call(self):
         path = os.path.join(self.metadata_file_dir, 'test.xml')
         context = MetadataFileContext(path)
-        context._write_root_tag_open = Mock()
         context.initialize()
+        context._write_file_header = Mock()
         context.initialize()
-        # despite initialize being called twice, the root tag should only be written once
-        context._write_root_tag_open.assert_called_once_with()
+        self.assertEquals(0, context._write_file_header.call_count)
         context.finalize()
 
     def test_is_closed_gzip_file(self):
-        path = os.path.join(DATA_DIR, 'foo.tar.gz')
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
 
         file_object = gzip.open(path)
         file_object.close()
@@ -175,7 +149,7 @@ class MetadataWriterTests(unittest.TestCase):
         self.assertTrue(MetadataFileContext._is_closed(file_object))
 
     def test_is_open_gzip_file(self):
-        path = os.path.join(DATA_DIR, 'foo.tar.gz')
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
 
         file_object = gzip.open(path)
 
@@ -184,7 +158,7 @@ class MetadataWriterTests(unittest.TestCase):
         file_object.close()
 
     def test_is_closed_file(self):
-        path = os.path.join(DATA_DIR, 'foo.tar.gz')
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
 
         # opening as a regular file, not with gzip
         file_object = open(path)
@@ -193,7 +167,7 @@ class MetadataWriterTests(unittest.TestCase):
         self.assertTrue(MetadataFileContext._is_closed(file_object))
 
     def test_is_open_file(self):
-        path = os.path.join(DATA_DIR, 'foo.tar.gz')
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
 
         # opening as a regular file, not with gzip
         file_object = open(path)
@@ -211,7 +185,7 @@ class MetadataWriterTests(unittest.TestCase):
         # this test makes sure that we can properly detect the closed state of
         # a gzip file, because on python 2.6 we have to take special measures
         # to do so.
-        path = os.path.join(DATA_DIR, 'foo.tar.gz')
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
 
         context = MetadataFileContext('/a/b/c')
         context.metadata_file_handle = gzip.open(path)
@@ -225,12 +199,13 @@ class MetadataWriterTests(unittest.TestCase):
         path = os.path.join(self.metadata_file_dir, 'test.xml')
         context = MetadataFileContext(path)
 
-        context._open_metadata_file_handle()
-        context._write_xml_header()
-        context._close_metadata_file_handle()
+        context.initialize()
+        context._write_file_footer = Mock()
         context.finalize()
+        context._write_file_footer.assert_called_once_with()
 
         self.assertEqual(context.metadata_file_path, path)
+        self.assertEqual(context.metadata_file_handle, None)
 
     def test_finalize_error_on_write_footer(self):
         # Ensure that if the write_file_footer throws an exception we eat it so that
@@ -240,11 +215,10 @@ class MetadataWriterTests(unittest.TestCase):
         path = os.path.join(self.metadata_file_dir, 'test.xml')
         context = MetadataFileContext(path)
 
-        context._write_root_tag_open = Mock()
-        context._write_root_tag_close = Mock(side_effect=Exception())
         context.initialize()
+        context._write_file_footer = Mock(side_effect=Exception())
         context.finalize()
-        context._write_root_tag_close.assert_called_once_with()
+        context._write_file_footer.assert_called_once_with()
 
         self.assertEqual(context.metadata_file_path, path)
 
@@ -252,12 +226,11 @@ class MetadataWriterTests(unittest.TestCase):
         path = os.path.join(self.metadata_file_dir, 'test.xml')
         context = MetadataFileContext(path)
 
-        context._write_root_tag_open = Mock()
-        context._write_root_tag_close = Mock()
         context.initialize()
         context.finalize()
+        context._write_file_footer = Mock(side_effect=Exception())
         context.finalize()
-        self.assertEquals(context._write_root_tag_close.call_count, 1)
+        self.assertEquals(context._write_file_footer.call_count, 0)
 
     def test_finalize_with_valid_checksum_type(self):
 
@@ -266,7 +239,7 @@ class MetadataWriterTests(unittest.TestCase):
         context = MetadataFileContext(path, checksum_type)
 
         context._open_metadata_file_handle()
-        context._write_xml_header()
+        context._write_file_header()
         context.finalize()
 
         expected_metadata_file_name = context.checksum + '-' + 'test.xml'
@@ -282,7 +255,7 @@ class MetadataWriterTests(unittest.TestCase):
         context._write_file_footer = Mock(side_effect=Exception('foo'))
 
         context._open_metadata_file_handle()
-        context._write_xml_header()
+        context._write_file_header()
 
         context.finalize()
 
@@ -296,7 +269,7 @@ class MetadataWriterTests(unittest.TestCase):
         context._close_metadata_file_handle = Mock(side_effect=Exception('foo'))
 
         context._open_metadata_file_handle()
-        context._write_xml_header()
+        context._write_file_header()
 
         context.finalize()
 

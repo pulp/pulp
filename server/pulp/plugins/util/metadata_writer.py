@@ -1,20 +1,20 @@
+from gettext import gettext as _
 import glob
 import gzip
-import hashlib
 import logging
 import os
 import shutil
 import traceback
-from gettext import gettext as _
-from xml.dom import minidom
+
+
 from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
-from pulp.server.exceptions import PulpCodedException, PulpCodedValidationException
+from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
+from verification import CHECKSUM_FUNCTIONS
 
 _LOG = logging.getLogger(__name__)
 BUFFER_SIZE = 1024
-HASHLIB_ALGORITHMS = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
 
 
 class MetadataFileContext(object):
@@ -22,16 +22,14 @@ class MetadataFileContext(object):
     Context manager class for metadata file generation.
     """
 
-    def __init__(self, metadata_file_path, checksum_type=None, non_checksum_filenames=None):
+    def __init__(self, metadata_file_path, checksum_type=None):
         """
         :param metadata_file_path: full path to metadata file to be generated
         :type  metadata_file_path: str
         :param checksum_type: checksum type to be used to generate and prepend checksum
-                              to the file names of metadata files. If checksum_type is None,
+                              to the file names of files. If checksum_type is None,
                               no checksum is added to the filename
         :type checksum_type: str or None
-        :param non_checksum_filenames: file names that *will not* have a checksum prepended to them
-        :type non_checksum_filenames: list or None
         """
 
         self.metadata_file_path = metadata_file_path
@@ -39,13 +37,11 @@ class MetadataFileContext(object):
         self.checksum_type = checksum_type
         self.checksum = None
         if self.checksum_type is not None:
-            try:
-                self.checksum_constructor = getattr(hashlib, checksum_type)
-            except AttributeError:
-                raise PulpCodedValidationException([PulpCodedException(error_codes.PLP1005,
-                                                    checksum_type=checksum_type)])
-        if non_checksum_filenames is None:
-            self.non_checksum_filenames = []
+            checksum_function = CHECKSUM_FUNCTIONS.get(checksum_type)
+            if not checksum_function:
+                raise PulpCodedValidationException(
+                    [PulpCodedException(error_codes.PLP1005, checksum_type=checksum_type)])
+            self.checksum_constructor = checksum_function
 
     def __enter__(self):
 
@@ -56,6 +52,7 @@ class MetadataFileContext(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
 
         if None not in (exc_type, exc_val, exc_tb):
+
             err_msg = '\n'.join(traceback.format_exception(exc_type, exc_val, exc_tb))
             log_msg = _('Exception occurred while writing [%(m)s]\n%(e)s')
             # any errors here should have already been caught and logged
@@ -67,27 +64,25 @@ class MetadataFileContext(object):
 
     def initialize(self):
         """
-        Create a new metadata file and write the XML header and opening root
-        level tag into it.
+        Create the new metadata file and write the header.
         """
         if self.metadata_file_handle is not None:
             # initialize has already, at least partially, been run
             return
 
         self._open_metadata_file_handle()
-        self._write_xml_header()
-        self._write_root_tag_open()
+        self._write_file_header()
 
     def finalize(self):
         """
-        Write the closing root level tag into the metadata file and close it.
+        Write the footer into the metadata file and close it.
         """
         if self._is_closed(self.metadata_file_handle):
             # finalize has already been run or initialize has not been run
             return
 
         try:
-            self._write_root_tag_close()
+            self._write_file_footer()
 
         except Exception, e:
             _LOG.exception(e)
@@ -98,9 +93,9 @@ class MetadataFileContext(object):
         except Exception, e:
             _LOG.exception(e)
 
-        # Add calculated checksum to filenames not in non_checksum_filenames
+        # Add calculated checksum to the filename
         file_name = os.path.basename(self.metadata_file_path)
-        if self.checksum_type is not None and file_name not in self.non_checksum_filenames:
+        if self.checksum_type is not None:
             with open(self.metadata_file_path, 'rb') as file_handle:
                 content = file_handle.read()
                 checksum = self.checksum_constructor(content).hexdigest()
@@ -111,6 +106,9 @@ class MetadataFileContext(object):
                                          file_name_with_checksum)
             os.rename(self.metadata_file_path, new_file_path)
             self.metadata_file_path = new_file_path
+
+        # Set the metadata_file_handle to None so we don't double call finalize
+        self.metadata_file_handle = None
 
     def _open_metadata_file_handle(self):
         """
@@ -150,28 +148,17 @@ class MetadataFileContext(object):
         else:
             self.metadata_file_handle = open(self.metadata_file_path, 'w')
 
-    def _write_xml_header(self):
+    def _write_file_header(self):
         """
-        Write the initial <?xml?> header tag into the file handle.
+        Write any headers for the metadata file
         """
-        assert self.metadata_file_handle is not None
-        _LOG.debug('Writing XML header into metadata file: %s' % self.metadata_file_path)
-        # newline is added to the toxml return inconsistently across versions of python,
-        # so .strip() it and explicitly add the newline here
-        xml_header = minidom.Document().toxml(encoding='UTF-8').strip() + os.linesep
-        self.metadata_file_handle.write(xml_header)
+        pass
 
-    def _write_root_tag_open(self):
+    def _write_file_footer(self):
         """
-        Write the opening tag for the root element of a given metadata XML file.
+        Write any file footers for the metadata file.
         """
-        raise NotImplementedError()
-
-    def _write_root_tag_close(self):
-        """
-        Write the closing tag for the root element of a give metadata XML file.
-        """
-        raise NotImplementedError()
+        pass
 
     def _close_metadata_file_handle(self):
         """
