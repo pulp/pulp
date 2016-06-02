@@ -2,16 +2,44 @@
 This module contains utility code to be used by pulp.server.
 """
 from contextlib import contextmanager
+from gettext import gettext as _
+import hashlib
 import logging
 import os
 from shutil import copy, Error
 
-from gettext import gettext as _
+from pulp.common import error_codes
 
-from pulp.server.exceptions import PulpExecutionException
+from pulp.server.exceptions import PulpCodedException, PulpExecutionException
 
 
 _logger = logging.getLogger(__name__)
+
+
+# Number of bytes to read into RAM at a time when validating the checksum
+CHECKSUM_CHUNK_SIZE = 8 * 1024 * 1024
+
+# Constants to pass in as the checksum type in verify_checksum
+TYPE_MD5 = hashlib.md5().name
+TYPE_SHA = 'sha'
+TYPE_SHA1 = hashlib.sha1().name
+TYPE_SHA256 = hashlib.sha256().name
+
+HASHLIB_ALGORITHMS = (TYPE_MD5, TYPE_SHA, TYPE_SHA1, TYPE_SHA256)
+
+CHECKSUM_FUNCTIONS = {
+    TYPE_MD5: hashlib.md5,
+    TYPE_SHA: hashlib.sha1,
+    TYPE_SHA1: hashlib.sha1,
+    TYPE_SHA256: hashlib.sha256,
+}
+
+
+class InvalidChecksumType(ValueError):
+    """
+    Raised when the specified checksum isn't one of the supported TYPE_* constants.
+    """
+    pass
 
 
 class Singleton(type):
@@ -264,3 +292,62 @@ def deleting(path):
         os.remove(path)
     except Exception as e:
         _logger.warning(_('Could not remove file from location: {0}').format(e))
+
+
+def sanitize_checksum_type(checksum_type):
+    """
+    Sanitize and validate the checksum type.
+
+    This function will always return the given checksum_type in lower case, unless it is sha, in
+    which case it will return "sha1". SHA and SHA-1 are the same algorithm, and so we prefer to use
+    "sha1", since it is a more specific name. For some unit types (such as RPM), this can cause
+    conflicts inside of Pulp when repos or uploads use a mix of sha and sha1. See
+    https://bugzilla.redhat.com/show_bug.cgi?id=1165355
+
+    This function also validates that the checksum_type is a recognized one from the list of known
+    hashing algorithms.
+
+    :param checksum_type: The checksum type we are sanitizing
+    :type  checksum_type: basestring
+
+    :return: A sanitized checksum type, converting "sha" to "sha1", otherwise returning the given
+             checksum_type in lowercase.
+    :rtype:  basestring
+
+    :raises PulpCodedException: if the checksum type is not recognized
+    """
+    lowercase_checksum_type = checksum_type.lower()
+    if lowercase_checksum_type == "sha":
+        lowercase_checksum_type = "sha1"
+    if lowercase_checksum_type not in HASHLIB_ALGORITHMS:
+        raise PulpCodedException(error_code=error_codes.PLP1005, checksum_type=checksum_type)
+    return lowercase_checksum_type
+
+
+def calculate_checksums(file_object, checksum_types):
+    """
+    Calculate multiple checksums for the contents of an open file.
+
+    :param file_object: an open file
+    :type  file_object: file
+    :param checksum_types: list of checksum types. Must be in CHECKSUM_FUNCTIONS.
+    :type  checksum_types: list
+
+    :return:    dict where keys are checksum types and values are checksum values.
+    :rtype:     dict
+    """
+    hashers = {}
+    for checksum_type in checksum_types:
+        try:
+            hashers[checksum_type] = CHECKSUM_FUNCTIONS[checksum_type]()
+        except KeyError:
+            raise InvalidChecksumType('Unknown checksum type [%s]' % checksum_type)
+
+    file_object.seek(0)
+    bits = file_object.read(CHECKSUM_CHUNK_SIZE)
+    while bits:
+        for hasher in hashers.values():
+            hasher.update(bits)
+        bits = file_object.read(CHECKSUM_CHUNK_SIZE)
+
+    return dict((checksum_type, hasher.hexdigest()) for checksum_type, hasher in hashers.items())

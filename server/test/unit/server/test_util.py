@@ -1,9 +1,12 @@
+from cStringIO import StringIO
+import hashlib
 import shutil
 
 from mock import Mock, patch, call
 
 from pulp.common.compat import unittest
 from pulp.server import util
+from pulp.server.exceptions import PulpCodedException
 
 
 class TestCopyTree(unittest.TestCase):
@@ -186,3 +189,69 @@ class TestPackageListenerDeleting(unittest.TestCase):
             pass
 
         mock_remove.assert_called_once_with(path)
+
+
+class TestSanitizeChecksumType(unittest.TestCase):
+    """
+    This class contains tests for the sanitize_checksum_type() function.
+    """
+
+    def test_sha_to_sha1(self):
+        """
+        Assert that "sha" is converted to "sha1".
+        """
+        checksum_type = util.sanitize_checksum_type('sha')
+
+        self.assertEqual(checksum_type, 'sha1')
+
+    def test_ShA_to_sha1(self):
+        """
+        Assert that "ShA" is converted to "sha1".
+        """
+        checksum_type = util.sanitize_checksum_type('ShA')
+
+        self.assertEqual(checksum_type, 'sha1')
+
+    def test_SHA256_to_sha256(self):
+        """
+        Assert that "SHA256" is converted to "sha256".
+        """
+        checksum_type = util.sanitize_checksum_type('SHA256')
+
+        self.assertEqual(checksum_type, 'sha256')
+
+    def test_invalid_type_raises_coded_exception(self):
+        self.assertRaises(PulpCodedException,
+                          util.sanitize_checksum_type, 'not_a_real_checksum')
+
+
+class TestGlobal(unittest.TestCase):
+    def test_checksum_algorithm_mappings(self):
+        self.assertEqual(4, len(util.CHECKSUM_FUNCTIONS))
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_MD5], hashlib.md5)
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA1], hashlib.sha1)
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA], hashlib.sha1)
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA256], hashlib.sha256)
+
+
+class TestCalculateChecksums(unittest.TestCase):
+    def setUp(self):
+        super(TestCalculateChecksums, self).setUp()
+        self.f = StringIO('sometext')
+        self.sha1_sum = 'd22a158c8ead99dbd7eddb86104496f3ee087049'
+        self.sha256_sum = '5fb2054478353fd8d514056d1745b3a9eef066deadda4b90967af7ca65ce6505'
+
+    def test_invalid_type(self):
+        self.assertRaises(util.InvalidChecksumType, util.calculate_checksums, self.f, ['sha0'])
+
+    def test_with_data(self):
+        ret = util.calculate_checksums(self.f, ['sha1', 'sha256'])
+
+        self.assertEqual(ret['sha1'], self.sha1_sum)
+        self.assertEqual(ret['sha256'], self.sha256_sum)
+
+    def test_one(self):
+        ret = util.calculate_checksums(self.f, ['sha256'])
+
+        self.assertEqual(ret['sha256'], self.sha256_sum)
+        self.assertTrue(len(ret), 1)
