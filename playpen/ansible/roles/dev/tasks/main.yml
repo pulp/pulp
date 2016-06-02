@@ -46,6 +46,7 @@
       - jnettop
       - koji
       - httpie
+      - mock
       - plantuml
       - python-django-bash-completion
       - python-gofer-qpid
@@ -67,6 +68,13 @@
       name: vagrant
       state: present
       groups: systemd-journal
+      append: true
+
+- name: allow vagrant user to use mock
+  user:
+      name: vagrant
+      state: present
+      groups: mock
       append: true
 
 - name: Install Pulp RPM dependencies
