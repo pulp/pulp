@@ -59,7 +59,7 @@ if [ -d pulp-smash ]; then
     mkdir -p $HOME/.config/pulp_smash/
     cat << EOF > $HOME/.config/pulp_smash/settings.json
 {
-    "default": {
+    "pulp": {
         "base_url": "https://$(hostname)",
         "auth": ["admin", "admin"],
         "cli_transport": "local",
