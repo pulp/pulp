@@ -36,7 +36,7 @@ echo "Choosing $GITHUB_USERNAME as your GitHub username."
 
 read -p 'Which plugin repos would you like to clone from your GitHub account? [crane pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash] ' REPOS
 if [ "$REPOS" = "" ]; then
-    REPOS="crane pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash"
+    REPOS="crane packaging pulp_deb pulp_docker pulp_openstack pulp_ostree pulp_puppet pulp_python pulp_rpm pulp-smash"
 fi
 # pulp is required and must be installed first so let's prepend it.
 REPOS="pulp $REPOS"
