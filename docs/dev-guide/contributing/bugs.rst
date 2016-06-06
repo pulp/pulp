@@ -85,8 +85,8 @@ Reviewer
 Triage Process
 --------------
 
-Pulp holds bug triage as an IRC meeting on Fridays at 10:30 ET (either EST or EDT) in #pulp-dev on
-Freenode. We encourage bug filers and interested parties to join and give input.
+Pulp holds bug triage as an IRC meeting on Tuesdays and Fridays at 10:30 ET (either EST or EDT) in
+#pulp-dev on Freenode. We encourage bug filers and interested parties to join and give input.
 
 A quorum of at least 2 core developers is required to hold triage. Quorum must be established at
 the beginning of the meeting. Developers forming the quorum must stay for the entire duration of
