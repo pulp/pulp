@@ -22,7 +22,8 @@ def migrate():
             ('ssl_client_cert', 'client.crt'),
             ('ssl_client_key', 'client.key'))
         for key, filename in pem_key_paths:
-            _write_pem_file(pki_path, importer['config'], key, filename)
+            if 'config' in importer:
+                _write_pem_file(pki_path, importer['config'], key, filename)
 
 
 def _mkdir(path):

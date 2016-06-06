@@ -2,6 +2,32 @@
 Pulp 2.8 Release Notes
 ======================
 
+Pulp 2.8.4
+==========
+
+This is a hotfix release to address migration failures introduced in earlier versions
+of Pulp. 
+
+
+Upgrade instructions
+--------------------
+
+If you haven't already upgraded (or attempted to upgrade) to 2.8.3, you should
+follow the upgrade instructions below for 2.8.3. If you have already dealt with
+the security issues in the 2.8.3 upgrade instructions, then the normal upgrade process,
+with migrations, should be followed::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat goferd
+
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.8.4`
+
 
 Pulp 2.8.3
 ==========
