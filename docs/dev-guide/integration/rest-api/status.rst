@@ -18,12 +18,11 @@ and ``known_workers`` to get more detailed status information.
     of a Pulp deployment, and is not meant to replace monitoring of Pulp
     components in a production environment.
 
-A healthy Pulp installation will contain exactly one record for
-"resource_manager" and "scheduler" in the worker list, and one or more
-"reserved_resource_worker" records. It will also have
-``messaging_connection`` and ``database_connection`` entries that contain ``{connected: True}``.
-Note that if the scheduler is not running, other workers may be running but not
-updating their last heartbeat record.
+A healthy Pulp installation will contain exactly one record for "resource_manager", one
+or more records for "pulp_celerybeat", and one or more records for "reserved_resource_worker".
+It will also have``messaging_connection`` and ``database_connection`` entries that contain
+``{connected: True}``. Note that if pulp_celerybeat is not running, other workers may be
+running but not updating their last heartbeat record.
 
 The version of Pulp is also returned via ``platform_version`` in the
 ``versions`` object. This field is calculated from the "pulp-server" python
@@ -49,7 +48,7 @@ package version. Do not use the deprecated ``api_version`` record.
     "known_workers": [
         {
             "last_heartbeat": "2015-01-02T20:39:58Z",
-            "name": "scheduler@status-info-net0.default.virt"
+            "name": "pulp_celerybeat@status-info-net0.default.virt"
         },
         {
             "last_heartbeat": "2015-01-02T20:40:34Z",
