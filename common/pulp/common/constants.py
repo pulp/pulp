@@ -53,7 +53,7 @@ DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 # celerybeat constants
 
 # Scheduler worker name
-SCHEDULER_WORKER_NAME = 'pulp_celerybeat'
+SCHEDULER_WORKER_NAME = 'scheduler'
 # Constant used as the default wait time for celerybeat instances with no lock
 CELERY_TICK_DEFAULT_WAIT_TIME = 90
 # Constant used to determine whether a CeleryBeatLock should be removed due to age
