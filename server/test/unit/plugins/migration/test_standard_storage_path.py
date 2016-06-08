@@ -14,16 +14,19 @@ MODULE = 'pulp.plugins.migration.standard_storage_path'
 class TestBatch(TestCase):
 
     def test_add(self):
-        unit = Mock(plan=1, id=2, storage_path=3, new_path=4)
+        unit = Mock(plan=1, id=2, storage_path='3', new_path='4', files=['4', '5'])
 
         # test
         batch = Batch()
         batch.add(unit)
 
         # validation
-        item = batch.items.values()[0]
+        item = batch.items[0]
         self.assertEqual(len(batch), 1)
-        self.assertEqual(batch.items.keys()[0], unit.storage_path)
+        self.assertEqual(
+            sorted(batch.paths.keys()),
+            sorted([unit.storage_path] + [os.path.join(unit.storage_path, f) for f in unit.files]))
+        self.assertEqual(batch.paths.values(), [item, item, item])
         self.assertEqual(item.plan, unit.plan)
         self.assertEqual(item.unit_id, unit.id)
         self.assertEqual(item.storage_path, unit.storage_path)
@@ -31,11 +34,13 @@ class TestBatch(TestCase):
     def test_reset(self):
         # test
         batch = Batch()
-        batch.items = {'A': 1}
+        batch.items = [1]
+        batch.paths = {'A': 1}
         batch.reset()
 
         # validation
-        self.assertEqual(batch.items, {})
+        self.assertEqual(batch.items, [])
+        self.assertEqual(batch.paths, {})
 
     @patch('os.walk')
     @patch('os.readlink')
@@ -44,6 +49,8 @@ class TestBatch(TestCase):
     @patch('os.path.islink')
     def test_relink(self, islink, symlink, unlink, readlink, walk):
         def read_link(path):
+            if os.path.basename(path) == 'l-invalid':
+                raise OSError()
             return path.upper()
 
         readlink.side_effect = read_link
@@ -53,55 +60,61 @@ class TestBatch(TestCase):
 
         islink.side_effect = is_link
 
-        items = {
-            'D0/L2': Item(1, '1', 'd0/l2', 'new-path-1'),
-            'D1/L3': Item(2, '2', 'd1/l3', 'new-path-2'),
-            'D2/L6': Item(3, '3', 'd2/l6', 'new-path-3'),
+        paths = {
+            'D0/L2': Item(1, '1', 'D0/L2', 'new-path-1', []),
+            'D1/L3': Item(2, '2', 'D1/L3', 'new-path-2', []),
+            'D2/L6': Item(3, '3', 'D2/L6', 'new-path-3', []),
+            'D3/L7': Item(4, '4', 'D3', 'new-path-4', ['L7']),
         }
 
         walk.return_value = [
             ('d0', ['d1', 'd2'], ['f1', 'l2']),
             ('d1', [], ['l3', 'f4']),
-            ('d2', [], ['f5', 'l6', 'l7'])
+            ('d2', [], ['f5', 'l6', 'l7', 'l-invalid']),
+            ('d3', [], ['l7']),
         ]
 
         # test
         batch = Batch()
-        batch.items = items
+        batch.paths = paths
         batch._relink()
 
         # validation
         self.assertEqual(
             unlink.call_args_list,
             [
-                call(items[k].storage_path) for k in sorted(items)
+                call('d0/l2'),
+                call('d1/l3'),
+                call('d2/l6'),
+                call('d3/l7')
             ])
         self.assertEqual(
             symlink.call_args_list,
             [
-                call(items[k].new_path, k.lower()) for k in sorted(items)
+                call('new-path-1', 'd0/l2'),
+                call('new-path-2', 'd1/l3'),
+                call('new-path-3', 'd2/l6'),
+                call('new-path-4/L7', 'd3/l7')
             ])
 
-    @patch(MODULE + '.Unit.migrate')
-    def test_migrate(self, unit_migrate):
+    def test_migrate(self):
+        plan = Mock()
         items = [
-            Item(Mock(), '1', 'path-1', 'new-path-1'),
-            Item(Mock(), '2', 'path-2', 'new-path-2'),
-            Item(Mock(), '3', 'path-3', 'new-path-3'),
+            Item(plan, '1', 'path-1', 'new-path-1', []),
+            Item(plan, '2', 'path-2', 'new-path-2', []),
+            Item(plan, '3', 'path-3', 'new-path-3', []),
         ]
-        _dict = Mock()
-        _dict.itervalues.return_value = iter(items)
 
         # test
         batch = Batch()
-        batch.items = _dict
+        batch.items = items
         batch._migrate()
 
         # validate
         self.assertEqual(
-            unit_migrate.call_args_list,
+            plan.migrate.call_args_list,
             [
-                call(i.plan, i.unit_id, i.storage_path, i.new_path) for i in items
+                call(i.unit_id, i.storage_path, i.new_path) for i in items
             ])
 
     @patch(MODULE + '.Batch.reset')
@@ -110,7 +123,7 @@ class TestBatch(TestCase):
     def test_call(self, relink, migrate, reset):
         # test
         batch = Batch()
-        batch.items['A'] = 12
+        batch.items = [12]
         batch()
 
         # validate
@@ -121,8 +134,7 @@ class TestBatch(TestCase):
     def test_len(self):
         # test
         batch = Batch()
-        batch.items['A'] = 12
-        batch.items['B'] = 18
+        batch.items = [1, 2]
 
         # validation
         self.assertEqual(len(batch), len(batch.items))
@@ -184,8 +196,41 @@ class TestPlan(TestCase):
         self.assertEqual(path, expected_path)
 
     @patch(MODULE + '.Unit')
+    def test_new_unit(self, unit):
+        document = Mock()
+
+        # test
+        plan = Plan(Mock(), tuple(), False)
+        created = plan._new_unit(document)
+
+        # validation
+        unit.assert_called_once_with(plan, document)
+        self.assertEqual(created, unit.return_value)
+
+    @patch(MODULE + '.shutil')
+    @patch(MODULE + '.mkdir')
+    @patch('os.path.exists')
+    def test_migrate(self, path_exists, mkdir, shutil):
+        unit_id = '123'
+        path = '/tmp/old/path_1'
+        new_path = '/tmp/new/content/path_2'
+        path_exists.return_value = True
+
+        # test
+        plan = Plan(Mock(), tuple(), False)
+        plan.migrate(unit_id, path, new_path)
+
+        # validation
+        path_exists.assert_called_once_with(path)
+        mkdir.assert_called_once_with(os.path.dirname(new_path))
+        shutil.move.assert_called_once_with(path, new_path)
+        plan.collection.update_one.assert_called_once_with(
+            filter={'_id': unit_id},
+            update={'$set': {'_storage_path': new_path}})
+
+    @patch(MODULE + '.Plan._new_unit')
     @patch(MODULE + '.Plan._new_path')
-    def test_iter(self, new_path, unit):
+    def test_iter(self, new_path, new_unit):
         collection = Mock()
         key_fields = ('name', 'version')
         documents = [
@@ -201,7 +246,7 @@ class TestPlan(TestCase):
             Mock(id='3', needs_migration=Mock(return_value=True)),
             Mock(id='4', needs_migration=Mock(return_value=False)),
         ]
-        unit.side_effect = units
+        new_unit.side_effect = units
         new_paths = [
             'p1',
             'p2',
@@ -225,9 +270,9 @@ class TestPlan(TestCase):
                 'name': True,
             })
         self.assertEqual(
-            unit.call_args_list,
+            new_unit.call_args_list,
             [
-                call(plan, d) for d in documents
+                call(d) for d in documents
             ])
         for unit, new_path in izip(units, new_paths):
             self.assertEqual(unit.new_path, new_path)
@@ -371,6 +416,7 @@ class TestUnit(TestCase):
         self.assertEqual(unit.type_id, document['_content_type_id'])
         self.assertEqual(unit.storage_path, document['_storage_path'])
         self.assertEqual(unit.key, unit_key)
+        self.assertEqual(unit.files, tuple())
 
     def test_key_digest(self):
         unit_key = {
@@ -421,24 +467,3 @@ class TestUnit(TestCase):
 
         # validation
         self.assertFalse(needed)
-
-    @patch(MODULE + '.shutil')
-    @patch(MODULE + '.mkdir')
-    @patch('os.path.exists')
-    def test_migrate(self, path_exists, mkdir, shutil):
-        unit_id = '123'
-        plan = Mock()
-        path = '/tmp/old/path_1'
-        new_path = '/tmp/new/content/path_2'
-        path_exists.return_value = True
-
-        # test
-        Unit.migrate(plan, unit_id, path, new_path)
-
-        # validation
-        path_exists.assert_called_once_with(path)
-        mkdir.assert_called_once_with(os.path.dirname(new_path))
-        shutil.move.assert_called_once_with(path, new_path)
-        plan.collection.update_one.assert_called_once_with(
-            filter={'_id': unit_id},
-            update={'$set': {'_storage_path': new_path}})

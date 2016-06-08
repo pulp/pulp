@@ -35,7 +35,8 @@ Item = namedtuple(
         'plan',
         'unit_id',
         'storage_path',
-        'new_path'
+        'new_path',
+        'files'
     ]
 )
 
@@ -44,8 +45,10 @@ class Batch(object):
     """
     A batch of units to be migrated.
 
-    :ivar items: A dictionary of Item keyed by storage path.
-    :type items: dict
+    :ivar items: A list of items to be migrated.
+    :type items: list
+    :ivar paths: Unit file paths mapped to items.
+    :type paths: dict
     """
 
     # The number of items in each batch.
@@ -53,7 +56,8 @@ class Batch(object):
     LIMIT = 500000
 
     def __init__(self):
-        self.items = {}
+        self.items = []
+        self.paths = {}
 
     def add(self, unit):
         """
@@ -62,14 +66,23 @@ class Batch(object):
         :param unit: A unit to add.
         :type unit: Unit
         """
-        item = Item(unit.plan, unit.id, unit.storage_path, unit.new_path)
-        self.items[unit.storage_path] = item
+        item = Item(
+            plan=unit.plan,
+            unit_id=unit.id,
+            storage_path=unit.storage_path,
+            new_path=unit.new_path,
+            files=unit.files)
+        self.items.append(item)
+        self.paths[item.storage_path] = item
+        for path in unit.files:
+            self.paths[os.path.join(item.storage_path, path)] = item
 
     def reset(self):
         """
         Reset the batch by clearing added units.
         """
-        self.items = {}
+        self.items = []
+        self.paths = {}
 
     def _relink(self):
         """
@@ -85,11 +98,16 @@ class Batch(object):
                     target = os.readlink(abs_path)
                 except OSError:
                     continue
-                unit = self.items.get(target)
-                if not unit:
+                item = self.paths.get(target)
+                if not item:
                     continue
+                new_path = item.new_path
+                for rel_path in item.files:
+                    if target.endswith(rel_path):
+                        new_path = os.path.join(new_path, rel_path)
+                        break
                 os.unlink(abs_path)
-                os.symlink(unit.new_path, abs_path)
+                os.symlink(new_path, abs_path)
 
     def _migrate(self):
         """
@@ -97,8 +115,8 @@ class Batch(object):
           1. Move the content files.
           2. Update the unit in the DB.
         """
-        for item in self.items.itervalues():
-            Unit.migrate(item.plan, item.unit_id, item.storage_path, item.new_path)
+        for item in self.items:
+            item.plan.migrate(item.unit_id, item.storage_path, item.new_path)
 
     def __call__(self):
         """
@@ -172,6 +190,43 @@ class Plan(object):
             path = os.path.join(path, os.path.basename(unit.storage_path))
         return path
 
+    def _new_unit(self, document):
+        """
+        Create a new unit for the specified document.
+        Provides derived plan classes the opportunity to create specialized
+        unit classes.
+
+        :param document: A content unit document fetched from the DB.
+        :type document: dict
+        :return: A new unit.
+        :rtype: Unit
+        """
+        return Unit(self, document)
+
+    def migrate(self, unit_id, path, new_path):
+        """
+        Migrate the unit.
+          1. move content
+          2. update the DB
+
+        :param unit_id: A unit UUID.
+        :type unit_id: str
+        :param path: The current storage path.
+        :type path: str
+        :param new_path: The new storage path.
+        :type new_path: str
+        """
+        if os.path.exists(path):
+            mkdir(os.path.dirname(new_path))
+            shutil.move(path, new_path)
+        self.collection.update_one(
+            filter={
+                '_id': unit_id
+            },
+            update={
+                '$set': {'_storage_path': new_path}
+            })
+
     def __iter__(self):
         """
         Get an iterable of units planned to be migrated.
@@ -184,7 +239,7 @@ class Plan(object):
             (k, True) for k in chain(Plan.BASE_FIELDS, self.fields, self.key_fields)
         )
         for document in self.collection.find(projection=fields):
-            unit = Unit(self, document)
+            unit = self._new_unit(document)
             unit.new_path = self._new_path(unit)
             if not unit.needs_migration():
                 continue
@@ -318,6 +373,13 @@ class Unit(object):
         """
         return dict([(k, self.document[k]) for k in self.plan.key_fields])
 
+    @property
+    def files(self):
+        """
+        List of files (relative paths) associated with the unit.
+        """
+        return tuple()
+
     def needs_migration(self):
         """
         Get whether the unit needs to be migrated.
@@ -342,30 +404,3 @@ class Unit(object):
             else:
                 _hash.update(value)
         return _hash.hexdigest()
-
-    @staticmethod
-    def migrate(plan, unit_id, path, new_path):
-        """
-        Migrate the unit.
-          1. move content
-          2. update the DB
-
-        :param plan: A plan object.
-        :type plan: Plan
-        :param unit_id: A unit UUID.
-        :type unit_id: str
-        :param path: The current storage path.
-        :type path: str
-        :param new_path: The new storage path.
-        :type new_path: str
-        """
-        if os.path.exists(path):
-            mkdir(os.path.dirname(new_path))
-            shutil.move(path, new_path)
-        plan.collection.update_one(
-            filter={
-                '_id': unit_id
-            },
-            update={
-                '$set': {'_storage_path': new_path}
-            })
