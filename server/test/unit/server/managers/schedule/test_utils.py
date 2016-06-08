@@ -347,8 +347,10 @@ class TestResetFailureCount(unittest.TestCase):
 class TestIncrementFailureCount(unittest.TestCase):
     schedule_id = str(ObjectId())
 
+    @mock.patch('time.time')
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
-    def test_update(self, mock_get_collection):
+    def test_update(self, mock_get_collection, mock_time):
+        mock_time.return_value = 12345
         mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = SCHEDULES[0]
 
@@ -359,8 +361,7 @@ class TestIncrementFailureCount(unittest.TestCase):
         self.assertEqual(mock_find.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
         self.assertEqual(mock_find.call_args[1]['update']['$inc']['consecutive_failures'], 1)
         last_updated = mock_find.call_args[1]['update']['$set']['last_updated']
-        # make sure the last_updated value is within the last tenth of a second
-        self.assertTrue(time.time() - last_updated < .1)
+        self.assertEqual(mock_time.return_value, last_updated)
         # make sure it asks for the new version of the schedule to be returned
         self.assertTrue(mock_find.call_args[1]['new'] is True)
 
