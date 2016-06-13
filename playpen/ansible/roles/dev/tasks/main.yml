@@ -59,9 +59,11 @@
       - python2-rpdb
       - redhat-lsb-core
       - rpm-build
+      - ruby-devel
       - telnet
       - tito
       - yum-utils
+      - zlib-devel
 
 - name: allow vagrant user to read the systemd journal
   user:
