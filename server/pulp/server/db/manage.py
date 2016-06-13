@@ -159,6 +159,7 @@ def ensure_database_indexes():
     model.TaskStatus.ensure_indexes()
     model.Worker.ensure_indexes()
     model.CeleryBeatLock.ensure_indexes()
+    model.ResourceManagerLock.ensure_indexes()
     model.LazyCatalogEntry.ensure_indexes()
     model.DeferredDownload.ensure_indexes()
     model.Distributor.ensure_indexes()
