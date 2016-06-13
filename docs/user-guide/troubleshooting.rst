@@ -20,7 +20,7 @@ Pulp's log level can be adjusted with the ``log_level`` setting in the ``[server
 CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
 
 .. note::
-   
+
    This setting will only adjust the verbosity of the messages that Pulp emits. If you wish to see
    all of these messages, you may also need to set the log level on your syslog handler. For example,
    rsyslog typically only displays INFO and higher, so if you set Pulp to DEBUG it will still be
@@ -196,12 +196,6 @@ configured and running correctly. If you are using systemd, please see the speci
    those services are still running. It is possible to ask for pulp_worker statuses using wildcards,
    such as ``systemctl status pulp_worker-\* -a``, for example.
 
-.. warning::
-
-   Remember that ``pulp_celerybeat`` and ``pulp_resource_manager`` must be singletons across the
-   entire Pulp distributed installation. Please be sure to only start one instance of each of these.
-   ``pulp_workers`` is safe to start on as many machines as you like.
-
 qpid.messaging is not installed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -255,7 +249,7 @@ User permissions not behaving as expected
 Resource names should always start with ``/v2`` and end with a trailing ``/``.  For example, the
 following command will add a permission to ``test-user`` to create repositories::
 
-    pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create 
+    pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create
 
 Pulp workers not starting due to Permission Denied Exception
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -264,7 +258,7 @@ Pulp workers attempt create working directory on startup. The path for working d
 defined by the `working_directory` config in `server` section of `/etc/pulp/server.conf`. The
 default value is `/var/cache/pulp`. Any user defined path needs to be owned by user and group
 `apache`. If running with SELinux in Enforcing mode, the path also needs to have
-`system_u:object_r:pulp_var_cache_t` security context. 
+`system_u:object_r:pulp_var_cache_t` security context.
 
 Celery terminates the worker in case of sync cancellation.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

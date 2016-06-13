@@ -3,18 +3,31 @@ This module is the Pulp Celery App. It is passed to the workers from the command
 will see the "celery" module attribute and use it. This module also initializes the Pulp app after
 Celery setup finishes.
 """
+import time
+import logging
+import platform
+import mongoengine
+
+from gettext import gettext as _
+from datetime import datetime
 from celery.signals import celeryd_after_setup
+
+from pulp.common import constants
+from pulp.server import initialization
+from pulp.server.async import tasks
+from pulp.server.db.model import ResourceManagerLock, Worker
+from pulp.server.managers.repo import _common as common_utils
 
 # This import will load our configs
 from pulp.server import config  # noqa
-from pulp.server import initialization
 # We need this import so that the Celery setup_logging signal gets registered
 from pulp.server import logs  # noqa
-from pulp.server.async import tasks
 # This import is here so that Celery will find our application instance
 from pulp.server.async.celery_instance import celery  # noqa
-from pulp.server.managers.repo import _common as common_utils
+
 import pulp.server.tasks  # noqa
+
+_logger = logging.getLogger(__name__)
 
 
 @celeryd_after_setup.connect
@@ -22,7 +35,12 @@ def initialize_worker(sender, instance, **kwargs):
     """
     This function performs all the necessary initialization of the Celery worker.
 
-    It starts by cleaning up old state if this worker was previously running, but died unexpectedly.
+    If the worker is a resource manager, it tries to acquire a lock stored within the database.
+    This prevents more than one resource manager from attempting to act concurrently.  If the lock
+    cannot be acquired immediately, it will wait until the currently active instance becomes
+    unavailable, at which point the worker cleanup routine will clear the lock for us to acquire.
+
+    We also clean up old state in case this worker was previously running, but died unexpectedly.
     In such cases, any Pulp tasks that were running or waiting on this worker will show incorrect
     state. Any reserved_resource reservations associated with the previous worker will also be
     removed along with the worker entry in the database itself. The working directory specified in
@@ -49,6 +67,42 @@ def initialize_worker(sender, instance, **kwargs):
     """
     initialization.initialize()
 
+    # Whether this instance has had to wait for availability
+    _cycled = False
+
+    # If the worker is a resource manager, try to acquire the lock, or wait until it
+    # can be acquired
+    if sender.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
+
+        name = constants.RESOURCE_MANAGER_WORKER_NAME + "@" + platform.node()
+        lock = ResourceManagerLock(name=name)
+
+        while True:
+
+            # Create a worker record so the user can tell that we're running
+            Worker.objects(name=sender).update_one(set__last_heartbeat=datetime.utcnow(),
+                                                   upsert=True)
+
+            try:
+                lock.save()
+
+                if _cycled:
+                    msg = _("A new instance of pulp_resource_manager '%s' has become "
+                            "active after previous instance no longer available") % sender
+                    _logger.info(msg)
+
+                break
+            except mongoengine.NotUniqueError:
+                if not _cycled:
+                    msg = _("An instance of pulp_resource_manager is already active. "
+                            "Halting execution until the currently active "
+                            "resource_manager becomes unavailable.")
+                    _logger.info(msg)
+                    _cycled = True
+
+                time.sleep(constants.CELERY_CHECK_INTERVAL)
+
+    # Delete any potential old state
     tasks._delete_worker(sender, normal_shutdown=True)
 
     # Create a new working directory for worker that is starting now
