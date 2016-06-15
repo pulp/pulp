@@ -18,10 +18,12 @@ umask 0077
 
 DIR=$(mktemp -d) || exit 1
 HOST=`hostname -f`
+
 if [ -z "$HOST" ]
 then
   HOST=`hostname`
 fi
+
 PWDFILE="password"
 SEEDFILE="seed"
 INST_DIR='/etc/pki/pulp/qpid'
@@ -59,8 +61,6 @@ then
 else
   DB_PASSWORD=$(dd if=/dev/urandom bs=8192 count=1 | sha256sum | cut -d " " -f 1)
 fi
-echo ""
-echo "Using password: [$DB_PASSWORD]"
 
 # prompt user for existing CA.
 # may contain both key & certificate
@@ -283,4 +283,6 @@ NOTES:
 
   [3] The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
       need to be manually copied to each worker.
+
+  [4] The NSS DB password written to $INST_DIR/nss/$PWDFILE
 "
