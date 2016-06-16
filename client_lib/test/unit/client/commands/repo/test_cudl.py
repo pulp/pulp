@@ -345,7 +345,8 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure the correct arguments are present
-        expected_option_names = set(['--details', '--fields', '--all', '--summary', '--repo-id'])
+        expected_option_names = set(
+            ['--details', '--syncs', '--fields', '--all', '--summary', '--repo-id'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
@@ -359,7 +360,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_no_all_structure(self):
         # Ensure the all argument isn't present
         self.command = cudl.ListRepositoriesCommand(self.context, include_all_flag=False)
-        expected_option_names = set(['--details', '--fields', '--summary', '--repo-id'])
+        expected_option_names = set(['--details', '--syncs', '--fields', '--summary', '--repo-id'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
