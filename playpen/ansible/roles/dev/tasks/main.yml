@@ -16,6 +16,9 @@
       url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
       dest: /etc/yum.repos.d/fedora-pulp.repo
 
+- name: Install dnf config-manager
+  dnf: name=dnf-command(config-manager) state=present
+
 - name: Enable Pulp Nightly repository
   command: dnf config-manager --set-enabled pulp-nightlies
   when: pulp_nightly_repo_enabled == false
