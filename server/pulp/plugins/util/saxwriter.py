@@ -37,14 +37,24 @@ class XMLWriter(ContentHandler):
         :type  short_empty_elements: bool
         """
         ContentHandler.__init__(self)
-        self._write = stream.write
-        self._flush = stream.flush
+        self._stream = stream
         self._encoding = encoding
         self._short_empty_elements = short_empty_elements
         self._pending_start_element = False
         self._indent_lvl = 0
         self._indent_sep = '  '
         self._start_element = False
+
+    def _write(self, text):
+        """
+        Write text to the stream, encoding with the configured encoding if possible.
+
+        :param text:    text that should be written to the stream
+        :type  text:    basestring
+        """
+        if isinstance(text, unicode):
+            text = text.encode(self._encoding)
+        self._stream.write(text)
 
     def _finish_pending_start_element(self):
         """
@@ -92,7 +102,7 @@ class XMLWriter(ContentHandler):
         """
         Flush the buffer after generating the XML document.
         """
-        self._flush()
+        self._stream.flush()
 
     def startElement(self, name, attrs={}):
         """
@@ -144,7 +154,4 @@ class XMLWriter(ContentHandler):
         """
         if content:
             self._finish_pending_start_element()
-            if isinstance(content, unicode):
-                self._write(escape(content).encode(self._encoding))
-            else:
-                self._write(escape(content))
+            self._write(escape(content))

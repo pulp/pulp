@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from cStringIO import StringIO
 
 from pulp.common.compat import unittest
@@ -60,3 +62,17 @@ class TestXMLWriter(unittest.TestCase):
                        '</outer_tag1>\n' \
                        '<outer_tag2></outer_tag2>\n'
         self.assertEqual(generated_xml, expected_xml)
+
+    def test_utf8_writes(self):
+        """
+        Test that utf-8 non-ascii characters are handled without complaint.
+        """
+        xml_generator = XMLWriter(StringIO())
+
+        tag = u'𝅘𝅥𝅮'
+        xml_generator.startDocument()
+        xml_generator.writeDoctype('<!DOCTYPE string here>')
+        xml_generator.startElement(tag, {u'𝆑': u'𝆒'})
+        xml_generator.completeElement(u'inner_tag2 Ώ', {u'attr1 ỳ': u'value1 ỳ'}, u'ỳ')
+        xml_generator.endElement(tag)
+        xml_generator.endDocument()
