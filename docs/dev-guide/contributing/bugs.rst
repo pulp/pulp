@@ -127,13 +127,15 @@ The triage lead will do the following:
    and add any comments that come in from the chat. It's preferred for comments to be left directly
    versus having the triage lead leave comments made by others.
 
+If a bug needs to block a release, the priority should be changed to URGENT. The "Target Platform
+Release" field should never be set before the issue is in MODIFIED state.
+
 Bugs that need additional information will have notes put onto the issue asking for input. Unless a
 Redmine user specifically disabled e-mail support, adding a note will e-mail the reporter. Bugs
 with enough information and an agreed upon severity and priority, will be triaged. Also any
 components or tags should be set.
 
-A target release can also be set during triage. An issue that has target release set during triage
-will block a release. Once triaged, the bug is included in the `Prioritized Bugs query`_ and awaits
+Once triaged, the bug is included in the `Prioritized Bugs query`_ and awaits
 a developer to pick it up.
 
 Triage Issue Fields
