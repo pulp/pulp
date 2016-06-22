@@ -16,6 +16,9 @@
       url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
       dest: /etc/yum.repos.d/fedora-pulp.repo
 
+- name: Install dnf config-manager
+  dnf: name=dnf-command(config-manager) state=present
+
 - name: Enable Pulp Nightly repository
   command: dnf config-manager --set-enabled pulp-nightlies
   when: pulp_nightly_repo_enabled == false
@@ -82,6 +85,9 @@
 - name: Install Pulp RPM dependencies
   dnf: name={{ item }} state=present
   with_items: "{{ pulp_rpm_dependencies }}"
+
+- name: Ensure homedir mode suitable for ssh keys
+  file: dest=/home/{{ ansible_env.SUDO_USER }} mode=0750
 
 - copy: src=bashrc dest=/home/{{ ansible_env.SUDO_USER }}/.bashrc
 - copy: src=drop_database.js dest=/home/{{ ansible_env.SUDO_USER }}/drop_database.js
