@@ -14,7 +14,7 @@ from pulp.server import exceptions
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.db import model
 from pulp.server.webservices.views import repositories, util, search
-from pulp.server.webservices.views.repositories import(
+from pulp.server.webservices.views.repositories import (
     ContentApplicabilityRegenerationView, HistoryView, RepoAssociate, RepoDistributorResourceView,
     RepoDistributorsView, RepoDistributorsSearchView, RepoImportUpload, RepoImporterResourceView,
     RepoImportersView, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,

@@ -266,6 +266,11 @@ class TestQuery(TestCase):
         decoded = Query.decode(encoded)
         self.assertEqual(decoded, {'name': 'john', 'age': '12'})
 
+    def test_decode_with_padding(self):
+        encoded = 'policy=SuchPad==;signature=MuchZero=='
+        decoded = Query.decode(encoded)
+        self.assertEqual(decoded, {'policy': 'SuchPad==', 'signature': 'MuchZero=='})
+
     def test_encode(self):
         decoded = OrderedDict()
         decoded['name'] = 'john'
