@@ -30,19 +30,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      config.hostmanager.manage_host = true
  end
 
- # vagrant-cachier is currently broken due to making yum-based assumptions
- #  https://github.com/fgrehm/vagrant-cachier/issues/163
- # It is included here as an example if you're still using a yum-based box
-
- # vagrant plugin install vagrant-cachier to cache packages installed by yum/dnf
- # if Vagrant.has_plugin?("vagrant-cachier")
- #    config.cache.scope = :box
- #    config.cache.synced_folder_opts = {
- #        type: :nfs,
- #        mount_options: ['rw', 'vers=4', 'tcp']
- #    }
- # end
-
  # Comment this line if you would like to disable the automatic update during provisioning
  config.vm.provision "shell", inline: "sudo dnf upgrade -y"
 
@@ -83,7 +70,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # vagrant destroy and vagrant up to get a new one).
         #
         # domain.volume_cache = "unsafe"
-    
+
         # Uncomment this to resize the root partition and filesystem to fill the base box disk
         # This script is only guaranteed to work with the default official fedora image, and is
         # only needed it you changed machine_virtual_size above.
@@ -93,6 +80,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     dev.vm.provider :docker do |d, override|
         override.vm.box = nil
+        # Based on fedora official image, with vagrant's needs met:
+        # https://github.com/rohanpm/docker-fedora-vagrant
         d.image = 'rohanpm/fedora-vagrant:23'
 
         # use ssh for the sake of ansible
@@ -125,7 +114,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           uid = Process.euid
           gid = Process.egid
           reset_cmd = "/vagrant/playpen/reset-vagrant-user.sh #{uid} #{gid}"
-        
+
           shell.inline = <<-END_SCRIPT.gsub(/\s+/, ' ').strip
             nohup sudo /bin/sh -c '
               if ! #{reset_cmd}; then
@@ -138,7 +127,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
               fi
             ' >/tmp/reset-user.log 2>&1 &
           END_SCRIPT
-        
+
           shell.privileged = false
         end
     end
