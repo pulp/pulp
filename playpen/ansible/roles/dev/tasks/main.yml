@@ -12,6 +12,7 @@
   notify: restart sshd
 
 - name: Install Pulp dnf repository
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24
   get_url:
       url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
       dest: /etc/yum.repos.d/fedora-pulp.repo
@@ -21,7 +22,7 @@
 
 - name: Enable Pulp Nightly repository
   command: dnf config-manager --set-enabled pulp-nightlies
-  when: pulp_nightly_repo_enabled == false
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24 and pulp_nightly_repo_enabled == false
 
 # These can go away when https://fedorahosted.org/spin-kickstarts/ticket/59 is fixed
 - stat:
