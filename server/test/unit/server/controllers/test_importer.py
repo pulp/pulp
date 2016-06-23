@@ -372,6 +372,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'config'})
+        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
+                                                     {'test': 'config'})
         mock_importer.config.update.assert_called_once_with({'test': 'config'})
         mock_importer.save.assert_called_once_with()
         mock_ser.assert_called_once_with(mock_importer)
@@ -390,6 +392,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'change', 'dont_keep': None})
+        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
+                                                     {'test': 'change'})
         self.assertDictEqual(mock_importer.config, {'test': 'change', 'keep': 'keep'})
         mock_importer.save.assert_called_once_with()
         mock_ser.assert_called_once_with(mock_importer)
@@ -407,6 +411,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
 
         self.assertRaises(exceptions.InvalidValue, importer.update_importer_config,
                           'mrepo', {'test': 'config'})
+        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
+                                                     {'test': 'config'})
 
 
 @mock.patch('pulp.server.controllers.importer.update_importer_config')

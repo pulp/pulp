@@ -244,7 +244,7 @@ def update_importer_config(repo_id, importer_config):
     """
     repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
     importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer.importer_type_id)
-    validate_importer_config(repo_id, repo_importer.importer_type_id, plugin_config)
+    validate_importer_config(repo_id, repo_importer.importer_type_id, importer_config)
 
     # The convention is that None in an update removes the value and sets it to the default.
     unset_property_names = [k for k in importer_config if importer_config[k] is None]
