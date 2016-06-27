@@ -15,7 +15,8 @@ from mongoengine import ValidationError
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
-from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
+from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
+                                   SCHEDULER_WORKER_NAME, RESOURCE_MANAGER_WORKER_NAME)
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import app, tasks
@@ -527,6 +528,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
             """
             def __init__(self):
                 self.traceback = "string_repr_of_traceback"
+
         einfo = EInfo()
         mock_request.called_directly = False
 
@@ -561,6 +563,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
             """
             def __init__(self):
                 self.traceback = "string_repr_of_traceback"
+
         einfo = EInfo()
         mock_request.called_directly = False
         TaskStatus(task_id).save()
@@ -584,6 +587,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
             """
             def __init__(self):
                 self.traceback = "string_repr_of_traceback"
+
         einfo = EInfo()
         mock_request.called_directly = False
         TaskStatus(task_id).save()
@@ -1055,10 +1059,10 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         self.assertTrue(tasks._is_worker("a_worker@some.hostname"))
 
     def test_is_not_worker_is_scheduler(self):
-        self.assertEquals(tasks._is_worker("scheduler@some.hostname"), False)
+        self.assertEquals(tasks._is_worker(SCHEDULER_WORKER_NAME + "@some.hostname"), False)
 
     def test_is_not_worker_is_resource_mgr(self):
-        self.assertEquals(tasks._is_worker("resource_manager@some.hostname"), False)
+        self.assertEquals(tasks._is_worker(RESOURCE_MANAGER_WORKER_NAME + "@some.hostname"), False)
 
 
 class TestPulpTask(unittest.TestCase):

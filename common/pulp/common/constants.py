@@ -51,9 +51,23 @@ PRIMARY_ID = '___/primary/___'
 DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
 # celerybeat constants
-CELERYBEAT_WAIT_SECONDS = 200
+
+# Scheduler worker name
 SCHEDULER_WORKER_NAME = 'scheduler'
-TICK_SECONDS = 90
+# Constant used as the default wait time for celerybeat instances with no lock
+CELERY_TICK_DEFAULT_WAIT_TIME = 90
+# Constant used to determine whether a CeleryBeatLock should be removed due to age
+CELERYBEAT_LOCK_MAX_AGE = 200
+# The amount of time in seconds before a Celery process is considered missing
+CELERY_TIMEOUT_SECONDS = 300
+# The interval in seconds for which the Celery Process monitor thread sleeps between
+# checking for missing Celery processes.
+CELERY_CHECK_INTERVAL = 60
+# The maximum number of seconds that will ever elapse before the scheduler looks for
+# new or changed schedules
+CELERY_MAX_INTERVAL = 90
 
 # resource manager constants
+
+# Resource manager worker name
 RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'

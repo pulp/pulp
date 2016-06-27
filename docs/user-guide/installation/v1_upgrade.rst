@@ -1,7 +1,7 @@
 :orphan:
 
-Pulp v1 Upgrades
-================
+Pulp v1 Upgrade
+===============
 
 Pulp no longer supports directly upgrading from Pulp 1.1 to the latest release. If you wish to
 upgrade from Pulp 1.1 to the latest release of Pulp, you must first

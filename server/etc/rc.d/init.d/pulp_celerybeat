@@ -26,7 +26,7 @@ echo "celery init v${VERSION}."
 
 if [ "$EUID" != "0" ]; then
     echo "Error: This program can only be used by the root user."
-    echo "       Unpriviliged users must use 'celery beat --detach'"
+    echo "       Unprivileged users must use 'celery beat --detach'"
     exit 1
 fi
 

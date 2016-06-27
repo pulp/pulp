@@ -1,100 +1,8 @@
-Installation
-============
+CentOS, RHEL, and Fedora 23-
+============================
 
-Pulp operates with three main components that get installed potentially on different
-machines.
+This page contains installation instructions for CentOS, RHEL, and Fedora 23 and below.
 
-Server
-  This is the main application server that stores data and distributes content.
-
-Agent
-  This component runs on consumers and communicates with the server to provide remote content
-  management.
-
-Client
-  This is a command line component that comes as two pieces: admin-client,
-  which manages the server; and consumer-client, which manages a consumer's relationship
-  to the server. admin-client can be run from any machine that can access the server's
-  REST API, but the consumer-client must be run on a consumer.
-
-Additional steps are needed for upgrading Pulp 1.1 installations. More information can be found
-in the :doc:`v1_upgrade` section of this guide.
-
-
-Supported Operating Systems
----------------------------
-Server
-
-* RHEL Server 6 & 7
-* Fedora 21 & 22
-* CentOS Server 6 & 7
-
-Consumer
-
-* RHEL 5, 6, & 7
-* Fedora 21 & 22
-* CentOS 5, 6 & 7
-
-Admin Client
-
-* RHEL 6 & 7
-* Fedora 21 & 22
-* CentOS 6 & 7
-
-Prerequisites
--------------
-
-* The following ports must be open into the server:
-
- * 80 for consumers to access repositories served over HTTP
- * 443 for consumers to access repositories served over HTTPS
- * 443 for clients (both admin and consumer) to access Pulp APIs
- * 5671 for consumers to connect to the message bus if it is running over TLS
- * 5672 for consumers to connect to the message bus if it is left unsecured
-
-* The mod_python Apache module must be uninstalled or not loaded. Pulp uses
-  mod_wsgi which conflicts with mod_python and will cause the server to fail.
-
-.. warning::
-  The python-qpid package is not available from Pulp installation repositories
-  on RHEL 5 or CentOS 5. This will prevent management of RHEL 5 or CentOS 5
-  clients with pulp-consumer using Qpid. Users who want to use Qpid instead of
-  RabbitMQ and manage these RHEL 5 or CentOS 5 clients will need to build
-  python-qpid from source.
-
-
-.. warning::
-  MongoDB is known to have
-  `serious limitations <http://docs.mongodb.org/manual/faq/fundamentals/#what-are-the-32-bit-limitations>`_
-  on 32-bit architectures. It is strongly advised that you run MongoDB on a 64-bit architecture.
-
-Storage Requirements
---------------------
-
-MongoDB
-^^^^^^^
-
-The MongoDB database can easily grow to 10GB or more in size, which vastly
-exceeds the amount of data actually stored in the database. This is normal
-(but admittedly surprising) behavior for MongoDB. As such, make sure you
-allocate plenty of storage within ``/var/lib/mongodb``.
-
-Pulp
-^^^^
-
-Pulp stores its content in ``/var/lib/pulp``. The size requirements of this
-directory vary depending on how much content you wish to download.
-
-.. note::
-   Making ``/var/lib/pulp`` a symbolic link to a different directory is possible,
-   but it is recommended that you use a bind mount instead. As of Pulp 2.8.0, using
-   a symbolic link requires you modify an Apache configuration. This configuration
-   is found by default in ``/etc/httpd/conf.d/pulp_content.conf``. In the
-   ``<Location /pulp/content/>`` section, you will need to add an entry for the target
-   of your symbolic link. For example, if you have ``/var/lib/pulp`` point to
-   ``/mnt/pulp``, you should add ``XSendFilePath`` entries for each directory you would
-   like Apache to be able to serve from. If you fail to make this configuration change,
-   you will receive an ``HTTP 403: Forbidden`` for all requests.
 
 Repositories
 ------------
@@ -110,6 +18,7 @@ Download the appropriate repo definition file from the Pulp repository:
 .. note::
    If you would like to install the RHEL 5 Client for Pulp, please use the
    `RHEL 5 repository <https://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
+
 
 EPEL for RHEL & CentOS
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -137,6 +46,7 @@ For RHEL 5, Subscribe to the following RHN channels:
  * MRG Messaging v. 1
  * MRG Messaging Base v. 1
 
+
 Message Broker
 ^^^^^^^^^^^^^^
 
@@ -149,6 +59,7 @@ If you would like to use RabbitMQ instead, see the
 `RabbitMQ installation docs <http://www.rabbitmq.com/download.html>`_.
 
 .. _server_installation:
+
 
 Server
 ------
@@ -327,6 +238,7 @@ Server
       $ sudo systemctl enable pulp_resource_manager
       $ sudo systemctl start pulp_resource_manager
 
+
 Admin Client
 ------------
 
@@ -357,7 +269,6 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
   [server]
   host = localhost.localdomain
-
 
 
 .. _consumer_installation:
@@ -419,133 +330,7 @@ specific consumer dependencies with one command by running:
       $sudo systemctl start goferd
 
 
-SSL Configuration
------------------
+Extra Configuration
+-------------------
 
-By default, all of the client components of Pulp will require validly signed SSL certificates from
-the servers on remote ends of its outbound connections. On a brand new httpd installation, a
-self-signed certificate will be generated for the server to use to serve Pulp. This means that a
-fresh installation will experience client errors similar to this::
-
-    (pulp)[rbarlow@coconut pulp]$ pulp-admin puppet repo list
-    +----------------------------------------------------------------------+
-    Puppet Repositories
-    +----------------------------------------------------------------------+
-
-    WARNING: The server's SSL certificate is untrusted!
-
-    The server's SSL certificate was not signed by a trusted authority. This could
-    be due to a man-in-the-middle attack, or it could be that the Pulp server needs
-    to have its certificate signed by a trusted authority. If you are willing to
-    accept the associated risks, you can set verify_ssl to False in the client
-    config's [server] section to disable this check.
-
-You have two choices to solve this issue: You may make or acquire signed SSL certificates for httpd
-to use to serve Pulp, or you may configure Pulp's various clients not to perform SSL signature
-validation.
-
-.. note:
-
-   Even Pulp's server makes client connections in some cases. For example, a Child Node will act as
-   a client to its parent.
-
-.. _signed certificates:
-
-Signed Certificates
-^^^^^^^^^^^^^^^^^^^
-
-If you wish to use signed certificates, you must decide whether you will purchase signed
-certificates from a root certificate authority or use your own organization's certificate authority.
-How to make or buy signed certificates is outside the scope of this document. We will assume that
-you have these items:
-
-#. A PEM-encoded X.509 certificate file, signed by a trusted certificate authority.
-#. A PEM-encoded private key file that corresponds to your SSL certificate.
-#. The CA certificate that signed your SSL certificate. This is only necessary if your Linux
-   distribution does not already include the CA that signed your certificate in its system CA
-   pack.
-
-You must first configure httpd to use the SSL certificate and private key you have acquired. You
-must configure the `SSLCertificateFile`_ and `SSLCertificateKeyFile`_ mod_ssl directives to point at
-these files. On Red Hat based systems, these settings can be found in
-``/etc/httpd/conf.d/ssl.conf``.
-
-.. _SSLCertificateFile: https://httpd.apache.org/docs/2.2/mod/mod_ssl.html#sslcertificatefile
-.. _SSLCertificateKeyFile: https://httpd.apache.org/docs/2.2/mod/mod_ssl.html#sslcertificatekeyfile
-
-If you are using a CA certificate that is not already trusted by your operating system's system CA
-pack, you may either configure Pulp to trust that CA, or you may configure your operating system to
-trust that CA.
-
-Pulp has a setting called ``ca_path`` in these files: ``/etc/pulp/admin/admin.conf``,
-``/etc/pulp/consumer/consumer.conf``, and ``/etc/pulp/nodes.conf``. This setting indicates which CA
-pack each of these components should use when validating Pulp server certificates. By default, Pulp
-will use the operating system's CA pack. If you wish, you may adjust this setting to point to a
-different CA pack. The CA pack may be a single file that contains multiple concatenated
-certificates, or it may be a directory with OpenSSL style hashed symlinks pointing at CA certificate
-files, with one certificate per file. Of course, if you have exactly one CA certificate, you can
-configure this setting to point at it directly.
-
-There are three settings in ``/etc/pulp/server.conf`` that you should be aware of, but probably
-should not alter. ``capath`` and ``cakey`` point to a CA certificate and key that Pulp uses to sign
-client authentication certificates. Note that this is not the CA that you signed your server
-certificate with earlier. It is used only internally by Pulp and Apache to create client
-certificates with login calls, and to validate those certificates when clients use the API. It is
-best to avoid altering these settings. The third setting is confusingly named
-``ssl_ca_certificate``. This setting should not be used, since it causes a chicken and egg situation
-that could cause the universe to experience a machine check exception. If it is configured, the yum
-consumer handlers will use this CA in their yum repository files for validating the Pulp server. The
-problem is that the consumer must have already trusted Pulp in order to have registered to Pulp to
-get this CA file, which helps the consumer to trust Pulp. It's best for users to configure CA trust
-themselves outside of Pulp, which is why this setting should not be used.
-
-.. warning::
-
-   The Pulp team plans to deprecate the ``cacert``, ``cakey``, and ``ssl_ca_certificate`` settings.
-   It is best to avoid altering these settings from their defaults, as described above. See
-   `1123509`_ and `1165403`_.
-
-.. _1123509: https://bugzilla.redhat.com/show_bug.cgi?id=1123509
-.. _1165403: https://bugzilla.redhat.com/show_bug.cgi?id=1165403
-
-If you want to use SSL with Qpid, see the
-:ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
-
-Turning off Validation
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. warning::
-
-   It is strongly recommended that you make or acquire :ref:`signed certificates` to prevent
-   man-in-the-middle attacks or other nefarious activities. It is very risky to assume that the
-   other end of the connection is who they claim to be. SSL uses a combination of encryption and
-   authentication to ensure private communication. Disabling these settings removes the
-   authentication component from the SSL session, which removes the guarantee of private
-   communication since you can't be sure who you are communicating with.
-
-Pulp has a setting called ``verify_ssl`` in these files: ``/etc/pulp/admin/admin.conf``,
-``/etc/pulp/consumer/consumer.conf``, ``/etc/pulp/nodes.conf``, and ``/etc/pulp/repo_auth.conf``. If
-you configure these settings to false, the respective Pulp components will no longer validate the
-Pulp server's certificate signature.
-
-Pulp Broker Settings
---------------------
-
-To configure Pulp to work with a non-default broker configuration read the
-:ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
-
-MongoDB Authentication
-----------------------
-
-To configure Pulp for connecting to the MongoDB with username/password authentication, use the
-following steps:
-1. Configure MongoDB for username password authentication. See
-`MongoDB - Enable Authentication <http://docs.mongodb.org/manual/tutorial/enable-authentication/>`_
-for details.
-2. In ``/etc/pulp/server.conf``, find the ``[database]`` section and edit the ``username`` and
-``password`` values to match the user configured in step 1.
-3. Restart the httpd service
-::
-
-  $ sudo service httpd restart
-
+You are now ready to proceed to :doc:`extra_configuration`.

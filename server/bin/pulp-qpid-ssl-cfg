@@ -12,17 +12,21 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+set -e
 
-DIR="/tmp/tmp$RANDOM"
+umask 0077
+
+DIR=$(mktemp -d) || exit 1
 HOST=`hostname -f`
+
 if [ -z "$HOST" ]
 then
   HOST=`hostname`
 fi
+
 PWDFILE="password"
 SEEDFILE="seed"
 INST_DIR='/etc/pki/pulp/qpid'
-DB_PASSWORD=$RANDOM
 VALID="12"
 CA_PATH=""
 CA_KEY_PATH=""
@@ -54,9 +58,9 @@ read -sp "Enter a password:" ans
 if [ "${#ans}" -gt 0 ]
 then
   DB_PASSWORD=$ans
+else
+  DB_PASSWORD=$(dd if=/dev/urandom bs=8192 count=1 | sha256sum | cut -d " " -f 1)
 fi
-echo ""
-echo "Using password: [$DB_PASSWORD]"
 
 # prompt user for existing CA.
 # may contain both key & certificate
@@ -90,26 +94,12 @@ fi
 echo ""
 echo "Using hostname: [$HOST]"
 
-# create temporary db directory
-rm -rf $DIR
-mkdir $DIR
-cd $DIR
-#
-# ========== KEY SEED ===========
-#
-touch $SEEDFILE
-i=0
-while [ $i -lt 20 ]; do
-  echo $RANDOM >> $SEEDFILE
-  i=`expr $i + 1`
-done
-
 #
 # ========== PASSWORD ===========
 #
 
 # create the password file
-echo "$DB_PASSWORD" > $PWDFILE
+echo "$DB_PASSWORD" > $DIR/$PWDFILE
 
 echo ""
 echo "Password file created."
@@ -119,7 +109,7 @@ echo "Password file created."
 #
 
 # create the nss db
-certutil -N -d . -f $PWDFILE
+certutil -N -d $DIR -f $DIR/$PWDFILE
 
 echo ""
 echo "Database created."
@@ -134,15 +124,17 @@ if [ "${#CA_PATH}" -eq 0 ]
 then
   echo "Creating CA certificate:"
   SUBJECT="CN=redhat,O=pulp,ST=Alabama,C=US"
-  certutil -S -d . -n "ca" -s $SUBJECT -t "TC,," -f $PWDFILE -z $SEEDFILE -x -v $VALID
+  dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
+  certutil -S -d $DIR -n "ca" -s $SUBJECT -t "TC,," -f $DIR/$PWDFILE -z $DIR/$SEEDFILE -x -v $VALID
   echo "CA created"
 else
-  openssl pkcs12 -export -in $CA_PATH -inkey $CA_KEY_PATH -out ca.p12 -name "ca" -passout file:$PWDFILE
-  pk12util -d . -n "ca" -i ca.p12 -w $PWDFILE -k $PWDFILE
-  certutil -d . -n "ca" -M -t "TCu,Cu,Tuw" -f $PWDFILE
+  openssl pkcs12 -export -in $CA_PATH -inkey $CA_KEY_PATH -out $DIR/ca.p12 -name "ca" \
+      -passout file:$DIR/$PWDFILE
+  pk12util -d $DIR -n "ca" -i ca.p12 -w $DIR/$PWDFILE -k $DIR/$PWDFILE
+  certutil -d $DIR -n "ca" -M -t "TCu,Cu,Tuw" -f $DIR/$PWDFILE
   echo "CA certificate: $CA_PATH, imported"
 fi
-certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
+certutil -L -d $DIR -n "ca" -a -o $DIR/ca.crt -f $DIR/$PWDFILE
 
 
 #
@@ -153,13 +145,15 @@ certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
 echo ""
 echo "Creating BROKER certificate:"
 SUBJECT="CN=$HOST,O=pulp,ST=Alabama,C=US"
-certutil -R -d . -s $SUBJECT -a -o broker.req -f $PWDFILE -z $SEEDFILE
+dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
+certutil -R -d $DIR -s $SUBJECT -a -o $DIR/broker.req -f $DIR/$PWDFILE -z $DIR/$SEEDFILE
 
 # sign the broker cert w/ CA
-certutil -C -d . -c "ca" -v $VALID -uV -m1 -a -i broker.req -f $PWDFILE -o broker.crt
+certutil -C -d $DIR -c "ca" -v $VALID -uV -m1 -a -i $DIR/broker.req -f $DIR/$PWDFILE \
+    -o $DIR/broker.crt
 
 # import the broker cert
-certutil -A -d . -n "broker" -t ",," -a -i broker.crt
+certutil -A -d $DIR -n "broker" -t ",," -a -i $DIR/broker.crt
 
 echo "Broker certificate created."
 
@@ -168,27 +162,30 @@ echo "Broker certificate created."
 #
 
 # create the nss db
-mkdir client
-certutil -N -d client -f $PWDFILE
+mkdir $DIR/client
+certutil -N -d $DIR/client -f $DIR/$PWDFILE
 
 # create client cert signing request
 echo ""
 echo "Creating CLIENT certificate:"
 SUBJECT="CN=client,O=pulp,ST=Alabama,C=US"
-certutil -R -d client -s $SUBJECT -a -o client.req -f $PWDFILE -z $SEEDFILE
+dd if=/dev/urandom of=$DIR/$SEEDFILE bs=8192 count=1
+certutil -R -d $DIR/client -s $SUBJECT -a -o $DIR/client.req -f $DIR/$PWDFILE -z $DIR/$SEEDFILE
 
 # sign the client cert w/ CA
-certutil -C -d . -c "ca" -v $VALID -uC -m2 -a -i client.req -f $PWDFILE -o client.crt
+certutil -C -d $DIR -c "ca" -v $VALID -uC -m2 -a -i $DIR/client.req -f $DIR/$PWDFILE \
+    -o $DIR/client.crt
 
 # import the client cert
-certutil -A -d client -n "client" -t ",," -a -i client.crt
+certutil -A -d $DIR/client -n "client" -t ",," -a -i $DIR/client.crt
 echo "Client certificate created."
 
 # export client p12 bundle
-pk12util -d client -n "client" -o client.p12 -w $PWDFILE -W $DB_PASSWORD -k $PWDFILE -K $DB_PASSWORD
+pk12util -d $DIR/client -n "client" -o $DIR/client.p12 -w $DIR/$PWDFILE -W $DB_PASSWORD \
+    -k $DIR/$PWDFILE -K $DB_PASSWORD
 
 # using openssl, generate a key & cert using the p12.
-openssl pkcs12 -in client.p12 -nodes -out client.crt -password file:$PWDFILE
+openssl pkcs12 -in $DIR/client.p12 -nodes -out $DIR/client.crt -password file:$DIR/$PWDFILE
 
 echo "Client key & certificate exported"
 
@@ -197,9 +194,12 @@ echo "Client key & certificate exported"
 #
 
 # clean unused artifacts
-rm -f *.req
-rm -f *.p12
-rm -rf client
+rm $DIR/broker.req
+rm $DIR/client.req
+rm $DIR/client/cert8.db
+rm $DIR/client/key3.db
+rm $DIR/client/secmod.db
+rmdir $DIR/client
 
 # create target directory and install files
 mkdir -p $INST_DIR
@@ -222,8 +222,10 @@ echo ""
 # =========== CLEANUP =============
 #
 
-cd /tmp
-rm -rf $DIR
+for f in broker.crt ca.crt cert8.db client.crt client.p12 key3.db password secmod.db seed; do
+    rm $DIR/$f
+done
+rmdir $DIR
 
 #
 # =========== POST =============
@@ -281,4 +283,6 @@ NOTES:
 
   [3] The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
       need to be manually copied to each worker.
+
+  [4] The NSS DB password written to $INST_DIR/nss/$PWDFILE
 "

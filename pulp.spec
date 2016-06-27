@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.8.4
+Version: 2.8.5
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -352,6 +352,7 @@ rm -rf %{buildroot}
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
+Requires: pulp-selinux
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-repoauth = %{pulp_version}
 Requires: python-blinker
@@ -1043,22 +1044,13 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Mon Jun 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.4-1
+* Mon Jun 27 2016 Sean Myers <sean.myers@redhat.com> 2.8.5-1
 - Pulp rebuild
 
-* Tue May 31 2016 Sean Myers <sean.myers@redhat.com> 2.8.4-0.2.beta
+* Fri Jun 17 2016 Sean Myers <sean.myers@redhat.com> 2.8.5-0.1.beta
 - Pulp rebuild
 
-* Tue May 17 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-1
-- Pulp rebuild
-
-* Mon May 16 2016 pulpbot <pulp-infra@redhat.com> 2.8.3-0.4.rc
-- Pulp rebuild
-
-* Tue May 10 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-0.3.rc
-- Pulp rebuild
-
-* Tue May 03 2016 Sean Myers <sean.myers@redhat.com> 2.8.3-0.2.beta
+* Thu May 26 2016 Sean Myers <sean.myers@redhat.com> 2.8.4-0.1.beta
 - Pulp rebuild
 
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
