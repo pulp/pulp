@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.abspath('./_extensions'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.intersphinx', 'rest_api', 'sphinx.ext.extlinks']
+extensions = ['rest_api', 'sphinx.ext.extlinks']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -247,21 +247,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
-
-# NOTE: these need to be updated periodically to point to the most recent
-# current release of the plugin. They are all set to "latest" right now but
-# that will change as new plugin versions are released using the new RTD
-# builders. See
-# http://pulp.readthedocs.org/en/latest/dev-guide/contributing/building.html
-# for more info.
-
-intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
-                       'python': ("http://pulp-python.readthedocs.org/en/latest/", None),
-                       'docker': ("http://pulp-docker.readthedocs.org/en/latest/", None),
-                       'puppet': ("http://pulp-puppet.readthedocs.org/en/latest/", None),
-                       'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),
-                       'platform': ("http://pulp.readthedocs.org/en/latest/", None),
-                       'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
 
 extlinks = {'redmine': ('https://pulp.plan.io/issues/%s', '#'),
             'fixedbugs': ('https://pulp.plan.io/projects/pulp/issues?c%%5B%%5D=tracker&c%%5B%%5D='
