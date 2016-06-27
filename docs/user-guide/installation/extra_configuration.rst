@@ -32,6 +32,8 @@ validation.
    a client to its parent.
 
 
+.. _signed_certificates:
+
 Signed Certificates
 ^^^^^^^^^^^^^^^^^^^
 
@@ -98,12 +100,13 @@ Turning off Validation
 
 .. warning::
 
-   It is strongly recommended that you make or acquire :ref:`signed certificates` to prevent
-   man-in-the-middle attacks or other nefarious activities. It is very risky to assume that the
-   other end of the connection is who they claim to be. SSL uses a combination of encryption and
-   authentication to ensure private communication. Disabling these settings removes the
-   authentication component from the SSL session, which removes the guarantee of private
-   communication since you can't be sure who you are communicating with.
+   It is strongly recommended that you make or acquire
+   :ref:`signed certificates <signed_certificates>` to prevent man-in-the-middle attacks or other
+   nefarious activities. It is very risky to assume that the other end of the connection is who
+   they claim to be. SSL uses a combination of encryption and authentication to ensure private
+   communication. Disabling these settings removes the authentication component from the SSL
+   session, which removes the guarantee of private communication since you can't be sure who you
+   are communicating with.
 
 Pulp has a setting called ``verify_ssl`` in these files: ``/etc/pulp/admin/admin.conf``,
 ``/etc/pulp/consumer/consumer.conf``, ``/etc/pulp/nodes.conf``, and ``/etc/pulp/repo_auth.conf``. If
