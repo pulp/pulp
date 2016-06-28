@@ -117,8 +117,8 @@ We have improved the Content Applicability API significantly in this release. A
 #. Return format is updated to a more compact format keyed by Consumer ID and Content Type ID and it now returns
    only applicable units.
 
-The API is documented in detail 
-`in the applicability API documentation <http://pulp-dev-guide.readthedocs.org/en/devguide-2.1/integration/rest-api/consumer/applicability.html>`_.
+The API is documented in detail `in the applicability API documentation <https://
+docs.pulpproject.org/dev-guide/integration/rest-api/consumer/applicability.html>`_.
 
 Distributor Plugin API Change
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
