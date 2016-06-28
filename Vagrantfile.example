@@ -27,7 +27,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  # to browse that repository a bit to find the latest successful Vagrant image. For example, at the
  # time of this writing, I could set this setting like this for the latest F24 image:
  # config.vm.box = "https://kojipkgs.fedoraproject.org/compose/24/Fedora-24-20160430.0/compose/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-24_Beta-1.4.x86_64.vagrant-libvirt.box"
- config.vm.box = "fedora/23-cloud-base"
+ config.vm.box = "fedora/24-cloud-base"
 
  # Comment out if you don't want Vagrant to add and remove entries from /etc/hosts for each VM.
  # requires the vagrant-hostmanager plugin to be installed
