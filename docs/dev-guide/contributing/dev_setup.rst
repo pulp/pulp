@@ -135,7 +135,7 @@ After preparing either the libvirt or docker prerequisites using the instruction
 Whenever you connect to your Vagrant environment, you will be greeted by a message of the day
 that gives you some helpful hints. All of the code is mounted in
 /home/vagrant/devel. Your development environment has been configured for
-`virtualenvwrapper <http://virtualenvwrapper.readthedocs.org/en/latest/>`_. If you would like to
+`virtualenvwrapper <http://virtualenvwrapper.readthedocs.io/en/latest/>`_. If you would like to
 activate a virtualenv, you can simply type ``workon <repo_dir>`` to work on any particular Pulp
 repo. For example, ``workon pulp`` will activate the Pulp platform virtualenv and cd into the code
 directory for you. You can type ``workon pulp_rpm`` for pulp_rpm, ``workon pulp_python`` for
