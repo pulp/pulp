@@ -18,7 +18,6 @@ platform guide and instead focus on these two topics:
    and interesting operations. For example, create a repository, sync it, and
    publish it. Show more advanced stories as "recipes".
 
-
 Command Line User Guide
 -----------------------
 
@@ -40,52 +39,36 @@ must be run as root should be shown using ``sudo``.
 Docs Layout
 -----------
 
-Relative to the root of pulp, the user guide is stored at ``dev/sphinx/user-guide/``
-and the dev guide is stored at ``docs/sphinx/dev-guide/``.
+Platform and plugins each have their own Sphinx project which allow docs to be
+built without checking out additional repositories. The Sphinx project for
+platform and each plugin are located in the ``docs`` directory in the top level
+of the repository. For example, the platform Sphinx project
+`is located here <https://github.com/pulp/pulp/tree/master/docs>`_.
 
+Doc Hosting
+-----------
 
-Read the Docs
--------------
+Pulp's documentation is hosted on `OpenShift <https://www.openshift.com/>`_.
+and is available at `https://docs.pulpproject.org/ <https://docs.pulpproject.org/>`_.
 
-Pulp's documentation is hosted on `Read the Docs <http://readthedocs.org>`_.
-Links to all current documentation can be found at
-`http://www.pulpproject.org/docs <http://www.pulpproject.org/docs>`_.
-
-
-RTD Versions
+Doc Versions
 ------------
 
-When viewing docs on Read the Docs, there are multiple versions linked in the
-bottom-left corner of the page. Past releases each have a link named "pulp-x.y"
-and are built from the most recent commit on the corresponding "pulp-x.y"
-release branch. Documentation shown on Read the Docs must be merged onto the
-appropriate branch for it to be displayed. The "latest" version corresponds
-to the most recently released version of Pulp.
+The current, stable GA release are hosted at https://docs.pulpproject.org/
 
-Docs automatically get built when a commit happens to a corresponding branch.
-However, it seems that builds may not happen automatically when only a merge
-takes place.
+GA releases for version X.Y are hosted at https://docs.pulpproject.org/en/X.Y/
 
-   .. note::
+A given X.Y version could have either a Beta or an RC but not both, so
+those are hosted at the same place https://docs.pulpproject.org/en/X.Y/testing/
 
-      You can manually start a build on Read the Docs for a specific version
-      using the `user guide build page <https://readthedocs.org/builds/pulp-user-guide/>`_
-      or the `dev guide build page <https://readthedocs.org/builds/pulp-dev-guide/>`_.
+Nightly docs for a given X.Y release are hosted at https://docs.pulpproject.org/en/X.Y/nightly/
 
-There may be a "staging" version at times. This build is used by the team to
-share documentation that has not yet been reviewed.
+Old doc versions not available on https://docs.pulpproject.org/ are available via source.
 
 Editing the Docs
------------------
+----------------
 
-The Pulp docs support `intersphinx <http://sphinx-doc.org/ext/intersphinx.html>`_
-and `extlinks <http://sphinx-doc.org/ext/extlinks.html>`_.
-
-To refer to a document in a plugin or platform, you can do something like so::
-
-     :ref:`installation <platform:server_installation>`
-
-This will create a link to the correct reference in the platform docs.
+The Pulp docs support `extlinks <http://sphinx-doc.org/ext/extlinks.html>`_.
 
 Use the ``:redmine:`` directive to easily create links to Pulp issues. For
 example::
@@ -110,16 +93,34 @@ have its link text set using the syntax::
 
 Which creates this link: :fixedbugs:`these great bugs were fixed <2.6.0>`
 
-Building the Docs
------------------
+Build Docs Locally
+------------------
 
-Anyone can build the docs in their own dev environment, which is useful for
-proofing changes to the docs before committing them. For either the user guide
-or the dev guide, navigate to the base docs folder and run ``make html``. Once
-run, the html is available in ``_build/html``.
+Building docs locally is easy::
 
-The html is built with the vanilla sphinx theme, so the look and feel is
-different than Read the Docs look and feel.
+    1. Navigate to the Sphinx project folder
+    2. ``make html``
+    3. Browse the docs the folder ``docs/_build/html``.
+
+The Vagrant environment comes pre-loaded with all the dependencies you need
+to build the docs.
+
+If the Python environment you build the docs in has the ``sphinx_rtd_theme``
+Python package, the docs will have the same look and feel as
+`https://docs.pulpproject.org/ <https://docs.pulpproject.org/>`_. If not,
+you will get the default Sphinx theme. Either should be sufficient for
+proofing content changes.
 
 You do not need to clean the docs before rebuilding. If you do need to
 clean the docs, you should run ``make clean`` from the documentation root.
+
+Build Docs for docs.pulpproject.org
+-----------------------------------
+
+Nightly docs are built automatically each night. If builds fail,
+e-mail is sent to the docs maintainers who are expected to resolve issues.
+
+GA, RC, and Beta docs are triggered manually as part of the release process.
+
+See all of the `Jenkins doc builders <https://pulp-jenkins.rhev-ci-vms.eng.
+rdu2.redhat.com/view/Docs%20Builders/>`_.

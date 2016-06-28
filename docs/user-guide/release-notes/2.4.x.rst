@@ -440,11 +440,10 @@ Call Reports
 
 Every API that returns a Call Report with an HTTP 202 ACCEPTED response code has changed. For the
 sake of brevity, we will not list every API that returns 202 here. The structure of the Call Report
-has been changed significantly. The
-`2.3 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/conventions/sync-v-async.html#call-report>`_
-had many more fields than the
-`2.4 Call Report <https://pulp-dev-guide.readthedocs.org/en/2.4-release/conventions/sync-v-async.html#call-report>`_
-does.
+has been changed significantly. The `2.3 Call Report <https://github.com/pulp/pulp/blob/
+pulp-2.3/docs/sphinx/dev-guide/integration/rest-api/dispatch/task.rst#polling-task-progress>`_
+had many more fields than the `2.4 Call Report <https://github.com/pulp/pulp/blob/2.4-release/
+docs/sphinx/dev-guide/integration/rest-api/dispatch/task.rst#task-report>`_ does.
 
 * The spawned_tasks list within the Call Report object does not contain the full list of all
   tasks that will be scheduled for a given call. Each spawned task is responsible for spawning
@@ -459,7 +458,7 @@ does.
 Scheduled Calls
 ^^^^^^^^^^^^^^^
 
-The `Scheduled Call data structure <https://pulp-dev-guide.readthedocs.org/en/latest/conventions/scheduled.html#scheduled-tasks>`_
+The `Scheduled Call data structure <https://docs.pulpproject.org/dev-guide/conventions/scheduled.html>`_
  has changed substantially.
 
 * ``last_run`` is now ``last_run_at``.
@@ -481,8 +480,8 @@ Here are other APIs that have changed, arranged by path:
 
 ``/v2/catalog/<source_id>/``
 
-    This is a new API. See the `developer documentation <http://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/content/catalog.html>`_
-    for more detail.
+    This is a new API. See the `developer documentation <https://docs.pulpproject.org/dev-guide/
+    integration/rest-api/content/catalog.html>`_ for more detail.
 
 ``/v2/consumers/<consumer_id>/actions/content/regenerate_applicability/``
     The original applicability generation API did not allow a consumer to request regeneration of its
@@ -496,7 +495,7 @@ Here are other APIs that have changed, arranged by path:
 ``/v2/queued_calls/``
 
     This API has been removed in 2.4, as queued and running tasks are accessed through the same
-    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_.
+    `Tasks API <https://docs.pulpproject.org/dev-guide/integration/rest-api/tasks.html#task-report>`_.
 
 ``/v2/repositories/``
     Documentation for POST states that each distributor object should contain a
@@ -515,7 +514,7 @@ Here are other APIs that have changed, arranged by path:
 ``/v2/queued_calls/<call_request_id>/``
 
     This API has been removed in 2.4, as queued and running tasks are accessed through the same
-    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_.
+    `Tasks API <https://docs.pulpproject.org/dev-guide/integration/rest-api/tasks.html#task-report>`_.
 
 ``/v2/task_groups/``
 
@@ -544,10 +543,10 @@ Here are other APIs that have changed, arranged by path:
       ``spawned_tasks``.
 
     Feel free to compare the
-    `2.3 Call Report API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/integration/rest-api/dispatch/task.html#polling-task-progress>`_
-    and the
-    `2.4 Task Report API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_
-    on your own.
+    `2.3 Call Report API <https://github.com/pulp/pulp/blob/pulp-2.3/docs/sphinx/dev-guide/
+    integration/rest-api/dispatch/task.rst#polling-task-progress>`_ and the
+    `2.4 Task Report API <https://github.com/pulp/pulp/blob/2.4-release/docs/sphinx/dev-guide/
+    integration/rest-api/dispatch/task.rst#task-report>`_ on your own.
 
 ``/v2/tasks/search/``
 
