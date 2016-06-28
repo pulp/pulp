@@ -33,7 +33,7 @@ keep in mind what use cases users are likely to be interested in.
 
 Examples should not include long lines that will require horizontal scrolling.
 
-All example commands should begin with only ``$ `` as a prompt. Commands that
+All example commands should begin with only ``$`` as a prompt. Commands that
 must be run as root should be shown using ``sudo``.
 
 Docs Layout
