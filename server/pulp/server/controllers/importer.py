@@ -69,7 +69,10 @@ def set_importer(repo_id, importer_type_id, repo_plugin_config):
     :raises exceptions.InvalidValue: if the values passed to create the importer are invalid
     """
     repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    validate_importer_config(repo.repo_id, importer_type_id, repo_plugin_config)
+
+    if not plugin_api.is_valid_importer(importer_type_id):
+        raise exceptions.PulpCodedValidationException(error_code=error_codes.PLP1008,
+                                                      importer_type_id=importer_type_id)
 
     importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
     clean_config = clean_config_dict(repo_plugin_config)
@@ -77,6 +80,7 @@ def set_importer(repo_id, importer_type_id, repo_plugin_config):
     # Let the importer plugin verify the configuration
     call_config = PluginCallConfiguration(plugin_config, clean_config)
     transfer_repo = repo.to_transfer_repo()
+    validate_importer_config(repo, importer_type_id, clean_config)
 
     try:
         remove_importer(repo_id)
@@ -123,29 +127,21 @@ def queue_set_importer(repo, importer_type_id, config):
     return async_result
 
 
-def validate_importer_config(repo_id, importer_type_id, importer_config):
+def validate_importer_config(repo_obj, importer_type_id, config):
     """
-    This validates that the repository and importer type exist as these are both required to
-    validate the configuration.
+    Validates the importer configuration.
 
-    :param repo_id: identifies the repo
-    :type  repo_id: str
+    :param repo_obj: repository object
+    :type  repo_obj: pulp.server.db.model.Repository
     :param importer_type_id: type of importer, must correspond to a plugin loaded at server startup
     :type  importer_type_id: str
-    :param importer_config: configuration values for the importer; may be None
-    :type  importer_config: dict
+    :param config: configuration values for the importer
+    :type  config: dict
 
-    :raises exceptions.PulpCodedValidationException: if config is invalid.
+    :raises exceptions.PulpDataException: if config is invalid.
     """
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-
-    if not plugin_api.is_valid_importer(importer_type_id):
-        raise exceptions.PulpCodedValidationException(error_code=error_codes.PLP1008,
-                                                      importer_type_id=importer_type_id)
-
     importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
-    clean_config = clean_config_dict(importer_config)
-    call_config = PluginCallConfiguration(plugin_config, clean_config)
+    call_config = PluginCallConfiguration(plugin_config, config)
     transfer_repo = repo_obj.to_transfer_repo()
     result = importer_instance.validate_config(transfer_repo, call_config)
 
@@ -157,7 +153,7 @@ def validate_importer_config(repo_id, importer_type_id, importer_config):
         valid_config, message = result
 
     if not valid_config:
-        raise exceptions.PulpCodedValidationException(validation_errors=message)
+        raise exceptions.PulpDataException(message)
 
 
 @celery.task(base=Task, name='pulp.server.managers.repo.importer.remove_importer')
@@ -242,18 +238,18 @@ def update_importer_config(repo_id, importer_config):
     :param importer_config: new configuration values to use for this repo
     :type  importer_config: dict
     """
+    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
-    importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer.importer_type_id)
-    validate_importer_config(repo_id, repo_importer.importer_type_id, importer_config)
 
-    # The convention is that None in an update removes the value and sets it to the default.
-    unset_property_names = [k for k in importer_config if importer_config[k] is None]
-    for key in unset_property_names:
-        repo_importer.config.pop(key, None)
-        importer_config.pop(key, None)
+    # repo_importer.config needs to be changed
+    for k, v in importer_config.iteritems():
+        if v is None:
+            repo_importer.config.pop(k)
+        else:
+            repo_importer.config[k] = v
 
-    # Whatever is left over are the changed/added values, so merge them in.
-    repo_importer.config.update(importer_config)
+    validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
+
     try:
         repo_importer.save()
     except ValidationError, e:
