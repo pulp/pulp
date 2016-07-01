@@ -761,6 +761,20 @@ class TestConsumerContentActionView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
+    def test_consumer_invalid_value_units_not_list_dicts(self, mock_consumer):
+        """
+        Test consumer content install invalid value if units are not a list of dicts
+        """
+        mock_consumer.return_value.get_consumer.return_value = 'test-consumer'
+        request = mock.MagicMock()
+        request.body = json.dumps({"units": {}, "options": {}})
+        consumer_content = ConsumerContentActionView()
+        self.assertRaises(InvalidValue, consumer_content.post, request,
+                          'test-consumer', 'install')
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_cons(self, mock_consumer):
         """
         Test consumer content installation with missing consumer
