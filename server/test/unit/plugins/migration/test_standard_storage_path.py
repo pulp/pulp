@@ -46,32 +46,50 @@ class TestBatch(TestCase):
     @patch('os.readlink')
     @patch('os.unlink')
     @patch('os.symlink')
-    @patch('os.path.islink')
-    def test_relink(self, islink, symlink, unlink, readlink, walk):
+    def test_relink(self, symlink, unlink, readlink, walk):
+        links = {
+            '/pub/zoo/cat/lion/f1': '/content/a/f1',
+            '/pub/zoo/cat/tiger/f2': '/content/b/f2',
+            '/pub/zoo/zebra/f3': '/content/c/f3',
+            '/pub/zoo/bear/f4': '/content/d/f4',
+            '/pub/zoo/wolf/f5': '/content/e/f5',
+            '/pub/zoo/wolf/.f5': '/content/e/.f5',
+            '/pub/zoo/wolf/f6': '/content/e/f6',
+            '/pub/unknown/f0': '/content/unknown/f0',
+        }
+
         def read_link(path):
-            if os.path.basename(path) == 'l-invalid':
+            try:
+                return links[path]
+            except KeyError:
                 raise OSError()
-            return path.upper()
 
         readlink.side_effect = read_link
 
-        def is_link(path):
-            return os.path.basename(path)[0] == 'l'
+        items = [
+            Item(1, '1', '/content/a/f1', '/content/new/a/f1', []),
+            Item(2, '2', '/content/b/f2', '/content/new/b/f2', []),
+            Item(3, '3', '/content/c/f3', '/content/new/c/f3', []),
+            Item(4, '4', '/content/d/f4', '/content/new/d/f4', []),
+            Item(5, '5', '/content/e', '/content/new/e', ['f5', '.f5', 'f6']),
+        ]
 
-        islink.side_effect = is_link
-
-        paths = {
-            'D0/L2': Item(1, '1', 'D0/L2', 'new-path-1', []),
-            'D1/L3': Item(2, '2', 'D1/L3', 'new-path-2', []),
-            'D2/L6': Item(3, '3', 'D2/L6', 'new-path-3', []),
-            'D3/L7': Item(4, '4', 'D3', 'new-path-4', ['L7']),
-        }
+        paths = {}
+        for i in items:
+            paths[i.storage_path] = i
+            for f in i.files:
+                paths[os.path.join(i.storage_path, f)] = i
 
         walk.return_value = [
-            ('d0', ['d1', 'd2'], ['f1', 'l2']),
-            ('d1', [], ['l3', 'f4']),
-            ('d2', [], ['f5', 'l6', 'l7', 'l-invalid']),
-            ('d3', [], ['l7']),
+            ('/pub', ['zoo', 'other'], []),
+            ('/pub/zoo', ['cat'], []),
+            ('/pub/zoo/cat', ['lion', 'tiger'], []),
+            ('/pub/zoo/cat/lion', [], ['f1']),
+            ('/pub/zoo/cat/tiger', [], ['f2']),
+            ('/pub/zoo/zebra', [], ['f3']),
+            ('/pub/zoo/bear', [], ['f4']),
+            ('/pub/zoo/wolf', [], ['.f5', 'f5', 'f6']),
+            ('/pub/unknown', [], ['f0', 'f1']),
         ]
 
         # test
@@ -83,18 +101,24 @@ class TestBatch(TestCase):
         self.assertEqual(
             unlink.call_args_list,
             [
-                call('d0/l2'),
-                call('d1/l3'),
-                call('d2/l6'),
-                call('d3/l7')
+                call('/pub/zoo/cat/lion/f1'),
+                call('/pub/zoo/cat/tiger/f2'),
+                call('/pub/zoo/zebra/f3'),
+                call('/pub/zoo/bear/f4'),
+                call('/pub/zoo/wolf/.f5'),
+                call('/pub/zoo/wolf/f5'),
+                call('/pub/zoo/wolf/f6'),
             ])
         self.assertEqual(
             symlink.call_args_list,
             [
-                call('new-path-1', 'd0/l2'),
-                call('new-path-2', 'd1/l3'),
-                call('new-path-3', 'd2/l6'),
-                call('new-path-4/L7', 'd3/l7')
+                call('/content/new/a/f1', '/pub/zoo/cat/lion/f1'),
+                call('/content/new/b/f2', '/pub/zoo/cat/tiger/f2'),
+                call('/content/new/c/f3', '/pub/zoo/zebra/f3'),
+                call('/content/new/d/f4', '/pub/zoo/bear/f4'),
+                call('/content/new/e/.f5', '/pub/zoo/wolf/.f5'),
+                call('/content/new/e/f5', '/pub/zoo/wolf/f5'),
+                call('/content/new/e/f6', '/pub/zoo/wolf/f6'),
             ])
 
     def test_migrate(self):
