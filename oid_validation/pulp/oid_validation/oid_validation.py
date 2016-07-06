@@ -194,16 +194,17 @@ class OidValidator:
 
         valid = False
         for prefix in repo_url_prefixes:
-            # Extract the repo portion of the URL
-            repo_dest = dest[dest.find(prefix) + len(prefix):]
-            try:
-                valid = cert.check_path(repo_dest)
-            except AttributeError:
-                # not an entitlement certificate, so no entitlements
-                log_func('The provided client certificate is not an entitlement certificate.\n')
-            # if we have a valid url check, no need to continue
-            if valid:
-                break
+            if dest.find(prefix) > -1:
+                # Extract the repo portion of the URL
+                repo_dest = dest[dest.find(prefix) + len(prefix):]
+                try:
+                    valid = cert.check_path(repo_dest)
+                except AttributeError:
+                    # not an entitlement certificate, so no entitlements
+                    log_func('The provided client certificate is not an entitlement certificate.\n')
+                # if we have a valid url check, no need to continue
+                if valid:
+                    break
 
         if not valid:
             log_func('Request denied to destination [%s]' % dest)
