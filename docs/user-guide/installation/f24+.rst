@@ -178,18 +178,17 @@ Now we are ready to install and configure the Pulp server!
       $ sudo systemctl enable pulp_celerybeat
       $ sudo systemctl start pulp_celerybeat
 
-   Lastly, exactly one ``pulp_resource_manager`` process must be running in the installation. This
-   process acts as a task router, deciding which worker should perform certain types of tasks.
-   Apologies for the repetitive message, but it is important that this process only be enabled on
-   one host. Edit ``/etc/default/pulp_resource_manager`` to your liking. Then::
+   Lastly, a ``pulp_resource_manager`` process must be running in the installation. This process
+   acts as a task router, deciding which worker should perform certain types of tasks. As with
+   ``pulp_celerybeat``, multiple instances of ``pulp_resource_manager`` may be run concurrently on
+   separate hosts to increase fault tolerance, however, only one instance will ever be active at a
+   time. Should the active instance become unavailable, another instance will take over after some
+   delay.
+
+   Edit ``/etc/default/pulp_resource_manager`` to your liking. Then::
 
       $ sudo systemctl enable pulp_resource_manager
       $ sudo systemctl start pulp_resource_manager
-
-   .. warning::
-
-      ``pulp_resource_manager`` must be singleton, so be sure that you
-      only enable this on one host if you are deploying Pulp in a clustered environment.
 
 
 Admin Client
@@ -250,7 +249,7 @@ repositories.
    and Puppet plugins support the Pulp Agent.
 
    ::
- 
+
       $ sudo dnf install pulp-puppet-consumer-extensions pulp-rpm-consumer-extensions
 
 

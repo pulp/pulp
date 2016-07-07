@@ -247,8 +247,12 @@ class Scheduler(beat.Scheduler):
         # this is not an event that gets sent anywhere. We process it
         # immediately.
         scheduler_event = {
-            'timestamp': time.time(), 'local_received': time.time(), 'type': 'scheduler-event',
-            'hostname': celerybeat_name}
+            'timestamp': time.time(),
+            'local_received': time.time(),
+            'type': 'scheduler-event',
+            'hostname': celerybeat_name
+        }
+
         worker_watcher.handle_worker_heartbeat(scheduler_event)
 
         old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)

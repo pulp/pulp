@@ -983,6 +983,24 @@ class CeleryBeatLock(AutoRetryDocument):
     _ns = StringField(default='celery_beat_lock')
 
 
+class ResourceManagerLock(AutoRetryDocument):
+    """
+    Single document collection which gives information about the current resource manager lock.
+
+    :ivar name: string representing the resource manager instance name
+    :type name: basestring
+    :ivar lock: A unique key set to "locked" when lock is acquired.
+    :type lock: basestring
+    :ivar _ns: (Deprecated), Contains the name of the collection this model represents
+    :type _ns: mongoengine.StringField
+    """
+    name = StringField(required=True)
+    lock = StringField(required=True, default="locked", unique=True)
+
+    # For backward compatibility
+    _ns = StringField(default='resource_manager_lock')
+
+
 class LazyCatalogEntry(AutoRetryDocument):
     """
     A catalog of content that can be downloaded by the specified plugin.

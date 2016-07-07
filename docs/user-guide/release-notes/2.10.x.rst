@@ -1,0 +1,13 @@
+=======================
+Pulp 2.10 Release Notes
+=======================
+
+Pulp 2.10.0
+===========
+
+New Features
+------------
+
+* Multiple instances of ``pulp_resource_manager`` can now exist in parallel without interfering with
+  each other. The original copy will now hold an exclusive lock until it dies or is killed, at
+  which point another instance of ``pulp_resource_manager`` can acquire the lock and take its place.
