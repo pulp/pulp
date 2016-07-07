@@ -37,6 +37,21 @@ class TestSetImporter(unittest.TestCase):
     Tests for setting an importer on a repository.
     """
 
+    def test_plugin_is_invalid_importer(self, m_validate_conf, m_model, m_plug_api, m_clean,
+                                        mock_remove, mock_plug_call_config, *_):
+        """
+        If the plugin_api returns that an importer is invalid, raise.
+        """
+        m_plug_api.is_valid_importer.return_value = False
+        try:
+            importer.set_importer('m_id', 'm_type', 'm_conf')
+        except exceptions.PulpCodedValidationException, e:
+            pass
+        else:
+            raise AssertionError('PulpCodedValidationException should be raised if importer type '
+                                 'is invalid.')
+        self.assertEqual(e.error_code.code, 'PLP1008')
+
     def test_instance_exception(self, m_validate_conf, m_model, m_plug_api, m_clean, *_):
         """
         Test the behavior with the plugin raises an exception.
@@ -174,7 +189,6 @@ class TestQueueSetImporter(unittest.TestCase):
         self.assertTrue(result is m_set.apply_async_with_reservation.return_value)
 
 
-@mock.patch('pulp.server.controllers.importer.clean_config_dict')
 @mock.patch('pulp.server.controllers.importer.plugin_api')
 @mock.patch('pulp.server.controllers.importer.model.Repository')
 class TestValidateImporterConfig(unittest.TestCase):
@@ -182,22 +196,8 @@ class TestValidateImporterConfig(unittest.TestCase):
     Tests for ValidateImporterConfig.
     """
 
-    def test_plugin_is_invalid_importer(self, m_repo_model, m_plug_api, m_clean):
-        """
-        If the plugin_api returns that an importer is invalid, raise.
-        """
-        m_plug_api.is_valid_importer.return_value = False
-        try:
-            importer.validate_importer_config('m_id', 'm_type', 'm_conf')
-        except exceptions.PulpCodedValidationException, e:
-            pass
-        else:
-            raise AssertionError('PulpCodedValidationException should be raised if importer type '
-                                 'is invalid.')
-        self.assertEqual(e.error_code.code, 'PLP1008')
-
     @mock.patch('pulp.server.controllers.importer.PluginCallConfiguration')
-    def test_invalid_as_expected_bool(self, m_plug_call_config, m_repo_model, m_plug_api, m_clean):
+    def test_invalid_as_expected_bool(self, m_plug_call_config, m_repo_model, m_plug_api):
         """
         Importer instances can return a boolean or a tuple. Test bool only.
         """
@@ -207,16 +207,15 @@ class TestValidateImporterConfig(unittest.TestCase):
         imp_inst.validate_config.return_value = False
 
         self.assertRaises(
-            exceptions.PulpCodedValidationException, importer.validate_importer_config,
-            'm_id', 'm_type', 'm_conf'
+            exceptions.PulpDataException, importer.validate_importer_config,
+            m_repo, 'm_type', 'm_conf'
         )
-        m_clean.assert_called_once_with('m_conf')
-        m_plug_call_config.assert_called_once_with('plug_config', m_clean.return_value)
+        m_plug_call_config.assert_called_once_with('plug_config', 'm_conf')
         imp_inst.validate_config.assert_called_once_with(
             m_repo.to_transfer_repo.return_value, m_plug_call_config.return_value)
 
     @mock.patch('pulp.server.controllers.importer.PluginCallConfiguration')
-    def test_invalid_as_expected_tuple(self, m_plug_call_config, m_repo_model, m_plug_api, m_clean):
+    def test_invalid_as_expected_tuple(self, m_plug_call_config, m_repo_model, m_plug_api):
         """
         Importer instances can return a boolean or a tuple. Test tuple.
         """
@@ -226,21 +225,20 @@ class TestValidateImporterConfig(unittest.TestCase):
         imp_inst.validate_config.return_value = (False, 'm_message')
 
         try:
-            importer.validate_importer_config('m_id', 'm_type', 'm_conf')
-        except exceptions.PulpCodedValidationException, e:
+            importer.validate_importer_config(m_repo, 'm_type', 'm_conf')
+        except exceptions.PulpDataException, e:
             pass
         else:
-            raise AssertionError('PulpCodedValidationException should be raised if importer type '
+            raise AssertionError('PulpDataException should be raised if importer type '
                                  'is invalid.')
 
-        m_clean.assert_called_once_with('m_conf')
-        m_plug_call_config.assert_called_once_with('plug_config', m_clean.return_value)
+        m_plug_call_config.assert_called_once_with('plug_config', 'm_conf')
         imp_inst.validate_config.assert_called_once_with(
             m_repo.to_transfer_repo.return_value, m_plug_call_config.return_value)
-        self.assertEqual(e.to_dict()['data']['validation_errors'], 'm_message')
+        self.assertEqual(e.to_dict()['description'], 'm_message')
 
     @mock.patch('pulp.server.controllers.importer.PluginCallConfiguration')
-    def test_valid_as_expected(self, m_plug_call_config, m_repo_model, m_plug_api, m_clean):
+    def test_valid_as_expected(self, m_plug_call_config, m_repo_model, m_plug_api):
         """
         Test a valid importer.
         """
@@ -250,10 +248,9 @@ class TestValidateImporterConfig(unittest.TestCase):
         imp_inst.validate_config.return_value = True
 
         # No error messages should be raised.
-        importer.validate_importer_config('m_id', 'm_type', 'm_conf')
+        importer.validate_importer_config(m_repo, 'm_type', 'm_conf')
 
-        m_clean.assert_called_once_with('m_conf')
-        m_plug_call_config.assert_called_once_with('plug_config', m_clean.return_value)
+        m_plug_call_config.assert_called_once_with('plug_config', 'm_conf')
         imp_inst.validate_config.assert_called_once_with(
             m_repo.to_transfer_repo.return_value, m_plug_call_config.return_value)
 
@@ -364,6 +361,7 @@ class TestUpdateImporterConfig(unittest.TestCase):
         """
         Update an importer config in the minimal way.
         """
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
         mock_imp_inst = mock.MagicMock()
         mock_plugin_config = mock.MagicMock()
@@ -372,9 +370,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'config'})
-        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
-                                                     {'test': 'config'})
-        mock_importer.config.update.assert_called_once_with({'test': 'config'})
+        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
+                                                     mock_importer.config)
         mock_importer.save.assert_called_once_with()
         mock_ser.assert_called_once_with(mock_importer)
         self.assertTrue(result is mock_ser.return_value.data)
@@ -383,6 +380,7 @@ class TestUpdateImporterConfig(unittest.TestCase):
         """
         Test that keys with value None are removed from the config.
         """
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
         mock_importer.config = {'keep': 'keep', 'dont_keep': 'dont_keep'}
         mock_imp_inst = mock.MagicMock()
@@ -392,8 +390,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'change', 'dont_keep': None})
-        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
-                                                     {'test': 'change'})
+        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
+                                                     {'test': 'change', 'keep': 'keep'})
         self.assertDictEqual(mock_importer.config, {'test': 'change', 'keep': 'keep'})
         mock_importer.save.assert_called_once_with()
         mock_ser.assert_called_once_with(mock_importer)
@@ -403,6 +401,7 @@ class TestUpdateImporterConfig(unittest.TestCase):
         """
         Test behavior if config is invalid.
         """
+        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
         mock_importer.save.side_effect = ValidationError
         mock_imp_inst = mock.MagicMock()
@@ -411,8 +410,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
 
         self.assertRaises(exceptions.InvalidValue, importer.update_importer_config,
                           'mrepo', {'test': 'config'})
-        mock_validate_config.assert_called_once_with('mrepo', mock_importer.importer_type_id,
-                                                     {'test': 'config'})
+        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
+                                                     mock_importer.config)
 
 
 @mock.patch('pulp.server.controllers.importer.update_importer_config')
