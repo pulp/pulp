@@ -13,6 +13,7 @@ The OID structure follows the Red Hat model. Download URLs are found at:
 The * represents the product ID and is not used as part of this calculation.
 '''
 
+import os
 from gettext import gettext as _
 from ConfigParser import NoOptionError, SafeConfigParser, NoSectionError
 
@@ -194,9 +195,10 @@ class OidValidator:
 
         valid = False
         for prefix in repo_url_prefixes:
-            if dest.find(prefix) > -1:
-                # Extract the repo portion of the URL
-                repo_dest = dest[dest.find(prefix) + len(prefix):]
+            if dest.startswith(prefix):
+                # rhsm throws a ValueError if there's no leading /. Amusingly, it immediately
+                # strips it off.
+                repo_dest = os.path.join('/', os.path.relpath(dest, prefix))
                 try:
                     valid = cert.check_path(repo_dest)
                 except AttributeError:
