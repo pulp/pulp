@@ -312,6 +312,10 @@ ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
 mkdir -p %{buildroot}/%{_datadir}/pulp/templates
 cp server/usr/share/pulp/templates/* %{buildroot}/%{_datadir}/pulp/templates/
 
+# logrotate for pulp logs
+mkdir -p %{buildroot}/etc/logrotate.d
+install -m 644 -p server/etc/logrotate.d/pulp %{buildroot}/etc/logrotate.d/%{name}
+
 %endif # End server installation block
 
 # Everything else installation
@@ -404,6 +408,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/default/pulp_resource_manager
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_content.conf
+%config(noreplace) %{_sysconfdir}/logrotate.d/pulp
 %dir %{_sysconfdir}/pki/%{name}
 %dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %dir %{_sysconfdir}/%{name}/server
