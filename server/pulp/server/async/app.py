@@ -6,7 +6,6 @@ Celery setup finishes.
 
 import contextlib
 import logging
-import platform
 import sys
 import signal
 import time
@@ -88,7 +87,7 @@ def initialize_worker(sender, instance, **kwargs):
         get_resource_manager_lock(sender)
 
 
-def get_resource_manager_lock(sender):
+def get_resource_manager_lock(name):
     """
     Tries to acquire the resource manager lock. If the lock cannot be acquired immediately, it
     will wait until the currently active instance becomes unavailable, at which point the worker
@@ -97,13 +96,12 @@ def get_resource_manager_lock(sender):
     handler so that that the worker record will be immediately cleaned up if the process is killed
     while in this states.
 
-    :param sender:   The hostname of the worker
-    :type  sender:   basestring
+    :param name:   The hostname of the worker
+    :type  name:   basestring
     """
-    name = constants.RESOURCE_MANAGER_WORKER_NAME + "@" + platform.node()
-    lock = ResourceManagerLock(name=name)
-
     assert name.startswith(constants.RESOURCE_MANAGER_WORKER_NAME)
+
+    lock = ResourceManagerLock(name=name)
 
     with custom_sigterm_handler(name):
         # Whether this is the first lock availability check for this instance
@@ -111,8 +109,8 @@ def get_resource_manager_lock(sender):
 
         while True:
             # Create / update the worker record so that Pulp knows we exist
-            Worker.objects(name=sender).update_one(set__last_heartbeat=datetime.utcnow(),
-                                                   upsert=True)
+            Worker.objects(name=name).update_one(set__last_heartbeat=datetime.utcnow(),
+                                                 upsert=True)
             try:
                 lock.save()
 
