@@ -4,12 +4,12 @@ Creation, Deletion, and Configuration
 Create a Repository
 -------------------
 
-Creates a new repository in Pulp. This call accepts optional parameters 
-for importer and distributor configuration. More detailed description of 
-these parameters can be found below in the documentation of APIs to associate an importer 
-or a distributor to an already existing repository. If these parameters are not passed, 
-the call will only create the repository in Pulp. The real functionality 
-of a repository isn't defined until importers and distributors are added. 
+Creates a new repository in Pulp. This call accepts optional parameters
+for importer and distributor configuration. More detailed description of
+these parameters can be found below in the documentation of APIs to associate an importer
+or a distributor to an already existing repository. If these parameters are not passed,
+the call will only create the repository in Pulp. The real functionality
+of a repository isn't defined until importers and distributors are added.
 Repository IDs must be unique across all repositories in the server.
 
 | :method:`post`
@@ -67,7 +67,7 @@ Repository IDs must be unique across all repositories in the server.
   "content_unit_counts": {},
   "_id": {
     "$oid": "52280416e5e71041ad000066"
-  }, 
+  },
   "id": "harness_repo_1",
   "_href": "/pulp/api/v2/repositories/harness_repo_1/"
  }
@@ -108,7 +108,7 @@ is centered around updating only that metadata.
   },
   "importer_config": {
    "demo_key": "demo_value"
-  }, 
+  },
   "distributor_configs": {
    "demo_distributor": {
      "demo_key": "demo_value"
@@ -154,6 +154,12 @@ repository maintains its own configuration for the importer which is used to
 dictate how the importer will function when it synchronizes content. The possible
 configuration values are contingent on the type of importer being added; each
 importer type will support a different set of values relevant to how it functions.
+
+.. note::
+        There is an optional importer configuration parameter that is usable
+        on all importer plugin types called ``force_full``. If this parameter is set,
+        a full re-sync will be forced.
+        More details are `here <http://pulp.readthedocs.org/en/latest/user-guide/release-notes/2.10.x.html#pulp-2-10-0>`_.
 
 Only one importer may be associated with a repository at a given time. If a
 repository already has an associated importer, the previous association is removed.

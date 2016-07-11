@@ -93,6 +93,12 @@ class SyncPublishCommandTests(base.PulpClientTests):
     """
     Tests for the SyncPublishCommand class.
     """
+    def setUp(self):
+        super(SyncPublishCommandTests, self).setUp()
+        self.sample_option1 = PulpCliOption('--sample-option1', "sample_option1", required=False)
+        self.sample_option2 = PulpCliOption('--sample-option2', "sample_option2", required=False)
+        self.additional_options = [self.sample_option1, self.sample_option2]
+
     @mock.patch('pulp.client.commands.polling.PollingCommand.__init__',
                 side_effect=polling.PollingCommand.__init__, autospec=True)
     def test__init___method_set(self, __init__):
@@ -104,13 +110,18 @@ class SyncPublishCommandTests(base.PulpClientTests):
         method = mock.MagicMock()
         context = mock.MagicMock()
         renderer = mock.MagicMock()
+        override_config_options = self.additional_options
 
-        spc = sp.SyncPublishCommand(name, description, method, context, renderer)
+        spc = sp.SyncPublishCommand(name, description, method, context, renderer,
+                                    override_config_options)
 
         self.assertEqual(spc.renderer, renderer)
         self.assertEqual(spc.context, context)
         self.assertEqual(spc.prompt, context.prompt)
         self.assertTrue(options.OPTION_REPO_ID in spc.options)
+        # Test override_config_options
+        self.assertEqual(set([o.keyword for o in spc.option_groups[0].options]),
+                         set([o.keyword for o in self.additional_options]))
         __init__.assert_called_once_with(spc, name, description, method, context)
 
     @mock.patch('pulp.client.commands.polling.PollingCommand.__init__',
@@ -124,6 +135,7 @@ class SyncPublishCommandTests(base.PulpClientTests):
         method = None
         context = mock.MagicMock()
         renderer = mock.MagicMock()
+        override_config_options = self.additional_options
 
         # Because the SyncPublishCommand does not have a run() method, we need to make and test a
         # subclass of it that has a run() method to ensure that method defaults to run() when is is
@@ -132,12 +144,15 @@ class SyncPublishCommandTests(base.PulpClientTests):
             def run(self):
                 pass
 
-        spc = TestSubclass(name, description, method, context, renderer)
+        spc = TestSubclass(name, description, method, context, renderer, override_config_options)
 
         self.assertEqual(spc.renderer, renderer)
         self.assertEqual(spc.context, context)
         self.assertEqual(spc.prompt, context.prompt)
         self.assertTrue(options.OPTION_REPO_ID in spc.options)
+        # Test override_config_options
+        self.assertEqual(set([o.keyword for o in spc.option_groups[0].options]),
+                         set([o.keyword for o in self.additional_options]))
         # When method is None, self.run should have been used instead
         __init__.assert_called_once_with(spc, name, description, spc.run, context)
 
@@ -191,9 +206,15 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure all of the expected options are there
         found_option_keywords = set([o.keyword for o in self.command.options])
+        found_group_option_keywords = set(
+            [o.keyword for o in self.command.option_groups[0].options])
+
         expected_option_keywords = set([options.OPTION_REPO_ID.keyword,
                                         polling.FLAG_BACKGROUND.keyword])
+        expected_group_option_keywords = set([sp.FLAG_FORCE_FULL_SYNC.keyword])
+
         self.assertEqual(found_option_keywords, expected_option_keywords)
+        self.assertEqual(found_group_option_keywords, expected_group_option_keywords)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
@@ -210,7 +231,8 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when there is not an existing sync Task on the server.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
+                sp.FLAG_FORCE_FULL_SYNC.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -238,7 +260,8 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when there is an existing sync Task on the server.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
+                sp.FLAG_FORCE_FULL_SYNC.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
@@ -267,7 +290,8 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when the --bg flag is set.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: True}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: True,
+                sp.FLAG_FORCE_FULL_SYNC.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -381,24 +405,15 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         self.mock_renderer = mock.MagicMock()
         self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer,
                                                       distributor_id='yum_distributor')
-        self.sample_option1 = PulpCliOption('--sample-option1', "sample_option1", required=False)
-        self.sample_option2 = PulpCliOption('--sample-option2', "sample_option2", required=False)
-        self.additional_publish_options = [self.sample_option1, self.sample_option2]
 
     def test_structure(self):
-        # Ensure all of the expected options are there
-        self.command = sp.RunPublishRepositoryCommand(
-            self.context, self.mock_renderer, distributor_id='yum_distributor',
-            override_config_options=self.additional_publish_options)
         found_option_keywords = set([o.keyword for o in self.command.options])
         found_group_option_keywords = set(
             [o.keyword for o in self.command.option_groups[0].options])
 
         expected_option_keywords = set([options.OPTION_REPO_ID.keyword,
                                         polling.FLAG_BACKGROUND.keyword])
-        expected_group_option_keywords = set([self.sample_option1.keyword,
-                                              self.sample_option2.keyword,
-                                              sp.FLAG_FORCE_FULL.keyword])
+        expected_group_option_keywords = set([sp.FLAG_FORCE_FULL_PUBLISH.keyword])
 
         self.assertEqual(found_option_keywords, expected_option_keywords)
         self.assertEqual(found_group_option_keywords, expected_group_option_keywords)
@@ -419,7 +434,7 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         """
         repo_id = 'test-repo'
         data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
-                sp.FLAG_FORCE_FULL.keyword: False}
+                sp.FLAG_FORCE_FULL_PUBLISH.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -446,7 +461,7 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         """
         repo_id = 'test-repo'
         data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False,
-                sp.FLAG_FORCE_FULL.keyword: False}
+                sp.FLAG_FORCE_FULL_PUBLISH.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
@@ -476,7 +491,7 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         """
         repo_id = 'test-repo'
         data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: True,
-                sp.FLAG_FORCE_FULL.keyword: False}
+                sp.FLAG_FORCE_FULL_PUBLISH.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call

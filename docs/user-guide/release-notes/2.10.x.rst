@@ -11,3 +11,7 @@ New Features
 * Multiple instances of ``pulp_resource_manager`` can now exist in parallel without interfering with
   each other. The original copy will now hold an exclusive lock until it dies or is killed, at
   which point another instance of ``pulp_resource_manager`` can acquire the lock and take its place.
+
+* A full re-sync can be forced with a 'force_full' option. It will trigger full sync where
+  no sync optimization will be applied or steps skipped. This option can be used by ``force_full``
+  option in override_config via API or ``--force-full`` via CLI.
