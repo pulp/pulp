@@ -1,0 +1,18 @@
+=======================
+Pulp 2.10 Release Notes
+=======================
+
+Pulp 2.10.0
+===========
+
+New Features
+------------
+
+* Multiple instances of ``pulp_resource_manager`` can now exist in parallel without interfering with
+  each other. The original copy will now hold an exclusive lock until it dies or is killed, at
+  which point another instance of ``pulp_resource_manager`` can acquire the lock and take its place.
+
+* Added new option --force-full to sync. This can be used for example in rpm to re-download missing
+  files even when the repo revision number has not changed since last sync.
+  This option can be used by `force_full` option in `override_config` via API or
+  `--force-full` via CLI.
