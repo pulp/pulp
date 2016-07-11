@@ -20,7 +20,7 @@ from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import app, tasks
-from pulp.server.db.model import Worker, ReservedResource, TaskStatus
+from pulp.server.db.model import Worker, TaskStatus
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
@@ -214,74 +214,50 @@ class TestDeleteWorker(ResourceReservationTests):
         self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])
 
 
-class TestReleaseResource(ResourceReservationTests):
-    """
-    Test the _release_resource() Task.
-    """
-    def test_resource_not_in_resource_map(self):
-        """
-        Test _release_resource() with a resource that is not in the database. This should be
-        gracefully handled, and result in no changes to the database.
-        """
-        # Set up two workers
-        worker_1 = Worker(name=WORKER_1, last_heartbeat=datetime.utcnow())
-        worker_1.save()
-        worker_2 = Worker(name=WORKER_2, last_heartbeat=datetime.utcnow())
-        worker_2.save()
-        # Set up two resource reservations, using our workers from above
-        reserved_resource_1 = ReservedResource(task_id=str(uuid.uuid4()),
-                                               worker_name=worker_1.name, resource_id='resource_1')
-        reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(task_id=str(uuid.uuid4()),
-                                               worker_name=worker_2.name, resource_id='resource_2')
-        reserved_resource_2.save()
+class TestReleaseResource(unittest.TestCase):
 
-        # This should not raise any Exception, but should also not alter either the Worker
-        # collection or the ReservedResource collection
-        tasks._release_resource('made_up_resource_id')
+    def setUp(self):
+        self.patch_a = mock.patch('pulp.server.async.tasks.ReservedResource', autospec=True)
+        self.mock_reserved_resource = self.patch_a.start()
 
-        # Make sure that the workers collection has not been altered
-        self.assertEqual(Worker.objects().count(), 2)
-        worker_1 = Worker.objects().get(name=worker_1.name)
-        self.assertTrue(worker_1)
-        worker_2 = Worker.objects().get(name=worker_2.name)
-        self.assertTrue(worker_2)
-        # Make sure that the reserved resources collection has not been altered
-        self.assertEqual(ReservedResource.objects.count(), 2)
-        rr_1 = ReservedResource.objects.get(task_id=reserved_resource_1.task_id)
-        self.assertEqual(rr_1['worker_name'], reserved_resource_1.worker_name)
-        self.assertEqual(rr_1['resource_id'], 'resource_1')
-        rr_2 = ReservedResource.objects.get(task_id=reserved_resource_2.task_id)
-        self.assertEqual(rr_2['worker_name'], reserved_resource_2.worker_name)
-        self.assertEqual(rr_2['resource_id'], 'resource_2')
+        self.patch_b = mock.patch('pulp.server.async.tasks.TaskStatus', autospec=True)
+        self.mock_task_status = self.patch_b.start()
 
-    def test_resource_in_resource_map(self):
-        """
-        Test _release_resource() with a valid resource. This should remove the resource from the
-        database.
-        """
-        # Set up two workers
-        now = datetime.utcnow()
-        worker_1 = Worker(name=WORKER_1, last_heartbeat=now)
-        worker_1.save()
-        worker_2 = Worker(name=WORKER_2, last_heartbeat=now)
-        worker_2.save()
-        # Set up two reserved resources
-        reserved_resource_1 = ReservedResource(task_id=str(uuid.uuid4()),
-                                               worker_name=worker_1.name, resource_id='resource_1')
-        reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(task_id=str(uuid.uuid4()),
-                                               worker_name=worker_2.name, resource_id='resource_2')
-        reserved_resource_2.save()
+        self.patch_c = mock.patch('pulp.server.async.tasks.Task', autospec=True)
+        self.mock_task = self.patch_c.start()
 
-        # This should remove resource_2 from the _resource_map.
-        tasks._release_resource(reserved_resource_2.task_id)
+        self.patch_d = mock.patch('pulp.server.async.tasks.constants', autospec=True)
+        self.mock_constants = self.patch_d.start()
 
-        # resource_2 should have been removed from the database
-        self.assertEqual(ReservedResource.objects.count(), 1)
-        rr_1 = ReservedResource.objects.get(task_id=reserved_resource_1.task_id)
-        self.assertEqual(rr_1['worker_name'], reserved_resource_1.worker_name)
-        self.assertEqual(rr_1['resource_id'], 'resource_1')
+        super(TestReleaseResource, self).setUp()
+
+    def tearDown(self):
+        self.patch_a.stop()
+        self.patch_b.stop()
+        self.patch_c.stop()
+        self.patch_d.stop()
+        super(TestReleaseResource, self).tearDown()
+
+    def test_deletes_reserved_resource(self):
+        mock_task_id = mock.Mock()
+        tasks._release_resource(mock_task_id)
+        self.mock_reserved_resource.objects.assert_called_once_with(task_id=mock_task_id)
+        self.mock_reserved_resource.objects.return_value.delete.assert_called_once_with()
+
+    def test_finds_running_task_by_uuid(self):
+        mock_task_id = mock.Mock()
+        tasks._release_resource(mock_task_id)
+        filter_obj = self.mock_task_status.objects.filter
+        filter_obj.assert_called_once_with(task_id=mock_task_id,
+                                           state=self.mock_constants.CALL_RUNNING_STATE)
+
+    def test_calls_on_failure_handler_if_task_id_is_not_final(self):
+        self.mock_task_status.objects.filter.return_value = [mock.Mock()]
+        mock_task = mock.Mock()
+        self.mock_task.return_value = mock_task
+        mock_task_id = mock.Mock()
+        tasks._release_resource(mock_task_id)
+        self.assertTrue(mock_task.on_failure.called)
 
 
 class TestTaskResult(unittest.TestCase):

@@ -274,6 +274,17 @@ def _release_resource(task_id):
     :param task_id: The UUID of the task that requested the reservation
     :type  task_id: basestring
     """
+    running_task_qs = TaskStatus.objects.filter(task_id=task_id, state=constants.CALL_RUNNING_STATE)
+    for running_task in running_task_qs:
+        new_task = Task()
+        msg = _('The task status %(task_id)s exited immediately for some reason. Marking as '
+                'errored. Check the logs for more details')
+        runtime_exception = RuntimeError(msg % {'task_id': task_id})
+
+        class MyEinfo(object):
+            traceback = None
+
+        new_task.on_failure(runtime_exception, task_id, (), {}, MyEinfo)
     ReservedResource.objects(task_id=task_id).delete()
 
 
