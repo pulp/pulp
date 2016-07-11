@@ -11,7 +11,7 @@ from pulp.common import dateutils
 from pulp.common.plugins import importer_constants
 
 
-ID_REGEX_ALLOW_DOTS = re.compile(r'^[.\-_A-Za-z0-9]+$')
+ID_REGEX_ALLOW_DOTS = re.compile(r'^[.@\-_A-Za-z0-9]+$')
 ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
 
 
@@ -115,8 +115,8 @@ def id_validator_allow_dots(x):
 
     for input_id in x:
         if ID_REGEX_ALLOW_DOTS.match(input_id) is None:
-            raise ValueError(_('value must contain only letters, numbers, underscores, periods and '
-                               'hyphens'))
+            raise ValueError(_('value must contain only letters, numbers, underscores, periods,'
+                               'hyphens, and @ signs'))
 
 
 def download_policy_validator(x):
