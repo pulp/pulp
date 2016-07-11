@@ -730,6 +730,26 @@ class TestOidValidation(unittest.TestCase):
         mock_oid_validation.return_value.is_valid.assert_called_once_with(
             '/some/repo/package.rpm', FULL_CLIENT_CERT, environ['wsgi.errors'].write)
 
+    @mock.patch('pulp.oid_validation.oid_validation.certificate')
+    def test_check_extensions(self, mock_certificate_module):
+        """Assert path prefixes are stripped correctly before handing the path to RHSM"""
+        path_prefixes = ['/pulp/repos', '/pulp/ostree/', '/some/prefix']
+        unprefixed_path = '/content/i/want'
+        prefixed_paths = [
+            '/pulp/repos/content/i/want',
+            '/pulp/ostree/content/i/want',
+            '/some/prefix/content/i/want',
+        ]
+        mock_cert = mock.Mock()
+        mock_certificate_module.create_from_pem.return_value = mock_cert
+        validator = oid_validation.OidValidator(self.config)
+
+        for path in prefixed_paths:
+            validator._check_extensions(mock.Mock(), path, mock.Mock(), path_prefixes)
+
+        for call in mock_cert.check_path.call_args_list:
+            self.assertEqual(unprefixed_path, call[0][0])
+
 # -- test data ---------------------------------------------------------------------
 
 ANYCERT = """
