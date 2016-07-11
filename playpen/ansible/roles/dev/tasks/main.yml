@@ -68,6 +68,7 @@
       - tito
       - yum-utils
       - zlib-devel
+      - mod_ssl
 
 - name: allow vagrant user to read the systemd journal
   user:
