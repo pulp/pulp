@@ -17,6 +17,7 @@ from pulp.server.content.sources import model as content_models
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
+from pulp.streamer import adapters as pulp_adapters
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +143,11 @@ class Streamer(resource.Resource):
         """
         resource.Resource.__init__(self)
         self.config = config
-        # Used to pool TCP connections for upstream requests.
+        # Used to pool TCP connections for upstream requests. Once requests #2863 is
+        # fixed and available, remove the PulpHTTPAdapter. This is a short-term work-around
+        # to avoid carrying the package.
         self.session = requests.Session()
+        self.session.mount('https://', pulp_adapters.PulpHTTPAdapter)
 
     def render_GET(self, request):
         """
