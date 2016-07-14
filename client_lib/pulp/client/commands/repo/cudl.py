@@ -522,7 +522,7 @@ def _default_summary_view(repo_list, prompt):
 
     if isinstance(repo_list, dict) and repo_list != {}:
         id_value = repo_list['id'] + ' '
-        name_value = repo_list['display_name']
+        name_value = repo_list['display_name'] or ''
         line = line_template % (id_value, name_value)
         prompt.write(line, skip_wrap=True)
 
@@ -532,6 +532,7 @@ def _default_summary_view(repo_list, prompt):
 
         for repo in repo_list:
             id_value = repo['id'] + ' ' * (max_id_width - len(repo['id']))
-            name_value = repo['display_name'][0:max_name_width]
+            name_value = repo['display_name'] or ''
+            name_value = name_value[:max_name_width]
             line = line_template % (id_value, name_value)
             prompt.write(line, skip_wrap=True)

@@ -517,6 +517,36 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
         self.assertEqual(self.recorder.lines[1], 'xyz     XYZ\n')
 
+    def test_summary_empty_display_name(self):
+        """
+        Test output of repo summary if display_name of one of the repos is not specified.
+        """
+        # Setup
+        data = {
+            'summary': True,
+            'details': False
+        }
+
+        self.command.get_repositories = mock.MagicMock()
+        self.command.get_other_repositories = mock.MagicMock()
+        self.command.get_repositories.return_value = [
+            {'id': 'abcdef', 'display_name': 'ABCDEF'},
+            {'id': 'xyz', 'display_name': None}
+        ]
+
+        self.command.prompt.terminal_size = mock.MagicMock()
+        self.command.prompt.terminal_size.return_value = 20, 20
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(self.command.get_repositories.call_count, 1)
+        self.assertEqual(self.command.get_other_repositories.call_count, 0)
+
+        self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
+        self.assertEqual(self.recorder.lines[1], 'xyz     \n')
+
     def test_one_repo_summary(self):
         # Setup
         data = {
@@ -539,6 +569,32 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         # Verify
         self.assertEqual(self.command.get_repository.call_count, 1)
         self.assertEqual(self.recorder.lines[0], 'zoo-repo   zoo-repo\n')
+
+    def test_one_repo_summary_empty_display_name(self):
+        """
+        Test output of one repo summary if display_name is empty.
+        """
+        # Setup
+        data = {
+            'summary': True,
+            'details': False,
+            'repo-id': 'zoo-repo'
+        }
+
+        self.command.get_repository = mock.MagicMock()
+        self.command.get_repository.return_value = {
+            'id': 'zoo-repo', 'display_name': None
+        }
+
+        self.command.prompt.terminal_size = mock.MagicMock()
+        self.command.prompt.terminal_size.return_value = 20, 20
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(self.command.get_repository.call_count, 1)
+        self.assertEqual(self.recorder.lines[0], 'zoo-repo   \n')
 
     def test_summary_when_empty(self):
         # Test that summmary is an empty list when there are no repositories
