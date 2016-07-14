@@ -1123,7 +1123,7 @@ class User(AutoRetryDocument):
     :type _ns: mongoengine.StringField
     """
 
-    login = StringField(required=True, regex=r'^[.\-_A-Za-z0-9]+$')
+    login = StringField(required=True, regex=r'^[.@\-_A-Za-z0-9]+$')
     name = StringField()
     password = StringField()
     roles = ListField(StringField())
