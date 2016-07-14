@@ -518,6 +518,7 @@ class ConsumerContentActionView(View):
 
         :raises MissingResource: if consumer id does not exist
         :raises MissingValue: if some required values are missing
+        :raises InvalidValue: if units are not a list of dictionaries
         """
 
         method = getattr(self, action, None)
@@ -532,6 +533,8 @@ class ConsumerContentActionView(View):
                 units = body.get('units')
                 if units is None:
                     missing_params.append('units')
+                elif not isinstance(units, list):
+                    raise InvalidValue('Units must be a list of dictionaries')
                 options = body.get('options')
                 if options is None:
                     missing_params.append('options')
