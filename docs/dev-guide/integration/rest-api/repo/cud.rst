@@ -244,7 +244,7 @@ distributor type will support a different set of values relevant to how it funct
         on all distributor plugin types called ``force_full``. If this parameter is set,
         every publish of the repo using this distributor will be done from scratch.
         More details could be found in `the release notes for Pulp 2.9.0
-        <http://pulp.readthedocs.org/en/latest/user-guide/release-notes/2.9.x.html#pulp-2-9-0>`_.
+        <http://docs.pulpproject.org/user-guide/release-notes/2.9.x.html#pulp-2-9-0>`_.
 
 Multiple distributors may be associated with a repository at a given time. There
 may be more than one distributor with the same type. The only restriction is
