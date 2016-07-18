@@ -20,25 +20,27 @@ This assembly is accomplished using release definitions specified in the
 ``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the details
 of a build that the Pulp build scripts can later assemble. The components within that
 file specify the target koji tag as well as the individual git repositories and branches that
-will be assembled as part of a build. In addition it specifies the directory within
+will be assembled as part of a build. In addition it specifies the directories within
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
 will be published. The file has the following format:
 ::
 
-  koji-target-prefix: pulp-2.7
-  rsync-target-dir: 2.7/dev
+  koji-target-prefix: pulp-2.9
+  rsync-target-dir: 2.9/dev
+  tsync-tested-dir: 2.9/stage
   repositories:
     - name: pulp
       external_deps: deps/external_deps.json
       git_url: git@github.com:pulp/pulp.git
-      git_branch: 2.7-dev
-      version: 2.7.0-0.7.beta
+      git_branch: 2.9-dev
+      version: 2.9.0-0.7.beta
 
 ``koji-target-prefix``: This target needs to exist in koji.
 
-``rsync-target-dir``: The directory inside of
-https://repos.fedorapeople.org/pulp/pulp/testing/automation/ to rsync the RPMs
-when build is complete.
+``rsync-target-dir``: The directory to rsync the RPMs to when the build is complete.
+
+``rsync-tested-dir``: The directory to rsync the RPMs to when the build is complete
+and passes automated testing.
 
 ``repositories``: describes a list of Git repositories to include in the build.
 
@@ -47,8 +49,8 @@ Each repository has the following fields:
 ``name``: name of the project in repository. This should be the same as the name
 of the root directory of a project.
 
-``external_deps``: path inside root directory of repository of the json file describing external dependencies that need to be included in the RPM
-repository at the end of build process.
+``external_deps``: path inside root directory of repository of the json file describing external
+dependencies that need to be included in the RPM repository at the end of build process.
 
 ``git_url``: URL used to clone a project
 
@@ -65,7 +67,7 @@ X.Y.Z-<build_number>
 
    For pre-release builds, Pulp uses the build number as the release field. The first pre-release build
    will always be 0.1, and every build thereafter prior to the release will be the last release plus
-   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
+   0.1, even when switching from alpha to beta. For example, if we have built 7 2.5.0 alphas and it
    is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. For release
    builds, use whole numbers for the build number. We loosely follow the
    `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
@@ -77,11 +79,15 @@ Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into t
 must indicate the build to use in the version field of the release stream's definition file,
 ``2.5-dev.yaml`` in this case.
 
-Because there is no way to automatically determine when a particular component needs to be rebuilt or what that version should be, the build-infrastructure assumes that whatever version is specified
+Because there is no way to automatically determine when a particular component needs to be rebuilt
+or what that version should be, the build-infrastructure assumes that whatever version is specified
 in the yaml file is the final version that is required.  If a release build of that version had
 already been built in koji then those RPMs will be used. If the version specified in the yaml file
 does not match the version in the spec file, the spec file will be updated and the change will be
 merged forward using the 'ours' strategy.
+
+Information about the release configs, and which config to use for building, can be found in the
+config README, located next to the
 
 When to build from a -dev branch, a tag or hotfix branch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -139,7 +145,12 @@ items.
 In order to publish builds to the Pulp repository, you will need the SSH keypair used to upload
 packages to the fedorapeople.org repository. You can get this from members of the Pulp team.
 
-Additionally you will need to install ``createrepo`` on the machine you will be building from.
+Additionally you will need to install the following packages on the machine
+you will be building from, using dnf or yum:
+
+* createrepo
+* koji
+* tito
 
 Configuring your build environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -155,9 +166,7 @@ step is to make a clean checkout of the pulp_packging somewhere away from your o
     $ git clone git@github.com:pulp/pulp_packaging.git
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
-Katello CA certificate and your client certificate in your home folder::
-
-    $ sudo yum install koji
+Katello CA certificate and your client certificate in your home folder.
 
 Here is an example $HOME/.koji/config file you can use::
 
@@ -200,10 +209,6 @@ If all went well, you should be able to say hello to Koji::
     olá, rbarlow!
 
     You are using the hub at http://koji.katello.org/kojihub
-
-Next, you should install Tito::
-
-    $ sudo yum install tito
 
 Now you are ready to begin building.
 
@@ -272,11 +277,24 @@ Run the build script with the following syntax::
 
     $ ./build-all.py <name of yaml file> [options]
 
-For example, to perform a test build of the 2.6-dev release as specified in
-``pulp_packaging/ci/config/releases/2.6-dev.py`` where the results are not pushed to
+For example, to perform a test build of the 2.6-build release as specified in
+``pulp_packaging/ci/config/releases/2.6-build.py`` where the results are not pushed to
 fedorapeople::
 
     $ ./build-all.py 2.6-dev --disable-push
+
+Reconcile Redmine Issues
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before starting a release build, ensure that there are no issues in a ``MODIFIED`` state without
+a Target Platform Release (See the "``MODIFIED`` - No Release" report in Redmine). All ``MODIFIED``
+issues should include a link to the pull request for the related bugfix or feature, and the
+target release can usually be determined by examining the destination branch of the pull
+request. If in doubt, consult with the developer that fixed the issue to know which target
+release is appropriate.
+
+Similarly, if there are any issues that are ``NEW``, ``ASSIGNED``, or ``POST`` and inappropriately given
+a Target Platform Release, set the Target Platform Release field to none on those issues.
 
 Submit to Koji
 ^^^^^^^^^^^^^^
@@ -284,7 +302,7 @@ Submit to Koji
 We are now prepared to submit the build to Koji. This task is simple::
 
     $ cd pulp_packaging/ci
-    $ ./build-all.py 2.6-testing --release
+    $ ./build-all.py 2.6-build --release
 
 This command will build SRPMs, upload them to Koji, and monitor the resulting builds. If any of them
 fail, you can view the
@@ -329,30 +347,21 @@ in all of the setup.py files.
 At this point you can inspect the files to ensure the versions are as you expect. You can rerun the
 script with ``--push`` flag to push the changes to Github.
 
-You should also push the changes in the yaml file inside of pulp_packaging to Github.
+You should also push the changes in the release config yaml file to Github.
 
 Updating Docs
 -------------
 
-When releasing a new X or Y release, the internal links in the docs need to be updated to match.
+When releasing a new X or Y release, the release config for those docs must exist, e.g.
+``2.8-release``, and be up to date in the packaging repo. The jenkins docs buiding job for that
+release config must also exist. If it doesn't, update jenkins job builder definitions to include
+the release config:
 
-The docs for Pulp platform and each plugin use `intersphinx <http://sphinx-doc.org/ext/intersphinx.html>`_
-to facilitiate linking between documents. It is important that each branch
-of Pulp and Pulp plugins link to the correct versions of their sister
-documents.  This is accomplished by editing the URLs in the
-``intersphinx_mapping`` variable, which is set in ``docs/conf.py`` for
-both Pulp platform and all plugins.
+https://github.com/pulp/pulp_packaging/blob/master/ci/jobs/projects.yaml
 
-Here are some guidelines for what to set the URL to:
- - The master branch of Pulp or any plugins should always point to "latest".
- - Plugins should point to the latest stable version of Pulp that they are
-   known to support.
- - Pulp platform's intersphinx URLs should point back to whatever the plugin is
-   set to. For example, if the "pulp_foo" plugin's docs for version 1.0 point to
-   the "2.8-release" version of the Pulp platform docs, then platform version
-   2.8 should point back to "1.0-release" for pulp_foo's docs. This ensures a
-   consistent experience when users click back and forth between docs.
-
+After ensuring that release config is pushed and the docs building job for that release exists,
+run the docs building job for that release. This should be done for pre-releases (using the
+x.y-build release config) and GA releases (using the x.y-release config).
 
 Testing the Build
 -----------------
@@ -447,7 +456,16 @@ Sync down your mash one more time (run from the ``pulp_packaging/ci`` dir)::
    related to signature verification. While we sign all RPMs including RHEL 5, we
    do not publish the signed RPMs for this particular platform.
 
-After it is synced down, you can publish the build.
+Finally, verify the downloaded signatures of the rpms in your mash directory::
+
+   $ find . -name "*.rpm" | xargs rpm --checksig || echo 'Bad signatures!'
+
+RPMs with invalid signatures will be reported in the output, but can be easy to
+miss with all the output the scrolls by. xargs will exit with a non-zero exit
+code if any of the calls to xargs rpm fail, which will trigger the echo of
+"Bad Signatures!" to the shell. Failing RPMs may need to be re-signed.
+
+After it is synced down and verified, you can publish the build.
 
 Publishing the Build
 --------------------
@@ -485,16 +503,38 @@ typical email you can use::
 
    [0] https://repos.fedorapeople.org/repos/pulp/pulp/beta/
 
+Additional information, such as update instructions and issues addressed, can be included in
+these release notes. If a security-related issue (probably assigned a CVE number) is included
+in this release, information about the vulnerability and what can be done to address it must
+be included in this announcement. This information should already be in the release notes for
+the release being built and can be copied from there.
+
+Hotfix releases should mention the specific issues that caused a hotfix to be created, and
+feature releases should mention notable new features of interest.
+
+To easily generate a list of issues, start with a redmine report of issues for the current
+release (such as the Next Bugfix Release report). Then, under the Redmine filter options,
+group the results by Project, remove everything but "Subject" from the list of selected
+columns, and Apply the new options. This creates a list of issues that's very easy to copy
+and paste into a release announcement. It also generates a URL that can be included in the
+release announcement. This URL is very long, so a URL shortener should be used to make the
+URL fit into the announcement.
+
 If you have published a stable build, there are a few more items to take care of:
 
 #. Update the "latest release" text on http://www.pulpproject.org/.
-#. Contact Brian or Michael to update the documentation builders to use the new tag.
+#. Run the Jenkins job to update the documentation for this version.
 #. Update the channel topic in #pulp on Freenode with the new release.
 #. Move all bugs that were in the ``MODIFIED``, ``ON_QA``, or ``VERIFIED`` state for this target
    release to ``CLOSED CURRENTRELEASE``.
+#. Update the Redmine report for this release type for the next release of that type. For example,
+   if this was a z-stream bugfix release, update the 'Next Bugfix Release' to point to the next
+   version to be released in that stream. Redmine may need to have that version added before the
+   report can be updated.
+#. Update the pulp website with a blog post announcing the release, using the template below
+#. Mail pulp-list@redhat.com to announce the new release, using the template below
 
-After publishing a stable build, email pulp-list@redhat.com to announce the new release. Here is
-a typical email you can use::
+Here is an email template you can use for release announcements::
 
    Subject: Pulp <version> is available!
 
@@ -510,6 +550,7 @@ a typical email you can use::
    [0] link to pulp-puppet release notes (if updated)
 
 Please ensure that the release notes have in fact been updated before sending the email out.
+Ideally, the release notes will have been updated before the first beta build of a release.
 
 New Stable Major/Minor Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

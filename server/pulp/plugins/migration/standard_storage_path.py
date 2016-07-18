@@ -103,7 +103,7 @@ class Batch(object):
                     continue
                 new_path = item.new_path
                 for rel_path in item.files:
-                    if target.endswith(rel_path):
+                    if target == os.path.join(item.storage_path, rel_path):
                         new_path = os.path.join(new_path, rel_path)
                         break
                 os.unlink(abs_path)

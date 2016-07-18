@@ -4,10 +4,11 @@
 Developer Setup
 ===============
 
-There are two ways to automatically configure a development environment. There is a Vagrantfile
-in the platform git repository that can automatically deploy a virtual machine on your host with a
-Pulp development environment configured. Alternatively, there is a script that can turn a blank
-running virtual machine into a Pulp development environment.
+There are two ways to automatically configure a development environment. There
+is a Vagrantfile in the platform git repository that can automatically deploy a
+virtual machine or container on your host with a Pulp development environment
+configured. Alternatively, there is a script that can turn a blank running
+virtual machine into a Pulp development environment.
 
 Vagrant
 ^^^^^^^
@@ -15,7 +16,27 @@ Vagrant
 `Vagrant <https://docs.vagrantup.com/>`_ is a tool to aid developers in quickly deploying
 development environments. Pulp has provided an example ``Vagrantfile`` in the platform git
 repository called Vagrantfile.example. This is the easiest way to get started on developing with
-Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora. Follow these steps:
+Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
+
+There are two Vagrant providers available for use: ``libvirt`` (using a virtual machine) and
+``docker`` (using a `docker <https://www.docker.com/>`_ container).
+
+Reasons to prefer libvirt:
+
+* doesn't require disabling SELinux on host
+* doesn't grant the development environment root-equivalent privileges on host
+* may run a different kernel on host vs guest
+
+Reasons to prefer docker:
+
+* uses less resources (RAM, CPU and disk)
+* improved performance
+* host may freely access processes within the guest (e.g. for debugging)
+
+Prerequisites for libvirt
+-------------------------
+
+Follow these steps:
 
 #. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
    deployed virtual machine::
@@ -47,6 +68,25 @@ Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
       $ sudo firewall-cmd --permanent --add-service=mountd
       $ sudo firewall-cmd --reload
 
+Prerequisites for docker
+------------------------
+
+Follow these steps:
+
+#. Install vagrant, ansible, and docker::
+   
+      $ sudo dnf install vagrant ansible docker
+
+#. Enable and start the docker service::
+
+      $ sudo systemctl enable docker
+      $ sudo systemctl start docker
+
+Creating the Vagrant environment
+--------------------------------
+
+After preparing either the libvirt or docker prerequisites using the instructions above:
+
 #. You are now prepared to check out the Pulp code into your preferred location. Change directories
    to that location, and check out the platform::
 
@@ -76,7 +116,9 @@ Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
 
       $ cd pulp
       $ cp Vagrantfile.example Vagrantfile
-      $ vagrant up
+      # Choose ONE of the following, for your preferred provider:
+      $ vagrant up --provider=libvirt
+      $ vagrant up --provider=docker
       $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
 
    .. note::
