@@ -272,7 +272,7 @@ class RepoUnitAssociationManager(object):
                 transfer_source_repo, transfer_dest_repo, conduit, call_config,
                 units=transfer_units)
 
-            unit_ids = [u.to_id_dict() for u in copied_units]
+            unit_ids = [u.to_id_dict() for u in copied_units if u is not None]
             repo_controller.rebuild_content_unit_counts(dest_repo)
             return {'units_successful': unit_ids}
         except Exception:
