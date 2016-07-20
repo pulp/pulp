@@ -388,6 +388,20 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for u in units:
             self.assertEqual(u['metadata']['md_2'], 0)
 
+    def test_get_units_by_type_unit_id_filter(self):
+        unit_id = 'dog'
+        unit_filter = {
+            '_id': {'$in': [unit_id]}
+        }
+
+        # Test
+        criteria = UnitAssociationCriteria(unit_filters=unit_filter)
+        units = self.manager.get_units_by_type('repo-2', 'delta', criteria)
+
+        # Verify
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['unit_id'], unit_id)
+
     def test_get_units_by_type_filter_wildcard(self):
         # Test
         criteria = UnitAssociationCriteria(unit_filters={'key_1': {'$regex': 'aa.*'}})
