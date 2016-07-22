@@ -5,18 +5,20 @@ Developer Setup
 ===============
 
 There are two ways to automatically configure a development environment. There
-is a Vagrantfile in the platform git repository that can automatically deploy a
-virtual machine or container on your host with a Pulp development environment
-configured. Alternatively, there is a script that can turn a blank running
-virtual machine into a Pulp development environment.
+is a Vagrantfile in the `devel <https://github.com/pulp/devel/>`_ git
+repository that can automatically deploy a virtual machine or container on your
+host with a Pulp development environment configured. Alternatively, there is a
+script that can turn a blank running virtual machine into a Pulp development
+environment.
 
 Vagrant
 ^^^^^^^
 
 `Vagrant <https://docs.vagrantup.com/>`_ is a tool to aid developers in quickly deploying
-development environments. Pulp has provided an example ``Vagrantfile`` in the platform git
-repository called Vagrantfile.example. This is the easiest way to get started on developing with
-Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
+development environments. Pulp has provided an example ``Vagrantfile`` in the
+`devel <https://github.com/pulp/devel/>`_ git repository called Vagrantfile.example. This
+is the easiest way to get started on developing with Pulp if you aren't sure which method
+you prefer. Vagrant is available in Fedora.
 
 There are two Vagrant providers available for use: ``libvirt`` (using a virtual machine) and
 ``docker`` (using a `docker <https://www.docker.com/>`_ container).
@@ -88,9 +90,10 @@ Creating the Vagrant environment
 After preparing either the libvirt or docker prerequisites using the instructions above:
 
 #. You are now prepared to check out the Pulp code into your preferred location. Change directories
-   to that location, and check out the platform::
+   to that location, and check out the development tools repository and the Pulp platform repository::
 
       $ cd $HOME/devel  # Season to taste
+      $ git clone git@github.com:pulp/devel.git
       $ git clone git@github.com:pulp/pulp.git
 
 #. Check out the plugins you wish to develop or use as well::
@@ -109,7 +112,7 @@ After preparing either the libvirt or docker prerequisites using the instruction
       If you followed the instructions above, you have checked out master on all repositories which
       should be compatible.
 
-#. Next, cd into the pulp directory. The Pulp project provides an example Vagrantfile that you can
+#. Next, cd into the ``devel`` directory. The Pulp project provides an example Vagrantfile that you can
    use as a starting point by copying it. After you've done that, you can begin provisioning your
    Vagrant environment. We will finish by running ``vagrant reload``. This allows the machine to
    reboot after provisioning.::
@@ -150,19 +153,10 @@ Advanced Vagrant
 The following steps are all optional, so feel free to pick and choose which you would like to
 follow.
 
-#. `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_ can cache packages that are
-   downloaded during provisioning on your host so that the next time you provision you will save
-   some time and bandwidth. If you are using Fedora 23 or newer, you can install
-   it with dnf::
-
-      $ sudo dnf install vagrant-cachier
-
-   If you are on an older Fedora release, you will need to install some development
-   libraries so that the ``vagrant plugin install`` command has its dependencies available
-   and use vagrant plugin install::
-
-      $ sudo dnf install gcc-c++ libvirt-devel ruby-devel
-      $ vagrant plugin install vagrant-cachier
+#. You can configure your Vagrant enviroment to cache RPM packages you download with dnf. To do
+   this, uncomment the line ``'.dnf-cache' => '/var/cache/dnf'``, which syncs the ``.dnf-cache``
+   directory (relative to the Vagrantfile) to ``/var/cache/dnf``. You will need to create the
+   ``.dnf-cache`` directory manually with ``mkdir .dnf-cache``.
 
 #. When using Vagrant, you probably have noticed that you are frequently prompted for passwords to
    manage libvirt. You can configure your system policy to allow your user to manage libvirt without
