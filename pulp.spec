@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
-%if 0%{?rhel} == 5
+%if 0%{?rhel} == 5 || 0%{?sles_version}
 %define pulp_admin 0
 %define pulp_client_oauth 0
 %define pulp_server 0
@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.9.0
+Version: 2.9.1
 Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -43,7 +43,11 @@ URL: https://fedorahosted.org/pulp/
 Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
+%if 0%{?sles_version}
+BuildRequires: python-devel >= 2.6
+%else
 BuildRequires: python2-devel
+%endif
 BuildRequires: python-setuptools
 # do not include either of these on rhel 5
 %if 0%{?rhel} == 6
@@ -1044,6 +1048,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Thu May 12 2016 Darin Lively <darinlively@gmail.com> 2.9.1-0.1.beta
+- Added basic SLES build compatibility
+
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 
