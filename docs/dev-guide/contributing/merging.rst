@@ -1,6 +1,8 @@
 Merging
 =======
 
+.. _pull-requests:
+
 Pull Requests
 -------------
 
