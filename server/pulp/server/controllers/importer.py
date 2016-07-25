@@ -138,8 +138,13 @@ def validate_importer_config(repo_obj, importer_type_id, config):
     :param config: configuration values for the importer
     :type  config: dict
 
+    :raises PulpCodedValidationException: if importer_type_id is invalid
     :raises exceptions.PulpDataException: if config is invalid.
     """
+    if not plugin_api.is_valid_importer(importer_type_id):
+        raise exceptions.PulpCodedValidationException(error_code=error_codes.PLP1008,
+                                                      importer_type_id=importer_type_id)
+
     importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
     call_config = PluginCallConfiguration(plugin_config, config)
     transfer_repo = repo_obj.to_transfer_repo()

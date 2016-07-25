@@ -254,6 +254,15 @@ class TestValidateImporterConfig(unittest.TestCase):
         imp_inst.validate_config.assert_called_once_with(
             m_repo.to_transfer_repo.return_value, m_plug_call_config.return_value)
 
+    @mock.patch('pulp.server.controllers.importer.PluginCallConfiguration')
+    def test_invalid_importer_type(self, m_plug_call_config, m_repo_model, m_plug_api):
+        m_repo = m_repo_model.objects.get_repo_or_missing_resource.return_value
+        m_plug_api.is_valid_importer.return_value = False
+
+        with self.assertRaises(exceptions.PulpCodedValidationException) as cm:
+            importer.validate_importer_config(m_repo, 'm_type', 'm_conf')
+        self.assertEqual(cm.exception.error_code.code, 'PLP1008')
+
 
 @mock.patch('pulp.server.controllers.importer.model')
 @mock.patch('pulp.server.controllers.importer.manager_factory')
