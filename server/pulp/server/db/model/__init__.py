@@ -914,6 +914,14 @@ class FileContentUnit(ContentUnit):
         orphan_manger = factory.content_orphan_manager()
         orphan_manger.delete_orphan_content_units_by_type(self._content_type_id, self.id)
 
+    def get_symlink_name(self):
+        """
+        Provides the name that should be used when creating a symlink.
+        :return: file name as it appears in a published repository
+        :rtype: str
+        """
+        raise NotImplemented()
+
 
 class SharedContentUnit(ContentUnit):
     """
