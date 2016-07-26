@@ -1285,12 +1285,14 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         storage_dir = os.path.join(pulp_config.get('server', 'storage_dir'), 'content', 'units')
         relative_content_unit_path = os.path.relpath(item.storage_path, storage_dir)
         self.parent.content_unit_file_list.append(relative_content_unit_path)
-        symlink = self.make_link_unit(item, self.get_working_dir(), self.remote_repo_path,
+        filename = item.get_symlink_name()
+        symlink = self.make_link_unit(item, filename, self.get_working_dir(),
+                                      self.remote_repo_path,
                                       self.get_config().get("remote")["root"],
                                       self.published_unit_path)
         self.parent.symlink_list.append(symlink)
 
-    def make_link_unit(self, unit, working_dir, remote_repo_path, remote_root,
+    def make_link_unit(self, unit, filename, working_dir, remote_repo_path, remote_root,
                        published_unit_path):
         """
         This method creates symlink in working directory, pointing to remote
@@ -1298,6 +1300,8 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
 
         :param unit: Pulp content unit
         :type unit: Unit
+        :param filename: name that should be used for symlink
+        :type file: str
         :param working_dir: Working directory
         :type working_dir: str
         :param remote_repo_path: relative repo destination path on remote server
@@ -1308,7 +1312,6 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         :type published_unit_path: list of str
 
         """
-        filename = unit.get_symlink_name()
         extra_src_path = ['.relative'] + published_unit_path
         if not os.path.exists(os.path.join(working_dir, *extra_src_path)):
             os.makedirs(os.path.join(working_dir, *extra_src_path))
