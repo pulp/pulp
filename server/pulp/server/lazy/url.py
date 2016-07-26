@@ -360,7 +360,9 @@ class Query(object):
         for pair in encoded.split(';'):
             if not pair:
                 continue
-            k, v = pair.split('=')
+            # The url-safe base64 encoding still contains padding
+            # so we shouldn't split more than once.
+            k, v = pair.split('=', 1)
             decoded[k] = unquote(v)
         return decoded
 

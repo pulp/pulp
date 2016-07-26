@@ -101,7 +101,6 @@ class TestId(unittest.TestCase):
 
         # Single input
         self.assertRaises(ValueError, validators.id_validator, '**invalid**')
-        self.assertRaises(ValueError, validators.id_validator, 'invalid-@')
         self.assertRaises(ValueError, validators.id_validator, '-_-_- ')
 
         # Multiple input
@@ -122,6 +121,7 @@ class TestIdAllowDots(unittest.TestCase):
         validators.id_validator_allow_dots('TesT.-0')
         validators.id_validator_allow_dots('-_-_-')
         validators.id_validator_allow_dots('-._.-._.-')
+        validators.id_validator_allow_dots('Kodiak@dabomb.com')
 
         # Multiple input
         validators.id_validator_allow_dots(['test123', 'TesT-0', 'test.123'])
@@ -131,7 +131,6 @@ class TestIdAllowDots(unittest.TestCase):
         # Single input
         self.assertRaises(ValueError, validators.id_validator_allow_dots, '**invalid**')
         self.assertRaises(ValueError, validators.id_validator_allow_dots, '**inval.id**')
-        self.assertRaises(ValueError, validators.id_validator_allow_dots, 'invalid-@')
         self.assertRaises(ValueError, validators.id_validator_allow_dots, '-_-_- ')
 
         # Multiple input
