@@ -248,7 +248,7 @@ class RSyncPublishStep(PublishStep):
         (is_successful, this_output) = self.remote_mkdir(self.dest_directory)
         if not is_successful:
             params = {'directory': self.dest_directory, 'output': this_output}
-            _logger.error(_("Cannot create directory %s: %s") % params)
+            _logger.error(_("Cannot create directory %(directory)s: %(output)s") % params)
             return (is_successful, this_output)
         output += this_output
         rsync_args = self.make_rsync_args(list_of_files, self.src_directory,
@@ -343,13 +343,13 @@ class Publisher(PublishStep):
         :return: Whether or not this publish should be in fast forward mode
         :rtype: bool
         """
-        skip_fast_forward = False
+        force_full = False
         for entry in self.predist_history:
-            predistributor_skip_ff = entry.get("distributor_config", {}).get("skip_fast_forward",
-                                                                             False)
-            skip_fast_forward |= predistributor_skip_ff
+            predistributor_force_full = entry.get("distributor_config", {}).get("force_full",
+                                                                                False)
+            force_full |= predistributor_force_full
             if entry.get("result", "error") == "error":
-                skip_fast_forward = True
+                force_full = True
         if self.last_published:
             last_published = self.last_published.replace(tzinfo=None)
         else:
@@ -359,12 +359,12 @@ class Publisher(PublishStep):
         else:
             last_published = None
 
-        config_skip_ff = self.get_config().get("skip_fast_forward", False)
-        skip_fast_forward = skip_fast_forward | config_skip_ff
+        config_force_full = self.get_config().get("force_full", False)
+        force_full = force_full | config_force_full
         delete = self.get_config().get("delete", False)
 
         return last_published and ((last_deleted and last_published > last_deleted) or
-                                   not last_deleted) and not skip_fast_forward and\
+                                   not last_deleted) and not force_full and\
             not delete
 
     def create_date_range_filter(self, start_date=None, end_date=None):
