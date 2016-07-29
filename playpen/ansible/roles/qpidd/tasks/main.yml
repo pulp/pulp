@@ -8,6 +8,4 @@
     - qpid-tools
 
 - name: Start and enable services
-  service: name={{ item }} state=started enabled=yes
-  with_items:
-    - qpidd
+  service: name=qpidd state=started enabled=yes

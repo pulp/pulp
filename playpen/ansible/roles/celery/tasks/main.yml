@@ -1,0 +1,15 @@
+---
+  # Install for Fedora 24+
+  - name: Install Pulp Server
+    dnf: name=python2-celery state=present
+    when: ansible_distribution == 'Fedora' and ansible_distribution_version|int > 23
+
+  # Install for Fedora < 24
+  - name: Install Pulp Server
+    dnf: name=python-celery state=present
+    when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24
+
+  # Install for non-Fedora
+  - name: Install Pulp Server
+    dnf: name=python-celery state=present
+    when: ansible_distribution != 'Fedora'

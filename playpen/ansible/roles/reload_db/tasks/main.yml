@@ -1,0 +1,4 @@
+---
+
+- name: Migrate pulp_database
+  shell: sudo -u apache pulp-manage-db

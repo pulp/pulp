@@ -1,0 +1,9 @@
+---
+# Install pulp_cunsumer and pulp_agent on systems with DNF
+# Supported platforms: RHEL 6, RHEL 7, CentOS 6, CentOS 7, Fedora
+- hosts: all
+  become: true
+  become_method: sudo
+  vars:
+  roles:
+    - install_pulp_consumer_and_agent

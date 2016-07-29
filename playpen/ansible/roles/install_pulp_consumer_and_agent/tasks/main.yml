@@ -1,0 +1,22 @@
+---
+# Install for Fedora 24+
+- name: Install Pulp consumer and Agent for Ferdora 24
+  dnf: name={{ item }} state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int > 23
+  with_items:
+    - python-gofer-qpid
+    - pulp-puppet-consumer-extensions
+    - pulp-rpm-consumer-extensions
+
+# Install for non-Fedora
+- name: Install Pulp consumer and Agent for RHEL, CentOS
+  dnf: name=@pulp-consumer-qpid state=present
+  when: ansible_distribution != 'Fedora'
+
+# Install for Fedora < 24
+- name: Install Pulp consumer and Agent for Fedora 23 and older
+  dnf: name=@pulp-consumer-qpid state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24
+
+- name: Start and enable goferd
+  service: name=goferd state=started enabled=yes

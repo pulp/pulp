@@ -1,0 +1,15 @@
+---
+# Install pulp_server on systems with DNF and systemd
+# Supported platforms: RHEL 6, RHEL 7, CentOS 6, CentOS 7, Fedora
+- hosts: all
+  become: true
+  become_method: sudo
+  vars:
+  roles:
+    - db
+    - qpidd
+    - celery
+    - pulp_server_install
+    - pulp_ca
+    - reload_db
+    - enable_pulp_server

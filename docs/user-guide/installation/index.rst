@@ -61,7 +61,6 @@ Prerequisites
   `serious limitations <http://docs.mongodb.org/manual/faq/fundamentals/#what-are-the-32-bit-limitations>`_
   on 32-bit architectures. It is strongly advised that you run MongoDB on a 64-bit architecture.
 
-
 Message Broker
 ^^^^^^^^^^^^^^
 
@@ -106,6 +105,9 @@ directory vary depending on how much content you wish to download.
 
 Instructions
 ------------
+
+Instalations below are production ready. That means if you want to only try pulp you can use
+our ansible playbook
 
 Please refer to the instructions below for your operating system.
 
