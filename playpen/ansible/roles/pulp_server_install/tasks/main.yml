@@ -1,0 +1,45 @@
+---
+# Install for Fedora 24+
+- name: Install Pulp Server for Ferdora 24
+  dnf: name={{ item }} state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int > 23
+  with_items:
+    - pulp-rpm-plugins
+    - pulp-docker-plugins
+    - pulp-ostree-plugins
+    - pulp-puppet-plugins
+    - pulp-python-plugins
+
+# Install RHEL 6
+- name: Enable EPEL for RHEL 6
+  when: ansible_distribution == 'Red Hat Enterprise Linux' and ansible_distribution_version|int == 6
+  dnf: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm state=present
+
+# Install RHEL 7
+- name: Enable EPEL for RHEL 7
+  when: ansible_distribution == 'Red Hat Enterprise Linux' and ansible_distribution_version|int == 7
+  dnf: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm state=present
+
+# Install RHEL or CentOS repo
+- name: Install Pulp repository for RHEL, CentOS
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  get_url:
+      url: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+      dest: /etc/yum.repos.d/rhel-pulp.repo
+
+# Install Fedora < 24 repo
+- name: Install Pulp repository for Fedora 23 and older
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24
+  get_url:
+      url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+      dest: /etc/yum.repos.d/fedora-pulp.repo
+
+# Install Pulp for non-Fedora
+- name: Install Pulp Server for RHEL, CentOS
+  dnf: name=@pulp-server-qpid state=present
+  when: ansible_distribution != 'Fedora'
+
+# Install Pulp for Fedora < 24
+- name: Install Pulp Server for Fedora 23 and older
+  dnf: name=@pulp-server-qpid state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24

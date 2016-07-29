@@ -1,0 +1,13 @@
+---
+
+- name: Start and enable httpd
+  service: name=httpd state=started enabled=yes
+
+- name: Start and enable pulp_workers
+  service: name=pulp_workers state=started enabled=yes
+
+- name: Start and enable pulp_celerybeat
+  service: name=pulp_celerybeat state=started enabled=yes
+
+- name: Start and enable pulp_resource_manager
+  service: name=pulp_resource_manager state=started enabled=yes
