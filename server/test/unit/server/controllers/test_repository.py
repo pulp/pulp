@@ -1106,7 +1106,8 @@ class TestCheckPublish(unittest.TestCase):
         m_dist_qs.return_value.update.assert_called_once_with(set__last_publish=mock_now())
         m_repo_pub_result.skipped_result.assert_called_once_with(
             fake_repo.repo_id, m_dist.distributor_id, m_dist.distributor_type_id, mock_now(),
-            mock_now(), m_repo_pub_result.RESULT_SKIPPED
+            mock_now(), m_repo_pub_result.RESULT_SKIPPED, 'Repository content has not changed '
+                                                          'since last publish.'
         )
         msg = 'publish skipped for repo [repo1] with distributor ID [dist]'
         mock_log.assert_called_once_with(msg)
@@ -1121,7 +1122,7 @@ class TestCheckPublish(unittest.TestCase):
         Test that if force option specified, publish happens even if there were no changes made
         since last publish.
         """
-        mock_call_conf.get.return_value = True
+        mock_call_conf.get.side_effect = [True, None]
         fake_repo = model.Repository(repo_id='repo1')
         mock_transfer = fake_repo.to_transfer_repo()
         mock_objects.return_value.count.return_value = 0
