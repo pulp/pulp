@@ -460,4 +460,4 @@ class Publisher(PublishStep):
         :return: predistributor that was configured in rsyn distributor's config
         :rtype: Distributor
         """
-        raise NotImplementedError()
+        return None

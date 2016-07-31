@@ -1006,6 +1006,14 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                                                            updated__gte=the_timestamp).count()
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
+    published_after_predistributor = True
+    predistributor_id = call_config.get('predistributor_id')
+    if predistributor_id and last_published:
+        predistributor = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
+                                                              distributor_id=predistributor_id)
+        predistributor_last_published = predistributor["last_publish"]
+        if predistributor_last_published:
+            published_after_predistributor = last_published > predistributor_last_published
 
     same_override = dist.last_override_config == config_override
     if not same_override:
@@ -1014,8 +1022,12 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
             repo_id=repo_obj.repo_id,
             distributor_id=dist_id).update(set__last_override_config=config_override)
 
-    if last_published and not force_full and not last_updated and not units_removed and \
-            not dist_updated and same_override:
+    # Skip if a predistributor is configured and the predistributor has not published since the
+    # last publish. Skip if content has not changed since last publish and force_full has not been
+    # requested and no predistributor is defined.
+    if (predistributor_id and published_after_predistributor) or \
+            (last_published and not force_full and not last_updated and not units_removed and
+             not dist_updated and same_override and not predistributor_id):
 
         publish_result_coll = RepoPublishResult.get_collection()
         publish_start_timestamp = _now_timestamp()
@@ -1029,9 +1041,15 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         result_code = RepoPublishResult.RESULT_SKIPPED
         _logger.debug('publish skipped for repo [%s] with distributor ID [%s]' % (
                       repo_obj.repo_id, dist_id))
+
+        if predistributor_id:
+            reason = _('Predistributor %(predistributor_id)s has not published since last '
+                       'publish.') % {'predistributor_id': predistributor_id}
+        else:
+            reason = _('Repository content has not changed since last publish.')
         result = RepoPublishResult.skipped_result(
             repo_obj.repo_id, dist.distributor_id, dist.distributor_type_id,
-            publish_start_timestamp, publish_end_timestamp, result_code)
+            publish_start_timestamp, publish_end_timestamp, result_code, reason)
         publish_result_coll.save(result)
 
     else:
