@@ -380,7 +380,6 @@ Requires: mod_xsendfile >= 0.12
 Requires: m2crypto
 Requires: genisoimage
 Requires: kobo
-Requires: sshpass
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9

@@ -5,43 +5,6 @@ import os
 _LOG = logging.getLogger(__name__)
 
 
-class OneOfValidation(object):
-    """
-    Validates that the the value is one of possible values
-    """
-    def __init__(self, values):
-        """
-        :param values: list of valid values
-        """
-        self.values = values
-
-    def __call__(self, value, config):
-        """
-        :param value: value to validate
-        :type value: any
-        :param config: distributor config
-        :type config: PulpCallConfig object
-
-        :return: tuple indicating whether config value validates and error message or None
-        :rtype: (bool, str) or (bool, None)
-        """
-        if value in self.values:
-            return (True, None)
-        else:
-            return (False, self._err(value))
-
-    def _err(self, value):
-        """
-        :param value: value that did not pass validation
-        :type value: any
-
-        :return: error message
-        :rtype: str
-        """
-        params = {'value': value, 'allowed_values': ", ".join(self.values)}
-        return _("%(value)s is not in allowed values: %(allowed_values)s") % params
-
-
 class NonEmptyValidation(object):
     """
     Validates that the value is not None
@@ -110,68 +73,6 @@ class TypeValidation(object):
         return _("%(type)s type is not one of allowed types: %(allowed_types)s") % params
 
 
-class RequireOptionalIf(object):
-    """
-    Validates that if a particular config is present, other configs that are needed for it are also
-    present.
-    """
-    def __init__(self, required_for_attr, condition):
-        """
-        :param required_for_attr: a list of required config keys or dictionary with keys in the
-                                  config and values are lists of configs that need to be present
-                                  in the value of the key in config.
-        :type required_for_attr: list or dict
-        :param condition: callable that takes a config name and returns a boolean
-        :type condition: callable
-        """
-        self.required_for_attr = required_for_attr
-        self.condition = condition
-
-    def __call__(self, value, config):
-        """
-        :param value: config name that is being validated
-        :type value: str
-        :param config: configuration instance to validate
-        :type  config: pulp.plugins.config.PluginCallConfiguration
-
-        :return: tuple indicating whether config value validates and error message or None
-        :rtype: (bool, str) or (bool, None)
-        """
-
-        subconfig = config
-        path = []
-        if not self.condition(value):
-            return (True, None)
-
-        if isinstance(self.required_for_attr, list):
-            fifo = [(x, subconfig, path) for x in self.required_for_attr]
-        elif isinstance(self.required_for_attr, dict):
-            fifo = [(val, subconfig.get(key), [key])
-                    for key, val in self.required_for_attr.iteritems()]
-        while fifo:
-            (required_for_attr, subconfig, path) = fifo.pop(0)
-            if isinstance(required_for_attr, list):
-                for x in required_for_attr:
-                    fifo.insert(0, (x, subconfig, path))
-            elif isinstance(required_for_attr, dict):
-                for key, val in required_for_attr.iteritems():
-                    fifo.insert(0, (val, subconfig.get(key)), path + [key])
-            elif isinstance(required_for_attr, basestring):
-                if required_for_attr not in subconfig:
-                    return (False, self._err(path + [required_for_attr]))
-        return (True, None)
-
-    def _err(self, path):
-        """
-        :param path: list of value that were missing
-        :type path: list
-
-        :return: error message
-        :rtype: str
-        """
-        return _("%(attribute)s attribute is required") % {'attribute': "::".join(path)}
-
-
 class RelativePathValidation(object):
     """
     Validates that a path does not start with a forward slash.
@@ -200,20 +101,14 @@ class RelativePathValidation(object):
         return _("attribute cannot start with a /")
 
 REMOTE_MANDATORY_KEYS = {
-    "auth_type": [OneOfValidation(["publickey", "password"]),
-                  RequireOptionalIf({"remote": ["ssh_password", "ssh_user"]},
-                                    lambda x: x == "password"),
-                  RequireOptionalIf({"remote": ["ssh_identity_file", "ssh_user"]},
-                                    lambda x: x == "publickey")],
+    "ssh_identity_file": [TypeValidation([basestring]), NonEmptyValidation()],
+    "ssh_user": [TypeValidation([basestring]), NonEmptyValidation()],
     "host": [TypeValidation([basestring]), NonEmptyValidation()],
     "root": [TypeValidation([basestring]), NonEmptyValidation()]
 }
 
 REMOTE_OPTIONAL_KEYS = {
-    "remote_units_path": [TypeValidation([basestring]), RelativePathValidation()],
-    "ssh_identity_file": [TypeValidation([basestring]), NonEmptyValidation()],
-    "ssh_user": [TypeValidation([basestring]), NonEmptyValidation()],
-    "ssh_password": [TypeValidation([basestring]), NonEmptyValidation()]
+    "remote_units_path": [TypeValidation([basestring]), RelativePathValidation()]
 }
 
 

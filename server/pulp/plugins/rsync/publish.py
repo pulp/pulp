@@ -96,23 +96,16 @@ class RSyncPublishStep(PublishStep):
         :rtype: list
         """
         user = self.get_config().flatten()["remote"]['ssh_user']
-        auth_type = self.get_config().flatten()["remote"]['auth_type']
-
         # -e 'ssh -l ssh_user -i ssh_identity_file'
         # use shared ssh connection for other threads
         cmd = ['ssh', '-l', user]
-        if auth_type == "publickey":
-            key = self.get_config().flatten()["remote"]['ssh_identity_file']
-            cmd += ['-i', key]
-        cmd += ['-o', 'StrictHostKeyChecking no',
+        key = self.get_config().flatten()["remote"]['ssh_identity_file']
+        cmd += ['-i', key,
+                '-o', 'StrictHostKeyChecking no',
                 '-o', 'UserKnownHostsFile /dev/null',
                 '-S', '/tmp/rsync_distributor-%r@%h:%p',
                 '-o', 'ControlMaster auto',
                 '-o', 'ControlPersist 10']
-        if self.get_config().flatten()["remote"]['auth_type'] == 'password':
-            password_file = os.path.join(self.get_working_dir(), str(uuid.uuid4()))
-            open(password_file, 'w').write(self.get_config().flatten()['remote']['ssh_password'])
-            cmd = ['sshpass', '-f', password_file] + cmd
         if args:
             cmd += args
         return cmd
