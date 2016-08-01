@@ -1006,7 +1006,9 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                                                            updated__gte=the_timestamp).count()
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
-    published_after_predistributor = True
+        published_after_predistributor = True
+    else:
+        published_after_predistributor = False
     predistributor_id = call_config.get('predistributor_id')
     if predistributor_id and last_published:
         predistributor = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
