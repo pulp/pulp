@@ -184,11 +184,12 @@ class UnitAssociationCriteria(Model):
 
         :rtype:     dict
         """
-
+        association_filters = _get_patterns_for_not(self.association_filters)
+        unit_filters = _get_patterns_for_not(self.unit_filters)
         return {
             'type_ids': self.type_ids,
-            'association_filters': self.association_filters,
-            'unit_filters': self.unit_filters,
+            'association_filters': association_filters,
+            'unit_filters': unit_filters,
             'association_sort': self.association_sort,
             'unit_sort': self.unit_sort,
             'limit': self.limit,
@@ -212,7 +213,8 @@ class UnitAssociationCriteria(Model):
 
         :rtype:                  UnitAssociationCriteria
         """
-
+        _compile_regexs_for_not(input_dictionary['association_filters'])
+        _compile_regexs_for_not(input_dictionary['unit_filters'])
         return cls(input_dictionary['type_ids'], input_dictionary['association_filters'],
                    input_dictionary['unit_filters'], input_dictionary['association_sort'],
                    input_dictionary['unit_sort'], input_dictionary['limit'],
@@ -429,6 +431,13 @@ def _validate_fields(fields):
 
 
 def _compile_regexs_for_not(spec):
+    """
+    Compile the regular expression for the `$not` operator which is required by Mongo.
+    Modify the filter dictionary in-place.
+
+    :param spec: Mongo query filter
+    :type  spec: dict, list or tuple
+    """
     if not isinstance(spec, (dict, list, tuple)):
         return
     if isinstance(spec, (list, tuple)):
@@ -438,6 +447,29 @@ def _compile_regexs_for_not(spec):
         if key == '$not' and isinstance(value, basestring):
             spec[key] = re.compile(value)
         _compile_regexs_for_not(value)
+
+
+def _get_patterns_for_not(spec):
+    """
+    Get pattern from regex objects for the `$not` operator to make them JSON serializable.
+
+    :param spec: Mongo query filter
+    :type  spec: dict, list or tuple
+    :return: copy of the filter
+    :rtype: dict, list or tuple
+    """
+    spec_copy = {}
+    if not isinstance(spec, (dict, list, tuple)):
+        return spec
+    if isinstance(spec, (list, tuple)):
+        return map(_get_patterns_for_not, spec)
+    re_type = type(re.compile(''))
+    for key, value in spec.items():
+        if key == '$not' and isinstance(value, re_type):
+            spec_copy[key] = value.pattern
+        else:
+            spec_copy[key] = _get_patterns_for_not(value)
+    return spec_copy
 
 
 class DateOperator(object):
