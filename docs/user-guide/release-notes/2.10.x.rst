@@ -15,3 +15,6 @@ New Features
 * A full re-sync can be forced with a 'force_full' option. It will trigger full sync where
   no sync optimization will be applied or steps skipped. This option can be used by ``force_full``
   option in override_config via API or ``--force-full`` via CLI.
+
+* RPM, ISO, and Docker repositories can be published using the new rsync distributors. These
+  distributors afford Pulp users to rsync repositories to remote servers.
