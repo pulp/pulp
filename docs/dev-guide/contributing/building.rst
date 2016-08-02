@@ -1,6 +1,13 @@
 Building Instructions
 =====================
 
+.. warning::
+
+   These build instructions are deprecated, and no longer apply after Pulp 2.9.
+   They have been superseded by a COPR-based build system that is still in
+   development. This page will be updated with the new build instructions once
+   the COPR-based build system becomes stable.
+
 Getting Started
 ---------------
 
