@@ -119,8 +119,6 @@ class RSyncPublishStep(PublishStep):
                                                     '/ssh_identity_file', 'hostname']
         :rtype: list
         """
-        if self.get_config().flatten()["remote"]['auth_type'] == 'local':
-            return []
         ssh_parts = []
         for arg in self.make_ssh_cmd():
             if " " in arg:
@@ -153,9 +151,6 @@ class RSyncPublishStep(PublishStep):
         :return: str of the combination of user, host, and dir.
         :rtype:  str
         """
-        if self.get_config().flatten()["remote"]['auth_type'] == 'local':
-            return self.get_config().flatten()["remote"]['root']
-
         user = self.get_config().flatten()["remote"]['ssh_user']
         host = self.get_config().flatten()["remote"]['host']
         remote_root = self.get_config().flatten()["remote"]['root']
