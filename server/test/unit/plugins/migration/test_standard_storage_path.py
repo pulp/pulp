@@ -341,36 +341,6 @@ class TestMigration(TestCase):
         # validation
         self.assertEqual(path, os.path.join(storage_dir.return_value, 'published'))
 
-    @patch('os.rmdir')
-    @patch('os.walk')
-    @patch('os.listdir')
-    @patch(MODULE + '.Migration.content_dir')
-    def test_prune(self, content_dir, listdir, walk, rmdir):
-        def list_dir(path):
-            if path.endswith('_'):
-                return []
-            else:
-                return [1, 2]
-        listdir.side_effect = list_dir
-        walk.return_value = [
-            ('r', ['d1', 'd2'], ['f1', 'f2']),
-            ('d1_', [], []),
-            ('d2', ['d3'], []),
-            ('d4_', [], [])
-        ]
-
-        # test
-        Migration._prune()
-
-        # validation
-        walk.assert_called_once_with(content_dir.return_value, topdown=False)
-        self.assertEqual(
-            rmdir.call_args_list,
-            [
-                call('d1_'),
-                call('d4_')
-            ])
-
     def test_add(self):
         plan = Mock()
 
