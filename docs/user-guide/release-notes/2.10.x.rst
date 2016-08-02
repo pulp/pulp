@@ -18,3 +18,19 @@ New Features
 
 * RPM, ISO, and Docker repositories can be published using the new rsync distributors. These
   distributors afford Pulp users to rsync repositories to remote servers.
+
+Upgrade
+-------
+
+Action required: If you are upgrading from 2.8.2 or earlier direct to 2.10.0 or later, you will find
+that many empty directories are present in /var/lib/pulp/content/. Several migrations that moved
+unit files to new locations were optimized for performance, specifically when operating on NFS, and
+that required removal of a directory pruning stage that was taking some users many hours. Instead,
+you can now perform that removal separately from the migration system. Or pulp will happily run with
+the empty directories in place if you do not wish to spend time running the removal.
+
+To execute the removal, which may take a long time over NFS, run this command::
+
+  $ sudo -u apache find /var/lib/pulp/content/ -type d -empty \
+    -not -path "/var/lib/pulp/content/units/*" -delete
+
