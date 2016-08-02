@@ -286,20 +286,26 @@ Dependencies
 The easiest way to download the other dependencies is to install Pulp through yum or dnf, which
 pulls in the latest dependencies according to the spec file.
 
-#. Download the appropriate repository from https://repos.fedorapeople.org/repos/pulp/pulp/
+#. Enable the appropriate repository from https://copr.fedorainfracloud.org/groups/g/pulp/coprs/
 
    Example for Fedora::
 
-       $ cd /etc/yum.repos.d/
-       $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+       $ sudo dnf copr enable @pulp/2.y
 
 #. Edit the repo and enable the most recent testing repository.
 
 #. When using dnf, install the dependencies with this command.
    ``$ sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)``
 
-#. When using yum, install the main Pulp groups to get all of the dependencies.
-   ``$ sudo yum install @pulp-server-qpid @pulp-admin @pulp-consumer``
+#. When using yum, install all Pulp packages to get the dependencies::
+
+    $ sudo yum install pulp-server python-qpid qpid-tools \
+    pulp-rpm-plugins pulp-puppet-plugins pulp-docker-plugins \
+    pulp-admin-client pulp-rpm-admin-extensions \
+    pulp-puppet-admin-extensions pulp-docker-admin-extensions \
+    pulp-consumer-client pulp-rpm-consumer-extensions \
+    pulp-puppet-consumer-extensions pulp-agent pulp-rpm-handlers pulp-rpm-yumplugins \
+    pulp-puppet-handlers python-gofer-qpid
 
 #. When using yum, remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``

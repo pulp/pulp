@@ -4,6 +4,11 @@ Fedora 24+
 Beginning with Fedora 24, Pulp is included in the Fedora project and no special repositories are
 needed to install there.
 
+You can stay up to date with newer Pulp releases, however, by subscribing to one of our COPR
+repositories:
+
+https://copr.fedorainfracloud.org/groups/g/pulp/coprs/
+
 
 Database Server
 ---------------
