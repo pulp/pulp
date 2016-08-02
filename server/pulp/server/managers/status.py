@@ -9,6 +9,9 @@ from pulp.server.db import connection
 from pulp.server.db.model import Worker
 
 
+conn = celery.connection()
+
+
 def get_version():
     """
     :returns:          Pulp platform version
@@ -51,9 +54,14 @@ def get_broker_conn_status():
     # explicit connection and then release it.
     # See https://github.com/celery/kombu/issues/432 for more detail.
     try:
-        conn = celery.connection()
         conn.connect()
+        transport = conn._transport
         conn.release()
+
+        # An explicit call to __del__ to release file descriptors
+        # https://pulp.plan.io/issues/2124#note-9
+        transport.__del__()
+
         return {'connected': True}
     except:
         # if the above was not successful for any reason, return False
