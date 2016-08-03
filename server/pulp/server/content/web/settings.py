@@ -47,7 +47,6 @@ LOGGING = {
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 DEBUG = False
-TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = ()
 
@@ -78,4 +77,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-TEMPLATE_DIRS = ('/usr/share/pulp/templates/',)
+# More information on this https://docs.djangoproject.com/en/1.9/ref/templates/upgrading/
+TEMPLATE_DIRS = ['/usr/share/pulp/templates/']
+TEMPLATE_DEBUG = False
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': TEMPLATE_DIRS,
+        'OPTIONS': {'debug': False},
+    }
+]
