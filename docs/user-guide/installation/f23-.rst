@@ -10,9 +10,10 @@ Repositories
 Pulp
 ^^^^
 
-Enable appropriate COPR repository, according to the instructions found on the COPR site:
+Download the appropriate repo definition file from the Pulp repository:
 
-https://copr.fedorainfracloud.org/groups/g/pulp/coprs/
+ * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+ * RHEL 6+: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
 
 EPEL for RHEL & CentOS

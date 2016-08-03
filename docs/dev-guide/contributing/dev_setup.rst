@@ -286,11 +286,12 @@ Dependencies
 The easiest way to download the other dependencies is to install Pulp through yum or dnf, which
 pulls in the latest dependencies according to the spec file.
 
-#. Enable the appropriate repository from https://copr.fedorainfracloud.org/groups/g/pulp/coprs/
+#. Download the appropriate repository from https://repos.fedorapeople.org/repos/pulp/pulp/
 
    Example for Fedora::
 
-       $ sudo dnf copr enable @pulp/2.y
+       $ cd /etc/yum.repos.d/
+       $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 
 #. Edit the repo and enable the most recent testing repository.
 
