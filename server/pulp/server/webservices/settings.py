@@ -1,6 +1,9 @@
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
+import django
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
@@ -25,7 +28,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
 )
 
-ROOT_URLCONF = 'pulp.server.webservices.urls'
+if django.VERSION[0] == 1 and django.VERSION[2] <= 6:
+    ROOT_URLCONF = 'pulp.server.webservices.compat_urls'
+else:
+    ROOT_URLCONF = 'pulp.server.webservices.urls'
+
 
 WSGI_APPLICATION = 'pulp.server.webservices.wsgi.application'
 
