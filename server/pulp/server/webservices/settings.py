@@ -11,7 +11,6 @@ SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -72,3 +71,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.4/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# More information on this https://docs.djangoproject.com/en/1.9/ref/templates/upgrading/
+TEMPLATE_DEBUG = False
+TEMPLATES = [
+    {
+        'OPTIONS': {'debug': False},
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    }
+]
