@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.33
-Release:        5.pulp%{?dist}
+Release:        6.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -24,6 +24,7 @@ Patch1:         1212200.patch
 Patch2:         569.patch
 Patch3:         571.patch
 Patch4:         577.patch
+Patch5:         2124.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -124,6 +125,7 @@ This subpackage is for python3
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -180,6 +182,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Aug 05 2016 Brian Bouterse <bbouters@redhat.com> 3.0.33-6.pulp
+- Fixes Qpid file descriptor leak (bbouters@redhat.com)
+
 * Fri Apr 01 2016 Brian Bouterse <bbouters@redhat.com> 3.0.33-5.pulp
 - Add kombu patch for issue celery/kombu#577
 
