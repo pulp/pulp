@@ -182,6 +182,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Aug 05 2016 Brian Bouterse <bbouters@redhat.com> 3.0.33-6.pulp
+- Fixes Qpid file descriptor leak (bbouters@redhat.com)
+
 * Fri Apr 01 2016 Brian Bouterse <bbouters@redhat.com> 3.0.33-5.pulp
 - Add kombu patch for issue celery/kombu#577
 
