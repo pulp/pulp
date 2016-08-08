@@ -1,2 +1,0 @@
-# debugging tasks for the dev role are disabled by default
-pulp_dev_debug: false
