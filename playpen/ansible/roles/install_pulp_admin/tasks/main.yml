@@ -1,0 +1,21 @@
+---
+# Install for Fedora 24+
+- name: Install Pulp Admin for Ferdora 24
+  dnf: name={{ item }} state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int > 23
+  with_items:
+    - pulp-docker-admin-extensions
+    - pulp-puppet-admin-extensions
+    - pulp-rpm-admin-extensions
+    - pulp-ostree-admin-extensions
+    - pulp-python-admin-extensions
+
+# Install for non-Fedora
+- name: Install Pulp Admin for RHEL, CentOS
+  dnf: name=@pulp-admin state=present
+  when: ansible_distribution != 'Fedora'
+
+# Install for Fedora < 24
+- name: Install Pulp Admin for Fedora 23 and older
+  dnf: name=@pulp-admin state=present
+  when: ansible_distribution == 'Fedora' and ansible_distribution_version|int < 24
