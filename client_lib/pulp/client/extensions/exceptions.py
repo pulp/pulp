@@ -126,8 +126,11 @@ class ExceptionHandler:
                     'provided the following error message:')
             self.prompt.render_failure_message(msg)
 
-            self.prompt.render_failure_message('   %s' % e.error_message)
-            msg = _('More information may be found using the -v flag.')
+            msg = '   %s' % e.error_message
+            v_flag_msg = self.handle_v_flags()
+            if v_flag_msg:
+                self.prompt.render_failure_message(msg)
+                msg = v_flag_msg
 
         self.prompt.render_failure_message(msg)
         return CODE_BAD_REQUEST
@@ -197,8 +200,7 @@ class ExceptionHandler:
                 msg += _('Operation: %(o)s') % {'o': r['operation']}
         else:
             msg = _('The requested operation could not execute due to an unexpected '
-                    'conflict on the server. More information may be found using the '
-                    '-v flag.')
+                    'conflict on the server.') + self.handle_v_flags()
 
         self.prompt.render_failure_message(msg)
         return CODE_CONFLICT
@@ -228,8 +230,7 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = _('An error occurred attempting to contact the server. More information '
-                'may be found using the -v flag.')
+        msg = _('An error occurred attempting to contact the server.') + self.handle_v_flags()
 
         self.prompt.render_failure_message(msg)
         return CODE_CONNECTION_EXCEPTION
@@ -326,8 +327,7 @@ class ExceptionHandler:
             data = {'server': self.config['server']['host']}
             msg = msg % data
         else:
-            msg = _('An error occurred attempting to contact the server. More information '
-                    'may be found using the -v flag.')
+            msg = _('An error occurred attempting to contact the server.') + self.handle_v_flags()
 
         self.prompt.render_failure_message(msg)
         return CODE_SOCKET_ERROR
@@ -424,10 +424,9 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = _('An unexpected error has occurred. More information '
-                'may be found using the -v flag.')
-
+        msg = _('An unexpected error has occurred.') + self.handle_v_flags()
         self.prompt.render_failure_message(msg)
+
         return CODE_UNEXPECTED
 
     def _log_server_exception(self, e):
@@ -485,3 +484,36 @@ class ExceptionHandler:
             return str(expiration_date)
         except Exception:
             return None
+
+    def _get_v_flag_count(self):
+        """
+        Estimate number of v flags from logger level.
+
+        :rtype: int or None
+        :return: 0 for normal level, 1 for -v, 2 for -vv, None for others
+        """
+        verbose = _logger.getEffectiveLevel()
+        verbose_levels = {
+            logging.DEBUG: 2,
+            logging.INFO: 1,
+            logging.FATAL: 0
+        }
+        try:
+            return verbose_levels[verbose]
+        except KeyError:
+            return None
+
+    def handle_v_flags(self):
+        """
+        By number of v flags return text about using v flags.
+
+        :rtype: string
+        :return: 2 flags = "", 1 flag = "...use -vv...", 0 or other "...use -v flag..."
+        """
+        verbose_level = self._get_v_flag_count()
+        if verbose_level == 2:
+            return ""
+        elif verbose_level == 1:
+            return _('More information may be found using the -vv flag.')
+        else:
+            return _('More information may be found using the -v flag.')
