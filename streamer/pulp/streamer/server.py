@@ -212,7 +212,7 @@ class Streamer(resource.Resource):
         :type  responder:       Responder
         """
         # Configure the primary downloader for alternate content sources
-        plugin_importer, config, db_importer = repo_controller.get_importer_by_id(
+        plugin_importer, configuration, db_importer = repo_controller.get_importer_by_id(
             catalog_entry.importer_id)
         # There is an unfortunate mess of configuration classes and attributes, and
         # multiple "models" floating around. The MongoEngine class that corresponds
@@ -221,7 +221,7 @@ class Streamer(resource.Resource):
         # configuration, so here we override the db_importer.config because it doesn't
         # have the whole config. In the future the importer object should seemlessly
         # load and apply the plugin-wide configuration.
-        db_importer.config = config.flatten()
+        db_importer.config = configuration.flatten()
         primary_downloader = plugin_importer.get_downloader_for_db_importer(
             db_importer, catalog_entry.url, working_dir='/tmp')
         pulp_request = request.getHeader(PULP_STREAM_REQUEST_HEADER)
