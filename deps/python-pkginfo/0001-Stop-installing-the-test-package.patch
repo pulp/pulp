@@ -1,0 +1,24 @@
+From 40656d5d20feda729ab3328c3f7b716fb7af1499 Mon Sep 17 00:00:00 2001
+From: Jeremy Cline <jeremy@jcline.org>
+Date: Thu, 9 Jun 2016 16:05:39 -0400
+Subject: [PATCH] Stop installing the test package
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index f50b5e4..6bead7f 100644
+--- a/setup.py
++++ b/setup.py
+@@ -47,6 +47,6 @@ setup(
+         ['pkginfo = pkginfo.commandline:main']
+       ]
+     },
+-    packages=['pkginfo', 'pkginfo.tests'],
++    packages=['pkginfo'],
+     **extras
+ )
+--
+2.5.5
+
