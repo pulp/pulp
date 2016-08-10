@@ -214,7 +214,8 @@ Permissions
 
 Permissions to various resources can be accessed or manipulated using ``pulp-admin auth permission``
 commands. There are 5 types of permissions - CREATE, READ, UPDATE, DELETE and EXECUTE. Permissions are
-granted and revoked from a resource which is essentially a REST API path.
+granted and revoked from a resource which is essentially a REST API path with the ``/pulp/api`` prefix
+removed.
 
 Here are a few examples of accessing and manipulation permissions:
 
@@ -303,10 +304,10 @@ role will inherit these permissions.
 
 ::
 
-    $ pulp-admin auth permission grant --resource /repositories --role-id test-role -o read
-    Permissions [/repositories : ['READ']] successfully granted to role [test-role]
+    $ pulp-admin auth permission grant --resource /v2/repositories/ --role-id test-role -o read
+    Permissions [/v2/repositories/ : ['READ']] successfully granted to role [test-role]
 
-    $ pulp-admin auth permission revoke --resource /repositories --role-id test-role -o read
-    Permissions [/repositories : ['READ']] successfully revoked from role [test-role]
+    $ pulp-admin auth permission revoke --resource /v2/repositories/ --role-id test-role -o read
+    Permissions [/v2/repositories/ : ['READ']] successfully revoked from role [test-role]
 
 
