@@ -1,12 +1,15 @@
 """
 Manager to return status information about a running Pulp instance
 """
-
+from logging import getLogger
 from pkg_resources import get_distribution
 
 from pulp.server.async.celery_instance import celery
 from pulp.server.db import connection
 from pulp.server.db.model import Worker
+
+
+_logger = getLogger(__name__)
 
 
 def get_version():
@@ -55,6 +58,7 @@ def get_broker_conn_status():
         conn.connect()
         conn.release()
         return {'connected': True}
-    except:
+    except Exception:
+        _logger.exception('Connection to broker failed during status check!')
         # if the above was not successful for any reason, return False
         return {'connected': False}
