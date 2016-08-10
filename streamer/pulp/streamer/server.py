@@ -147,7 +147,7 @@ class Streamer(resource.Resource):
         # fixed and available, remove the PulpHTTPAdapter. This is a short-term work-around
         # to avoid carrying the package.
         self.session = requests.Session()
-        self.session.mount('https://', pulp_adapters.PulpHTTPAdapter)
+        self.session.mount('https://', pulp_adapters.PulpHTTPAdapter())
 
     def render_GET(self, request):
         """
