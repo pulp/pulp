@@ -6,3 +6,5 @@ from .consumer import Consumer, ConsumerContent  # NOQA
 from .repository import (Repository, RepositoryGroup, Importer, Distributor,  # NOQA
                          RepositoryImporter,  RepositoryDistributor, GroupDistributor,  # NOQA
                          RepositoryContent)  # NOQA
+
+from .task import ReservedResource, Worker, Task, TaskTag, TaskLock, ScheduledCalls  # NOQA
