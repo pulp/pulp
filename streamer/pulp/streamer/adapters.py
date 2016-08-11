@@ -18,13 +18,15 @@ try:
 except ImportError:  # threading is an optional module and may not be present.
     from dummy_threading import RLock
 
-from requests.adapters import (DEFAULT_POOLBLOCK, DEFAULT_POOLSIZE, DEFAULT_RETRIES,
-                               HTTPAdapter)
+from requests.models import Response
+from requests.packages.urllib3.poolmanager import proxy_from_url
 from requests.packages.urllib3.response import HTTPResponse
 from requests.packages.urllib3.util import Timeout as TimeoutSauce
+from requests.packages.urllib3.util.retry import Retry
 from requests.compat import urlparse, basestring
+from requests.utils import (DEFAULT_CA_BUNDLE_PATH, get_encoding_from_headers,
+                            prepend_scheme_if_needed)
 from requests.structures import CaseInsensitiveDict
-from requests.packages.urllib3.exceptions import ClosedPoolError
 from requests.packages.urllib3.exceptions import ConnectTimeoutError
 from requests.packages.urllib3.exceptions import HTTPError as _HTTPError
 from requests.packages.urllib3.exceptions import MaxRetryError
@@ -36,9 +38,7 @@ from requests.packages.urllib3.exceptions import ResponseError
 from requests.cookies import extract_cookies_to_jar
 from requests.exceptions import (ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
                                  ProxyError, RetryError)
-from requests.utils import (DEFAULT_CA_BUNDLE_PATH, get_encoding_from_headers,
-                            prepend_scheme_if_needed)
-from requests.models import Response
+from requests.adapters import DEFAULT_POOLBLOCK, DEFAULT_POOLSIZE, DEFAULT_RETRIES, HTTPAdapter
 
 
 class PulpHTTPAdapter(HTTPAdapter):
@@ -51,7 +51,7 @@ class PulpHTTPAdapter(HTTPAdapter):
 
     :param pool_connections: The number of urllib3 connection pools to cache.
     :param pool_maxsize: The maximum number of connections to save in the pool.
-    :param max_retries: The maximum number of retries each connection
+    :param int max_retries: The maximum number of retries each connection
         should attempt. Note, this applies only to failed DNS lookups, socket
         connections and connection timeouts, never to requests where data has
         made it to the server. By default, Requests does not retry failed
@@ -71,10 +71,21 @@ class PulpHTTPAdapter(HTTPAdapter):
     def __init__(self, pool_connections=DEFAULT_POOLSIZE,
                  pool_maxsize=DEFAULT_POOLSIZE, max_retries=DEFAULT_RETRIES,
                  pool_block=DEFAULT_POOLBLOCK):
+        if max_retries == DEFAULT_RETRIES:
+            self.max_retries = Retry(0, read=False)
+        else:
+            self.max_retries = Retry.from_int(max_retries)
+        self.config = {}
+        self.proxy_manager = {}
+
+        super(HTTPAdapter, self).__init__()
+
+        self._pool_connections = pool_connections
+        self._pool_maxsize = pool_maxsize
+        self._pool_block = pool_block
         self._pool_kw_lock = RLock()
-        super(PulpHTTPAdapter, self).__init__(pool_connections=pool_connections,
-                                              pool_maxsize=pool_maxsize, max_retries=max_retries,
-                                              pool_block=pool_block)
+
+        self.init_poolmanager(pool_connections, pool_maxsize, block=pool_block)
 
     def __setstate__(self, state):
         # Can't handle by adding 'proxy_manager' to self.__attrs__ because
@@ -88,6 +99,29 @@ class PulpHTTPAdapter(HTTPAdapter):
 
         self.init_poolmanager(self._pool_connections, self._pool_maxsize,
                               block=self._pool_block)
+
+    def proxy_manager_for(self, proxy, **proxy_kwargs):
+        """Return urllib3 ProxyManager for the given proxy.
+
+        This method should not be called from user code, and is only
+        exposed for use when subclassing the
+        :class:`HTTPAdapter <requests.adapters.HTTPAdapter>`.
+
+        :param proxy: The proxy to return a urllib3 ProxyManager for.
+        :param proxy_kwargs: Extra keyword arguments used to configure the Proxy Manager.
+        :returns: ProxyManager
+        """
+        if proxy not in self.proxy_manager:
+            proxy_headers = self.proxy_headers(proxy)
+            self.proxy_manager[proxy] = proxy_from_url(
+                proxy,
+                proxy_headers=proxy_headers,
+                num_pools=self._pool_connections,
+                maxsize=self._pool_maxsize,
+                block=self._pool_block,
+                **proxy_kwargs)
+
+        return self.proxy_manager[proxy]
 
     def _update_poolmanager_ssl_kw(self, verify, cert):
         """Update the :class:`PoolManager <urllib3.poolmanager.PoolManager>`
@@ -121,14 +155,11 @@ class PulpHTTPAdapter(HTTPAdapter):
 
             if not os.path.isdir(cert_loc):
                 self.poolmanager.connection_pool_kw['ca_certs'] = cert_loc
-                self.poolmanager.connection_pool_kw['ca_cert_dir'] = None
             else:
-                self.poolmanager.connection_pool_kw['ca_cert_dir'] = cert_loc
                 self.poolmanager.connection_pool_kw['ca_certs'] = None
         else:
             self.poolmanager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
             self.poolmanager.connection_pool_kw['ca_certs'] = None
-            self.poolmanager.connection_pool_kw['ca_cert_dir'] = None
 
         if cert:
             if not isinstance(cert, basestring):
@@ -185,25 +216,8 @@ class PulpHTTPAdapter(HTTPAdapter):
             if url.lower().startswith('https'):
                 self._update_poolmanager_ssl_kw(verify, cert)
 
-            # NOTE: This differs from upstream, which factored the proxy select code out into
-            # utils and fixed #2722 at the same time. Since that function is missing in 2.6,
-            # I've modified this to inline that function.
             proxies = proxies or {}
-            urlparts = urlparse(url)
-            if urlparts.hostname is None:
-                proxy = proxies.get('all', proxies.get(urlparts.scheme))
-            else:
-                proxy_keys = [
-                    'all://' + urlparts.hostname,
-                    'all',
-                    urlparts.scheme + '://' + urlparts.hostname,
-                    urlparts.scheme,
-                ]
-                proxy = None
-                for proxy_key in proxy_keys:
-                    if proxy_key in proxies:
-                        proxy = proxies[proxy_key]
-                        break
+            proxy = proxies.get(urlparse(url.lower()).scheme)
 
             if proxy:
                 proxy = prepend_scheme_if_needed(proxy, 'http')
@@ -223,8 +237,8 @@ class PulpHTTPAdapter(HTTPAdapter):
         :param request: The :class:`PreparedRequest <PreparedRequest>` being sent.
         :param stream: (optional) Whether to stream the request content.
         :param timeout: (optional) How long to wait for the server to send
-            data before giving up, as a float, or a :ref:`(connect timeout,
-            read timeout) <timeouts>` tuple.
+            data before giving up, as a float, or a (`connect timeout, read
+            timeout <user/advanced.html#timeouts>`_) tuple.
         :type timeout: float or tuple
         :param verify: (optional) Whether to verify SSL certificates.
         :param cert: (optional) Any user-provided SSL certificate to be trusted.
@@ -270,7 +284,7 @@ class PulpHTTPAdapter(HTTPAdapter):
                 if hasattr(conn, 'proxy_pool'):
                     conn = conn.proxy_pool
 
-                low_conn = conn._get_conn(timeout=None)
+                low_conn = conn._get_conn(timeout=timeout)
 
                 try:
                     low_conn.putrequest(request.method,
@@ -289,15 +303,7 @@ class PulpHTTPAdapter(HTTPAdapter):
                         low_conn.send(b'\r\n')
                     low_conn.send(b'0\r\n\r\n')
 
-                    # Receive the response from the server
-                    try:
-                        # For Python 2.7+ versions, use buffering of HTTP
-                        # responses
-                        r = low_conn.getresponse(buffering=True)
-                    except TypeError:
-                        # For compatibility with Python 2.6 versions and back
-                        r = low_conn.getresponse()
-
+                    r = low_conn.getresponse()
                     resp = HTTPResponse.from_httplib(
                         r,
                         pool=conn,
@@ -310,29 +316,20 @@ class PulpHTTPAdapter(HTTPAdapter):
                     # Then, reraise so that we can handle the actual exception.
                     low_conn.close()
                     raise
+                else:
+                    # All is well, return the connection to the pool.
+                    conn._put_conn(low_conn)
 
         except (ProtocolError, socket.error) as err:
             raise ConnectionError(err, request=request)
 
         except MaxRetryError as e:
             if isinstance(e.reason, ConnectTimeoutError):
-                # NOTE: This differs from the upstream 2.x series; NewConnectionError
-                # was introduced after 2.6 to fix issue #2811. RHEL6 and 7 have 2.6, so
-                # the fix has been removed here in order to not have to pull in more
-                # changes and to maintain compatibility. The end result is that a
-                # ConnectTimeout will be raised even when the underlying error isn't a
-                # timeout. See requests issues #2811, #2812.
                 raise ConnectTimeout(e, request=request)
 
             if isinstance(e.reason, ResponseError):
                 raise RetryError(e, request=request)
 
-            if isinstance(e.reason, _ProxyError):
-                raise ProxyError(e, request=request)
-
-            raise ConnectionError(e, request=request)
-
-        except ClosedPoolError as e:
             raise ConnectionError(e, request=request)
 
         except _ProxyError as e:
