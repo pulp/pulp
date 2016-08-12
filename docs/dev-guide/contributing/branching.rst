@@ -33,6 +33,21 @@ Each ``x.y`` release will have one corresponding branch called ``x.y-dev``. For
 example, all work for the 2.7.z series of releases gets merged into ``2.7-dev``.
 
 
+Protected Branches
+------------------
+
+Within each repository, the ``master`` branch, any branch ending in ``-dev``, and any
+branch ending in ``-release`` should be marked as
+`protected <https://help.github.com/articles/about-protected-branches/>`_
+on GitHub. The basic protection that disallows force-push and deletion is the
+only option that should be enabled. There should be no restrictions on required
+status checks or who can push. There is a script at
+`devel/scripts/protected-branches.py
+<https://github.com/pulp/devel/tree/master/scripts/protected-branches.py>`_
+that will mark all appropriate branches as protected. Any time new branches are
+created that should be protected, that script can be run to do the work.
+
+
 Build Tags
 ----------
 
