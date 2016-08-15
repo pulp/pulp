@@ -1044,6 +1044,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Mon Aug 15 2016 Sean Myers <sean.myers@redhat.com> 2.9.2-1
+- Pulp rebuild
+
 * Thu Aug 11 2016 Sean Myers <sean.myers@redhat.com> 2.9.2-0.3.beta
 - Pulp rebuild
 
