@@ -17,12 +17,12 @@
     {
         "name": "gofer",
         "version": "2.7.6-1",
-        "platform": ["el5", "el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": ["el5", "el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-amqp",
         "version": "1.4.9-1",
-        "platform": ["el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": ["el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-billiard",
@@ -32,7 +32,7 @@
     {
         "name": "python-celery",
         "version": "3.1.11-1",
-        "platform": ["el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": ["el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-isodate",
@@ -42,22 +42,22 @@
     {
         "name": "python-kombu",
         "version": "3.0.33-6.pulp",
-        "platform": [ "el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": [ "el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-mongoengine",
         "version": "0.10.5-1",
-        "platform": [ "el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": [ "el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-pymongo",
         "version": "3.2-1",
-        "platform": [ "el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": [ "el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-nectar",
         "version": "1.5.2-1",
-        "platform": [ "el6", "el7", "fc22", "fc23", "fc24"]
+        "platform": [ "el6", "el7", "fc23", "fc24"]
     },
     {
         "name": "python-rhsm",
