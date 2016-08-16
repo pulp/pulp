@@ -168,6 +168,45 @@ class TestCleanConfigDict(unittest.TestCase):
         result = importer.clean_config_dict(mock_config)
         self.assertTrue(result is None)
 
+    def test_feed_with_basic_auth_username_password(self):
+        """
+        Ensure that username and password are removed from the feed and put into the config.
+        """
+        mock_config = {'feed': 'http://mock_user:mock_pass@realfeed.com'}
+        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock_user',
+                                 'basic_auth_password': 'mock_pass'}
+        result = importer.clean_config_dict(mock_config)
+        self.assertDictEqual(expected_clean_config, result)
+
+    def test_feed_with_basic_auth_username(self):
+        """
+        Ensure that the username is moved to config even if password is not present.
+        """
+        mock_config = {'feed': 'http://mock_user@realfeed.com'}
+        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock_user'}
+        result = importer.clean_config_dict(mock_config)
+        self.assertDictEqual(expected_clean_config, result)
+
+    def test_feed_with_basic_auth_password(self):
+        """
+        If password but not username is in the feed, move the password config set username empty ''.
+        """
+        mock_config = {'feed': 'http://:mock_pass@realfeed.com'}
+        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': '',
+                                 'basic_auth_password': 'mock_pass'}
+        result = importer.clean_config_dict(mock_config)
+        self.assertDictEqual(expected_clean_config, result)
+
+    def test_feed_with_basic_auth_username_password_at_symbol(self):
+        """
+        Ensure that usernames and passwords can contain the '@' symbol.
+        """
+        mock_config = {'feed': 'http://mock@user:mock@pass@realfeed.com'}
+        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock@user',
+                                 'basic_auth_password': 'mock@pass'}
+        result = importer.clean_config_dict(mock_config)
+        self.assertDictEqual(expected_clean_config, result)
+
 
 @mock.patch('pulp.server.controllers.importer.set_importer')
 @mock.patch('pulp.server.controllers.importer.tags')
@@ -253,6 +292,15 @@ class TestValidateImporterConfig(unittest.TestCase):
         m_plug_call_config.assert_called_once_with('plug_config', 'm_conf')
         imp_inst.validate_config.assert_called_once_with(
             m_repo.to_transfer_repo.return_value, m_plug_call_config.return_value)
+
+    @mock.patch('pulp.server.controllers.importer.PluginCallConfiguration')
+    def test_invalid_importer_type(self, m_plug_call_config, m_repo_model, m_plug_api):
+        m_repo = m_repo_model.objects.get_repo_or_missing_resource.return_value
+        m_plug_api.is_valid_importer.return_value = False
+
+        with self.assertRaises(exceptions.PulpCodedValidationException) as cm:
+            importer.validate_importer_config(m_repo, 'm_type', 'm_conf')
+        self.assertEqual(cm.exception.error_code.code, 'PLP1008')
 
 
 @mock.patch('pulp.server.controllers.importer.model')

@@ -16,7 +16,7 @@
 %if %{pulp_server}
 #SELinux
 %define selinux_variants mls strict targeted
-%define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
+%define selinux_policyver %(rpm --qf "%%{version}-%%{release}" -q selinux-policy)
 %define moduletype apps
 %endif
 
@@ -379,6 +379,7 @@ Requires: mod_wsgi >= 3.4-1.pulp
 Requires: mod_xsendfile >= 0.12
 Requires: m2crypto
 Requires: genisoimage
+Requires: kobo
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
@@ -949,12 +950,7 @@ BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
 Obsoletes: pulp-selinux-server
 
-%if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
-%endif
-%if 0%{?fedora} == 19
-Requires(post): selinux-policy-targeted >= 3.12.1-74
-%endif
 Requires(post): policycoreutils-python
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
 Requires(postun): /usr/sbin/semodule

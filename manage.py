@@ -1,1 +1,0 @@
-platform/pulp/platform/manage.py

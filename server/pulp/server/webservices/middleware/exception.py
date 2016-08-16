@@ -55,7 +55,6 @@ class ExceptionHandlerMiddleware(object):
                 response_obj = HttpResponseServerError(
                     json.dumps(response), content_type="application/json; charset=utf-8")
 
-            response_obj['Content-Encoding'] = 'utf-8'
             return response_obj
         # Because this defines our own exception handling, if something goes wrong we need to make
         # sure that it gets logged.

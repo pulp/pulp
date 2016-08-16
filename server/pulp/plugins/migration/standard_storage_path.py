@@ -17,15 +17,22 @@ def migrate(*args, **kwargs):
     migration.add(plan)
     migration()
 """
+import contextlib
+import logging
 import os
 import shutil
-
+import Queue
+import threading
 from collections import namedtuple
+from gettext import gettext as _
 from hashlib import sha256
 from itertools import chain
 
 from pulp.plugins.util.misc import mkdir
 from pulp.server.config import config
+
+
+_log = logging.getLogger(__name__)
 
 
 # stored in the Batch
@@ -39,6 +46,54 @@ Item = namedtuple(
         'files'
     ]
 )
+
+
+@contextlib.contextmanager
+def defer(func):
+    """
+    Call a function at the end of the context block. Usefulness is similar to contextlib.closing,
+    but obviously more flexible.
+
+    :param func:    A function to call with no arguments.
+    :type  func:    function
+    """
+    try:
+        yield
+    finally:
+        func()
+
+
+@contextlib.contextmanager
+def threader(target, num_threads):
+    """
+    Starts the specified number of threads using the target function. Creates a Queue.Queue object,
+    passes it to the target as the only argument, and yields that queue.
+
+    The code using this as a context manager must add items to the queue in the code block whose
+    context is being managed. At the end of the block, this manager will add None to the queue
+    num_threads times. It will then call queue.join().
+
+    :param target:      A function to run in a thread. It should take items out of the queue, do
+                        something with each, and call queue.task_complete() appropriately. When the
+                        value retrieved from the queue is none, the thread should gracefully exit.
+    :type  target:      function
+    :param num_threads: The number of threads to start
+    :type  num_threads: int
+    """
+    # 500 is an arbitrary limit to control memory use.
+    queue = Queue.Queue(500)
+    for i in range(num_threads):
+        t = threading.Thread(target=target, args=[queue])
+        t.daemon = True
+        t.start()
+
+    yield queue
+
+    # sentinel value telling workers to quit
+    for i in range(num_threads):
+        queue.put(None)
+
+    queue.join()
 
 
 class Batch(object):
@@ -90,9 +145,27 @@ class Batch(object):
         Foreach symlink found, find the *new* path using the plan.  Then,
         re-create the symlink with the updated target.
         """
-        root = Migration.publish_dir()
-        for path, directories, files in os.walk(root):
-            for name in chain(files, directories):
+        with threader(self._relink_worker, 4) as queue:
+            root = Migration.publish_dir()
+            for path, directories, files in os.walk(root):
+                for name in chain(files, directories):
+                    queue.put((path, name))
+
+    def _relink_worker(self, queue):
+        """
+        Worker function to be run in a thread. It takes Item instances from the queue and
+        relinks each.
+
+        :param queue:   a queue with items that are Item instances. When the fetched item is None,
+                        this function will return.
+        :type  queue:   Queue.Queue
+        """
+        while True:
+            job = queue.get()
+            with defer(queue.task_done):
+                if job is None:
+                    break
+                path, name = job
                 abs_path = os.path.join(path, name)
                 try:
                     target = os.readlink(abs_path)
@@ -115,8 +188,25 @@ class Batch(object):
           1. Move the content files.
           2. Update the unit in the DB.
         """
-        for item in self.items:
-            item.plan.migrate(item.unit_id, item.storage_path, item.new_path)
+        with threader(self._migrate_worker, 4) as queue:
+            for item in self.items:
+                queue.put(item)
+
+    @staticmethod
+    def _migrate_worker(queue):
+        """
+        Worker function to be run in a thread. It takes Units from the queue and migrates them.
+
+        :param queue:   a queue with items that are Unit instances. When the fetched item is None,
+                        this function will return.
+        :type  queue:   Queue.Queue
+        """
+        while True:
+            item = queue.get()
+            with defer(queue.task_done):
+                if item is None:
+                    break
+                item.plan.migrate(item.unit_id, item.storage_path, item.new_path)
 
     def __call__(self):
         """
@@ -284,17 +374,6 @@ class Migration(object):
         """
         return os.path.join(Migration.storage_dir(), 'published')
 
-    @staticmethod
-    def _prune():
-        """
-        Delete empty directories in the content storage tree.
-        The migration will create empty directories.
-        """
-        root = Migration.content_dir()
-        for path, directories, files in os.walk(root, topdown=False):
-            if not os.listdir(path):
-                os.rmdir(path)
-
     def __init__(self):
         self.plans = []
 
@@ -319,7 +398,10 @@ class Migration(object):
             if len(batch) >= Batch.LIMIT:
                 batch()
         batch()
-        self._prune()
+        _log.info(_('*** To remove empty directories, consider running the following command. It '
+                    'may take a long time over NFS.'))
+        _log.info('$ sudo -u apache find /var/lib/pulp/content/ -type d -empty '
+                  '-not -path "/var/lib/pulp/content/units/*" -delete')
 
 
 class Unit(object):

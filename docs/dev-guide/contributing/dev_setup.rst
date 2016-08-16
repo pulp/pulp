@@ -5,18 +5,20 @@ Developer Setup
 ===============
 
 There are two ways to automatically configure a development environment. There
-is a Vagrantfile in the platform git repository that can automatically deploy a
-virtual machine or container on your host with a Pulp development environment
-configured. Alternatively, there is a script that can turn a blank running
-virtual machine into a Pulp development environment.
+is a Vagrantfile in the `devel <https://github.com/pulp/devel/>`_ git
+repository that can automatically deploy a virtual machine or container on your
+host with a Pulp development environment configured. Alternatively, there is a
+script that can turn a blank running virtual machine into a Pulp development
+environment.
 
 Vagrant
 ^^^^^^^
 
 `Vagrant <https://docs.vagrantup.com/>`_ is a tool to aid developers in quickly deploying
-development environments. Pulp has provided an example ``Vagrantfile`` in the platform git
-repository called Vagrantfile.example. This is the easiest way to get started on developing with
-Pulp if you aren't sure which method you prefer. Vagrant is available in Fedora.
+development environments. Pulp has provided an example ``Vagrantfile`` in the
+`devel <https://github.com/pulp/devel/>`_ git repository called Vagrantfile.example. This
+is the easiest way to get started on developing with Pulp if you aren't sure which method
+you prefer. Vagrant is available in Fedora.
 
 There are two Vagrant providers available for use: ``libvirt`` (using a virtual machine) and
 ``docker`` (using a `docker <https://www.docker.com/>`_ container).
@@ -88,9 +90,10 @@ Creating the Vagrant environment
 After preparing either the libvirt or docker prerequisites using the instructions above:
 
 #. You are now prepared to check out the Pulp code into your preferred location. Change directories
-   to that location, and check out the platform::
+   to that location, and check out the development tools repository and the Pulp platform repository::
 
       $ cd $HOME/devel  # Season to taste
+      $ git clone git@github.com:pulp/devel.git
       $ git clone git@github.com:pulp/pulp.git
 
 #. Check out the plugins you wish to develop or use as well::
@@ -109,7 +112,7 @@ After preparing either the libvirt or docker prerequisites using the instruction
       If you followed the instructions above, you have checked out master on all repositories which
       should be compatible.
 
-#. Next, cd into the pulp directory. The Pulp project provides an example Vagrantfile that you can
+#. Next, cd into the ``devel`` directory. The Pulp project provides an example Vagrantfile that you can
    use as a starting point by copying it. After you've done that, you can begin provisioning your
    Vagrant environment. We will finish by running ``vagrant reload``. This allows the machine to
    reboot after provisioning.::
@@ -150,19 +153,10 @@ Advanced Vagrant
 The following steps are all optional, so feel free to pick and choose which you would like to
 follow.
 
-#. `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_ can cache packages that are
-   downloaded during provisioning on your host so that the next time you provision you will save
-   some time and bandwidth. If you are using Fedora 23 or newer, you can install
-   it with dnf::
-
-      $ sudo dnf install vagrant-cachier
-
-   If you are on an older Fedora release, you will need to install some development
-   libraries so that the ``vagrant plugin install`` command has its dependencies available
-   and use vagrant plugin install::
-
-      $ sudo dnf install gcc-c++ libvirt-devel ruby-devel
-      $ vagrant plugin install vagrant-cachier
+#. You can configure your Vagrant enviroment to cache RPM packages you download with dnf. To do
+   this, uncomment the line ``'.dnf-cache' => '/var/cache/dnf'``, which syncs the ``.dnf-cache``
+   directory (relative to the Vagrantfile) to ``/var/cache/dnf``. You will need to create the
+   ``.dnf-cache`` directory manually with ``mkdir .dnf-cache``.
 
 #. When using Vagrant, you probably have noticed that you are frequently prompted for passwords to
    manage libvirt. You can configure your system policy to allow your user to manage libvirt without
@@ -205,6 +199,31 @@ follow.
     if you end up with a corrupted environment you will need to destroy and recreate it.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
+
+#. You can use SSHFS rather than NFS. The downside is SSHFS does not perform quite as well as NFS,
+   but the upside is you do not need to configure or run NFS, nor do you need to allow Vagrant to
+   edit your /etc/exports file. At the time of this writing, the ``vagrant-sshfs`` package is not
+   yet in Fedora, although the package is in the process of being reviewed. The author provides a
+   COPR repository you can enable to install the RPM::
+
+    $ sudo dnf copr enable dustymabe/vagrant-sshfs
+    $ sudo dnf install vagrant-sshfs
+
+   You need to modify your Vagrantfile to use SSHFS::
+
+    # -*- mode: ruby -*-
+    # vi: set ft=ruby :
+
+
+    Vagrant.configure(2) do |config|
+        config.vm.define "dev" do |dev|
+            VAGRANT_SYNCED_FOLDERS.each do |host_path, guest_path|
+                # Use SSHFS instead of NFS. The ``-o nonempty`` option is passed to allow
+                # mounts on non-empty directories.
+                dev.vm.synced_folder host_path, guest_path, type: "sshfs", sshfs_opts_append: "-o nonempty"
+            end
+        end
+    end
 
 
 Vagrant w/ PyCharm
@@ -304,8 +323,15 @@ pulls in the latest dependencies according to the spec file.
 #. When using dnf, install the dependencies with this command.
    ``$ sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)``
 
-#. When using yum, install the main Pulp groups to get all of the dependencies.
-   ``$ sudo yum install @pulp-server-qpid @pulp-admin @pulp-consumer``
+#. When using yum, install all Pulp packages to get the dependencies::
+
+    $ sudo yum install pulp-server python-qpid qpid-tools \
+    pulp-rpm-plugins pulp-puppet-plugins pulp-docker-plugins \
+    pulp-admin-client pulp-rpm-admin-extensions \
+    pulp-puppet-admin-extensions pulp-docker-admin-extensions \
+    pulp-consumer-client pulp-rpm-consumer-extensions \
+    pulp-puppet-consumer-extensions pulp-agent pulp-rpm-handlers pulp-rpm-yumplugins \
+    pulp-puppet-handlers python-gofer-qpid
 
 #. When using yum, remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``

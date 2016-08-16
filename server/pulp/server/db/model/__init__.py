@@ -235,6 +235,8 @@ class Importer(AutoRetryDocument):
     config = DictField()
     scratchpad = DictField(default=None)
     last_sync = ISO8601StringField()
+    last_updated = UTCDateTimeField()
+    last_override_config = DictField()
 
     # For backward compatibility
     _ns = StringField(default='repo_importers')
@@ -259,6 +261,18 @@ class Importer(AutoRetryDocument):
         _logger.debug(_('Deleting lazy catalog entries for the {repo} repository.').format(
             repo=document.repo_id))
         query_set.delete()
+
+    @classmethod
+    def pre_save(cls, sender, document, **kwargs):
+        """
+        The signal that is triggered before importer is saved.
+
+        :param sender:   class of sender (unused)
+        :type sender:    object
+        :param document: mongoengne document being saved
+        :type document:  pulp.server.db.model.Importer
+        """
+        document.last_updated = dateutils.now_utc_datetime_with_tzinfo()
 
     def delete(self):
         """
@@ -348,6 +362,7 @@ class Importer(AutoRetryDocument):
 
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
+signals.pre_save.connect(Importer.pre_save, sender=Importer)
 
 
 class ReservedResource(AutoRetryDocument):
@@ -913,6 +928,14 @@ class FileContentUnit(ContentUnit):
         """
         orphan_manger = factory.content_orphan_manager()
         orphan_manger.delete_orphan_content_units_by_type(self._content_type_id, self.id)
+
+    def get_symlink_name(self):
+        """
+        Provides the name that should be used when creating a symlink.
+        :return: file name as it appears in a published repository
+        :rtype: str
+        """
+        raise NotImplemented()
 
 
 class SharedContentUnit(ContentUnit):

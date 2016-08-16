@@ -13,11 +13,7 @@ Pulp
 Download the appropriate repo definition file from the Pulp repository:
 
  * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
- * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
-
-.. note::
-   If you would like to install the RHEL 5 Client for Pulp, please use the
-   `RHEL 5 repository <https://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
+ * RHEL 6+: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
 
 EPEL for RHEL & CentOS
@@ -39,12 +35,6 @@ EPEL 7::
    and users of RHEL 7.x to additionally enable the ``extras`` repository.
    Details are described
    `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
-
-
-For RHEL 5, Subscribe to the following RHN channels:
-
- * MRG Messaging v. 1
- * MRG Messaging Base v. 1
 
 
 Message Broker
@@ -127,12 +117,15 @@ Server
 #. Install the Pulp server, task workers, and their dependencies. For Pulp installations that use
    Qpid, install Pulp server using::
 
-    $ sudo yum groupinstall pulp-server-qpid
+    $ sudo yum install pulp-server python-gofer-qpid python-qpid qpid-tools
 
    .. note::
-      For RabbitMQ installations, install Pulp server without any Qpid specific libraries using
-      ``sudo yum groupinstall pulp-server``. You may need to install additional RabbitMQ
-      dependencies manually.
+      For RabbitMQ installations, install Pulp server without any Qpid specific libraries.
+      You may need to install additional RabbitMQ dependencies manually.
+
+#. Also install support for different content via plugins::
+
+    $ sudo yum install pulp-rpm-plugins pulp-puppet-plugins pulp-docker-plugins
 
 #. Edit ``/etc/pulp/server.conf``. Most defaults will work, but these are sections you might
    consider looking at before proceeding. Each section is documented in-line.
@@ -250,11 +243,12 @@ that is configured as a Pulp consumer.
 Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 
-1. Install the Pulp admin client packages:
+1. Install the Pulp admin client and plugin packages:
 
 ::
 
-  $ sudo yum groupinstall pulp-admin
+  $ sudo yum install pulp-admin-client pulp-rpm-admin-extensions \
+  pulp-puppet-admin-extensions pulp-docker-admin-extensions
 
 2. Update the admin client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
@@ -289,15 +283,14 @@ specific consumer dependencies with one command by running:
 
 ::
 
-   $ sudo yum groupinstall pulp-consumer-qpid
+   $ sudo yum install pulp-consumer-client pulp-rpm-consumer-extensions \
+   pulp-puppet-consumer-extensions pulp-agent pulp-rpm-handlers pulp-rpm-yumplugins \
+   pulp-puppet-handlers python-gofer-qpid
 
 
 .. note::
 
-     For RabbitMQ installations, install the Pulp consumer client and agent packages without any
-     Qpid specific dependencies using ``sudo yum groupinstall pulp-consumer``. You may need to
-     install additional RabbitMQ dependencies manually including the ``python-gofer-amqp``
-     package.
+     For RabbitMQ installations, install ``python-gofer-amqp`` instead of ``python-gofer-qpid``.
 
 
 2. Update the consumer client configuration to point to the Pulp server. Keep in mind
