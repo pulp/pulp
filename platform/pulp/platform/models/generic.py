@@ -50,30 +50,35 @@ class GenericKeyValueMutableMapping(MutableMapping):
     ``r.notes.mapping['key'] = 'note value'`` will result in database write.
     ``r.notes.mapping['key']`` by itself will read from the database, and
     ``del(r.notes.mapping['key'])`` will delete the corresponding db entity.
-    ``__len__`` falls back to the manager's count method rather than evaluating the queryset
-    iterable, and ``__iter__`` returns a generator of keys (like dict does)
+    ``KeyError`` is raised when the corresponding DB row for a key does not exist.
+    ``__iter__`` returns a generator of keys.
 
-    This mapping does not raise KeyError where a python dict normally would. Instead, the
-    normal Django model exceptions (DoesNotExist, MultipleObjectsReturned, etc) will be raised,
-    since this is a convience layer over Django functionality, not an actual dictionary.
+    Certain methods have been overridden to use the database more efficiently, where possible:
+    ``__len__`` falls back to the manager's ``count`` method
+    ``__contains__`` falls back to the manager's ``exists`` method
+    ``items`` returns key/value pairs directly from model instances, rather than
+
+    keys and values are stored in ``TextField``s, and will automatically be coerced to strings
+    when saved to the database.
+
     """
     def __init__(self, manager):
         self.manager = manager
 
     def __getitem__(self, key):
-        return self.manager.get(key=key).value
+        try:
+            return self.manager.get(key=key).value
+        except self.manager.model.DoesNotExist:
+            raise KeyError(key)
 
     def __setitem__(self, key, value):
-        # The underlying field is a textfield, so the value will be coerced to str when saved
-        try:
-            item = self.manager.get(key=key)
-            item.value = value
-            item.save()
-        except self.manager.model.DoesNotExist:
-            item = self.manager.create(key=key, value=value)
+        self.manager.update_or_create(key=key, defaults={'value': value})
 
     def __delitem__(self, key):
-        self.manager.filter(key=key).delete()
+        try:
+            self.manager.get(key=key).delete()
+        except self.manager.model.DoesNotExist:
+            raise KeyError(key)
 
     def __iter__(self):
         return (kv.key for kv in self.manager.all())
@@ -81,10 +86,19 @@ class GenericKeyValueMutableMapping(MutableMapping):
     def __len__(self):
         return self.manager.count()
 
+    def __contains__(self, key):
+        return self.manager.filter(key=key).exists()
+
     def items(self):
         # we can save MutableMapping a step by returning key value pairs from Django as an
         # iterable, rather than making it __getitem__ for each key
         return ((kv.key, kv.value) for kv in self.manager.all())
+
+    def clear(self):
+        self.manager.all().delete()
+
+    def values(self):
+        return (kv.value for kv in self.manager.all())
 
     def __repr__(self):
         return '{}({})'.format(self.manager.model._meta.object_name, repr(dict(self)))
@@ -110,7 +124,7 @@ class GenericKeyValueStore(GenericRelationModel):
     # types of K/V stores with this single model (and thus store them in a single table), but
     # it's *way simpler* to make multiple tables and let Django keep track of everything.
 
-    key = models.CharField(max_length=255)
+    key = models.TextField()
     value = models.TextField()
 
     # Use the GenericKeyValueManager by default to let anything using a GenericKeyValueStore
