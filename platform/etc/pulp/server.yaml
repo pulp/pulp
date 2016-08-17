@@ -1,0 +1,44 @@
+# Pulp server configuration
+#
+# Values shown are the default values used, unless otherwise indicated.
+
+
+# `allowed_hosts`: A list of strings representing the host/domain names that
+# Pulp can serve. This is a security measure to prevent HTTP Host header
+# attacks. A value beginning with a period can be used as a sub-domain wildcard.
+# The default is the host's FQDN.
+#
+# allowed_hosts:
+#   - pulp.example.com
+
+# `databases`: An associative array (dictionary) of databases to use. For the
+# full list of configuration options, refer to the Django database documentation
+# shipped with your version of Django, or online at
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+#
+# By default, Pulp will attempt to connect to PostgreSQL on a local Unix
+# socket using the 'pulp' user with a database name of 'pulp'.
+#
+# databases:
+#   default:
+#     CONN_MAX_AGE: 0
+#     ENGINE: django.db.backends.postgresql_psycopg2
+#     NAME: pulp
+#     USER: pulp
+#     PASSWORD:
+#     HOST:
+#     PORT:
+
+# Logging configuration
+#
+# `logging`: Logging configuration for Pulp. By default, Pulp logs to syslog.
+# It is possible to change this by providing a Python logging dictConfig. For
+# more information, see Django's logging documentation.
+#
+# logging:
+#   loggers:
+#     django:
+#       level: INFO
+#     pulp.platform:
+#       level: INFO
+

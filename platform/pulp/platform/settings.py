@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
+import socket
+import sys
+
+import yaml
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +55,7 @@ INSTALLED_APPS = [
 # demo project it's sufficient just to show adding plugins conditionally
 # to Django's installed apps when settings is imported.
 # XXX Disabled until we figure out plugin loading in platform
-#PULP_PLUGINS = ['pulp_rpm.apps.PulpRpmConfig']
+# PULP_PLUGINS = ['pulp_rpm.apps.PulpRpmConfig']
 PULP_PLUGINS = []
 for plugin in PULP_PLUGINS:
     # since the actual list of plugins would come from entry points, we
@@ -97,17 +102,6 @@ REST_FRAMEWORK = {
     'URL_FIELD_NAME': '_href',
 }
 
-# Database
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'pulp',
-        'USER': 'pulp',
-    }
-}
-
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 
@@ -146,9 +140,107 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# override default settings in the local settings file
-# XXX replace this with settings customization in server.conf
-try:
-    from settings_local import *  # NOQA
-except ImportError:
-    pass
+# A set of default settings to use if the configuration file in
+# /etc/pulp/ is missing or if it does not have values for every setting
+_DEFAULT_PULP_SETTINGS = {
+    'allowed_hosts': [socket.getfqdn()],
+    # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+    'databases': {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'pulp',
+            'USER': 'pulp',
+            'CONN_MAX_AGE': 0,
+        },
+    },
+    # https://docs.djangoproject.com/en/1.8/ref/settings/#logging and
+    # https://docs.python.org/3/library/logging.config.html
+    'logging': {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {'format': 'pulp: %(name)s:%(levelname)s: %(message)s'},
+        },
+        'handlers': {
+            'syslog': {
+                'address': '/dev/log',
+                'facility': 'pulp.server.logs.CompliantSysLogHandler.LOG_DAEMON',
+                'class': 'pulp.server.logs.CompliantSysLogHandler',
+                'formatter': 'simple',
+            },
+        },
+        'loggers': {
+            'pulp.platform': {
+                'handlers': ['syslog'],
+                'level': 'INFO',
+            },
+            'django': {
+                'handlers': ['syslog'],
+                'level': 'INFO',
+            },
+        }
+    },
+}
+
+
+def merge_settings(default, override):
+    """
+    Merge override settings into a set of default settings.
+
+    If both default and override have a key that has a dictionary value, these
+    dictionaries are merged recursively. If either of the values are _not_ a
+    dictionary, the override key's value is used.
+    """
+    if not override:
+        return default
+    merged = default.copy()
+
+    for key in override:
+        if key in merged:
+            if isinstance(default[key], dict) and isinstance(override[key], dict):
+                merged[key] = merge_settings(default[key], override[key])
+            else:
+                merged[key] = override[key]
+        else:
+            merged[key] = override[key]
+
+    return merged
+
+
+def load_settings(paths=()):
+    """
+    Load one or more configuration files, merge them with the defaults, and apply them
+    to this module as module attributes.
+
+    Be aware that the order the paths are provided in matters. Settings are repeatedly
+    overridden so settings in the last file in the list win.
+
+    :param paths: One or more absolute paths to configuration files in YAML format.
+    :type  paths: str or list of str
+
+    :return: The dictionary of merged settings. This is helpful to see what settings
+             Pulp is contributing, but is not the full set of settings Django uses,
+             as there are a set of Django-provided defaults as well.
+    :rtype:  dict
+    """
+    if isinstance(paths, basestring):
+        paths = [paths]
+
+    settings = _DEFAULT_PULP_SETTINGS
+    for path in paths:
+        try:
+            with open(path) as config_file:
+                config = config_file.read()
+                override_settings = yaml.load(config)
+                settings = merge_settings(settings, override_settings)
+        except (OSError, IOError):
+            # Consider adding logging of some kind, potentially to /var/log/pulp
+            pass
+
+    for setting_name, setting_value in settings.items():
+        setattr(sys.modules[__name__], setting_name.upper(), setting_value)
+
+    return settings
+
+
+load_settings('/etc/pulp/server.yaml')
