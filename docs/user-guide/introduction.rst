@@ -48,3 +48,35 @@ you are interested. You can find all of our documentation at `our docs page <htt
 
 Many examples require the use of a type, and for those we will use "rpm". However,
 examples in this guide will only cover features that are common across content types.
+
+.. _platform-support-policy:
+
+Platform Support Policy
+-----------------------
+
+CentOS/Red Hat Enterprise Linux (RHEL)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Pulp team aims to provide RPM builds for the last two major releases of RHEL. For
+example, if the latest version is RHEL 8, builds should be available for RHEL 8 and
+RHEL 7. However, due to the long life cycle of these platforms and the relatively rapid
+development cycle of both Pulp and its dependencies, we may need to stop supporting
+the older platform before the next major release of RHEL. If this does occur, announcements
+will be made well in advance.
+
+.. note::
+  It is likely that support for Red Hat Enterprise Linux 6 will be removed prior to
+  the release of Red Hat Enterprise Linux 8. This is due to the difficulty of
+  supporting both Python 2.6 and Python 3 at the same time.
+
+Currently we support Red Hat Enterprise Linux 6 and 7 as well as CentOS 6 and 7.
+
+
+Fedora
+^^^^^^
+
+Pulp follows the `Fedora release life cycle
+<https://fedoraproject.org/wiki/Fedora_Release_Life_Cycle#Maintenance_Schedule>`_.
+This means that when a release of Fedora reaches its End of Life, Pulp will no longer
+support that platform in any way, including providing updates for any security
+vulnerabilities.
