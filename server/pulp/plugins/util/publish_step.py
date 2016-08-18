@@ -10,6 +10,8 @@ import tarfile
 import time
 import traceback
 import uuid
+import errno
+import signal
 
 from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants, importer_constants
@@ -1154,6 +1156,8 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         """
         self.progress_failures += 1
         self.report_progress()
+        if os.strerror(errno.ENOSPC) in report.error_msg:
+            os.kill(os.getpid(), signal.SIGKILL)
 
     def cancel(self):
         """
