@@ -532,6 +532,24 @@ class TestUpdate(unittest.TestCase):
             m_bind['notify_agent'], m_bind['binding_config'], {})
         self.assertTrue(result is m_task.return_value)
 
+    def test_remove_none_values_non_existing(self, m_model, m_plug_api, m_plug_call_conf,
+                                             m_repo_conf_conduit, m_managers, m_task):
+        """
+        Test removing config option which does not exist in config.
+        """
+        m_dist_inst = mock.MagicMock()
+        m_plug_config = mock.MagicMock()
+        m_plug_api.get_distributor_by_id.return_value = (m_dist_inst, m_plug_config)
+        m_dist_inst.validate_config.return_value = True
+        m_bind_man = m_managers.consumer_bind_manager.return_value
+        m_bind_man.find_by_distributor.return_value = []
+
+        m_model.Distributor.objects.get_or_404.return_value.config = {}
+
+        result = distributor.update('rid', 'did', {"checksum_type": None}, {})
+
+        self.assertTrue(result is m_task.return_value)
+
 
 @mock.patch('pulp.server.controllers.distributor.PluginCallConfiguration')
 @mock.patch('pulp.server.controllers.distributor.plugin_api')
