@@ -137,7 +137,8 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
                                                              len(units_failed))
 
         if total_units == 0:
-            self.prompt.write(_('Nothing found that matches the given criteria.'), tag='too-few')
+            self.prompt.write(_('Nothing found that matches the given criteria and '
+                                'repository configuration'), tag='too-few')
         else:
             # Display the successfully processed units
             self.prompt.write(success_string)

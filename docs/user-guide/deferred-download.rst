@@ -326,6 +326,41 @@ downloading.
     access to both the Content Sources configuration directory and the ``file://`` URL.
 
 
+Re-Using Files On Disk When DB Is Lost
+--------------------------------------
+
+Given a situation where the database has been lost, but the files within
+``/var/lib/pulp/content/`` are still present, it is possible to re-use those
+files when creating new repositories by using Pulp's deferred download
+functionality. For each repository that needs to be recreated, follow the steps
+below.
+
+.. note::
+    This strategy only works for plugins that support the deferred download
+    functionality.
+
+#. Create the new repository with a download policy of ``on_demand``.
+
+#. Sync the new repository. This will populate the database with knowledge
+   of each remote piece of content without actually downloading the files.
+
+#. Run the download_repo task with the ``verify_all_units`` option set to
+   ``True``.  This will check the filesystem for existing files and verify
+   their integrity, only downloading a file from the remote source if it is not
+   found on disk. From the command line::
+
+    pulp-admin repo download --repo-id=myrepo --verify-all
+
+#. Change the download policy of the repository to whichever policy you
+   want to use long-term.
+
+.. note::
+    There is a `known issue <https://pulp.plan.io/issues/2177>`_ that will
+    prevent the units from having their ``downloaded`` attribute from being set
+    to ``True``. That may not matter unless you depend on that attribute being
+    correct.
+
+
 Troubleshooting
 ---------------
 

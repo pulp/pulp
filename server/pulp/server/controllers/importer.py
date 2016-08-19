@@ -1,10 +1,12 @@
 import logging
 import sys
+import urlparse
 
 import celery
 from mongoengine import ValidationError
 
 from pulp.common import error_codes, tags
+from pulp.common.plugins import importer_constants
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
@@ -35,7 +37,10 @@ def build_resource_tag(repo_id, importer_type_id):
 
 def clean_config_dict(config):
     """
-    Remove keys from a dict that have a value None.
+    Ensure that the config is ready to be passed to the plugin. There are two things that must
+    occur:
+        1. Remove keys from the dict that have a value None.
+        2. If they exist, move basic auth credentials from the feed_url to the config.
 
     :param config: configuration for plugin
     :type  config: dict
@@ -43,8 +48,16 @@ def clean_config_dict(config):
     :return: config without the keys whose values were None
     :rtype:  dict:
     """
-
     if config is not None:
+        feed_url = config.get('feed')
+        if feed_url:
+            parsed = urlparse.urlparse(feed_url)
+            if parsed.username or parsed.password:
+                new_url = parsed._replace(netloc=parsed.netloc.rsplit('@', 1)[1])
+                config[importer_constants.KEY_BASIC_AUTH_USER] = parsed.username
+                config[importer_constants.KEY_BASIC_AUTH_PASS] = parsed.password
+                config['feed'] = new_url.geturl()
+
         return dict([(k, v) for k, v in config.items() if v is not None])
     else:
         return None
@@ -138,8 +151,13 @@ def validate_importer_config(repo_obj, importer_type_id, config):
     :param config: configuration values for the importer
     :type  config: dict
 
+    :raises PulpCodedValidationException: if importer_type_id is invalid
     :raises exceptions.PulpDataException: if config is invalid.
     """
+    if not plugin_api.is_valid_importer(importer_type_id):
+        raise exceptions.PulpCodedValidationException(error_code=error_codes.PLP1008,
+                                                      importer_type_id=importer_type_id)
+
     importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
     call_config = PluginCallConfiguration(plugin_config, config)
     transfer_repo = repo_obj.to_transfer_repo()

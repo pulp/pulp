@@ -9,8 +9,7 @@ offerings when coming up with techniques and guidelines for converting our non-r
 database over to postgres.
 
 This document intends to serve as a reference guide for developers taking on this conversion task,
-with particular focus on Repositories and Content Units. This should be considered a living
-document: we should keep it up to date with current development practices.
+with particular focus on Repositories and Content Units.
 
 This document does not intend to take on other aspects of the move to Pulp 3, such as the REST API,
 the plugin API, the tasking system, RBAC, search, or other aspects of Pulp 3 that are likely to be

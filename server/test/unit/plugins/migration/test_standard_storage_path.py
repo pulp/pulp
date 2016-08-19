@@ -98,28 +98,27 @@ class TestBatch(TestCase):
         batch._relink()
 
         # validation
-        self.assertEqual(
-            unlink.call_args_list,
-            [
-                call('/pub/zoo/cat/lion/f1'),
-                call('/pub/zoo/cat/tiger/f2'),
-                call('/pub/zoo/zebra/f3'),
-                call('/pub/zoo/bear/f4'),
-                call('/pub/zoo/wolf/.f5'),
-                call('/pub/zoo/wolf/f5'),
-                call('/pub/zoo/wolf/f6'),
-            ])
-        self.assertEqual(
-            symlink.call_args_list,
-            [
-                call('/content/new/a/f1', '/pub/zoo/cat/lion/f1'),
-                call('/content/new/b/f2', '/pub/zoo/cat/tiger/f2'),
-                call('/content/new/c/f3', '/pub/zoo/zebra/f3'),
-                call('/content/new/d/f4', '/pub/zoo/bear/f4'),
-                call('/content/new/e/.f5', '/pub/zoo/wolf/.f5'),
-                call('/content/new/e/f5', '/pub/zoo/wolf/f5'),
-                call('/content/new/e/f6', '/pub/zoo/wolf/f6'),
-            ])
+        expected_unlink_calls = [
+            call('/pub/zoo/cat/lion/f1'),
+            call('/pub/zoo/cat/tiger/f2'),
+            call('/pub/zoo/zebra/f3'),
+            call('/pub/zoo/bear/f4'),
+            call('/pub/zoo/wolf/.f5'),
+            call('/pub/zoo/wolf/f5'),
+            call('/pub/zoo/wolf/f6'),
+        ]
+        expected_link_calls = [
+            call('/content/new/a/f1', '/pub/zoo/cat/lion/f1'),
+            call('/content/new/b/f2', '/pub/zoo/cat/tiger/f2'),
+            call('/content/new/c/f3', '/pub/zoo/zebra/f3'),
+            call('/content/new/d/f4', '/pub/zoo/bear/f4'),
+            call('/content/new/e/.f5', '/pub/zoo/wolf/.f5'),
+            call('/content/new/e/f5', '/pub/zoo/wolf/f5'),
+            call('/content/new/e/f6', '/pub/zoo/wolf/f6'),
+        ]
+        for link_call, unlink_call in zip(expected_link_calls, expected_unlink_calls):
+            self.assertIn(link_call, symlink.call_args_list)
+            self.assertIn(unlink_call, unlink.call_args_list)
 
     def test_migrate(self):
         plan = Mock()
@@ -135,11 +134,9 @@ class TestBatch(TestCase):
         batch._migrate()
 
         # validate
-        self.assertEqual(
-            plan.migrate.call_args_list,
-            [
-                call(i.unit_id, i.storage_path, i.new_path) for i in items
-            ])
+        for i in items:
+            expected_call = call(i.unit_id, i.storage_path, i.new_path)
+            self.assertIn(expected_call, plan.migrate.call_args_list)
 
     @patch(MODULE + '.Batch.reset')
     @patch(MODULE + '.Batch._relink')
@@ -340,36 +337,6 @@ class TestMigration(TestCase):
 
         # validation
         self.assertEqual(path, os.path.join(storage_dir.return_value, 'published'))
-
-    @patch('os.rmdir')
-    @patch('os.walk')
-    @patch('os.listdir')
-    @patch(MODULE + '.Migration.content_dir')
-    def test_prune(self, content_dir, listdir, walk, rmdir):
-        def list_dir(path):
-            if path.endswith('_'):
-                return []
-            else:
-                return [1, 2]
-        listdir.side_effect = list_dir
-        walk.return_value = [
-            ('r', ['d1', 'd2'], ['f1', 'f2']),
-            ('d1_', [], []),
-            ('d2', ['d3'], []),
-            ('d4_', [], [])
-        ]
-
-        # test
-        Migration._prune()
-
-        # validation
-        walk.assert_called_once_with(content_dir.return_value, topdown=False)
-        self.assertEqual(
-            rmdir.call_args_list,
-            [
-                call('d1_'),
-                call('d4_')
-            ])
 
     def test_add(self):
         plan = Mock()

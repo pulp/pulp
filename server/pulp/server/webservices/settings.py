@@ -1,6 +1,9 @@
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
+import django
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
@@ -8,7 +11,6 @@ SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -25,7 +27,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
 )
 
-ROOT_URLCONF = 'pulp.server.webservices.urls'
+if django.VERSION[0] == 1 and django.VERSION[2] <= 6:
+    ROOT_URLCONF = 'pulp.server.webservices.compat_urls'
+else:
+    ROOT_URLCONF = 'pulp.server.webservices.urls'
+
 
 WSGI_APPLICATION = 'pulp.server.webservices.wsgi.application'
 
@@ -65,3 +71,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.4/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# More information on this https://docs.djangoproject.com/en/1.9/ref/templates/upgrading/
+TEMPLATE_DEBUG = False
+TEMPLATES = [
+    {
+        'OPTIONS': {'debug': False},
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    }
+]

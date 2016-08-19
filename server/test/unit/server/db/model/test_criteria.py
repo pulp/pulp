@@ -2,6 +2,8 @@
 Test the pulp.server.db.model.criteria module.
 """
 
+import copy
+import re
 import unittest
 
 from datetime import datetime
@@ -295,6 +297,46 @@ class TestValidateFields(unittest.TestCase):
         self.assertRaises(exceptions.InvalidValue, criteria._validate_fields, input)
 
 
+class TestConvertionsForNot(unittest.TestCase):
+    """
+    Test that regular expressions for the Mongo operator `$not` are converted to a proper format.
+    """
+    def test__compile_regexs_for_not(self):
+        """
+        Test that regular expression is compiled to a regex object.
+        """
+        some_filter = {'key': {'$not': '^regexp?$'}}
+        criteria._compile_regexs_for_not(some_filter)
+        re_type = type(re.compile(''))
+        self.assertTrue(isinstance(some_filter['key']['$not'], re_type))
+
+    def test__compile_regexs_for_not_noop(self):
+        """
+        Test that _compile_regexs_for_not does nothing to the filter if there is no `$not` operator.
+        """
+        some_filter = {'key': {'$eq': 'value'}}
+        expected_filter = copy.deepcopy(some_filter)
+        criteria._compile_regexs_for_not(some_filter)
+        self.assertEqual(some_filter, expected_filter)
+
+    def test__get_patterns_for_not(self):
+        """
+        Test that a pattern is obtained from the regex object.
+        """
+        regex = '^regexp?$'
+        some_filter = {'key': {'$not': re.compile(regex)}}
+        filter_copy = criteria._get_patterns_for_not(some_filter)
+        self.assertEqual(filter_copy['key']['$not'], regex)
+
+    def test__get_patterns_for_not_noop(self):
+        """
+        Test that _get_patterns_for_not does nothing to the filter if there is no `$not` operator.
+        """
+        some_filter = {'key': {'$eq': 'value'}}
+        filter_copy = criteria._get_patterns_for_not(some_filter)
+        self.assertEqual(some_filter, filter_copy)
+
+
 class TestDateOperator(unittest.TestCase):
 
     def test_apply(self):
@@ -331,7 +373,7 @@ class TestUnitAssociationCriteria(unittest.TestCase):
         c = criteria.UnitAssociationCriteria(
             type_ids=['rpm'],
             association_filters={},
-            unit_filters={'name': 'test'},
+            unit_filters={'name': 'test', '$not': re.compile('regexp?')},
             association_sort=None,
             unit_sort=None,
             limit=10,
@@ -341,19 +383,20 @@ class TestUnitAssociationCriteria(unittest.TestCase):
             remove_duplicates=False
         )
         ret = c.to_dict()
+        expected_unit_filters = {'name': 'test', '$not': 'regexp?'}
         self.assertTrue(isinstance(ret, dict))
         self.assertTrue(isinstance(ret['association_filters'], dict))
         self.assertEqual(ret['limit'], 10)
         self.assertEqual(ret['skip'], 10)
         self.assertEqual(ret['unit_fields'], c.unit_fields)
         self.assertEqual(ret['type_ids'], c.type_ids)
-        self.assertEqual(ret['unit_filters'], c.unit_filters)
+        self.assertEqual(ret['unit_filters'], expected_unit_filters)
         self.assertEqual(ret['remove_duplicates'], False)
         self.assertEqual(set(ret.keys()), ASSOCIATION_FIELDS)
 
     def test_from_dict(self):
         type_ids = ['rpm']
-        unit_filters = {'some': 'filters'}
+        unit_filters = {'some': 'filters', '$not': 'regexp?'}
         limit = 42
         skip = 64
         unit_fields = ['a_field']
@@ -370,14 +413,14 @@ class TestUnitAssociationCriteria(unittest.TestCase):
 
         new_criteria = criteria.UnitAssociationCriteria.from_dict(a_dict)
 
+        expected_unit_filters = {'some': 'filters', '$not': re.compile('regexp?')}
         self.assertTrue(isinstance(new_criteria, criteria.UnitAssociationCriteria))
-        self.assertEqual(new_criteria.unit_filters, unit_filters)
+        self.assertEqual(new_criteria.unit_filters, expected_unit_filters)
         self.assertEqual(new_criteria.association_sort, association_sort)
         self.assertEqual(new_criteria.limit, limit)
         self.assertEqual(new_criteria.type_ids, type_ids)
         self.assertEqual(new_criteria.unit_fields, unit_fields)
         self.assertEqual(new_criteria.skip, skip)
-        self.assertEqual(new_criteria.unit_fields, unit_fields)
         self.assertEqual(new_criteria.remove_duplicates, remove_duplicates)
         self.assertEqual(new_criteria.unit_sort, unit_sort)
         self.assertEqual(new_criteria.association_filters, association_filters)

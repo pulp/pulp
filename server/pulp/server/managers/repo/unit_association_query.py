@@ -353,11 +353,16 @@ class RepoUnitAssociationQueryManager(object):
         collection = types_db.type_units_collection(unit_type_id)
         serializer = units.get_model_serializer_for_type(unit_type_id)
 
-        spec = criteria.unit_filters.copy()
-        if spec and serializer:
-                spec = serializer.translate_filters(serializer.model, spec)
+        unit_filter = criteria.unit_filters.copy()
+        if unit_filter and serializer:
+                unit_filter = serializer.translate_filters(serializer.model, unit_filter)
 
-        spec['_id'] = {'$in': associated_unit_ids}
+        spec = {
+            '$and': [
+                {'_id': {'$in': associated_unit_ids}},
+                unit_filter
+            ]
+        }
 
         fields = criteria.unit_fields
 
