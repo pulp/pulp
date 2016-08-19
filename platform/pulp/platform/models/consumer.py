@@ -29,10 +29,10 @@ class Consumer(Model):
     :type distributors: models.ManyToManyField
     """
     name = models.TextField(db_index=True, unique=True)
-    description = models.TextField(blank=True, default='')
+    description = models.TextField(blank=True)
 
     notes = fields.GenericRelation(Notes)
-    distributors = models.ManyToManyField('Distributor')
+    distributors = models.ManyToManyField('RepositoryDistributor')
 
 
 class ConsumerContent(Model):

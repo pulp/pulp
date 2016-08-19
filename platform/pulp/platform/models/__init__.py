@@ -3,4 +3,6 @@ from .base import Model, MasterModel  # NOQA
 from .generic import GenericRelationModel, GenericKeyValueStore, Config, Notes, Scratchpad  # NOQA
 
 from .consumer import Consumer, ConsumerContent  # NOQA
-from .repository import Distributor  # NOQA
+from .repository import (Repository, RepositoryGroup, Importer, Distributor,  # NOQA
+                         RepositoryImporter,  RepositoryDistributor, GroupDistributor,  # NOQA
+                         RepositoryContent)  # NOQA
