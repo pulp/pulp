@@ -993,7 +993,6 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     :return: publish result containing information about the publish
     :rtype:  pulp.server.db.model.repository.RepoPublishResult
     """
-
     force_full = call_config.get('force_full', False)
     config_override = call_config.override_config
     last_published = conduit.last_publish()
@@ -1006,15 +1005,14 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                                                            updated__gte=the_timestamp).count()
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
-        published_after_predistributor = True
     else:
         published_after_predistributor = False
     predistributor_id = call_config.get('predistributor_id')
-    if predistributor_id and last_published:
+    if predistributor_id:
         predistributor = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
                                                               distributor_id=predistributor_id)
         predistributor_last_published = predistributor["last_publish"]
-        if predistributor_last_published:
+        if predistributor_last_published and last_published:
             published_after_predistributor = last_published > predistributor_last_published
 
     same_override = dist.last_override_config == config_override
@@ -1027,7 +1025,9 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     # Skip if a predistributor is configured and the predistributor has not published since the
     # last publish. Skip if content has not changed since last publish and force_full has not been
     # requested and no predistributor is defined.
-    if (predistributor_id and published_after_predistributor) or \
+    skip_for_predistributor = (predistributor_id and (published_after_predistributor or
+                                                      not predistributor_last_published))
+    if skip_for_predistributor or \
             (last_published and not force_full and not last_updated and not units_removed and
              not dist_updated and same_override and not predistributor_id):
 
