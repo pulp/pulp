@@ -17,6 +17,7 @@ from pulp.server.content.sources import model as content_models
 from pulp.server.db import model
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
+from pulp.streamer import adapters as pulp_adapters
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +143,11 @@ class Streamer(resource.Resource):
         """
         resource.Resource.__init__(self)
         self.config = config
-        # Used to pool TCP connections for upstream requests.
+        # Used to pool TCP connections for upstream requests. Once requests #2863 is
+        # fixed and available, remove the PulpHTTPAdapter. This is a short-term work-around
+        # to avoid carrying the package.
         self.session = requests.Session()
+        self.session.mount('https://', pulp_adapters.PulpHTTPAdapter())
 
     def render_GET(self, request):
         """
@@ -210,6 +214,14 @@ class Streamer(resource.Resource):
         # Configure the primary downloader for alternate content sources
         plugin_importer, config, db_importer = repo_controller.get_importer_by_id(
             catalog_entry.importer_id)
+        # There is an unfortunate mess of configuration classes and attributes, and
+        # multiple "models" floating around. The MongoEngine class that corresponds
+        # to the database entry only contains the repository config. The ``config``
+        # variable above contains the repository configuration _and_ the plugin-wide
+        # configuration, so here we override the db_importer.config because it doesn't
+        # have the whole config. In the future the importer object should seemlessly
+        # load and apply the plugin-wide configuration.
+        db_importer.config = config.flatten()
         primary_downloader = plugin_importer.get_downloader_for_db_importer(
             db_importer, catalog_entry.url, working_dir='/tmp')
         pulp_request = request.getHeader(PULP_STREAM_REQUEST_HEADER)
