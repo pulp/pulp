@@ -51,7 +51,7 @@ class MasterModel(Model):
         subclass.
 
     """
-    type = models.CharField(max_length=63)
+    detail_model = models.CharField(max_length=63)
 
     objects = MasterModelManager()
 
@@ -64,8 +64,8 @@ class MasterModel(Model):
         # name. That name is what I'm using here to determine the value of
         # type. Storing type in a column on the MasterModel next to makes it trivial
         # to filter for specific detail model types across model relations.
-        if not self.type:
-            self.type = self._meta.model_name
+        if not self.detail_model:
+            self.detail_model = self._meta.model_name
         return super(MasterModel, self).save(*args, **kwargs)
 
     def cast(self):
@@ -74,16 +74,16 @@ class MasterModel(Model):
         If this model is already an instance of its detail type, it will return itself.
         """
         # If this instance's type matches the current model name, it is already cast. Return it.
-        if self.type == self._meta.model_name:
+        if self.detail_model == self._meta.model_name:
             return self
         else:
             try:
                 # Otherwise, return the cast model attribute for this instance
-                return getattr(self, self.type)
+                return getattr(self, self.detail_model)
             except AttributeError:
                 # Unknown content type. The generic content type is as specific as
                 # we can get here. This is a great place to throw a log message about
-                # encountering an unmodelled type, such as a type from an uninstalled
+                # encountering an un-modelled type, such as a type from an uninstalled
                 # plugin.
                 return self
 
