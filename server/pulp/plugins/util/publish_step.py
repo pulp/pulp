@@ -10,6 +10,8 @@ import tarfile
 import time
 import traceback
 import uuid
+import errno
+import signal
 
 from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants, importer_constants
@@ -23,6 +25,7 @@ from pulp.server.controllers import units as units_controller
 from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
+from pulp.server.config import config as pulp_config
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import copytree
@@ -574,7 +577,7 @@ class UnitModelPluginStep(PluginStep):
     The QuerySetNoCache objects themselves do not cache results, as the name implies.
     """
     def __init__(self, step_type, model_classes, repo_content_unit_q=None, repo=None, conduit=None,
-                 config=None, working_dir=None, plugin_type=None, **kwargs):
+                 config=None, working_dir=None, plugin_type=None, unit_fields=None, **kwargs):
         """
         :param step_type: The id of the step this processes
         :type  step_type: str
@@ -593,12 +596,15 @@ class UnitModelPluginStep(PluginStep):
         :type  working_dir: str
         :param plugin_type: The type of the plugin
         :type  plugin_type: str
+        :param unit_fields: list of unit fields to retrieve from database, if None all are retrieved
+-       :type unit_fields: list of str
         """
         super(UnitModelPluginStep, self).__init__(step_type, repo, conduit, config, working_dir,
                                                   plugin_type, **kwargs)
 
         self.model_classes = model_classes
         self._repo_content_unit_q = repo_content_unit_q
+        self.unit_fields = unit_fields
 
         # the corresponding publicly-accessible values get cached here
         self._unit_querysets = None
@@ -632,6 +638,9 @@ class UnitModelPluginStep(PluginStep):
                                                                    model_class,
                                                                    self._repo_content_unit_q)
                 self._unit_querysets.extend(queries)
+
+        if self.unit_fields:
+            return (qs.only(*self.unit_fields) for qs in self._unit_querysets)
         return self._unit_querysets
 
     def get_total(self):
@@ -1147,6 +1156,8 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         """
         self.progress_failures += 1
         self.report_progress()
+        if os.strerror(errno.ENOSPC) in report.error_msg:
+            os.kill(os.getpid(), signal.SIGKILL)
 
     def cancel(self):
         """
@@ -1231,3 +1242,113 @@ class GetLocalUnitsStep(SaveUnitsStep):
             for unit in units_group:
                 if hash(unit) not in units_we_already_had:
                     self.units_to_download.append(unit)
+
+
+class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
+
+    def __init__(self, step_type, model_classes, repo_content_unit_q=None, repo=None,
+                 config=None, remote_repo_path=None, published_unit_path=None, unit_fields=None):
+        """
+        Set the default parent, step_type and units_type for the the publish step.
+
+        :param step_type: The id of the step this processes
+        :type step_type: str
+        :param model_classes:   list of ContentUnit subclasses that should be queried
+        :type  model_classes:   list
+        :param repo_content_unit_q: optional Q object that will be applied to the queries performed
+                                    against RepoContentUnit model
+        :type  repo_content_unit_q: mongoengine.Q
+        :param repo: The repo being worked on
+        :type  repo: pulp.plugins.model.Repository
+        :param config: The publish configuration
+        :type  config: PluginCallConfiguration
+        :param remote_repo_path: relative path on remote server where published repo should live
+        :type remote_repo_path: str
+        :param published_unit_path: relative path to the content unit from root of published repo
+        :type published_unit_path: str
+        :param unit_fields: list of unit fields to retrieve from database
+-       :type unit_fields: list of str
+
+        """
+        self.description = _('Generating relative symlinks')
+        self.remote_repo_path = remote_repo_path
+        self.published_unit_path = published_unit_path
+
+        super(RSyncFastForwardUnitPublishStep,
+              self).__init__(step_type, model_classes, repo=repo, config=config,
+                             repo_content_unit_q=repo_content_unit_q, unit_fields=unit_fields)
+
+    def process_main(self, item=None):
+        """
+        Creates symlink for a unit and appends the symlink to a list used to perform rsync later.
+        This also generates the list of actual content units that need to be rsynced later.
+
+        :param unit: Content type unit
+        :type unit: ContentUnit
+        """
+        storage_dir = os.path.join(pulp_config.get('server', 'storage_dir'), 'content', 'units')
+        relative_content_unit_path = os.path.relpath(item.storage_path, storage_dir)
+        self.parent.content_unit_file_list.append(relative_content_unit_path)
+        filename = item.get_symlink_name()
+        symlink = self.make_link_unit(item, filename, self.get_working_dir(),
+                                      self.remote_repo_path,
+                                      self.get_config().get("remote")["root"],
+                                      self.published_unit_path)
+        self.parent.symlink_list.append(symlink)
+
+    def make_link_unit(self, unit, filename, working_dir, remote_repo_path, remote_root,
+                       published_unit_path):
+        """
+        This method creates symlink in working directory, pointing to remote
+        content directory, so they can be sync to remote server
+
+        :param unit: Pulp content unit
+        :type unit: Unit
+        :param filename: name that should be used for symlink
+        :type file: str
+        :param working_dir: Working directory
+        :type working_dir: str
+        :param remote_repo_path: relative repo destination path on remote server
+        :type remote_repo_path: str
+        :param remote_root: remote destination root directory
+        :type remote_root: str
+        :param published_unit_path: directory name inside repo that the symlink should be in
+        :type published_unit_path: list of str
+
+        """
+        extra_src_path = ['.relative'] + published_unit_path
+        if not os.path.exists(os.path.join(working_dir, *extra_src_path)):
+            os.makedirs(os.path.join(working_dir, *extra_src_path))
+
+        origin_path = self.get_origin_rel_path(unit)
+
+        dest = os.path.normpath(os.path.join(working_dir,
+                                             *(extra_src_path + [filename])))
+        full_remote_path = os.path.normpath(os.path.join(remote_root, origin_path))
+        abs_remote_path = os.path.normpath(os.path.join(remote_root,
+                                                        remote_repo_path.lstrip("/"),
+                                                        *published_unit_path))
+
+        link_source = os.path.relpath(full_remote_path, abs_remote_path)
+
+        _logger.debug("LN %s -> %s " % (link_source, dest))
+        if os.path.islink(dest):
+            os.remove(dest)
+        os.symlink(link_source, dest)
+        return os.path.join(*(published_unit_path + [filename]))
+
+    def get_origin_rel_path(self, unit):
+        """
+        Returns path relative to the remote root for the content unit
+
+        :param unit: Pulp content unit
+        :type unit: Unit
+        """
+
+        storage_dir = pulp_config.get('server', 'storage_dir')
+        content_base = os.path.join(storage_dir, "content", "units", unit.type_id)
+        rel_unit_path = unit.storage_path.replace(content_base, '').lstrip("/")
+        remote_content_base = self.parent.get_units_directory_dest_path()
+        remote_content_type_dir = unit.type_id
+
+        return os.path.join(remote_content_base, remote_content_type_dir, rel_unit_path)

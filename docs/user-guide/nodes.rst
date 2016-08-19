@@ -91,7 +91,7 @@ To install *Nodes* parent support, follow the instructions below.
 
 ::
 
-  $ sudo yum install @pulp-nodes-parent
+  $ sudo yum install pulp-nodes-parent pulp-nodes-admin-extensions
 
 2. The communication between the child and parent nodes is secured using OAuth. The parent node
    must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
@@ -111,7 +111,7 @@ To install *Nodes* child support, follow the instructions below.
 
 ::
 
- $ sudo yum install @pulp-nodes-child
+ $ sudo yum install pulp-nodes-child pulp-nodes-consumer-extensions pulp-agent
 
 2. The communication between the child and parent nodes is secured using OAuth. The child node
    must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
@@ -398,7 +398,7 @@ On the Pulp server to be used as the parent node:
 
 ::
 
-  $ sudo yum install @pulp-nodes-parent
+  $ sudo yum install pulp-nodes-parent pulp-nodes-admin-extensions
   $ sudo service httpd restart
 
 2. Enable the ``pulp-goodness`` repository.
@@ -423,7 +423,7 @@ On the Pulp server to be used as the child node:
 
 ::
 
-  $ sudo yum install @pulp-nodes-child
+  $ sudo yum install pulp-nodes-child pulp-nodes-consumer-extensions pulp-agent
 
 2. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
    ``/etc/pulp/server.conf`` on the parent node.

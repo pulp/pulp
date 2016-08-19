@@ -1,0 +1,12 @@
+=======================
+Pulp 2.11 Release Notes
+=======================
+
+Pulp 2.11.0
+===========
+
+New Features
+------------
+
+* For RPM content, a full sync will be forced if the sync configuration has been changed or content
+  has been removed since the last sync.

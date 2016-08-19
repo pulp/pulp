@@ -289,9 +289,7 @@ class ImporterScratchPadMixin(object):
         :raises ImporterConduitException: wraps any exception that may occur in the Pulp server
         """
         try:
-            importer = model.Importer.objects.get(repo_id=self.repo_id)
-            importer.scratchpad = value
-            importer.save()
+            model.Importer.objects.get(repo_id=self.repo_id).update(set__scratchpad=value)
         except Exception, e:
             _logger.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r': self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]

@@ -338,8 +338,8 @@ class RepoImportersView(View):
         """
         importer_type = request.body_as_json.get('importer_type_id', None)
         config = request.body_as_json.get('importer_config', None)
-        importer_controller.validate_importer_config(repo_id, importer_type, config)
         repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        importer_controller.validate_importer_config(repo, importer_type, config)
         async_result = importer_controller.queue_set_importer(repo, importer_type, config)
         raise exceptions.OperationPostponed(async_result)
 

@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import traceback as traceback_module
 
 from pulp.server.db.model.base import Model
@@ -245,7 +246,7 @@ class RepoPublishResult(Model, ReaperMixin):
 
     @classmethod
     def skipped_result(cls, repo_id, distributor_id, distributor_type_id, started, completed,
-                       result_code):
+                       result_code, translated_message):
         """
         Creates a new history entry for a skipped publish.
 
@@ -266,11 +267,15 @@ class RepoPublishResult(Model, ReaperMixin):
 
         @param result_code: one of the RESULT_* constants in this class
         @type  result_code: str
+
+        @param translated_message: translated reason for skipping
+        @type translated_message: str
+
         """
 
         r = cls(repo_id, distributor_id, distributor_type_id, started, completed,
                 cls.RESULT_SKIPPED)
-        message = 'Skipped. Nothing changed since last publish'
+        message = _('Skipped: %(reason)s') % {'reason': translated_message}
         r.summary = r.details = message
 
         return r
