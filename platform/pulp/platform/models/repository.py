@@ -65,6 +65,15 @@ class Repository(Model):
         mapping = self.content.values('type').annotate(count=models.Count('type'))
         return {m['type']: m['count'] for m in mapping}
 
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.name,)
+
 
 class RepositoryGroup(Model):
     """
@@ -91,6 +100,15 @@ class RepositoryGroup(Model):
     members = models.ManyToManyField('Repository')
     scratchpad = fields.GenericRelation(Scratchpad)
     notes = fields.GenericRelation(Notes)
+
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.name,)
 
 
 class Plugin(MasterModel):
@@ -222,7 +240,16 @@ class RepositoryImporter(Importer):
         Repository, related_name='importers', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('name', 'repository')
+        unique_together = ('repository', 'name')
+
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.repository.id, self.name)
 
 
 class Distributor(Plugin):
@@ -269,7 +296,16 @@ class RepositoryDistributor(Distributor):
         Repository, related_name='distributors', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('name', 'repository')
+        unique_together = ('repository', 'name')
+
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.repository.id, self.name)
 
 
 class GroupDistributor(Distributor):
@@ -288,7 +324,16 @@ class GroupDistributor(Distributor):
         RepositoryGroup, related_name='distributors', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('name', 'group')
+        unique_together = ('group', 'name')
+
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.group.id, self.name)
 
 
 class RepositoryContent(Model):

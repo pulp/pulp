@@ -34,6 +34,15 @@ class Consumer(Model):
     notes = fields.GenericRelation(Notes)
     distributors = models.ManyToManyField('RepositoryDistributor')
 
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.name,)
+
 
 class ConsumerContent(Model):
     """
