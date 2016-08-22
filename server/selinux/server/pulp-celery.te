@@ -158,6 +158,13 @@ optional_policy(`
 
 ######################################
 #
+# The rsync distributors need to be able to execute rsync.
+#
+
+rsync_exec(celery_t)
+
+######################################
+#
 # ostree needs to be able to execute gpg, but both ostree and the gpg_exec directive are
 # unavailable on el6.
 #
