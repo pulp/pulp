@@ -14,6 +14,9 @@ class VerificationException(ValueError):
 
 def verify_size(file_object, expected_size):
     """
+    Depricated. Do not use it anymore. Use os.stat to find out the file size to compare
+    with the expected one.
+
     Returns whether or not the size of the contents of the given file-like object match
     the expectation.
 
