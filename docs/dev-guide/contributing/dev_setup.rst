@@ -283,7 +283,7 @@ disable SELinux and install items as root outside of the system package manager.
   sudo access. If you are using a Fedora cloud image, the "fedora" user is
   sufficient.
 
-* As that user, ``curl -O https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh && bash -e dev-setup.sh``.
+* As that user, ``curl -O https://raw.githubusercontent.com/pulp/devel/master/scripts/dev-setup.sh && bash -e dev-setup.sh``.
 
    .. warning:: Note that this installs RPMs and makes system modifications that you wouldn't
                 want to apply on a VM that was not dedicated to Pulp development.
