@@ -1,38 +1,73 @@
-"""
-These tests are intended to be a HOW TO for working with the repository motel.
-"""
-
 from django.test import TestCase
 
-from pulp.platform.models import Repository, RepositoryImporter, RepositoryDistributor
+from pulp.platform.models import (Repository, RepositoryGroup, RepositoryImporter,
+                                  RepositoryDistributor, GroupDistributor)
 
 
 class TestRepository(TestCase):
 
+    def test_natural_key(self):
+        repository = Repository(name='test')
+        self.assertEqual(repository.natural_key(), (repository.name,))
+
+
+class TestRepositoryGroup(TestCase):
+
+    def test_natural_key(self):
+        group = RepositoryGroup(name='test')
+        self.assertEqual(group.natural_key(), (group.name,))
+
+
+class TestRepositoryImporter(TestCase):
+
+    def test_natural_key(self):
+        repository = Repository()
+        importer = RepositoryImporter(name='test', repository=repository)
+        self.assertEqual(importer.natural_key(), (repository.id, importer.name))
+
+
+class TestRepositoryDistributor(TestCase):
+
+    def test_natural_key(self):
+        group = RepositoryGroup()
+        distributor = GroupDistributor(name='test', group=group)
+        self.assertEqual(distributor.natural_key(), (group.id, distributor.name))
+
+
+class TestGroupDistributor(TestCase):
+
+    def test_natural_key(self):
+        repository = Repository()
+        distributor = RepositoryDistributor(name='test', repository=repository)
+        self.assertEqual(distributor.natural_key(), (repository.id, distributor.name))
+
+
+class RepositoryExample(TestCase):
+
     NAME = 'zoo'
 
-    def _create_repository(self):
+    def create_repository(self):
         """
         Create a repository with sample notes and scratchpad.
         """
-        repository = Repository(name=TestRepository.NAME)
+        repository = Repository(name=RepositoryExample.NAME)
         repository.notes.mapping['organization'] = 'Engineering'
         repository.notes.mapping.update({'age': 10})
         repository.scratchpad.mapping['hello'] = 'world'
         repository.save()
 
-    def _delete_repository(self):
+    def delete_repository(self):
         """
         Delete the repository.
         """
-        repository = Repository.objects.filter(name=TestRepository.NAME)
+        repository = Repository.objects.filter(name=RepositoryExample.NAME)
         repository.delete()
 
-    def _add_importer(self):
+    def add_importer(self):
         """
         Add an importer with feed URL and some standard settings.
         """
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
         importer = RepositoryImporter(repository=repository)
         importer.name = 'Upstream'
         importer.type = 'YUM'
@@ -46,11 +81,11 @@ class TestRepository(TestCase):
         importer.basic_auth_password = 'Fudd'
         importer.save()
 
-    def _add_distributor(self):
+    def add_distributor(self):
         """
         Add a distributor with some standard settings.
         """
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
         distributor = RepositoryDistributor(repository=repository)
         distributor.name = 'Public'
         distributor.type = 'YUM'
@@ -58,22 +93,22 @@ class TestRepository(TestCase):
         distributor.save()
 
     def setUp(self):
-        self._create_repository()
+        self.create_repository()
 
     def tearDown(self):
-        self._delete_repository()
+        self.delete_repository()
 
     def test_add_importer(self):
-        self._add_importer()
+        self.add_importer()
 
     def test_add_distributor(self):
-        self._add_distributor()
+        self.add_distributor()
 
     def test_inspect_repository(self):
         """
         Inspect a repository.
         """
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
 
         # Read notes and scratchpad
         self.assertEqual(repository.notes.mapping['organization'], 'Engineering')
@@ -85,8 +120,8 @@ class TestRepository(TestCase):
             _ = repository.notes.mapping['xx']
 
     def test_inspect_importer(self):
-        self._add_importer()
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        self.add_importer()
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
         importer = repository.importers.first()
 
         self.assertEqual(importer.feed_url, 'http://content-world/everyting/')
@@ -105,10 +140,10 @@ class TestRepository(TestCase):
         """
         Update the notes.
         """
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
         repository.notes.mapping['name'] = 'Elvis'
         repository.notes.mapping.update({'age': 98})
 
-        repository = Repository.objects.get(name=TestRepository.NAME)
+        repository = Repository.objects.get(name=RepositoryExample.NAME)
         self.assertEqual(repository.notes.mapping['name'], 'Elvis')
         self.assertEqual(repository.notes.mapping['age'], '98')
