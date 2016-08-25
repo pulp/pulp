@@ -21,6 +21,9 @@ require {
         type pulp_var_cache_t;
         type pulp_cert_t;
         type puppet_etc_t;
+        type tmp_t;
+        class sock_file { create link unlink write };
+        class unix_stream_socket connectto;
         class dir { getattr search write remove_name create add_name rmdir };
         class file { lock rename write setattr getattr read create unlink open };
         class process { setsched signal signull };
@@ -158,10 +161,23 @@ optional_policy(`
 
 ######################################
 #
-# The rsync distributors need to be able to execute rsync.
+# Adds a SELinux boolean called pulp_manage_rsync that enables Pulp to execute rsync and ssh.
+# Defaults to false.
 #
 
-rsync_exec(celery_t)
+gen_tunable(pulp_manage_rsync, false)
+
+optional_policy(`
+    tunable_policy(`pulp_manage_rsync', `
+        # Pulp executes rsync over ssh. Pulp needs to write to /var directories. Allow creation of
+        # a socket file. Allow managing a socket.
+        rsync_exec(celery_t)
+        ssh_exec(celery_t)
+        files_write_var_dirs(celery_t)
+        allow celery_t tmp_t:sock_file { create link unlink write };
+        allow celery_t self:unix_stream_socket { create_stream_socket_perms connectto };
+    ')
+')
 
 ######################################
 #
