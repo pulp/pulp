@@ -1,11 +1,13 @@
+import datetime
 import os
 
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client.admin.tasks import BaseTasksSection
 from pulp.client.arg_utils import convert_boolean_arguments
 from pulp.client.extensions.decorator import priority
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.consumer.query import ConsumerListCommand
 from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
@@ -39,6 +41,7 @@ SCHEDULES_NAME = 'schedules'
 
 
 NODE_LIST_DESC = _('list child nodes')
+LIST_SYNCS_DESC = _('if "true", list sync runs of child nodes')
 REPO_LIST_DESC = _('list node enabled repositories')
 ACTIVATE_DESC = _('activate a consumer as a child node')
 DEACTIVATE_DESC = _('deactivate a child node')
@@ -65,6 +68,9 @@ AUTO_PUBLISH_OPTION = PulpCliOption('--auto-publish', AUTO_PUBLISH_DESC, require
 
 STRATEGY_OPTION = \
     PulpCliOption('--strategy', STRATEGY_DESC, required=False, default=constants.ADDITIVE_STRATEGY)
+
+FLAG_SYNCS = PulpCliFlag('--syncs',
+                         _('if "true", list last sync runs of child nodes'))
 
 # --- messages ---------------------------------------------------------------
 
@@ -142,6 +148,8 @@ class NodeListCommand(ConsumerListCommand):
 
     def __init__(self, context):
         super(NodeListCommand, self).__init__(context, description=NODE_LIST_DESC)
+        self.add_flag(FLAG_SYNCS)
+        self.context = context
 
     def get_title(self):
         return NODE_LIST_TITLE
@@ -173,6 +181,87 @@ class NodeListCommand(ConsumerListCommand):
                 formatted[strategy] = repo_ids
             repo_ids.append(repo_id)
         consumer[key] = formatted
+
+    def run(self, **kwargs):
+        syncs = kwargs.get(FLAG_SYNCS.keyword, False)
+        if not syncs:
+            return super(NodeListCommand, self).run(**kwargs)
+        FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time', 'result')
+        task_objects = self.context.server.tasks_search.search(
+            filters={'group_id': None},
+            fields=FIELDS)
+
+        # Easy out clause
+        if len(task_objects) is 0:
+            self.context.prompt.render_paragraph('No syncs found')
+            return
+
+        # Parse each task object into a document to be displayed using the
+        # prompt utilities
+        task_documents = []
+        for task in task_objects:
+            # Interpret task values
+            state, start_time, finish_time, result = BaseTasksSection.parse_state(task)
+            # Turn complex results into simple worked/failed string
+            if isinstance(result, dict):
+                result = result.get('succeeded', False)
+            if result is True:
+                result = _('Successful')
+            elif result is False:
+                result = _('Failed')
+            actions, resources = BaseTasksSection.parse_tags(task)
+
+            # even a successful task might contain a failed result
+            if state == _('Successful'):
+                state = _('Finished')
+
+            if "unit_update" not in actions:
+                continue   # we are interested in node syncs only.
+            task_doc = {
+                'operations': ', '.join(actions),
+                'resources': ', '.join(resources),
+                'task_id': task.task_id,
+                'state': state,
+                'start_time': start_time,
+                'finish_time': finish_time,
+                'result': result,
+            }
+            task_documents.append(task_doc)
+        _write_tasklist_as_lines(task_documents, self.context.prompt)
+
+
+def _write_tasklist_as_lines(task_documents, prompt):
+    """Rendering a list of task docs as list.
+
+    :param task_documents: list of dicts wach representing a task.
+    :type  task_documents: list
+    :param prompt:         a `PulpPrompt` instance (derived from `okaara.prompt.Prompt`).
+    :type  prompt:         pulp.client.extensions.core.PulpPrompt
+    """
+    terminal_width = prompt.terminal_size()[0]
+    # set column widths. Left column stretched dynamically if space avail.
+    headline = "+" + max(40, terminal_width - 2) * '-' + '+'
+    prompt.write(headline, skip_wrap=True)
+    prompt.write(("{:^%s}" % terminal_width).format("Node Syncs"), skip_wrap=True)
+    prompt.write(headline, skip_wrap=True)
+    first_field_width = max(10, terminal_width - 82)
+    FORMAT = "{:<%s.%ss} {:<36s} {:<20s} {:>11s} {:<11s}" % (
+        first_field_width, first_field_width)
+    prompt.write(
+        FORMAT.format(
+            _("Node"), _("Task ID"), _("Started"), _("Duration"),
+            _("Status")), skip_wrap=True)
+    prompt.write(FORMAT.replace(":", ":-").format("", "", "", "", ""), skip_wrap=True)
+    for doc in task_documents:
+        try:
+            duration = (
+                datetime.datetime.strptime(doc["finish_time"], "%Y-%m-%dT%H:%M:%SZ") -
+                datetime.datetime.strptime(doc["start_time"], "%Y-%m-%dT%H:%M:%SZ"))
+        except ValueError:
+            duration = doc["finish_time"]
+        prompt.write(FORMAT.format(
+            doc["resources"], doc["task_id"], doc["start_time"], duration, doc["result"]),
+            skip_wrap=True)
 
 
 class NodeListRepositoriesCommand(ListRepositoriesCommand):
