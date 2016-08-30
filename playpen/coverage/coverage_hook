@@ -6,10 +6,13 @@ In addition to calling %(prog)s with --help, each subcommand has its own options
 that can also be seen by passing --help after the subcommand, e.g. %(prog)s <command> --help
 """
 import argparse
-import hashlib
 import glob
+import hashlib
+import importlib
 import os
+import platform
 import shutil
+import subprocess
 import sys
 import warnings
 
@@ -56,6 +59,9 @@ report the saved coverage reports and write the output to the specified director
 report will fail if coverage has not yet been installed
 """
 _root_epilog = "This script is intended to be run with root privileges."
+
+_DISTRIBUTION = platform.dist()[0]
+_DISTRIBUTION_MAJOR_VERSION = platform.dist()[1].split('.')[0]
 
 
 def _files():
@@ -200,6 +206,70 @@ def _patch_entry_module(install):
                 file.writelines(lines)
 
 
+def _patch_pulp_resource_manager_service(install):
+    """Patch the pulp_resource_manager.service file.
+
+    :param install: boolean that indicates if the patch should be installed or
+        uninstalled, ``True`` or ``False`` respectively.
+    """
+    if install:
+        if _DISTRIBUTION == 'redhat' and _DISTRIBUTION_MAJOR_VERSION == '6':
+            subprocess.check_call([
+                'sed', '-i',
+                '/^VERSION=/ a CELERYD_OPTS="-P solo"',
+                '/etc/rc.d/init.d/pulp_workers',
+            ])
+        else:
+            subprocess.check_call([
+                'sed', '-i',
+                r's/\(--heartbeat-interval=[0-9]\+\).*$/\1 -P solo/',
+                '/etc/systemd/system/pulp_resource_manager.service',
+            ])
+    else:
+        if _DISTRIBUTION == 'redhat' and _DISTRIBUTION_MAJOR_VERSION == '6':
+            subprocess.check_call([
+                'sed', '-i',
+                '/^CELERYD_OPTS="-P solo"/ d',
+                '/etc/rc.d/init.d/pulp_workers',
+            ])
+        else:
+            subprocess.check_call([
+                'sed', '-i',
+                r's/\(--heartbeat-interval=[0-9]\+\).*$/\1/',
+                '/etc/systemd/system/pulp_resource_manager.service',
+            ])
+    if _DISTRIBUTION == 'redhat' and _DISTRIBUTION_MAJOR_VERSION != '6':
+        subprocess.check_call(['systemctl', 'daemon-reload'])
+
+
+def _patch_pulp_workers_service(install):
+    """Patch the pulp_workers service file template.
+
+    :param install: boolean that indicates if the patch should be installed or
+        uninstalled, ``True`` or ``False`` respectively.
+    """
+    try:
+        mod = importlib.import_module('pulp.server.async.manage_workers')
+    except ImportError:
+        print >>sys.stderr, 'Module {} import failed, coverage reporting may be incomplete.'.format('pulp.server.async.manage_workers')
+        return
+    mod = mod.__file__.rstrip('co')
+    with open(mod) as file:
+        lines = file.readlines()
+    for index, line in enumerate(lines):
+        if '--heartbeat-interval=30' in line:
+            break
+    # Maintain the indentation
+    line = lines[index][:line.index('--heartbeat')]
+    if install:
+        line += '--heartbeat-interval=30 -P solo\n'
+    else:
+        line += '--heartbeat-interval=30\n'
+    lines[index] = line
+    with open(mod, 'w') as file:
+        file.writelines(lines)
+
+
 def parse_args():
     """
     Parse commandline arguments.
@@ -306,6 +376,8 @@ def install(force=False, deps=False):
     # alter pulp to explicitly import sitecustomize, since some scripts (such as WSGI
     # applications) don't do this automatically.
     _patch_entry_module(True)
+    _patch_pulp_resource_manager_service(True)
+    _patch_pulp_workers_service(True)
 
 
 def uninstall(force=False, deps=False):
@@ -348,6 +420,8 @@ def uninstall(force=False, deps=False):
         os.remove(sitecustomize_file)
 
     _patch_entry_module(False)
+    _patch_pulp_resource_manager_service(False)
+    _patch_pulp_workers_service(False)
 
     print 'coverage hook {} uninstalled'.format(files['target_sitecustomize'])
 
