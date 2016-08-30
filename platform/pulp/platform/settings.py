@@ -26,7 +26,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-MEDIA_ROOT = 'content'
+MEDIA_ROOT = '/var/lib/pulp/content/'
+DEFAULT_FILE_STORAGE = 'pulp.platform.models.storage.FileSystem'
 
 # Application definition
 
