@@ -34,8 +34,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.9.2
-Release: 0.2.beta%{?dist}
+Version: 2.9.3
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
