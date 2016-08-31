@@ -8,12 +8,6 @@ from django.utils import timezone
 from pulp.platform.models import Model, Notes, Scratchpad, MasterModel
 
 
-class Content(Model):
-    # placeholder
-    type = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
-
-
 class Repository(Model):
     """
     Collection of content.
