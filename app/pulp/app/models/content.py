@@ -76,6 +76,10 @@ class Artifact(Model):
     :cvar downloaded: The associated file has been successfully downloaded.
     :type downloaded: BooleanField
 
+    :cvar requested: The associated file has been requested by a client at
+                     least once.
+    :type requested: BooleanField
+
     :cvar relative_path: The artifact's path relative to the associated
                          :class:`Content`. This path is incorporated in
                          the absolute storage path of the file and its
@@ -117,6 +121,7 @@ class Artifact(Model):
 
     file = models.FileField(db_index=True, upload_to=StoragePath(), max_length=255)
     downloaded = models.BooleanField(db_index=True, default=False)
+    requested = models.BooleanField(db_index=True, default=False)
     relative_path = models.TextField(db_index=True, blank=False, default=None)
 
     size = models.IntegerField(blank=True, null=True)
