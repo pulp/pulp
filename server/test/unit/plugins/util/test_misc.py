@@ -105,6 +105,13 @@ class TestMkdir(unittest.TestCase):
         fake_mkdir.side_effect = OSError(errno.EPERM, path)
         self.assertRaises(OSError, misc.mkdir, path)
 
+    @patch('os.makedirs')
+    def test_mode(self, fake_mkdir):
+        path = 'path-123'
+        mode = 0750
+        misc.mkdir(path, mode)
+        fake_mkdir.assert_called_once_with(path, mode)
+
 
 class TestGetParentDirectory(unittest.TestCase):
 
