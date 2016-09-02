@@ -1152,13 +1152,13 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                                                       not predistributor_last_published))
     # Check if content has not changed since last publish and a predistributor is not defined.
     unchanged_content_and_no_predistributor = last_published and not last_updated and \
-                                              not units_removed and not predistributor_id
+        not units_removed and not predistributor_id
     # We want to skip based on predistributor conditions. We also want to skip if repository
     # content has not changed since last publish and no predistributor is defined. We want to not
     # skip if 'force_full' is configured or the distributor config has changed since last publish.
     if (skip_for_predistributor and not last_published) or\
-            (last_published and not force_full and not dist_updated and same_override
-             and (skip_for_predistributor or unchanged_content_and_no_predistributor)):
+            (last_published and not force_full and not dist_updated and same_override and
+                (skip_for_predistributor or unchanged_content_and_no_predistributor)):
 
         publish_result_coll = RepoPublishResult.get_collection()
         publish_start_timestamp = _now_timestamp()
