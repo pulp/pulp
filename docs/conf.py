@@ -13,6 +13,7 @@
 
 import sys
 import os
+from datetime import date
 
 try:
     import sphinx_rtd_theme
@@ -48,7 +49,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Pulp Project'
-copyright = u'2012-2014, Pulp Team'
+
+# Set copyright to current year
+copyright = u'2012-' + str(date.today().year).decode("utf-8") + u', Pulp Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
