@@ -2,9 +2,10 @@ from setuptools import setup, find_packages
 
 requirements = [
     'Django>=1.8,<1.9',
+    'django-extensions',
     'djangorestframework',
     'psycopg2',
-    'django-extensions',
+    'PyYAML',
     'setuptools',
 ]
 
