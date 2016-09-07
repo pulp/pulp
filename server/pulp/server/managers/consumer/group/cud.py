@@ -7,11 +7,11 @@ from pymongo.errors import DuplicateKeyError
 
 from pulp.common import error_codes
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
 from pulp.server.exceptions import PulpCodedException, PulpException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.controllers.consumer import bind as bind_task, unbind as unbind_task
+from pulp.tasking import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -248,15 +248,13 @@ class ConsumerGroupManager(object):
         :type units: list or tuple
         :param options: options to pass to the install manager
         :type options: dict or None
-        :return: Details of the subtasks that were executed
-        :rtype: TaskResult
         """
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0020,
-                                                  {'group_id': consumer_group_id},
-                                                  agent_manager.install_content, units, options)
+        ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0020,
+                                           {'group_id': consumer_group_id},
+                                           agent_manager.install_content, units, options)
 
     @staticmethod
     def update_content(consumer_group_id, units, options):
@@ -268,15 +266,13 @@ class ConsumerGroupManager(object):
         :type units: list or tuple
         :param options: options to pass to the update manager
         :type options: dict or None
-        :return: Details of the subtasks that were executed
-        :rtype: TaskResult
         """
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0021,
-                                                  {'group_id': consumer_group_id},
-                                                  agent_manager.update_content, units, options)
+        ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0021,
+                                           {'group_id': consumer_group_id},
+                                           agent_manager.update_content, units, options)
 
     @staticmethod
     def uninstall_content(consumer_group_id, units, options):
@@ -288,15 +284,13 @@ class ConsumerGroupManager(object):
         :type units: list or tuple
         :param options: options to pass to the uninstall manager
         :type options: dict or None
-        :return: Details of the subtasks that were executed
-        :rtype: TaskResult
         """
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0022,
-                                                  {'group_id': consumer_group_id},
-                                                  agent_manager.uninstall_content, units, options)
+        ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0022,
+                                           {'group_id': consumer_group_id},
+                                           agent_manager.uninstall_content, units, options)
 
     @staticmethod
     def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
@@ -316,21 +310,16 @@ class ConsumerGroupManager(object):
         :param binding_config: configuration options to use when generating the payload for this
                                binding
         :type binding_config:  dict
-        :return:               Details of the subtasks that were executed
-        :rtype:                TaskResult
         """
         manager = manager_factory.consumer_group_query_manager()
         group = manager.get_group(group_id)
 
         bind_errors = []
-        additional_tasks = []
 
         for consumer_id in group['consumer_ids']:
             try:
-                report = bind_task(consumer_id, repo_id, distributor_id, notify_agent,
-                                   binding_config, agent_options)
-                if report.spawned_tasks:
-                    additional_tasks.extend(report.spawned_tasks)
+                bind_task(consumer_id, repo_id, distributor_id, notify_agent, binding_config,
+                          agent_options)
             except PulpException, e:
                 # Log a message so that we can debug but don't throw
                 _logger.debug(e)
@@ -340,15 +329,13 @@ class ConsumerGroupManager(object):
                 # Don't do anything else since we still want to process all the other consumers
                 bind_errors.append(e)
 
-        bind_error = None
         if len(bind_errors) > 0:
             bind_error = PulpCodedException(error_codes.PLP0004,
                                             repo_id=repo_id,
                                             distributor_id=distributor_id,
                                             group_id=group_id)
             bind_error.child_exceptions = bind_errors
-
-        return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
+            raise bind_error
 
     @staticmethod
     def unbind(group_id, repo_id, distributor_id, options):
@@ -362,20 +349,15 @@ class ConsumerGroupManager(object):
         :type distributor_id: str
         :param options: Bind options passed to the agent handler.
         :type options: dict
-        :return: TaskResult containing the ids of all the spawned tasks & bind errors
-        :rtype: TaskResult
         """
         manager = manager_factory.consumer_group_query_manager()
         group = manager.get_group(group_id)
 
         bind_errors = []
-        additional_tasks = []
 
         for consumer_id in group['consumer_ids']:
             try:
-                report = unbind_task(consumer_id, repo_id, distributor_id, options)
-                if report:
-                    additional_tasks.extend(report.spawned_tasks)
+                unbind_task(consumer_id, repo_id, distributor_id, options)
             except PulpException, e:
                 # Log a message so that we can debug but don't throw
                 _logger.warn(e)
@@ -384,14 +366,13 @@ class ConsumerGroupManager(object):
                 bind_errors.append(e)
                 # Don't do anything else since we still want to process all the other consumers
 
-        bind_error = None
         if len(bind_errors) > 0:
             bind_error = PulpCodedException(error_codes.PLP0005,
                                             repo_id=repo_id,
                                             distributor_id=distributor_id,
                                             group_id=group_id)
             bind_error.child_exceptions = bind_errors
-        return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
+            raise bind_error
 
     @staticmethod
     def process_group(consumer_group, error_code, error_kwargs, process_method, *args):
@@ -409,17 +390,13 @@ class ConsumerGroupManager(object):
         :param args: any additional arguments passed to this method will be passed to the
                      process method function
         :type args: list of arguments
-        :returns: A TaskResult with the overall results of the group
-        :rtype: TaskResult
         """
         errors = []
-        spawned_tasks = []
         for consumer_id in consumer_group['consumer_ids']:
             try:
-                group_task = process_method(consumer_id, *args)
-                spawned_tasks.append(group_task)
+                process_method(consumer_id, *args)
             except PulpException, e:
-                # Log a message so that we can debug but don't throw
+                # Log a message so that we can debug but don't raise
                 _logger.warn(e)
                 errors.append(e)
             except Exception, e:
@@ -427,21 +404,20 @@ class ConsumerGroupManager(object):
                 errors.append(e)
                 # Don't do anything else since we still want to process all the other consumers
 
-        error = None
         if len(errors) > 0:
             error = PulpCodedException(error_code, **error_kwargs)
             error.child_exceptions = errors
-        return TaskResult({}, error, spawned_tasks)
+            raise error
 
 
-associate = task(ConsumerGroupManager.associate, base=Task, ignore_result=True)
-create_consumer_group = task(ConsumerGroupManager.create_consumer_group, base=Task)
-delete_consumer_group = task(ConsumerGroupManager.delete_consumer_group, base=Task,
+associate = task(ConsumerGroupManager.associate, base=UserFacingTask, ignore_result=True)
+create_consumer_group = task(ConsumerGroupManager.create_consumer_group, base=UserFacingTask)
+delete_consumer_group = task(ConsumerGroupManager.delete_consumer_group, base=UserFacingTask,
                              ignore_result=True)
-update_consumer_group = task(ConsumerGroupManager.update_consumer_group, base=Task)
-unassociate = task(ConsumerGroupManager.unassociate, base=Task, ignore_result=True)
-bind = task(ConsumerGroupManager.bind, base=Task)
-unbind = task(ConsumerGroupManager.unbind, base=Task)
+update_consumer_group = task(ConsumerGroupManager.update_consumer_group, base=UserFacingTask)
+unassociate = task(ConsumerGroupManager.unassociate, base=UserFacingTask, ignore_result=True)
+bind = task(ConsumerGroupManager.bind, base=UserFacingTask)
+unbind = task(ConsumerGroupManager.unbind, base=UserFacingTask)
 
 
 def validate_existing_consumer_group(group_id):

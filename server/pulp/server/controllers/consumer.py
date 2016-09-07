@@ -1,7 +1,7 @@
 import celery
 
-from pulp.server.async.tasks import TaskResult, Task
 from pulp.server.managers import factory as managers
+from pulp.tasking import UserFacingTask
 
 
 def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
@@ -21,9 +21,8 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
     :type  notify_agent: bool
     :param binding_config: configuration options to use when generating the payload for this binding
 
-    :returns TaskResult containing the result of the bind & any spawned tasks or a dictionary
-             of the bind result if no tasks were spawned.
-    :rtype: TaskResult
+    :returns Dictionary containing the result of the bind.
+    :rtype: dict
 
     :raises pulp.server.exceptions.MissingResource: when given consumer does not exist
     """
@@ -31,16 +30,13 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
 
-    response = TaskResult(result=binding)
-
     # Notify the agents of the binding
     if notify_agent:
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
         # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task['task_id']})
 
-    return response
+    return binding
 
 
 def unbind(consumer_id, repo_id, distributor_id, options):
@@ -60,15 +56,12 @@ def unbind(consumer_id, repo_id, distributor_id, options):
     :type distributor_id: str
     :param options: Unbind options passed to the agent handler.
     :type options: dict
-    :returns TaskResult containing the result of the unbind & any spawned tasks or a dictionary
-             of the unbind result if no tasks were spawned.
-    :rtype: TaskResult
+    :returns Dictionary containing the result of the unbind.
+    :rtype: dict
     """
 
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
-
-    response = TaskResult(result=binding)
 
     if binding['notify_agent']:
         # Unbind the consumer from the repo on the server
@@ -76,26 +69,27 @@ def unbind(consumer_id, repo_id, distributor_id, options):
         # Notify the agent to remove the binding.
         # The agent notification handler will delete the binding from the server
         agent_manager = managers.consumer_agent_manager()
-        task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task['task_id']})
+        agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
     else:
         # Since there was no agent notification, perform the delete immediately
         bind_manager.delete(consumer_id, repo_id, distributor_id, True)
 
-    return response
+    return binding
 
 
 def force_unbind(consumer_id, repo_id, distributor_id, options):
     """
     Get the unbind itinerary.
+
     A forced unbind immediately deletes the binding instead
     of marking it deleted and going through that lifecycle.
     It is intended to be used to clean up orphaned bindings
     caused by failed/unconfirmed unbind actions on the consumer.
+
     The itinerary is:
       1. Delete the binding on the server.
       2. Request that the consumer (agent) perform the unbind.
+
     :param consumer_id: A consumer ID.
     :type consumer_id: str
     :param repo_id: A repository ID.
@@ -104,27 +98,18 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     :type distributor_id: str
     :param options: Unbind options passed to the agent handler.
     :type options: dict
-    :returns TaskResult containing the result of the unbind & any spawned tasks or a dictionary
-             of the unbind result if no tasks were spawned.
-    :rtype: TaskResult
     """
 
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
     bind_manager.delete(consumer_id, repo_id, distributor_id, True)
 
-    response = TaskResult()
-
     if binding['notify_agent']:
         agent_manager = managers.consumer_agent_manager()
-        task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task['task_id']})
-
-    return response
+        agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
 
 
-@celery.task(base=Task, name='pulp.server.tasks.consumer.install_content')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.consumer.install_content')
 def install_content(consumer_id, units, options):
     """
     Install units on a consumer
@@ -142,7 +127,7 @@ def install_content(consumer_id, units, options):
     return agent_manager.install_content(consumer_id, units, options)
 
 
-@celery.task(base=Task, name='pulp.server.tasks.consumer.update_content')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.consumer.update_content')
 def update_content(consumer_id, units, options, scheduled_call_id=None):
     """
     Update units on a consumer.
@@ -162,7 +147,7 @@ def update_content(consumer_id, units, options, scheduled_call_id=None):
     return agent_manager.update_content(consumer_id, units, options)
 
 
-@celery.task(base=Task, name='pulp.server.tasks.consumer.uninstall_content')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.consumer.uninstall_content')
 def uninstall_content(consumer_id, units, options):
     """
     Uninstall content from a consumer.

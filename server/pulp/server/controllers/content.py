@@ -9,9 +9,9 @@ from pulp.common.plugins import reporting_constants
 from pulp.plugins.conduits.mixins import (ContentSourcesConduitException, StatusMixin,
                                           PublishReportMixin)
 from pulp.plugins.util.publish_step import Step
-from pulp.server.async.tasks import Task
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.exceptions import PulpCodedTaskException
+from pulp.tasking import UserFacingTask
 
 _logger = getLogger(__name__)
 
@@ -79,7 +79,7 @@ class ContentSourcesRefreshStep(Step):
         return len(self.sources)
 
 
-@celery.task(base=Task, name='pulp.server.tasks.content.refresh_content_sources')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.content.refresh_content_sources')
 def refresh_content_sources():
     """
     Refresh the content catalog using available content sources.
@@ -89,7 +89,7 @@ def refresh_content_sources():
     step.process_lifecycle()
 
 
-@celery.task(base=Task, name='pulp.server.tasks.content.refresh_content_source')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.content.refresh_content_source')
 def refresh_content_source(content_source_id=None):
     """
     Refresh the content catalog from a specific content source.

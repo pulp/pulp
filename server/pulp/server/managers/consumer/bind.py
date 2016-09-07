@@ -8,11 +8,11 @@ from time import time
 from celery import task
 from pymongo.errors import DuplicateKeyError
 
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
+from pulp.tasking import UserFacingTask
 
 
 _logger = getLogger(__name__)
@@ -443,6 +443,6 @@ class BindManager(object):
         return missing_values
 
 
-bind = task(BindManager.bind, base=Task)
-delete = task(BindManager.delete, base=Task)
-unbind = task(BindManager.unbind, base=Task)
+bind = task(BindManager.bind, base=UserFacingTask)
+delete = task(BindManager.delete, base=UserFacingTask)
+unbind = task(BindManager.unbind, base=UserFacingTask)

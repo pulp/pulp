@@ -9,12 +9,12 @@ import unittest
 
 import mock
 
-from pulp.server.async import celery_instance
 from pulp.server.config import config, _default_values
 from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
 from pulp.server.controllers.repository import queue_download_deferred
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
+from pulp.tasking import celery_instance
 
 
 class TestCelerybeatSchedule(unittest.TestCase):

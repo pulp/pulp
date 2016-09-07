@@ -235,40 +235,6 @@ class OperationTimedOut(PulpExecutionException):
         return {'timeout': self.timeout}
 
 
-class NoWorkers(PulpExecutionException):
-    """
-    This Exception is raised when there are no Celery workers available to perform asynchronous
-    tasks.
-    """
-    http_status_code = httplib.SERVICE_UNAVAILABLE
-
-    def __init__(self):
-        """
-        Initialize the NoWorkers Exception by setting its error code and message.
-        """
-        super(NoWorkers, self).__init__()
-        self.error_code = error_codes.PLP0024
-
-    def __str__(self):
-        """
-        Return a string representation of self.
-
-        :return: str of self
-        :rtype:  str
-        """
-        msg = self.error_code.message
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        """
-        Return an empty dictionary, as there is no data for this error.
-
-        :return: empty dictionary
-        :rtype:  dict
-        """
-        return {}
-
-
 class OperationPostponed(PulpExecutionException):
     """
     Base class for handling operations postponed by the coordinator.

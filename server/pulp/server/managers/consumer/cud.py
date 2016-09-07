@@ -11,12 +11,12 @@ from celery import task
 
 from pulp.common.bundle import Bundle
 from pulp.server import config
-from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue
 from pulp.server.managers import factory
 from pulp.server.managers.schedule import utils as schedule_utils
+from pulp.tasking import UserFacingTask
 
 
 _CONSUMER_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
@@ -246,9 +246,9 @@ class ConsumerManager(object):
             raise ValueError('"%s" is not a valid operation' % operation)
 
 
-register = task(ConsumerManager.register, base=Task)
-unregister = task(ConsumerManager.unregister, base=Task, ignore_result=True)
-update = task(ConsumerManager.update, base=Task)
+register = task(ConsumerManager.register, base=UserFacingTask)
+unregister = task(ConsumerManager.unregister, base=UserFacingTask, ignore_result=True)
+update = task(ConsumerManager.update, base=UserFacingTask)
 
 
 def update_notes(notes, delta_notes):

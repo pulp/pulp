@@ -4,10 +4,9 @@ Manager to return status information about a running Pulp instance
 from logging import getLogger
 from pkg_resources import get_distribution
 
-from pulp.server.async.celery_instance import celery
 from pulp.server.db import connection
 from pulp.server.db.model import Worker
-
+from pulp.tasking.celery_instance import celery
 
 _logger = getLogger(__name__)
 

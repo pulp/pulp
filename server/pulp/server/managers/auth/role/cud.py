@@ -8,7 +8,6 @@ from gettext import gettext as _
 from celery import task
 
 from pulp.server.constants import SUPER_USER_ROLE
-from pulp.server.async.tasks import Task
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE, \
     _operations_not_granted_by_roles
 from pulp.server.controllers import user as user_controller
@@ -17,6 +16,7 @@ from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingResource,
                                     PulpDataException)
 from pulp.server.managers import factory
+from pulp.tasking import UserFacingTask
 
 
 _ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
@@ -329,11 +329,13 @@ class RoleManager(object):
         return Role.get_collection().find_one({'id': role})
 
 
-add_permissions_to_role = task(RoleManager.add_permissions_to_role, base=Task, ignore_result=True)
-add_user_to_role = task(RoleManager.add_user_to_role, base=Task, ignore_result=True)
-create_role = task(RoleManager.create_role, base=Task)
-delete_role = task(RoleManager.delete_role, base=Task, ignore_result=True)
-remove_permissions_from_role = task(RoleManager.remove_permissions_from_role, base=Task,
-                                    ignore_result=True)
-remove_user_from_role = task(RoleManager.remove_user_from_role, base=Task, ignore_result=True)
-update_role = task(RoleManager.update_role, base=Task)
+add_permissions_to_role = task(RoleManager.add_permissions_to_role, base=UserFacingTask,
+                               ignore_result=True)
+add_user_to_role = task(RoleManager.add_user_to_role, base=UserFacingTask, ignore_result=True)
+create_role = task(RoleManager.create_role, base=UserFacingTask)
+delete_role = task(RoleManager.delete_role, base=UserFacingTask, ignore_result=True)
+remove_permissions_from_role = task(RoleManager.remove_permissions_from_role,
+                                    base=UserFacingTask, ignore_result=True)
+remove_user_from_role = task(RoleManager.remove_user_from_role, base=UserFacingTask,
+                             ignore_result=True)
+update_role = task(RoleManager.update_role, base=UserFacingTask)

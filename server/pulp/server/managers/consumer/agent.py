@@ -17,13 +17,13 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent.context import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
-from pulp.server.async.tasks import Task
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind
 from pulp.server.db.model import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
+from pulp.tasking import UserFacingTask
 
 
 QUEUE_DELETE_DELAY = 600  # 10 min.
@@ -437,7 +437,7 @@ class AgentManager(object):
         agent.delete_queue(url, name)
 
 
-@task(base=Task)
+@task(base=UserFacingTask)
 def delete_queue(url, name, consumer_id):
     """
     Task to delete the agent queue.
