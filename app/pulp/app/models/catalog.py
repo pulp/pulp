@@ -22,11 +22,11 @@ class DownloadCatalog(Model):
     Relations:
 
     :cvar artifact: The artifact that is expected to be present at ``url``.
-    :type artifact: pulp.platform.models.Artifact
+    :type artifact: pulp.app.models.Artifact
 
     :cvar importer: The importer that contains the configuration necessary
                     to access ``url``.
-    :type importer: pulp.platform.models.Importer
+    :type importer: pulp.app.models.Importer
     """
     # Although there is a Django field for URLs based on CharField, there is
     # not technically any limit on URL lengths so it's simplier to allow any

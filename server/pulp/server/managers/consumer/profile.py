@@ -5,10 +5,10 @@ from celery import task
 
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
-from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import UnitProfile
 from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.managers import factory
+from pulp.tasking import UserFacingTask
 
 
 class ProfileManager(object):
@@ -143,6 +143,6 @@ class ProfileManager(object):
         return UnitProfile.get_collection().query(criteria)
 
 
-create = task(ProfileManager.create, base=Task)
-delete = task(ProfileManager.delete, base=Task, ignore_result=True)
-update = task(ProfileManager.update, base=Task)
+create = task(ProfileManager.create, base=UserFacingTask)
+delete = task(ProfileManager.delete, base=UserFacingTask, ignore_result=True)
+update = task(ProfileManager.update, base=UserFacingTask)

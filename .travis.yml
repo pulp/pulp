@@ -8,6 +8,10 @@ addons:
 install:
     - "pip install -r test_requirements.txt"
     - "pushd app/ && python setup.py develop && popd"
+    - "pushd common/ && python setup.py develop && popd"
+    - "pushd exceptions/ && python setup.py develop && popd"
+    - "pushd plugin/ && python setup.py develop && popd"
+    - "pushd tasking/ && python setup.py develop && popd"
 before_script:
     - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"

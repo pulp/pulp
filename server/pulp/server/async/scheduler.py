@@ -12,13 +12,13 @@ import mongoengine
 from pulp.common import constants
 from pulp.common.dateutils import ensure_tz
 from pulp.server.async import worker_watcher
-from pulp.server.async.celery_instance import celery as app
-from pulp.server.async.tasks import _delete_worker
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
 from pulp.server.db.model import Worker, CeleryBeatLock
 from pulp.server.managers.schedule import utils
+from pulp.tasking.celery_instance import celery as app
+from pulp.tasking import delete_worker
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
 # first and only Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it
@@ -106,7 +106,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
 
         To find a missing Celery process, filter the Workers model for entries older than
         utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
-        a comparable datetime. For each missing worker found, call _delete_worker() synchronously
+        a comparable datetime. For each missing worker found, call delete_worker() synchronously
         for cleanup.
 
         This method also checks that at least one resource_manager and one scheduler process is
@@ -131,7 +131,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
                 if worker.name.startswith(constants.SCHEDULER_WORKER_NAME):
                     worker.delete()
                 else:
-                    _delete_worker(worker.name)
+                    delete_worker(worker.name)
             elif worker.name.startswith(constants.SCHEDULER_WORKER_NAME):
                 scheduler_count = scheduler_count + 1
             elif worker.name.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):

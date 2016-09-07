@@ -11,9 +11,9 @@ from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
-from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db import model
 from pulp.server.managers import factory as managers
+from pulp.tasking import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -110,16 +110,13 @@ def queue_delete(distributor):
     return async_result
 
 
-@celery.task(base=Task, name='pulp.server.tasks.repository.distributor_delete')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.repository.distributor_delete')
 def delete(repo_id, dist_id):
     """
     Removes a distributor from a repository and unbinds any bound consumers.
 
     :param distributor: distributor to be deleted
     :type  distributor: pulp.server.db.model.Distributor
-
-    :return: result containing any errors and tasks spawned
-    :rtype pulp.server.async.tasks.TaskResult
     """
 
     distributor = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=dist_id)
@@ -147,13 +144,11 @@ def delete(repo_id, dist_id):
         except Exception, e:
             unbind_errors.append(e)
 
-    bind_error = None
     if unbind_errors:
         bind_error = exceptions.PulpCodedException(PLP0003, repo_id=repo_id,
                                                    distributor_id=dist_id)
         bind_error.child_exceptions = unbind_errors
-
-    return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
+        raise bind_error
 
 
 def queue_update(distributor, config, delta):
@@ -185,7 +180,7 @@ def queue_update(distributor, config, delta):
     return async_result
 
 
-@celery.task(base=Task, name='pulp.server.tasks.repository.distributor_update')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.repository.distributor_update')
 def update(repo_id, dist_id, config=None, delta=None):
     """
     Update the distributor and (re)bind any bound consumers.
@@ -194,14 +189,14 @@ def update(repo_id, dist_id, config=None, delta=None):
     :type  distributor: pulp.server.db.model.Distributor
     :param config: A configuration dictionary for a distributor instance. The contents of this dict
                    depends on the type of distributor. Values of None will remove they key from the
-                   config. Keys ommited from this dictionary will remain unchanged.
+                   config. Keys omitted from this dictionary will remain unchanged.
     :type  config: dict
     :param delta: A dictionary used to change conf values for a distributor instance. This currently
                   only supports the 'auto_publish' keyword, which should have a value of type bool
     :type  delta: dict or None
 
     :return: result containing any errors and tasks spawned
-    :rtype pulp.server.async.tasks.TaskResult
+    :rtype ???
     """
     repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     distributor = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=dist_id)
@@ -252,14 +247,13 @@ def update(repo_id, dist_id, config=None, delta=None):
         except Exception, e:
             unbind_errors.append(e)
 
-    bind_error = None
     if unbind_errors:
         bind_error = exceptions.PulpCodedException(PLP0002, repo_id=distributor.repo_id,
                                                    distributor_id=distributor.distributor_id)
         bind_error.child_exceptions = unbind_errors
+        raise bind_error
 
-    serialized_dist = model.Distributor.SERIALIZER(distributor).data
-    return TaskResult(serialized_dist, error=bind_error, spawned_tasks=additional_tasks)
+    return model.Distributor.SERIALIZER(distributor).data
 
 
 def create_bind_payload(repo_id, distributor_id, binding_config):

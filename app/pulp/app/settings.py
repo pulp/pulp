@@ -177,6 +177,14 @@ _DEFAULT_PULP_SETTINGS = {
             },
         }
     },
+    'broker': {
+        'url': 'qpid://localhost/',
+        'celery_require_ssl': False,
+        'ssl_ca_certificate': '/etc/pki/pulp/qpid/ca.crt',
+        'ssl_client_key': '/etc/pki/pulp/qpid/client.crt',
+        'ssl_client_certificate': '/etc/pki/pulp/qpid/client.crt',
+        'login_method': None
+    },
 }
 
 

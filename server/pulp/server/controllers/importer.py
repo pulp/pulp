@@ -10,9 +10,9 @@ from pulp.common.plugins import importer_constants
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.managers import factory as manager_factory
+from pulp.tasking import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ def clean_config_dict(config):
         return None
 
 
-@celery.task(base=Task, name='pulp.server.managers.repo.importer.set_importer')
+@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.importer.set_importer')
 def set_importer(repo_id, importer_type_id, repo_plugin_config):
     """
     Configures an importer to be used for the given repository.
@@ -128,16 +128,12 @@ def queue_set_importer(repo, importer_type_id, config):
     :type  importer_type_id: str
     :param config: configuration values for the importer
     :type  config: dict or None
-
-    :return: asynchronous result
-    :rtype:  pulp.server.async.tasks.TaskResult
     """
     task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id),
                  tags.action_tag('add_importer')]
-    async_result = set_importer.apply_async_with_reservation(
-        tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id, [repo.repo_id, importer_type_id],
-        {'repo_plugin_config': config}, tags=task_tags)
-    return async_result
+    set_importer.apply_async_with_reservation(tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id,
+                                              [repo.repo_id, importer_type_id],
+                                              {'repo_plugin_config': config}, tags=task_tags)
 
 
 def validate_importer_config(repo_obj, importer_type_id, config):
@@ -174,7 +170,7 @@ def validate_importer_config(repo_obj, importer_type_id, config):
         raise exceptions.PulpDataException(message)
 
 
-@celery.task(base=Task, name='pulp.server.managers.repo.importer.remove_importer')
+@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.importer.remove_importer')
 def remove_importer(repo_id):
     """
     Removes an importer from a repository.
@@ -206,17 +202,13 @@ def queue_remove_importer(repo_id, importer_type_id):
     :type  repo_id: str
     :param importer_type_id: type of importer
     :type  importer_type_id: str
-
-    :return: asynchronous result
-    :rtype:  pulp.server.async.tasks.TaskResult
     """
     get_valid_importer(repo_id, importer_type_id)
     task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                  tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_type_id),
                  tags.action_tag('delete_importer')]
-    async_result = remove_importer.apply_async_with_reservation(
-        tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id], tags=task_tags)
-    return async_result
+    remove_importer.apply_async_with_reservation(tags.RESOURCE_REPOSITORY_TYPE, repo_id,
+                                                 [repo_id], tags=task_tags)
 
 
 def get_valid_importer(repo_id, importer_type_id):
@@ -244,7 +236,7 @@ def get_valid_importer(repo_id, importer_type_id):
     return importer
 
 
-@celery.task(base=Task, name='pulp.server.managers.repo.importer.update_importer_config')
+@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.importer.update_importer_config')
 def update_importer_config(repo_id, importer_config):
     """
     Attempts to update the saved configuration for the given repo's importer. The importer will be

@@ -7,7 +7,6 @@ from gettext import gettext as _
 
 from celery import task
 
-from pulp.server.async.tasks import Task
 from pulp.server.auth import authorization
 from pulp.server.db import model
 from pulp.server.db.model.auth import Permission
@@ -15,6 +14,7 @@ from pulp.server.exceptions import (
     DuplicateResource, InvalidValue, MissingResource, PulpDataException,
     PulpExecutionException)
 from pulp.server.managers import factory
+from pulp.tasking import UserFacingTask
 
 
 class PermissionManager(object):
@@ -305,5 +305,5 @@ class PermissionManager(object):
             return None
         return authorization.OPERATION_NAMES[operation]
 
-grant = task(PermissionManager.grant, base=Task, ignore_result=True)
-revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)
+grant = task(PermissionManager.grant, base=UserFacingTask, ignore_result=True)
+revoke = task(PermissionManager.revoke, base=UserFacingTask, ignore_result=True)

@@ -11,11 +11,11 @@ from pulp.plugins.types import database as content_types_db
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.util import misc as plugin_misc
 from pulp.server import config as pulp_config, exceptions as pulp_exceptions
-from pulp.server.async.tasks import Task
 from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db import model
 from pulp.server.exceptions import MissingResource
+from pulp.tasking import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -381,6 +381,9 @@ class OrphanManager(object):
             _logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
 
 
-delete_all_orphans = task(OrphanManager.delete_all_orphans, base=Task, ignore_result=True)
-delete_orphans_by_id = task(OrphanManager.delete_orphans_by_id, base=Task, ignore_result=True)
-delete_orphans_by_type = task(OrphanManager.delete_orphans_by_type, base=Task, ignore_result=True)
+delete_all_orphans = task(OrphanManager.delete_all_orphans, base=UserFacingTask,
+                          ignore_result=True)
+delete_orphans_by_id = task(OrphanManager.delete_orphans_by_id, base=UserFacingTask,
+                            ignore_result=True)
+delete_orphans_by_type = task(OrphanManager.delete_orphans_by_type, base=UserFacingTask,
+                              ignore_result=True)

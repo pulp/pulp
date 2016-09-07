@@ -219,7 +219,7 @@ def get_paths_to_copy():
             # This really should be 640 since that's how the RPM installs it, but the unit tests try
             # to read the settings rather than mocking them. Once we've fixed that, we should fix
             # this to be the same as the spec file.
-            {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
+            {'source': 'app/etc/pulp/server.yaml', 'destination': '/etc/pulp/server.yaml',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
             {'source': 'server/etc/pulp/repo_auth.conf', 'destination': '/etc/pulp/repo_auth.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},

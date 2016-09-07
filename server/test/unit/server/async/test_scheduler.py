@@ -8,10 +8,9 @@ from mongoengine import NotUniqueError
 
 from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
 from pulp.server.async import scheduler
-from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model import dispatch, Worker
 from pulp.server.managers.factory import initialize
-
+from pulp.tasking.celery_instance import celery as app
 
 initialize()
 
@@ -450,7 +449,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
 
         mock_worker.objects.all.assert_called_once_with()
 
-    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     def test_deletes_workers(self, mock_worker, mock_delete_worker):
         mock_worker.objects.all.return_value = [
@@ -460,10 +459,10 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
 
         scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
 
-        # make sure _delete_worker is only called for the old worker
+        # make sure delete_worker is only called for the old worker
         mock_delete_worker.assert_has_calls([mock.call('name1')])
 
-    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_logs_scheduler_missing(self, mock__logger, mock_worker, mock_delete_worker):
@@ -478,7 +477,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
             'There are 0 pulp_celerybeat processes running. Pulp will not operate '
             'correctly without at least one pulp_celerybeat process running.')
 
-    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_logs_resource_manager_missing(self, mock__logger, mock_worker, mock_delete_worker):
@@ -493,7 +492,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
             'There are 0 pulp_resource_manager processes running. Pulp will not operate '
             'correctly without at least one pulp_resource_mananger process running.')
 
-    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_debug_logging(self, mock__logger, mock_worker, mock_delete_worker):

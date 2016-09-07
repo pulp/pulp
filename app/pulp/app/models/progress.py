@@ -7,7 +7,7 @@ import logging
 from django.db import models
 
 from pulp.app.models import Model, Task
-from pulp.app.tasks.task_system import get_current_task_id
+from pulp.tasking import get_current_task_id
 
 
 _logger = logging.getLogger(__name__)
@@ -44,14 +44,14 @@ class ProgressReport(Model):
     SKIPPED = 'skipped'
     RUNNING = 'running'
     COMPLETED = 'completed'
-    ERRORED = 'errored'
+    FAILED = 'failed'
     CANCELED = 'canceled'
     STATES = (
         (WAITING, 'Waiting'),
         (SKIPPED, 'Skipped'),
         (RUNNING, 'Running'),
         (COMPLETED, 'Completed'),
-        (ERRORED, 'Errored'),
+        (FAILED, 'Failed'),
         (CANCELED, 'Canceled')
     )
     message = models.TextField()
@@ -88,9 +88,9 @@ class ProgressReport(Model):
 
     def __exit__(self, type, value, traceback):
         """
-        Update the progress report state to COMPLETED or ERRORED.
+        Update the progress report state to COMPLETED or FAILED.
 
-        If an exception occurs the progress report state is saved as ERRORED and the exception is
+        If an exception occurs the progress report state is saved as FAILED and the exception is
         not suppressed. If the context manager exited without exception the progress report state
         is saved as COMPLETED.
 
@@ -100,7 +100,7 @@ class ProgressReport(Model):
             self.state = self.COMPLETED
             self.save()
         else:
-            self.state = self.ERRORED
+            self.state = self.FAILED
             self.save()
 
 
@@ -122,13 +122,13 @@ class ProgressSpinner(ProgressReport):
         >>> metadata_progress.save()
 
     The ProgressSpinner() is a context manager that provides automatic state transitions for the
-    RUNNING COMPLETED and ERRORED states. Use it as follows:
+    RUNNING COMPLETED and FAILED states. Use it as follows:
 
         >>> spinner = ProgressSpinner('Publishing Metadata')
         >>> with spinner:
         >>>     # spinner is at 'running'
         >>>     publish_metadata()
-        >>>     # spinner is at 'completed' if no exception or 'errored' if an exception was raised
+        >>>     # spinner is at 'completed' if no exception or 'failed' if an exception was raised
 
     You can also use this short form:
 
@@ -162,7 +162,7 @@ class ProgressBar(ProgressReport):
         >>> progress_bar.save()
 
     The ProgressBar() is a context manager that provides automatic state transitions for the RUNNING
-    COMPLETED and ERRORED states. The increment() method can be called in the loop as work is
+    COMPLETED and FAILED states. The increment() method can be called in the loop as work is
     completed. Use it as follows:
 
         >>> progress_bar = ProgressBar(message='Publishing files', total=len(files_iterator))
@@ -172,7 +172,7 @@ class ProgressBar(ProgressReport):
         >>>     for file in files_iterator:
         >>>         handle(file)
         >>>         progress_bar.increment()  # increments and saves
-        >>> # progress_bar is at 'completed' if no exception or 'errored' if an exception was raised
+        >>> # progress_bar is at 'completed' if no exception or 'failed' if an exception was raised
 
     A convenience method called iter() allows you to avoid calling increment() directly:
 

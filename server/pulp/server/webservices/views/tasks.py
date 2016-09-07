@@ -10,7 +10,6 @@ from mongoengine.queryset import DoesNotExist
 from pulp.common import error_codes
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_COMPLETE_STATES
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model import Worker, TaskStatus
 from pulp.server.exceptions import MissingResource
@@ -19,6 +18,7 @@ from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.serializers import dispatch as serial_dispatch
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder)
+from pulp.tasking import cancel
 
 
 # This constant set is used for deleting the completed tasks from the collection.
@@ -144,5 +144,5 @@ class TaskResourceView(View):
         :return: Response containing None
         :rtype:  django.http.HttpResponse
         """
-        tasks.cancel(task_id)
+        cancel(task_id)
         return generate_json_response(None)

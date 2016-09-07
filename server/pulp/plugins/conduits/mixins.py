@@ -5,13 +5,13 @@ import sys
 from pymongo.errors import DuplicateKeyError
 
 from pulp.plugins.model import Unit, PublishReport
-from pulp.server.async.tasks import get_current_task_id
 from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
 from pulp.server import exceptions as pulp_exceptions
 import pulp.plugins.conduits._common as common_utils
 import pulp.server.managers.factory as manager_factory
+from pulp.tasking import get_current_task_id
 
 
 _logger = logging.getLogger(__name__)

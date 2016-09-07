@@ -1252,10 +1252,10 @@ class TaskStatusTests(base.PulpServerTests):
         mock_date.return_value = finished
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERRORED_STATE,
+                                                       set__state=constants.CALL_FAILED_STATE,
                                                        set__traceback=traceback)
         task_status = TaskStatus.objects.get(task_id=task_id)
-        self.assertTrue(task_status['state'], constants.CALL_ERRORED_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_FAILED_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
 
@@ -1267,9 +1267,9 @@ class TaskStatusTests(base.PulpServerTests):
         finished = '2014-11-21T05:21:38.829678'
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERRORED_STATE,
+                                                       set__state=constants.CALL_FAILED_STATE,
                                                        set__traceback=traceback)
         task_status = TaskStatus.objects.get(task_id=task_id)
-        self.assertTrue(task_status['state'], constants.CALL_ERRORED_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_FAILED_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
