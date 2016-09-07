@@ -27,16 +27,6 @@ class Model(models.Model):
         abstract = True
 
 
-class MasterModelQuerySet(models.QuerySet):
-    # a normal django queryset, but adds the 'cast' method to the QuerySet DSL,
-    # which runs the cast method on the current queryset, returning detail instances
-    def cast(self):
-        return (instance.cast() for instance in self)
-
-# Make a Manager class based on the cast-aware queryset
-MasterModelManager = models.Manager.from_queryset(MasterModelQuerySet)
-
-
 class MasterModel(Model):
     """Base model for the "Master" model in a "Master-Detail" relationship.
 
@@ -52,8 +42,6 @@ class MasterModel(Model):
 
     """
     detail_model = models.CharField(max_length=63)
-
-    objects = MasterModelManager()
 
     class Meta:
         abstract = True
