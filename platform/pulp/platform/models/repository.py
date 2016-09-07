@@ -215,12 +215,11 @@ class Importer(Plugin):
 
     class Meta:
         abstract = True
-        unique_together = ('name', 'repository')
 
 
 class RepositoryImporter(Importer):
     """
-    A content importer that is associated with a repository..
+    A content importer that is associated with a repository.
 
     Fields:
 
