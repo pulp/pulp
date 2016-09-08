@@ -42,12 +42,12 @@ class ContentExample(TestCase):
     def publish(self, artifact):
         """
         Fake publish.
-        The artifact.published_path will be the file relative path.
+        The artifact.relative_path will be the file relative path.
             Example: "3/test_content.py"
         The artifact.file.name will be the absolute path to where it is stored.
             Example: "/tmp/pulp-viCVvC/units/test/e3/b0c4429b93855/9/test_content.py"
         """
-        self.assertEqual(os.path.basename(artifact.published_path), os.path.basename(__file__))
+        self.assertEqual(os.path.basename(artifact.relative_path), os.path.basename(__file__))
         self.assertEqual(os.path.basename(artifact.file.name), os.path.basename(__file__))
 
     def add_artifacts(self):
@@ -61,7 +61,7 @@ class ContentExample(TestCase):
         for n in range(10):
             artifact = Artifact(content=self.content)
             # Set the artifact name as n/<name> to make them unique.
-            artifact.published_path = '{0}/{1}'.format(n, os.path.basename(__file__))
+            artifact.relative_path = '{0}/{1}'.format(n, os.path.basename(__file__))
             # Set the file content (to be stored).
             with open(__file__) as fp:
                 artifact.file = File(fp)
@@ -73,7 +73,7 @@ class ContentExample(TestCase):
         """
         Example of publishing.
         for each content unit, we'll iterate all of the artifacts (files) and publish them.
-        The artifact.published_path already contains relative path information needed for
+        The artifact.relative_path already contains relative path information needed for
         publishing which makes this easy.
         """
         self.add_artifacts()
