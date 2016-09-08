@@ -117,7 +117,7 @@ class RepositoryExample(TestCase):
 
         # This is what happens when a key is not in the notes and [] is used.
         with self.assertRaises(KeyError):
-            _ = repository.notes.mapping['xx']
+            repository.notes.mapping['xx']
 
     def test_inspect_importer(self):
         self.add_importer()

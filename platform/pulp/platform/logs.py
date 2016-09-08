@@ -1,90 +1,18 @@
 """
 This module defines and configures Pulp's logging system.
 """
-import ConfigParser
+from logging import handlers
 import logging
 import os
-import sys
 import threading
-
-from celery.signals import setup_logging
-
-from pulp.server import config
 
 
 DEFAULT_LOG_LEVEL = logging.INFO
-# A list of modules from which we silence all log messages. It might be possible to expand this data
-# structure to express log levels to blacklist as well, if we ever find that we need that in the
-# future.
-LOG_BLACKLIST = ['qpid.messaging.io.ops', 'qpid.messaging.io.raw']
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
 
 
-def _blacklist_loggers():
-    """
-    Disable all the loggers in the LOG_BLACKLIST.
-    """
-    for logger_name in LOG_BLACKLIST:
-        logger = logging.getLogger(logger_name)
-        logger.disabled = True
-        logger.propagate = False
-
-
-@setup_logging.connect
-def start_logging(*args, **kwargs):
-    """
-    Configure Pulp's syslog handler for the configured log level.
-
-    :param args:   Unused
-    :type  args:   list
-    :param kwargs: Unused
-    :type  kwargs: dict
-    """
-    # Get and set up the root logger with our configured log level
-    try:
-        log_level = config.config.get('server', 'log_level')
-        log_level = getattr(logging, log_level.upper())
-    except (ConfigParser.NoOptionError, AttributeError):
-        # If the user didn't provide a log level, or if they provided an invalid one, let's use the
-        # default log level
-        log_level = DEFAULT_LOG_LEVEL
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-
-    # Set up our handler and add it to the root logger
-    if not os.path.exists(LOG_PATH):
-        print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
-        sys.exit(os.EX_UNAVAILABLE)
-
-    handler = CompliantSysLogHandler(address=LOG_PATH, facility=CompliantSysLogHandler.LOG_DAEMON)
-    formatter = logging.Formatter(LOG_FORMAT_STRING)
-    handler.setFormatter(formatter)
-    root_logger.handlers = []
-    root_logger.addHandler(handler)
-
-    try:
-        # Celery uses warnings so let's capture those with this logger too. captureWarnings is new
-        # in Python 2.7, which is why we want to catch the AttributeError and move on.
-        logging.captureWarnings(True)
-    except AttributeError:
-        pass
-
-    _blacklist_loggers()
-
-
-def stop_logging():
-    """
-    Informs the logging system to perform an orderly shutdown by flushing and closing all handlers.
-    This should be called at application exit and no further use of the logging system should be
-    made after this call.
-    """
-    logging.shutdown()
-    root_logger = logging.getLogger()
-    root_logger.handlers = []
-
-
-class CompliantSysLogHandler(logging.handlers.SysLogHandler):
+class CompliantSysLogHandler(handlers.SysLogHandler):
     """
     RFC 5426[0] recommends that we limit the length of our log messages. RFC 3164[1] requires that
     we only include visible characters and spaces in our log messages. Though RFC 3164 is obsoleted

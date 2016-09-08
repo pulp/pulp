@@ -1,7 +1,16 @@
 language: python
 python:
     - "2.7"
+    - "3.4"
+    - "3.5"
+addons:
+    postgresql: "9.3"
 install:
-    - "pip install flake8"
+    - "pip install -r test_requirements.txt"
+    - "pushd platform/ && python setup.py develop && popd"
+before_script:
+    - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
+    - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
 script:
-    - "git diff HEAD^ | flake8 --diff --config flake8.cfg"
+    - "flake8 --config flake8.cfg platform/"
+    - "cd platform/pulp/platform && ./db-reset.sh && python manage.py test"
