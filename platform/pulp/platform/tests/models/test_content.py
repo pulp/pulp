@@ -1,8 +1,10 @@
+import hashlib
 import os
 import tempfile
 import shutil
 
 from django.conf import settings
+from django.db import models
 from django.test import TestCase
 from django.core.files import File
 
@@ -87,8 +89,8 @@ class ContentExample(TestCase):
 
         # reading
         for artifact in self.content.artifacts.all():
-            artifact.file.open()
-            with open(__file__) as fp:
+            artifact.file.open(mode='rb')
+            with open(__file__, mode='rb') as fp:
                 self.assertEqual(artifact.file.read(), fp.read())
             artifact.file.close()
 
@@ -109,3 +111,16 @@ class ContentExample(TestCase):
             for artifact in content.artifacts.filter(file=paths[0]):
                 n += 1
         self.assertGreater(n, 0)
+
+    def test_natural_key_digest(self):
+        """Assert the basic functionality of Content.natural_key_digest."""
+        class BoringContent(Content):
+            my_field = models.TextField()
+            natural_key_fields = (my_field,)
+
+        content = BoringContent(my_field='wheat')
+        expected_hash = hashlib.sha256()
+        expected_hash.update('my_fieldwheat'.encode(encoding='utf-8'))
+
+        digest = content.natural_key_digest()
+        self.assertEqual(expected_hash.hexdigest(), digest)

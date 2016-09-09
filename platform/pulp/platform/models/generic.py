@@ -4,12 +4,7 @@ Container for models using generic relations provided by Django's ContentTypes f
 References:
     https://docs.djangoproject.com/en/1.8/ref/contrib/contenttypes/#generic-relations
 """
-try:
-    # python3
-    from collections import MutableMapping
-except ImportError:
-    # python2
-    from collections.abc import MutableMapping
+from collections import MutableMapping
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType

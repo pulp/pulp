@@ -224,7 +224,7 @@ def load_settings(paths=()):
              as there are a set of Django-provided defaults as well.
     :rtype:  dict
     """
-    if isinstance(paths, basestring):
+    if isinstance(paths, str):
         paths = [paths]
 
     settings = _DEFAULT_PULP_SETTINGS

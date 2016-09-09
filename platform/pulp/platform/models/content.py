@@ -55,10 +55,10 @@ class Content(MasterModel):
         """
         h = hashlib.sha256()
         for name in sorted(f.name for f in self.natural_key_fields):
-            h.update(name)
+            h.update(name.encode(encoding='utf-8'))
             value = getattr(self, name)
-            if not isinstance(value, basestring):
-                h.update(str(value))
+            if isinstance(value, str):
+                h.update(value.encode(encoding='utf-8'))
             else:
                 h.update(value)
         return h.hexdigest()
