@@ -1,5 +1,5 @@
 """
-Django models related to Progress Reporting
+Django models related to progress reporting
 """
 from gettext import gettext as _
 import logging
@@ -8,12 +8,6 @@ from django.db import models
 
 from pulp.platform.models import Model, Task
 from pulp.server.async.tasks import get_current_task_id
-
-
-__all__ = [
-    'ProgressBar',
-    'ProgressSpinner',
-]
 
 
 _logger = logging.getLogger(__name__)
