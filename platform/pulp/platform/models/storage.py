@@ -47,7 +47,7 @@ class StoragePath(object):
         :return: An absolute path.
         :rtype: str
         """
-        return os.path.join(StoragePath.base_path(artifact), artifact.published_path)
+        return os.path.join(StoragePath.base_path(artifact), artifact.relative_path)
 
 
 class FileSystem(Storage):

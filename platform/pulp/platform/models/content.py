@@ -76,8 +76,13 @@ class Artifact(Model):
     :cvar downloaded: The associated file has been successfully downloaded.
     :type downloaded: BooleanField
 
-    :cvar published_path: The relative published path.
-    :type published_path: models.FileField
+    :cvar relative_path: The artifact's path relative to the associated
+                         :class:`Content`. This path is incorporated in
+                         the absolute storage path of the file and its
+                         published path relative to the root publishing
+                         directory. At a minimum the path will contain the
+                         file name but may also include sub-directories.
+    :type relative_path: models.TextField
 
     :cvar size: The size of the file in bytes.
     :type size: models.IntegerField
@@ -112,7 +117,7 @@ class Artifact(Model):
 
     file = models.FileField(db_index=True, upload_to=StoragePath(), max_length=255)
     downloaded = models.BooleanField(db_index=True, default=False)
-    published_path = models.TextField(db_index=True, blank=False, default=None)
+    relative_path = models.TextField(db_index=True, blank=False, default=None)
 
     size = models.IntegerField(blank=True, null=True)
 
@@ -126,7 +131,7 @@ class Artifact(Model):
     content = models.ForeignKey(Content, related_name='artifacts', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('content', 'published_path')
+        unique_together = ('content', 'relative_path')
 
     def delete(self, *args, **kwargs):
         if self.downloaded:
