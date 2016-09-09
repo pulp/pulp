@@ -516,7 +516,7 @@ class Task(PulpTask, ReservedTaskMixin):
             # important for when the task has been canceled, so we don't move the task from canceled
             # to finished.
             if task_status['state'] not in constants.CALL_COMPLETE_STATES:
-                task_status['state'] = constants.CALL_FINISHED_STATE
+                task_status['state'] = constants.CALL_COMPLETED_STATE
             if isinstance(retval, TaskResult):
                 task_status['result'] = retval.return_value
                 if retval.error:
@@ -561,7 +561,7 @@ class Task(PulpTask, ReservedTaskMixin):
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
             task_status = TaskStatus.objects.get(task_id=task_id)
-            task_status['state'] = constants.CALL_ERROR_STATE
+            task_status['state'] = constants.CALL_ERRORED_STATE
             task_status['finish_time'] = finish_time
             task_status['traceback'] = einfo.traceback
             if not isinstance(exc, PulpException):

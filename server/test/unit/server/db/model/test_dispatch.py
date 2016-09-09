@@ -1184,7 +1184,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id='2', tags=tags).save()
 
         result = 'done'
-        TaskStatus(task_id='3', tags=tags, state=constants.CALL_FINISHED_STATE,
+        TaskStatus(task_id='3', tags=tags, state=constants.CALL_COMPLETED_STATE,
                    result=result).save()
 
         filters = {'tags': tags, 'task_id': {'$in': ['1', '3']}}
@@ -1220,10 +1220,10 @@ class TaskStatusTests(base.PulpServerTests):
         t = datetime.now(dateutils.utc_tz())
         finished = dateutils.format_iso8601_datetime(t)
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__state=constants.CALL_COMPLETED_STATE,
                                                        set__result=result)
         task_status = TaskStatus.objects(task_id=task_id).first()
-        self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_COMPLETED_STATE)
         self.assertTrue(task_status['finish_time'], now)
         self.assertTrue(task_status['result'], result)
 
@@ -1235,10 +1235,10 @@ class TaskStatusTests(base.PulpServerTests):
         now = '2014-11-21T05:21:38.829678'
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=now,
-                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__state=constants.CALL_COMPLETED_STATE,
                                                        set__result=result)
         task_status = TaskStatus.objects(task_id=task_id).first()
-        self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_COMPLETED_STATE)
         self.assertTrue(task_status['finish_time'], now)
         self.assertTrue(task_status['result'], result)
 
@@ -1252,10 +1252,10 @@ class TaskStatusTests(base.PulpServerTests):
         mock_date.return_value = finished
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__state=constants.CALL_ERRORED_STATE,
                                                        set__traceback=traceback)
         task_status = TaskStatus.objects.get(task_id=task_id)
-        self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_ERRORED_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
 
@@ -1267,9 +1267,9 @@ class TaskStatusTests(base.PulpServerTests):
         finished = '2014-11-21T05:21:38.829678'
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__state=constants.CALL_ERRORED_STATE,
                                                        set__traceback=traceback)
         task_status = TaskStatus.objects.get(task_id=task_id)
-        self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
+        self.assertTrue(task_status['state'], constants.CALL_ERRORED_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)

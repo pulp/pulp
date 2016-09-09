@@ -15,7 +15,7 @@ from mongoengine import ValidationError
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
-from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
+from pulp.common.constants import (CALL_CANCELED_STATE, CALL_COMPLETED_STATE,
                                    SCHEDULER_WORKER_NAME, RESOURCE_MANAGER_WORKER_NAME)
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
@@ -800,11 +800,11 @@ class TestCancel(PulpServerTests):
         to the task state.
         """
         task_id = '1234abcd'
-        TaskStatus(task_id, 'test_worker', state=CALL_FINISHED_STATE).save()
+        TaskStatus(task_id, 'test_worker', state=CALL_COMPLETED_STATE).save()
 
         tasks.cancel(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
-        self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
+        self.assertEqual(task_status['state'], CALL_COMPLETED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks._logger', autospec=True)
