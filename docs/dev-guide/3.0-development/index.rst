@@ -11,6 +11,7 @@ The goal of this section is to create a place for living documents related to th
    :maxdepth: 3
 
    data-modeling
+   db-translation-guide
    dev-setup
    plugin-api
    rest-planning
