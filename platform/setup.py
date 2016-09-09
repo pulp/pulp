@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 
 requirements = [
+    'celery',
     'Django>=1.8,<1.9',
     'django-extensions',
     'djangorestframework',

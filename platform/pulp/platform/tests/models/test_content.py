@@ -14,7 +14,7 @@ TYPE = 'test'
 
 
 class ContentExample(TestCase):
-    
+
     REPO_NAME = 'test'
 
     def setUp(self):

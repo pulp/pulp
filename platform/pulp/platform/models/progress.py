@@ -84,7 +84,6 @@ class ProgressReport(Model):
             self.task_id = Task.objects.get(id=get_current_task_id())
         super(ProgressReport, self).save(*args, **kwargs)
 
-
     def __enter__(self):
         """
         Saves the progress report state as RUNNING
