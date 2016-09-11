@@ -44,6 +44,7 @@ DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
 DEFAULT_PULP_CONCURRENCY=$(nproc --all)
+DEFAULT_PULP_MAX_TASKS_PER_CHILD=0
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
@@ -58,6 +59,10 @@ CELERY_APP_ARG=""
 if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
+
+# Sets --maxrequestsperchild argument for CELERY_BIN
+PULP_MAX_TASKS_PER_CHILD=${PULP_MAX_TASKS_PER_CHILD:-$DEFAULT_PULP_MAX_TASKS_PER_CHILD}
+CELERY_MAX_TASKS_PER_CHILD_ARG="--maxrequestsperchild=$PULP_MAX_TASKS_PER_CHILD"
 
 CELERYD_USER=${CELERYD_USER:-$DEFAULT_USER}
 
@@ -219,6 +224,7 @@ start_workers () {
                  --logfile="$CELERYD_LOG_FILE"      \
                  --loglevel="$CELERYD_LOG_LEVEL"    \
                  $CELERY_APP_ARG                    \
+                 $CELERY_MAX_TASKS_PER_CHILD_ARG    \
                  $CELERYD_OPTS
 }
 

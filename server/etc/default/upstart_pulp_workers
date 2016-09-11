@@ -19,6 +19,10 @@ CELERYD_PID_FILE="/var/run/pulp/%n.pid"
 # Configure Python's encoding for writing all logs, stdout and stderr
 PYTHONIOENCODING="UTF-8"
 
+# To avoid memory leaks, pulp can restart the worker after X tasks. Defaults to 0.
+# for more informations, see http://docs.celeryproject.org/en/latest/userguide/workers.html#max-tasks-per-child-setting
+PULP_MAX_TASKS_PER_CHILD=0
+
 ######################################################################
 # Please do not edit any of the settings below this mark in this file!
 ######################################################################
