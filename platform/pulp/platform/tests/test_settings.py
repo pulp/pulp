@@ -1,6 +1,4 @@
-from unittest import TestCase
-
-import mock
+from unittest import TestCase, mock
 
 from pulp.platform import settings as pulp_settings
 

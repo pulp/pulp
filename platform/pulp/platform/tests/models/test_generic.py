@@ -99,4 +99,4 @@ class GenericMutableMappingTestCase(TestCase):
     def test_repr(self):
         # keeping coverage happy :)
         self.notes.mapping['key'] = 'value'
-        self.assertEqual(repr(self.notes.mapping), "Notes({u'key': u'value'})")
+        self.assertEqual(repr(self.notes.mapping), "Notes({'key': 'value'})")

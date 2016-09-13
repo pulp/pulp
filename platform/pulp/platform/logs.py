@@ -55,8 +55,6 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
         """
         if record.exc_info:
             trace = self.formatter.formatException(record.exc_info)
-            if not isinstance(record.msg, basestring):
-                record.msg = unicode(record.msg)
             record.msg += u'\n'
             record.msg += trace.replace('%', '%%')
             record.exc_info = None
@@ -100,35 +98,32 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
         :rtype:        int
         """
         formatted_record = self.format(record)
-        if isinstance(formatted_record, unicode):
-            formatted_record = formatted_record.encode('utf8')
+        formatted_record = formatted_record.encode('utf8')
         raw_record = record.getMessage()
-        if isinstance(raw_record, unicode):
-            raw_record = raw_record.encode('utf8')
+        raw_record = raw_record.encode('utf8')
         return len(formatted_record) - len(raw_record)
 
     @staticmethod
     def _cut_message(message, formatter_buffer, msg_id):
         """
-        Return a generator of strings made from message cut at every
+        Return a generator of bytes made from message cut at every
         MAX_MSG_LENGTH - formatter_buffer octets, with the exception that it will not cut
         multi-byte characters apart. This method also encodes unicode objects with UTF-8 as a side
         effect, because length limits are specified in octets, not characters.
 
         :param message:          A message that needs to be broken up if it's too long
-        :type  message:          basestring
+        :type  message:          str (Python 2 `unicode`)
         :param formatter_buffer: How many octets of room to leave on each message to account for
                                  extra data that the formatter will add to this message
         :type  formatter_buffer: int
         :param msg_id:           Process and thread id that will be prepended to multi line messages
         :type  msg_id:           string
-        :return:                 A generator of str objects, each of which is no longer than
+        :return:                 A generator of bytes objects, each of which is no longer than
                                  MAX_MSG_LENGTH - formatter_buffer octets.
         :rtype:                  generator
         """
         max_length = CompliantSysLogHandler.MAX_MSG_LENGTH - formatter_buffer
-        if isinstance(message, unicode):
-            message = message.encode('utf8')
+        message = message.encode('utf8')
 
         i = 0
         while i < len(message):
