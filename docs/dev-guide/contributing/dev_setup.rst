@@ -40,35 +40,11 @@ Prerequisites for libvirt
 
 Follow these steps:
 
-#. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
-   deployed virtual machine::
-   
-      $ sudo dnf install ansible nfs-utils vagrant-libvirt
+#. Install vagrant, ansible, and the SSHFS plugin for vagrant. SSHFS will be used to share your
+   code directory with the deployed virtual machine::
 
-#. You will need to grant the nfsnobody user rx access to the folder that you check out your code
-   under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
-   does not allow such access to other users. If your code is in $HOME, you will need to::
-   
-      $ setfacl -m user:nfsnobody:r-x $HOME  # Season to taste, as per above
+      $ sudo dnf install ansible vagrant-sshfs vagrant-libvirt
 
-   .. warning::
-   
-      Wherever you have hosted your code, it would be good to verify that nfsnobody is able to read
-      it. If you experience an error message similar to
-      "mount.nfs: access denied by server while mounting 192.168.121.1:/path/to/my/code/dir"
-      during the vagrant up later, it is likely that nfsnobody is being blocked from reading your
-      code directory by either filesystem permissions or SELinux.
-
-#. Start and enable the nfs-server service::
-
-      $ sudo systemctl enable nfs-server && sudo systemctl start nfs-server
-
-#. You will need to allow NFS services through your firewall::
-   
-      $ sudo firewall-cmd --permanent --add-service=nfs
-      $ sudo firewall-cmd --permanent --add-service=rpc-bind
-      $ sudo firewall-cmd --permanent --add-service=mountd
-      $ sudo firewall-cmd --reload
 
 Prerequisites for docker
 ------------------------
@@ -199,31 +175,6 @@ follow.
     if you end up with a corrupted environment you will need to destroy and recreate it.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
-
-#. You can use SSHFS rather than NFS. The downside is SSHFS does not perform quite as well as NFS,
-   but the upside is you do not need to configure or run NFS, nor do you need to allow Vagrant to
-   edit your /etc/exports file. At the time of this writing, the ``vagrant-sshfs`` package is not
-   yet in Fedora, although the package is in the process of being reviewed. The author provides a
-   COPR repository you can enable to install the RPM::
-
-    $ sudo dnf copr enable dustymabe/vagrant-sshfs
-    $ sudo dnf install vagrant-sshfs
-
-   You need to modify your Vagrantfile to use SSHFS::
-
-    # -*- mode: ruby -*-
-    # vi: set ft=ruby :
-
-
-    Vagrant.configure(2) do |config|
-        config.vm.define "dev" do |dev|
-            VAGRANT_SYNCED_FOLDERS.each do |host_path, guest_path|
-                # Use SSHFS instead of NFS. The ``-o nonempty`` option is passed to allow
-                # mounts on non-empty directories.
-                dev.vm.synced_folder host_path, guest_path, type: "sshfs", sshfs_opts_append: "-o nonempty"
-            end
-        end
-    end
 
 
 Vagrant w/ PyCharm
