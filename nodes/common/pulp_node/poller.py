@@ -2,7 +2,7 @@ import httplib
 from gettext import gettext as _
 from time import sleep
 
-from pulp.common.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
+from pulp.common.constants import CALL_COMPLETE_STATES, CALL_ERRORED_STATE
 
 
 FETCH_TASK_FAILED = _('Fetch task %(t)s, failed: http=%(c)s')
@@ -70,7 +70,7 @@ class TaskPoller(object):
 
             task = http.response_body
 
-            if task.state == CALL_ERROR_STATE:
+            if task.state == CALL_ERRORED_STATE:
                 msg = TASK_FAILED % {'t': task_id, 's': task.state}
                 raise TaskFailed(msg, task.exception, task.traceback)
 

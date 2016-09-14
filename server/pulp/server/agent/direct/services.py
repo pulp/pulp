@@ -167,7 +167,7 @@ class ReplyHandler(Listener):
             now = datetime.now(dateutils.utc_tz())
             finished = dateutils.format_iso8601_datetime(now)
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERROR_STATE)
+                                                       set__state=constants.CALL_ERRORED_STATE)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -195,7 +195,7 @@ class ReplyHandler(Listener):
             finished = dateutils.format_iso8601_datetime(now)
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__state=constants.CALL_COMPLETED_STATE,
                                                        set__result=result)
         if action == 'bind':
             if result['succeeded']:
@@ -229,7 +229,7 @@ class ReplyHandler(Listener):
             finished = dateutils.format_iso8601_datetime(now)
 
         TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
-                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__state=constants.CALL_ERRORED_STATE,
                                                        set__traceback=traceback)
 
         if action == 'bind':

@@ -15,3 +15,4 @@ Developer Guide
    glossary
    debugging
    troubleshooting
+   3.0-development/index
