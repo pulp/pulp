@@ -10,7 +10,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from pulp.platform.models import Model
+from pulp.app.models import Model
 
 
 class GenericRelationModel(Model):

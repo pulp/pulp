@@ -8,7 +8,7 @@ from django.db import models
 from django.test import TestCase
 from django.core.files import File
 
-from pulp.platform.models import Repository, RepositoryContent, Content, Artifact
+from pulp.app.models import Repository, RepositoryContent, Content, Artifact
 
 
 NAME = 'test'

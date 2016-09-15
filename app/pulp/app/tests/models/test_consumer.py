@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from pulp.platform.models import Consumer, Publisher, Repository
+from pulp.app.models import Consumer, Publisher, Repository
 
 
 class TestConsumer(TestCase):

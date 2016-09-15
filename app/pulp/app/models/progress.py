@@ -6,8 +6,8 @@ import logging
 
 from django.db import models
 
-from pulp.platform.models import Model, Task
-from pulp.platform.tasks.task_system import get_current_task_id
+from pulp.app.models import Model, Task
+from pulp.app.tasks.task_system import get_current_task_id
 
 
 _logger = logging.getLogger(__name__)

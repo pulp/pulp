@@ -3,8 +3,8 @@ Django models related to the Tasking system
 """
 from django.db import models
 
-from pulp.platform.models import Model
-from pulp.platform.fields import JSONField
+from pulp.app.models import Model
+from pulp.app.fields import JSONField
 
 
 class ReservedResource(Model):

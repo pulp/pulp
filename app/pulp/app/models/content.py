@@ -7,8 +7,8 @@ from django.contrib.contenttypes import fields
 from django.db import models
 
 
-from pulp.platform.models import Model, MasterModel, Notes
-from pulp.platform.models.storage import StoragePath
+from pulp.app.models import Model, MasterModel, Notes
+from pulp.app.models.storage import StoragePath
 
 
 class Content(MasterModel):

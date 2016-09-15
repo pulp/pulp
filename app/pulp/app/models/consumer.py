@@ -5,7 +5,7 @@ Django models related to content consumers.
 from django.contrib.contenttypes import fields
 from django.db import models
 
-from pulp.platform.models import Model, Notes
+from pulp.app.models import Model, Notes
 
 
 class Consumer(Model):

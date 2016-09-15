@@ -11,7 +11,8 @@ requirements = [
 ]
 
 setup(
-    name='pulp-platform',
+    name='pulp-app',
+    description='Pulp Django Application and Related Modules',
     version='3.0a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),

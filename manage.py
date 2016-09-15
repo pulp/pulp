@@ -1,1 +1,1 @@
-platform/pulp/platform/manage.py
+app/pulp/app/manage.py

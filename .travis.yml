@@ -6,10 +6,10 @@ addons:
     postgresql: "9.3"
 install:
     - "pip install -r test_requirements.txt"
-    - "pushd platform/ && python setup.py develop && popd"
+    - "pushd app/ && python setup.py develop && popd"
 before_script:
     - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
 script:
-    - "flake8 --config flake8.cfg platform/"
-    - "cd platform/pulp/platform && ./db-reset.sh && python manage.py test"
+    - "flake8 --config flake8.cfg app/"
+    - "cd app/pulp/app && ./db-reset.sh && python manage.py test"
