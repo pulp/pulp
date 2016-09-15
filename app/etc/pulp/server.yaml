@@ -39,6 +39,6 @@
 #   loggers:
 #     django:
 #       level: INFO
-#     pulp.platform:
+#     pulp.app:
 #       level: INFO
 

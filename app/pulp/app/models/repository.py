@@ -5,7 +5,7 @@ from django.db import models
 from django.contrib.contenttypes import fields
 from django.utils import timezone
 
-from pulp.platform.models import Model, Notes, Scratchpad, MasterModel
+from pulp.app.models import Model, Notes, Scratchpad, MasterModel
 
 
 class Repository(Model):

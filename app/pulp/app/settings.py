@@ -16,7 +16,7 @@ import sys
 
 import yaml
 
-from pulp.platform import logs
+from pulp.app import logs
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +33,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 MEDIA_ROOT = '/var/lib/pulp/content/'
-DEFAULT_FILE_STORAGE = 'pulp.platform.models.storage.FileSystem'
+DEFAULT_FILE_STORAGE = 'pulp.app.models.storage.FileSystem'
 
 # Application definition
 
@@ -48,8 +48,8 @@ INSTALLED_APPS = [
     # third-party
     'rest_framework',
     'django_extensions',
-    # pulp - loads as 'pulp_platform' app label
-    'pulp.platform.apps.PulpPlatformConfig',
+    # pulp platform app
+    'pulp.app',
 ]
 
 # This list would normally come in via entry points, but for this
@@ -79,7 +79,7 @@ MIDDLEWARE_CLASSES = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'pulp.platform.urls'
+ROOT_URLCONF = 'pulp.app.urls'
 
 TEMPLATES = [
     {
@@ -166,12 +166,12 @@ _DEFAULT_PULP_SETTINGS = {
             'syslog': {
                 'address': '/dev/log',
                 'facility': logs.CompliantSysLogHandler.LOG_DAEMON,
-                'class': 'pulp.platform.logs.CompliantSysLogHandler',
+                'class': 'pulp.app.logs.CompliantSysLogHandler',
                 'formatter': 'simple',
             },
         },
         'loggers': {
-            'pulp.platform': {
+            'pulp.app': {
                 'handlers': ['syslog'],
                 'level': 'INFO',
             },

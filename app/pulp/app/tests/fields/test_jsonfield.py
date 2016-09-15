@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from pulp.platform.fields import JSONField
+from pulp.app.fields import JSONField
 
 
 class TestJSONField(TestCase):
@@ -29,6 +29,6 @@ class TestJSONField(TestCase):
 
     def test_value_to_string(self):
         """Assert the value returned by value_to_string matches a json-serialized version of obj"""
-        with patch('pulp.platform.fields.JSONField._get_val_from_obj', return_value=self.obj):
+        with patch('pulp.app.fields.JSONField._get_val_from_obj', return_value=self.obj):
             new_obj = self.json_field.value_to_string(object())
             self.assertEquals(self.obj_json, new_obj)

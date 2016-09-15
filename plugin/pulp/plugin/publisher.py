@@ -1,4 +1,4 @@
-from pulp.platform.models import Publisher as PlatformPublisher
+from pulp.app.models import Publisher as PlatformPublisher
 
 
 class Publisher(PlatformPublisher):
@@ -15,7 +15,7 @@ class Publisher(PlatformPublisher):
     details. Failing to implement this method will prevent publish functionality for this plugin
     type.
 
-    This object is a Django model that inherits from :class: `pulp.platform.models.Publisher`
+    This object is a Django model that inherits from :class: `pulp.app.models.Publisher`
     which provides the platform persistent attributes for a publisher object. Plugin authors can
     add additional persistent publisher data by subclassing this object and adding Django
     fields. We defer to the Django docs on extending this model definition with additional fields.
@@ -37,7 +37,7 @@ class Publisher(PlatformPublisher):
         subclassed Publisher.
 
         The model attributes encapsulate all of the information required to publish. This includes
-        the platform :class: `pulp.platform.models.Publish` base attributes and any custom
+        the platform :class: `pulp.app.models.Publish` base attributes and any custom
         attributes defined by the subclass.
 
         The model attributes were loaded from the database and then had the user specified override

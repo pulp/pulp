@@ -1,4 +1,4 @@
-from pulp.platform.models import ProgressBar, ProgressSpinner, Repository, RepositoryContent
+from pulp.app.models import ProgressBar, ProgressSpinner, Repository, RepositoryContent
 
 from .cataloger import Cataloger
 from .publisher import Publisher

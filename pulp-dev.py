@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import optparse
@@ -6,7 +6,6 @@ import os
 import re
 import subprocess
 import sys
-
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -39,6 +38,7 @@ DIRS = [
     '/usr/lib/yum-plugins/',
     '/var/cache/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/content',
     '/var/lib/pulp_client',
     '/var/lib/pulp_client/admin',
     '/var/lib/pulp_client/admin/extensions',
@@ -139,17 +139,19 @@ if sys.version_info >= (2, 6):
 try:
     LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
                                   stdout=subprocess.PIPE).communicate()[0].strip()
+    LSB_VENDOR = LSB_VENDOR.decode('utf-8')
 except OSError:
-    print ('pulp-dev requires lsb_release to detect which operating system you are using. Please '
-           'install it and try again. For Red Hat based distributions, the package is called '
-           'redhat-lsb-core.')
+    print('pulp-dev requires lsb_release to detect which operating system you are using. Please '
+          'install it and try again. For Red Hat based distributions, the package is called '
+          'redhat-lsb-core.')
     sys.exit(1)
 # RedHatEnterpriseEverything is what the EL Beta seems to use, or at least the installation rbarlow
 # performed. Perhaps we need a better matching algorithm than just a list of strings.
 if LSB_VENDOR not in ('CentOS', 'Fedora', 'RedHatEnterpriseEverything', 'RedHatEnterpriseServer'):
-    print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
+    print('Your Linux vendor is not supported by this script: %s' % LSB_VENDOR)
     sys.exit(1)
 LSB_VERSION = subprocess.Popen(['lsb_release', '-sr'], stdout=subprocess.PIPE).communicate()[0]
+LSB_VERSION = LSB_VERSION.decode('utf8')
 # Fedora will report this an an integer, RHEL 6/7 and CentOS 6 will report as a float, and CentOS 7
 # will report this as an X.Y.Z. This latter expression requires us to split off the ".Z" if it
 # exists, so that we can cast it to a float
@@ -193,7 +195,7 @@ def create_dirs(opts):
             environment.debug(opts, 'skipping %s exists' % d)
             continue
         environment.debug(opts, 'creating directory: %s' % d)
-        os.makedirs(d, 0777)
+        os.makedirs(d, 0o777)
 
 
 def get_paths_to_copy():
@@ -282,7 +284,7 @@ def get_paths_to_copy():
 
 
 def gen_rsa_keys():
-    print 'generating RSA keys'
+    print('generating RSA keys')
     for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
         key_path = os.path.join(key_dir, 'rsa.key')
         key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
@@ -325,6 +327,7 @@ def getlinks():
         apachectl_output = subprocess.Popen(
             ['apachectl', '-v'], stdout=subprocess.PIPE
         ).communicate()[0]
+        apachectl_output = apachectl_output.decode('utf8')
 
         search_result = re.search(r'Apache\/([0-9]+)\.([0-9]+)\.([0-9]+)', apachectl_output)
         apache_version = tuple(map(int, search_result.groups()))
@@ -379,7 +382,7 @@ def install(opts):
         os.system('chmod 3775 /var/cache/pulp')
 
         # Generate certificates
-        print 'generating certificates'
+        print('generating certificates')
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
             os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
@@ -401,7 +404,7 @@ def install(opts):
         os.system('systemctl daemon-reload')
 
     if warnings:
-        print "\n***\nPossible problems:  Please read below\n***"
+        print("\n***\nPossible problems:  Please read below\n***")
         for w in warnings:
             environment.warning(w)
     return os.EX_OK
@@ -426,7 +429,7 @@ def uninstall(opts):
         os.unlink('/var/www/html/pub')
 
     # Remove generated certificates
-    print 'removing certificates'
+    print('removing certificates')
     os.system('rm -rf /etc/pki/pulp/*')
 
     # Remove the Python packages
@@ -471,7 +474,7 @@ def _create_link(opts, src, dst):
     environment.debug(opts, 'creating link: %s pointing to %s' % (dst, src))
     try:
         os.symlink(src, dst)
-    except OSError, e:
+    except OSError as e:
         msg = "Unable to create symlink for [%s] pointing to [%s], " \
               "received error: <%s>" % (dst, src, e)
         return msg

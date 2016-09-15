@@ -16,6 +16,6 @@
 
 for setup in `find . -name setup.py`; do
     pushd `dirname $setup`;
-    python setup.py "$@";
+    python3 setup.py "$@";
     popd;
 done;

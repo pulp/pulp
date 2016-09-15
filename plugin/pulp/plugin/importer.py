@@ -1,4 +1,4 @@
-from pulp.platform.models import Importer as PlatformImporter
+from pulp.app.models import Importer as PlatformImporter
 
 
 class Importer(PlatformImporter):
@@ -14,7 +14,7 @@ class Importer(PlatformImporter):
     The sync implementation is provided by :meth: `Importer.sync` which provides more details.
     Failing to implement this method will prevent sync functionality for this plugin type.
 
-    This object is a Django model that inherits from :class: `pulp.platform.models.Importer` which
+    This object is a Django model that inherits from :class: `pulp.app.models.Importer` which
     provides the platform persistent attributes for an importer object. Plugin authors can add
     additional persistent importer data by subclassing this object and adding Django fields. We
     defer to the Django docs on extending this model definition with additional fields.
@@ -36,7 +36,7 @@ class Importer(PlatformImporter):
         subclassed Importer.
 
         The model attributes encapsulate all of the information required to sync. This includes the
-        platform :class: `pulp.platform.models.Importer` base attributes and any custom attributes
+        platform :class: `pulp.app.models.Importer` base attributes and any custom attributes
         defined by the subclass.
 
         The model attributes were loaded from the database and then had the user specified override

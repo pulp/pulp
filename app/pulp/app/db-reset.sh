@@ -5,5 +5,5 @@ echo "drop database pulp; create database pulp owner pulp" | sudo -u postgres ps
 
 rm -rf migrations
 
-python manage.py makemigrations pulp_platform --noinput
+python manage.py makemigrations pulp --noinput
 python manage.py migrate --noinput

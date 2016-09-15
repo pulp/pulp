@@ -3,7 +3,7 @@ from random import randrange
 from django.db import IntegrityError
 from django.test import TestCase
 
-from pulp.platform.models import Consumer, generic
+from pulp.app.models import Consumer, generic
 
 
 class GenericMutableMappingTestCase(TestCase):

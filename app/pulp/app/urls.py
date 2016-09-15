@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 
-from pulp.platform import views
+from pulp.app import views
 
 urlpatterns = [
     url(r'^api/v3/', include(views.router.urls)),

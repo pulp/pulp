@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from pulp.platform.models import Repository, RepositoryGroup, Importer, Publisher
+from pulp.app.models import Repository, RepositoryGroup, Importer, Publisher
 
 
 class TestRepository(TestCase):

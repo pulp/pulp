@@ -23,7 +23,7 @@ class StoragePath(object):
         All artifact files *must* be stored relative to this location.
 
         :param artifact: An content artifact.
-        :type  artifact: pulp.platform.models.content.Artifact
+        :type  artifact: pulp.app.models.content.Artifact
         :return: An absolute (base) path.
         :rtype: str
         """
@@ -41,7 +41,7 @@ class StoragePath(object):
         with the specified artifact.
 
         :param artifact: An content artifact.
-        :type  artifact: pulp.platform.models.content.Artifact
+        :type  artifact: pulp.app.models.content.Artifact
         :param name: Unused but matches the FileField API.
         :param name: str
         :return: An absolute path.
