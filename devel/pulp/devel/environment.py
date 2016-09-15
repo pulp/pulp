@@ -97,4 +97,5 @@ def warning(msg):
     :param msg:   The message to write
     :type  msg:   basestring
     """
-    print "%s%s%s" % (WARNING_COLOR, msg, WARNING_RESET)
+    print("%s%s%s" % (WARNING_COLOR, msg, WARNING_RESET))
+
