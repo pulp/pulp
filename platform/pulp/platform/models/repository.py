@@ -105,35 +105,50 @@ class RepositoryGroup(Model):
         return (self.name,)
 
 
-class Plugin(MasterModel):
+class ContentAdaptor(MasterModel):
     """
-    An Abstract model for plugins.
+    An Abstract model for objects that import or publish content.
 
     Fields:
 
-    :cvar name: The plugin name.
+    :cvar name: The ContentAdaptor name.
     :type type: models.TextField
 
-    :cvar type: The plugin type.
+    :cvar type: The ContentAdaptor type.
     :type type: models.TextField
 
-    :cvar last_updated: When the plugin was last updated.
+    :cvar last_updated: When the adaptor was last updated.
     :type last_updated: fields.DateTimeField
 
     Relations:
+
+    :cvar repository: The associated repository.
+    :type repository: models.ForeignKey
 
     """
     name = models.TextField(db_index=True)
     type = models.TextField(blank=False, default=None)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
+    repository = models.ForeignKey(Repository, related_name='%(class)ss', on_delete=models.CASCADE)
+
     class Meta:
         abstract = True
+        unique_together = ('repository', 'name')
+
+    def natural_key(self):
+        """
+        Get the model's natural key.
+
+        :return: The model's natural key.
+        :rtype: tuple
+        """
+        return (self.repository, self.name)
 
 
-class Importer(Plugin):
+class Importer(ContentAdaptor):
     """
-    A abstract content importer.
+    A content importer.
 
     Fields:
 
@@ -213,43 +228,16 @@ class Importer(Plugin):
 
     scratchpad = fields.GenericRelation(Scratchpad)
 
-    class Meta:
-        abstract = True
 
-
-class RepositoryImporter(Importer):
+class Publisher(ContentAdaptor):
     """
-    A content importer that is associated with a repository.
+    A content publisher.
 
     Fields:
 
-    Relations:
-
-    :cvar repository: The associated repository.
-    :type repository: models.ForeignKey
-    """
-
-    repository = models.ForeignKey(
-        Repository, related_name='importers', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('repository', 'name')
-
-    def natural_key(self):
-        """
-        Get the model's natural key.
-
-        :return: The model's natural key.
-        :rtype: tuple
-        """
-        return (self.repository.id, self.name)
-
-
-class Distributor(Plugin):
-    """
-    An abstract content distributor.
-
-    Fields:
+    :cvar auto_publish: Indicates that the adaptor may publish automatically
+        when the associated repository's content has changed.
+    :type auto_publish: models.BooleanField
 
     :cvar relative_path: The (relative) path component of the published url.
     :type relative_path: models.TextField
@@ -260,73 +248,9 @@ class Distributor(Plugin):
     Relations:
 
     """
+    auto_publish = models.BooleanField(default=True)
     relative_path = models.TextField(blank=True)
     last_published = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        abstract = True
-
-
-class RepositoryDistributor(Distributor):
-    """
-    A content distributor that is associated with a repository.
-
-    Fields:
-
-    :cvar auto_publish: Indicates that the distributor may publish automatically
-        when the associated repository's content has changed.
-    :type auto_publish: models.BooleanField
-
-    Relations:
-
-    :cvar repository: The associated repository.
-    :type repository: models.ForeignKey
-
-    """
-    auto_publish = models.BooleanField(default=True)
-
-    repository = models.ForeignKey(
-        Repository, related_name='distributors', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('repository', 'name')
-
-    def natural_key(self):
-        """
-        Get the model's natural key.
-
-        :return: The model's natural key.
-        :rtype: tuple
-        """
-        return (self.repository.id, self.name)
-
-
-class GroupDistributor(Distributor):
-    """
-    A content distributor that is associated with a repository group.
-
-    Fields:
-
-    Relations:
-
-    :cvar group: The associated repository group.
-    :type group: models.ForeignKey
-
-    """
-    group = models.ForeignKey(
-        RepositoryGroup, related_name='distributors', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('group', 'name')
-
-    def natural_key(self):
-        """
-        Get the model's natural key.
-
-        :return: The model's natural key.
-        :rtype: tuple
-        """
-        return (self.group.id, self.name)
 
 
 class RepositoryContent(Model):

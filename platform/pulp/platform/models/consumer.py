@@ -25,14 +25,14 @@ class Consumer(Model):
     :cvar notes: Arbitrary information about the consumer.
     :type notes: fields.GenericRelation
 
-    :cvar distributors: Associated distributors.
-    :type distributors: models.ManyToManyField
+    :cvar publishers: Associated publishers.
+    :type publishers: models.ManyToManyField
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
 
     notes = fields.GenericRelation(Notes)
-    distributors = models.ManyToManyField('RepositoryDistributor')
+    publishers = models.ManyToManyField('Publisher', related_name='consumers')
 
     def natural_key(self):
         """
