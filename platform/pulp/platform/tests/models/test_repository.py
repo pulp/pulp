@@ -1,7 +1,6 @@
 from django.test import TestCase
 
-from pulp.platform.models import (Repository, RepositoryGroup, RepositoryImporter,
-                                  RepositoryDistributor, GroupDistributor)
+from pulp.platform.models import Repository, RepositoryGroup, Importer, Publisher
 
 
 class TestRepository(TestCase):
@@ -16,30 +15,6 @@ class TestRepositoryGroup(TestCase):
     def test_natural_key(self):
         group = RepositoryGroup(name='test')
         self.assertEqual(group.natural_key(), (group.name,))
-
-
-class TestRepositoryImporter(TestCase):
-
-    def test_natural_key(self):
-        repository = Repository()
-        importer = RepositoryImporter(name='test', repository=repository)
-        self.assertEqual(importer.natural_key(), (repository.id, importer.name))
-
-
-class TestRepositoryDistributor(TestCase):
-
-    def test_natural_key(self):
-        group = RepositoryGroup()
-        distributor = GroupDistributor(name='test', group=group)
-        self.assertEqual(distributor.natural_key(), (group.id, distributor.name))
-
-
-class TestGroupDistributor(TestCase):
-
-    def test_natural_key(self):
-        repository = Repository()
-        distributor = RepositoryDistributor(name='test', repository=repository)
-        self.assertEqual(distributor.natural_key(), (repository.id, distributor.name))
 
 
 class RepositoryExample(TestCase):
@@ -68,7 +43,7 @@ class RepositoryExample(TestCase):
         Add an importer with feed URL and some standard settings.
         """
         repository = Repository.objects.get(name=RepositoryExample.NAME)
-        importer = RepositoryImporter(repository=repository)
+        importer = Importer(repository=repository)
         importer.name = 'Upstream'
         importer.type = 'YUM'
         importer.feed_url = 'http://content-world/everyting/'
@@ -81,16 +56,17 @@ class RepositoryExample(TestCase):
         importer.basic_auth_password = 'Fudd'
         importer.save()
 
-    def add_distributor(self):
+    def add_publishers(self):
         """
-        Add a distributor with some standard settings.
+        Add a publisher with some standard settings.
         """
         repository = Repository.objects.get(name=RepositoryExample.NAME)
-        distributor = RepositoryDistributor(repository=repository)
-        distributor.name = 'Public'
-        distributor.type = 'YUM'
-        distributor.auto_publish = True
-        distributor.save()
+        for n in range(3):
+            publisher = Publisher(repository=repository)
+            publisher.name = 'p{}'.format(n)
+            publisher.type = 'YUM'
+            publisher.auto_publish = True
+            publisher.save()
 
     def setUp(self):
         self.create_repository()
@@ -101,8 +77,8 @@ class RepositoryExample(TestCase):
     def test_add_importer(self):
         self.add_importer()
 
-    def test_add_distributor(self):
-        self.add_distributor()
+    def test_add_publisher(self):
+        self.add_publishers()
 
     def test_inspect_repository(self):
         """

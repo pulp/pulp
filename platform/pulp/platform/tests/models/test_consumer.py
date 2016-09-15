@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from pulp.platform.models import Consumer
+from pulp.platform.models import Consumer, Publisher, Repository
 
 
 class TestConsumer(TestCase):
@@ -8,3 +8,23 @@ class TestConsumer(TestCase):
     def test_natural_key(self):
         consumer = Consumer(name='test')
         self.assertEqual(consumer.natural_key(), (consumer.name,))
+
+    def test_bind(self):
+        consumer = Consumer(name='test')
+        consumer.save()
+        repository = Repository(name='test')
+        repository.save()
+        publisher = Publisher(name='test', type='test', repository=repository)
+        publisher.save()
+
+        # bind
+        consumer.publishers.add(publisher)
+        consumer.save()
+
+        # inspect publishers
+        fetched = consumer.publishers.all()[0]
+        self.assertEqual(fetched.id, publisher.id)
+
+        # inspect consumers
+        fetched = publisher.consumers.all()[0]
+        self.assertEqual(fetched.id, consumer.id)
