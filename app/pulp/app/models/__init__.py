@@ -7,6 +7,7 @@ from .content import Content, Artifact  # NOQA
 from .repository import (Repository, RepositoryGroup, Importer, Publisher,  # NOQA
                          RepositoryContent)  # NOQA
 
+from .catalog import DownloadCatalog  # NOQA
 from .task import ReservedResource, Worker, Task, TaskTag, TaskLock, ScheduledCalls  # NOQA
 
 # Moved here to avoid a circular import with Task
