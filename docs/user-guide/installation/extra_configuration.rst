@@ -60,8 +60,8 @@ If you are using a CA certificate that is not already trusted by your operating 
 pack, you may either configure Pulp to trust that CA, or you may configure your operating system to
 trust that CA.
 
-Pulp has a setting called ``ca_path`` in these files: ``/etc/pulp/admin/admin.conf``,
-``/etc/pulp/consumer/consumer.conf``, and ``/etc/pulp/nodes.conf``. This setting indicates which CA
+Pulp has a setting called ``ca_path`` in these files: ``/etc/pulp/admin/admin.conf`` and
+``/etc/pulp/consumer/consumer.conf``. This setting indicates which CA
 pack each of these components should use when validating Pulp server certificates. By default, Pulp
 will use the operating system's CA pack. If you wish, you may adjust this setting to point to a
 different CA pack. The CA pack may be a single file that contains multiple concatenated
@@ -109,7 +109,7 @@ Turning off Validation
    are communicating with.
 
 Pulp has a setting called ``verify_ssl`` in these files: ``/etc/pulp/admin/admin.conf``,
-``/etc/pulp/consumer/consumer.conf``, ``/etc/pulp/nodes.conf``, and ``/etc/pulp/repo_auth.conf``. If
+``/etc/pulp/consumer/consumer.conf``  and ``/etc/pulp/repo_auth.conf``. If
 you configure these settings to false, the respective Pulp components will no longer validate the
 Pulp server's certificate signature.
 

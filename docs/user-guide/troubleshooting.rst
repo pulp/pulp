@@ -237,10 +237,6 @@ issue you can:
   2. Follow the `Qpid scalability guide`_ for configuring Qpid to handle a large number of
      persistent queues.
 
-  3. Consider spreading your consumers over multiple Pulp installations, each with its own Qpid
-     broker to reduce the number of Pulp Consumers per broker. The Pulp nodes feature should make
-     this architecture manageable.
-
 .. _Qpid scalability guide: https://bugzilla.redhat.com/attachment.cgi?id=930496
 
 User permissions not behaving as expected

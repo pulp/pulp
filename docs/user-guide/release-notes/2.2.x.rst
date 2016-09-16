@@ -11,7 +11,7 @@ New Features
 ------------
 
 * Child node synchronization can now be scheduled with an optional recurrence. More
-  information can be found in the :doc:`../nodes` section of the user guide.
+  information can be found in the nodes section of the user guide.
 * Some consumer operations can now be canceled.
 * Orphan removal performs much better.
 
@@ -59,4 +59,3 @@ See the RPM-specific user guide for highlights of the most important bug fixes
 there. All bug fixes for this release can be seen at this link:
 
 `All Bug Fixes <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&classification=Community&product=Pulp&query_format=advanced&target_release=2.2.1>`_
-

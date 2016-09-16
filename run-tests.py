@@ -22,7 +22,6 @@ os.environ['DJANGO_SETTINGS_MODULE'] = PULP_DJANGO_SETTINGS_MODULE
 PACKAGES = [
     os.path.dirname(__file__),
     'pulp',
-    'pulp_node',
 ]
 
 
@@ -36,7 +35,6 @@ TESTS_ALL_PLATFORMS = [
 
 TESTS_NON_RHEL5 = [
     'client_admin/test/unit',
-    'nodes/test/nodes_tests',
     'streamer/test/unit',
     'server/test/unit',
     'repoauth/test',

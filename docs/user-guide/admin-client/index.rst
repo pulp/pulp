@@ -11,7 +11,6 @@ Contents:
    consumer
    consumer-group
    events
-   nodes
    repositories
    orphan
    server

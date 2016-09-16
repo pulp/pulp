@@ -51,7 +51,7 @@ New Features
 ------------
 
 #. Pulp now has support for hierarchical collections of Pulp Servers that are able to synchronize with each
-   other. These are called Pulp Nodes, and you can read more about them :doc:`in the nodes section <../nodes>`.
+   other. These are called Pulp Nodes, and you can read more about them in the nodes section.
 #. Unit counts within each repository are now tracked by type.
 #. We now support Fedora 18 and Apache 2.4.
 #. It is now possible to upgrade from Pulp 1.1 to 2.1.

@@ -55,8 +55,6 @@ if sys.version_info >= (2, 6):
         '/etc/pulp/content/sources/conf.d',
         '/etc/pulp/server',
         '/etc/pulp/server/plugins.conf.d',
-        '/etc/pulp/server/plugins.conf.d/nodes/importer',
-        '/etc/pulp/server/plugins.conf.d/nodes/distributor',
         '/etc/pulp/vhosts80',
         '/usr/share/pulp',
         '/usr/share/pulp/templates',
@@ -66,9 +64,6 @@ if sys.version_info >= (2, 6):
         '/usr/lib/pulp/plugins',
         '/usr/lib/pulp/plugins/types',
         '/var/lib/pulp/celery',
-        '/var/lib/pulp/nodes/published',
-        '/var/lib/pulp/nodes/published/http',
-        '/var/lib/pulp/nodes/published/https',
         '/var/lib/pulp/published',
         '/var/lib/pulp/static',
         '/var/lib/pulp/uploads',
@@ -76,7 +71,6 @@ if sys.version_info >= (2, 6):
         '/var/run/pulp',
         '/var/www/pulp',
         '/var/www/streamer',
-        '/var/www/pulp/nodes',
         '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
     ])
 
@@ -119,17 +113,6 @@ if sys.version_info >= (2, 6):
         ('streamer/etc/httpd/conf.d/pulp_streamer.conf', '/etc/httpd/conf.d/pulp_streamer.conf'),
         ('streamer/etc/pulp/streamer.conf', '/etc/pulp/streamer.conf'),
 
-        # Pulp Nodes
-        ('/var/lib/pulp/content', '/var/www/pulp/nodes/content'),
-        ('/var/lib/pulp/nodes/published/http', '/var/www/pulp/nodes/http'),
-        ('/var/lib/pulp/nodes/published/https', '/var/www/pulp/nodes/https'),
-        ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
-        ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
-         '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
-        ('nodes/parent/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf',
-         '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'),
-        ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
-        ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 
         # Static Content
         ('/etc/pki/pulp/rsa_pub.key', '/var/lib/pulp/static/rsa_pub.key'),
@@ -229,10 +212,6 @@ def get_paths_to_copy():
             {'source': 'client_admin/etc/pulp/admin/admin.conf',
              'destination': '/etc/pulp/admin/admin.conf',
              'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': False},
-            # This should really be 640, but the unit tests require the ability to read it. They
-            # should mock instead, but until they do we need to keep this world readable
-            {'source': 'nodes/common/etc/pulp/nodes.conf', 'destination': '/etc/pulp/nodes.conf',
-             'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
             # This really should be 640 since that's how the RPM installs it, but the unit tests try
             # to read the settings rather than mocking them. Once we've fixed that, we should fix
             # this to be the same as the spec file.
@@ -385,8 +364,6 @@ def install(opts):
         print('generating certificates')
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
             os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
-        if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
-            os.system(os.path.join(ROOT_DIR, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
         # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
         # those world readable. Until we fix this, we cannot close #1048297
