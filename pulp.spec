@@ -16,7 +16,7 @@
 %if %{pulp_server}
 #SELinux
 %define selinux_variants mls strict targeted
-%define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
+%define selinux_policyver %(rpm --qf "%%{version}-%%{release}" -q selinux-policy)
 %define moduletype apps
 %endif
 
@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.9.2
+Version: 2.9.3
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -949,12 +949,7 @@ BuildRequires:  selinux-policy-devel
 BuildRequires:  hardlink
 Obsoletes: pulp-selinux-server
 
-%if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
-%endif
-%if 0%{?fedora} == 19
-Requires(post): selinux-policy-targeted >= 3.12.1-74
-%endif
 Requires(post): policycoreutils-python
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
 Requires(postun): /usr/sbin/semodule
@@ -1044,10 +1039,13 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Mon Aug 15 2016 Sean Myers <sean.myers@redhat.com> 2.9.2-1
+* Mon Sep 19 2016 Sean Myers <sean.myers@redhat.com> 2.9.3-1
 - Pulp rebuild
 
-* Thu Aug 11 2016 Sean Myers <sean.myers@redhat.com> 2.9.2-0.3.beta
+* Tue Sep 13 2016 Sean Myers <sean.myers@redhat.com> 2.9.3-0.2.beta
+- Pulp rebuild
+
+* Tue Aug 30 2016 Sean Myers <sean.myers@redhat.com> 2.9.3-0.1.beta
 - Pulp rebuild
 
 * Thu Aug 04 2016 Sean Myers <sean.myers@redhat.com> 2.9.2-0.2.beta

@@ -1023,6 +1023,7 @@ class DownloadStepTests(unittest.TestCase):
     def test_download_failed(self):
         dlstep = publish_step.DownloadStep('fake-step')
         mock_report = Mock()
+        mock_report.error_msg = '404 encountered'
         mock_report_progress = Mock()
         dlstep.report_progress = mock_report_progress
         dlstep.download_failed(mock_report)

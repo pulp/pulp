@@ -41,8 +41,8 @@
     },
     {
         "name": "python-kombu",
-        "version": "3.0.33-5.pulp",
-        "platform": [ "el6", "el7", "fc22", "fc23"]
+        "version": "3.0.33-6.pulp",
+        "platform": [ "el6", "el7", "fc23"]
     },
     {
         "name": "python-mongoengine",

@@ -208,7 +208,7 @@ def update(repo_id, dist_id, config=None, delta=None):
 
     for k, v in config.iteritems():
         if v is None:
-            distributor.config.pop(k)
+            distributor.config.pop(k, None)
         else:
             distributor.config[k] = v
 
