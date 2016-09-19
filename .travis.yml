@@ -1,3 +1,4 @@
+sudo: false
 language: python
 python:
     - "3.4"
@@ -12,4 +13,4 @@ before_script:
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
 script:
     - "flake8 --config flake8.cfg app/"
-    - "cd app/pulp/app && ./db-reset.sh && python manage.py test"
+    - "app/pulp/app/db-reset.sh && python manage.py test app"

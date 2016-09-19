@@ -16,8 +16,6 @@ import sys
 
 import yaml
 
-from pulp.app import logs
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -163,20 +161,18 @@ _DEFAULT_PULP_SETTINGS = {
             'simple': {'format': 'pulp: %(name)s:%(levelname)s: %(message)s'},
         },
         'handlers': {
-            'syslog': {
-                'address': '/dev/log',
-                'facility': logs.CompliantSysLogHandler.LOG_DAEMON,
-                'class': 'pulp.app.logs.CompliantSysLogHandler',
+            'stream': {
+                'class': 'logging.StreamHandler',
                 'formatter': 'simple',
             },
         },
         'loggers': {
             'pulp.app': {
-                'handlers': ['syslog'],
+                'handlers': ['stream'],
                 'level': 'INFO',
             },
             'django': {
-                'handlers': ['syslog'],
+                'handlers': ['stream'],
                 'level': 'INFO',
             },
         }
