@@ -333,16 +333,22 @@ order. Be cautious not to clobber the versions in the spec file! Then you can ``
 after you check the diff to make sure it is correct. Lastly, do a new git checkout elsewhere and check that
 ``tito build --srpm`` is tagged correctly and builds.
 
+.. _building-updating-versions:
 
 Updating Versions
 ^^^^^^^^^^^^^^^^^
 
 We use Jenkins to make nightly builds, so once you have built the package successfully and merged the
 changelog forward, you should update the yaml file that Jenkins uses and bump the versions of all the
-projects that were included in this build. Most likely it is the same file you were using to build
-the packages in the previous step. You can use ``update-version-and-merge-forward.py`` to update
+projects that were included in this build. You can use ``update-version-and-merge-forward.py`` to update
 the versions. This script checks out all the projects and updates the version in the spec file and
 in all of the setup.py files.
+
+This script should be run on dev branches after the first prerelease (beta and rc releases)
+of a given version to ensure that the nightly builds for that branch are clearly newer than the
+current release in progress. This means that the versions of packages building from -dev branches
+in the x.y-dev config should be higher than the versions of those same pages in the corresponding
+x.y-build and x.y-release configs.
 
 At this point you can inspect the files to ensure the versions are as you expect. You can rerun the
 script with ``--push`` flag to push the changes to Github.
@@ -492,7 +498,8 @@ output to ensure that it is correct. If it is, run the command again while omitt
    testing or a stable repository.
 
 If you have published a beta build, you must move all issues and stories for the target release
-from ``MODIFIED`` to ``ON_QA``.
+from ``MODIFIED`` to ``ON_QA``. If this is the first beta build for this version, you must also
+update versions on the branch as described :ref:`above <building-updating-versions>`.
 
 After publishing a beta build, email pulp-list@redhat.com to announce the beta. Here is a
 typical email you can use::
