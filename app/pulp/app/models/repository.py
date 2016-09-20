@@ -130,7 +130,7 @@ class ContentAdaptor(MasterModel):
     type = models.TextField(blank=False, default=None)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
-    repository = models.ForeignKey(Repository, related_name='%(class)ss', on_delete=models.CASCADE)
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -228,6 +228,9 @@ class Importer(ContentAdaptor):
 
     scratchpad = fields.GenericRelation(Scratchpad)
 
+    class Meta(ContentAdaptor.Meta):
+        default_related_name = 'importers'
+
 
 class Publisher(ContentAdaptor):
     """
@@ -251,6 +254,9 @@ class Publisher(ContentAdaptor):
     auto_publish = models.BooleanField(default=True)
     relative_path = models.TextField(blank=True)
     last_published = models.DateTimeField(blank=True, null=True)
+
+    class Meta(ContentAdaptor.Meta):
+        default_related_name = 'publishers'
 
 
 class RepositoryContent(Model):
