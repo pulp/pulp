@@ -7,5 +7,3 @@ Consumer Group APIs
    cud
    membership
    bind
-   content
-

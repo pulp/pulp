@@ -63,10 +63,7 @@ The ``history`` command shows the most recent operations first.
 List
 ----
 
-This command retrieves a list of consumers. "Confirmed" bindings are those for
-which the agent on the remote consumer has performed a bind action. "Unconfirmed"
-bindings are waiting for that remote action to take place.
-
+This command retrieves a list of consumers.
 ::
 
     $ pulp-admin consumer list --help
@@ -171,4 +168,3 @@ Basic attributes of consumers can be modified using the ``update`` command.
 
     $ pulp-admin consumer update --consumer-id=consumer1 --description='First consumer.'
     Consumer [ consumer1 ] successfully updated
-

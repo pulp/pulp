@@ -7,7 +7,6 @@ Consumer APIs
    cud
    bind
    retrieval
-   content
    scheduled_content
    history
    profile

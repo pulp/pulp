@@ -52,7 +52,7 @@ Prerequisites for docker
 Follow these steps:
 
 #. Install vagrant, ansible, and docker::
-   
+
       $ sudo dnf install vagrant ansible docker
 
 #. Enable and start the docker service::
@@ -281,14 +281,14 @@ pulls in the latest dependencies according to the spec file.
     pulp-admin-client pulp-rpm-admin-extensions \
     pulp-puppet-admin-extensions pulp-docker-admin-extensions \
     pulp-consumer-client pulp-rpm-consumer-extensions \
-    pulp-puppet-consumer-extensions pulp-agent pulp-rpm-handlers pulp-rpm-yumplugins \
+    pulp-puppet-consumer-extensions pulp-rpm-handlers pulp-rpm-yumplugins \
     pulp-puppet-handlers python-gofer-qpid
 
 #. When using yum, remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 #. Install some additional dependencies for development::
-   
+
         $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
         qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
         python-mock python-paste python-pip python-flake8
@@ -380,10 +380,6 @@ Start the broker (Though qpid shown here, it is not your only option)::
 
     sudo systemctl start qpidd
 
-Start the agent::
-
-    sudo systemctl start goferd
-
 Install a plugin (the server requires at least one to start)::
 
     git clone https://github.com/pulp/pulp_rpm.git
@@ -425,4 +421,3 @@ into the local source directory. It is run using the ``-U`` flag:
 Each python package installed above must be removed by its package name.::
 
   $ sudo pip uninstall <package name>
-

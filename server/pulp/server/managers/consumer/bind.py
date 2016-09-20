@@ -36,7 +36,7 @@ class BindManager(object):
         )
 
     @staticmethod
-    def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+    def bind(consumer_id, repo_id, distributor_id, binding_config):
         """
         Bind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
@@ -51,8 +51,7 @@ class BindManager(object):
         :rtype:  SON
 
         :raise MissingResource: when given consumer does not exist.
-        :raise InvalidValid:    when the repository or distributor id is invalid, or
-        if the notify_agent value is invalid
+        :raise InvalidValid:    when the repository or distributor id is invalid
         """
         # Validation
         missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
@@ -64,18 +63,13 @@ class BindManager(object):
                 # Everything else is a parameter so raise a 400
                 raise InvalidValue(missing_values.keys())
 
-        # ensure notify_agent is a boolean
-        if not isinstance(notify_agent, bool):
-            raise InvalidValue(['notify_agent'])
-
         # perform the bind
         collection = Bind.get_collection()
         try:
-            bind = Bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
+            bind = Bind(consumer_id, repo_id, distributor_id, binding_config)
             collection.save(bind)
         except DuplicateKeyError:
-            BindManager._update_binding(consumer_id, repo_id, distributor_id, notify_agent,
-                                        binding_config)
+            BindManager._update_binding(consumer_id, repo_id, distributor_id, binding_config)
             BindManager._reset_bind(consumer_id, repo_id, distributor_id)
         # fetch the inserted/updated bind
         bind = BindManager.get_bind(consumer_id, repo_id, distributor_id)
@@ -86,11 +80,11 @@ class BindManager(object):
         return bind
 
     @staticmethod
-    def _update_binding(consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+    def _update_binding(consumer_id, repo_id, distributor_id, binding_config):
         """
         Workaround to the way bindings rely on a duplicate key error for supporting rebind.
         This call makes sure the existing binding is updated with the new values for
-        notifying the agent and the binding's configuration.
+        the binding's configuration.
 
         The parameters are the values passed to the bind() call.
         """
@@ -98,7 +92,6 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         binding = collection.find_one(query)
-        binding['notify_agent'] = notify_agent
         binding['binding_config'] = binding_config
         collection.save(binding)
 

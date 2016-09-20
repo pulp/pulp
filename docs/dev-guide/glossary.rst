@@ -7,9 +7,9 @@ Glossary
 
   applicability data
     Applicability data for a consumer consists of arrays of applicable :term:`content unit` ids,
-    keyed by a content unit type. The definition of applicability itself defers for each content type. 
-    For example, in case of an rpm, a content unit is considered applicable to a consumer 
-    when an older version of the content unit installed on that consumer can be updated 
+    keyed by a content unit type. The definition of applicability itself defers for each content type.
+    For example, in case of an rpm, a content unit is considered applicable to a consumer
+    when an older version of the content unit installed on that consumer can be updated
     to the given content unit.
 
   binding
@@ -23,7 +23,7 @@ Glossary
 
   conduit
     Object passed to a plugin when it is invoked. The conduit contains methods the plugin
-    should use to access the Pulp Server or Pulp Agent.
+    should use to access the Pulp Server.
 
   consumer
     A managed system that is the consumer of content. Consumption refers
@@ -44,10 +44,6 @@ Glossary
   extension
     Client-side command line interface plugin that provides additional commands
     within the command-line clients.
-
-  handler
-    Agent plugin that implements content type specific or operating system specific
-    operations on the consumer.
 
   importer
     Server-side plugin that provides support for synchronizing content from an

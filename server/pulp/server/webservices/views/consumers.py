@@ -3,21 +3,18 @@ from django.http import HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.common import tags
-from pulp.server.async.tasks import TaskResult
 from pulp.server.auth import authorization
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
-                                    OperationPostponed, UnsupportedValue)
+                                    OperationPostponed)
 from pulp.server.managers import factory
 from pulp.server.managers.consumer import bind
 from pulp.server.managers.consumer import profile
 from pulp.server.managers.consumer import query as query_manager
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
-from pulp.server.managers.schedule.consumer import (UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION,
-                                                    UNIT_UPDATE_ACTION)
 from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.serializers import binding as serial_binding
@@ -400,10 +397,9 @@ class ConsumerBindingsView(ConsumerRepoBindingView):
         :param consumer_id: consumer to bind.
         :type  consumer_id: str
 
-        :raises OperationPostponed: will dispatch a task if 'notify_agent' is set to True
         :raises InvalidValue: if binding_config is invalid
 
-        :return: Response representing the binding(in case 'notify agent' is set to False)
+        :return: Response representing the binding
         :rtype: django.http.HttpResponse
         """
 
@@ -413,18 +409,14 @@ class ConsumerBindingsView(ConsumerRepoBindingView):
         distributor_id = body.get('distributor_id')
         binding_config = body.get('binding_config', {})
         options = body.get('options', {})
-        notify_agent = body.get('notify_agent', True)
 
         if not isinstance(binding_config, dict):
             raise InvalidValue(['binding_config'])
 
         call_report = consumer_controller.bind(
-            consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
+            consumer_id, repo_id, distributor_id, binding_config, options)
 
-        if call_report.spawned_tasks:
-            raise OperationPostponed(call_report)
-        else:
-            return generate_json_response_with_pulp_encoder(call_report.serialize())
+        return generate_json_response_with_pulp_encoder(call_report.serialize())
 
 
 class ConsumerBindingResourceView(View):
@@ -472,10 +464,9 @@ class ConsumerBindingResourceView(View):
         :param distributor_id: A distributor ID.
         :type distributor_id: str
 
-        :raises OperationPostponed: will dispatch a task if 'notify_agent' is set to True
         :raises InvalidValue: if some parameters are invalid
 
-        :return: Response representing the deleted binding(in case 'notify agent' is set to False)
+        :return: Response representing the deleted binding
         :rtype: django.http.HttpResponse
         """
 
@@ -496,126 +487,6 @@ class ConsumerBindingResourceView(View):
             raise OperationPostponed(call_report)
         else:
             return generate_json_response_with_pulp_encoder(call_report.serialize())
-
-
-class ConsumerContentActionView(View):
-    """
-    Views for content manipulation on the consumer.
-    """
-
-    @auth_required(authorization.CREATE)
-    @parse_json_body(json_type=dict)
-    def post(self, request, consumer_id, action):
-        """
-        Install/update/uninstall content unit/s on the consumer.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: A consumer ID.
-        :type consumer_id: str
-        :param action: type of action to perform
-        :type action: str
-
-        :raises MissingResource: if consumer id does not exist
-        :raises MissingValue: if some required values are missing
-        :raises InvalidValue: if units are not a list of dictionaries
-        """
-
-        method = getattr(self, action, None)
-        if method:
-            try:
-                factory.consumer_manager().get_consumer(consumer_id)
-            except MissingResource:
-                raise MissingResource(consumer_id=consumer_id)
-            else:
-                body = request.body_as_json
-                missing_params = []
-                units = body.get('units')
-                if units is None:
-                    missing_params.append('units')
-                elif not isinstance(units, list):
-                    raise InvalidValue('Units must be a list of dictionaries')
-                options = body.get('options')
-                if options is None:
-                    missing_params.append('options')
-
-                if missing_params:
-                    raise MissingValue(missing_params)
-            return method(request, consumer_id, units, options)
-        else:
-            return HttpResponseBadRequest('bad request')
-
-    def install(self, request, consumer_id, units, options):
-        """
-        Install content (units) on a consumer.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of install options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: A consumer ID.
-        :type consumer_id: str
-        :param units: units to install
-        :type units: list
-        :param options: install options
-        :type options: dict
-
-        :raises OperationPostponed: when an async operation is performed.
-        """
-
-        agent_manager = factory.consumer_agent_manager()
-        task = agent_manager.install_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult.from_task_status_dict(task))
-
-    def update(self, request, consumer_id, units, options):
-        """
-        Update content (units) on a consumer.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of update options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: A consumer ID.
-        :type consumer_id: str
-        :param units: units to install
-        :type units: list
-        :param options: install options
-        :type options: dict
-
-        :raises OperationPostponed: when an async operation is performed.
-        """
-
-        agent_manager = factory.consumer_agent_manager()
-        task = agent_manager.update_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult.from_task_status_dict(task))
-
-    def uninstall(self, request, consumer_id, units, options):
-        """
-        Uninstall content (units) on a consumer.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of uninstall options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: A consumer ID.
-        :type consumer_id: str
-        :param units: units to install
-        :type units: list
-        :param options: install options
-        :type options: dict
-
-        :raises OperationPostponed: when an async operation is performed.
-        """
-
-        agent_manager = factory.consumer_agent_manager()
-        task = agent_manager.uninstall_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult.from_task_status_dict(task))
 
 
 class ConsumerHistoryView(View):
@@ -960,219 +831,3 @@ class ConsumerResourceContentApplicRegenerationView(View):
             (consumer_criteria.as_dict(),),
             tags=task_tags)
         raise OperationPostponed(async_result)
-
-
-class ConsumerUnitActionSchedulesView(View):
-    """
-    View for scheduled content manipulation on the consumer.
-    """
-
-    ACTION = None
-
-    def __init__(self):
-        super(ConsumerUnitActionSchedulesView, self).__init__()
-        self.manager = factory.consumer_schedule_manager()
-
-    @auth_required(authorization.READ)
-    def get(self, request, consumer_id):
-        """
-        List schedules <action>.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-
-        :raises MissingResource: if consumer does not exist
-
-        :return: Response containing consumer's schedules <action>
-        :rtype: django.http.HttpResponse
-        """
-
-        try:
-            factory.consumer_manager().get_consumer(consumer_id)
-        except MissingResource:
-            raise MissingResource(consumer_id=consumer_id)
-        schedules = self.manager.get(consumer_id, self.ACTION)
-
-        schedule_objs = []
-        for schedule in schedules:
-            obj = scheduled_unit_management_obj(schedule.for_display())
-            add_link_schedule(obj, self.ACTION, consumer_id)
-            schedule_objs.append(obj)
-
-        return generate_json_response_with_pulp_encoder(schedule_objs)
-
-    @auth_required(authorization.CREATE)
-    @parse_json_body(json_type=dict)
-    def post(self, request, consumer_id):
-        """
-        Create a schedule.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-
-        :raises UnsupportedValue: if some extra unsupported keys were specified.
-
-        :return: Response containing just created schedule
-        :rtype: django.http.HttpResponse
-        """
-
-        params = request.body_as_json
-        units = params.pop('units', None)
-        options = params.pop('options', {})
-        schedule = params.pop('schedule', None)
-        failure_threshold = params.pop('failure_threshold', None)
-        enabled = params.pop('enabled', True)
-        if params:
-            raise UnsupportedValue(params.keys())
-        scheduled_call = self.manager.create_schedule(
-            self.ACTION, consumer_id, units, options, schedule, failure_threshold, enabled)
-
-        scheduled_obj = scheduled_unit_management_obj(scheduled_call.for_display())
-        link = add_link_schedule(scheduled_obj, self.ACTION, consumer_id)
-        response = generate_json_response_with_pulp_encoder(scheduled_obj)
-        redirect_response = generate_redirect_response(response, link['_href'])
-        return redirect_response
-
-
-class ConsumerUnitActionScheduleResourceView(View):
-    """
-    View for a single scheduled consumer unit action.
-    """
-
-    ACTION = None
-
-    def __init__(self):
-        super(ConsumerUnitActionScheduleResourceView, self).__init__()
-        self.manager = factory.consumer_schedule_manager()
-
-    @auth_required(authorization.READ)
-    def get(self, request, consumer_id, schedule_id):
-        """
-        List a specific schedule <action>.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-        :param schedule_id: the schedule id
-        :type schedule_id: str
-
-        :raises MissingResource: if consumer/schedule does not exist
-
-        :return: Response containing consumer's schedule <action>
-        :rtype: django.http.HttpResponse
-        """
-
-        scheduled_call = None
-        for call in self.manager.get(consumer_id, self.ACTION):
-            if call.id == schedule_id:
-                scheduled_call = call
-                break
-        if scheduled_call is None:
-            raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
-
-        scheduled_obj = scheduled_unit_management_obj(scheduled_call.for_display())
-        add_link_schedule(scheduled_obj, self.ACTION, consumer_id)
-        return generate_json_response_with_pulp_encoder(scheduled_obj)
-
-    @auth_required(authorization.UPDATE)
-    @parse_json_body(allow_empty=True, json_type=dict)
-    def put(self, request, consumer_id, schedule_id):
-        """
-        Update a specific schedule <action>.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-        :param schedule_id: the schedule id
-        :type schedule_id: str
-
-        :return: Response containing consumer's updated schedule <action>
-        :rtype: django.http.HttpResponse
-        """
-
-        schedule_data = request.body_as_json
-        options = schedule_data.pop('options', None)
-        units = schedule_data.pop('units', None)
-
-        if 'schedule' in schedule_data:
-            schedule_data['iso_schedule'] = schedule_data.pop('schedule')
-
-        schedule = self.manager.update_schedule(consumer_id, schedule_id, units,
-                                                options, schedule_data)
-
-        scheduled_obj = scheduled_unit_management_obj(schedule.for_display())
-        add_link_schedule(scheduled_obj, self.ACTION, consumer_id)
-        return generate_json_response_with_pulp_encoder(scheduled_obj)
-
-    @auth_required(authorization.DELETE)
-    def delete(self, request, consumer_id, schedule_id):
-        """
-        Delete a specific schedule <action>.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_id: The consumer ID.
-        :type consumer_id: str
-        :param schedule_id: the schedule id
-        :type schedule_id: str
-
-        :return: An empty response
-        :rtype: django.http.HttpResponse
-        """
-
-        self.manager.delete_schedule(consumer_id, schedule_id)
-        return generate_json_response(None)
-
-
-class UnitInstallSchedulesView(ConsumerUnitActionSchedulesView):
-    """
-    View for scheduled content install on the consumer.
-    """
-
-    ACTION = UNIT_INSTALL_ACTION
-
-
-class UnitInstallScheduleResourceView(ConsumerUnitActionScheduleResourceView):
-    """
-    View for a single scheduled consumer unit install.
-    """
-
-    ACTION = UNIT_INSTALL_ACTION
-
-
-class UnitUpdateSchedulesView(ConsumerUnitActionSchedulesView):
-    """
-    View for scheduled content update on the consumer.
-    """
-
-    ACTION = UNIT_UPDATE_ACTION
-
-
-class UnitUpdateScheduleResourceView(ConsumerUnitActionScheduleResourceView):
-    """
-    View for a single scheduled consumer unit update.
-    """
-
-    ACTION = UNIT_UPDATE_ACTION
-
-
-class UnitUninstallSchedulesView(ConsumerUnitActionSchedulesView):
-    """
-    View for scheduled content uninstall on the consumer.
-    """
-
-    ACTION = UNIT_UNINSTALL_ACTION
-
-
-class UnitUninstallScheduleResourceView(ConsumerUnitActionScheduleResourceView):
-    """
-    View for a single scheduled consumer unit uninstall.
-    """
-
-    ACTION = UNIT_UNINSTALL_ACTION

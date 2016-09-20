@@ -39,15 +39,6 @@ DEFAULT = {
         'wrap_to_terminal': 'false',
         'wrap_width': '80',
     },
-    'messaging': {
-        'scheme': 'amqp',
-        'host': None,
-        'port': '5672',
-        'vhost': None,
-        'transport': 'qpid',
-        'cacert': None,
-        'clientcert': None,
-    },
     'profile': {
         'minutes': '240',
     }
@@ -83,14 +74,6 @@ SCHEMA = (
       ('enable_color', REQUIRED, BOOL),
       ('wrap_to_terminal', REQUIRED, BOOL),
       ('wrap_width', REQUIRED, NUMBER))),
-    ('messaging', REQUIRED,
-     (('scheme', REQUIRED, r'(tcp|ssl|amqp|amqps)'),
-      ('host', OPTIONAL, ANY),
-      ('port', REQUIRED, NUMBER),
-      ('vhost', OPTIONAL, ANY),
-      ('transport', REQUIRED, ANY),
-      ('cacert', OPTIONAL, ANY),
-      ('clientcert', OPTIONAL, ANY))),
     ('profile', REQUIRED,
      (('minutes', REQUIRED, NUMBER),)))
 

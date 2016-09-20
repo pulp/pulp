@@ -17,7 +17,6 @@ TYPE_CDS = 'cds-manager'
 TYPE_CERTIFICATE = 'certificate-manager'
 TYPE_CERT_GENERATION = 'cert-generation-manager'
 TYPE_CONSUMER = 'consumer-manager'
-TYPE_CONSUMER_AGENT = 'consumer-agent-manager'
 TYPE_CONSUMER_BIND = 'consumer-bind-manager'
 TYPE_CONSUMER_CONTENT = 'consumer-content-manager'
 TYPE_CONSUMER_GROUP = 'consumer-group-manager'
@@ -25,7 +24,6 @@ TYPE_CONSUMER_GROUP_QUERY = 'consumer-group-query-manager'
 TYPE_CONSUMER_HISTORY = 'consumer-history-manager'
 TYPE_CONSUMER_PROFILE = 'consumer-profile-manager'
 TYPE_CONSUMER_QUERY = 'consumer-query-manager'
-TYPE_CONSUMER_SCHEDULE = 'consumer-schedule-manager'
 TYPE_CONTENT = 'content-manager'
 TYPE_CONTENT_CATALOG = 'content-catalog-manager'
 TYPE_CONTENT_ORPHAN = 'content-orphan-manager'
@@ -114,13 +112,6 @@ def consumer_manager():
     return get_manager(TYPE_CONSUMER)
 
 
-def consumer_agent_manager():
-    """
-    @rtype: L{pulp.server.managers.consumer.agent.AgentManager}
-    """
-    return get_manager(TYPE_CONSUMER_AGENT)
-
-
 def consumer_bind_manager():
     """
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
@@ -168,13 +159,6 @@ def consumer_profile_manager():
     @rtype: L{pulp.server.managers.consumer.profile.ProfileManager}
     """
     return get_manager(TYPE_CONSUMER_PROFILE)
-
-
-def consumer_schedule_manager():
-    """
-    @rtype: L{pulp.server.managers.schedule.consumer.ConsumerScheduleManager}
-    """
-    return get_manager(TYPE_CONSUMER_SCHEDULE)
 
 
 def content_manager():
@@ -346,7 +330,6 @@ def initialize():
     from pulp.server.managers.auth.role.cud import RoleManager
     from pulp.server.managers.auth.role.query import RoleQueryManager
     from pulp.server.managers.consumer.cud import ConsumerManager
-    from pulp.server.managers.consumer.agent import AgentManager
     from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
     from pulp.server.managers.consumer.bind import BindManager
     from pulp.server.managers.consumer.content import ConsumerContentManager
@@ -372,7 +355,6 @@ def initialize():
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.repo import (RepoPublishScheduleManager,
                                                     RepoSyncScheduleManager)
-    from pulp.server.managers.schedule.consumer import ConsumerScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -382,7 +364,6 @@ def initialize():
         TYPE_CERTIFICATE: CertificateManager,
         TYPE_CERT_GENERATION: CertGenerationManager,
         TYPE_CONSUMER: ConsumerManager,
-        TYPE_CONSUMER_AGENT: AgentManager,
         TYPE_CONSUMER_BIND: BindManager,
         TYPE_CONSUMER_CONTENT: ConsumerContentManager,
         TYPE_CONSUMER_GROUP: ConsumerGroupManager,
@@ -390,7 +371,6 @@ def initialize():
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
         TYPE_CONSUMER_PROFILE: ProfileManager,
         TYPE_CONSUMER_QUERY: ConsumerQueryManager,
-        TYPE_CONSUMER_SCHEDULE: ConsumerScheduleManager,
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_CATALOG: ContentCatalogManager,
         TYPE_CONTENT_ORPHAN: OrphanManager,

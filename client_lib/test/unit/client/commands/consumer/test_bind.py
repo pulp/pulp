@@ -131,19 +131,6 @@ class ConsumerBindCommandTests(base.PulpClientTests):
         # Verify
         self.assertEqual(self.prompt.get_write_tags(), ['bind-header'])
 
-    def test_task_header_agent_bind(self):
-        # Setup
-        sim = task_simulator.TaskSimulator()
-
-        task = sim.add_task_state('2', responses.STATE_FINISHED)
-        task.tags = [tags.action_tag(tags.ACTION_AGENT_BIND)]
-
-        # Test
-        self.command.task_header(task)
-
-        # Verify
-        self.assertEqual(self.prompt.get_write_tags(), ['agent-bind-header'])
-
 
 class ConsumerUnbindCommandTests(base.PulpClientTests):
 
@@ -203,19 +190,6 @@ class ConsumerUnbindCommandTests(base.PulpClientTests):
 
         # Verify
         self.assertEqual(self.prompt.get_write_tags(), ['unbind-header'])
-
-    def test_task_header_agent_unbind(self):
-        # Setup
-        sim = task_simulator.TaskSimulator()
-
-        task = sim.add_task_state('2', responses.STATE_FINISHED)
-        task.tags = [tags.action_tag(tags.ACTION_AGENT_UNBIND)]
-
-        # Test
-        self.command.task_header(task)
-
-        # Verify
-        self.assertEqual(self.prompt.get_write_tags(), ['agent-unbind-header'])
 
     def test_task_header_delete_binding(self):
         # Setup

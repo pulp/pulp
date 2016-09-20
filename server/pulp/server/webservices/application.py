@@ -5,7 +5,6 @@ import sys
 # setup methods. Importing the config reads the config file, unfortunately.
 from pulp.server import config  # noqa
 from pulp.server import initialization, logs
-from pulp.server.agent.direct.services import Services as AgentServices
 # Even though this import does not get used anywhere, we must import it for the Celery
 # application to be initialized.
 from pulp.server.async import app as celery_app  # noqa
@@ -65,9 +64,6 @@ def _initialize_web_services():
     # database connection, initialize plugins, and initialize the manager factory.
     initialization.initialize()
 
-    # configure agent services
-    AgentServices.init()
-
     # Verify the database has been migrated to the correct version. This is
     # very likely a reason the server will fail to start.
     try:
@@ -81,9 +77,6 @@ def _initialize_web_services():
     # The previous two are likely user errors, but the remainder represent
     # something gone horribly wrong. As such, I'm not going to account for each
     # and instead simply let the exception itself bubble up.
-
-    # start agent services
-    AgentServices.start()
 
     # If we got this far, it was successful, so flip the flag
     _IS_INITIALIZED = True

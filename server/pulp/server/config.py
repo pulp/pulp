@@ -91,16 +91,6 @@ _default_values = {
         'base': 'dc=localhost',
         'tls': 'false',
     },
-    'messaging': {
-        'url': 'tcp://localhost:5672',
-        'transport': 'qpid',
-        'auth_enabled': 'true',
-        'cacert': '/etc/pki/qpid/ca/ca.crt',
-        'clientcert': '/etc/pki/qpid/client/client.pem',
-        'topic_exchange': 'amq.topic',
-        'event_notifications_enabled': 'false',
-        'event_notification_url': 'qpid://localhost:5672/',
-    },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',

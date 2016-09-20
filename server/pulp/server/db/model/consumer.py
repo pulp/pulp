@@ -107,8 +107,6 @@ class Bind(Model):
     :type repo_id: str
     :ivar distributor_id: uniquely identifies a distributor
     :type distributor_id: str
-    :ivar notify_agent: indicates if the agent should be sent a message informing it of the binding
-    :type notify_agent: bool
     :ivar binding_config: value only applicable to this particular binding
     :type binding_config: object
     :ivar consumer_actions: tracks consumer bind/unbind actions; see above for format
@@ -134,7 +132,7 @@ class Bind(Model):
         SUCCEEDED = 'succeeded'
         FAILED = 'failed'
 
-    def __init__(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+    def __init__(self, consumer_id, repo_id, distributor_id, binding_config):
         """
         :param consumer_id: uniquely identifies the consumer.
         :type consumer_id: str
@@ -142,9 +140,6 @@ class Bind(Model):
         :type repo_id: str
         :param distributor_id: uniquely identifies a distributor.
         :type distributor_id: str
-        :ivar notify_agent: controls whether or not the consumer agent will be sent a message
-                            about the binding
-        :type notify_agent: bool
         :ivar binding_config: configuration to pass the distributor during payload creation for this
                               binding
         :type binding_config: object
@@ -157,7 +152,6 @@ class Bind(Model):
         self.distributor_id = distributor_id
 
         # Configuration
-        self.notify_agent = notify_agent
         self.binding_config = binding_config
 
         # State
