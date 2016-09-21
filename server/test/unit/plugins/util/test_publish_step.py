@@ -748,7 +748,7 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         touch(sub_file)
 
         # create an existing file that will be maintained
-        existing_file = os.path.join(source_dir, 'bar.html')
+        existing_file = os.path.join(publish_dir, 'existing.html')
         touch(existing_file)
 
         # Create an old directory to test
@@ -757,7 +757,7 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         step.process_main()
 
         target_file = os.path.join(publish_dir, 'bar.html')
-        self.assertEquals(True, os.path.exists(target_file))
+        self.assertTrue(os.path.exists(target_file))
         self.assertTrue(os.path.exists(existing_file))
         self.assertEquals(1, len(os.listdir(master_dir)))
 
