@@ -896,7 +896,16 @@ class AtomicDirectoryPublishStep(PluginStep):
         # for items where http & https are published to a separate directory
 
         _logger.debug('Copying tree from %s to %s' % (self.source_dir, timestamp_master_dir))
-        copytree(self.source_dir, timestamp_master_dir, symlinks=True)
+
+        misc.mkdir(os.path.dirname(timestamp_master_dir))
+
+        try:
+            os.rename(self.source_dir, timestamp_master_dir)
+        except OSError as e:
+            if e.errno == errno.EXDEV:
+                copytree(self.source_dir, timestamp_master_dir, symlinks=True)
+            else:
+                raise
 
         for source_relative_location, publish_location in self.publish_locations:
             if source_relative_location.startswith('/'):
