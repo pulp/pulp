@@ -17,7 +17,6 @@ Contents:
    authentication
    admin-client/index
    consumer-client/index
-   nodes
    content-sources
    deferred-download
    general-reference

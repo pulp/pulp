@@ -199,15 +199,6 @@ Queries the server for the loaded importer plugins.
             "package_environment"
         ]
     },
-    {
-        "_href": "/pulp/api/v2/plugins/importers/nodes_http_importer/",
-        "display_name": "Pulp Nodes HTTP Importer",
-        "id": "nodes_http_importer",
-        "types": [
-            "node",
-            "repository"
-        ]
-    }
  ]
 
 
@@ -238,7 +229,7 @@ Retrieves information about a specific importer plugin.
     ]
  }
 
- 
+
 .. _getting_distributors:
 
 Retrieve All Distributor Plugins
@@ -283,21 +274,13 @@ Queries the server for the loaded distributor plugins.
         ]
     },
     {
-        "_href": "/pulp/api/v2/plugins/distributors/nodes_http_distributor/",
-        "display_name": "Pulp Nodes HTTP Distributor",
-        "id": "nodes_http_distributor",
-        "types": [
-            "node"
-        ]
-    },
-    {
         "_href": "/pulp/api/v2/plugins/distributors/docker_distributor_web/",
         "display_name": "Docker Web Distributor",
         "id": "docker_distributor_web",
         "types": [
             "docker_image"
         ]
-    }  
+    }
  ]
 
 
@@ -334,4 +317,3 @@ Retrieves information about a specific distributor plugin.
         "yum_repo_metadata_file"
     ]
  }
-

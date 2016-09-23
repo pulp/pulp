@@ -14,5 +14,4 @@ Contents:
    bind
    history
    status
-   nodes
    repositories

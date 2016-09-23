@@ -151,9 +151,7 @@ Clustering Pulp
 ---------------
 
 A clustered Pulp installation is comprised of two or more `Pulp clustered
-servers`. The term `Pulp clustered server` is used to distinguish it as a
-separate concept from :ref:`pulp_nodes`. `Pulp clustered servers` share the
-following components:
+servers`. `Pulp clustered servers` share the following components:
 
 +--------------------+---------------------------------------------------------+
 | Pulp Configuration | Pulp reads its configuration from conf files inside     |
