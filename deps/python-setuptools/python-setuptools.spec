@@ -69,6 +69,12 @@ chmod +x %{buildroot}%{python_sitelib}/setuptools/command/easy_install.py
 %{_bindir}/easy_install-2.*
 
 %changelog
+* Fri Sep 23 2016 Ina Panova <ipanova@redhat.com> 0.9.8-4
+- new package built version 0.9.8-4
+
+* Fri Sep 23 2016 Ina Panova <ipanova@redhat.com>
+- new package built version 0.9.8-4
+
 * Tue Jun 30 2015 Matej Stuchlik <mstuchli@redhat.com> - 0.9.8-4
 - Restore proxy support in SSL connections
 Resolves: rhbz#1121007
