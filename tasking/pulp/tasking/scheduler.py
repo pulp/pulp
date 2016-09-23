@@ -1,24 +1,20 @@
 from datetime import datetime, timedelta
 from gettext import gettext as _
-import itertools
 import logging
 import platform
 import threading
 import time
 
 from celery import beat
-import mongoengine
+from django.utils import timezone
+from django.db import IntegrityError
 
 from pulp.common import constants
-from pulp.common.dateutils import ensure_tz
-from pulp.server.async import worker_watcher
-from pulp.server.async.celery_instance import celery as app
-from pulp.server.async.tasks import _delete_worker
-from pulp.server.db import connection as db_connection
-from pulp.server.db.connection import UnsafeRetry
-from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
-from pulp.server.db.model import Worker, CeleryBeatLock
-from pulp.server.managers.schedule import utils
+from pulp.tasking import worker_watcher
+from pulp.tasking.celery_instance import celery as app
+from pulp.tasking import delete_worker
+from pulp.app.models.task import TaskLock, ScheduledCalls, Worker
+
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
 # first and only Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it
@@ -106,7 +102,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
 
         To find a missing Celery process, filter the Workers model for entries older than
         utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
-        a comparable datetime. For each missing worker found, call _delete_worker() synchronously
+        a comparable datetime. For each missing worker found, call delete_worker() synchronously
         for cleanup.
 
         This method also checks that at least one resource_manager and one scheduler process is
@@ -116,7 +112,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes '
                 'are missing for more than %d seconds') % constants.CELERY_TIMEOUT_SECONDS
         _logger.debug(msg)
-        now = ensure_tz(datetime.utcnow())
+        now = timezone.now()
         oldest_heartbeat_time = now - timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS)
         worker_list = Worker.objects.all()
         worker_count = 0
@@ -131,7 +127,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
                 if worker.name.startswith(constants.SCHEDULER_WORKER_NAME):
                     worker.delete()
                 else:
-                    _delete_worker(worker.name)
+                    delete_worker(worker.name)
             elif worker.name.startswith(constants.SCHEDULER_WORKER_NAME):
                 scheduler_count = scheduler_count + 1
             elif worker.name.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
@@ -172,14 +168,11 @@ class Scheduler(beat.Scheduler):
     second, is a WorkerTimeoutMonitor thread that watches for cases where all workers disappear
     at once.
     """
-    Entry = ScheduleEntry
+    Entry = beat.ScheduleEntry
 
     # the superclass reads this attribute, which is the maximum number of seconds
     # that will ever elapse before the scheduler looks for new or changed schedules.
     max_interval = constants.CELERY_MAX_INTERVAL
-
-    # allows mongo initialization to occur exactly once during the first call to setup_schedule()
-    _mongo_initialized = False
 
     def __init__(self, *args, **kwargs):
         """
@@ -258,30 +251,29 @@ class Scheduler(beat.Scheduler):
         old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
 
         # Updating the current lock if lock is on this instance of celerybeat
-        result = CeleryBeatLock.objects(celerybeat_name=celerybeat_name).\
-            update(set__timestamp=datetime.utcnow())
-
-        # If current instance has lock and updated lock_timestamp, call super
-        if result == 1:
+        try:
+            celerybeat_lock = TaskLock.objects.get(name=celerybeat_name)
+            celerybeat_lock.timestamp = timezone.now()
+            celerybeat_lock.save()
+            # If current instance has lock and updated lock_timestamp, call super
             _logger.debug(_('Lock updated by %(celerybeat_name)s')
                           % {'celerybeat_name': celerybeat_name})
             ret = self.call_tick(self, celerybeat_name)
-        else:
+        except TaskLock.DoesNotExist:
             # check for old enough time_stamp and remove if such lock is present
-            CeleryBeatLock.objects(timestamp__lte=old_timestamp).delete()
+            TaskLock.objects(timestamp__lte=old_timestamp).delete()
             try:
-                lock_timestamp = datetime.utcnow()
+                lock_timestamp = timezone.now()
 
                 # Insert new lock entry
-                new_lock = CeleryBeatLock(celerybeat_name=celerybeat_name,
-                                          timestamp=lock_timestamp)
+                new_lock = TaskLock(name=celerybeat_name, timestamp=lock_timestamp, lock=TaskLock.CELERY_BEAT)
                 new_lock.save()
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
                              {'celerybeat_name': celerybeat_name})
                 # After acquiring new lock call super to dispatch tasks
                 ret = self.call_tick(self, celerybeat_name)
 
-            except mongoengine.NotUniqueError:
+            except IntegrityError:
                 # Setting a default wait time for celerybeat instances with no lock
                 ret = constants.CELERY_TICK_DEFAULT_WAIT_TIME
                 _logger.info(_("Duplicate or new celerybeat Instance, "
@@ -294,10 +286,6 @@ class Scheduler(beat.Scheduler):
         This loads enabled schedules from the database and adds them to the
         "_schedule" dictionary as instances of celery.beat.ScheduleEntry
         """
-        if not Scheduler._mongo_initialized:
-            _logger.debug('Initializing Mongo client connection to read celerybeat schedule')
-            db_connection.initialize()
-            Scheduler._mongo_initialized = True
         _logger.debug(_('loading schedules from app'))
         self._schedule = {}
         for key, value in self.app.conf.CELERYBEAT_SCHEDULE.iteritems():
@@ -309,22 +297,16 @@ class Scheduler(beat.Scheduler):
         _logger.debug(_('loading schedules from DB'))
         ignored_db_count = 0
         self._loaded_from_db_count = 0
-        for call in itertools.imap(ScheduledCall.from_db, utils.get_enabled()):
-            if call.remaining_runs == 0:
-                _logger.debug(
-                    _('ignoring schedule with 0 remaining runs: %(id)s') % {'id': call.id})
-                ignored_db_count += 1
-            else:
-                self._schedule[call.id] = call.as_schedule_entry()
-                update_timestamps.append(call.last_updated)
-                self._loaded_from_db_count += 1
+        for call in ScheduledCalls.objects.filter(enabled=True):
+            self._schedule[call.id] = call.as_schedule_entry()
+            update_timestamps.append(call.last_updated)
+            self._loaded_from_db_count += 1
 
         _logger.debug('loaded %(count)d schedules' % {'count': self._loaded_from_db_count})
 
         self._most_recent_timestamp = max(update_timestamps)
 
     @property
-    @UnsafeRetry.retry_decorator()
     def schedule_changed(self):
         """
         Looks at the update timestamps in the database to determine if there
@@ -336,11 +318,11 @@ class Scheduler(beat.Scheduler):
                     in the database.
         :rtype:     bool
         """
-        if utils.get_enabled().count() != self._loaded_from_db_count:
+        if ScheduledCalls.objects.filter(enabled=True).count() != self._loaded_from_db_count:
             logging.debug(_('number of enabled schedules has changed'))
             return True
 
-        if utils.get_updated_since(self._most_recent_timestamp).count() > 0:
+        if ScheduledCalls.objects.filter(last_updated__gt=self._most_recent_timestamp).count() > 0:
             logging.debug(_('one or more enabled schedules has been updated'))
             return True
 
