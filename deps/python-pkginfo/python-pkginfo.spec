@@ -14,25 +14,14 @@ Source0:        https://pypi.python.org/packages/bc/3e/046ec2439e233161f99d2f6cc
 Patch0:         0001-Stop-installing-the-test-package.patch
 
 BuildArch:      noarch
-
-
-%description
-This package provides an API for querying the distutils metadata written in the
-PKG-INFO file inside a source distribution (an sdist) or a binary distribution
-(e.g., created by running bdist_egg). It can also query the EGG-INFO directory
-of an installed distribution, and the *.egg-info stored in a "development
-checkout" (e.g, created by running setup.py develop).
-
-
-%package -n python2-%{srcname}
-Summary:        %{sum}
 Requires:       python-setuptools
 BuildRequires:  python2-devel
 BuildRequires:  python-nose
 BuildRequires:  python-sphinx10
-%{?python_provide:%python_provide python2-%{srcname}}
 
-%description -n python2-%{srcname}
+
+
+%description
 This package provides an API for querying the distutils metadata written in the
 PKG-INFO file inside a source distribution (an sdist) or a binary distribution
 (e.g., created by running bdist_egg). It can also query the EGG-INFO directory
@@ -53,38 +42,41 @@ installed distribution, and the *.egg-info stored in a "development checkout"
 
 
 %prep
-%autosetup -p1 -n %{srcname}-%{version}
+%setup -q -n %{srcname}-%{version}
 rm -rf *.egg-info
 
+%patch0 -p1
 
 %build
-%py2_build
+%{__python} setup.py build
 
 cd docs
 make %{?_smp_mflags} SPHINXBUILD=sphinx-1.0-build html
 
 %install
-%py2_install
-ln -s %{_bindir}/pkginfo %{buildroot}%{_bindir}/pkginfo-%{python2_version}
-ln -s %{_bindir}/pkginfo-%{python2_version} %{buildroot}%{_bindir}/pkginfo-2
-
+%{__python} setup.py install --skip-build --root %{buildroot}
+ln -s %{_bindir}/pkginfo %{buildroot}%{_bindir}/pkginfo-%{python_version}
+ln -s %{_bindir}/pkginfo-%{python_version} %{buildroot}%{_bindir}/pkginfo-2
 
 # Upstream ships a broken unit test: see https://bugs.launchpad.net/pkginfo/+bug/1591298
 # Until that's fixed, skip testing.
 
 
-%files -n python2-%{srcname}
+%files -n python-%{srcname}
 %doc README.txt CHANGES.txt
-%{python2_sitelib}/*
+%{python_sitelib}/*
 %{_bindir}/pkginfo
 %{_bindir}/pkginfo-2
-%{_bindir}/pkginfo-%{python2_version}
+%{_bindir}/pkginfo-%{python_version}
 
 %files -n python-%{srcname}-doc
 %doc README.txt CHANGES.txt
 %doc docs/.build/html/*
 
 %changelog
+* Fri Sep 23 2016 Ina Panova <ipanova@redhat.com> 1.3.2-3
+- new package built version 1.3.2-3
+
 * Wed Jul 20 2016 Jeremy Cline <jeremy@jcline.org> - 1.3.2-3
 - Remove hard-coded Python y release versions in /usr/bin entries
 
