@@ -1,11 +1,13 @@
 """
 Django models related to the Tasking system
 """
+import pickle
+
 from django.db import models
 
 from pulp.app.models import Model
 from pulp.app.fields import JSONField
-
+from celery.beat import ScheduleEntry
 
 class ReservedResource(Model):
     """
@@ -211,3 +213,15 @@ class ScheduledCalls(Model):
 
     args = JSONField()
     kwargs = JSONField()
+
+
+    def as_schedule_entry(self):
+        """
+        Creates a ScheduleEntry instance that can be used by the base scheduler
+        class that comes with celery.
+
+        :return:    a ScheduleEntry instance based on this object
+        :rtype:     celery.beat.ScheduleEntry
+        """
+        return ScheduleEntry(self.id, self.task, self.last_run, self.total_run_count,
+                             pickle.loads(self.schedule), self.args, self.kwargs, {}, False)
