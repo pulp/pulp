@@ -8,12 +8,12 @@ from pulp.common import tags
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
-from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
 from pulp.server.db import model
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
 from pulp.server.managers.consumer.agent import AgentManager, Units
+from pulp.tasking import UserFacingTask
 
 
 class TestAgentManager(TestCase):
@@ -543,7 +543,7 @@ class TestAgentManager(TestCase):
 class TestDeleteQueue(TestCase):
 
     def test_decorator(self):
-        self.assertTrue(isinstance(delete_queue, Task))
+        self.assertTrue(isinstance(delete_queue, UserFacingTask))
 
     @patch('pulp.server.managers.consumer.agent.AgentManager.delete_queue')
     def test_succeeded(self, delete):

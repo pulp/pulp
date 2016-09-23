@@ -27,7 +27,7 @@ class ReservedResource(Model):
     resource = models.TextField()
 
     task = models.OneToOneField("Task")
-    worker = models.ForeignKey("Worker")
+    worker = models.ForeignKey("Worker", on_delete=models.CASCADE, related_name="reservations")
 
 
 class Worker(Model):
@@ -43,7 +43,7 @@ class Worker(Model):
     :type last_heartbeat: models.DateTimeField
     """
     name = models.TextField(db_index=True, unique=True)
-    last_heartbeat = models.DateTimeField()
+    last_heartbeat = models.DateTimeField(auto_now=True)
 
 
 class TaskLock(Model):
@@ -92,8 +92,8 @@ class Task(Model):
     :cvar finished_at: The time the task finished executing
     :type finished_at: models.DateTimeField
 
-    :cvar error: Collection of errors that might have occurred while task was running
-    :type error: models.JSONField
+    :cvar non_fatal_errors: Dictionary of non-fatal errors that occurred while task was running.
+    :type non_fatal_errors: models.JSONField
 
     :cvar result: Return value of the task
     :type result: models.JSONField
@@ -113,7 +113,7 @@ class Task(Model):
     RUNNING = 'running'
     SUSPENDED = 'suspended'
     COMPLETED = 'completed'
-    ERRORED = 'errored'
+    FAILED = 'failed'
     CANCELED = 'canceled'
     STATES = (
         (WAITING, 'Waiting'),
@@ -122,7 +122,7 @@ class Task(Model):
         (RUNNING, 'Running'),
         (SUSPENDED, 'Suspended'),
         (COMPLETED, 'Completed'),
-        (ERRORED, 'Errored'),
+        (FAILED, 'Failed'),
         (CANCELED, 'Canceled')
     )
     group = models.UUIDField(null=True)
@@ -131,11 +131,11 @@ class Task(Model):
     started_at = models.DateTimeField(null=True)
     finished_at = models.DateTimeField(null=True)
 
-    error = JSONField()
+    non_fatal_errors = JSONField()
     result = JSONField()
 
     parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
-    worker = models.ForeignKey("Worker", null=True)
+    worker = models.ForeignKey("Worker", null=True, related_name="tasks")
 
 
 class TaskTag(Model):

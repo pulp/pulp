@@ -29,8 +29,7 @@ from pulp.plugins.model import SyncReport
 from pulp.plugins.util.misc import paginate
 from pulp.plugins.util.verification import VerificationException, verify_checksum
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, TaskResult,
-                                     get_current_task_id)
+from pulp.server.async.tasks import register_sigterm_handler
 from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.content.sources.constants import MAX_CONCURRENT, HEADERS, SSL_VALIDATION
@@ -46,6 +45,7 @@ from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import InvalidChecksumType
+from pulp.tasking import PulpTask, UserFacingTask, get_current_task_id
 
 
 _logger = logging.getLogger(__name__)
@@ -439,18 +439,13 @@ def queue_delete(repo_id):
 
     :param repo_id: id of the repository to delete
     :type  repo_id: str
-
-    :return: A TaskResult with the details of any errors or spawned tasks
-    :rtype:  pulp.server.async.tasks.TaskResult
     """
     task_tags = [
         tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
         tags.action_tag('delete')
     ]
-    async_result = delete.apply_async_with_reservation(
-        tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-        [repo_id], tags=task_tags)
-    return async_result
+    delete.apply_async_with_reservation(tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id],
+                                        tags=task_tags)
 
 
 def get_importer_by_id(object_id):
@@ -481,7 +476,7 @@ def get_importer_by_id(object_id):
     return plugin, call_conf, document
 
 
-@celery.task(base=Task, name='pulp.server.tasks.repository.delete')
+@celery.task(base=UserFacingTask, name='pulp.server.tasks.repository.delete')
 def delete(repo_id):
     """
     Delete a repository and inform other affected collections.
@@ -491,9 +486,6 @@ def delete(repo_id):
 
     :raise pulp_exceptions.PulpExecutionException: if any part of the process fails; the exception
                                                    will contain information on which sections failed
-
-    :return: A TaskResult object with the details of any errors or spawned tasks
-    :rtype:  pulp.server.async.tasks.TaskResult
     """
 
     # With so much going on during a delete, it's possible that a few things could go wrong while
@@ -565,12 +557,10 @@ def delete(repo_id):
         except Exception, e:
             errors.append(e)
 
-    error = None
     if len(errors) > 0:
         error = pulp_exceptions.PulpCodedException(error_codes.PLP0007, repo_id=repo_id)
         error.child_exceptions = errors
-
-    return TaskResult(error=error, spawned_tasks=additional_tasks)
+        raise error
 
 
 def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_configs):
@@ -599,8 +589,8 @@ def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_confi
     :param distributor_configs: mapping of distributor ID to the new configuration to set for it
     :type  distributor_configs: dict, None
 
-    :return: Task result that contains the updated repository object and additional spawned tasks
-    :rtype:  pulp.server.async.tasks.TaskResult
+    :return: Dictionary result that contains the updated repository object
+    :rtype:  dict
 
     :raises pulp_exceptions.InvalidValue: if repo_delta is not a dictionary
     """
@@ -628,7 +618,7 @@ def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_confi
                 tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id,
                 [repo.repo_id, dist_id, dist_config, None], tags=task_tags)
             additional_tasks.append(async_result)
-    return TaskResult(repo, None, additional_tasks)
+    return repo
 
 
 def update_unit_count(repo_id, unit_type_id, delta):
@@ -693,19 +683,14 @@ def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None
     :type overrides:  dict or None
     :param scheduled_call_id: id of scheduled call that dispatched this task
     :type  scheduled_call_id: str
-
-    :return: result containing the details of the task executed and any spawned tasks
-    :rtype:  pulp.server.async.tasks.TaskResult
     """
     kwargs = {'repo_id': repo_id, 'sync_config_override': overrides,
               'scheduled_call_id': scheduled_call_id}
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]
-    result = sync.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
-                                               kwargs=kwargs)
-    return result
+    sync.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
 
 
-@celery.task(base=Task, name='pulp.server.managers.repo.sync.sync')
+@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.sync.sync')
 def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     """
     Performs a synchronize operation on the given repository and triggers publishes for
@@ -722,8 +707,8 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     :param scheduled_call_id: id of scheduled call that dispatched this task
     :type  scheduled_call_id: str
 
-    :return: TaskResult containing sync results and a list of spawned tasks
-    :rtype:  pulp.server.async.tasks.TaskResult
+    :return: Dictionary containing sync results.
+    :rtype:  dict
 
     :raise pulp_exceptions.MissingResource: if specified repo does not exist, or it does not have
                                             an importer and associated plugin
@@ -815,11 +800,8 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     if sync_result.result == RepoSyncResult.RESULT_FAILED:
         raise pulp_exceptions.PulpExecutionException(_('Importer indicated a failed response'))
 
-    spawned_tasks = _queue_auto_publish_tasks(repo_obj.repo_id, scheduled_call_id=scheduled_call_id)
-    download_policy = call_config.get(importer_constants.DOWNLOAD_POLICY)
-    if download_policy == importer_constants.DOWNLOAD_BACKGROUND:
-        spawned_tasks.append(queue_download_repo(repo_obj.repo_id).task_id)
-    return TaskResult(sync_result, spawned_tasks=spawned_tasks)
+    _queue_auto_publish_tasks(repo_obj.repo_id, scheduled_call_id=scheduled_call_id)
+    return sync_result
 
 
 def check_unit_removed_since_last_sync(conduit, repo_id):
@@ -1044,19 +1026,16 @@ def queue_publish(repo_id, distributor_id, overrides=None, scheduled_call_id=Non
     :type  overrides: dict or None
     :param scheduled_call_id: id of scheduled call that dispatched this task
     :type  scheduled_call_id: str
-
-    :return: task result object
-    :rtype: pulp.server.async.tasks.TaskResult
     """
     kwargs = {'repo_id': repo_id, 'dist_id': distributor_id, 'publish_config_override': overrides,
               'scheduled_call_id': scheduled_call_id}
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
-    return publish.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
-                                                kwargs=kwargs)
+    publish.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
+                                         kwargs=kwargs)
 
 
-@celery.task(base=Task, name='pulp.server.managers.repo.publish.publish')
+@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.publish.publish')
 def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=None):
     """
     Uses the given distributor to publish the repository.
@@ -1365,7 +1344,7 @@ def queue_download_repo(repo_id, verify_all_units=False):
     )
 
 
-@celery.task(base=Task)
+@celery.task(base=UserFacingTask)
 def download_deferred():
     """
     Downloads all the units with entries in the DeferredDownload collection.
@@ -1381,7 +1360,7 @@ def download_deferred():
     download_step.start()
 
 
-@celery.task(base=Task)
+@celery.task(base=UserFacingTask)
 def download_repo(repo_id, verify_all_units=False):
     """
     Download all content units in the repository that have catalog entries associated

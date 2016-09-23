@@ -81,10 +81,10 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
 
 class TestHandleWorkerOffline(unittest.TestCase):
     @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher._delete_worker')
+    @mock.patch('pulp.server.async.worker_watcher.delete_worker')
     @mock.patch('pulp.server.async.worker_watcher._')
     @mock.patch('pulp.server.async.worker_watcher._logger')
-    def test_handle_worker_offline(self, mock__logger, mock_gettext, mock__delete_worker,
+    def test_handle_worker_offline(self, mock__logger, mock_gettext, mock_delete_worker,
                                    mock__parse_and_log_event):
         mock_event = mock.Mock()
 
@@ -94,4 +94,4 @@ class TestHandleWorkerOffline(unittest.TestCase):
         mock__parse_and_log_event.assert_called_once_with(mock_event)
         mock_gettext.assert_called_once_with("Worker '%(worker_name)s' shutdown")
         mock__logger.info.assert_called_once()
-        mock__delete_worker.assert_called_once_with(event_info['worker_name'], normal_shutdown=True)
+        mock_delete_worker.assert_called_once_with(event_info['worker_name'], normal_shutdown=True)

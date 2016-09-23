@@ -19,11 +19,12 @@ from pulp.common.constants import (CALL_CANCELED_STATE, CALL_COMPLETED_STATE,
                                    SCHEDULER_WORKER_NAME, RESOURCE_MANAGER_WORKER_NAME)
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
 from pulp.devel.unit.util import compare_dict
-from pulp.server.async import app, tasks
 from pulp.server.db.model import Worker, TaskStatus
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
+from pulp.tasking import celery_app as app
+from pulp import tasking
 
 
 # Worker names
@@ -68,7 +69,7 @@ class TestQueueReservedTask(ResourceReservationTests):
     def test_creates_and_saves_reserved_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
+        tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock_reserved_resource.assert_called_once_with(task_id='my_task_id',
                                                             worker_name='worker1',
                                                             resource_id='my_resource_id')
@@ -77,7 +78,7 @@ class TestQueueReservedTask(ResourceReservationTests):
     def test_dispatches_inner_task(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
+        tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
         apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1', task_id='my_task_id',
                                             exchange='C.dq')
@@ -85,7 +86,7 @@ class TestQueueReservedTask(ResourceReservationTests):
     def test_dispatches__release_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
+        tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
                                                                         routing_key='worker1',
                                                                         exchange='C.dq')
@@ -93,7 +94,7 @@ class TestQueueReservedTask(ResourceReservationTests):
     def test_get_worker_for_reservation_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
+        tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_get_unreserved_worker.called)
         self.assertTrue(not self.mock_time.sleep.called)
 
@@ -101,7 +102,7 @@ class TestQueueReservedTask(ResourceReservationTests):
         self.mock_get_worker_for_reservation.side_effect = NoWorkers()
         self.mock_get_unreserved_worker.return_value = Worker(name='worker1',
                                                               last_heartbeat=datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
+        tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_time.sleep.called)
 
     def test_loops_and_sleeps_waiting_for_available_worker(self):
@@ -120,7 +121,7 @@ class TestQueueReservedTask(ResourceReservationTests):
         self.mock_time.sleep.side_effect = side_effect
 
         try:
-            tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2],
+            tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2],
                                        {'a': 2})
         except BreakOutException:
             pass
@@ -167,19 +168,19 @@ class TestDeleteWorker(ResourceReservationTests):
         super(TestDeleteWorker, self).tearDown()
 
     def test_normal_shutdown_true_logs_correctly(self):
-        tasks._delete_worker('worker1', normal_shutdown=True)
+        tasking.delete_worker('worker1', normal_shutdown=True)
         self.assertTrue(not self.mock_gettext.called)
         self.assertTrue(not self.mock_logger.error.called)
 
     def test_normal_shutdown_not_specified_logs(self):
         self.mock_gettext.return_value = 'asdf %(name)s asdf'
-        tasks._delete_worker('worker1')
+        tasking.delete_worker('worker1')
         self.mock_gettext.assert_called_once_with(
             'The worker named %(name)s is missing. Canceling the tasks in its queue.')
         self.mock_logger.error.assert_called_once_with('asdf worker1 asdf')
 
     def test_removes_all_associated_reserved_resource_entries(self):
-        tasks._delete_worker('worker1')
+        tasking.delete_worker('worker1')
         self.assertTrue(self.mock_reserved_resource.objects.called)
         remove = self.mock_reserved_resource.objects.return_value.delete
         remove.assert_called_once_with()
@@ -191,7 +192,7 @@ class TestDeleteWorker(ResourceReservationTests):
         mock_get.get.return_value = [mock_document]
         mock_worker_objects.return_value = mock_get
 
-        tasks._delete_worker('worker1')
+        tasking.delete_worker('worker1')
 
         mock_document.delete.assert_called_once()
 
@@ -199,9 +200,9 @@ class TestDeleteWorker(ResourceReservationTests):
     def test_no_entry_for_worker_does_not_raise_exception(self, mock_worker_objects):
         mock_worker_objects.get.return_value = []
         try:
-            tasks._delete_worker('worker1')
+            tasking.delete_worker('worker1')
         except Exception:
-            self.fail('_delete_worker() on a Worker that is not in the database caused an '
+            self.fail('delete_worker() on a Worker that is not in the database caused an '
                       'Exception')
 
     def test_cancels_all_found_task_status_objects(self):
@@ -209,7 +210,7 @@ class TestDeleteWorker(ResourceReservationTests):
         mock_task_id_b = mock.Mock()
         self.mock_task_status.objects.return_value = [{'task_id': mock_task_id_a},
                                                       {'task_id': mock_task_id_b}]
-        tasks._delete_worker('worker1')
+        tasking.delete_worker('worker1')
 
         self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])
 
@@ -240,13 +241,13 @@ class TestReleaseResource(unittest.TestCase):
 
     def test_deletes_reserved_resource(self):
         mock_task_id = mock.Mock()
-        tasks._release_resource(mock_task_id)
+        tasking._release_resource(mock_task_id)
         self.mock_reserved_resource.objects.assert_called_once_with(task_id=mock_task_id)
         self.mock_reserved_resource.objects.return_value.delete.assert_called_once_with()
 
     def test_finds_running_task_by_uuid(self):
         mock_task_id = mock.Mock()
-        tasks._release_resource(mock_task_id)
+        tasking._release_resource(mock_task_id)
         filter_obj = self.mock_task_status.objects.filter
         filter_obj.assert_called_once_with(task_id=mock_task_id,
                                            state=self.mock_constants.CALL_RUNNING_STATE)
@@ -256,7 +257,7 @@ class TestReleaseResource(unittest.TestCase):
         mock_task = mock.Mock()
         self.mock_task.return_value = mock_task
         mock_task_id = mock.Mock()
-        tasks._release_resource(mock_task_id)
+        tasking._release_resource(mock_task_id)
         self.assertTrue(mock_task.on_failure.called)
 
 
@@ -267,7 +268,7 @@ class TestTaskResult(unittest.TestCase):
         async_result = AsyncResult('foo')
         test_exception = PulpException('foo')
         task_status = TaskStatus(task_id='quux')
-        result = tasks.TaskResult('foo', test_exception, [{'task_id': 'baz'},
+        result = tasking.TaskResult('foo', test_exception, [{'task_id': 'baz'},
                                                           async_result, "qux", task_status])
         serialized = result.serialize()
         self.assertEquals(serialized.get('result'), 'foo')
@@ -282,7 +283,7 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
 
     def setUp(self):
         super(TestReservedTaskMixinApplyAsyncWithReservation, self).setUp()
-        self.task = tasks.ReservedTaskMixin()
+        self.task = tasking.ReservedTaskMixin()
         self.task.name = 'dummy_task_name'
         self.resource_id = 'three_to_get_ready'
         self.resource_type = 'reserve_me'
@@ -319,7 +320,7 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
                               'reserve_me:three_to_get_ready', tuple(self.some_args),
                               self.some_kwargs]
         self.mock__queue_reserved_task.apply_async.assert_called_once_with(
-            queue=tasks.RESOURCE_MANAGER_QUEUE,
+            queue=tasking.RESOURCE_MANAGER_QUEUE,
             args=expected_arguments)
 
     def test_task_status_created_and_saved(self):
@@ -349,7 +350,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
 
         new_task_status = TaskStatus.objects(task_id=task_id).first()
@@ -363,7 +364,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
     def test_spawned_task_status(self, mock_request):
         async_result = AsyncResult('foo-id')
 
-        retval = tasks.TaskResult(error=PulpException('error-foo'),
+        retval = tasking.TaskResult(error=PulpException('error-foo'),
                                   result='bar')
         retval.spawned_tasks = [async_result]
 
@@ -376,7 +377,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
 
         new_task_status = TaskStatus.objects(task_id=task_id).first()
@@ -390,7 +391,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_spawned_task_dict(self, mock_request):
-        retval = tasks.TaskResult(spawned_tasks=[{'task_id': 'foo-id'}], result='bar')
+        retval = tasking.TaskResult(spawned_tasks=[{'task_id': 'foo-id'}], result='bar')
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
@@ -401,7 +402,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
 
         new_task_status = TaskStatus.objects(task_id=task_id).first()
@@ -423,7 +424,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
 
         new_task_status = TaskStatus.objects(task_id=task_id).first()
@@ -442,7 +443,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
         TaskStatus(task_id, state=CALL_CANCELED_STATE).save()
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         # This should not update the task status to finished, since this task was canceled.
         task.on_success(retval, task_id, args, kwargs)
@@ -465,7 +466,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
                   'scheduled_call_id': '12345'}
         mock_request.called_directly = False
         TaskStatus(task_id).save()
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
         mock_reset_failure.assert_called_once_with('12345')
 
@@ -482,7 +483,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
                   'scheduled_call_id': None}
         mock_request.called_directly = False
         TaskStatus(task_id).save()
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_success(retval, task_id, args, kwargs)
         self.assertFalse(mock_reset_failure.called)
 
@@ -513,7 +514,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_failure(exc, task_id, args, kwargs, einfo)
 
         new_task_status = TaskStatus.objects(task_id=task_id).first()
@@ -543,7 +544,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
         TaskStatus(task_id).save()
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_failure(exc, task_id, args, kwargs, einfo)
         mock_increment_failure.assert_called_once_with('12345')
 
@@ -567,7 +568,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
         TaskStatus(task_id).save()
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.on_failure(exc, task_id, args, kwargs, einfo)
         self.assertFalse(mock_increment_failure.called)
 
@@ -579,7 +580,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -606,7 +607,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
                   'group_id': group_id}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -632,7 +633,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1,
                   'group_id': 'string-id'}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         self.assertRaises(ValidationError, task.apply_async, *args, **kwargs)
 
@@ -641,7 +642,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf'}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -653,7 +654,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'asdf',
                   'group_id': uuid.uuid4()}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -664,7 +665,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -682,7 +683,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags'], 'routing_key': 'othername'}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         task.apply_async(*args, **kwargs)
 
@@ -702,7 +703,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         TaskStatus(task_id, 'test-worker', state=CALL_CANCELED_STATE).save()
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
         task.apply_async(*args, **kwargs)
 
         task_status = TaskStatus.objects(task_id=task_id).first()
@@ -715,7 +716,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         async_result = celery.result.AsyncResult('test_task_id')
         apply_async.return_value = async_result
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         result = task.apply_async(*args, **kwargs)
 
@@ -727,7 +728,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         async_result = celery.result.AsyncResult('test_task_id')
         apply_async.return_value = async_result
-        task = tasks.Task()
+        task = tasking.UserFacingTask()
 
         result = task.apply_async(*args, **kwargs)
 
@@ -740,7 +741,7 @@ class TestTaskThrows(unittest.TestCase):
     traces get auto-logged by celery.
     """
     def test_throws_pulp_coded_exception(self):
-        self.assertTrue(PulpCodedException in tasks.Task.throws)
+        self.assertTrue(PulpCodedException in tasking.UserFacingTask.throws)
 
 
 class TestCancel(PulpServerTests):
@@ -760,7 +761,7 @@ class TestCancel(PulpServerTests):
     def test_cancel_successful(self, _logger, revoke):
         task_id = '1234abcd'
         TaskStatus(task_id).save()
-        tasks.cancel(task_id)
+        tasking.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
         self.assertEqual(_logger.info.call_count, 1)
@@ -781,7 +782,7 @@ class TestCancel(PulpServerTests):
             resource_tag(RESOURCE_CONSUMER_TYPE, consumer_id)
         ]
         TaskStatus(task_id, tags=tags, worker_name='agent').save()
-        tasks.cancel(task_id)
+        tasking.cancel(task_id)
 
         cancel.assert_called_once_with(mock.ANY, consumer_id, task_id)
         self.assertFalse(revoke.called)
@@ -802,7 +803,7 @@ class TestCancel(PulpServerTests):
         task_id = '1234abcd'
         TaskStatus(task_id, 'test_worker', state=CALL_COMPLETED_STATE).save()
 
-        tasks.cancel(task_id)
+        tasking.cancel(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_COMPLETED_STATE)
 
@@ -816,114 +817,9 @@ class TestCancel(PulpServerTests):
         task_id = '1234abcd'
         TaskStatus(task_id, 'test_worker', state=CALL_CANCELED_STATE).save()
 
-        tasks.cancel(task_id)
+        tasking.cancel(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
-
-
-class TestRegisterSigtermHandler(unittest.TestCase):
-    """
-    Test the register_sigterm_handler() decorator.
-    """
-    def test_error_case(self):
-        """
-        Make sure that register_sigterm_handler() does the right thing during the error case.
-        """
-        class FakeException(Exception):
-            """
-            This Exception gets raised by f(). It's better to raise this instead of Exception, so we
-            can assert it with self.assertRaises without missing the Exceptions that could be raised
-            by the other assertions in f().
-            """
-
-        def f(*args, **kwargs):
-            """
-            This function will be wrapped by the decorator during this test. It asserts that the
-            signal handler is correct and then raises Exception.
-
-            :param args:   positional arguments that will be asserted to be correct
-            :type  args:   tuple
-            :param kwargs: keyword argumets that will be asserted to be correct
-            :type  kwargs: dict
-            """
-            # Make sure the correct params were passed
-            self.assertEqual(args, some_args)
-            self.assertEqual(kwargs, some_kwargs)
-            # We can't assert that our mock cancel method below is the handler, because the real
-            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
-            # that the signal handler has changed, and that calling the signal handler calls our
-            # mock cancel.
-            signal_handler = signal.getsignal(signal.SIGTERM)
-            self.assertNotEqual(signal_handler, starting_term_handler)
-            # Now let's call the signal handler and make sure that cancel() gets called.
-            self.assertEqual(cancel.call_count, 0)
-            signal_handler(signal.SIGTERM, None)
-            self.assertEqual(cancel.call_count, 1)
-
-            raise FakeException()
-
-        f = mock.MagicMock(side_effect=f)
-        cancel = mock.MagicMock()
-        starting_term_handler = signal.getsignal(signal.SIGTERM)
-        wrapped_f = tasks.register_sigterm_handler(f, cancel)
-        # So far, the signal handler should still be the starting one
-        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
-        some_args = (1, 'b', 4)
-        some_kwargs = {'key': 'value'}
-
-        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
-        # should be restored to its initial value. f() also asserts that during the operation the
-        # signal handler is cancel.
-        self.assertRaises(FakeException, wrapped_f, *some_args, **some_kwargs)
-
-        # Assert that f() was called with the right params
-        f.assert_called_once_with(*some_args, **some_kwargs)
-        # Assert that the signal handler has been restored
-        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
-
-    def test_normal_case(self):
-        """
-        Make sure that register_sigterm_handler() does the right thing during the normal case.
-        """
-        def f(*args, **kwargs):
-            """
-            This function will be wrapped by the decorator during this test. It asserts that the
-            signal handler is correct and then returns 42.
-            """
-            self.assertEqual(args, some_args)
-            self.assertEqual(kwargs, some_kwargs)
-            # We can't assert that our mock cancel method below is the handler, because the real
-            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
-            # that the signal handler has changed, and that calling the signal handler calls our
-            # mock cancel.
-            signal_handler = signal.getsignal(signal.SIGTERM)
-            self.assertNotEqual(signal_handler, starting_term_handler)
-            # Now let's call the signal handler and make sure that cancel() gets called.
-            self.assertEqual(cancel.call_count, 0)
-            signal_handler(signal.SIGTERM, None)
-            self.assertEqual(cancel.call_count, 1)
-
-            return 42
-
-        f = mock.MagicMock(side_effect=f)
-        cancel = mock.MagicMock()
-        starting_term_handler = signal.getsignal(signal.SIGTERM)
-        wrapped_f = tasks.register_sigterm_handler(f, cancel)
-        # So far, the signal handler should still be the starting one
-        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
-        some_args = (1, 'b', 4)
-        some_kwargs = {'key': 'value'}
-
-        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
-        # should be restored to its initial value. f() also asserts that during the operation the
-        # signal handler is cancel.
-        return_value = wrapped_f(*some_args, **some_kwargs)
-
-        self.assertEqual(return_value, 42)
-        # Assert that f() was called with the right params
-        f.assert_called_once_with(*some_args, **some_kwargs)
-        # Assert that the signal handler has been restored
-        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
 
 
 class TestGetCurrentTaskId(unittest.TestCase):
@@ -931,10 +827,10 @@ class TestGetCurrentTaskId(unittest.TestCase):
     @mock.patch('pulp.server.async.tasks.current_task')
     def test_get_task_id(self, mock_current_task):
         mock_current_task.request.id = 'foo'
-        self.assertEquals('foo', tasks.get_current_task_id())
+        self.assertEquals('foo', tasking.get_current_task_id())
 
     def test_get_task_id_not_in_task(self):
-        self.assertEquals(None, tasks.get_current_task_id())
+        self.assertEquals(None, tasking.get_current_task_id())
 
 
 class TestScheduledTasks(unittest.TestCase):
@@ -957,7 +853,7 @@ class TestGetWorkerForReservation(ResourceReservationTests):
     def test_existing_reservation_correctly_found(self, mock_reserved_resource,
                                                   mock_worker_objects):
         get_objects = mock_reserved_resource.objects
-        tasks.get_worker_for_reservation('resource1')
+        tasking.get_worker_for_reservation('resource1')
         get_objects.assert_called_once_with(resource_id='resource1')
         get_objects.return_value.first.assert_called_once_with()
 
@@ -967,7 +863,7 @@ class TestGetWorkerForReservation(ResourceReservationTests):
         find_one = mock_reserved_resource.objects.return_value.first
         find_one.return_value = {'worker_name': 'worker1'}
         mock_worker_objects.return_value.first.return_value = find_one.return_value
-        result = tasks.get_worker_for_reservation('resource1')
+        result = tasking.get_worker_for_reservation('resource1')
         self.assertTrue(result is find_one.return_value)
 
     @mock.patch('pulp.server.async.tasks.ReservedResource')
@@ -975,7 +871,7 @@ class TestGetWorkerForReservation(ResourceReservationTests):
         find_one = mock_reserved_resource.objects.return_value.first
         find_one.return_value = False
         try:
-            tasks.get_worker_for_reservation('resource1')
+            tasking.get_worker_for_reservation('resource1')
         except NoWorkers:
             pass
         else:
@@ -989,7 +885,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         find = mock_reserved_resource.objects.all
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
-            tasks._get_unreserved_worker()
+            tasking._get_unreserved_worker()
         except NoWorkers:
             pass
         else:
@@ -1002,7 +898,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
                                                              mock_worker_objects):
         mock_worker_objects.return_value = [{'name': 'a'}, {'name': 'b'}]
         mock_reserved_resource.objects.all.return_value = [{'worker_name': 'a'}]
-        result = tasks._get_unreserved_worker()
+        result = tasking._get_unreserved_worker()
         self.assertEqual(result, {'name': 'b'})
 
     @mock.patch('pulp.server.async.tasks.Worker.objects')
@@ -1012,7 +908,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         find = mock_reserved_resource.objects
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
-            tasks._get_unreserved_worker()
+            tasking._get_unreserved_worker()
         except NoWorkers:
             pass
         else:
@@ -1025,20 +921,20 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         find = mock_reserved_resource.objects
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
-            tasks._get_unreserved_worker()
+            tasking._get_unreserved_worker()
         except NoWorkers:
             pass
         else:
             self.fail("NoWorkers() Exception should have been raised.")
 
     def test_is_worker(self):
-        self.assertTrue(tasks._is_worker("a_worker@some.hostname"))
+        self.assertTrue(tasking._is_worker("a_worker@some.hostname"))
 
     def test_is_not_worker_is_scheduler(self):
-        self.assertEquals(tasks._is_worker(SCHEDULER_WORKER_NAME + "@some.hostname"), False)
+        self.assertEquals(tasking._is_worker(SCHEDULER_WORKER_NAME + "@some.hostname"), False)
 
     def test_is_not_worker_is_resource_mgr(self):
-        self.assertEquals(tasks._is_worker(RESOURCE_MANAGER_WORKER_NAME + "@some.hostname"), False)
+        self.assertEquals(tasking._is_worker(RESOURCE_MANAGER_WORKER_NAME + "@some.hostname"), False)
 
 
 class TestPulpTask(unittest.TestCase):
@@ -1050,8 +946,8 @@ class TestPulpTask(unittest.TestCase):
         This test should not be adjusted, unless you are really sure what are you doing.
         """
 
-        for task_name, task in app.celery.tasks.iteritems():
+        for task_name, task in app.celery.tasking.iteritems():
             if task_name.startswith('pulp'):
-                if not isinstance(task, tasks.PulpTask):
+                if not isinstance(task, tasking.PulpTask):
                     self.fail('Task named %s must have %s as an ancestor'
-                              % (task_name, tasks.PulpTask))
+                              % (task_name, tasking.PulpTask))

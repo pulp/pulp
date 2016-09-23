@@ -14,7 +14,6 @@ from pulp.common import error_codes
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.async.tasks import Task
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
@@ -23,6 +22,7 @@ from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.conduits._common as conduit_common_utils
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
+from pulp.tasking import UserFacingTask
 
 
 # Valid sort strings
@@ -428,8 +428,9 @@ class RepoUnitAssociationManager(object):
         return bool(existing_count)
 
 
-associate_from_repo = task(RepoUnitAssociationManager.associate_from_repo, base=Task)
-unassociate_by_criteria = task(RepoUnitAssociationManager.unassociate_by_criteria, base=Task)
+associate_from_repo = task(RepoUnitAssociationManager.associate_from_repo, base=UserFacingTask)
+unassociate_by_criteria = task(RepoUnitAssociationManager.unassociate_by_criteria,
+                               base=UserFacingTask)
 
 
 def load_associated_units(source_repo_id, criteria):

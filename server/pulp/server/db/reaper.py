@@ -6,8 +6,8 @@ from celery import task
 from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
 from pulp.server.db import model
-from pulp.server.async.tasks import PulpTask, Task
 from pulp.server.db.model import celery_result, consumer, repo_group, repository
+from pulp.tasking import PulpTask, UserFacingTask
 
 
 # Add collections to reap here. The keys in this datastructure are the Model classes that represent
@@ -36,7 +36,7 @@ def queue_reap_expired_documents():
     reap_expired_documents.apply_async(tags=tags)
 
 
-@task(base=Task)
+@task(base=UserFacingTask)
 def reap_expired_documents():
     """
     For each collection in _COLLECTION_TIMEDELTAS, call the class method reap_old_documents().

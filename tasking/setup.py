@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='pulp-plugin',
+    name='pulp-tasking',
     version='3.0a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),

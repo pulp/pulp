@@ -17,7 +17,7 @@ PYTHONIOENCODING="UTF-8"
 ######################################################################
 # Please do not edit any of the settings below this mark in this file!
 ######################################################################
-CELERY_APP="pulp.server.async.app"
+CELERY_APP="pulp.tasking.celery_app"
 
 CELERY_CREATE_DIRS=1
 

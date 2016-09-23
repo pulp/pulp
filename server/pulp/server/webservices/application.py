@@ -6,12 +6,13 @@ import sys
 from pulp.server import config  # noqa
 from pulp.server import initialization, logs
 from pulp.server.agent.direct.services import Services as AgentServices
-# Even though this import does not get used anywhere, we must import it for the Celery
-# application to be initialized.
-from pulp.server.async import app as celery_app  # noqa
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.http import _thread_local
 from pulp.server.webservices.wsgi import application as django_application
+
+# Even though this import does not get used anywhere, we must import it for the Celery
+# application to be initialized.
+from pulp.tasking import celery_app  # noqa
 
 
 logger = logging.getLogger(__name__)

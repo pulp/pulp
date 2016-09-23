@@ -11,33 +11,17 @@ import ssl
 
 from celery import Celery
 
-from pulp.server.config import config
-from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
+from pulp.app import settings
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", PULP_DJANGO_SETTINGS_MODULE)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulp.app.settings')
 
-broker_url = config.get('tasks', 'broker_url')
+broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)
 
 
 DEDICATED_QUEUE_EXCHANGE = 'C.dq'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 CELERYBEAT_SCHEDULE = {
-    'reap_expired_documents': {
-        'task': 'pulp.server.db.reaper.queue_reap_expired_documents',
-        'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
-        'args': tuple(),
-    },
-    'monthly_maintenance': {
-        'task': 'pulp.server.maintenance.monthly.queue_monthly_maintenance',
-        'schedule': timedelta(days=30),
-        'args': tuple(),
-    },
-    'download_deferred_content': {
-        'task': 'pulp.server.controllers.repository.queue_download_deferred',
-        'schedule': timedelta(minutes=config.getint('lazy', 'download_interval')),
-        'args': tuple(),
-    },
 }
 
 
@@ -52,8 +36,8 @@ def configure_login_method():
     """
     Configures the celery object with BROKER_LOGIN_METHOD if not default.
     """
-    login_method = config.get('tasks', 'login_method')
-    if login_method is not '':
+    login_method = settings.BROKER['login_method']
+    if login_method is not None:
         celery.conf.update(BROKER_LOGIN_METHOD=login_method)
 
 
@@ -61,11 +45,11 @@ def configure_SSL():
     """
     Configures the celery object with BROKER_USE_SSL options
     """
-    if config.getboolean('tasks', 'celery_require_ssl'):
+    if settings.BROKER['celery_require_ssl']:
         BROKER_USE_SSL = {
-            'ca_certs': config.get('tasks', 'cacert'),
-            'keyfile': config.get('tasks', 'keyfile'),
-            'certfile': config.get('tasks', 'certfile'),
+            'ca_certs': settings.BROKER['cacert'],
+            'keyfile': settings.BROKER['keyfile'],
+            'certfile': settings.BROKER['certfile'],
             'cert_reqs': ssl.CERT_REQUIRED,
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)

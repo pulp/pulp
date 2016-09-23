@@ -10,8 +10,8 @@ import signal
 import mock
 
 from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, CELERY_CHECK_INTERVAL
-from pulp.server.async import app
 from pulp.server.managers.factory import initialize
+from pulp.tasking import celery_app as app
 
 
 initialize()
@@ -24,11 +24,11 @@ class InitializeWorkerTestCase(unittest.TestCase):
     @mock.patch('pulp.server.async.app.common_utils.delete_worker_working_directory')
     @mock.patch('pulp.server.async.app.common_utils.create_worker_working_directory')
     @mock.patch('pulp.server.async.app.initialization.initialize')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
+    @mock.patch('pulp.server.async.app.tasks.delete_worker')
     @mock.patch('pulp.server.async.app.get_resource_manager_lock')
     def test_initialize_worker(self,
                                mock_get_resource_manager_lock,
-                               _delete_worker, initialize,
+                               delete_worker, initialize,
                                create_worker_working_directory,
                                delete_worker_working_directory):
         """
@@ -40,7 +40,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
         app.initialize_worker(sender, mock.MagicMock())
 
         initialize.assert_called_once_with()
-        _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
+        delete_worker.assert_called_once_with(sender, normal_shutdown=True)
         create_worker_working_directory.assert_called_once_with(sender)
         delete_worker_working_directory.assert_called_once_with(sender)
         mock_get_resource_manager_lock.assert_not_called()
@@ -48,11 +48,11 @@ class InitializeWorkerTestCase(unittest.TestCase):
     @mock.patch('pulp.server.async.app.common_utils.delete_worker_working_directory')
     @mock.patch('pulp.server.async.app.common_utils.create_worker_working_directory')
     @mock.patch('pulp.server.async.app.initialization.initialize')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
+    @mock.patch('pulp.server.async.app.tasks.delete_worker')
     @mock.patch('pulp.server.async.app.get_resource_manager_lock')
     def test_initialize_worker_resource_manager(self,
                                                 mock_get_resource_manager_lock,
-                                                _delete_worker, initialize,
+                                                delete_worker, initialize,
                                                 create_worker_working_directory,
                                                 delete_worker_working_directory):
         """
@@ -64,7 +64,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
         app.initialize_worker(sender, mock.MagicMock())
 
         initialize.assert_called_once_with()
-        _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
+        delete_worker.assert_called_once_with(sender, normal_shutdown=True)
         create_worker_working_directory.assert_called_once_with(sender)
         delete_worker_working_directory.assert_called_once_with(sender)
         mock_get_resource_manager_lock.assert_called_once_with(sender)
@@ -90,8 +90,8 @@ class InitializeWorkerTestCase(unittest.TestCase):
         mock_time.sleep.assert_called_once_with(CELERY_CHECK_INTERVAL)
 
     @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    def test_custom_sigterm_handler(self, _delete_worker, mock_sys):
+    @mock.patch('pulp.server.async.app.tasks.delete_worker')
+    def test_custom_sigterm_handler(self, delete_worker, mock_sys):
         """
         Assert that the signal handler installed by the custom_sigterm_handler context manager
         calls the delete_worker cleanup routine with the correct worker name and then exits.
@@ -104,12 +104,12 @@ class InitializeWorkerTestCase(unittest.TestCase):
 
             handler(None, None)
 
-            _delete_worker.assert_called_once_with(name, normal_shutdown=True)
+            delete_worker.assert_called_once_with(name, normal_shutdown=True)
             mock_sys.exit.assert_called_once_with(0)
 
     @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    def test_custom_sigterm_handler_context_manager(self, _delete_worker, mock_sys):
+    @mock.patch('pulp.server.async.app.tasks.delete_worker')
+    def test_custom_sigterm_handler_context_manager(self, delete_worker, mock_sys):
         """
         Assert that the custom_sigterm_handler context manager properly sets and restores the
         SIGTERM signal handler upon entry and exit.

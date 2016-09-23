@@ -11,10 +11,9 @@ from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
 
 from pulp.common import dateutils
-from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model.base import Model
 from pulp.server.managers import factory
-
+from pulp.tasking.celery_instance import celery as app
 
 _logger = logging.getLogger(__name__)
 

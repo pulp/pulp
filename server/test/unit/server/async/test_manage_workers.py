@@ -19,7 +19,7 @@ import unittest
 
 import mock
 
-from pulp.server.async import manage_workers
+from pulp.app import manage_workers
 
 
 class TestGetConcurrency(unittest.TestCase):

@@ -135,7 +135,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE)
+                                                        set__state=constants.CALL_FAILED_STATE)
 
     @patch('pulp.server.db.model.TaskStatus.objects')
     def test_started(self, mock_task_objects):
@@ -205,7 +205,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE,
+                                                        set__state=constants.CALL_FAILED_STATE,
                                                         set__traceback=traceback)
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
@@ -456,7 +456,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE,
+                                                        set__state=constants.CALL_FAILED_STATE,
                                                         set__traceback=traceback)
         # validate bind action updated
         mock_bind_failed.assert_called_with(task_id, call_context)
@@ -488,7 +488,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE)
+                                                        set__state=constants.CALL_FAILED_STATE)
         # validate bind action updated
         mock_bind_failed.assert_called_with(task_id, call_context)
 
@@ -527,7 +527,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE,
+                                                        set__state=constants.CALL_FAILED_STATE,
                                                         set__traceback=traceback)
         # validate bind action updated
         mock_unbind_failed.assert_called_with(task_id, call_context)
@@ -559,6 +559,6 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_objects.assert_called_with(task_id=task_id)
         mock_return_tasks.update_one.assert_called_with(set__finish_time=test_date,
-                                                        set__state=constants.CALL_ERRORED_STATE)
+                                                        set__state=constants.CALL_FAILED_STATE)
         # validate bind action updated
         mock_unbind_failed.assert_called_with(task_id, call_context)
