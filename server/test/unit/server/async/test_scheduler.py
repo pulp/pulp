@@ -6,11 +6,12 @@ from celery.beat import ScheduleEntry
 import mock
 from mongoengine import NotUniqueError
 
-from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
+from pulp.common.constants import SCHEDULER_WORKER_NAME
 from pulp.server.async import scheduler
 from pulp.server.db.model import dispatch, Worker
 from pulp.server.managers.factory import initialize
 from pulp.tasking.celery_instance import celery as app
+from pulp.tasking.constants import TASKING_CONSTANTS
 
 initialize()
 
@@ -467,7 +468,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_logs_scheduler_missing(self, mock__logger, mock_worker, mock_delete_worker):
         mock_worker.objects.all.return_value = [
-            Worker(name=RESOURCE_MANAGER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
+            Worker(name=TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME,
+                   last_heartbeat=datetime.utcnow()),
             Worker(name='name2', last_heartbeat=datetime.utcnow()),
         ]
 
@@ -499,7 +501,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
         mock_worker.objects.all.return_value = [
             Worker(name='name1', last_heartbeat=datetime.utcnow() - timedelta(seconds=400)),
             Worker(name='name2', last_heartbeat=datetime.utcnow()),
-            Worker(name=RESOURCE_MANAGER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
+            Worker(name=TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME,
+                   last_heartbeat=datetime.utcnow()),
             Worker(name=SCHEDULER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
         ]
 

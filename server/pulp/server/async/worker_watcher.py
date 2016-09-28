@@ -76,8 +76,7 @@ def handle_worker_heartbeat(event):
         msg = _("New worker '%(worker_name)s' discovered") % event_info
         _logger.info(msg)
     else:
-        # Saving the worker updates the timestamp.
-        existing_worker.save()
+        existing_worker.save_heartbeat()
 
 
 def handle_worker_offline(event):

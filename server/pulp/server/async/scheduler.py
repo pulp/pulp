@@ -1,12 +1,13 @@
-from datetime import datetime, timedelta
-from gettext import gettext as _
 import itertools
 import logging
 import platform
 import threading
 import time
+from datetime import datetime, timedelta
+from gettext import gettext as _
 
 from celery import beat
+
 import mongoengine
 
 from pulp.common import constants
@@ -14,17 +15,17 @@ from pulp.common.dateutils import ensure_tz
 from pulp.server.async import worker_watcher
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import UnsafeRetry
+from pulp.server.db.model import CeleryBeatLock, Worker
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
-from pulp.server.db.model import Worker, CeleryBeatLock
 from pulp.server.managers.schedule import utils
-from pulp.tasking.celery_instance import celery as app
 from pulp.tasking import delete_worker
+from pulp.tasking.celery_instance import celery as app
+from pulp.tasking.constants import TASKING_CONSTANTS
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
 # first and only Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it
 # configures the celerybeat logging to log as Pulp does.
 import pulp.server.logs  # noqa
-
 
 _logger = logging.getLogger(__name__)
 
@@ -134,7 +135,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
                     delete_worker(worker.name)
             elif worker.name.startswith(constants.SCHEDULER_WORKER_NAME):
                 scheduler_count = scheduler_count + 1
-            elif worker.name.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
+            elif worker.name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
                 resource_manager_count = resource_manager_count + 1
             else:
                 worker_count = worker_count + 1
