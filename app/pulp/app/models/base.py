@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.db.models import options
 
 
 class Model(models.Model):
@@ -36,19 +37,31 @@ class MasterModel(Model):
         subclass.
 
     """
-    detail_model = models.CharField(max_length=63)
+
+    # TYPE is the user-facing string that describes this type. It is used to construct API
+    # endpoints for Detail models, and will be seen in the URLs generated for those Detail models.
+    # It can also be used for filtering across a relation where a model is related to a Master
+    # model. Set this to something reasonable in Master and Detail model classes, e.g. when
+    # create a master model, like "Importer", its TYPE value could be "importer". Then, when
+    # creating an Importer Detail class like PackageImporter, its type value could be "package",
+    # not "package_importer", since "package_importer" would be redundant in the context of
+    # an importer Master model.
+    TYPE = None
+
+    # This field must have a value when models are saved, and defaults to the value of
+    # the TYPE attribute on the Model being saved (seen above).
+    type = models.TextField(null=False, default=None)
 
     class Meta:
         abstract = True
 
     def save(self, *args, **kwargs):
         # instances of "detail" models that subclass MasterModel are exposed
-        # on instances of MasterModel by a lowercase version of their model
-        # name. That name is what I'm using here to determine the value of
-        # type. Storing type in a column on the MasterModel next to makes it trivial
-        # to filter for specific detail model types across model relations.
-        if not self.detail_model:
-            self.detail_model = self._meta.model_name
+        # on instances of MasterModel by the string stored in that model's TYPE attr.
+        # Storing this type in a column on the MasterModel next to makes it trivial
+        # to filter for specific detail model types across master's relations.
+        if not self.type:
+            self.type = self.TYPE
         return super(MasterModel, self).save(*args, **kwargs)
 
     def cast(self):
@@ -56,19 +69,22 @@ class MasterModel(Model):
 
         If this model is already an instance of its detail type, it will return itself.
         """
-        # If this instance's type matches the current model name, it is already cast. Return it.
-        if self.detail_model == self._meta.model_name:
-            return self
+        # Go through our related objects, find the one that's a subclass of this model
+        # on a OneToOneField, which identifies it as a potential detail relation.
+        for rel in self._meta.related_objects:
+            if rel.one_to_one and issubclass(rel.related_model, self._meta.model):
+                # The name of this relation is the name of the attr on the model instance.
+                # If that attr as a value, that means a row exists for this model in the
+                # related detail table. Cast and resturn this value, recursively following
+                # master/detail relationships down to the last table (the most detailed).
+                try:
+                    return getattr(self, rel.name).cast()
+                except AttributeError:
+                    continue
         else:
-            try:
-                # Otherwise, return the cast model attribute for this instance
-                return getattr(self, self.detail_model)
-            except AttributeError:
-                # Unknown content type. The generic content type is as specific as
-                # we can get here. This is a great place to throw a log message about
-                # encountering an un-modelled type, such as a type from an uninstalled
-                # plugin.
-                return self
+            # The for loop exited normally, there are no more detailed models than this
+            # one in this instance's master/detail ancestry, so return here.
+            return self
 
     @property
     def master(self):
@@ -76,17 +92,59 @@ class MasterModel(Model):
 
         If this is already the master model instance, it will return itself.
         """
-        # The assumption here is that the first OneToOneField found is the master
-        # related field. Based on testing, additional layers of nested inheritance
-        # add their their fields to the bottom of the model's field list.
-        # XXX This is potentially unreliable, and should absolutely be covered by unit tests.
-        #     This is also the reason for the warning issued in MasterModel's docstring.
-        for field in self._meta.fields:
-            if type(field) is models.OneToOneField:
-                return getattr(self, field.name)
+        if self._meta.master_model:
+            return self._meta.master_model(pk=self.pk)
         else:
-            # No OneToOneField means this is already the master.
             return self
 
     def __repr__(self):
         return '<{} "{}">'.format(type(self).__name__, str(self))
+
+
+# Add properties to model _meta info to support master/detail models
+# These are handy for registering API ModelViewSets and for other mechanisms that want to
+# introspect a model's master/detail status. Due to the fact that multiple modules can
+# inherit from a single master, it is impossible to go the other way with this:
+# We can't return a single "detail model" for a given master model.
+# Doing this in a non-monkeypatch way would mean a lot of effort to achieve the same result
+# (e.g. custom model metaclass, custom Options implementation, etc). These could be classmethods
+# on Model classes, but it's easy enough to use the model's _meta namespace to do this, since
+# that's where other methods like this exist in Django.
+def master_model(options):
+    """
+    The Master model class of this Model's Master/Detail relationship.
+
+    Accessible at <model_class>._meta.master_model, the Master model class in a Master/Detail
+    relationship is the most generic non-abstract Model in this model's multiple-table chain
+    of inheritance.
+
+    If this model is not a detail model, None will be returned.
+    """
+    # If this isn't even a MasterModel descendant, don't bother.
+    if not issubclass(options.model, MasterModel):
+        return None
+    try:
+        # The last item in this list is the oldest ancestor. Since the MasterModel usage
+        # is to declare your master by subclassing MasterModel, and MasterModel is abstract,
+        # the oldest ancestor model is the Master Model.
+        return options.get_parent_list()[-1]
+    except IndexError:
+        # Also None if this model is itself the master.
+        return None
+options.Options.master_model = property(master_model)
+
+
+def master_model_name(options):
+    """
+    The name of the Master model class of this Model's Master/Detail relationship.
+
+    Accessible at <model_class>._meta.master_model_name
+
+    If this model is not a detail model, None will be returned.
+    """
+    try:
+        return options.master_model._meta.model_name
+    except AttributeError:
+        # _meta was None, no master model
+        return None
+options.Options.master_model_name = property(master_model_name)

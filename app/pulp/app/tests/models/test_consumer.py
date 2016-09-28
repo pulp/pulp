@@ -14,7 +14,7 @@ class TestConsumer(TestCase):
         consumer.save()
         repository = Repository(name='test')
         repository.save()
-        publisher = Publisher(name='test', type='test', repository=repository)
+        publisher = Publisher(name='test', repository=repository)
         publisher.save()
 
         # bind

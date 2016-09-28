@@ -18,19 +18,14 @@ class Content(MasterModel):
     :cvar natural_key_fields: Tuple of natural fields.  Must be: models.Field.
     :type natural_key_fields: tuple
 
-    Fields:
-
-    :cvar type: The content type.
-    :type type: models.TextField
-
     Relations:
 
     :cvar notes: Arbitrary information stored with the content.
     :type notes: fields.GenericRelation
     """
-    natural_key_fields = ()
+    TYPE = 'content'
 
-    type = models.TextField(blank=False, default=None)
+    natural_key_fields = ()
 
     notes = fields.GenericRelation(Notes)
 
