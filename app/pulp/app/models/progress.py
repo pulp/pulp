@@ -124,7 +124,7 @@ class ProgressSpinner(ProgressReport):
     The ProgressSpinner() is a context manager that provides automatic state transitions for the
     RUNNING COMPLETED and ERRORED states. Use it as follows:
 
-        >>> spinner = ProgressSpinner('Publishing Metadata')
+        >>> spinner = ProgressSpinner.objects.create('Publishing Metadata')
         >>> with spinner:
         >>>     # spinner is at 'running'
         >>>     publish_metadata()
@@ -132,7 +132,7 @@ class ProgressSpinner(ProgressReport):
 
     You can also use this short form:
 
-        >>> with ProgressSpinner('Publishing Metadata'):
+        >>> with ProgressSpinner.objects.create('Publishing Metadata'):
         >>>     publish_metadata()
 
     ProgressSpinner objects are associated with a Task and auto-discover and populate the task id
@@ -184,7 +184,8 @@ class ProgressBar(ProgressReport):
 
     You can also use this short form:
 
-        >>> with ProgressBar(message='Publishing files', total=len(files_iterator)):
+        >>> with ProgressBar.objects.create(
+        >>>     message='Publishing files', total=len(files_iterator)) as progress_bar:
         >>>     for file in progress_bar.iter(files_iterator):
         >>>         handle(file)
 
