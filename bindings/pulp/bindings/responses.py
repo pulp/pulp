@@ -117,14 +117,6 @@ class Task(object):
         """
         return self.state == STATE_RUNNING
 
-    def was_accepted(self):
-        """
-        Indicates if the task was accepted by the agent.
-
-        :rtype: bool
-        """
-        return self.state == STATE_ACCEPTED
-
     def is_completed(self):
         """
         Indicates if the task has finished running and will not begin again,

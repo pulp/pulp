@@ -5,19 +5,13 @@ Glossary
 
 .. glossary::
 
-  agent
-    A daemon running on a consumer.  The agent provides a command
-    & control API which is used by the Pulp server to initiate content changes
-    on the consumer.  It also sends scheduled reports concerning consumer
-    status and installed content profiles to the Pulp server.
-
   binding
     An association between a :term:`consumer` and a :term:`repository`
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
     on the specified consumer.
 
   bundle
-    Term used to denote the collection of server, client, and agent components to
+    Term used to denote the collection of server and client components to
     provide support for a particular set of content types. For example, support
     for handling RPMs and errata is provided by the RPM bundle whereas support
     for Puppet modules is provided by the Puppet bundle.
@@ -84,9 +78,7 @@ Glossary
   registration
     The association of a :term:`consumer` to a Pulp server.  Once registered,
     a consumer is added to Pulp's inventory and may be :term:`bound <binding>` to
-    Pulp provided :term:`repositories <repository>`.  :term:`Content <content unit>`
-    installs, updates and uninstalls may be initiated from the Pulp server on
-    consumers running the Pulp :term:`agent`.
+    Pulp provided :term:`repositories <repository>`.
 
   repository
     A collection of content units. A repository's supported types is dictated

@@ -2,7 +2,6 @@ import json
 import unittest
 
 import mock
-from django.http import HttpResponseBadRequest
 
 from base import (assert_auth_CREATE, assert_auth_READ, assert_auth_UPDATE, assert_auth_DELETE,
                   assert_auth_EXECUTE)
@@ -13,7 +12,6 @@ from pulp.server.webservices.views.consumer_groups import (serialize,
                                                            ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,
-                                                           ConsumerGroupContentActionView,
                                                            ConsumerGroupResourceView,
                                                            ConsumerGroupSearchView,
                                                            ConsumerGroupUnassociateActionView,
@@ -457,70 +455,3 @@ class TestConsumerGroupBindingView(unittest.TestCase):
             raise AssertionError("MissingResource should be raised with missing options")
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'repo_id': 'no_such_repo'})
-
-
-class TestConsumerGroupContentActionView(unittest.TestCase):
-    """
-    Test Consumer group content manipulation.
-    """
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    def test_consumer_group_bad_request_content(self):
-        """
-        Test consumer group invalid content action.
-        """
-        request = mock.MagicMock()
-        request.body = json.dumps('')
-        consumer_group_content = ConsumerGroupContentActionView()
-        response = consumer_group_content.post(request, 'my-group', 'no_such_action')
-        self.assertTrue(isinstance(response, HttpResponseBadRequest))
-        self.assertEqual(response.status_code, 400)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_consumer_group_content_install(self, mock_factory):
-        """
-        Test consumer group content installation.
-        """
-        mock_factory.consumer_group_manager.return_value.install_content.return_value = 'ok'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_group_content = ConsumerGroupContentActionView()
-        self.assertRaises(OperationPostponed, consumer_group_content.post, request,
-                          'my-group', 'install')
-        mock_factory.consumer_group_manager().install_content.assert_called_once_with(
-            'my-group', [], {})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_consumer_group_content_update(self, mock_factory):
-        """
-        Test consumer group content update.
-        """
-        mock_factory.consumer_group_manager.return_value.update_content.return_value = 'ok'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_group_content = ConsumerGroupContentActionView()
-        self.assertRaises(OperationPostponed, consumer_group_content.post, request,
-                          'my-group', 'update')
-        mock_factory.consumer_group_manager().update_content.assert_called_once_with(
-            'my-group', [], {})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_consumer_group_content_uninstall(self, mock_factory):
-        """
-        Test consumer group content uninstall.
-        """
-        mock_factory.consumer_group_manager.return_value.uninstall_content.return_value = 'ok'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_group_content = ConsumerGroupContentActionView()
-        self.assertRaises(OperationPostponed, consumer_group_content.post, request,
-                          'my-group', 'uninstall')
-        mock_factory.consumer_group_manager().uninstall_content.assert_called_once_with(
-            'my-group', [], {})

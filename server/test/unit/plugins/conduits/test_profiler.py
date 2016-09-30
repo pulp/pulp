@@ -19,7 +19,6 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'test-distributor'
-    NOTIFY_AGENT = True
     BINDING_CONFIG = {'x': 'x'}
     TYPE_1_DEF = TypeDefinition('type-1', 'Type 1', 'One', ['key-1'], [], [])
     TYPE_2_DEF = TypeDefinition('type-2', 'Type 2', 'Two', ['key-2'], [], [])
@@ -73,8 +72,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
 
     def populate_bindings(self):
         manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.BINDING_CONFIG)
 
     def populate_units(self, key, typedef, additional_key=None):
         for i in range(1, 10):

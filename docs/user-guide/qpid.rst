@@ -16,20 +16,18 @@ The steps to reconfigure both Pulp and Qpid to communicate using SSL are as foll
    expect it to be at ``/etc/qpidd.conf``.
 3. Edit ``/etc/pulp/server.conf`` *messaging* section so that the server will connect to
    the Qpid broker using SSL.
-4. On each consumer, edit ``/etc/pulp/consumer/consumer.conf`` *messaging* section
-   so that the agent will connect to the Qpid broker using SSL.
-5. Copy x.509 certificates to each consumer:
+4. Copy x.509 certificates to each consumer:
 
   * ``/etc/pki/pulp/qpid/ca.crt``
   * ``/etc/pki/pulp/qpid/client.crt``
 
-6. Copy the x.509 certificates to each worker:
+5. Copy the x.509 certificates to each worker:
 
   * ``/etc/pki/pulp/qpid/ca.crt``
   * ``/etc/pki/pulp/qpid/client.crt``
 
-7. Make sure the ``qpid-cpp-server-ssl`` RPM is installed.
-8. Restart qpidd, httpd and pulp-agent
+6. Make sure the ``qpid-cpp-server-ssl`` RPM is installed.
+7. Restart qpidd and httpd
 
 
 Details
@@ -361,10 +359,6 @@ On each worker:
 
 * pulp_workers
 
-On each consumer:
-
-* pulp-agent
-
 
 Troubleshooting
 ---------------
@@ -379,13 +373,10 @@ General
 
 #. The Qpid broker (qpidd) also logs to syslog by default.
 
-#. The consumer agent (goferd) logs Qpid connection information to syslog.
-   See: :ref:`logging` for details.
-
 #. Make sure you've copied the client key and certificate to each consumer.
 
 #. Make sure you have restarted the services involved: httpd, qpidd, pulp_celerybeat,
-   pulp_resource_manager, pulp_workers, and pulp-agent.
+   pulp_resource_manager and pulp_workers.
 
 #. Make sure the firewall on the Pulp server is configured to permit TCP on port 5671
    or that it's disabled.
@@ -415,8 +406,8 @@ Log Messages Explained
 ``[Security] error Rejected un-encrypted connection.``
     Log messages containing this indicate that either the Pulp
     server or the consumer is not properly configured to connect using SSL. This can also
-    indicate that SSL configuration is complete but that either the Pulp server (httpd) or
-    the consumer agent (goferd) needs to be restarted.
+    indicate that SSL configuration is complete but that either the Pulp server (httpd)
+    needs to be restarted.
 
 
 Helpful Links

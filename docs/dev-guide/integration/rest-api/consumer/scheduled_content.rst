@@ -78,7 +78,7 @@ Creating a Schedule
 * :param:`schedule,string,schedule in iso8601 interval format`
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
 * :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
-* :param:`?options,object,key - value options to pass to the install agent`
+* :param:`?options,object,key - value options to pass to the install`
 * :param:`units,array,array of units to install`
 
 | :response_list:`_`
