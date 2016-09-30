@@ -981,7 +981,7 @@ class TestCheckPerformFullSync(unittest.TestCase):
 @mock.patch('pulp.server.controllers.repository.manager_factory')
 @mock.patch('pulp.server.controllers.repository.RepoSyncResult')
 @mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
-@mock.patch('pulp.server.controllers.repository.common_utils.get_working_directory')
+@mock.patch('pulp.tasking.storage.get_working_directory')
 @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
 @mock.patch('pulp.server.controllers.repository.plugin_api')
 @mock.patch('pulp.server.controllers.repository.model')
@@ -1200,12 +1200,12 @@ class TestPublish(unittest.TestCase):
     Tests for publishing a repository.
     """
     @mock.patch('pulp.server.controllers.repository.check_publish')
-    @mock.patch('pulp.server.controllers.repository.common_utils')
+    @mock.patch('pulp.server.controllers.repository.get_working_directory')
     @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
     @mock.patch('pulp.server.controllers.repository.RepoPublishConduit')
     @mock.patch('pulp.server.controllers.repository._get_distributor_instance_and_config')
     def test_expected(self, mock_get_dist_inst, mock_pub_conduit, mock_plug_call_conf,
-                      m_common, mock_check_pub, mock_f, m_repo_qs, m_dist_qs):
+                      m_w_dir, mock_check_pub, mock_f, m_repo_qs, m_dist_qs):
         """
         Test publish when all goes as expected.
         """
@@ -1223,7 +1223,7 @@ class TestPublish(unittest.TestCase):
                                                mock_pub_conduit(), mock_plug_call_conf())
         mock_fire.fire_repo_publish_finished.assert_called_once_with(mock_check_pub())
         self.assertTrue(
-            m_repo.to_transfer_repo().working_dir is m_common.get_working_directory())
+            m_repo.to_transfer_repo().working_dir is m_w_dir())
         self.assertTrue(result is mock_check_pub())
 
 
@@ -1744,7 +1744,7 @@ class TestGetDeferredContentUnits(unittest.TestCase):
 class TestCreateDownloadRequests(unittest.TestCase):
 
     @patch(MODULE + 'Key.load', Mock())
-    @patch(MODULE + 'common_utils.get_working_directory', Mock(return_value='/working/'))
+    @patch(MODULE + 'get_working_directory', Mock(return_value='/working/'))
     @patch(MODULE + 'mkdir')
     @patch(MODULE + '_get_streamer_url')
     @patch(MODULE + 'model.LazyCatalogEntry')

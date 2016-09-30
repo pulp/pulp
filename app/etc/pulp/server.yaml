@@ -55,3 +55,12 @@
 #   ssl_client_key: /etc/pki/pulp/qpid/client.crt
 #   ssl_client_certificate: /etc/pki/pulp/qpid/client.crt
 #   login_method:
+
+# Server configuration
+#
+# `server`: Server behavior configuration of pulp.
+#   `working_directory`: Path for pulp workers to create temporary directories
+#                        for completion of tasks
+#
+# server:
+#   working_directory: /var/cache/pulp

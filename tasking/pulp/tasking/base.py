@@ -13,6 +13,7 @@ from django.db.models import Count
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
 from pulp.exceptions import MissingResource, PulpCodedException
+from pulp.tasking import storage
 from pulp.tasking.celery_instance import celery
 from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
 from pulp.tasking.constants import TASKING_CONSTANTS
@@ -326,6 +327,8 @@ class UserFacingTask(PulpTask):
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_success(retval)
 
+        storage.delete_working_directory()
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
         Update the :class: `pulp.app.models.Task` object, log, and save the results.
@@ -358,6 +361,8 @@ class UserFacingTask(PulpTask):
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_failed(exc, einfo)
+
+        storage.delete_working_directory()
 
     def _get_parent_arg(self):
         """Return a dictionary with the parent set if running inside of a Task"""

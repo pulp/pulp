@@ -66,7 +66,7 @@ class FileDistributorTest(unittest.TestCase):
 
     @patch('pulp.plugins.file.model_distributor.FileDistributor._symlink_unit')
     @patch('pulp.server.controllers.repository.find_repo_content_units', spec_set=True)
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_repo_publish_api_calls(self, mock_get_working_dir, mock_find, mock_symlink):
         mock_get_working_dir.return_value = self.temp_dir
         mock_find.return_value = [self.unit]
@@ -96,7 +96,7 @@ class FileDistributorTest(unittest.TestCase):
                                          self.unit.unit_key['checksum'],
                                          self.unit.unit_key['size']])
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     @patch('pulp.plugins.file.model_distributor._logger')
     def test_repo_publish_handles_errors(self, mock_logger, mock_get_working_dir):
         """

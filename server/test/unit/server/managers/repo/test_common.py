@@ -1,17 +1,16 @@
 import unittest
 
 import mock
-
-from pulp.server.managers.repo._common import (
-    get_working_directory, delete_working_directory,
-    create_worker_working_directory, delete_worker_working_directory
-)
+from pulp.tasking.storage import (create_worker_working_directory,
+                                  delete_worker_working_directory,
+                                  delete_working_directory,
+                                  get_working_directory)
 
 
 class TestWorkingDirectory(unittest.TestCase):
 
     @mock.patch('os.mkdir')
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_create_worker_working_directory(self, mock_pulp_config_get, mock_mkdir):
         mock_pulp_config_get.return_value = '/var/cache/pulp'
         create_worker_working_directory('test-worker')
@@ -20,7 +19,7 @@ class TestWorkingDirectory(unittest.TestCase):
 
     @mock.patch('shutil.rmtree')
     @mock.patch('os.path.exists', return_value=True)
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_delete_worker_working_directory(self, mock_pulp_config_get, mock_path_exists,
                                              mock_rmtree):
         mock_pulp_config_get.return_value = '/var/cache/pulp'
@@ -32,7 +31,7 @@ class TestWorkingDirectory(unittest.TestCase):
     @mock.patch('celery.task.current')
     @mock.patch('os.path.exists', return_value=False)
     @mock.patch('os.mkdir')
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_get_working_directory_new(self, mock_pulp_config_get, mock_mkdir, mock_path_exists,
                                        mock_celery_current_task):
         mock_pulp_config_get.return_value = '/var/cache/pulp'
@@ -45,7 +44,7 @@ class TestWorkingDirectory(unittest.TestCase):
     @mock.patch('celery.task.current')
     @mock.patch('os.path.exists', return_value=True)
     @mock.patch('os.mkdir')
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_get_working_directory_existing(self, mock_pulp_config_get, mock_mkdir,
                                             mock_path_exists, mock_celery_current_task):
         mock_pulp_config_get.return_value = '/var/cache/pulp'
@@ -58,7 +57,7 @@ class TestWorkingDirectory(unittest.TestCase):
     @mock.patch('celery.task.current')
     @mock.patch('os.path.exists', return_value=True)
     @mock.patch('shutil.rmtree')
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_delete_working_directory_existing(self, mock_pulp_config_get, mock_rmtree,
                                                mock_path_exists, mock_celery_current_task):
         mock_pulp_config_get.return_value = '/var/cache/pulp'
@@ -70,7 +69,7 @@ class TestWorkingDirectory(unittest.TestCase):
     @mock.patch('celery.task.current')
     @mock.patch('os.path.exists', return_value=False)
     @mock.patch('shutil.rmtree')
-    @mock.patch('pulp.server.config.config.get')
+    @mock.patch('django.conf.settings.SERVER.get')
     def test_delete_working_directory_non_existing(self, mock_pulp_config_get, mock_rmtree,
                                                    mock_path_exists, mock_celery_current_task):
         mock_pulp_config_get.return_value = '/var/cache/pulp'

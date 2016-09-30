@@ -1,4 +1,3 @@
-from os import readlink
 import copy
 import csv
 import errno
@@ -6,14 +5,14 @@ import os
 import shutil
 import tempfile
 import unittest
+from os import readlink
 
-from mock import Mock, MagicMock, patch
+from mock import MagicMock, Mock, patch
 
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.devel.mock_distributor import get_publish_conduit
-from pulp.plugins.file.distributor import FileDistributor, FilePublishProgressReport, BUILD_DIRNAME
+from pulp.plugins.file.distributor import BUILD_DIRNAME, FileDistributor, FilePublishProgressReport
 from pulp.plugins.model import Repository, Unit
-
 
 DATA_DIR = os.path.realpath("../../../data/")
 SAMPLE_RPM = 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
@@ -62,7 +61,7 @@ class FileDistributorTest(unittest.TestCase):
         # ensure that this doesn't raise an error
         distributor.post_repo_publish(None, None)
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_repo_publish_api_calls(self, mock_get_working):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
@@ -79,7 +78,7 @@ class FileDistributorTest(unittest.TestCase):
         self.assertEqual(self.publish_conduit.set_progress.mock_calls[1][1][0]['state'],
                          FilePublishProgressReport.STATE_COMPLETE)
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_repo_publish_files_placed_properly(self, mock_get_working):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
@@ -91,7 +90,7 @@ class FileDistributorTest(unittest.TestCase):
         link_target = os.readlink(target_file)
         self.assertEquals(link_target, os.path.join(DATA_DIR, SAMPLE_RPM))
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_repo_publish_metadata_writing(self, mock_get_working):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
@@ -103,7 +102,7 @@ class FileDistributorTest(unittest.TestCase):
             self.assertEquals(row[1], self.unit.unit_key['checksum'])
             self.assertEquals(row[2], str(self.unit.unit_key['size']))
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     @patch('pulp.plugins.file.distributor._logger')
     def test_repo_publish_handles_errors(self, mock_logger, mock_get_working):
         """
@@ -130,7 +129,7 @@ class FileDistributorTest(unittest.TestCase):
         self.assertEqual(self.publish_conduit.set_progress.mock_calls[1][1][0]['state'],
                          FilePublishProgressReport.STATE_FAILED)
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_republish_after_unit_removal(self, mock_get_working):
         """
         This test checks for an issue[0] we had where publishing an ISO repository, removing an ISO,
@@ -167,7 +166,7 @@ class FileDistributorTest(unittest.TestCase):
         distributor.distributor_removed(self.repo, {})
         self.assertTrue(distributor.unpublish_repo.called)
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_unpublish_repo(self, mock_get_working):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()

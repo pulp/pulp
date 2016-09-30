@@ -1,27 +1,29 @@
-from gettext import gettext as _
-from itertools import chain
 import copy
 import logging
 import os
 import sys
 import time
-from urlparse import urlunsplit
 import uuid
 
-from bson.objectid import ObjectId, InvalidId
+from gettext import gettext as _
+from itertools import chain
+from urlparse import urlunsplit
+
 import celery
-from mongoengine import NotUniqueError, OperationError, ValidationError, DoesNotExist
+from bson.objectid import InvalidId, ObjectId
+from mongoengine import DoesNotExist, NotUniqueError, OperationError, ValidationError
+
 from nectar.config import DownloaderConfig
-from nectar.request import DownloadRequest
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 from nectar.listener import DownloadEventListener
+from nectar.request import DownloadRequest
 
 from pulp.common import dateutils, error_codes, tags
-from pulp.common.config import parse_bool, Unparsable
-from pulp.common.plugins import reporting_constants, importer_constants
-from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
-from pulp.plugins.conduits.repo_sync import RepoSyncConduit
+from pulp.common.config import Unparsable, parse_bool
+from pulp.common.plugins import reporting_constants
+from pulp.common.tags import RESOURCE_REPOSITORY_TYPE, action_tag, resource_tag
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -32,21 +34,19 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import register_sigterm_handler
 from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
-from pulp.server.content.sources.constants import MAX_CONCURRENT, HEADERS, SSL_VALIDATION
+from pulp.server.content.sources.constants import HEADERS, MAX_CONCURRENT, SSL_VALIDATION
 from pulp.server.content.storage import mkdir
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import connection, model
-from pulp.server.db.model.repository import (
-    RepoContentUnit, RepoSyncResult, RepoPublishResult)
+from pulp.server.db.model.repository import RepoContentUnit, RepoPublishResult, RepoSyncResult
 from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import InvalidChecksumType
 from pulp.tasking import PulpTask, UserFacingTask, get_current_task_id
-
+from pulp.tasking.storage import get_working_directory
 
 _logger = logging.getLogger(__name__)
 
@@ -726,7 +726,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
 
     importer_config = importer_controller.clean_config_dict(copy.deepcopy(repo_importer.config))
     call_config = PluginCallConfiguration(imp_config, importer_config, sync_config_override)
-    transfer_repo.working_dir = common_utils.get_working_directory()
+    transfer_repo.working_dir = get_working_directory()
     conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id, repo_importer.id)
     sync_result_collection = RepoSyncResult.get_collection()
 
@@ -1066,7 +1066,7 @@ def publish(repo_id, dist_id, publish_config_override=None, scheduled_call_id=No
     conduit = RepoPublishConduit(repo_id, dist_id)
     call_config = PluginCallConfiguration(dist_conf, dist.config, publish_config_override)
     transfer_repo = repo_obj.to_transfer_repo()
-    transfer_repo.working_dir = common_utils.get_working_directory()
+    transfer_repo.working_dir = get_working_directory()
 
     # Fire events describing the publish state
     fire_manager = manager_factory.event_fire_manager()
@@ -1130,8 +1130,8 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     skip_for_predistributor = (predistributor_id and (published_after_predistributor or
                                                       not predistributor_last_published))
     # Check if content has not changed since last publish and a predistributor is not defined.
-    unchanged_content_and_no_predistributor = last_published and not last_updated and \
-        not units_removed and not predistributor_id
+    unchanged_content_and_no_predistributor = (last_published and not last_updated and
+                                               not units_removed and not predistributor_id)
     # We want to skip based on predistributor conditions. We also want to skip if repository
     # content has not changed since last publish and no predistributor is defined. We want to not
     # skip if 'force_full' is configured or the distributor config has changed since last publish.
@@ -1429,7 +1429,7 @@ def _create_download_requests(content_units):
     :rtype:  list of nectar.request.DownloadRequest
     """
     requests = []
-    working_dir = common_utils.get_working_directory()
+    working_dir = get_working_directory()
     signing_key = Key.load(pulp_conf.get('authentication', 'rsa_key'))
 
     for content_unit in content_units:

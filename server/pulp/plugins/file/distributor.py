@@ -1,4 +1,3 @@
-from gettext import gettext as _
 import csv
 import errno
 import logging
@@ -6,11 +5,13 @@ import os
 import shutil
 import traceback
 
+from gettext import gettext as _
+
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
-from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import copytree
+from pulp.tasking.storage import get_working_directory
 
 BUILD_DIRNAME = 'build'
 
@@ -77,7 +78,7 @@ class FileDistributor(Distributor):
             units = publish_conduit.get_units()
 
             # Set up an empty build_dir
-            working_dir = common_utils.get_working_directory()
+            working_dir = get_working_directory()
             build_dir = os.path.join(working_dir, BUILD_DIRNAME)
             os.makedirs(build_dir)
 
