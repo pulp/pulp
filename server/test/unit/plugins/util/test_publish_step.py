@@ -690,7 +690,8 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         step = publish_step.AtomicDirectoryPublishStep('foo', 'bar', 'baz')
         self.assertEquals(step.step_id, reporting_constants.PUBLISH_STEP_DIRECTORY)
 
-    def test_process_main(self):
+    @patch('selinux.restorecon')
+    def test_process_main(self, restorecon):
         source_dir = os.path.join(self.working_directory, 'source')
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
@@ -707,11 +708,14 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         os.makedirs(old_dir)
         step.process_main()
 
+        restorecon.assert_called_once_with(
+            os.path.join(master_dir, step.parent.timestamp), recursive=True)
         target_file = os.path.join(publish_dir, 'foo', 'bar.html')
         self.assertEquals(True, os.path.exists(target_file))
         self.assertEquals(1, len(os.listdir(master_dir)))
 
-    def test_process_main_multiple_targets(self):
+    @patch('selinux.restorecon')
+    def test_process_main_multiple_targets(self, restorecon):
         source_dir = os.path.join(self.working_directory, 'source')
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
@@ -730,11 +734,14 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
 
         step.process_main()
 
+        restorecon.assert_called_once_with(
+            os.path.join(master_dir, step.parent.timestamp), recursive=True)
         target_file = os.path.join(publish_dir, 'foo', 'bar.html')
         self.assertEquals(True, os.path.exists(target_file))
         self.assertEquals(True, os.path.exists(target_qux))
 
-    def test_process_main_only_publish_directory_contents(self):
+    @patch('selinux.restorecon')
+    def test_process_main_only_publish_directory_contents(self, restorecon):
         source_dir = os.path.join(self.working_directory, 'source')
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
@@ -756,6 +763,8 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         os.makedirs(old_dir)
         step.process_main()
 
+        restorecon.assert_called_once_with(
+            os.path.join(master_dir, step.parent.timestamp), recursive=True)
         target_file = os.path.join(publish_dir, 'bar.html')
         self.assertTrue(os.path.exists(target_file))
         self.assertTrue(os.path.exists(existing_file))

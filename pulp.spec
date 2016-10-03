@@ -367,6 +367,7 @@ Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-qpid
 Requires: python-nectar >= 1.5.0
 Requires: python-semantic_version >= 2.2.0
+Requires: libselinux-python
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
