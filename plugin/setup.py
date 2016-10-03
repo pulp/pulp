@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requirements = []
+requirements = ['requests_futures']
 
 setup(
     name='pulp-plugin',
