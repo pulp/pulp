@@ -114,9 +114,6 @@ class ContentAdaptor(MasterModel):
     :cvar name: The ContentAdaptor name.
     :type type: models.TextField
 
-    :cvar type: The ContentAdaptor type.
-    :type type: models.TextField
-
     :cvar last_updated: When the adaptor was last updated.
     :type last_updated: fields.DateTimeField
 
@@ -127,7 +124,6 @@ class ContentAdaptor(MasterModel):
 
     """
     name = models.TextField(db_index=True)
-    type = models.TextField(blank=False, default=None)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
@@ -197,6 +193,7 @@ class Importer(ContentAdaptor):
     :cvar scratchpad: Arbitrary information stashed by the importer.
     :type scratchpad: fields.GenericRelation
     """
+    TYPE = 'importer'
 
     # Download Policies
     IMMEDIATE = 'immediate'
@@ -251,6 +248,8 @@ class Publisher(ContentAdaptor):
     Relations:
 
     """
+    TYPE = 'publisher'
+
     auto_publish = models.BooleanField(default=True)
     relative_path = models.TextField(blank=True)
     last_published = models.DateTimeField(blank=True, null=True)

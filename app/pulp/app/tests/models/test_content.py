@@ -94,15 +94,6 @@ class ContentExample(TestCase):
                 self.assertEqual(artifact.file.read(), fp.read())
             artifact.file.close()
 
-    def test_publishing_repository(self):
-        self.associate()
-        self.add_artifacts()
-
-        # publishing
-        for content in (c.cast() for c in self.repository.content.filter(type=TYPE)):
-            for artifact in content.artifacts.all():
-                self.publish(artifact)
-
     def test_find_artifacts_by_path(self):
         n = 0
         self.associate()

@@ -45,7 +45,6 @@ class RepositoryExample(TestCase):
         repository = Repository.objects.get(name=RepositoryExample.NAME)
         importer = Importer(repository=repository)
         importer.name = 'Upstream'
-        importer.type = 'YUM'
         importer.feed_url = 'http://content-world/everyting/'
         importer.ssl_validation = True
         importer.ssl_ca_certificate = 'MY-CA'
@@ -64,7 +63,6 @@ class RepositoryExample(TestCase):
         for n in range(3):
             publisher = Publisher(repository=repository)
             publisher.name = 'p{}'.format(n)
-            publisher.type = 'YUM'
             publisher.auto_publish = True
             publisher.save()
 
