@@ -82,9 +82,8 @@ class ProgressReport(Model):
         """
         Saves the progress report state as RUNNING
         """
-        if self.state != self.RUNNING:
-            self.state = self.RUNNING
-            self.state.save()
+        self.state = self.RUNNING
+        self.save()
 
     def __exit__(self, type, value, traceback):
         """
@@ -121,16 +120,17 @@ class ProgressSpinner(ProgressReport):
         >>> metadata_progress.state = 'completed'
         >>> metadata_progress.save()
 
-    The ProgressSpinner() is a context manager that provides automatic state transitions for the
-    RUNNING COMPLETED and FAILED states. Use it as follows:
+    The ProgressSpinner() is a context manager that provides automatic state transitions and saving
+    for the RUNNING COMPLETED and FAILED states. Use it as follows:
 
         >>> spinner = ProgressSpinner('Publishing Metadata')
+        >>> spinner.save() # spinner is saved as 'waiting'
         >>> with spinner:
-        >>>     # spinner is at 'running'
+        >>>     # spinner is saved as 'running'
         >>>     publish_metadata()
-        >>>     # spinner is at 'completed' if no exception or 'failed' if an exception was raised
+        >>> # spinner is saved as 'completed' if no exception is raised or 'failed' otherwise
 
-    You can also use this short form:
+    You can also use this short form which handles all necessary save() calls:
 
         >>> with ProgressSpinner('Publishing Metadata'):
         >>>     publish_metadata()
@@ -161,18 +161,18 @@ class ProgressBar(ProgressReport):
         >>> progress_bar.state = 'completed'
         >>> progress_bar.save()
 
-    The ProgressBar() is a context manager that provides automatic state transitions for the RUNNING
-    COMPLETED and FAILED states. The increment() method can be called in the loop as work is
-    completed. Use it as follows:
+    The ProgressBar() is a context manager that provides automatic state transitions and saving for
+    the RUNNING COMPLETED and FAILED states. The increment() method can be called in the loop as
+    work is completed. Use it as follows:
 
         >>> progress_bar = ProgressBar(message='Publishing files', total=len(files_iterator))
         >>> progress_bar.save()
         >>> with progress_bar:
-        >>>     # progress_bar now at 'running'
+        >>>     # progress_bar saved as 'running'
         >>>     for file in files_iterator:
         >>>         handle(file)
         >>>         progress_bar.increment()  # increments and saves
-        >>> # progress_bar is at 'completed' if no exception or 'failed' if an exception was raised
+        >>> # progress_bar is saved as 'completed' if no exception or 'failed' otherwise
 
     A convenience method called iter() allows you to avoid calling increment() directly:
 
@@ -182,10 +182,10 @@ class ProgressBar(ProgressReport):
         >>>     for file in progress_bar.iter(files_iterator):
         >>>         handle(file)
 
-    You can also use this short form:
+    You can also use this short form which handles all necessary save() calls:
 
-        >>> with ProgressBar(message='Publishing files', total=len(files_iterator)):
-        >>>     for file in progress_bar.iter(files_iterator):
+        >>> with ProgressBar(message='Publishing files', total=len(files_iterator)) as pb:
+        >>>     for file in pb.iter(files_iterator):
         >>>         handle(file)
 
     ProgressBar objects are associated with a Task and auto-discover and populate the task id when
