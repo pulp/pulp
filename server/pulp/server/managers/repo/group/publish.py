@@ -9,10 +9,10 @@ from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import PublishReport
-from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
+from pulp.tasking import UserFacingTask
 
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ class RepoGroupPublishManager(object):
         return date
 
 
-publish = task(RepoGroupPublishManager.publish, base=Task, ignore_result=True)
+publish = task(RepoGroupPublishManager.publish, base=UserFacingTask, ignore_result=True)
 
 
 def _now_timestamp():

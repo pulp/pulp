@@ -9,12 +9,12 @@ from celery import task
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import (InvalidValue, MissingResource, PulpDataException,
                                     PulpExecutionException)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
+from pulp.tasking import UserFacingTask
 
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
@@ -315,10 +315,11 @@ class RepoGroupDistributorManager(object):
         RepoGroupDistributor.get_collection().save(distributor)
 
 
-add_distributor = task(RepoGroupDistributorManager.add_distributor, base=Task)
-remove_distributor = task(RepoGroupDistributorManager.remove_distributor, base=Task,
+add_distributor = task(RepoGroupDistributorManager.add_distributor, base=UserFacingTask)
+remove_distributor = task(RepoGroupDistributorManager.remove_distributor, base=UserFacingTask,
                           ignore_result=True)
-update_distributor_config = task(RepoGroupDistributorManager.update_distributor_config, base=Task)
+update_distributor_config = task(RepoGroupDistributorManager.update_distributor_config,
+                                 base=UserFacingTask)
 
 
 def process_update_config(current_config, supplied_config):

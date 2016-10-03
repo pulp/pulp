@@ -4,13 +4,13 @@ This module contains views related to Pulp's task groups.
 from django.views.generic import View
 
 from pulp.common.constants import CALL_STATES
-from pulp.server.async import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model import TaskStatus
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import generate_json_response, \
     generate_json_response_with_pulp_encoder
+from pulp.tasking import cancel
 
 
 class TaskGroupView(View):
@@ -53,7 +53,7 @@ class TaskGroupView(View):
             raise MissingResource
 
         for task in raw_tasks:
-            tasks.cancel(task.task_id)
+            cancel(task.task_id)
         return generate_json_response(None)
 
 

@@ -12,11 +12,11 @@ from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.server import config as pulp_config
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException, PulpCodedException)
 from pulp.server.controllers import repository as repo_controller
+from pulp.tasking import UserFacingTask
 
 
 logger = logging.getLogger(__name__)
@@ -273,4 +273,4 @@ class ContentUploadManager(object):
         return upload_storage_dir
 
 
-import_uploaded_unit = task(ContentUploadManager.import_uploaded_unit, base=Task)
+import_uploaded_unit = task(ContentUploadManager.import_uploaded_unit, base=UserFacingTask)

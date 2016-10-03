@@ -1,10 +1,19 @@
 """
 Django models related to the Tasking system
 """
+from gettext import gettext as _
+import logging
+
 from django.db import models
+from django.utils import timezone
 
 from pulp.app.models import Model
 from pulp.app.fields import JSONField
+from pulp.common import TASK_FINAL_STATES
+from pulp.exceptions import PulpException
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ReservedResource(Model):
@@ -27,7 +36,7 @@ class ReservedResource(Model):
     resource = models.TextField()
 
     task = models.OneToOneField("Task")
-    worker = models.ForeignKey("Worker")
+    worker = models.ForeignKey("Worker", on_delete=models.CASCADE, related_name="reservations")
 
 
 class Worker(Model):
@@ -43,7 +52,7 @@ class Worker(Model):
     :type last_heartbeat: models.DateTimeField
     """
     name = models.TextField(db_index=True, unique=True)
-    last_heartbeat = models.DateTimeField()
+    last_heartbeat = models.DateTimeField(auto_now=True)
 
 
 class TaskLock(Model):
@@ -92,8 +101,8 @@ class Task(Model):
     :cvar finished_at: The time the task finished executing
     :type finished_at: models.DateTimeField
 
-    :cvar error: Collection of errors that might have occurred while task was running
-    :type error: models.JSONField
+    :cvar non_fatal_errors: Dictionary of non-fatal errors that occurred while task was running.
+    :type non_fatal_errors: models.JSONField
 
     :cvar result: Return value of the task
     :type result: models.JSONField
@@ -109,20 +118,16 @@ class Task(Model):
 
     WAITING = 'waiting'
     SKIPPED = 'skipped'
-    ACCEPTED = 'accepted'
     RUNNING = 'running'
-    SUSPENDED = 'suspended'
     COMPLETED = 'completed'
-    ERRORED = 'errored'
+    FAILED = 'failed'
     CANCELED = 'canceled'
     STATES = (
         (WAITING, 'Waiting'),
         (SKIPPED, 'Skipped'),
-        (ACCEPTED, 'Accepted'),
         (RUNNING, 'Running'),
-        (SUSPENDED, 'Suspended'),
         (COMPLETED, 'Completed'),
-        (ERRORED, 'Errored'),
+        (FAILED, 'Failed'),
         (CANCELED, 'Canceled')
     )
     group = models.UUIDField(null=True)
@@ -131,11 +136,68 @@ class Task(Model):
     started_at = models.DateTimeField(null=True)
     finished_at = models.DateTimeField(null=True)
 
-    error = JSONField()
+    non_fatal_errors = JSONField()
     result = JSONField()
 
     parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
-    worker = models.ForeignKey("Worker", null=True)
+    worker = models.ForeignKey("Worker", null=True, related_name="tasks")
+
+    def set_running(self):
+        """
+        Set this Task to the running state, save it, and log output in warning cases.
+
+        This updates the :attr: `started_at` and sets the :attr: `state` to :attr: `RUNNING`.
+        """
+        if self.state != self.WAITING:
+            msg = _('Task __call__() occurred but Task %s is not at WAITING')
+            _logger.warning(msg % self.request.id)
+        self.state = Task.RUNNING
+        self.started_at = timezone.now()
+        self.save()
+
+    def set_completed(self, result):
+        """
+        Set this Task to the completed state, save it, and log output in warning cases.
+
+        This updates the :attr: `finished_at` and sets the :attr: `state` to :attr: `COMPLETED`.
+
+        :param result: The result to save on the :class: `~pulp.app.models.Task`
+        :type result: dict
+        """
+        self.finished_at = timezone.now()
+        self.result = result
+
+        # Only set the state to finished if it's not already in a complete state. This is
+        # important for when the task has been canceled, so we don't move the task from canceled
+        # to finished.
+        if self.state not in TASK_FINAL_STATES:
+            self.state = Task.COMPLETED
+        else:
+            msg = _('Task set_completed() occurred but Task %s is already in final state')
+            _logger.warning(msg % self.pk)
+
+        self.save()
+
+    def set_failed(self, exc, einfo):
+        """
+        Set this Task to the failed state and save it.
+
+        This updates the :attr: `finished_at` attribute, sets the :attr: `state` to
+        :attr: `FAILED`, and sets the :attr: `result` attribute.
+
+        :param exc:     The exception raised by the task.
+        :type exc:      ???
+
+        :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
+        :type einfo:    ???
+        """
+        self.state = Task.FAILED
+        self.finished_at = timezone.now()
+        if isinstance(exc, PulpException):
+            self.result = exc.to_dict()
+        else:
+            self.result = {'traceback': einfo.traceback}
+        self.save()
 
 
 class TaskTag(Model):

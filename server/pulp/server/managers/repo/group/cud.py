@@ -6,10 +6,10 @@ from pymongo.errors import DuplicateKeyError
 
 from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
+from pulp.tasking import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -265,11 +265,13 @@ class RepoGroupManager(object):
         self.remove_notes(group_id, [key])
 
 
-associate = task(RepoGroupManager.associate, base=Task, ignore_result=True)
-create_and_configure_repo_group = task(RepoGroupManager.create_and_configure_repo_group, base=Task)
-delete_repo_group = task(RepoGroupManager.delete_repo_group, base=Task, ignore_result=True)
-unassociate = task(RepoGroupManager.unassociate, base=Task, ignore_result=True)
-update_repo_group = task(RepoGroupManager.update_repo_group, base=Task)
+associate = task(RepoGroupManager.associate, base=UserFacingTask, ignore_result=True)
+create_and_configure_repo_group = task(RepoGroupManager.create_and_configure_repo_group,
+                                       base=UserFacingTask)
+delete_repo_group = task(RepoGroupManager.delete_repo_group, base=UserFacingTask,
+                         ignore_result=True)
+unassociate = task(RepoGroupManager.unassociate, base=UserFacingTask, ignore_result=True)
+update_repo_group = task(RepoGroupManager.update_repo_group, base=UserFacingTask)
 
 
 def validate_existing_repo_group(group_id):

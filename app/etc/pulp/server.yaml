@@ -42,3 +42,16 @@
 #     pulp.app:
 #       level: INFO
 
+# Broker configuration
+#
+# `broker`: Broker configuration for Pulp. By default, Pulp uses the Qpid
+# broker without SSL. It is possible to change this by providing a different
+# broker string. The remaining options are used to configure SSL settings.
+#
+# broker:
+#   url: qpid://localhost/
+#   celery_require_ssl: False
+#   ssl_ca_certificate: /etc/pki/pulp/qpid/ca.crt
+#   ssl_client_key: /etc/pki/pulp/qpid/client.crt
+#   ssl_client_certificate: /etc/pki/pulp/qpid/client.crt
+#   login_method:

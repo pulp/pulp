@@ -12,13 +12,13 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
-from pulp.server.async.tasks import Task
 from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 from pulp.plugins.util.misc import paginate
+from pulp.tasking import UserFacingTask
 
 
 _logger = getLogger(__name__)
@@ -331,13 +331,13 @@ class ApplicabilityRegenerationManager(object):
 
 
 regenerate_applicability_for_consumers = task(
-    ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
-    ignore_result=True)
+    ApplicabilityRegenerationManager.regenerate_applicability_for_consumers,
+    base=UserFacingTask, ignore_result=True)
 regenerate_applicability_for_repos = task(
-    ApplicabilityRegenerationManager.regenerate_applicability_for_repos, base=Task,
+    ApplicabilityRegenerationManager.regenerate_applicability_for_repos, base=UserFacingTask,
     ignore_result=True)
 batch_regenerate_applicability_task = task(
-    ApplicabilityRegenerationManager.batch_regenerate_applicability, base=Task,
+    ApplicabilityRegenerationManager.batch_regenerate_applicability, base=UserFacingTask,
     ignore_results=True)
 
 
