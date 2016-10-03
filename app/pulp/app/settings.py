@@ -228,7 +228,7 @@ def load_settings(paths=()):
         try:
             with open(path) as config_file:
                 config = config_file.read()
-                override_settings = yaml.load(config)
+                override_settings = yaml.safe_load(config)
                 settings = merge_settings(settings, override_settings)
         except (OSError, IOError):
             # Consider adding logging of some kind, potentially to /var/log/pulp

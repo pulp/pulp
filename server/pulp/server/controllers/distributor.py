@@ -246,7 +246,7 @@ def update(repo_id, dist_id, config=None, delta=None):
     for bind in bind_manager.find_by_distributor(distributor.repo_id, distributor.distributor_id):
         try:
             report = bind_manager.bind(bind['consumer_id'], bind['repo_id'], bind['distributor_id'],
-                                       bind['notify_agent'], bind['binding_config'], options)
+                                       bind['binding_config'], options)
             if report:
                 additional_tasks.extend(report.spawned_tasks)
         except Exception, e:

@@ -144,12 +144,11 @@ class BindingsAPI(PulpAPI):
             path += '%s/' % repo_id
         return self.server.GET(path)
 
-    def bind(self, consumer_id, repo_id, distributor_id, notify_agent=True, binding_config=None):
+    def bind(self, consumer_id, repo_id, distributor_id, binding_config=None):
         path = self.BASE_PATH % consumer_id
         data = {
             'repo_id': repo_id,
             'distributor_id': distributor_id,
-            'notify_agent': notify_agent,
             'binding_config': binding_config or {}
         }
         return self.server.POST(path, data)

@@ -267,25 +267,24 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 .. _consumer_installation:
 
-Consumer Client And Agent
--------------------------
+Consumer Client
+---------------
 
 The Pulp Consumer Client is present on all systems that wish to act as a consumer
 of a Pulp server. The Pulp Consumer Client provides the means for a system to
-register and configure itself with a Pulp server. Additionally, the Pulp Consumer
-Client runs an agent that will receive messages and commands from the Pulp server.
+register and configure itself with a Pulp server.
 
 Pulp consumer commands are accessed through the ``pulp-consumer`` script. This
 script must be run as root to permit access to add references to the Pulp server's
 repositories.
 
-1. For environments that use Qpid, install the Pulp consumer client, agent packages, and Qpid
+1. For environments that use Qpid, install the Pulp consumer client and Qpid
 specific consumer dependencies with one command by running:
 
 ::
 
    $ sudo yum install pulp-consumer-client pulp-rpm-consumer-extensions \
-   pulp-puppet-consumer-extensions pulp-agent pulp-rpm-handlers pulp-rpm-yumplugins \
+   pulp-puppet-consumer-extensions pulp-rpm-handlers pulp-rpm-yumplugins \
    pulp-puppet-handlers python-gofer-qpid
 
 
@@ -305,23 +304,6 @@ specific consumer dependencies with one command by running:
 
   [server]
   host = localhost.localdomain
-
-
-3. The agent may be configured so that it will connect to the Qpid broker using SSL by
-   following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
-   By default, the agent will connect using a plain TCP connection.
-
-
-4. Set the agent to start at boot. For upstart::
-
-      $ sudo chkconfig goferd on
-      $ sudo service goferd start
-
-   For systemd::
-
-      $sudo systemctl enable goferd
-      $sudo systemctl start goferd
-
 
 Extra Configuration
 -------------------

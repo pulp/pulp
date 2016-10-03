@@ -6,7 +6,7 @@ from django.http import HttpResponseBadRequest
 
 from base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
-                                    OperationPostponed, UnsupportedValue)
+                                    OperationPostponed)
 from pulp.server.managers.consumer import bind
 from pulp.server.managers.consumer import profile
 from pulp.server.managers.consumer import query
@@ -24,9 +24,7 @@ from pulp.server.webservices.views.consumers import (ConsumersView, ConsumerBind
                                                      ConsumerProfileSearchView,
                                                      ConsumerResourceView,
                                                      ConsumerResourceContentApplicRegenerationView,
-                                                     ConsumerSearchView,
-                                                     UnitInstallSchedulesView,
-                                                     UnitInstallScheduleResourceView)
+                                                     ConsumerSearchView)
 
 
 class Test_expand_consumers(unittest.TestCase):
@@ -560,14 +558,13 @@ class TestConsumerBindingsView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.bind')
     def test_create_binding_sync(self, mock_bind, mock_resp):
         """
-        Test bind consumer to a repo sync task(notify_agent is false)
+        Test bind consumer to a repo sync task
         """
         mock_bind.return_value.spawned_tasks = False
         mock_bind.return_value.serialize.return_value = {'mock': 'bind'}
 
         request = mock.MagicMock()
-        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy',
-                                   'notify_agent': 'false'})
+        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
         consumer_bindings = ConsumerBindingsView()
 
         response = consumer_bindings.post(request, 'foo')
@@ -771,120 +768,6 @@ class TestConsumerContentActionView(unittest.TestCase):
         consumer_content = ConsumerContentActionView()
         self.assertRaises(InvalidValue, consumer_content.post, request,
                           'test-consumer', 'install')
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    def test_consumer_content_install_missing_cons(self, mock_consumer):
-        """
-        Test consumer content installation with missing consumer
-        """
-        mock_consumer.return_value.get_consumer.side_effect = MissingResource()
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_content = ConsumerContentActionView()
-        try:
-            response = consumer_content.post(request, 'my-consumer', 'install')
-        except MissingResource, response:
-            pass
-        else:
-            raise AssertionError('MissingResource should be raised with missing consumer')
-        self.assertEqual(response.http_status_code, 404)
-        self.assertEqual(response.error_data['resources'], {'consumer_id': 'my-consumer'})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    def test_consumer_content_install_missing_units(self, mock_consumer):
-        """
-        Test consumer content installation with missing units param
-        """
-        mock_consumer.return_value.get_consumer.return_value = 'my-consumer'
-        request = mock.MagicMock()
-        request.body = json.dumps({'options': {}})
-        consumer_content = ConsumerContentActionView()
-        try:
-            response = consumer_content.post(request, 'my-consumer', 'install')
-        except MissingValue, response:
-            pass
-        else:
-            raise AssertionError('MissingValue should be raised with missing units param')
-        self.assertEqual(response.http_status_code, 400)
-        self.assertEqual(response.error_data['property_names'], ['units'])
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    def test_consumer_content_install_missing_options(self, mock_consumer):
-        """
-        Test consumer content installation with missing options param
-        """
-        mock_consumer.return_value.get_consumer.return_value = 'my-consumer'
-        request = mock.MagicMock()
-        request.body = json.dumps({'units': []})
-        consumer_content = ConsumerContentActionView()
-        try:
-            response = consumer_content.post(request, 'my-consumer', 'install')
-        except MissingValue, response:
-            pass
-        else:
-            raise AssertionError('MissingValue should be raised with missing options param')
-        self.assertEqual(response.http_status_code, 400)
-        self.assertEqual(response.error_data['property_names'], ['options'])
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
-    def test_consumer_content_install(self, mock_factory, mock_consumer):
-        """
-        Test consumer content installation.
-        """
-        mock_factory.return_value.install_content.return_value.task_id = '1234'
-        mock_consumer.return_value.get_consumer.return_value = 'my_consumer'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_content = ConsumerContentActionView()
-        self.assertRaises(OperationPostponed, consumer_content.post, request,
-                          'my-consumer', 'install')
-        mock_factory.return_value.install_content.assert_called_once_with(
-            'my-consumer', [], {})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
-    def test_consumer_content_update(self, mock_factory, mock_consumer):
-        """
-        Test consumer content update.
-        """
-        mock_consumer.return_value.get_consumer.return_value = 'test-consumer'
-        mock_factory.return_value.update_content.return_value.task_id = '1234'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_content = ConsumerContentActionView()
-        self.assertRaises(OperationPostponed, consumer_content.post, request,
-                          'my-consumer', 'update')
-        mock_factory.return_value.update_content.assert_called_once_with(
-            'my-consumer', [], {})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
-    def test_consumer_content_uninstall(self, mock_factory, mock_consumer):
-        """
-        Test consumer content uninstall.
-        """
-        mock_consumer.return_value.get_consumer.return_value = 'test-consumer'
-        mock_factory.return_value.uninstall_content.return_value.task_id = '1234'
-        request = mock.MagicMock()
-        request.body = json.dumps({"units": [], "options": {}})
-        consumer_content = ConsumerContentActionView()
-        self.assertRaises(OperationPostponed, consumer_content.post, request,
-                          'my-consumer', 'uninstall')
-        mock_factory.return_value.uninstall_content.assert_called_once_with(
-            'my-consumer', [], {})
 
 
 class TestConsumerHistoryView(unittest.TestCase):
@@ -1352,216 +1235,6 @@ class TestConsumerResourceContentApplicabilityView(unittest.TestCase):
         mock_applic.apply_async_with_reservation.assert_called_with(
             mock_tags.RESOURCE_CONSUMER_TYPE, 'c1',
             ({'mock': 'some-criteria'},), tags=mock_task_tags)
-
-
-class TestConsumerUnitActionSchedulesView(unittest.TestCase):
-    """
-    Test consumer schedule actions
-    """
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_schedules(self, mock_factory, mock_resp):
-        """
-        Test consumer's schedules retrieval
-        """
-        mock_consumer_manager = mock.MagicMock()
-        mock_factory.consumer_manager.return_value = mock_consumer_manager
-        mock_consumer_manager.get_consumer.return_value = 'c1'
-        mock_display = mock.MagicMock()
-        resp = {'_id': 'my-schedule', 'schedule': 'P1D', 'kwargs': {'options': {}, 'units': []}}
-        mock_display.for_display.return_value = resp
-        mock_factory.consumer_schedule_manager.return_value.get.return_value = [mock_display]
-
-        request = mock.MagicMock()
-        consumer_schedule = UnitInstallSchedulesView()
-        response = consumer_schedule.get(request, 'c1')
-
-        mock_factory.consumer_schedule_manager.return_value.get.assert_called_once_with(
-            'c1', 'scheduled_unit_install')
-
-        expected_content = [{'_id': 'my-schedule', 'kwargs': {'options': {}, 'units': []},
-                             '_href': '/v2/consumers/c1/schedules/content/install/my-schedule/',
-                             'options': {}, 'units': [], 'schedule': 'P1D'}]
-        mock_resp.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_schedules_missing_consumer(self, mock_factory):
-        """
-        Test consumer's schedules retrieval missing consumer
-        """
-        mock_consumer_manager = mock.MagicMock()
-        mock_factory.consumer_manager.return_value = mock_consumer_manager
-        mock_consumer_manager.get_consumer.side_effect = MissingResource()
-        request = mock.MagicMock()
-        consumer_schedule = UnitInstallSchedulesView()
-        try:
-            response = consumer_schedule.get(request, 'test-consumer')
-        except MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised with missing consumer")
-        self.assertEqual(response.http_status_code, 404)
-        self.assertEqual(response.error_data['resources'], {'consumer_id': 'test-consumer'})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_redirect_response')
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_create_schedules(self, mock_factory, mock_resp, mock_redirect):
-        """
-        Test consumer's schedules creation
-        """
-        mock_consumer_manager = mock.MagicMock()
-        mock_factory.consumer_manager.return_value = mock_consumer_manager
-        mock_consumer_manager.get_consumer.return_value = 'c1'
-        mock_consumer_schedule_manager = mock.MagicMock()
-        mock_factory.consumer_schedule_manager.return_value = mock_consumer_schedule_manager
-        resp = {'_id': 'some-schedule', 'kwargs': {'options': {}, 'units': []}}
-        mock_consumer_schedule_manager.create_schedule.return_value.for_display.return_value = resp
-
-        request = mock.MagicMock()
-        request.body = json.dumps({'schedule': 'some-schedule'})
-        consumer_schedule = UnitInstallSchedulesView()
-        response = consumer_schedule.post(request, 'c1')
-
-        mock_consumer_schedule_manager.create_schedule.assert_called_once_with(
-            'scheduled_unit_install', 'c1', None, {}, 'some-schedule', None, True)
-
-        expected_cont = {'_id': 'some-schedule', 'kwargs': {'options': {}, 'units': []},
-                         'options': {}, 'units': [],
-                         '_href': '/v2/consumers/c1/schedules/content/install/some-schedule/'}
-        mock_resp.assert_called_once_with(expected_cont)
-        mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
-        self.assertTrue(response is mock_redirect.return_value)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
-    def test_create_schedules_unsupported_params(self, mock_consumer):
-        """
-        Test consumer's schedules creation with unsupported param
-        """
-        request = mock.MagicMock()
-        request.body = json.dumps({'schedule': 'some-schedule', 'unsupported_param': '1234'})
-        consumer_schedule = UnitInstallSchedulesView()
-        try:
-            response = consumer_schedule.post(request, 'test-consumer')
-        except UnsupportedValue, response:
-            pass
-        else:
-            raise AssertionError("UnsupportedValue should be raised with unsupported keys")
-        self.assertEqual(response.http_status_code, 400)
-        self.assertEqual(response.error_data['property_names'], ['unsupported_param'])
-
-
-class TestConsumerUnitActionScheduleResourceView(unittest.TestCase):
-    """
-    Test consumer schedule actions
-    """
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_schedule(self, mock_factory, mock_resp):
-        """
-        Test consumer's schedules resource retrieval
-        """
-        mock_id = mock.MagicMock()
-        resp = {'_id': 'some-schedule', 'schedule': 'P1D', 'kwargs': {'options': {}, 'units': []}}
-        mock_id.for_display.return_value = resp
-        mock_id.id = 'some-schedule'
-        mock_factory.consumer_schedule_manager.return_value.get.return_value = [mock_id]
-
-        request = mock.MagicMock()
-        consumer_schedule = UnitInstallScheduleResourceView()
-        response = consumer_schedule.get(request, 'c1', 'some-schedule')
-
-        mock_factory.consumer_schedule_manager.return_value.get.assert_called_once_with(
-            'c1', 'scheduled_unit_install')
-
-        expected_cont = {'_id': 'some-schedule', 'kwargs': {'options': {}, 'units': []},
-                         '_href': '/v2/consumers/c1/schedules/content/install/some-schedule/',
-                         'options': {}, 'units': [], 'schedule': 'P1D'}
-        mock_resp.assert_called_once_with(expected_cont)
-        self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_invalid_schedule(self, mock_factory, mock_resp):
-        """
-        Test consumer's invalid schedule resource retrieval
-        """
-        mock_factory.consumer_schedule_manager.return_value.get.return_value = []
-
-        request = mock.MagicMock()
-        consumer_schedule = UnitInstallScheduleResourceView()
-        try:
-            response = consumer_schedule.get(request, 'test-consumer', 'some-schedule')
-        except MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised with missing param")
-        self.assertEqual(response.http_status_code, 404)
-        self.assertEqual(response.error_data['resources'], {'consumer_id': 'test-consumer',
-                                                            'schedule_id': 'some-schedule'})
-        mock_factory.consumer_schedule_manager.return_value.get.assert_called_once_with(
-            'test-consumer', 'scheduled_unit_install')
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
-    def test_update_schedule(self, mock_factory, mock_resp):
-        """
-        Test consumer's schedules resource update
-        """
-        resp = {'_id': 'some-schedule', 'schedule': 'P1D', 'kwargs': {'options': {}, 'units': []}}
-        mock_update_schedule = mock.MagicMock()
-        mock_factory.return_value.update_schedule = mock_update_schedule
-        mock_update_schedule.return_value.for_display.return_value = resp
-
-        request = mock.MagicMock()
-        request.body = json.dumps({'failure_threshold': '3', 'schedule': 'P1D'})
-        consumer_schedule = UnitInstallScheduleResourceView()
-        response = consumer_schedule.put(request, 'c1', 'some-schedule')
-
-        mock_update_schedule.assert_called_once_with('c1', 'some-schedule', None, None,
-                                                     {'failure_threshold': '3',
-                                                      'iso_schedule': 'P1D'})
-
-        expected_cont = {'_id': 'some-schedule', 'kwargs': {'options': {}, 'units': []},
-                         '_href': '/v2/consumers/c1/schedules/content/install/some-schedule/',
-                         'options': {}, 'units': [], 'schedule': 'P1D'}
-        mock_resp.assert_called_once_with(expected_cont)
-        self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.consumers.generate_json_response')
-    @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
-    def test_delete_schedule(self, mock_schedule, mock_resp):
-        """
-        Test consumer's schedules resource delete
-        """
-        request = mock.MagicMock()
-        consumer_schedule = UnitInstallScheduleResourceView()
-        response = consumer_schedule.delete(request, 'test-consumer', 'some-schedule')
-
-        mock_schedule.return_value.delete_schedule.assert_called_once_with(
-            'test-consumer', 'some-schedule')
-
-        mock_resp.assert_called_once_with(None)
-        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestConsumerAddLinks(unittest.TestCase):

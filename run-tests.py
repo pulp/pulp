@@ -26,7 +26,6 @@ PACKAGES = [
 
 
 TESTS_ALL_PLATFORMS = [
-    'agent/test/unit',
     'bindings/test/unit',
     'client_consumer/test/unit',
     'client_lib/test/unit',

@@ -103,7 +103,6 @@ class ConsumerBindCommand(BindRelatedPollingCommand):
 
         handlers = {
             tags.action_tag(tags.ACTION_BIND): self._render_bind_header,
-            tags.action_tag(tags.ACTION_AGENT_BIND): self._render_agent_bind_header,
         }
 
         # There will be exactly 1 action tag for each task (multiple resource tags)
@@ -118,12 +117,6 @@ class ConsumerBindCommand(BindRelatedPollingCommand):
         Displays the task header for the bind task.
         """
         self.prompt.write(_('-- Updating Pulp Server --'), tag='bind-header')
-
-    def _render_agent_bind_header(self):
-        """
-        Displays the task header for the agent's bind task.
-        """
-        self.prompt.write(_('-- Notifying the Consumer --'), tag='agent-bind-header')
 
 
 class ConsumerUnbindCommand(BindRelatedPollingCommand):
@@ -185,7 +178,6 @@ class ConsumerUnbindCommand(BindRelatedPollingCommand):
 
         handlers = {
             tags.action_tag(tags.ACTION_UNBIND): self._render_unbind_header,
-            tags.action_tag(tags.ACTION_AGENT_UNBIND): self._render_agent_unbind_header,
             tags.action_tag(tags.ACTION_DELETE_BINDING): self._render_delete_binding_header,
         }
 
@@ -201,12 +193,6 @@ class ConsumerUnbindCommand(BindRelatedPollingCommand):
         Displays the task header for the unbind task.
         """
         self.prompt.write(_('-- Updating Pulp Server --'), tag='unbind-header')
-
-    def _render_agent_unbind_header(self):
-        """
-        Displays the task header for the agent's unbind task.
-        """
-        self.prompt.write(_('-- Notifying the Consumer --'), tag='agent-unbind-header')
 
     def _render_delete_binding_header(self):
         """

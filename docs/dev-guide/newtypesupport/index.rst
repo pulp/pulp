@@ -6,4 +6,3 @@ Implementing Support for New Types
 
    plugin/index
    client/index
-   agent/index

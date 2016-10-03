@@ -594,16 +594,7 @@ def cancel(task_id):
         _logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
 
-    if task_status['worker_name'] == 'agent':
-        tag_dict = dict(
-            [
-                tags.parse_resource_tag(t) for t in task_status['tags'] if tags.is_resource_tag(t)
-            ])
-        agent_manager = managers.consumer_agent_manager()
-        consumer_id = tag_dict.get(tags.RESOURCE_CONSUMER_TYPE)
-        agent_manager.cancel_request(consumer_id, task_id)
-    else:
-        controller.revoke(task_id, terminate=True)
+    controller.revoke(task_id, terminate=True)
 
     qs = TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES)
     qs.update_one(set__state=constants.CALL_CANCELED_STATE)

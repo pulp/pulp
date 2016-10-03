@@ -7,10 +7,6 @@ machines.
 Server
   This is the main application server that stores data and distributes content.
 
-Agent
-  This component runs on consumers and communicates with the server to provide remote content
-  management.
-
 Client
   This is a command line component that comes as two pieces: admin-client,
   which manages the server; and consumer-client, which manages a consumer's relationship

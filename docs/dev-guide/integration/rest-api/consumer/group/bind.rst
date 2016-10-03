@@ -28,7 +28,6 @@ more information on the format.
 * :param:`repo_id,string,unique identifier for the repository`
 * :param:`distributor_id,string,identifier for the distributor`
 * :param:`?options,object,options passed to the handler on each consumer`
-* :param:`?notify_agent,bool,indicates if the consumer should be sent a message about the new binding; defaults to true if unspecified`
 * :param:`?binding_config,object,options to be used by the distributor for this binding`
 
 | :response_list:`_`
@@ -102,4 +101,3 @@ will be created with the following tags: ``"pulp:repository:<repo_id>",
 "pulp:consumer:<consumer_id>"
 "pulp:repository_distributor:<distributor-id>"
 "pulp:action:unbind"``
-

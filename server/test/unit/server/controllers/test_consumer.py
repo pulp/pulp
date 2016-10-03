@@ -9,11 +9,10 @@ from pulp.server.controllers import consumer
 @patch('pulp.server.controllers.consumer.managers')
 class TestBind(unittest.TestCase):
 
-    def test_bind_no_agent_notification(self, mock_bind_manager):
+    def test_bind(self, mock_bind_manager):
         binding_config = {'binding': 'foo'}
-        agent_options = {'bar': 'baz'}
         result = consumer.bind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                               False, binding_config, agent_options)
+                               False, binding_config)
 
         mock_bind_manager.consumer_bind_manager.return_value.bind.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
@@ -23,72 +22,29 @@ class TestBind(unittest.TestCase):
         self.assertEquals(mock_bind_manager.consumer_bind_manager.return_value.bind.return_value,
                           result.return_value)
 
-        # Make sure we didn't process the agent
-        self.assertEquals(result.spawned_tasks, [])
-        self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
-
-    def test_bind_with_agent_notification(self, mock_bind_manager):
-        binding_config = {'binding': 'foo'}
-        agent_options = {'bar': 'baz'}
-        mock_bind_manager.consumer_agent_manager.return_value.bind.return_value = \
-            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
-        result = consumer.bind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                               True, binding_config, agent_options)
-        mock_bind_manager.consumer_agent_manager.return_value.bind.assert_called_once_with(
-            'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options
-        )
-
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.return_value,
-                          mock_bind_manager.consumer_bind_manager.return_value.bind.return_value)
-        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
-
 
 @patch('pulp.server.controllers.consumer.managers')
 class TestUnbind(unittest.TestCase):
 
-    def test_unbind_no_agent_notification(self, mock_bind_manager):
-        binding_config = {'notify_agent': False}
-        agent_options = {'bar': 'baz'}
+    def test_unbind(self, mock_bind_manager):
+        binding_config = {}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                                 agent_options)
+        result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id')
 
         mock_bind_manager.consumer_bind_manager.return_value.delete.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', True)
 
         self.assertEqual(result.error, None)
-        self.assertEqual(result.return_value, {'notify_agent': False})
         self.assertEqual(result.spawned_tasks, [])
-
-        # Make sure we didn't process the agent
-        self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
-
-    def test_unbind_with_agent_notification(self, mock_bind_manager):
-        binding_config = {'notify_agent': True}
-        agent_options = {'bar': 'baz'}
-        mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
-            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
-        result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                                 agent_options)
-        mock_bind_manager.consumer_bind_manager.return_value.unbind.assert_called_once_with(
-            'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id')
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(
-            'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
 @patch('pulp.server.controllers.consumer.managers')
 class TestForceUnbind(unittest.TestCase):
 
-    def test_unbind_no_agent_notification(self, mock_bind_manager):
-        binding_config = {'notify_agent': False}
-        agent_options = {'bar': 'baz'}
+    def test_unbind(self, mock_bind_manager):
+        binding_config = {}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        result = consumer.force_unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                                       agent_options)
+        result = consumer.force_unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id')
 
         mock_bind_manager.consumer_bind_manager.return_value.delete.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', True)
@@ -96,55 +52,3 @@ class TestForceUnbind(unittest.TestCase):
         self.assertEqual(result.error, None)
         self.assertEqual(result.return_value, None)
         self.assertEqual(result.spawned_tasks, [])
-
-        # Make sure we didn't process the agent
-        self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
-
-    def test_unbind_with_agent_notification(self, mock_bind_manager):
-        binding_config = {'notify_agent': True}
-        agent_options = {'bar': 'baz'}
-        mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
-            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
-        result = consumer.force_unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
-                                       agent_options)
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(
-            'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
-
-
-class TestInstallContent(unittest.TestCase):
-
-    @patch('pulp.server.controllers.consumer.managers')
-    def test_install_content(self, mock_factory):
-        # Setup
-        mock_task = mock_factory.consumer_agent_manager.return_value.install_content
-        mock_task.return_value = 'qux'
-        result = consumer.install_content('foo', 'bar', 'baz')
-        self.assertEquals('qux', result)
-        mock_task.assert_called_once_with('foo', 'bar', 'baz')
-
-
-class TestUpdateContent(unittest.TestCase):
-
-    @patch('pulp.server.controllers.consumer.managers')
-    def test_install_content(self, mock_factory):
-        # Setup
-        mock_task = mock_factory.consumer_agent_manager.return_value.update_content
-        mock_task.return_value = 'qux'
-        result = consumer.update_content('foo', 'bar', 'baz')
-        self.assertEquals('qux', result)
-        mock_task.assert_called_once_with('foo', 'bar', 'baz')
-
-
-class TestUninstallContent(unittest.TestCase):
-
-    @patch('pulp.server.controllers.consumer.managers')
-    def test_install_content(self, mock_factory):
-        # Setup
-        mock_task = mock_factory.consumer_agent_manager.return_value.uninstall_content
-        mock_task.return_value = 'qux'
-        result = consumer.uninstall_content('foo', 'bar', 'baz')
-        self.assertEquals('qux', result)
-        mock_task.assert_called_once_with('foo', 'bar', 'baz')

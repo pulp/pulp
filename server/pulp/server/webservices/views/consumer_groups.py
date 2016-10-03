@@ -1,5 +1,4 @@
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.server import exceptions as pulp_exceptions
@@ -208,94 +207,6 @@ class ConsumerGroupUnassociateActionView(View):
         return generate_json_response_with_pulp_encoder(group['consumer_ids'])
 
 
-class ConsumerGroupContentActionView(View):
-    """
-    Views for content manipulation on consumer group.
-    """
-
-    @auth_required(authorization.CREATE)
-    @parse_json_body(allow_empty=True)
-    def post(self, request, consumer_group_id, action):
-        """
-        Install/update/uninstall content unit/s on each consumer in the group.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_group_id: A consumer group ID.
-        :type consumer_group_id: str
-        :param action: type of action to perform
-        :type action: str
-        """
-        method = getattr(self, action, None)
-        if method:
-            return method(request, consumer_group_id)
-        else:
-            return HttpResponseBadRequest('bad request')
-
-    def install(self, request, consumer_group_id):
-        """
-        Install content (units) on the consumers in a consumer group.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of install options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_group_id: A consumer group ID.
-        :type consumer_group_id: str
-        :raises: OperationPostponed when an async operation is performed
-        """
-        body = request.body_as_json
-        units = body.get('units')
-        options = body.get('options')
-        task = factory.consumer_group_manager().install_content(consumer_group_id,
-                                                                units, options)
-        raise pulp_exceptions.OperationPostponed(task)
-
-    def update(self, request, consumer_group_id):
-        """
-        Update content (units) on the consumer in a consumer group.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of update options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_group_id: A consumer group ID.
-        :type consumer_group_id: str
-        :raises: OperationPostponed when an async operation is performed
-        """
-        body = request.body_as_json
-        units = body.get('units')
-        options = body.get('options')
-        task = factory.consumer_group_manager().update_content(consumer_group_id,
-                                                               units, options)
-        raise pulp_exceptions.OperationPostponed(task)
-
-    def uninstall(self, request, consumer_group_id):
-        """
-        Uninstall content (units) from the consumers in a consumer group.
-
-        Expected body: {units:[], options:<dict>}
-        where unit is: {type_id:<str>, unit_key={}} and the
-        options is a dict of uninstall options.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :param consumer_group_id: A consumer group ID.
-        :type consumer_group_id: str
-        :raises: OperationPostponed when an async operation is performed
-        """
-        body = request.body_as_json
-        units = body.get('units')
-        options = body.get('options')
-        task = factory.consumer_group_manager().uninstall_content(consumer_group_id,
-                                                                  units, options)
-        raise pulp_exceptions.OperationPostponed(task)
-
-
 class ConsumerGroupBindingsView(View):
     """
     Views for repository binding to the group.
@@ -324,15 +235,13 @@ class ConsumerGroupBindingsView(View):
         distributor_id = params.get('distributor_id')
         binding_config = params.get('binding_config', None)
         options = params.get('options', {})
-        notify_agent = params.get('notify_agent', True)
         missing_resources = verify_group_resources(consumer_group_id, repo_id, distributor_id)
         if missing_resources:
             if 'group_id' in missing_resources:
                 raise pulp_exceptions.MissingResource(**missing_resources)
             else:
                 raise pulp_exceptions.InvalidValue(list(missing_resources))
-        bind_args_tuple = (consumer_group_id, repo_id, distributor_id, notify_agent,
-                           binding_config, options)
+        bind_args_tuple = (consumer_group_id, repo_id, distributor_id, binding_config, options)
         async_task = bind.apply_async(bind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 

@@ -110,19 +110,9 @@ class ConsumerManager(object):
         manager = factory.consumer_profile_manager()
         manager.consumer_deleted(consumer_id)
 
-        # Notify agent
-        agent_consumer = factory.consumer_agent_manager()
-        agent_consumer.unregister(consumer_id)
-
         # remove from consumer groups
         group_manager = factory.consumer_group_manager()
         group_manager.remove_consumer_from_groups(consumer_id)
-
-        # delete any scheduled unit installs
-        schedule_manager = factory.consumer_schedule_manager()
-        for schedule in schedule_manager.get(consumer_id):
-            # using "delete" on utils skips validation that the consumer exists.
-            schedule_utils.delete(schedule.id)
 
         # Database Updates
         try:

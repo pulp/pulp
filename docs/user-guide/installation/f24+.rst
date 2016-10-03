@@ -225,28 +225,19 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
       host = localhost.localdomain
 
 
-Consumer Client and Agent
--------------------------
+Consumer Client
+---------------
 
 The Pulp Consumer Client is present on all systems that wish to act as a consumer
 of a Pulp server. The Pulp Consumer Client provides the means for a system to
-register and configure itself with a Pulp server. Additionally, the Pulp Consumer
-Client runs an agent that will receive messages and commands from the Pulp server.
+register and configure itself with a Pulp server.
 
 Pulp consumer commands are accessed through the ``pulp-consumer`` script. This
 script must be run as root to permit access to add references to the Pulp server's
 repositories.
 
-#. Install the Gofer bindings for the message broker you are using. For qpidd::
 
-      $ sudo dnf install python-gofer-qpid
-
-   For RabbitMQ::
-
-      $ sudo dnf install python-gofer-amqp
-
-#. Install the consumer client extensions you wish to use. At the time of this writing, only the RPM
-   and Puppet plugins support the Pulp Agent.
+#. Install the consumer client extensions you wish to use.
 
    ::
 
@@ -264,16 +255,6 @@ repositories.
 
       [server]
       host = localhost.localdomain
-
-#. The agent may be configured so that it will connect to the Qpid broker using SSL by
-   following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
-   By default, the agent will connect using a plain TCP connection.
-
-#. Set the agent to start at boot::
-
-      $ sudo systemctl enable goferd
-      $ sudo systemctl start goferd
-
 
 Extra Configuration
 -------------------
