@@ -1,20 +1,21 @@
-from contextlib import suppress
-from gettext import gettext as _
 import logging
 import time
 import traceback
 import uuid
+from contextlib import suppress
+from gettext import gettext as _
 
-from celery import task, Task as CeleryTask, current_task
+from celery import Task as CeleryTask, current_task, task
 from celery.app import control
 from celery.result import AsyncResult
 from django.db.models import Count
 
-from pulp.app.models import Worker, ReservedResource, Task as TaskStatus
+from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
-from pulp.exceptions import PulpException, MissingResource, PulpCodedException
-from pulp.tasking.celery_instance import celery, RESOURCE_MANAGER_QUEUE, DEDICATED_QUEUE_EXCHANGE
-
+from pulp.exceptions import MissingResource, PulpCodedException
+from pulp.tasking.celery_instance import celery
+from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
+from pulp.tasking.constants import TASKING_CONSTANTS
 
 celery_controller = control.Control(app=celery)
 _logger = logging.getLogger(__name__)
@@ -146,6 +147,9 @@ def delete_worker(name, normal_shutdown=False):
         cancel(task_status.pk)
 
     worker.delete()
+
+    if name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+        TaskLock.objects.filter(name=name).delete()
 
 
 @task(base=PulpTask)
@@ -345,7 +349,7 @@ class UserFacingTask(PulpTask):
         """
         if isinstance(exc, PulpCodedException):
             _logger.error(_('Task failed : [%(task_id)s] : %(msg)s') %
-                         {'task_id': task_id, 'msg': str(exc)})
+                          {'task_id': task_id, 'msg': str(exc)})
             _logger.error(traceback.format_exc())
         else:
             _logger.error(_('Task failed : [%s]') % task_id)

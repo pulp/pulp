@@ -6,14 +6,17 @@ Celery setup finishes.
 
 import contextlib
 import logging
-import sys
 import signal
+import sys
+import time
 from gettext import gettext as _
 
 from celery.signals import celeryd_after_setup
+from django.db.utils import IntegrityError
 
+from pulp.app.models.task import TaskLock, Worker
 from pulp.tasking import delete_worker
-
+from pulp.tasking.constants import TASKING_CONSTANTS
 
 # This import is here so that Celery will find our application instance
 from pulp.tasking.celery_instance import celery  # noqa
@@ -68,6 +71,53 @@ def initialize_worker(sender, instance, **kwargs):
     """
     # Delete any potential old state
     delete_worker(sender, normal_shutdown=True)
+
+    if sender.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+        get_resource_manager_lock(sender)
+
+
+def get_resource_manager_lock(name):
+    """Block until the the resource manager lock is acquired.
+
+    Tries to acquire the resource manager lock. If the lock cannot be acquired immediately, it
+    will wait until the currently active instance becomes unavailable, at which point the worker
+    cleanup routine will clear the lock for us to acquire. A worker record will be created so that
+    the waiting resource manager will appear in the Status API. We override the SIGTERM signal
+    handler so that that the worker record will be immediately cleaned up if the process is killed
+    while in this states.
+
+    :param name:   The hostname of the worker
+    :type  name:   basestring
+    """
+    assert name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
+
+    lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)
+    worker, created = Worker.objects.get_or_create(name=name)
+
+    with custom_sigterm_handler(name):
+        # Whether this is the first lock availability check for this instance
+        _first_check = True
+
+        while True:
+            worker.save_heartbeat()
+
+            try:
+                lock.save()
+            except IntegrityError:
+                # Only log the message the first time
+                if _first_check:
+                    msg = _("Resource manager '%s' attempted to acquire the the resource manager "
+                            "lock but was unable to do so. It will retry every %d seconds until "
+                            "the lock can be acquired." % (
+                                name, TASKING_CONSTANTS.CELERY_CHECK_INTERVAL))
+                    _logger.info(msg)
+                    _first_check = False
+
+                time.sleep(TASKING_CONSTANTS.CELERY_CHECK_INTERVAL)
+            else:
+                msg = _("Resource manager '%s' has acquired the resource manager lock" % name)
+                _logger.info(msg)
+                break
 
 
 @contextlib.contextmanager

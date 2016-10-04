@@ -1,31 +1,30 @@
 """
 This module contains tests for the pulp.server.async.tasks module.
 """
-from datetime import datetime
-import signal
 import unittest
 import uuid
+from datetime import datetime
 
+import celery
 from celery.app import defaults
 from celery.result import AsyncResult
-import celery
-import mock
 
+import mock
 from mongoengine import ValidationError
 
-from ...base import PulpServerTests, ResourceReservationTests
+from pulp import tasking
 from pulp.common import dateutils
-from pulp.common.constants import (CALL_CANCELED_STATE, CALL_COMPLETED_STATE,
-                                   SCHEDULER_WORKER_NAME, RESOURCE_MANAGER_WORKER_NAME)
-from pulp.common.tags import action_tag, resource_tag, RESOURCE_CONSUMER_TYPE
+from pulp.common.constants import CALL_CANCELED_STATE, CALL_COMPLETED_STATE, SCHEDULER_WORKER_NAME
+from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
-from pulp.server.db.model import Worker, TaskStatus
+from pulp.server.db.model import TaskStatus, Worker
 from pulp.server.db.reaper import queue_reap_expired_documents
-from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
+from pulp.server.exceptions import NoWorkers, PulpCodedException, PulpException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 from pulp.tasking import celery_app as app
-from pulp import tasking
+from pulp.tasking.constants import TASKING_CONSTANTS
 
+from ...base import PulpServerTests, ResourceReservationTests
 
 # Worker names
 WORKER_1 = 'worker-1'
@@ -122,7 +121,7 @@ class TestQueueReservedTask(ResourceReservationTests):
 
         try:
             tasking._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2],
-                                       {'a': 2})
+                                         {'a': 2})
         except BreakOutException:
             pass
         else:
@@ -180,9 +179,9 @@ class TestDeleteWorker(ResourceReservationTests):
         self.mock_logger.error.assert_called_once_with('asdf worker1 asdf')
 
     def test_removes_all_associated_reserved_resource_entries(self):
-        tasking.delete_worker('worker1')
-        self.assertTrue(self.mock_reserved_resource.objects.called)
-        remove = self.mock_reserved_resource.objects.return_value.delete
+        tasking.delete_worker(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME + '@worker1')
+        self.assertTrue(self.mock_reserved_resource.objects.filter.called)
+        remove = self.mock_reserved_resource.objects.filter.return_value.delete
         remove.assert_called_once_with()
 
     @mock.patch('pulp.server.async.tasks.Worker.objects')
@@ -269,7 +268,7 @@ class TestTaskResult(unittest.TestCase):
         test_exception = PulpException('foo')
         task_status = TaskStatus(task_id='quux')
         result = tasking.TaskResult('foo', test_exception, [{'task_id': 'baz'},
-                                                          async_result, "qux", task_status])
+                                                            async_result, "qux", task_status])
         serialized = result.serialize()
         self.assertEquals(serialized.get('result'), 'foo')
         compare_dict(test_exception.to_dict(), serialized.get('error'))
@@ -365,7 +364,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         async_result = AsyncResult('foo-id')
 
         retval = tasking.TaskResult(error=PulpException('error-foo'),
-                                  result='bar')
+                                    result='bar')
         retval.spawned_tasks = [async_result]
 
         task_id = str(uuid.uuid4())
@@ -912,7 +911,8 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         self.assertEquals(tasking._is_worker(SCHEDULER_WORKER_NAME + "@some.hostname"), False)
 
     def test_is_not_worker_is_resource_mgr(self):
-        self.assertEquals(tasking._is_worker(RESOURCE_MANAGER_WORKER_NAME + "@some.hostname"), False)
+        self.assertEquals(tasking._is_worker(
+            TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME + "@some.hostname"), False)
 
 
 class TestPulpTask(unittest.TestCase):

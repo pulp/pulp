@@ -54,6 +54,15 @@ class Worker(Model):
     name = models.TextField(db_index=True, unique=True)
     last_heartbeat = models.DateTimeField(auto_now=True)
 
+    def save_heartbeat(self):
+        """Save a worker heartbeat
+
+        Update the last_heartbeat field to now and save it.
+
+        !!! Only the last_heartbeat field will be saved. No other changes will be saved.
+        """
+        self.save(update_fields=['last_heartbeat'])
+
 
 class TaskLock(Model):
     """
