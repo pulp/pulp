@@ -50,7 +50,7 @@ class RepoConfigConduit(object):
         spec = rel_url_is_repo_id | rel_url_in_list | rel_url_match
 
         if repo_id is not None:
-            spec = Q(repo_id__ne=repo_id) & spec
+            spec = Q(repo_id__ne=repo_id, distributor_type_id=self.distributor_type) & spec
 
         dists = model.Distributor.objects(spec).only('repo_id', 'config')
         return [{'repo_id': dist.repo_id, '_id': dist.id, 'config': dist.config} for dist in dists]

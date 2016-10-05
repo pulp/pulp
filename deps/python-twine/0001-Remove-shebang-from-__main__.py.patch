@@ -1,0 +1,22 @@
+From a1f281c4fc1d3eae60a09d168245bd5c47cd91e3 Mon Sep 17 00:00:00 2001
+From: Jeremy Cline <jeremy@jcline.org>
+Date: Tue, 12 Jul 2016 09:31:41 -0400
+Subject: [PATCH] Remove shebang from __main__.py
+
+Signed-off-by: Jeremy Cline <jeremy@jcline.org>
+---
+ twine/__main__.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/twine/__main__.py b/twine/__main__.py
+index 5d0c68c..01b8873 100644
+--- a/twine/__main__.py
++++ b/twine/__main__.py
+@@ -1,4 +1,3 @@
+-#!/usr/bin/env python
+ # Copyright 2013 Donald Stufft
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+-- 
+2.7.4
+

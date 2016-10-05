@@ -1,0 +1,52 @@
+diff --git a/setuptools/ssl_support.py b/setuptools/ssl_support.py
+--- a/setuptools/ssl_support.py
++++ b/setuptools/ssl_support.py
+@@ -194,6 +194,12 @@
+         sock = create_connection(
+             (self.host, self.port), getattr(self,'source_address',None)
+         )
++
++        # Handle the socket if a (proxy) tunnel is present
++        if hasattr(self, '_tunnel') and getattr(self, '_tunnel_host', None):
++            self.sock = sock
++            self._tunnel()
++
+         self.sock = ssl.wrap_socket(
+             sock, cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.ca_bundle
+         )
+# HG changeset patch
+# User Raphael Kubo da Costa <raphael.kubo.da.costa@intel.com>
+# Date 1404396219 -10800
+# Node ID ca4b86f318ecf4cb46462e65a86fc814295124e8
+# Parent  2381b11608897723145601dac345b9a4c981f3cb
+ssl_support: Adjust to tunneling changes in Python 2.7.7 and 3.4.1.
+
+The fix for https://bugs.python.org/issue7776 changed httplib.HTTPConnection's
+handling of tunneling: `host' now points to the proxy host, so we have to
+adjust the code to perform the certificate validation on `_tunnel_host' instead
+when it is available.
+
+diff --git a/setuptools/ssl_support.py b/setuptools/ssl_support.py
+--- a/setuptools/ssl_support.py
++++ b/setuptools/ssl_support.py
+@@ -178,12 +178,19 @@
+         if hasattr(self, '_tunnel') and getattr(self, '_tunnel_host', None):
+             self.sock = sock
+             self._tunnel()
++            # http://bugs.python.org/issue7776: Python>=3.4.1 and >=2.7.7
++            # change self.host to mean the proxy server host when tunneling is
++            # being used. Adapt, since we are interested in the destination
++            # host for the match_hostname() comparison.
++            actual_host = self._tunnel_host
++        else:
++            actual_host = self.host
+ 
+         self.sock = ssl.wrap_socket(
+             sock, cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.ca_bundle
+         )
+         try:
+-            match_hostname(self.sock.getpeercert(), self.host)
++            match_hostname(self.sock.getpeercert(), actual_host)
+         except CertificateError:
+             self.sock.shutdown(socket.SHUT_RDWR)
+             self.sock.close()
