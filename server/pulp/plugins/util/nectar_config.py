@@ -7,8 +7,7 @@ from functools import partial
 from nectar.config import DownloaderConfig
 
 from pulp.common.plugins import importer_constants as constants
-from pulp.server.managers.repo import _common as common_utils
-
+from pulp.tasking.storage import get_working_directory
 
 # Mapping of importer config key to downloader config key
 IMPORTER_DOWNLOADER_CONFIG_MAP = (
@@ -88,7 +87,7 @@ def importer_config_to_nectar_config(importer_config, working_dir=None,
         download_config_kwargs = {}
 
     if working_dir is None:
-        working_dir = common_utils.get_working_directory()
+        working_dir = get_working_directory()
 
     download_config_kwargs['working_dir'] = working_dir
     adder = partial(_safe_add_arg, importer_config, download_config_kwargs)

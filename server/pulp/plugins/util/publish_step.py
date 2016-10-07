@@ -1,36 +1,35 @@
-from gettext import gettext as _
-from itertools import chain, imap
 import copy
+import errno
 import itertools
 import logging
 import os
+import selinux
 import shutil
+import signal
 import sys
 import tarfile
 import time
 import traceback
 import uuid
-import errno
-import selinux
-import signal
+from gettext import gettext as _
+from itertools import chain, imap
 
-from pulp.common import error_codes
-from pulp.common.plugins import reporting_constants, importer_constants
-from pulp.common.util import encode_unicode
-from pulp.plugins.util import manifest_writer, misc
-from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
-from pulp.server.controllers import repository as repo_controller
-from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
-from pulp.server.exceptions import PulpCodedTaskFailedException
-from pulp.server.controllers import units as units_controller
+import pulp.server.managers.factory as manager_factory
 from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
+from pulp.common import error_codes
+from pulp.common.plugins import importer_constants, reporting_constants
+from pulp.common.util import encode_unicode
+from pulp.plugins.util import manifest_writer, misc
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.server.config import config as pulp_config
-import pulp.server.managers.factory as manager_factory
-from pulp.server.managers.repo import _common as common_utils
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.controllers import units as units_controller
+from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
+from pulp.server.exceptions import PulpCodedTaskFailedException
 from pulp.server.util import copytree
-
+from pulp.tasking.storage import get_working_directory
 
 _logger = logging.getLogger(__name__)
 
@@ -466,7 +465,7 @@ class PluginStep(Step):
         elif self.parent:
             return self.parent.get_working_dir()
         else:
-            self.working_dir = common_utils.get_working_directory()
+            self.working_dir = get_working_directory()
             return self.working_dir
 
     def get_plugin_type(self):

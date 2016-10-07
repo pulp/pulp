@@ -15,7 +15,7 @@ from celery.signals import celeryd_after_setup
 from django.db.utils import IntegrityError
 
 from pulp.app.models.task import TaskLock, Worker
-from pulp.tasking import delete_worker
+from pulp.tasking import delete_worker, storage
 from pulp.tasking.constants import TASKING_CONSTANTS
 
 # This import is here so that Celery will find our application instance
@@ -71,6 +71,9 @@ def initialize_worker(sender, instance, **kwargs):
     """
     # Delete any potential old state
     delete_worker(sender, normal_shutdown=True)
+
+    storage.delete_worker_working_directory(sender)
+    storage.create_worker_working_directory(sender)
 
     if sender.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
         get_resource_manager_lock(sender)

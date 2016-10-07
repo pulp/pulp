@@ -177,6 +177,9 @@ _DEFAULT_PULP_SETTINGS = {
             },
         }
     },
+    'server': {
+        'working_directory': '/var/cache/pulp',
+    },
     'broker': {
         'url': 'qpid://localhost/',
         'celery_require_ssl': False,

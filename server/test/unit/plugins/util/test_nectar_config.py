@@ -67,7 +67,7 @@ class ConfigTranslationTests(unittest.TestCase):
         self.assertEqual(download_config.working_dir, '/working/dir')
         _process_ssl_settings.assert_called_once_with()
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_importer_config_to_nectar_config_complete(self, mock_get_working):
         # Setup
         mock_get_working.return_value = self.temp_dir
@@ -107,7 +107,7 @@ class ConfigTranslationTests(unittest.TestCase):
         self.assertEqual(download_config.max_concurrent, 10)
         self.assertEqual(download_config.max_speed, 1024)
 
-    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    @patch('pulp.tasking.storage.get_working_directory', spec_set=True)
     def test_importer_config_to_download_config_partial(self, mock_get_working):
         # Setup
         mock_get_working.return_value = self.temp_dir

@@ -1,6 +1,6 @@
-from gettext import gettext as _
 import logging
 import sys
+from gettext import gettext as _
 
 from celery import task
 
@@ -13,6 +13,7 @@ from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDis
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 from pulp.tasking import UserFacingTask
+from pulp.tasking.storage import get_working_directory
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ class RepoGroupPublishManager(object):
         call_config = PluginCallConfiguration(plugin_config, distributor['config'],
                                               publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.get_working_directory()
+        transfer_group.working_dir = get_working_directory()
 
         # TODO: Add events for group publish start/complete
         RepoGroupPublishManager._do_publish(transfer_group, distributor_id, distributor_instance,

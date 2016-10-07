@@ -53,7 +53,7 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
         types_database.clean()
         model.Repository.objects.delete()
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+    @mock.patch('pulp.tasking.storage.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def setUp(self, mock_get_working_directory):
         super(DistributorScratchpadMixinTests, self).setUp()
