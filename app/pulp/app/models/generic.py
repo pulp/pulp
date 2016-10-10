@@ -6,11 +6,11 @@ References:
 """
 from collections import MutableMapping
 
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 
-from pulp.app.models import Model
+from pulp.app.models.base import Model
 
 
 class GenericRelationModel(Model):
@@ -88,6 +88,29 @@ class GenericKeyValueMutableMapping(MutableMapping):
     def __repr__(self):
         return '{}({})'.format(self.manager.model._meta.object_name, repr(dict(self)))
 
+    def replace(self, mapping):
+        """Efficiently replace the contents of this mapping with the provided mapping
+
+        Since this mapping is actually DB-backed, this provides a mechanism to atomically
+        update related key/value pairs with as few database calls as possible.
+
+        """
+        with transaction.atomic():
+            # no need to deepcopy since these are flat dicts by design
+            current_mapping = dict(self)
+
+            # update keys with new values only
+            for key, value in mapping.items():
+                # force value to string to force the aforementioned flatness
+                value = str(value)
+                if current_mapping.get(key) != value:
+                    self[key] = value
+
+            # remove keys that aren't in the provided mapping
+            for key in current_mapping:
+                if key not in mapping:
+                    del(self[key])
+
 
 class GenericKeyValueManager(models.Manager):
     """A normal Django Manager with a mapping attribute providing the MutableMapping interface.
@@ -102,7 +125,7 @@ class GenericKeyValueManager(models.Manager):
         return GenericKeyValueMutableMapping(self)
 
 
-class GenericKeyValueStore(GenericRelationModel):
+class GenericKeyValueModel(GenericRelationModel):
     """Generic model providing a Key/Value store that can be related to any other model."""
     # Because we have multiple types of Key/Value stores, this is an abstract base class that
     # can be easily subclasses to create the specific types. We could potentially support multiple
@@ -112,7 +135,7 @@ class GenericKeyValueStore(GenericRelationModel):
     key = models.TextField()
     value = models.TextField()
 
-    # Use the GenericKeyValueManager by default to let anything using a GenericKeyValueStore
+    # Use the GenericKeyValueManager by default to let anything using a GenericKeyValueModel
     # have access to the mapping attr
     objects = GenericKeyValueManager()
 
@@ -121,16 +144,26 @@ class GenericKeyValueStore(GenericRelationModel):
         unique_together = ('key', 'content_type', 'object_id')
 
 
-class Config(GenericKeyValueStore):
+class Config(GenericKeyValueModel):
     """Used by pulp and users to store k/v config data on a model"""
-    pass
+    class Meta:
+        pass
 
 
-class Notes(GenericKeyValueStore):
+class Notes(GenericKeyValueModel):
     """Used by users to store arbitrary k/v data on a model"""
     pass
 
 
-class Scratchpad(GenericKeyValueStore):
+class Scratchpad(GenericKeyValueModel):
     """Used by pulp to store arbitrary k/v data on a model."""
     pass
+
+
+class GenericKeyValueRelation(GenericRelation):
+    """
+    A version of GenericReleation used when relating to GenericKeyValueModels.
+    """
+    # This mainly exists so that we can add a field to the serializer field mappings to make the
+    # pulp base serializer know how to serialize these without having to declare the fields on
+    # every serializer that might use them.

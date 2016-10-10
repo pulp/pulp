@@ -2,10 +2,9 @@
 Django models related to content consumers.
 """
 
-from django.contrib.contenttypes import fields
 from django.db import models
 
-from pulp.app.models import Model, Notes
+from pulp.app.models import Model, Notes, GenericKeyValueRelation
 
 
 class Consumer(Model):
@@ -23,7 +22,7 @@ class Consumer(Model):
     Relations:
 
     :cvar notes: Arbitrary information about the consumer.
-    :type notes: fields.GenericRelation
+    :type notes: GenericKeyValueRelation
 
     :cvar publishers: Associated publishers.
     :type publishers: models.ManyToManyField
@@ -31,7 +30,7 @@ class Consumer(Model):
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
 
-    notes = fields.GenericRelation(Notes)
+    notes = GenericKeyValueRelation(Notes)
     publishers = models.ManyToManyField('Publisher', related_name='consumers')
 
     def natural_key(self):

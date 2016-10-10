@@ -14,9 +14,21 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
+from rest_framework import routers
 
-from pulp.app import views
+from pulp.app.apps import pulp_plugin_configs
+
+router = routers.DefaultRouter(
+    schema_title='Pulp API',
+    schema_url='/api/v3'
+)
+
+# go through plugin model viewsets and register them
+for app_config in pulp_plugin_configs():
+    for viewset in app_config.named_viewsets.values():
+        viewset.register_with(router)
+
 
 urlpatterns = [
-    url(r'^api/v3/', include(views.router.urls)),
+    url(r'^api/v3/', include(router.urls)),
 ]

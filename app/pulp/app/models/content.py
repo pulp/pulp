@@ -3,11 +3,10 @@ Content related Django models.
 """
 import hashlib
 
-from django.contrib.contenttypes import fields
 from django.db import models
 
 
-from pulp.app.models import Model, MasterModel, Notes
+from pulp.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
 from pulp.app.models.storage import StoragePath
 
 
@@ -21,13 +20,16 @@ class Content(MasterModel):
     Relations:
 
     :cvar notes: Arbitrary information stored with the content.
-    :type notes: fields.GenericRelation
+    :type notes: GenericKeyValueRelation
     """
     TYPE = 'content'
 
     natural_key_fields = ()
 
-    notes = fields.GenericRelation(Notes)
+    notes = GenericKeyValueRelation(Notes)
+
+    class Meta:
+        verbose_name_plural = 'content'
 
     def natural_key(self):
         """

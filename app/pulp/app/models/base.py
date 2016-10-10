@@ -102,10 +102,7 @@ class MasterModel(Model):
 
 
 # Add properties to model _meta info to support master/detail models
-# These are handy for registering API ModelViewSets and for other mechanisms that want to
-# introspect a model's master/detail status. Due to the fact that multiple modules can
-# inherit from a single master, it is impossible to go the other way with this:
-# We can't return a single "detail model" for a given master model.
+# If this property is not None on a Model, then that Model is a Detail Model.
 # Doing this in a non-monkeypatch way would mean a lot of effort to achieve the same result
 # (e.g. custom model metaclass, custom Options implementation, etc). These could be classmethods
 # on Model classes, but it's easy enough to use the model's _meta namespace to do this, since
@@ -132,19 +129,3 @@ def master_model(options):
         # Also None if this model is itself the master.
         return None
 options.Options.master_model = property(master_model)
-
-
-def master_model_name(options):
-    """
-    The name of the Master model class of this Model's Master/Detail relationship.
-
-    Accessible at <model_class>._meta.master_model_name
-
-    If this model is not a detail model, None will be returned.
-    """
-    try:
-        return options.master_model._meta.model_name
-    except AttributeError:
-        # _meta was None, no master model
-        return None
-options.Options.master_model_name = property(master_model_name)

@@ -44,16 +44,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # third-party
+    'django_filters',
+    'crispy_forms',
     'rest_framework',
     'django_extensions',
     # pulp platform app
     'pulp.app',
 ]
 
-# This list would normally come in via entry points, but for this
-# demo project it's sufficient just to show adding plugins conditionally
-# to Django's installed apps when settings is imported.
-# XXX Disabled until we figure out plugin loading in platform
+# XXX Disabled until we figure out plugin loading via entry points
 # PULP_PLUGINS = ['pulp_rpm.apps.PulpRpmConfig']
 PULP_PLUGINS = []
 for plugin in PULP_PLUGINS:
@@ -99,6 +98,9 @@ WSGI_APPLICATION = 'wsgi.application'
 
 REST_FRAMEWORK = {
     'URL_FIELD_NAME': '_href',
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
+    'DEFAULT_PAGINATION_CLASS': 'pulp.app.pagination.UUIDPagination',
+    'PAGE_SIZE': 100,
 }
 
 # Password validation
