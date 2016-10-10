@@ -19,6 +19,7 @@ class RepositoryViewSet(NamedModelViewSet):
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
     pagination_class = RepositoryPagination
+    filter_fields = ('name',)
 
     @decorators.detail_route()
     def content(self, request, name):

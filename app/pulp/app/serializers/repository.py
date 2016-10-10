@@ -15,11 +15,26 @@ class RepositorySerializer(ModelSerializer):
         help_text='A unique name for this repository.'
     )
 
+    description = serializers.CharField(
+        help_text='An optional description.',
+        required=False
+    )
+
+    last_content_added = serializers.DateTimeField(
+        help_text='Timestamp of the most recent addition of content to this repository.',
+        read_only=True
+    )
+
+    last_content_removed = serializers.DateTimeField(
+        help_text='Timestamp of the most recent removal of content to this repository.',
+        read_only=True
+    )
     notes = GenericKeyValueRelatedField(
         help_text='A mapping of string keys to string values.',
+        required=False
     )
 
     class Meta:
         model = models.Repository
-        fields = ModelSerializer.Meta.fields + ('name', 'notes')
-        filter_fields = ('name',)
+        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
+                                                'last_content_added', 'last_content_removed')
