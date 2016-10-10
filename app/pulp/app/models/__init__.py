@@ -1,6 +1,7 @@
 # https://docs.djangoproject.com/en/1.10/topics/db/models/#organizing-models-in-a-package
 from .base import Model, MasterModel  # NOQA
-from .generic import GenericRelationModel, GenericKeyValueStore, Config, Notes, Scratchpad  # NOQA
+from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyValueRelation,  # NOQA
+                      GenericKeyValueModel, Config, Notes, Scratchpad)  # NOQA
 
 from .consumer import Consumer, ConsumerContent  # NOQA
 from .content import Content, Artifact  # NOQA

@@ -2,8 +2,11 @@ from setuptools import setup, find_packages
 
 requirements = [
     'celery',
+    'coreapi',
     'Django>=1.8,<1.9',
+    'django-crispy-forms',
     'django-extensions',
+    'django-filter',
     'djangorestframework',
     'psycopg2',
     'PyYAML',

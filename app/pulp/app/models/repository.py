@@ -2,10 +2,9 @@
 Repository related Django models.
 """
 from django.db import models
-from django.contrib.contenttypes import fields
 from django.utils import timezone
 
-from pulp.app.models import Model, Notes, Scratchpad, MasterModel
+from pulp.app.models import Model, Notes, Scratchpad, MasterModel, GenericKeyValueRelation
 
 
 class Repository(Model):
@@ -29,10 +28,10 @@ class Repository(Model):
     Relations:
 
     :cvar scratchpad: Arbitrary information stashed on the repository.
-    :type scratchpad: fields.GenericRelation
+    :type scratchpad: GenericKeyValueRelation
 
     :cvar notes: Arbitrary repository properties.
-    :type notes: fields.GenericRelation
+    :type notes: GenericKeyValueRelation
 
     :cvar content: Associated content.
     :type content: models.ManyToManyField
@@ -43,10 +42,11 @@ class Repository(Model):
     last_content_added = models.DateTimeField(blank=True, null=True)
     last_content_removed = models.DateTimeField(blank=True, null=True)
 
-    scratchpad = fields.GenericRelation(Scratchpad)
-    notes = fields.GenericRelation(Notes)
+    scratchpad = GenericKeyValueRelation(Scratchpad)
+    notes = GenericKeyValueRelation(Notes)
 
-    content = models.ManyToManyField('Content', through='RepositoryContent')
+    content = models.ManyToManyField('Content', through='RepositoryContent',
+                                     related_name='repositories')
 
     @property
     def content_summary(self):
@@ -68,6 +68,9 @@ class Repository(Model):
         """
         return (self.name,)
 
+    def __str__(self):
+        return "<{}: {}>".format(self._meta.model.__name__, self.name)
+
 
 class RepositoryGroup(Model):
     """
@@ -83,7 +86,7 @@ class RepositoryGroup(Model):
 
     Relations:
     :cvar notes: Arbitrary group properties.
-    :type notes: fields.GenericRelation
+    :type notes: GenericKeyValueRelation
 
     :cvar members: Repositories associated with the group.
     :type members: models.ManyToManyField
@@ -92,8 +95,8 @@ class RepositoryGroup(Model):
     description = models.TextField(blank=True)
 
     members = models.ManyToManyField('Repository')
-    scratchpad = fields.GenericRelation(Scratchpad)
-    notes = fields.GenericRelation(Notes)
+    scratchpad = GenericKeyValueRelation(Scratchpad)
+    notes = GenericKeyValueRelation(Notes)
 
     def natural_key(self):
         """
@@ -191,7 +194,7 @@ class Importer(ContentAdaptor):
     Relations:
 
     :cvar scratchpad: Arbitrary information stashed by the importer.
-    :type scratchpad: fields.GenericRelation
+    :type scratchpad: GenericKeyValueRelation
     """
     TYPE = 'importer'
 
@@ -223,7 +226,7 @@ class Importer(ContentAdaptor):
     download_policy = models.TextField(choices=DOWNLOAD_POLICIES)
     last_sync = models.DateTimeField(blank=True, null=True)
 
-    scratchpad = fields.GenericRelation(Scratchpad)
+    scratchpad = GenericKeyValueRelation(Scratchpad)
 
     class Meta(ContentAdaptor.Meta):
         default_related_name = 'importers'

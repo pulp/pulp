@@ -14,7 +14,7 @@ upstream to convert the package.
 3.0 Development
 ===============
 
-The goal of this section is to create a place for living documents related to the development of Pulp 3.0. Some parts may grow and replace current documentation (plugin API) and others may be temporary guides to making changes (translating from Mongo to Postgres). 
+The goal of this section is to create a place for living documents related to the development of Pulp 3.0. Some parts may grow and replace current documentation (plugin API) and others may be temporary guides to making changes (translating from Mongo to Postgres).
 
 .. toctree::
    :maxdepth: 3
@@ -23,5 +23,4 @@ The goal of this section is to create a place for living documents related to th
    db-translation-guide
    dev-setup
    plugin-api
-   rest-planning
-
+   rest-api
