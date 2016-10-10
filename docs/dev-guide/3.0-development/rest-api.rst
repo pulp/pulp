@@ -162,9 +162,13 @@ Generic Key/Value Relationships
 The Generic Key/Value mapping interface can be used to easily nest the key/value pairs of this
 relationship in its containing serializer by using a
 :class:``pulp.app.serializers.generic.GenericKeyValueRelatedField`` in the serializer to represent this
-field.
+field. Special field classes have been made for each of the three existing Generic Key/Value Model
+types, all importable from ``pulp.app.serializers``:
 
-This field is supported by :class:`pulp.app.serializers.base.ModelSerializer`, and exposes the
+* ``ConfigKeyValueRelatedField``
+* ``NotesKeyValueRelatedField``
+
+This field type is supported by :class:`pulp.app.serializers.base.ModelSerializer`, and exposes the
 mapping form in the representation of the object being serialized with read and write capabilities.
 
 For example:
@@ -180,7 +184,7 @@ For example:
 	}
 
 In this basic example of a Repository, the ``notes`` field is being represented by the
-``GenericKeyValueRelatedField``, which aggregates the generically-related key/value pairs
+``NotesKeyValueRelatedField``, which aggregates the generically-related key/value pairs
 into a read-write nested serializer field, hiding the rather complicated underlying
 relational database magic from API users.
 
