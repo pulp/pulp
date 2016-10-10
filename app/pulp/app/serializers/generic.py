@@ -1,0 +1,17 @@
+from pulp.app import models
+
+# pulp.serializers is still initializing, so the pulp.serializers namespace isn't importable.
+# fields loads after base, so bring it in with a relative import
+from . import base
+
+
+class ConfigKeyValueRelatedField(base.GenericKeyValueRelatedField):
+    help_text = 'A mapping of string keys to string values, for configuring this object.'
+    required = False
+    queryset = models.Notes.objects.all()
+
+
+class NotesKeyValueRelatedField(base.GenericKeyValueRelatedField):
+    help_text = 'A mapping of string keys to string values, for storing notes on this object.'
+    required = False
+    queryset = models.Notes.objects.all()

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from pulp.app import models
-from pulp.app.serializers import GenericKeyValueRelatedField, ModelSerializer
+from pulp.app.serializers import NotesKeyValueRelatedField, ModelSerializer
 
 
 class RepositorySerializer(ModelSerializer):
@@ -29,10 +29,7 @@ class RepositorySerializer(ModelSerializer):
         help_text='Timestamp of the most recent removal of content to this repository.',
         read_only=True
     )
-    notes = GenericKeyValueRelatedField(
-        help_text='A mapping of string keys to string values.',
-        required=False
-    )
+    notes = NotesKeyValueRelatedField()
 
     class Meta:
         model = models.Repository
