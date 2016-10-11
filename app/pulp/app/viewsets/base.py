@@ -1,3 +1,5 @@
+from rest_framework.utils import formatting
+from django.utils.encoding import smart_text
 import warnings
 
 from pulp.app.models import MasterModel
@@ -94,3 +96,18 @@ class NamedModelViewSet(viewsets.ModelViewSet):
 
         urlpattern = '/'.join(pieces)
         router.register(urlpattern, cls)
+
+
+def get_view_description(view_cls, html=False):
+    """
+    Given a view class, return a textual description to represent the view.
+    This name is used in the browsable API, and in OPTIONS responses.
+    This function is the default for the `VIEW_DESCRIPTION_FUNCTION` setting.
+    """
+    description = view_cls.__doc__ or ''
+    if hasattr(view_cls, 'filter_class'):
+        description += view_cls.filter_class.__doc__
+    description = formatting.dedent(smart_text(description))
+    if html:
+        return formatting.markup_description(description)
+    return description

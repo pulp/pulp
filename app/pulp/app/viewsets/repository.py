@@ -1,6 +1,7 @@
 import django_filters
 from rest_framework import decorators, filters, pagination
 
+
 from pulp.app.models import Repository
 from pulp.app.pagination import UUIDPagination
 from pulp.app.serializers import ContentSerializer, RepositorySerializer
@@ -16,6 +17,21 @@ class RepositoryPagination(pagination.CursorPagination):
 
 
 class RepositoryFilter(filters.FilterSet):
+    """
+    Available Filters:
+
+        `name`: Filter by Repository name
+                Use: name=<repo_a>
+
+        `name_in_list`: Filter by multiple Repository names
+                        Use: name_in_list=<repo_a>,<repo_b>
+
+        `content_added_since`: Filter for repositories with content added after given date or
+                               datetime
+                               Use: content_added_since=2015-10-11T17:15:41.557494Z
+                               Use: content_added_since=2015-10-11
+
+    """
     name_in_list = CharInFilter(name='name', lookup_expr='in')
     content_added_since = django_filters.Filter(name='last_content_added', lookup_expr='gt')
 
@@ -25,6 +41,9 @@ class RepositoryFilter(filters.FilterSet):
 
 
 class RepositoryViewSet(NamedModelViewSet):
+    """
+    This endpoint presents repositories.
+    """
     lookup_field = 'name'
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer

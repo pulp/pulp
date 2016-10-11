@@ -6,6 +6,6 @@ from django_filters import filters
 
 class CharInFilter(filters.BaseInFilter, filters.CharFilter):
     """
-    Enables the user filter a field by a comma separated list of strings, allowing them to retrieve
-    more than one object in a single query.
+    Enables the user to filter a field by comma separated strings, allowing them to retrieve more
+    than one object in a single query.
     """
