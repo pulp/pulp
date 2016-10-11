@@ -116,9 +116,9 @@ class TestSchedulerTick(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
     def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, time, node,
                                     mock_tick):
+        node.return_value = 'some_host'
         sched_instance = scheduler.Scheduler()
         time.time.return_value = 1449261335.275528
-        node.return_value = 'some_host'
 
         sched_instance.tick()
 

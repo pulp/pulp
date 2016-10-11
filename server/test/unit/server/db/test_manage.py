@@ -4,6 +4,7 @@ Test the pulp.server.db.manage module.
 from argparse import Namespace
 from cStringIO import StringIO
 import os
+from datetime import datetime
 
 from mock import call, inPy3k, MagicMock, patch
 from mongoengine.queryset import DoesNotExist
@@ -11,6 +12,7 @@ from mongoengine.queryset import DoesNotExist
 from ... import base
 from pulp.common.compat import all, json
 from pulp.server.db import manage
+from pulp.server.db.fields import UTCDateTimeField
 from pulp.server.db.migrate import models
 from pulp.server.db.model import MigrationTracker
 import pulp.plugins.types.database as types_db
@@ -229,6 +231,53 @@ class TestManageDB(MigrationTest):
         self.assertTrue(mock_stderr.write.call_count > 0)
         self.assertTrue('root' in mock_stderr.write.call_args_list[0][0][0])
         self.assertTrue('apache' in mock_stderr.write.call_args_list[0][0][0])
+
+    @patch('logging.config.fileConfig')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch('sys.argv', ["pulp-manage-db"])
+    @patch('pulp.server.db.connection.initialize')
+    @patch('pulp.server.managers.status.get_workers')
+    @patch('pulp.server.db.manage._user_input_continue', return_value=False)
+    @patch('pulp.server.db.manage._auto_manage_db')
+    def test_user_prompted_if_workers_tasks_exist(self, mock__auto_manage_db,
+                                                  mock__user_input, mock_get_workers,
+                                                  *unused_mocks):
+        mock_get_workers.return_value = [{'last_heartbeat':
+                                         UTCDateTimeField().to_python(datetime.now())}]
+        ret = manage.main()
+        # make sure system exits ok if user chooses not to proceed
+        self.assertEqual(ret, os.EX_OK)
+        # make sure user is asked for input when there are workers running
+        self.assertTrue(mock__user_input.called)
+
+    @patch('logging.config.fileConfig')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch('sys.argv', ["pulp-manage-db"])
+    @patch('pulp.server.db.connection.initialize')
+    @patch('pulp.server.managers.status.get_workers', return_value=[])
+    @patch('pulp.server.db.manage._user_input_continue', return_value=True)
+    @patch('pulp.server.db.manage._auto_manage_db')
+    def test_user_not_prompted_if_no_workers(self, mock_auto_manage_db,
+                                             mock_user_input, *unused_mocks):
+        manage.main()
+        # make sure user is not asked for input when there are no tasks/workers
+        self.assertFalse(mock_user_input.called)
+        self.assertTrue(mock_auto_manage_db.called)
+
+    @patch('logging.config.fileConfig')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch('sys.argv', ["pulp-manage-db"])
+    @patch('pulp.server.db.connection.initialize')
+    @patch('pulp.server.managers.status.get_workers')
+    @patch('pulp.server.db.manage._user_input_continue', return_value=True)
+    @patch('pulp.server.db.manage._auto_manage_db')
+    def test_user_not_prompted_if_workers_timeout(self, mock__auto_manage_db, mock__user_input,
+                                                  mock_get_workers, *unused_mocks):
+        mock_get_workers.return_value = [{'last_heartbeat':
+                                         UTCDateTimeField().to_python(datetime(2000, 1, 1))}]
+        manage.main()
+        # make sure user is not asked for input when workers have timed out
+        self.assertFalse(mock__user_input.called)
 
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
