@@ -39,7 +39,7 @@ class Repository(Model):
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
 
-    last_content_added = models.DateTimeField(blank=True, null=True)
+    last_content_added = models.DateTimeField(auto_now=True)
     last_content_removed = models.DateTimeField(blank=True, null=True)
 
     scratchpad = GenericKeyValueRelation(Scratchpad)

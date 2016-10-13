@@ -101,6 +101,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulp.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
+    'VIEW_DESCRIPTION_FUNCTION': 'pulp.app.viewsets.base.get_view_description'
 }
 
 # Password validation

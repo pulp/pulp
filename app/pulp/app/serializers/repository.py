@@ -12,7 +12,8 @@ class RepositorySerializer(ModelSerializer):
         lookup_field='name',
     )
     name = serializers.CharField(
-        help_text='A unique name for this repository.'
+        help_text='A unique name for this repository.',
+        write_only=True
     )
 
     description = serializers.CharField(
@@ -35,3 +36,4 @@ class RepositorySerializer(ModelSerializer):
         model = models.Repository
         fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
                                                 'last_content_added', 'last_content_removed')
+
