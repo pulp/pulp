@@ -221,7 +221,7 @@ class _DetailFieldMixin:
 class DetailIdentityField(_DetailFieldMixin, serializers.HyperlinkedIdentityField):
     """IdentityField for use in the _href field of Master/Detail Serializers
 
-    When using this field on a Serializer,it will automatically cast objects to their Detail type
+    When using this field on a Serializer, it will automatically cast objects to their Detail type
     base on the Serializer's Model before generating URLs for them.
 
     Subclasses must indicate the Master model they represent by declaring a queryset

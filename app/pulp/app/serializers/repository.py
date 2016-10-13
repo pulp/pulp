@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from pulp.app import models
-from pulp.app.serializers import NotesKeyValueRelatedField, ModelSerializer
+from pulp.app.serializers import (ModelSerializer, NotesKeyValueRelatedField,
+                                  MasterModelSerializer)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -37,3 +38,19 @@ class RepositorySerializer(ModelSerializer):
         fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
                                                 'last_content_added', 'last_content_removed')
 
+
+class ImporterSerializer(MasterModelSerializer):
+    """
+    Every importer defined by a plugin should have an Importer serializer that inherits from this
+    class. Please import from `pulp.app.serializers` rather than from this module directly.
+
+    Every subclass must override the `_href` field with a `RepositoryNestedIdentityField` that
+    defines the view_name.
+    """
+    name = serializers.CharField(
+        help_text='A name for this importer, unique within the associated repository.'
+    )
+
+    class Meta:
+        abstract = True
+        fields = MasterModelSerializer.Meta.fields + ('name',)
