@@ -106,8 +106,8 @@ to do it in detail:
 http://www.django-rest-framework.org/api-guide/relations/#hyperlinkedrelatedfield
 
 To determine the 'view_name' to use when declaring a HyperlinkedRelatedField, it should be
-be ``<endpoint_name>-<view_action>``, e.g. 'repository-detail' when relating to a "normal" model
-ViewSet whose ``endpoint_name`` is 'repository'.
+be ``<endpoint_name>-<view_action>``, e.g. 'repositories-detail' when relating to a "normal" model
+ViewSet whose ``endpoint_name`` is 'repositories'.
 
 Nested
 ^^^^^^
