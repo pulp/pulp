@@ -1501,9 +1501,21 @@ class LazyUnitDownloadStep(DownloadEventListener):
                 path=path_entry[CATALOG_ENTRY].path)
             _logger.debug(msg)
             report.data[REQUEST].canceled = True
+
         except (InvalidChecksumType, VerificationException, IOError):
             # It's either missing or incorrect, so download it
             pass
+
+        unit_model = plugin_api.get_unit_model_by_id(report.data[TYPE_ID])
+        unit_qs = unit_model.objects.filter(id=report.data[UNIT_ID])
+
+        # Mark the entire unit as downloaded, if necessary.
+        download_flags = [entry[PATH_DOWNLOADED] for entry in
+                          report.data[UNIT_FILES].values()]
+        if all(download_flags):
+            _logger.debug(_('Marking content located at {path} as downloaded.').format(
+                path=path_entry[CATALOG_ENTRY].path))
+            unit_qs.update_one(set__downloaded=True)
 
     def download_succeeded(self, report):
         """
