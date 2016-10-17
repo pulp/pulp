@@ -1,3 +1,4 @@
+import datetime
 import inspect
 
 from bson.objectid import InvalidId
@@ -5,7 +6,7 @@ from mock import call, Mock, MagicMock, patch
 import mock
 import mongoengine
 
-from pulp.common import error_codes
+from pulp.common import dateutils, error_codes
 from pulp.common.compat import unittest
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
@@ -803,6 +804,176 @@ class TestUpdateLastUnitRemoved(unittest.TestCase):
         m_repo.save.assert_called_once_with()
 
 
+class TestCheckPerformFullSync(unittest.TestCase):
+    """
+    Test the series of checks Pulp does to determine if a full sync is necessary.
+    """
+
+    def setUp(self):
+        self.after_ts = dateutils.now_utc_datetime_with_tzinfo()
+        self.before_ts = self.after_ts - datetime.timedelta(minutes=1)
+
+        self.after_ts_str = dateutils.format_iso8601_datetime(self.after_ts)
+        self.before_ts_str = dateutils.format_iso8601_datetime(self.before_ts)
+
+    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
+    def test_check_unit_removed_since_last_sync(self, mock_conduit, mock_repo_qs):
+        """
+        Tests that "True" is returned when a unit has been removed since the last sync,
+        otherwise "False" is returned.
+        """
+        m_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        m_repo_id = m_repo.repo_id
+
+        # Test return value when there is no previous sync
+        mock_conduit.last_sync.return_value = None
+        retval = repo_controller.check_unit_removed_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when there is no unit removed
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        m_repo.last_unit_removed = None
+        retval = repo_controller.check_unit_removed_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when the last unit removed occurred before the last sync
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        m_repo.last_unit_removed = self.before_ts
+        retval = repo_controller.check_unit_removed_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when the last unit removed occurred since than the last sync
+        mock_conduit.last_sync.return_value = self.before_ts_str
+        m_repo.last_unit_removed = self.after_ts
+        retval = repo_controller.check_unit_removed_since_last_sync(mock_conduit, m_repo_id)
+        self.assertTrue(retval)
+
+    @mock.patch('pulp.server.controllers.repository.model.Importer.objects')
+    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
+    def test_check_config_updated_since_last_sync(self, mock_conduit, mock_repo_qs, mock_imp_qs):
+        """
+        Tests that "True" is returned when the config file has been changed since the last sync.
+        """
+        m_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
+        m_repo_id = m_repo.repo_id
+        mock_imp = mock_imp_qs.get_or_404.return_value
+        mock_imp.last_updated.return_value = None
+
+        # Test return value when there is no last sync
+        mock_conduit.last_sync.return_value = None
+        retval = repo_controller.check_config_updated_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when last_updated is None
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        mock_imp.last_updated = None
+        retval = repo_controller.check_config_updated_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when the last config update occurred before the last sync
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        mock_imp.last_updated = self.before_ts
+        retval = repo_controller.check_config_updated_since_last_sync(mock_conduit, m_repo_id)
+        self.assertFalse(retval)
+
+        # Test return value when the last config update occurred after the last sync
+        mock_conduit.last_sync.return_value = self.before_ts_str
+        mock_imp.last_updated = self.after_ts
+        retval = repo_controller.check_config_updated_since_last_sync(mock_conduit, m_repo_id)
+        self.assertTrue(retval)
+
+    @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
+    @mock.patch('pulp.server.controllers.repository.model.Importer.objects')
+    @mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
+    def test_check_override_config_change(self, mock_conduit, mock_imp_qs, mock_call_config):
+        """
+        Tests that "True" is returned when the config file has been changed since the last sync.
+        """
+        mock_imp = mock_imp_qs.get_or_404.return_value
+
+        # Test return value when there is no change in the override configuration
+        mock_imp.last_override_config = {'bg': True}
+        mock_call_config.override_config = {'bg': True}
+        retval = repo_controller.check_override_config_change(mock_conduit, mock_call_config)
+        self.assertFalse(retval)
+
+        # Test return value when the only difference is a "force_full" flag
+        mock_imp.last_override_config = {'force_full': True}
+        mock_call_config.override_config = {}
+        retval = repo_controller.check_override_config_change(mock_conduit, mock_call_config)
+        self.assertFalse(retval)
+
+        # Test return value when the only difference is a "force_full" flag
+        mock_imp.last_override_config = {}
+        mock_call_config.override_config = {'force_full': True}
+        retval = repo_controller.check_override_config_change(mock_conduit, mock_call_config)
+        self.assertFalse(retval)
+
+        # Test return value when the override configs are different
+        mock_imp.last_override_config = {'bg': True}
+        mock_call_config.override_config = {'bg': False}
+        retval = repo_controller.check_override_config_change(mock_conduit, mock_call_config)
+        self.assertTrue(retval)
+
+    @mock.patch('pulp.server.controllers.repository.check_override_config_change')
+    @mock.patch('pulp.server.controllers.repository.check_config_updated_since_last_sync')
+    @mock.patch('pulp.server.controllers.repository.check_unit_removed_since_last_sync')
+    @mock.patch('pulp.server.controllers.repository.PluginCallConfiguration')
+    @mock.patch('pulp.server.controllers.repository.RepoSyncConduit')
+    def test_check_perform_full_sync(self, mock_conduit, mock_call_config, mock_removed,
+                                     mock_updated, mock_override):
+        """
+        Tests that if any of the constitutent checks fail, the functon will fail as expected
+        """
+        # Test return value when all constituent checks evaluate to False
+        mock_call_config.get.return_value = False
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        mock_removed.return_value = False
+        mock_updated.return_value = False
+        mock_override.return_value = False
+
+        retval = repo_controller.check_perform_full_sync('mock_id',
+                                                         mock_conduit,
+                                                         mock_call_config)
+        self.assertFalse(retval)
+
+        # Test return value when all constituent checks evaluate to True
+        mock_call_config.get.return_value = True
+        mock_conduit.last_sync.return_value = None
+        mock_removed.return_value = True
+        mock_updated.return_value = True
+        mock_override.return_value = True
+
+        retval = repo_controller.check_perform_full_sync('mock_id',
+                                                         mock_conduit,
+                                                         mock_call_config)
+        self.assertTrue(retval)
+
+        # Test return True when only the "force_full" flag check evaluates to True
+        mock_call_config.get.return_value = True
+        mock_conduit.last_sync.return_value = self.after_ts_str
+        mock_removed.return_value = False
+        mock_updated.return_value = False
+        mock_override.return_value = False
+        retval = repo_controller.check_perform_full_sync('mock_id',
+                                                         mock_conduit,
+                                                         mock_call_config)
+        self.assertTrue(retval)
+
+        # Test return True when only the last sync check evaluates to True
+        mock_call_config.get.return_value = False
+        mock_conduit.last_sync.return_value = None
+        mock_removed.return_value = False
+        mock_updated.return_value = False
+        mock_override.return_value = False
+        retval = repo_controller.check_perform_full_sync('mock_id',
+                                                         mock_conduit,
+                                                         mock_call_config)
+        self.assertTrue(retval)
+
+
 @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts')
 @mock.patch('pulp.server.controllers.repository.sys')
 @mock.patch('pulp.server.controllers.repository.register_sigterm_handler')
@@ -887,7 +1058,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'canceled'
         )
-        m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
+        m_model.Importer.objects().update.assert_called_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(actual_result is m_task_result.return_value)
@@ -933,7 +1104,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'success'
         )
-        m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
+        m_model.Importer.objects().update.assert_called_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertEqual(mock_imp_inst.id, mock_conduit.call_args_list[0][0][2])
@@ -978,7 +1149,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), m_added, m_updated, m_removed, m_sync_result.summary,
             m_sync_result.details, 'failed'
         )
-        m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
+        m_model.Importer.objects().update.assert_called_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
 
@@ -1012,7 +1183,7 @@ class TestSync(unittest.TestCase):
             mock_now(), mock_now(), -1, -1, -1, mock_gettext(), mock_gettext(),
             'error'
         )
-        m_model.Importer.objects().update.assert_called_once_with(set__last_sync=mock_now())
+        m_model.Importer.objects().update.assert_called_with(set__last_sync=mock_now())
         mock_result.get_collection().save.assert_called_once_with(mock_result.expected_result())
         mock_fire_man.fire_repo_sync_finished.assert_called_once_with(mock_result.expected_result())
         self.assertTrue(result is m_task_result.return_value)

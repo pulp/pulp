@@ -34,8 +34,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.10.0
-Release: 0.4.beta%{?dist}
+Version: 2.11.0
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -367,6 +367,7 @@ Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-qpid
 Requires: python-nectar >= 1.5.0
 Requires: python-semantic_version >= 2.2.0
+Requires: libselinux-python
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -1040,17 +1041,6 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Mon Aug 29 2016 Sean Myers <sean.myers@redhat.com> 2.10.0-0.4.beta
-- Pulp rebuild
-
-* Fri Aug 19 2016 Sean Myers <sean.myers@redhat.com> 2.10.0-0.3.beta
-- Pulp rebuild
-
-* Wed Aug 03 2016 Sean Myers <sean.myers@redhat.com> 2.10.0-0.1.beta
-- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
-- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
-- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
-
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 

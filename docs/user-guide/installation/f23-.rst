@@ -2,6 +2,7 @@ CentOS, RHEL, and Fedora 23-
 ============================
 
 This page contains installation instructions for CentOS, RHEL, and Fedora 23 and below.
+The :ref:`platform-support-policy` defines platforms are currently supported.
 
 
 Repositories

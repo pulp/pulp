@@ -402,7 +402,7 @@ class Publisher(PublishStep):
         :return: path to 'master' publish directory
         :rtype: str
         """
-        repo_relative_path = self.predistributor['config']['relative_url']
+        repo_relative_path = self.predistributor['config'].get('relative_url', self.repo.id)
         return os.path.realpath(os.path.join(self._get_root_publish_dir(), repo_relative_path))
 
     def get_units_directory_dest_path(self):
