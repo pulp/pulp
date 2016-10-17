@@ -1703,8 +1703,9 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
         self.step.start()
         self.step.downloader.download.assert_called_once_with(self.step.download_requests)
 
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
     @patch(MODULE + 'model.DeferredDownload')
-    def test_download_started(self, mock_deferred_download):
+    def test_download_started(self, mock_deferred_download, mock_get_model):
         """Assert if validate_file raises an exception, the download is not skipped."""
         self.step.validate_file = Mock(side_effect=IOError)
 
@@ -1713,16 +1714,22 @@ class TestLazyUnitDownloadStep(unittest.TestCase):
         qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
         qs.return_value.delete.assert_called_once_with()
 
+    @patch(MODULE + 'plugin_api.get_unit_model_by_id')
     @patch(MODULE + 'model.DeferredDownload')
-    def test_download_started_already_downloaded(self, mock_deferred_download):
+    def test_download_started_already_downloaded(self, mock_deferred_download, mock_get_model):
         """Assert if validate_file doesn't raise an exception, the download is skipped."""
         self.step.validate_file = Mock()
+        model_qs = mock_get_model.return_value
 
         self.step.download_started(self.report)
         self.assertTrue(self.report.data[repo_controller.REQUEST].canceled)
         qs = mock_deferred_download.objects.filter
         qs.assert_called_once_with(unit_id='1234', unit_type_id='abc')
         qs.return_value.delete.assert_called_once_with()
+        self.assertEqual(
+            {'set__downloaded': True},
+            model_qs.objects.filter.return_value.update_one.call_args_list[0][1]
+        )
 
     @patch(MODULE + 'os.path.relpath', Mock(return_value='filename'))
     @patch(MODULE + 'plugin_api.get_unit_model_by_id')
