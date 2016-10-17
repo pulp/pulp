@@ -2,6 +2,24 @@
 Pulp 2.8 Release Notes
 ======================
 
+Pulp 2.8.7
+==========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.8.7`
+
+
+Pulp 2.8.6
+==========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.8.6`
+
+
 Pulp 2.8.5
 ==========
 
