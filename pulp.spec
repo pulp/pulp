@@ -652,7 +652,7 @@ Pulp nodes consumer client extensions.
 %package -n python-pulp-streamer
 Summary: The pulp lazy streamer
 Group: Development/Languages
-
+Provides: python2-pulp-streamer
 Requires: httpd
 Requires: pulp-server
 Requires: python-mongoengine
@@ -720,6 +720,7 @@ fi
 Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
+Provides: python2-pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
 # RHEL5 ONLY
@@ -745,6 +746,7 @@ A collection of components that are common between the pulp server and client.
 %package -n python-pulp-devel
 Summary: Pulp devel python packages
 Group: Development/Languages
+Provides: python2-pulp-devel
 %if 0%{?rhel} == 6
 Requires: python-unittest2
 %endif
@@ -766,6 +768,7 @@ A collection of tools used for developing & testing Pulp plugins
 %package -n python-pulp-bindings
 Summary: Pulp REST bindings for python
 Group: Development/Languages
+Provides: python2-pulp-bindings
 Requires: python-%{name}-common = %{pulp_version}
 %if %{pulp_client_oauth}
 Requires: python-oauth2 >= 1.5.170-2.pulp
@@ -787,6 +790,7 @@ The Pulp REST API bindings for python.
 %package -n python-pulp-client-lib
 Summary: Pulp client extensions framework
 Group: Development/Languages
+Provides: python2-pulp-client-lib
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-okaara >= 1.0.32
@@ -814,6 +818,7 @@ A framework for loading Pulp client extensions.
 %package -n python-pulp-agent-lib
 Summary: Pulp agent handler framework
 Group: Development/Languages
+Provides: python2-pulp-agent-lib
 Requires: python-%{name}-common = %{pulp_version}
 
 %description -n python-pulp-agent-lib
@@ -1006,6 +1011,7 @@ exit 0
 %package -n python-pulp-repoauth
 Summary: Framework for cert-based repo authentication
 Group: Development/Languages
+Provides: python2-pulp-repoauth
 Requires: httpd
 Requires: mod_ssl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -1027,6 +1033,7 @@ Cert-based repo authentication for Pulp
 %package -n python-pulp-oid_validation
 Summary: Cert-based repo authentication for Pulp
 Group: Development/Languages
+Provides: python2-pulp-oid-validation
 Requires: python-rhsm
 Requires: python-pulp-repoauth = %{pulp_version}
 
