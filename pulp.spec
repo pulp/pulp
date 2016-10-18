@@ -1041,6 +1041,13 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Tue Oct 18 2016 Sean Myers <sean.myers@redhat.com> 2.10.1-0.1.beta
+- 752 - Fixed: Suggestion to add -v remains even if you use -v
+  (fdobrovo@redhat.com)
+- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
+- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
+- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
+
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 
