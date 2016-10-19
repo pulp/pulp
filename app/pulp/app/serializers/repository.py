@@ -8,7 +8,7 @@ class RepositorySerializer(ModelSerializer):
     # _href is normally provided by the base class, but Repository's
     # "name" lookup field means _href must be explicitly declared.
     _href = serializers.HyperlinkedIdentityField(
-        view_name='repository-detail',
+        view_name='repositories-detail',
         lookup_field='name',
     )
     name = serializers.CharField(
