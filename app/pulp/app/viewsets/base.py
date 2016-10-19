@@ -93,4 +93,5 @@ class NamedModelViewSet(viewsets.ModelViewSet):
             pieces = (cls.endpoint_name,)
 
         urlpattern = '/'.join(pieces)
-        router.register(urlpattern, cls)
+        view_name = '-'.join(pieces)
+        router.register(urlpattern, cls, view_name)
