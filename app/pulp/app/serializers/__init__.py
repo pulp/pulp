@@ -7,5 +7,6 @@ from pulp.app.serializers.fields import RepositoryRelatedField  # NOQA
 from pulp.app.serializers.generic import (ConfigKeyValueRelatedField,  # NOQA
     NotesKeyValueRelatedField)  # NOQA
 from pulp.app.serializers.content import ContentSerializer, ContentRelatedField  # NOQA
+from pulp.app.serializers.consumer import ConsumerSerializer # NOQA
 from pulp.app.serializers.repository import RepositorySerializer  # NOQA
 from pulp.app.serializers.task import TaskSerializer, WorkerSerializer # NOQA
