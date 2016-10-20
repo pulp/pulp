@@ -6,7 +6,7 @@ from pulp.app.serializers import ModelSerializer
 
 class TaskTagSerializer(serializers.ModelSerializer):
     name = serializers.CharField(
-        help_text="The name of the tag",
+        help_text="The name of the tag"
     )
 
     class Meta:
@@ -15,6 +15,10 @@ class TaskTagSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(ModelSerializer):
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='tasks-detail',
+    )
+
     group = serializers.UUIDField(
         help_text="The group that this task belongs to.",
         read_only=True
@@ -50,7 +54,8 @@ class TaskSerializer(ModelSerializer):
         help_text="The worker associated with this task."
                   " This field is empty if a worker is not yet assigned.",
         read_only=True,
-        view_name='workers-detail'
+        view_name='workers-detail',
+        lookup_field='name'
     )
 
     parent = serializers.HyperlinkedRelatedField(
@@ -70,3 +75,23 @@ class TaskSerializer(ModelSerializer):
                                                 'finished_at', 'non_fatal_errors',
                                                 'result', 'worker', 'parent', 'tags')
 
+
+class WorkerSerializer(ModelSerializer):
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='workers-detail',
+        lookup_field='name'
+    )
+
+    name = serializers.CharField(
+        help_text='The name of the worker.',
+        read_only=True
+    )
+
+    last_heartbeat = serializers.DateTimeField(
+        help_text='Timestamp of the last time the worker talked to the service.',
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Worker
+        fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat')
