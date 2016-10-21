@@ -117,8 +117,8 @@ class TestBatch(TestCase):
             call('/content/new/e/f6', '/pub/zoo/wolf/f6'),
         ]
         for link_call, unlink_call in zip(expected_link_calls, expected_unlink_calls):
-            self.assertIn(link_call, symlink.call_args_list)
-            self.assertIn(unlink_call, unlink.call_args_list)
+            self.assertTrue(link_call in symlink.call_args_list)
+            self.assertTrue(unlink_call in unlink.call_args_list)
 
     def test_migrate(self):
         plan = Mock()
@@ -136,7 +136,7 @@ class TestBatch(TestCase):
         # validate
         for i in items:
             expected_call = call(i.unit_id, i.storage_path, i.new_path)
-            self.assertIn(expected_call, plan.migrate.call_args_list)
+            self.assertTrue(expected_call in plan.migrate.call_args_list)
 
     @patch(MODULE + '.Batch.reset')
     @patch(MODULE + '.Batch._relink')

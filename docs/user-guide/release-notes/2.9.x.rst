@@ -2,6 +2,35 @@
 Pulp 2.9 Release Notes
 ======================
 
+Pulp 2.9.3
+==========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.9.3`
+
+
+Pulp 2.9.2
+==========
+
+This is a hotfix release to address critical issues discovered after the release of 2.9.1.
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.9.2`
+
+
+Pulp 2.9.1
+==========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.9.1`
+
+
 Pulp 2.9.0
 ==========
 
@@ -15,3 +44,8 @@ New Features
   `--force-full` via CLI.
 
 * A new :ref:`security disclosures` process has been put in place.
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.9.0`

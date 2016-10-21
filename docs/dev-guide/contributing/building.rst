@@ -482,7 +482,7 @@ place, you can use a similar rsync command to do so::
 
     $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/<stream>/<X.Y>/ --dry-run
 
-Replace stream with "beta" or "stable", and substitute the correct version. For our 2.4 beta
+Replace ``<stream>`` with "beta" or "stable", and ``<X.Y>`` with the correct version. For our 2.4 beta
 example::
 
     $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/beta/2.4/ --dry-run
@@ -500,6 +500,9 @@ output to ensure that it is correct. If it is, run the command again while omitt
 If you have published a beta build, you must move all issues and stories for the target release
 from ``MODIFIED`` to ``ON_QA``. If this is the first beta build for this version, you must also
 update versions on the branch as described :ref:`above <building-updating-versions>`.
+
+If you are publishing a beta or release candidate build, ensure that the build documentation
+is listed and linked to on the `documentation page of pulpproject.org <http://pulpproject.org/docs/>`_.
 
 After publishing a beta build, email pulp-list@redhat.com to announce the beta. Here is a
 typical email you can use::
@@ -586,3 +589,6 @@ was 2.5, the stable folder should look similar to this::
 
 The ``rhel-pulp.repo`` and ``fedora-pulp.repo`` files also need to be updated
 for the new GPG public key location if you are creating a new X release.
+
+Also the X.Y-1 needs to be added to the "Older, Stable" section of the
+`documentation page of pulpproject.org <http://pulpproject.org/docs/>`_.
