@@ -9,7 +9,7 @@ from .repository import (Repository, RepositoryGroup, Importer, Publisher,  # NO
                          RepositoryContent)  # NOQA
 
 from .catalog import DownloadCatalog  # NOQA
-from .task import ReservedResource, Worker, Task, TaskTag, TaskLock, ScheduledCalls  # NOQA
+from .task import ReservedResource, Worker, Task, TaskTag, TaskLock  # NOQA
 
 # Moved here to avoid a circular import with Task
 from .progress import ProgressBar, ProgressSpinner  # NOQA
