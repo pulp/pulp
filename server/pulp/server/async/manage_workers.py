@@ -22,7 +22,7 @@ User=apache
 WorkingDirectory=/var/run/pulp/
 ExecStart=/usr/bin/celery worker -n reserved_resource_worker-%(num)s@%%%%h -A pulp.server.async.app\
           -c 1 --events --umask 18 --pidfile=/var/run/pulp/reserved_resource_worker-%(num)s.pid\
-          --heartbeat-interval=30
+          --heartbeat-interval=30 --maxrequestsperchild=$PULP_MAX_TASKS_PER_CHILD
 KillSignal=SIGQUIT
 """
 
