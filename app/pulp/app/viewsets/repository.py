@@ -1,5 +1,5 @@
-import django_filters
-from rest_framework import decorators, filters, pagination
+from django_filters.rest_framework import filters, filterset
+from rest_framework import decorators, pagination
 
 from pulp.app.models import Repository
 from pulp.app.pagination import UUIDPagination
@@ -15,9 +15,9 @@ class RepositoryPagination(pagination.CursorPagination):
     ordering = 'name'
 
 
-class RepositoryFilter(filters.FilterSet):
+class RepositoryFilter(filterset.FilterSet):
     name_in_list = CharInFilter(name='name', lookup_expr='in')
-    content_added_since = django_filters.Filter(name='last_content_added', lookup_expr='gt')
+    content_added_since = filters.Filter(name='last_content_added', lookup_expr='gt')
 
     class Meta:
         model = Repository
