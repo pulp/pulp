@@ -146,7 +146,6 @@ corenet_tcp_bind_generic_node(celery_t)
 # Pulp workers need to do selinux relabeling as part of publishing.
 #
 
-selinux_set_enforce_mode(celery_t)
 selinux_validate_context(celery_t)
 
 allow celery_t httpd_sys_rw_content_t:dir relabelto;
