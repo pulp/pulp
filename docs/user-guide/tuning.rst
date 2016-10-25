@@ -30,6 +30,22 @@ the collection responsible for that content type. Each content type has a collec
 
 .. _here: http://docs.mongodb.org/manual/core/index-creation/
 
+.. _process_recycling:
+
+Memory Issues
+^^^^^^^^^^^^^
+Pulp workers do not release all unused memory back to the system once tasks are complete. This is
+a known issues with the version of Python that Pulp uses.
+
+To work around this problem, Pulp supports worker process recycling to terminate a worker
+process after X tasks and replace it with a new one. This will release unused memory back to the
+system after tasks complete. This will not interfere with your usage of Pulp, but it does incur
+a small runtime overhead on the tasking system from killing and respawning processes regularly.
+
+See the ``PULP_MAX_TASKS_PER_CHILD`` variable in your ``/etc/default/pulp_workers`` file to enable
+this feature. After adjusting the configuration value you will need to restart your
+``pulp_workers`` processes.
+
 Monitoring
 ----------
 

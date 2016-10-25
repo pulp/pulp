@@ -51,6 +51,7 @@ class TestGetConcurrency(unittest.TestCase):
             stdout=subprocess.PIPE, shell=True)
         cpu_count.assert_called_once_with()
 
+    @mock.patch('pulp.server.async.manage_workers._get_max_tasks', mock.MagicMock(return_value=''))
     @mock.patch('pulp.server.async.manage_workers.multiprocessing.cpu_count', return_value=16)
     @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
     def test_concurrency_set(self, Popen, cpu_count):
@@ -172,6 +173,8 @@ class TestStartWorkers(unittest.TestCase):
     """
     Test the _start_workers() function. For simplicity, these tests all set concurrency to 1.
     """
+
+    @mock.patch('pulp.server.async.manage_workers._get_max_tasks', mock.MagicMock(return_value=''))
     @mock.patch('pulp.server.async.manage_workers._get_concurrency', mock.MagicMock(return_value=1))
     @mock.patch('pulp.server.async.manage_workers.os.path.exists',
                 mock.MagicMock(return_value=True))
@@ -192,7 +195,8 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value.returncode = 42
         Popen.return_value.communicate.return_value = pipe_output
         expected_read_data = manage_workers._WORKER_TEMPLATE % {
-            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
+            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE,
+            'max_tasks_argument': ''}
 
         with mock.patch('__builtin__.open', autospec=True) as mock_open:
             mock_file = mock.MagicMock(spec=file)
@@ -228,6 +232,7 @@ class TestStartWorkers(unittest.TestCase):
         # Make sure the exit code was passed on
         exit.assert_called_once_with(42)
 
+    @mock.patch('pulp.server.async.manage_workers._get_max_tasks', mock.MagicMock(return_value=''))
     @mock.patch('pulp.server.async.manage_workers._get_concurrency', mock.MagicMock(return_value=1))
     @mock.patch('pulp.server.async.manage_workers.os.path.exists',
                 mock.MagicMock(return_value=True))
@@ -243,7 +248,8 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
         expected_read_data = manage_workers._WORKER_TEMPLATE % {
-            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
+            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE,
+            'max_tasks_argument': ''}
 
         with mock.patch('__builtin__.open', autospec=True) as mock_open:
             mock_file = mock.MagicMock(spec=file)
@@ -274,6 +280,7 @@ class TestStartWorkers(unittest.TestCase):
         self.assertEqual(stdout.write.mock_calls[0][1][0], pipe_output[0])
         self.assertEqual(stdout.write.mock_calls[1][1][0], '\n')
 
+    @mock.patch('pulp.server.async.manage_workers._get_max_tasks', mock.MagicMock(return_value=''))
     @mock.patch('pulp.server.async.manage_workers._get_concurrency', mock.MagicMock(return_value=1))
     @mock.patch('pulp.server.async.manage_workers.os.path.exists',
                 mock.MagicMock(return_value=True))
@@ -303,7 +310,8 @@ class TestStartWorkers(unittest.TestCase):
         unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
         expected_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
         expected_file_contents = manage_workers._WORKER_TEMPLATE % {
-            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
+            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE,
+            'max_tasks_argument': ''}
         self.assertEqual(mock_open.call_count, 2)
         # Let's inspect the read call
         first_open = mock_open.mock_calls[0]
@@ -333,6 +341,7 @@ class TestStartWorkers(unittest.TestCase):
         self.assertEqual(stdout.write.mock_calls[0][1][0], pipe_output[0])
         self.assertEqual(stdout.write.mock_calls[1][1][0], '\n')
 
+    @mock.patch('pulp.server.async.manage_workers._get_max_tasks', mock.MagicMock(return_value=''))
     @mock.patch('pulp.server.async.manage_workers._get_concurrency', mock.MagicMock(return_value=1))
     # Setting this return value to False will simulate the file not existing
     @mock.patch('pulp.server.async.manage_workers.os.path.exists',
@@ -359,7 +368,8 @@ class TestStartWorkers(unittest.TestCase):
         unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
         expected_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
         expected_file_contents = manage_workers._WORKER_TEMPLATE % {
-            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
+            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE,
+            'max_tasks_argument': ''}
         # Now, let's inspect the write call
         mock_open.assert_called_once_with(expected_path, 'w')
         file_context = mock_open()

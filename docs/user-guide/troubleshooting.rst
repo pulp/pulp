@@ -275,3 +275,9 @@ be done by that worker. This is normal for cancellation and is not a cause for c
  celery.worker.job:ERROR: (15328-02560)   File "/usr/lib64/python2.7/site-packages/billiard/pool.py", line 1673, in _set_terminated
  celery.worker.job:ERROR: (15328-02560)     raise Terminated(-(signum or 0))
  celery.worker.job:ERROR: (15328-02560) Terminated: 0
+
+Workers not releasing memory
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+See the :ref:`process recycling documentation<process_recycling>` for more information on how to
+have your Pulp workers return memory back to the system.

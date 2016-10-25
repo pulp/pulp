@@ -22,7 +22,7 @@ User=apache
 WorkingDirectory=/var/run/pulp/
 ExecStart=/usr/bin/celery worker -n reserved_resource_worker-%(num)s@%%%%h -A pulp.server.async.app\
           -c 1 --events --umask 18 --pidfile=/var/run/pulp/reserved_resource_worker-%(num)s.pid\
-          --heartbeat-interval=30 --maxrequestsperchild=$PULP_MAX_TASKS_PER_CHILD
+          --heartbeat-interval=30 %(max_tasks_argument)s
 KillSignal=SIGQUIT
 """
 
@@ -42,6 +42,25 @@ def _get_concurrency():
     if output:
         return int(output)
     return multiprocessing.cpu_count()
+
+
+def _get_max_tasks():
+    """
+    Process the _ENVIRONMENT_FILE to determine if celery worker process recycling is to be used
+
+    If process recycling is to be used, return the string adding the command line option. If
+    disabled return an empty string.
+
+    :return: The argument string setting maxtasksperchild or empty string
+    :rtype:  basestring
+    """
+    pipe = subprocess.Popen(". %s; echo $PULP_MAX_TASKS_PER_CHILD" % _ENVIRONMENT_FILE,
+                            stdout=subprocess.PIPE, shell=True)
+    output = pipe.communicate()[0].strip()
+    if output:
+        return ' --maxtasksperchild=%s' % int(output)
+    else:
+        return ''
 
 
 def _get_file_contents(path):
@@ -66,7 +85,9 @@ def _start_workers():
     for i in range(concurrency):
         unit_filename = _UNIT_FILENAME_TEMPLATE % i
         unit_path = os.path.join(_SYSTEMD_UNIT_PATH, unit_filename)
-        unit_contents = _WORKER_TEMPLATE % {'num': i, 'environment_file': _ENVIRONMENT_FILE}
+        max_tasks_argument = _get_max_tasks()
+        unit_contents = _WORKER_TEMPLATE % {'num': i, 'environment_file': _ENVIRONMENT_FILE,
+                                            'max_tasks_argument': max_tasks_argument}
         if not os.path.exists(unit_path) or _get_file_contents(unit_path) != unit_contents:
             with open(unit_path, 'w') as unit_file:
                 unit_file.write(unit_contents)
