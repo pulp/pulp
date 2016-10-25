@@ -6,3 +6,7 @@
 
 # Configure Python's encoding for writing all logs, stdout and stderr
 PYTHONIOENCODING="UTF-8"
+
+# To avoid memory leaks, Pulp can terminate and replace a worker after processing X tasks. If
+# left commented, process recycling is disabled. PULP_MAX_TASKS_PER_CHILD must be > 0.
+# PULP_MAX_TASKS_PER_CHILD=2
