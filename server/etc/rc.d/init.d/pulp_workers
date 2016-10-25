@@ -59,8 +59,12 @@ if [ ! -z "$CELERY_APP" ]; then
     CELERY_APP_ARG="--app=$CELERY_APP"
 fi
 
-# Sets --maxrequestsperchild argument for CELERY_BIN
-CELERY_MAX_TASKS_PER_CHILD_ARG="--maxrequestsperchild=$PULP_MAX_TASKS_PER_CHILD"
+# Sets --maxtasksperchild argument for CELERY_BIN
+if [ -z ${PULP_MAX_TASKS_PER_CHILD+x} ]; then
+    CELERY_MAX_TASKS_PER_CHILD_ARG=""
+else
+    CELERY_MAX_TASKS_PER_CHILD_ARG="--maxtasksperchild=$PULP_MAX_TASKS_PER_CHILD"
+fi
 
 CELERYD_USER=${CELERYD_USER:-$DEFAULT_USER}
 
