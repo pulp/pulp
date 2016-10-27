@@ -10,7 +10,7 @@ from django.utils import timezone
 from pulp.app.models import Model
 from pulp.app.fields import JSONField
 from pulp.common import TASK_FINAL_STATES
-from pulp.exceptions import PulpException
+from pulp.exceptions import exception_to_dict
 
 
 _logger = logging.getLogger(__name__)
@@ -146,7 +146,7 @@ class Task(Model):
     finished_at = models.DateTimeField(null=True)
 
     non_fatal_errors = JSONField()
-    result = JSONField()
+    result = JSONField(default=[])
 
     parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
     worker = models.ForeignKey("Worker", null=True, related_name="tasks")
@@ -202,10 +202,7 @@ class Task(Model):
         """
         self.state = Task.FAILED
         self.finished_at = timezone.now()
-        if isinstance(exc, PulpException):
-            self.result = exc.to_dict()
-        else:
-            self.result = {'traceback': einfo.traceback}
+        self.result = exception_to_dict(exc, einfo.traceback)
         self.save()
 
 
