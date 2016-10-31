@@ -20,26 +20,7 @@ Client
 Additional steps are needed for upgrading Pulp 1.1 installations. More information can be found
 in the :doc:`v1_upgrade` section of this guide.
 
-
-Supported Operating Systems
----------------------------
-Server
-
-* RHEL Server 6 & 7
-* Fedora
-* CentOS Server 6 & 7
-
-Consumer
-
-* RHEL 5, 6, & 7
-* Fedora
-* CentOS 5, 6 & 7
-
-Admin Client
-
-* RHEL 6 & 7
-* Fedora
-* CentOS 6 & 7
+The :ref:`platform-support-policy` defines platforms are currently supported.
 
 
 Prerequisites

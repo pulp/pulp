@@ -113,9 +113,9 @@ To install *Nodes* child support, follow the instructions below.
 
  $ sudo yum install pulp-nodes-child pulp-nodes-consumer-extensions pulp-agent
 
-2. The communication between the child and parent nodes is secured using OAuth. The child node
-   must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
-   on enabling and configuring OAuth.
+2. The agent on the child node uses the local pulp REST API which is secured using OAuth.
+   The child node must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>`
+   for instructions on enabling and configuring OAuth.
 
 ::
 
@@ -399,15 +399,24 @@ On the Pulp server to be used as the parent node:
 ::
 
   $ sudo yum install pulp-nodes-parent pulp-nodes-admin-extensions
-  $ sudo service httpd restart
 
-2. Enable the ``pulp-goodness`` repository.
+2. Configure and enable :ref:`OAuth <oauth-config>`.
+
+3. Restart Apache.  For upstart::
+
+     $ sudo service httpd restart
+
+   For systemd::
+
+     $sudo systemctl restart httpd
+
+4. Enable the ``pulp-goodness`` repository.
 
 ::
 
  $ pulp-admin node repo enable --repo-id pulp-goodness
 
-3. Publish the ``pulp-goodness`` repository.
+5. Publish the ``pulp-goodness`` repository.
 
 ::
 
@@ -425,7 +434,10 @@ On the Pulp server to be used as the child node:
 
   $ sudo yum install pulp-nodes-child pulp-nodes-consumer-extensions pulp-agent
 
-2. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
+2. Configure and enable :ref:`OAuth <oauth-config>`. This should use different credentials from
+   the parent for security.
+
+3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
    ``/etc/pulp/server.conf`` on the parent node.
 
 ::
@@ -434,14 +446,14 @@ On the Pulp server to be used as the child node:
  key:    <matching value from parent /etc/pulp/server.conf>
  secret: <matching value from parent /etc/pulp/server.conf>
 
-3. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
+4. Edit ``/etc/pulp/consumer/consumer.conf`` and change:
 
 ::
 
  [server]
  host = parent.redhat.com
 
-4. Restart Apache.  For upstart::
+5. Restart Apache.  For upstart::
 
      $ sudo service httpd restart
 
@@ -449,7 +461,7 @@ On the Pulp server to be used as the child node:
 
      $sudo systemctl restart httpd
 
-5. Restart the Pulp agent.  For upstart::
+6. Restart the Pulp agent.  For upstart::
 
      $ sudo service goferd restart
 
@@ -458,20 +470,20 @@ On the Pulp server to be used as the child node:
      $ sudo systemctl restart goferd
 
 
-6. Register as a consumer. This command will prompt for a password.
+7. Register as a consumer. This command will prompt for a password.
 
 ::
 
  $ pulp-consumer register --consumer-id child-1
 
-7. Activate the node.
+8. Activate the node.
 
 ::
 
  $ pulp-consumer node activate
 
 
-8. Bind to the ``pulp-goodness`` repository.
+9. Bind to the ``pulp-goodness`` repository.
 
 ::
 

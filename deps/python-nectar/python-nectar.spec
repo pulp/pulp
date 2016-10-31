@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.5.2
+Version:        1.5.3
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Wed Sep 14 2016 Ina Panova <ipanova@redhat.com> 1.5.3-1
+- Change how Nectar configures requests to be thread-safe (jeremy@jcline.org)
+- Add mention-bot blacklist (jeremy@jcline.org)
+
 * Wed May 25 2016 Ina Panova <ipanova@redhat.com> 1.5.2-1
 - ConnectionError exceptions are logged at the error level (jeremy@jcline.org)
 - Add a unit test for proxy username being ''. (rbarlow@redhat.com)

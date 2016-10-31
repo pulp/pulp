@@ -16,6 +16,7 @@ files_tmp_file(pulp_tmp_t)
 
 require {
         type celery_t;
+        type httpd_sys_rw_content_t;
         type pulp_var_run_t;
         type pulp_tmp_t;
         type pulp_var_cache_t;
@@ -24,11 +25,11 @@ require {
         type tmp_t;
         class sock_file { create link unlink write };
         class unix_stream_socket connectto;
-        class dir { getattr search write remove_name create add_name rmdir };
-        class file { lock rename write setattr getattr read create unlink open };
+        class dir { getattr search write remove_name create add_name rmdir relabelto relabelfrom };
+        class file { lock rename write setattr getattr read create unlink open relabelto relabelfrom };
         class process { setsched signal signull };
         class tcp_socket { connect create getattr getopt read setopt shutdown write };
-        class lnk_file { create read getattr unlink};
+        class lnk_file { create read getattr unlink relabelto relabelfrom };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
         class udp_socket { ioctl create getattr connect write read };
         class unix_dgram_socket { create connect };
@@ -139,6 +140,21 @@ auth_use_nsswitch(celery_t)
 corenet_tcp_connect_all_ports(celery_t)
 corenet_tcp_bind_all_ports(celery_t)
 corenet_tcp_bind_generic_node(celery_t)
+
+######################################
+#
+# Pulp workers need to do selinux relabeling as part of publishing.
+#
+
+selinux_validate_context(celery_t)
+
+allow celery_t httpd_sys_rw_content_t:dir relabelto;
+allow celery_t httpd_sys_rw_content_t:file relabelto;
+allow celery_t httpd_sys_rw_content_t:lnk_file relabelto;
+allow celery_t pulp_var_cache_t:dir relabelfrom;
+allow celery_t pulp_var_cache_t:file relabelfrom;
+allow celery_t pulp_var_cache_t:lnk_file relabelfrom;
+
 
 ######################################
 #

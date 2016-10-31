@@ -36,16 +36,17 @@ def paginate(iterable, page_size=DEFAULT_PAGE_SIZE):
         yield page
 
 
-def mkdir(path):
+def mkdir(*args, **kwargs):
     """
     Create the specified directory.
     Tolerant of race conditions.
 
-    :param path: The absolute path to the directory.
-    :type path: str
+    :param args: path[, mode] that goes to os.makedirs
+    :param kwargs: path
+    :return:
     """
     try:
-        os.makedirs(path)
+        os.makedirs(*args, **kwargs)
     except OSError, e:
         if e.errno != errno.EEXIST:
             raise

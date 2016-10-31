@@ -200,6 +200,31 @@ follow.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
 
+#. You can use SSHFS rather than NFS. The downside is SSHFS does not perform quite as well as NFS,
+   but the upside is you do not need to configure or run NFS, nor do you need to allow Vagrant to
+   edit your /etc/exports file. At the time of this writing, the ``vagrant-sshfs`` package is not
+   yet in Fedora, although the package is in the process of being reviewed. The author provides a
+   COPR repository you can enable to install the RPM::
+
+    $ sudo dnf copr enable dustymabe/vagrant-sshfs
+    $ sudo dnf install vagrant-sshfs
+
+   You need to modify your Vagrantfile to use SSHFS::
+
+    # -*- mode: ruby -*-
+    # vi: set ft=ruby :
+
+
+    Vagrant.configure(2) do |config|
+        config.vm.define "dev" do |dev|
+            VAGRANT_SYNCED_FOLDERS.each do |host_path, guest_path|
+                # Use SSHFS instead of NFS. The ``-o nonempty`` option is passed to allow
+                # mounts on non-empty directories.
+                dev.vm.synced_folder host_path, guest_path, type: "sshfs", sshfs_opts_append: "-o nonempty"
+            end
+        end
+    end
+
 
 Vagrant w/ PyCharm
 ^^^^^^^^^^^^^^^^^^
@@ -258,7 +283,7 @@ disable SELinux and install items as root outside of the system package manager.
   sudo access. If you are using a Fedora cloud image, the "fedora" user is
   sufficient.
 
-* As that user, ``curl -O https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh && bash -e dev-setup.sh``.
+* As that user, ``curl -O https://raw.githubusercontent.com/pulp/devel/master/scripts/dev-setup.sh && bash -e dev-setup.sh``.
 
    .. warning:: Note that this installs RPMs and makes system modifications that you wouldn't
                 want to apply on a VM that was not dedicated to Pulp development.

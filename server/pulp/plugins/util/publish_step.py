@@ -11,6 +11,7 @@ import time
 import traceback
 import uuid
 import errno
+import selinux
 import signal
 
 from pulp.common import error_codes
@@ -896,7 +897,17 @@ class AtomicDirectoryPublishStep(PluginStep):
         # for items where http & https are published to a separate directory
 
         _logger.debug('Copying tree from %s to %s' % (self.source_dir, timestamp_master_dir))
-        copytree(self.source_dir, timestamp_master_dir, symlinks=True)
+
+        misc.mkdir(os.path.dirname(timestamp_master_dir))
+
+        try:
+            os.rename(self.source_dir, timestamp_master_dir)
+            selinux.restorecon(timestamp_master_dir.encode('utf-8'), recursive=True)
+        except OSError as e:
+            if e.errno == errno.EXDEV:
+                copytree(self.source_dir, timestamp_master_dir, symlinks=True)
+            else:
+                raise
 
         for source_relative_location, publish_location in self.publish_locations:
             if source_relative_location.startswith('/'):
@@ -911,7 +922,7 @@ class AtomicDirectoryPublishStep(PluginStep):
             # Create the parent directory of the published repository tree, if needed
             publish_dir_parent = os.path.dirname(publish_location)
             if not os.path.exists(publish_dir_parent):
-                os.makedirs(publish_dir_parent, 0750)
+                misc.mkdir(publish_dir_parent, 0750)
 
             if not self.only_publish_directory_contents:
                 # Create a temporary symlink in the parent of the published directory tree
@@ -926,7 +937,7 @@ class AtomicDirectoryPublishStep(PluginStep):
                 os.rename(tmp_link_name, publish_location)
             else:
                 if not os.path.exists(publish_location):
-                    os.makedirs(publish_location, 0750)
+                    misc.mkdir(publish_location, 0750)
                 for file_name in os.listdir(timestamp_master_location):
                     tmp_link_name = os.path.join(publish_location, self.parent.timestamp)
                     master_source_file = os.path.join(timestamp_master_location, file_name)
@@ -970,7 +981,7 @@ class SaveTarFilePublishStep(PublishStep):
         # Move the tar file to the final location
         publish_dir_parent = os.path.dirname(self.publish_file)
         if not os.path.exists(publish_dir_parent):
-            os.makedirs(publish_dir_parent, 0750)
+            misc.mkdir(publish_dir_parent, 0750)
         shutil.copy(os.path.join(self.source_dir, tar_file_name), self.publish_file)
 
 
