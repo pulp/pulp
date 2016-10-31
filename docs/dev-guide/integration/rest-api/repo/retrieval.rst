@@ -324,6 +324,7 @@ will either be empty (no importer configured) or contain a single entry.
         "last_sync": "2015-11-06T10:38:23Z",
         "repo_id": "zoo",
         "scratchpad": {
+            "previous_skip_list": [],
             "repomd_revision": 1331832478
         }
     }
@@ -361,6 +362,7 @@ Retrieves the given :term:`importer` (if any) associated with a repository.
     "last_sync": "2015-11-06T10:38:23Z",
     "repo_id": "zoo",
     "scratchpad": {
+        "previous_skip_list": [],
         "repomd_revision": 1331832478
     }
  }

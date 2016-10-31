@@ -383,9 +383,8 @@ class ImporterScratchPadMixinTests(unittest.TestCase):
     def test_set_scratchpad(self, mock_importer_qs):
         mock_importer = mock_importer_qs.get.return_value
         self.mixin.set_scratchpad('foo')
-        mock_importer.update.assert_called_once_with(set__scratchpad='foo')
-        sp = self.mixin.get_scratchpad()
-        self.assertTrue(sp is mock_importer_qs.get.return_value.scratchpad)
+        mock_importer.save.assert_called_once_with()
+        self.assertEqual(mock_importer.scratchpad, 'foo')
 
     def test_set_scratchpad_server_error(self, mock_importer_qs):
         mock_importer_qs.get.side_effect = Exception()
