@@ -230,28 +230,6 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_imp_inst.import_units.call_count)
         self.assertEqual(ret.get('units_successful'), [])
 
-    @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
-    @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
-    @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
-    @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
-    def test_associate_from_repo_return_tuple(self, mock_importer, mock_plugin, mock_repo,
-                                              mock_crit, mock_rebuild_count):
-        mock_imp_inst = mock.MagicMock()
-        mock_plugin.get_importer_by_id.return_value = (mock_imp_inst, mock.MagicMock())
-        source_repo = mock.MagicMock(repo_id='source-repo')
-        dest_repo = mock.MagicMock(repo_id='dest-repo')
-
-        with mock.patch('pulp.server.controllers.importer.remove_importer'):
-            importer_controller.set_importer(source_repo, 'mock-importer', {})
-            importer_controller.set_importer(dest_repo, 'mock-importer', {})
-
-        mock_imp_inst.import_units.return_value = (list(), list())
-        ret = self.manager.associate_from_repo('source_repo', 'dest_repo', mock_crit)
-
-        self.assertEqual(1, mock_imp_inst.import_units.call_count)
-        self.assertEqual(ret.get('units_successful'), [])
-        self.assertEqual(ret.get('units_failed_signature_filter'), [])
-
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     def test_associate_from_repo_missing_source(self, mock_repo, mock_crit):
         importer_controller.set_importer('dest_repo', 'mock-importer', {})
