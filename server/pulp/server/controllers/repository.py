@@ -1,6 +1,5 @@
 from gettext import gettext as _
 from itertools import chain
-import copy
 import logging
 import os
 import sys
@@ -739,8 +738,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     except plugin_exceptions.PluginNotFound:
         raise pulp_exceptions.MissingResource(repository=repo_id)
 
-    importer_config = importer_controller.clean_config_dict(copy.deepcopy(repo_importer.config))
-    call_config = PluginCallConfiguration(imp_config, importer_config, sync_config_override)
+    call_config = PluginCallConfiguration(imp_config, repo_importer.config, sync_config_override)
     transfer_repo.working_dir = common_utils.get_working_directory()
     conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id, repo_importer.id)
     sync_result_collection = RepoSyncResult.get_collection()
