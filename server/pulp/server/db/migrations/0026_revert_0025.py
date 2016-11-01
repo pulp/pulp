@@ -12,4 +12,3 @@ def migrate(*args, **kwargs):
 
     collection.update({}, {'$unset': {'last_updated': 1}}, multi=True)
     collection.update({}, {'$unset': {'last_override_config': 1}}, multi=True)
-
