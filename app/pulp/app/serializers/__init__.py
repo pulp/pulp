@@ -9,7 +9,7 @@ from pulp.app.serializers.generic import (ConfigKeyValueRelatedField,  # NOQA
     NotesKeyValueRelatedField, ScratchpadKeyValueRelatedField)  # NOQA
 from pulp.app.serializers.consumer import ConsumerSerializer  # NOQA
 from pulp.app.serializers.content import ContentSerializer, ArtifactSerializer  # NOQA
-from pulp.app.serializers.repository import (ImporterSerializer, RepositoryGroupSerializer, # NOQA
-                                             RepositorySerializer)  # NOQA
+from pulp.app.serializers.repository import (ImporterSerializer, PublisherSerializer,  # NOQA
+    RepositoryGroupSerializer, RepositorySerializer)  # NOQA
 from pulp.app.serializers.task import TaskSerializer, WorkerSerializer  # NOQA
 from pulp.app.serializers.user import UserSerializer  # NOQA

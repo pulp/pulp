@@ -74,3 +74,45 @@ class ImporterSerializer(MasterModelSerializer):
     class Meta:
         abstract = True
         fields = MasterModelSerializer.Meta.fields + ('name',)
+
+
+class PublisherSerializer(MasterModelSerializer):
+    """
+    Every publisher defined by a plugin should have an Publisher serializer that inherits from this
+    class. Please import from `pulp.app.serializers` rather than from this module directly.
+    """
+    # Every subclass must override the `_href` field with a `RepositoryNestedIdentityField` that
+    # defines the view_name.
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='publishers-detail',
+        lookup_field='name',
+    )
+    name = serializers.CharField(
+        help_text='A name for this publisher, unique within the associated repository.'
+    )
+    last_updated = serializers.DateTimeField(
+        help_text='Timestamp of the most recent update of the publisher configuration.',
+        read_only=True
+    )
+    repository = RepositoryRelatedField()
+
+    auto_publish = serializers.BooleanField(
+        help_text='An indicaton that the automatic publish may happen when'
+                  ' the repository content has changed.',
+        required=False
+    )
+    relative_path = serializers.CharField(
+        help_text='The (relative) path component of the published url',
+        required=False
+    )
+    last_published = serializers.DateTimeField(
+        help_text='Timestamp of the most recent successful publish.',
+        read_only=True
+    )
+
+    class Meta:
+        abstract = True
+        model = models.Publisher
+        fields = MasterModelSerializer.Meta.fields + (
+            'name', 'last_updated', 'repository', 'auto_publish', 'relative_path', 'last_published'
+        )
