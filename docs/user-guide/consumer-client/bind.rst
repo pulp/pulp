@@ -24,6 +24,8 @@ the type's name.
 
   Task Id: 6e48ce85-60a0-4bf6-b2bb-9617eb7b3ef3
 
+  Task Id: 5bfe25f6-7325-4c29-b6e7-7e8df839570c
+
 Looking at the consumer history, the first action in the list is a bind action
 to the specified repository.
 
@@ -59,6 +61,10 @@ Unbinding is equally simple.
   Unbind tasks successfully created:
 
   Task Id: 0c02d974-cf00-44b7-9b63-cdadfc9bfab7
+
+  Task Id: 947b03a6-6911-42c6-a8ce-3161bed08b15
+
+  Task Id: 358e9d1e-8531-4bbd-a8e8-ab64d596b345o
 
 Looking at the history, it is clear that the consumer is no longer bound to the
 repository.
