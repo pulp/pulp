@@ -262,7 +262,7 @@ def update_importer_config(repo_id, importer_config):
     # repo_importer.config needs to be changed
     for k, v in importer_config.iteritems():
         if v is None:
-            repo_importer.config.pop(k)
+            repo_importer.config.pop(k, None)
         else:
             repo_importer.config[k] = v
 
