@@ -437,7 +437,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_ser = mock_model.Importer.SERIALIZER
         mock_validate_config.return_value = (True, 'message')
 
-        result = importer.update_importer_config('mrepo', {'test': 'change', 'dont_keep': None})
+        result = importer.update_importer_config(
+            'mrepo', {'test': 'change', 'dont_keep': None, 'unknown': None})
         mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
                                                      {'test': 'change', 'keep': 'keep'})
         self.assertDictEqual(mock_importer.config, {'test': 'change', 'keep': 'keep'})
