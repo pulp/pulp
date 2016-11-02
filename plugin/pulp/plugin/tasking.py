@@ -2,7 +2,7 @@ from pulp.app.models import Task
 from pulp.tasking import get_current_task_id
 
 
-class Task(object):
+class TaskController(object):
     """
     An interface to the currently running task.
 
