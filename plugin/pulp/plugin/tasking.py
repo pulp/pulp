@@ -1,4 +1,5 @@
 from pulp.app.models import Task
+from pulp.exceptions import exception_to_dict
 from pulp.tasking import get_current_task_id
 
 
@@ -25,15 +26,13 @@ class TaskController(object):
         attribute on the :class: `~pulp.app.models.Task` model.
 
         :param error: The non fatal error to be appended.
-        :type error: dict
+        :type error: Exception
 
         :raises :class: `pulp.app.models.Task.DoesNotExist`: If not currently running inside a
                                                              task.
         """
         task_id = get_current_task_id()
         task_obj = Task.objects.get(id=task_id)
-        if not isinstance(task_obj.non_fatal_errors, list):
-            task_obj.non_fatal_errors = [error]
-        else:
-            task_obj.non_fata_errors.append(error)
+        serialized_error = exception_to_dict(error)
+        task_obj.non_fatal_errors.append(serialized_error)
         task_obj.save()

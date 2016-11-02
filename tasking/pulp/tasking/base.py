@@ -12,7 +12,7 @@ from django.db.models import Count
 
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
-from pulp.exceptions import MissingResource, PulpCodedException
+from pulp.exceptions import MissingResource, PulpException
 from pulp.tasking import storage
 from pulp.tasking.celery_instance import celery
 from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
@@ -200,7 +200,7 @@ class UserFacingTask(PulpTask):
     """
 
     # this tells celery to not automatically log tracebacks for these exceptions
-    throws = (PulpCodedException,)
+    throws = (PulpException,)
 
     def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
@@ -350,13 +350,7 @@ class UserFacingTask(PulpTask):
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         :type einfo:    ???
         """
-        if isinstance(exc, PulpCodedException):
-            _logger.error(_('Task failed : [%(task_id)s] : %(msg)s') %
-                          {'task_id': task_id, 'msg': str(exc)})
-            _logger.error(traceback.format_exc())
-        else:
-            _logger.error(_('Task failed : [%s]') % task_id)
-            # celery will log the traceback
+        _logger.error(_('Task failed : [%s]') % task_id)
 
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)

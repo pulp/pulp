@@ -1,35 +1,28 @@
+from gettext import gettext as _
+
 import http.client
 
-from pulp.common import error_codes
-
-from .base import PulpExecutionException
+from .base import PulpException
 
 
-class MissingResource(PulpExecutionException):
+class MissingResource(PulpException):
     """"
-    Base class for exceptions raised due to requesting a resource that does not
-    exist.
+    Base class for missing resource exceptions.
+
+    Exceptions that are raised due to requests for resources that do not exist should inherit
+    from this base class.
     """
     http_status_code = http.client.NOT_FOUND
 
-    def __init__(self, *args, **resources):
+    def __init__(self, **resources):
         """
-        @param args: backward compatibility for for positional resource_id argument
-        @param resources: keyword arguments of resource_type=resource_id
+        :param resources: keyword arguments of resource_type=resource_id
+        :type resources: dict
         """
-        # backward compatibility for for previous 'resource_id' positional argument
-        if args:
-            resources['resource_id'] = args[0]
-
-        super(MissingResource, self).__init__(resources)
-        self.error_code = error_codes.PLP0009
+        super(MissingResource, self).__init__("PLP0001")
         self.resources = resources
-        self.error_data = {'resources': resources}
 
     def __str__(self):
         resources_str = ', '.join('%s=%s' % (k, v) for k, v in self.resources.items())
-        msg = self.error_code.message % {'resources': resources_str}
+        msg = _("The following resources are missing: %s") % resources_str
         return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'resources': self.resources}

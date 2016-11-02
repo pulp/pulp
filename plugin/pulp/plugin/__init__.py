@@ -1,4 +1,5 @@
 from pulp.app.models import ProgressBar, ProgressSpinner, Repository, RepositoryContent
+from pulp.exceptions import PulpException
 
 from .cataloger import Cataloger
 from .publisher import Publisher
