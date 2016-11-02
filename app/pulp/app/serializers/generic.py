@@ -8,10 +8,17 @@ from . import base
 class ConfigKeyValueRelatedField(base.GenericKeyValueRelatedField):
     help_text = 'A mapping of string keys to string values, for configuring this object.'
     required = False
-    queryset = models.Notes.objects.all()
+    queryset = models.Config.objects.all()
 
 
 class NotesKeyValueRelatedField(base.GenericKeyValueRelatedField):
     help_text = 'A mapping of string keys to string values, for storing notes on this object.'
     required = False
     queryset = models.Notes.objects.all()
+
+
+class ScratchpadKeyValueRelatedField(base.GenericKeyValueRelatedField):
+    help_text = ('A mapping of string keys to string values, for storing an arbitrary information '
+                 'of this object.')
+    required = False
+    queryset = models.Scratchpad.objects.all()

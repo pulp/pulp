@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
 from pulp.app import models
-from pulp.app.serializers import (ModelSerializer, NotesKeyValueRelatedField,
-                                  MasterModelSerializer)
+from pulp.app.serializers import (MasterModelSerializer, ModelSerializer,
+                                  NotesKeyValueRelatedField, RepositoryRelatedField,
+                                  ScratchpadKeyValueRelatedField)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -32,11 +33,30 @@ class RepositorySerializer(ModelSerializer):
         read_only=True
     )
     notes = NotesKeyValueRelatedField()
+    scratchpad = ScratchpadKeyValueRelatedField()
 
     class Meta:
         model = models.Repository
-        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
+        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes', 'scratchpad',
                                                 'last_content_added', 'last_content_removed')
+
+
+class RepositoryGroupSerializer(ModelSerializer):
+    name = serializers.CharField(
+        help_text='A unique name for this repository group.'
+    )
+    description = serializers.CharField(
+        help_text='An optional description of the repository group.',
+        required=False
+    )
+    members = RepositoryRelatedField(many=True)
+    scratchpad = ScratchpadKeyValueRelatedField()
+    notes = NotesKeyValueRelatedField()
+
+    class Meta:
+        model = models.RepositoryGroup
+        fields = ModelSerializer.Meta.fields + ('name', 'description', 'members', 'scratchpad',
+                                                'notes')
 
 
 class ImporterSerializer(MasterModelSerializer):
