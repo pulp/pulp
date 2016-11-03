@@ -103,6 +103,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 }
 
+AUTH_USER_MODEL = 'pulp_app.PulpUser'
+
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 

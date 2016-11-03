@@ -72,7 +72,7 @@ class PulpAppConfig(PulpPluginAppConfig):
     # The app's importable name
     name = 'pulp.app'
 
-    # The app label to be used when creating tables, registering models,
-    # referencing this app with manage.py, etc. This cannot contain a dot,
-    # so for brevity's sake it's just "pulp", rather than e.g. "pulp_app".
-    label = 'pulp'
+    # The app label to be used when creating tables, registering models, referencing this app
+    # with manage.py, etc. This cannot contain a dot and must not conflict with the name of a
+    # package containing a Django app.
+    label = 'pulp_app'
