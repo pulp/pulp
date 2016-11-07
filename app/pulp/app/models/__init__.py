@@ -13,4 +13,4 @@ from .catalog import DownloadCatalog  # NOQA
 from .task import ReservedResource, Worker, Task, TaskTag, TaskLock  # NOQA
 
 # Moved here to avoid a circular import with Task
-from .progress import ProgressBar, ProgressSpinner  # NOQA
+from .progress import ProgressBar, ProgressReport, ProgressSpinner  # NOQA
