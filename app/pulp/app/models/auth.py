@@ -56,8 +56,6 @@ class PulpUser(AbstractBaseUser, PermissionsMixin):
         }
     )
 
-    is_admin = models.BooleanField(default=False)
-
     objects = PulpUserManager()
 
     USERNAME_FIELD = 'username'
