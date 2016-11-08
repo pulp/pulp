@@ -1,7 +1,7 @@
 """
 Django models related to the Authentication system
 
-The PulpUser and PulpUserManager classes are based on Django documentation for creating custom User
+The User and UserManager classes are based on Django documentation for creating custom User
 objects. More information can be found here:
 https://docs.djangoproject.com/en/1.8/topics/auth/customizing/#specifying-a-custom-user-model
 """
@@ -12,15 +12,15 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, Permis
 from django.db import models
 
 
-class PulpUserManager(BaseUserManager):
+class UserManager(BaseUserManager):
     """
-    A custom manager for PulpUser objects.
+    A custom manager for User objects.
     """
     use_in_migrations = True
 
     def _create_user(self, username, password, is_superuser):
         """
-        Creates and saves a PulpUser with the given username and password.
+        Creates and saves a User with the given username and password.
         """
         if not username:
             raise ValueError('The given username must be set')
@@ -36,7 +36,7 @@ class PulpUserManager(BaseUserManager):
         return self._create_user(username, password, True)
 
 
-class PulpUser(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin):
     """
     A custom Django User class for Pulp.
     """
@@ -56,7 +56,7 @@ class PulpUser(AbstractBaseUser, PermissionsMixin):
         }
     )
 
-    objects = PulpUserManager()
+    objects = UserManager()
 
     USERNAME_FIELD = 'username'
 

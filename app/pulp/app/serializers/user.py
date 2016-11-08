@@ -5,7 +5,7 @@ from django.utils import six
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from pulp.app.models import PulpUser
+from pulp.app.models import User
 from pulp.app.serializers import ModelSerializer
 
 
@@ -30,7 +30,7 @@ class UserSerializer(ModelSerializer):
 
     username = serializers.CharField(
         help_text=_("Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        validators=[UniqueValidator(queryset=PulpUser.objects.all())],
+        validators=[UniqueValidator(queryset=User.objects.all())],
     )
 
     is_superuser = serializers.BooleanField(
@@ -42,5 +42,5 @@ class UserSerializer(ModelSerializer):
     password = PasswordSerializer(write_only=True, help_text=_("Password"))
 
     class Meta:
-        model = PulpUser
+        model = User
         fields = ModelSerializer.Meta.fields + ('username', 'is_superuser', 'password')
