@@ -11,3 +11,4 @@ from pulp.app.serializers.consumer import ConsumerSerializer  # NOQA
 from pulp.app.serializers.content import ContentSerializer, ArtifactSerializer  # NOQA
 from pulp.app.serializers.repository import ImporterSerializer, RepositorySerializer  # NOQA
 from pulp.app.serializers.task import TaskSerializer, WorkerSerializer  # NOQA
+from pulp.app.serializers.user import UserSerializer  # NOQA
