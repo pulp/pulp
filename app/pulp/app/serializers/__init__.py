@@ -3,8 +3,7 @@
 # - all can import directly from base and fields if needed
 from pulp.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # NOQA
     ModelSerializer, MasterModelSerializer, viewset_for_model)  # NOQA
-from pulp.app.serializers.fields import (ContentRelatedField, RepositoryNestedIdentityField,  # NOQA
-    RepositoryRelatedField)  # NOQA
+from pulp.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField)  # NOQA
 from pulp.app.serializers.generic import (ConfigKeyValueRelatedField,  # NOQA
     NotesKeyValueRelatedField, ScratchpadKeyValueRelatedField)  # NOQA
 from pulp.app.serializers.consumer import ConsumerSerializer  # NOQA

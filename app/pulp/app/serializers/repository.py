@@ -71,17 +71,16 @@ class ImporterSerializer(MasterModelSerializer):
     """
     Every importer defined by a plugin should have an Importer serializer that inherits from this
     class. Please import from `pulp.app.serializers` rather than from this module directly.
-
-    Every subclass must override the `_href` field with a `RepositoryNestedIdentityField` that
-    defines the view_name.
     """
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
     )
 
+    repository = RepositoryRelatedField()
+
     class Meta:
         abstract = True
-        fields = MasterModelSerializer.Meta.fields + ('name',)
+        fields = MasterModelSerializer.Meta.fields + ('name', 'repository')
 
 
 class PublisherSerializer(MasterModelSerializer):
