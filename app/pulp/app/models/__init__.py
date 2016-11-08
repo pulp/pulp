@@ -1,5 +1,5 @@
 # https://docs.djangoproject.com/en/1.10/topics/db/models/#organizing-models-in-a-package
-from .auth import PulpUser # NOQA
+from .auth import User # NOQA
 from .base import Model, MasterModel  # NOQA
 from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyValueRelation,  # NOQA
                       GenericKeyValueModel, Config, Notes, Scratchpad)  # NOQA
