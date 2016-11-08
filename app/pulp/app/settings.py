@@ -64,6 +64,13 @@ for plugin in PULP_PLUGINS:
     # add it to INSTALLED_APPS. :)
     INSTALLED_APPS.append(plugin)
 
+if DEBUG:
+    try:
+        from pulp.app.tests import testapp  # NOQA
+        INSTALLED_APPS.append('pulp.app.tests.testapp')
+    except ImportError:
+        pass
+
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
