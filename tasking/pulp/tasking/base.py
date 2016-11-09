@@ -377,7 +377,6 @@ def cancel(task_id):
     :type  task_id: basestring
 
     :raises MissingResource: if a task with given task_id does not exist
-    :raises PulpCodedException: if given task is already in a complete state
     """
     try:
         task_status = TaskStatus.objects.get(pk=task_id)
