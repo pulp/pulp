@@ -16,17 +16,13 @@ class JSONField(models.TextField):
         """
         Converts a value as returned by the database to a Python object
 
-        :param value: The value to convert to Python
-        :type value: object
+        Args:
+            value: DB value to convert to Python
+            args: unused positional arguments
+            kwargs: unused keyword arguments
 
-        :param args: unused positional arguments
-        :type args: list
-
-        :param kwargs: unused keyword arguments
-        :type kwargs: dict
-
-        :return: A Python representation of value
-        :rtype: object
+        Returns:
+            Python representation of ``value``
         """
         if isinstance(value, six.string_types):
             return self.to_python(value)
@@ -36,11 +32,11 @@ class JSONField(models.TextField):
         """
         Converts the value into the correct Python object
 
-        :param value: The value to convert to Python
-        :type value: object
+        Args:
+            value: The JSON-serializeable value to convert to Python
 
-        :return: A Python representation of value
-        :rtype: object
+        Returns:
+            Python representation of value
         """
         return json.loads(value)
 
@@ -48,17 +44,13 @@ class JSONField(models.TextField):
         """
         Converts value to a backend-specific value
 
-        :param value: The value to be converted
-        :type value: object
+        Args:
+            value: value to convert
+            args: unused positional arguments
+            kwargs: unused keyword arguments
 
-        :param args: unused positional arguments
-        :type args: list
-
-        :param kwargs: unused keyword arguments
-        :type kwargs: dict
-
-        :return: json string representing the object
-        :rtype: str
+        Returns:
+            JSON string representation of ``value``
         """
         if value is None:
             return None
@@ -68,11 +60,10 @@ class JSONField(models.TextField):
         """
         Converts obj to a string. Used to serialize the value of the field
 
-        :param obj: The object to be converted
-        :type obj: object
-
-        :return: Serialized value
-        :rtype: str
+        Args:
+            obj: The JSON-serializable object to be converted
+        Returns:
+            str: JSON Serialized value
         """
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value, None)

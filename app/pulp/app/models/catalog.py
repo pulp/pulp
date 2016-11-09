@@ -10,23 +10,21 @@ from pulp.app.models import Model, Artifact, Importer
 
 class DownloadCatalog(Model):
     """
-    Each :class:`DownloadCatalog` maps an :class:`Artifact` to a URL where
-    it is stored remotely and to the :class:`Importer` which contains the
-    network configuration required to access that URL.
+    Each :class:`DownloadCatalog` maps an :class:`pulp.app.models.content.Artifact` to a URL where
+    it is stored remotely and to the :class:`pulp.app.models.repository.Importer` which contains
+    the network configuration required to access that URL.
 
     Fields:
 
-    :cvar url: The URL used to download the related artifact.
-    :type url: django.db.models.TextField
+        url (models.TextField): The URL used to download the related artifact.
 
     Relations:
 
-    :cvar artifact: The artifact that is expected to be present at ``url``.
-    :type artifact: pulp.app.models.Artifact
+        artifact (Artifact): The artifact that is expected to be present at
+            ``url``.
+        importer (Importer): The importer that contains the
+            configuration necessary to access ``url``.
 
-    :cvar importer: The importer that contains the configuration necessary
-                    to access ``url``.
-    :type importer: pulp.app.models.Importer
     """
     # Although there is a Django field for URLs based on CharField, there is
     # not technically any limit on URL lengths so it's simplier to allow any

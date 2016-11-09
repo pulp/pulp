@@ -43,7 +43,7 @@ class GenericKeyValueMutableMapping(MutableMapping):
     ``__contains__`` falls back to the manager's ``exists`` method
     ``items`` returns key/value pairs directly from model instances, rather than
 
-    keys and values are stored in ``TextField``s, and will automatically be coerced to strings
+    keys and values are stored in a ``TextField``, and will automatically be coerced to string
     when saved to the database.
 
     """

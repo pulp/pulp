@@ -14,13 +14,13 @@ class Content(MasterModel):
     """
     A piece of managed content.
 
-    :cvar natural_key_fields: Tuple of natural fields.  Must be: models.Field.
-    :type natural_key_fields: tuple
+    Attributes:
+
+        nature_key_fields (tuple): Natural key fields.  Must be models.Field subclasses.
 
     Relations:
 
-    :cvar notes: Arbitrary information stored with the content.
-    :type notes: GenericKeyValueRelation
+        notes (GenericKeyValueRelation): Arbitrary information stored with the content.
     """
     TYPE = 'content'
 
@@ -67,49 +67,25 @@ class Artifact(Model):
 
     Fields:
 
-    :cvar file: The stored file.
-    :type file: models.FileField
-
-    :cvar downloaded: The associated file has been successfully downloaded.
-    :type downloaded: BooleanField
-
-    :cvar requested: The associated file has been requested by a client at
-                     least once.
-    :type requested: BooleanField
-
-    :cvar relative_path: The artifact's path relative to the associated
-                         :class:`Content`. This path is incorporated in
-                         the absolute storage path of the file and its
-                         published path relative to the root publishing
-                         directory. At a minimum the path will contain the
-                         file name but may also include sub-directories.
-    :type relative_path: models.TextField
-
-    :cvar size: The size of the file in bytes.
-    :type size: models.IntegerField
-
-    :cvar md5: The MD5 checksum of the file.
-    :type md5: models.CharField
-
-    :cvar sha1: The SHA-1 checksum of the file.
-    :type sha1: models.CharField
-
-    :cvar sha224: The SHA-224 checksum of the file.
-    :type sha224: models.CharField
-
-    :cvar sha256: The SHA-256 checksum of the file.
-    :type sha256: models.CharField
-
-    :cvar sha384: The SHA-384 checksum of the file.
-    :type sha384: models.CharField
-
-    :cvar sha512: The SHA-512 checksum of the file.
-    :type sha512: models.CharField
+        file (models.FileField): The stored file.
+        downloaded (models.BooleanField): The associated file has been successfully downloaded.
+        requested (models.BooleanField): The associated file has been requested by a client at
+            least once.
+        relative_path (models.TextField): The artifact's path relative to the associated
+            :class:`Content`. This path is incorporated in the absolute storage path of the file
+            and its published path relative to the root publishing directory. At a minimum the path
+            will contain the file name but may also include sub-directories.
+        size (models.IntegerField): The size of the file in bytes.
+        md5 (models.CharField): The MD5 checksum of the file.
+        sha1 (models.CharField): The SHA-1 checksum of the file.
+        sha224 (models.CharField): The SHA-224 checksum of the file.
+        sha256 (models.CharField): The SHA-256 checksum of the file.
+        sha384 (models.CharField): The SHA-384 checksum of the file.
+        sha512 (models.CharField): The SHA-512 checksum of the file.
 
     Relations:
 
-    :cvar content: The associated content.
-    :type content: Content
+        content (models.ForeignKey): The associated content.
     """
 
     # Note: The FileField does not support unique indexes and has

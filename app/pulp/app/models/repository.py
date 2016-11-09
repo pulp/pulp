@@ -13,28 +13,16 @@ class Repository(Model):
 
     Fields:
 
-    :cvar name: The repository name.
-    :type name: models.TextField
-
-    :cvar: description: An optional description.
-    :type: models.TextField
-
-    :cvar last_content_added: When content was last added.
-    :type last_content_added: models.DateTimeField
-
-    :cvar last_content_removed: When content was last removed.
-    :type last_content_removed: models.DateTimeField
+        name (models.TextField): The repository name.
+        description (models.TextField): An optional description.
+        last_content_added (models.DateTimeField): When content was last added.
+        last_content_removed (models.DatetimeField): When content was last removed.
 
     Relations:
 
-    :cvar scratchpad: Arbitrary information stashed on the repository.
-    :type scratchpad: GenericKeyValueRelation
-
-    :cvar notes: Arbitrary repository properties.
-    :type notes: GenericKeyValueRelation
-
-    :cvar content: Associated content.
-    :type content: models.ManyToManyField
+        scratchpad (GenericKeyValueRelation): Arbitrary information stashed on the repository.
+        notes (GenericKeyValueRelation): Arbitrary repository properties.
+        content (models.ManyToManyField): Associated content.
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
@@ -47,6 +35,9 @@ class Repository(Model):
 
     content = models.ManyToManyField('Content', through='RepositoryContent',
                                      related_name='repositories')
+
+    class Meta:
+        verbose_name_plural = 'repositories'
 
     @property
     def content_summary(self):
@@ -78,18 +69,12 @@ class RepositoryGroup(Model):
 
     Fields:
 
-    :cvar name: The group name.
-    :type name: models.TextField
-
-    :cvar: description: An optional description.
-    :type: models.TextField
+        name (models.TextField): The group name.
+        description (models.TextField): An optional description.
 
     Relations:
-    :cvar notes: Arbitrary group properties.
-    :type notes: GenericKeyValueRelation
-
-    :cvar members: Repositories associated with the group.
-    :type members: models.ManyToManyField
+        notes (GenericKeyValueRelation): Arbitrary group properties.
+        members (models.ManyToManyField): Repositories associated with the group.
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
@@ -114,17 +99,12 @@ class ContentAdaptor(MasterModel):
 
     Fields:
 
-    :cvar name: The ContentAdaptor name.
-    :type type: models.TextField
-
-    :cvar last_updated: When the adaptor was last updated.
-    :type last_updated: fields.DateTimeField
+        name (models.TextField): The ContentAdaptor name.
+        last_updated (models.DatetimeField): When the adaptor was last updated.
 
     Relations:
 
-    :cvar repository: The associated repository.
-    :type repository: models.ForeignKey
-
+        repository (models.ForeignKey): The associated repository.
     """
     name = models.TextField(db_index=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
@@ -139,8 +119,9 @@ class ContentAdaptor(MasterModel):
         """
         Get the model's natural key.
 
-        :return: The model's natural key.
-        :rtype: tuple
+        Returns:
+
+            tuple: The model's natural key.
         """
         return (self.repository, self.name)
 
@@ -151,50 +132,29 @@ class Importer(ContentAdaptor):
 
     Fields:
 
-    :cvar feed_url: The URL of an external content source.
-    :type feed_url: models.TextField
-
-    :cvar validate: Validate the imported context.
-    :type validate: models.BooleanField
-
-    :cvar ssl_ca_certificate: A PEM encoded CA certificate used to validate the server
-                              certificate presented by the external source.
-    :type ssl_ca_certificate: models.TextField
-
-    :cvar ssl_client_certificate: A PEM encoded client certificate used for authentication.
-    :type ssl_client_certificate: models.TextField
-
-    :cvar ssl_client_key: A PEM encoded private key used for authentication.
-    :type ssl_client_key: models.TextField
-
-    :cvar ssl_validation: Indicates whether SSL peer validation must be performed.
-    :type ssl_validation: models.BooleanField
-
-    :cvar proxy_url: The optional proxy URL. Format: scheme://user:password@host:port
-    :type proxy_url: models.ForeignKey
-
-    :cvar basic_auth_user: The user used in HTTP basic authentication.
-    :type basic_auth_user: models.TextField
-
-    :cvar basic_auth_password: The password used in HTTP basic authentication.
-    :type basic_auth_password: models.TextField
-
-    :cvar max_download_bandwidth: The max amount of bandwidth used per download (Bps).
-    :type max_download_bandwidth: models.IntegerField
-
-    :cvar max_concurrent_downloads: The number of concurrent downloads permitted.
-    :type max_concurrent_downloads: models.IntegerField
-
-    :cvar download_policy: The policy for downloading content.
-    :type download_policy: models.TextField
-
-    :cvar last_sync: When the last successful synchronization occurred.
-    :type last_sync: models.DateTimeField
+        feed_url (models.TextField): The URL of an external content source.
+        validate (models.BooleanField): Validate the imported context.
+        ssl_ca_certificate (models.TextField): A PEM encoded CA certificate used to validate the
+            server certificate presented by the external source.
+        ssl_client_certificate (models.TextField): A PEM encoded client certificate used
+            for authentication.
+        ssl_client_key (models.TextField): A PEM encoded private key used for authentication.
+        ssl_validation (models.BooleanField): Indicates whether SSL peer validation
+            must be performed.
+        proxy_url (models.TextField): The optional proxy URL.
+            Format: scheme://user:password@host:port
+        basic_auth_user (models.TextField): The user used in HTTP basic authentication.
+        basic_auth_password (models.TextField): The password used in HTTP basic authentication.
+        max_download_bandwidth (models.IntegerField): The max amount of bandwidth used per download
+            in bytes per second.
+        max_concurrent_downloads (models.IntegerField): The number of concurrent downloads
+            permitted.
+        download_policy (models.TextField): The policy for downloading content.
+        last_sync (models.DatetimeField): When the last successful synchronization occurred.
 
     Relations:
 
-    :cvar scratchpad: Arbitrary information stashed by the importer.
-    :type scratchpad: GenericKeyValueRelation
+        scratchpad (GenericKeyValueRelation): Arbitrary information stashed by the importer.
     """
     TYPE = 'importer'
 
@@ -238,15 +198,10 @@ class Publisher(ContentAdaptor):
 
     Fields:
 
-    :cvar auto_publish: Indicates that the adaptor may publish automatically
-        when the associated repository's content has changed.
-    :type auto_publish: models.BooleanField
-
-    :cvar relative_path: The (relative) path component of the published url.
-    :type relative_path: models.TextField
-
-    :cvar last_published: When the last successful publish occurred.
-    :type last_published: models.DateTimeField
+        auto_publish (models.BooleanField): Indicates that the adaptor may publish automatically
+            when the associated repository's content has changed.
+        relative_path (models.TextField): The (relative) path component of the published url.
+        last_published (models.DatetimeField): When the last successful publish occurred.
 
     Relations:
 
@@ -267,19 +222,13 @@ class RepositoryContent(Model):
 
     Fields:
 
-    :cvar created: When the association was created.
-    :type created: fields.DateTimeField
+        created (models.DatetimeField): When the association was created.
 
     Relations:
 
-    :cvar content: The associated content.
-    :type content: models.ForeignKey
-
-    :cvar repository: The associated repository.
-    :type repository: models.ForeignKey
+        content (models.ForeignKey): The associated content.
+        repository (models.ForeignKey): The associated repository.
     """
-    created = models.DateTimeField(auto_now_add=True)
-
     content = models.ForeignKey('Content', on_delete=models.CASCADE)
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 

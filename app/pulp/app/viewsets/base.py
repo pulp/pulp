@@ -40,13 +40,13 @@ class NamedModelViewSet(viewsets.ModelViewSet):
         Master/Detail models are also handled by this method. Detail ViewSets must
         subclass Master ViewSets, and both endpoints must have endpoint_name set.
         The URL pattern created for detail ViewSets will be a combination of the two
-        endpoint_names:
+        endpoint_names::
 
-            <master_viewset.endpoint_name>/<detail_viewset.endpoint_name>'
+            <master_viewset.endpoint_name>/<detail_viewset.endpoint_name>
 
-        The base name for views generated will be similarly constructed:
+        The base name for views generated will be similarly constructed::
 
-            <master_viewset.endpoint_name>-<detail_viewset.endpoint_name>'
+            <master_viewset.endpoint_name>-<detail_viewset.endpoint_name>
 
         """
         if cls.is_master_viewset():

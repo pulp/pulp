@@ -10,6 +10,8 @@ Pulp Documentation
    dev-guide/index
    dev-guide/contributing/bugs
    dev-guide/contributing/features
+   api/pulp/app/index
+   api/pulp/plugin
 
 
 Indices and tables

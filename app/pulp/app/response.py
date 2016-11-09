@@ -23,8 +23,8 @@ class OperationPostponedResponse(Response):
 
     def __init__(self, task_results):
         """
-        :param task_results: List of AsyncResult objects that are used to generate the response.
-        :type task_group_id: List of AsyncResult
+        Args:
+            task_results (list): List of AsyncResult objects used to generate the response.
         """
         raise NotImplementedError
         tasks = []

@@ -10,10 +10,15 @@ class Model(models.Model):
     Uses UUID as its primary key field, named "id" to mimic default Django model
     behavior.
 
+    Fields:
+        id: UUID ID Primary Key Field
+
     References:
-        https://docs.djangoproject.com/en/1.8/topics/db/models/#automatic-primary-key-fields
-        https://docs.djangoproject.com/en/1.8/ref/models/fields/#uuidfield
-        https://www.postgresql.org/docs/current/static/datatype-uuid.html
+
+        * https://docs.djangoproject.com/en/1.8/topics/db/models/#automatic-primary-key-fields
+        * https://docs.djangoproject.com/en/1.8/ref/models/fields/#uuidfield
+        * https://www.postgresql.org/docs/current/static/datatype-uuid.html
+
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # ...we have zero interest in using a mongo-specific datatype (ObjectId) as
@@ -28,6 +33,15 @@ class MasterModel(Model):
 
     Provides methods for casting down to detail types, back up to the master type,
     as well as a model field for tracking the type.
+
+    Attributes:
+
+        MasterModel.TYPE (str): Default constant value saved into the ``type``
+            field of Model instances
+
+    Fields:
+
+        type: The user-facing string identifying the detail type of this model
 
     Warning:
         Subclasses of this class rely on there being no other parent/child Model
@@ -111,7 +125,7 @@ def master_model(options):
     """
     The Master model class of this Model's Master/Detail relationship.
 
-    Accessible at <model_class>._meta.master_model, the Master model class in a Master/Detail
+    Accessible at ``<model_class>._meta.master_model``, the Master model class in a Master/Detail
     relationship is the most generic non-abstract Model in this model's multiple-table chain
     of inheritance.
 

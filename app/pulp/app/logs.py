@@ -50,8 +50,8 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
         records. For each of those records, it will also verify that they are no longer than
         MAX_MSG_LENGTH octets. If they are, it will break them up at that boundary as well.
 
-        :param record: The record to be logged via syslog
-        :type  record: logging.LogRecord
+        Args:
+            record (logging.LogRecord): The record to be logged via syslog
         """
         if record.exc_info:
             trace = self.formatter.formatException(record.exc_info)
@@ -92,10 +92,12 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
         Given a record with no exc_info, determine how many bytes the formatter will add to it so
         that we know how much room to leave when trimming messages.
 
-        :param record: An example record that can be used to find the formatter buffer
-        :type  record: logging.LogRecord
-        :return:       The difference between the rendered record length and the message length.
-        :rtype:        int
+        Args:
+            record (logging.LogRecord): An example record that can be used to find the formatter
+                buffer
+
+        Returns:
+            int: The difference between the rendered record length and the message length.
         """
         formatted_record = self.format(record)
         formatted_record = formatted_record.encode('utf8')
@@ -111,16 +113,14 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
         multi-byte characters apart. This method also encodes unicode objects with UTF-8 as a side
         effect, because length limits are specified in octets, not characters.
 
-        :param message:          A message that needs to be broken up if it's too long
-        :type  message:          str (Python 2 `unicode`)
-        :param formatter_buffer: How many octets of room to leave on each message to account for
+        Args:
+            message (str): A message that needs to be broken up if it's too long
+            formatter_buffer (int): How many octets of room to leave on each message to account for
                                  extra data that the formatter will add to this message
-        :type  formatter_buffer: int
-        :param msg_id:           Process and thread id that will be prepended to multi line messages
-        :type  msg_id:           string
-        :return:                 A generator of bytes objects, each of which is no longer than
-                                 MAX_MSG_LENGTH - formatter_buffer octets.
-        :rtype:                  generator
+            msg_id (str): Process and thread id that will be prepended to multi line messages
+
+        Returns:
+            generator of bytes objects, each of which is no longer than
         """
         max_length = CompliantSysLogHandler.MAX_MSG_LENGTH - formatter_buffer
         message = message.encode('utf8')
