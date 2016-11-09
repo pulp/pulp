@@ -21,24 +21,18 @@ class ProgressReport(Model):
 
     Fields:
 
-    :cvar message: A short message for the progress update, typically shown to the user. (required)
-    :type message: models.TextField
-
-    :cvar state: The state of the progress update. Defaults to `WAITING`. This field uses a limited
-                 set of choices of field states. See `STATES` for possible states.
-    :type state: models.TextField
-
-    :cvar total: The total count of items to be handled by the ProgressBar (required)
-    :type total: models.IntegerField
-
-    :cvar done: The count of items already processed. Defaults to 0.
-    :type done: models.IntegerField
+        message (models.TextField): short message for the progress update, typically
+            shown to the user. (required)
+        state (models.TextField): The state of the progress update. Defaults to `WAITING`. This
+            field uses a limited set of choices of field states. See `STATES` for possible states.
+        total: (models.IntegerField) The total count of items to be handled by the ProgressBar
+            (required)
+        done (models.IntegerField): The count of items already processed. Defaults to 0.
 
     Relations:
 
-    :cvar task: The task associated with this progress report. If left unset when save() is called
-                it will be set to the current task_id.
-    :type task: models.ForeignKey
+        task: The task associated with this progress report. If left unset when save() is called
+            it will be set to the current task_id.
     """
     WAITING = 'waiting'
     SKIPPED = 'skipped'
@@ -69,10 +63,8 @@ class ProgressReport(Model):
         If the task_id is already set it will not be updated. If it is unset and this is running
         inside of a task it will be auto-set prior to saving.
 
-        :param args: positional arguments to be passed on to the real save
-        :type args: list
-        :param kwargs: keyword arguments to be passed on to the real save
-        :type kwargs: dict
+        args (list): positional arguments to be passed on to the real save
+        kwargs (dict): keyword arguments to be passed on to the real save
         """
         if self.task_id is None:
             self.task_id = Task.objects.get(id=get_current_task_id())
@@ -216,10 +208,11 @@ class ProgressBar(ProgressReport):
             >>> for file in progress_bar.iter(files_iterator):
             >>>     handle(file)
 
-        :param iter: The iterator to loop through while incrementing
-        :type iter: iterator
+        Args:
+            iter (iterator): The iterator to loop through while incrementing
 
-        :return: generator which yields items out of the argument iter
+        Returns:
+            generator of ``iter`` argument items
         """
         for x in iter:
             yield x

@@ -219,7 +219,7 @@ def merge_settings(default, override):
     return merged
 
 
-def load_settings(paths=()):
+def load_settings(paths=None):
     """
     Load one or more configuration files, merge them with the defaults, and apply them
     to this module as module attributes.
@@ -227,19 +227,17 @@ def load_settings(paths=()):
     Be aware that the order the paths are provided in matters. Settings are repeatedly
     overridden so settings in the last file in the list win.
 
-    :param paths: One or more absolute paths to configuration files in YAML format.
-    :type  paths: str or list of str
+    Args:
+        paths: A list of absolute path strings to configuration files in YAML format.
 
-    :return: The dictionary of merged settings. This is helpful to see what settings
-             Pulp is contributing, but is not the full set of settings Django uses,
-             as there are a set of Django-provided defaults as well.
-    :rtype:  dict
+    Returns:
+        dict: The merged settings. This is helpful to see what settings Pulp is contributing, but
+            is not the full set of settings Django uses, as there are a set of Django-provided
+            defaults as well.
     """
-    if isinstance(paths, str):
-        paths = [paths]
-
     settings = _DEFAULT_PULP_SETTINGS
-    for path in paths:
+
+    for path in (paths or []):
         try:
             with open(path) as config_file:
                 config = config_file.read()
@@ -255,4 +253,4 @@ def load_settings(paths=()):
     return settings
 
 
-load_settings('/etc/pulp/server.yaml')
+load_settings(['/etc/pulp/server.yaml'])

@@ -22,16 +22,12 @@ class ReservedResource(Model):
 
     Fields:
 
-    :cvar resource: The name of the resource reserved for the task.
-    :type resource: models.TextField
+        resource (models.TextField): The name of the resource reserved for the task.
 
     Relations:
 
-    :cvar task: The task associated with this reservation
-    :type task: models.ForeignKey
-
-    :cvar worker: The worker associated with this reservation
-    :type worker: models.ForeignKey
+        task (models.ForeignKey): The task associated with this reservation
+        worker (models.ForeignKey): The worker associated with this reservation
     """
     resource = models.TextField()
 
@@ -45,11 +41,8 @@ class Worker(Model):
 
     Fields:
 
-    :cvar name: The name of the worker, in the format "worker_type@hostname"
-    :type name: models.TextField
-
-    :cvar last_heartbeat: A timestamp of this worker's last heartbeat
-    :type last_heartbeat: models.DateTimeField
+        name (models.TextField): The name of the worker, in the format "worker_type@hostname"
+        last_heartbeat (models.DateTimeField): A timestamp of this worker's last heartbeat
     """
     name = models.TextField(db_index=True, unique=True)
     last_heartbeat = models.DateTimeField(auto_now=True)
@@ -59,7 +52,9 @@ class Worker(Model):
 
         Update the last_heartbeat field to now and save it.
 
-        !!! Only the last_heartbeat field will be saved. No other changes will be saved.
+        Warning:
+
+            Only the last_heartbeat field will be saved. No other changes will be saved.
         """
         self.save(update_fields=['last_heartbeat'])
 
@@ -70,14 +65,9 @@ class TaskLock(Model):
 
     Fields:
 
-    :cvar name: The name of the item that has the lock
-    :type name: models.TextField
-
-    :cvar timestamp: The time the lock was acquired
-    :type timestamp: models.DateTimeField
-
-    :cvar lock: The name of the lock acquired
-    :type lock: models.TextField
+        name (models.TextField): The name of the item that has the lock
+        timestamp (models.DateTimeField): The time the lock was acquired
+        lock (models.TextField): The name of the lock acquired
 
     """
     CELERY_BEAT = 'CeleryBeat'
@@ -98,31 +88,18 @@ class Task(Model):
 
     Fields:
 
-    :cvar group: The group this task belongs to
-    :type group: models.UUIDField
-
-    :cvar state: The state of the task
-    :type state: models.TextField
-
-    :cvar started_at: The time the task started executing
-    :type started_at: models.DateTimeField
-
-    :cvar finished_at: The time the task finished executing
-    :type finished_at: models.DateTimeField
-
-    :cvar non_fatal_errors: Dictionary of non-fatal errors that occurred while task was running.
-    :type non_fatal_errors: models.JSONField
-
-    :cvar result: Return value of the task
-    :type result: models.JSONField
+        group (models.UUIDField): The group this task belongs to
+        state (models.TextField): The state of the task
+        started_at (models.DateTimeField): The time the task started executing
+        finished_at (models.DateTimeField): The time the task finished executing
+        non_fatal_errors (pulp.app.fields.JSONField): Dictionary of non-fatal errors that occurred
+            while task was running.
+        result (pulp.app.fields.JSONField): Return value of the task
 
     Relations:
 
-    :cvar parent: Task that spawned this task (if any)
-    :type parent: models.ForeignKey
-
-    :cvar worker: The worker that this task is in
-    :type worker: models.ForeignKey
+        parent (models.ForeignKey): Task that spawned this task (if any)
+        worker (models.ForeignKey): The worker that this task is in
     """
 
     WAITING = 'waiting'
@@ -155,7 +132,7 @@ class Task(Model):
         """
         Set this Task to the running state, save it, and log output in warning cases.
 
-        This updates the :attr: `started_at` and sets the :attr: `state` to :attr: `RUNNING`.
+        This updates the :attr:`started_at` and sets the :attr:`state` to :attr:`RUNNING`.
         """
         if self.state != self.WAITING:
             msg = _('Task __call__() occurred but Task %s is not at WAITING')
@@ -168,10 +145,10 @@ class Task(Model):
         """
         Set this Task to the completed state, save it, and log output in warning cases.
 
-        This updates the :attr: `finished_at` and sets the :attr: `state` to :attr: `COMPLETED`.
+        This updates the :attr:`finished_at` and sets the :attr:`state` to :attr:`COMPLETED`.
 
-        :param result: The result to save on the :class: `~pulp.app.models.Task`
-        :type result: dict
+        Args:
+            result (dict): The result to save on the :class:`~pulp.app.models.Task`
         """
         self.finished_at = timezone.now()
         self.result = result
@@ -191,14 +168,13 @@ class Task(Model):
         """
         Set this Task to the failed state and save it.
 
-        This updates the :attr: `finished_at` attribute, sets the :attr: `state` to
-        :attr: `FAILED`, and sets the :attr: `result` attribute.
+        This updates the :attr:`finished_at` attribute, sets the :attr:`state` to
+        :attr:`FAILED`, and sets the :attr:`result` attribute.
 
-        :param exc:     The exception raised by the task.
-        :type exc:      ???
-
-        :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
-        :type einfo:    ???
+        Args:
+            exc (Exception): The exception raised by the task.
+            einfo (celery.datastructures.ExceptionInfo): ExceptionInfo instance containing a
+                serialized traceback.
         """
         self.state = Task.FAILED
         self.finished_at = timezone.now()
@@ -212,13 +188,11 @@ class TaskTag(Model):
 
     Fields:
 
-    :cvar name: The name of the tag
-    :type name: models.TextField
+        name (models.TextField): The name of the tag
 
     Relations:
 
-    :cvar task: The task this tag is associated with
-    :type task: models.ForeignKey
+        task (models.ForeignKey): The task this tag is associated with
     """
     name = models.TextField()
 

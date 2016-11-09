@@ -22,10 +22,11 @@ class StoragePath(object):
         Get the base path used to store a file associated with the specified artifact.
         All artifact files *must* be stored relative to this location.
 
-        :param artifact: An content artifact.
-        :type  artifact: pulp.app.models.content.Artifact
-        :return: An absolute (base) path.
-        :rtype: str
+        Args:
+            artifact (pulp.app.models.content.Artifact): Content artifact.
+
+        Returns:
+            str: An absolute (base) path
         """
         digest = artifact.content.natural_key_digest()
         return os.path.join(
@@ -40,12 +41,12 @@ class StoragePath(object):
         Get the absolute path used to store a file associated
         with the specified artifact.
 
-        :param artifact: An content artifact.
-        :type  artifact: pulp.app.models.content.Artifact
-        :param name: Unused but matches the FileField API.
-        :param name: str
-        :return: An absolute path.
-        :rtype: str
+        Args:
+            artifact (pulp.app.models.content.Artifact): Content artifact.
+            name (str): Unused, here to match Django's FileField API.
+
+        Returns:
+            str: Absolute path.
         """
         return os.path.join(StoragePath.base_path(artifact), artifact.relative_path)
 
@@ -63,8 +64,8 @@ class FileSystem(Storage):
         Make the directory (and parent directories) at the specified path.
         No exception is raised if the directory already exists.
 
-        :param path: The absolute directory path.
-        :type  path: str
+        Args:
+            path (str): Absolute directory path.
         """
         try:
             os.makedirs(path)
@@ -81,8 +82,8 @@ class FileSystem(Storage):
         Delete the link at the specified path.
         No exception is raised if the link does not exist.
 
-        :param path: A path to unlink.
-        :type  path: str
+        Args:
+            path (str): Path to unlink.
         """
         try:
             os.unlink(path)
@@ -96,12 +97,12 @@ class FileSystem(Storage):
         Open the file at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute path to a file.
-        :type  path: str
-        :param mode: The open mode.  Default: 'rb'.
-        :type  mode: str
-        :return: An open file object.
-        :rtype: File
+        Args:
+            path (str): Absolute path to a file.
+            mode (str): open mode.  Default: 'rb'.
+
+        Returns:
+            File: An open file object.
         """
         return File(open(path, mode))
 
@@ -112,12 +113,12 @@ class FileSystem(Storage):
         The directory tree is created as needed.
         Required by the Storage API.
 
-        :param path: The (target) path to which the file is copied.
-        :type  path: str
-        :param content: The (source) file object.
-        :type  content: File
-        :return: The final storage path.
-        :rtype: str
+        Args:
+            path (str): Target path to which the file is copied.
+            content (File): Source file object.
+
+        Returns:
+            str: Final storage page.
         """
         FileSystem.mkdir(os.path.dirname(path))
         shutil.copy(content.name, path)
@@ -128,13 +129,15 @@ class FileSystem(Storage):
         Get the available absolute path based on the name requested.
         Required by the Storage API.
 
-        :param name: The file name.
-        :type  name: str
-        :param max_length: The max length of the returned path.
-        :type  max_length: str
-        :return: The name.
-        :rtype: str
-        :raise: ValueError on max_length exceeded.
+        Args:
+            name (str): File name.
+            max_lenth (int): Maximum length, in characters, of the returned path.
+
+        Returns:
+            str: Available name.
+
+        Raises:
+            ValueError if ``max_length`` exceeded.
         """
         if max_length:
             if len(name) > max_length:
@@ -146,8 +149,8 @@ class FileSystem(Storage):
         Delete the file at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
+        Args:
+            path (str): An absolute file path.
         """
         FileSystem.unlink(path)
 
@@ -156,10 +159,11 @@ class FileSystem(Storage):
         Get whether the file actually exists at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: True if exists.
-        :rtype: bool
+        Args:
+            path (str): An absolute file path.
+
+        Returns:
+            bool: True if exists.
         """
         return os.path.exists(path)
 
@@ -168,10 +172,11 @@ class FileSystem(Storage):
         List the content of the directory at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute directory path.
-        :type  path: str
-        :return: A tuple of two lists: (directories, files).
-        :rtype: tuple
+        Args:
+            path (str): An absolute directory path.
+
+        Returns:
+            A tuple of two lists: (directories, files).
         """
         files = []
         directories = []
@@ -187,10 +192,11 @@ class FileSystem(Storage):
         Get the absolute path to a file with the specified name.
         Required by the Storage API.
 
-        :param name: A File.name.
-        :type  name: str
-        :return: An absolute path.
-        :rtype: str
+        Args:
+            name (str): A file name.
+
+        Returns:
+            str: An absolute path.
         """
         return name
 
@@ -199,10 +205,11 @@ class FileSystem(Storage):
         Get the size of the file at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: The size in bytes.
-        :rtype: int
+        Args:
+            path (str): An absolute file path.
+
+        Returns:
+            int: The size in bytes.
         """
         return os.path.getsize(path)
 
@@ -211,10 +218,11 @@ class FileSystem(Storage):
         Get a URL for the file at the specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: An appropriate URL.
-        :rtype: str
+        Args:
+            path (str): An absolute file path.
+
+        Returns:
+            str: An appropriate URL.
         """
         return 'file://{}'.format(path)
 
@@ -223,10 +231,11 @@ class FileSystem(Storage):
         Get the last accessed time of the file at specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: last access time.
-        :rtype: datetime
+        Args:
+            path: An absolute file path.
+
+        Returns:
+            datetime: last access time.
         """
         return datetime.fromtimestamp(os.path.getatime(path))
 
@@ -235,10 +244,11 @@ class FileSystem(Storage):
         Get the created time of the file at specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: Created time.
-        :rtype: datetime
+        Args:
+            path (str): An absolute file path.
+
+        Returns:
+            datetime: Created time.
         """
         return datetime.fromtimestamp(os.path.getctime(path))
 
@@ -247,9 +257,10 @@ class FileSystem(Storage):
         Get the last modified time of the file at specified path.
         Required by the Storage API.
 
-        :param path: An absolute file path.
-        :type  path: str
-        :return: Last modified time.
-        :rtype: datetime
+        Args:
+            path (str): An absolute file path.
+
+        Returns:
+            datetime: Last modified time.
         """
         return datetime.fromtimestamp(os.path.getmtime(path))

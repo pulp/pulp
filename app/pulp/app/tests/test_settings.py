@@ -56,7 +56,7 @@ class TestLoadSettings(TestCase):
 
         mocked_open = mock.mock_open(read_data=override)
         with mock.patch('pulp.app.settings.open', mocked_open, create=True):
-            settings = pulp_settings.load_settings('somefile')
+            settings = pulp_settings.load_settings(['somefile'])
 
         self.assertEqual(settings, expected)
         mocked_open.assert_called_with('somefile')
