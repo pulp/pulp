@@ -42,6 +42,12 @@ class RepositorySerializer(ModelSerializer):
 
 
 class RepositoryGroupSerializer(ModelSerializer):
+
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='repo_groups-detail',
+        lookup_field='name',
+    )
+
     name = serializers.CharField(
         help_text='A unique name for this repository group.'
     )

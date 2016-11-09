@@ -142,4 +142,6 @@ def master_model(options):
     except IndexError:
         # Also None if this model is itself the master.
         return None
+
+
 options.Options.master_model = property(master_model)
