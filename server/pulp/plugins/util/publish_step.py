@@ -902,7 +902,11 @@ class AtomicDirectoryPublishStep(PluginStep):
 
         try:
             os.rename(self.source_dir, timestamp_master_dir)
-            selinux.restorecon(timestamp_master_dir.encode('utf-8'), recursive=True)
+            try:
+                selinux.restorecon(timestamp_master_dir.encode('utf-8'), recursive=True)
+            except OSError as e:
+                if e.errno != errno.EPERM:
+                    raise
         except OSError as e:
             if e.errno == errno.EXDEV:
                 copytree(self.source_dir, timestamp_master_dir, symlinks=True)
