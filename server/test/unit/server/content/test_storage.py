@@ -5,6 +5,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 
+from pulp.plugins.util import verification
 from pulp.server.content.storage import mkdir, ContentStorage, FileStorage, SharedStorage
 
 
@@ -83,27 +84,93 @@ class TestFileStorage(TestCase):
                          digest[0:2],
                          digest[2:]))
 
+    @patch('os.rename')
+    @patch('os.close')
+    @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
     @patch('pulp.server.content.storage.mkdir')
-    def test_put_file(self, _mkdir, shutil):
+    def test_put_file_correct_size(self, _mkdir, shutil, tempfile, close, rename):
         path_in = '/tmp/test'
+        temp_destination = '/some/file/path'
         unit = Mock(id='123', storage_path='/tmp/storage')
         storage = FileStorage()
+        tempfile.mkstemp.return_value = ('fd', temp_destination)
 
         # test
         storage.put(unit, path_in)
 
         # validation
         _mkdir.assert_called_once_with(os.path.dirname(unit.storage_path))
-        shutil.copy.assert_called_once_with(path_in, unit.storage_path)
+        tempfile.mkstemp.assert_called_once_with(dir=os.path.dirname(unit.storage_path))
+        close.assert_called_once_with('fd')
+        shutil.copy.assert_called_once_with(path_in, temp_destination)
+        unit.verify_size.assert_called_once_with(temp_destination)
+        rename.assert_called_once_with(temp_destination, unit.storage_path)
 
+    @patch('os.rename')
+    @patch('os.remove')
+    @patch('os.close')
+    @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
     @patch('pulp.server.content.storage.mkdir')
-    def test_put_file_with_location(self, _mkdir, shutil):
+    def test_put_file_incorrect_size(self, _mkdir, shutil, tempfile, close, remove, rename):
         path_in = '/tmp/test'
-        location = '/a/b/'
+        temp_destination = '/some/file/path'
         unit = Mock(id='123', storage_path='/tmp/storage')
         storage = FileStorage()
+        tempfile.mkstemp.return_value = ('fd', temp_destination)
+        unit.verify_size.side_effect = verification.VerificationException(22)
+
+        # test
+        self.assertRaises(verification.VerificationException, storage.put, unit, path_in)
+
+        # validation
+        _mkdir.assert_called_once_with(os.path.dirname(unit.storage_path))
+        tempfile.mkstemp.assert_called_once_with(dir=os.path.dirname(unit.storage_path))
+        close.assert_called_once_with('fd')
+        shutil.copy.assert_called_once_with(path_in, temp_destination)
+        unit.verify_size.assert_called_once_with(temp_destination)
+        remove.assert_called_once_with(temp_destination)
+        self.assertFalse(rename.called)
+
+    @patch('os.rename')
+    @patch('os.remove')
+    @patch('os.close')
+    @patch('pulp.server.content.storage.tempfile')
+    @patch('pulp.server.content.storage.shutil')
+    @patch('pulp.server.content.storage.mkdir')
+    def test_put_file_no_verify_size(self, _mkdir, shutil, tempfile, close, remove, rename):
+        path_in = '/tmp/test'
+        temp_destination = '/some/file/path'
+        unit = Mock(id='123', storage_path='/tmp/storage')
+        storage = FileStorage()
+        tempfile.mkstemp.return_value = ('fd', temp_destination)
+        unit.verify_size.side_effect = AttributeError("object has no attribute 'verify_size'")
+
+        # test
+        storage.put(unit, path_in)
+
+        # validation
+        _mkdir.assert_called_once_with(os.path.dirname(unit.storage_path))
+        tempfile.mkstemp.assert_called_once_with(dir=os.path.dirname(unit.storage_path))
+        close.assert_called_once_with('fd')
+        shutil.copy.assert_called_once_with(path_in, temp_destination)
+        unit.verify_size.assert_called_once_with(temp_destination)
+        self.assertFalse(remove.called)
+        rename.assert_called_once_with(temp_destination, unit.storage_path)
+
+    @patch('os.rename')
+    @patch('os.close')
+    @patch('pulp.server.content.storage.tempfile')
+    @patch('pulp.server.content.storage.shutil')
+    @patch('pulp.server.content.storage.mkdir')
+    def test_put_file_with_location(self, _mkdir, shutil, tempfile, close, rename):
+        path_in = '/tmp/test'
+        location = '/a/b/'
+        temp_destination = '/some/file/path'
+        unit = Mock(id='123', storage_path='/tmp/storage')
+        storage = FileStorage()
+        tempfile.mkstemp.return_value = ('fd', temp_destination)
 
         # test
         storage.put(unit, path_in, location)
@@ -111,7 +178,8 @@ class TestFileStorage(TestCase):
         # validation
         destination = os.path.join(unit.storage_path, location.lstrip('/'))
         _mkdir.assert_called_once_with(os.path.dirname(destination))
-        shutil.copy.assert_called_once_with(path_in, destination)
+        shutil.copy.assert_called_once_with(path_in, temp_destination)
+        rename.assert_called_once_with(temp_destination, destination)
 
     def test_get(self):
         storage = FileStorage()

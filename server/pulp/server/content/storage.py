@@ -1,6 +1,7 @@
 import os
 import errno
 import shutil
+import tempfile
 
 from hashlib import sha256
 
@@ -107,7 +108,10 @@ class FileStorage(ContentStorage):
     def put(self, unit, path, location=None):
         """
         Put the content defined by the content unit into storage.
-        The file at the specified *path* is transferred into storage.
+        The file at the specified *path* is transferred into storage:
+         - Copy file to the temporary file at its final directory.
+         - If possible, verify size of the file to make sure that file is not corrupted.
+         - Do atomic rename.
 
         :param unit: The content unit to be stored.
         :type unit: pulp.sever.db.model.ContentUnit
@@ -121,7 +125,24 @@ class FileStorage(ContentStorage):
         if location:
             destination = os.path.join(destination, location.lstrip('/'))
         mkdir(os.path.dirname(destination))
-        shutil.copy(path, destination)
+        fd, temp_destination = tempfile.mkstemp(dir=os.path.dirname(destination))
+
+        # to avoid a file descriptor leak, close the one opened by tempfile.mkstemp which we are not
+        # going to use.
+        os.close(fd)
+
+        shutil.copy(path, temp_destination)
+
+        try:
+            unit.verify_size(temp_destination)
+        except AttributeError:
+            # verify_size method is not implemented for the unit
+            pass
+        except:
+            os.remove(temp_destination)
+            raise
+
+        os.rename(temp_destination, destination)
 
     def get(self, unit):
         """
