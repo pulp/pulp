@@ -46,6 +46,17 @@ necessary, the bug may be commented on requesting more information or
 clarification from the reporter. When a bug has enough information, its
 *Priority* rating set and is marked as triaged using the *Triaged* boolean.
 
+Blocking Bugs
+-------------
+
+All Redmine Issues have a "Blocks Release" field. This field refers to upcoming
+Platform Release versions that *cannot* be released until this bug is fixed.
+
+For example, if a blocking issues is discovered in Pulp 2.4.6, and 2.4.7 is the next Platform
+Release version, then the issue's "Blocks Release" field should be set to ``2.4.z``. If the bug
+also affects the next Platform Release of Pulp, such as 2.5.2, the issue's "Block Release" field
+should also include ``2.5.z``.
+
 .. _security disclosures:
 
 Security Disclosures
@@ -78,16 +89,17 @@ Developer
    state to ``ASSIGNED``.
 #. The developer creates a new remote branch for the bug on their GitHub fork.
 #. When the fix is complete, the developer submits a pull request for the bug into the appropriate
-   branch (master, release branch, etc.). It's appreciated by the reviewer if a link to the bug
-   is included in the merge request, as well as a brief description of what the change is. It is
-   not required to find and assign someone to do the review.
+   branch (master, release branch, etc.). A link to the bug should be included in the merge request,
+   as well as a brief description of what the change is. It is not required to find and assign
+   someone to do the review.
 #. When the pull request is submitted, the developer changes the status of the bug to ``POST`` and
-   sets the appropriate target release.
-#. Wait for someone to review the pull request. The reviewer will assign the pull request back to
-   the developer when done and should also ping them through other means. The developer may take
-   the reviewer's comments as they see fit and merge the pull request when satisfied. Once merged,
-   set bug status to ``MODIFIED``. It is also helpful to include a link to the pull request in a
-   comment on the bug.
+   includes a link to the open pull request.
+#. Wait for someone to review the pull request. The reviewer(s) will either approve the pull request
+   or request changes that must be addressed before the pull request can be merged. Pull requests
+   should have at least one approved review and no reviews requesting changes before being merged.
+   Once merged, set the bug status to ``MODIFIED``. If the next platform release version is known,
+   set the "Platform Release" field appropriately. Otherwise, leave it blank and it will be set
+   during the next platform bugfix release.
 #. Delete both local and remote branches for the bug.
 
 .. note::
@@ -95,6 +107,7 @@ Developer
 
 Reviewer
 ^^^^^^^^
+
 #. When reviewing a pull request, all feedback is appreciated, including compliments, questions,
    and general Python knowledge. It is up to the developer to decide what (if any) changes will
    be made based on each comment.
@@ -147,8 +160,8 @@ Priorities are defined as follows.
 ========    ===============================================================================
 Priority    Description
 ========    ===============================================================================
-Urgent      Extremely important, such as issues that must be fixed before the next release.
-High        Very important, but not blocking the next release.
+Urgent      Most important. Non-Urgent issues should not be worked on before this issue.
+High        Very important, generally worked on after Urgent Priority issues.
 Normal      Average importance, generally worked on after High Priority issues.
 Low         Not very important, generally worked on after Normal Priorty issues.
 ========    ===============================================================================
