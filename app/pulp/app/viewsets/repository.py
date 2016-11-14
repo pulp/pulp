@@ -1,4 +1,5 @@
 from django_filters.rest_framework import filters, filterset
+from django_filters import CharFilter
 from rest_framework import decorators, pagination
 
 from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup, RepositoryContent
@@ -64,10 +65,43 @@ class ImporterViewSet(NamedModelViewSet):
     endpoint_name = 'importers'
 
 
+class ContentAdaptorFilter(filterset.FilterSet):
+    """
+    A base ContentAdaptor filter which cannot be used on its own.
+    Importer/Publisher base filters would need:
+     - to inherit from this class
+     - to add any specific filters if needed
+     - to define its own `Meta` class which needs:
+     -- to specify model for which filter is defined
+     -- to extend `fields` with specific ones
+    """
+    repo_name = CharFilter(name="repository__name")
+
+    class Meta:
+        # One should not specify ContentAdaptor model here because it is an abstract model
+        # so it does not have managers which are required by filters to query data from db.
+        fields = ['name', 'last_updated', 'repo_name']
+
+
+class PublisherFilter(ContentAdaptorFilter):
+    """
+    Plugin publisher filter would need:
+     - to inherit from this class
+     - to add any specific filters if needed
+     - to define its own `Meta` class which needs:
+     -- to specify a plugin publisher model for which filter is defined
+     -- to extend `fields` with specific ones
+    """
+    class Meta:
+        model = Publisher
+        fields = ContentAdaptorFilter.Meta.fields
+
+
 class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
+    filter_class = PublisherFilter
 
 
 class RepositoryGroupViewSet(NamedModelViewSet):
