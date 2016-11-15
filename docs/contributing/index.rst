@@ -6,6 +6,7 @@ Contributing Guide
 
    3.0-development/index
    dev-setup
+   platform_api/index
    plugin_api/index
    git
    new_contributors
