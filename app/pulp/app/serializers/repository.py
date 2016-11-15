@@ -1,3 +1,5 @@
+from gettext import gettext as _
+
 from rest_framework import serializers
 
 from pulp.app import models
@@ -14,22 +16,22 @@ class RepositorySerializer(ModelSerializer):
         lookup_field='name',
     )
     name = serializers.CharField(
-        help_text='A unique name for this repository.',
+        help_text=_('A unique name for this repository.'),
         write_only=True
     )
 
     description = serializers.CharField(
-        help_text='An optional description.',
+        help_text=_('An optional description.'),
         required=False
     )
 
     last_content_added = serializers.DateTimeField(
-        help_text='Timestamp of the most recent addition of content to this repository.',
+        help_text=_('Timestamp of the most recent addition of content to this repository.'),
         read_only=True
     )
 
     last_content_removed = serializers.DateTimeField(
-        help_text='Timestamp of the most recent removal of content to this repository.',
+        help_text=_('Timestamp of the most recent removal of content to this repository.'),
         read_only=True
     )
     notes = NotesKeyValueRelatedField()
@@ -49,10 +51,10 @@ class RepositoryGroupSerializer(ModelSerializer):
     )
 
     name = serializers.CharField(
-        help_text='A unique name for this repository group.'
+        help_text=_('A unique name for this repository group.')
     )
     description = serializers.CharField(
-        help_text='An optional description of the repository group.',
+        help_text=_('An optional description of the repository group.'),
         required=False
     )
     members = RepositoryRelatedField(many=True)
@@ -74,7 +76,7 @@ class ImporterSerializer(MasterModelSerializer):
     defines the view_name.
     """
     name = serializers.CharField(
-        help_text='A name for this importer, unique within the associated repository.'
+        help_text=_('A name for this importer, unique within the associated repository.')
     )
 
     class Meta:
@@ -94,25 +96,25 @@ class PublisherSerializer(MasterModelSerializer):
         lookup_field='name',
     )
     name = serializers.CharField(
-        help_text='A name for this publisher, unique within the associated repository.'
+        help_text=_('A name for this publisher, unique within the associated repository.')
     )
     last_updated = serializers.DateTimeField(
-        help_text='Timestamp of the most recent update of the publisher configuration.',
+        help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
     repository = RepositoryRelatedField()
 
     auto_publish = serializers.BooleanField(
-        help_text='An indicaton that the automatic publish may happen when'
-                  ' the repository content has changed.',
+        help_text=_('An indicaton that the automatic publish may happen when'
+                    ' the repository content has changed.'),
         required=False
     )
     relative_path = serializers.CharField(
-        help_text='The (relative) path component of the published url',
+        help_text=_('The (relative) path component of the published url'),
         required=False
     )
     last_published = serializers.DateTimeField(
-        help_text='Timestamp of the most recent successful publish.',
+        help_text=_('Timestamp of the most recent successful publish.'),
         read_only=True
     )
 

@@ -1,3 +1,5 @@
+from gettext import gettext as _
+
 from rest_framework import serializers
 
 from pulp.app import models
@@ -11,11 +13,11 @@ class ConsumerSerializer(ModelSerializer):
     )
 
     name = serializers.CharField(
-        help_text="The consumer common name."
+        help_text=_("The consumer common name.")
     )
 
     description = serializers.CharField(
-        help_text="An optional description.",
+        help_text=_("An optional description."),
         required=False
     )
 
