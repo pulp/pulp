@@ -148,6 +148,8 @@ corenet_tcp_bind_generic_node(celery_t)
 
 selinux_validate_context(celery_t)
 ifdef(`distro_rhel6', `
+    seutil_search_default_contexts(celery_t)
+    seutil_read_file_contexts(celery_t)
     domain_obj_id_change_exemption(celery_t)
 ')
 
