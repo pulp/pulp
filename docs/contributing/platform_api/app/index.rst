@@ -1,5 +1,5 @@
-Pulp Platform API
-=================
+pulp.app
+========
 
 .. toctree::
 

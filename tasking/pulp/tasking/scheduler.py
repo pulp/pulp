@@ -19,7 +19,7 @@ from pulp.tasking import delete_worker
 # The import below is not used in this module, but it needs to be kept here. This module is the
 # first and only Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it
 # configures the celerybeat logging to log as Pulp does.
-import pulp.server.logs  # noqa
+import pulp.app.logs  # noqa
 
 _logger = logging.getLogger(__name__)
 

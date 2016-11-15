@@ -187,16 +187,16 @@ class UserFacingTask(PulpTask):
     """
     A Pulp Celery task which will be visible to the user through the tasking portion of the API.
 
-    This object provides two interfaces to dispatch tasks: :meth: `apply_async` and
-    :meth: `apply_async_with_reservation`.
+    This object provides two interfaces to dispatch tasks: :meth:`apply_async` and
+    :meth:`apply_async_with_reservation`.
 
-    The :meth: `apply_asyc` provides normal celery dispatches of the task to the 'celery' queue
+    The :meth:`apply_asyc` provides normal celery dispatches of the task to the 'celery' queue
     which all workers subscribe to. The task is handled by the first available worker.
 
-    The :meth: `apply_async_with_reservation` dispatch interface will send the task through the
+    The :meth:`apply_async_with_reservation` dispatch interface will send the task through the
     resource_manager queue and process and will be assigned a specific worker. A series of
     reservations cause specific types of tasks to not be run concurrently. See the
-    :meth: `apply_async_with_reservation` documentation for more details.
+    :meth:`apply_async_with_reservation` documentation for more details.
     """
 
     # this tells celery to not automatically log tracebacks for these exceptions
@@ -209,15 +209,15 @@ class UserFacingTask(PulpTask):
         accepts resource_type and resource_id and combines them to form a reservation key.
 
         This does not dispatch the task directly, but instead promises to dispatch it later by
-        encapsulating the desired task through a call to a :func: `_queue_reserved_task` task. See
-        the docblock on :func: `_queue_reserved_task` for more information on this.
+        encapsulating the desired task through a call to a :func:`_queue_reserved_task` task. See
+        the docblock on :func:`_queue_reserved_task` for more information on this.
 
-        This method creates a :class: `pulp.app.models.Task` object. Pulp expects to poll on a
+        This method creates a :class:`pulp.app.models.Task` object. Pulp expects to poll on a
         task just after calling this method, so a Task entry needs to exist for it
         before it returns.
 
-        For a list of parameters accepted by the *args and **kwargs parameters, please see the
-        docblock for the :meth: `apply_async` method.
+        For a list of parameters accepted by the ``*args`` and ``**kwargs`` parameters, please see
+        the docblock for the :meth:`apply_async` method.
 
         :param resource_type: A string that identifies type of a resource
         :type resource_type:  basestring
@@ -294,7 +294,7 @@ class UserFacingTask(PulpTask):
 
     def __call__(self, *args, **kwargs):
         """
-        Set the :class: `pulp.app.models.Task` object in the running state and log some output.
+        Set the :class:`pulp.app.models.Task` object in the running state and log some output.
 
         Skip the status updating if the task is called synchronously.
         """
@@ -306,7 +306,7 @@ class UserFacingTask(PulpTask):
 
     def on_success(self, retval, task_id, args, kwargs):
         """
-        Update the :class: `pulp.app.models.Task` object, log, and save the result.
+        Update the :class:`pulp.app.models.Task` object, log, and save the result.
 
         Skip the status updating if the callback is called synchronously.
 
@@ -314,7 +314,7 @@ class UserFacingTask(PulpTask):
         :type retval:   ???
 
         :param task_id: Unique id of the executed task.
-        :type task_id:  :class: `uuid.UUID`
+        :type task_id:  :class:`uuid.UUID`
 
         :param args:    Original arguments for the executed task.
         :type args:     list
@@ -331,7 +331,7 @@ class UserFacingTask(PulpTask):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
-        Update the :class: `pulp.app.models.Task` object, log, and save the results.
+        Update the :class:`pulp.app.models.Task` object, log, and save the results.
 
         Skip the status updating if the callback is called synchronously.
 
@@ -339,7 +339,7 @@ class UserFacingTask(PulpTask):
         :type exc:      ???
 
         :param task_id: Unique id of the failed task.
-        :type task_id:  :class: `uuid.UUID`
+        :type task_id:  :class:`uuid.UUID`
 
         :param args:    Original arguments for the executed task.
         :type args:     list
