@@ -3,9 +3,9 @@ import ssl
 
 from celery import Celery
 
-from pulp.app import settings
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulp.app.settings')
+
+from django.conf import settings  # NOQA
 
 broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)
