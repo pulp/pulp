@@ -16,7 +16,7 @@ class Content(MasterModel):
 
     Attributes:
 
-        nature_key_fields (tuple): Natural key fields.  Must be models.Field subclasses.
+        natural_key_fields (tuple): Natural key fields.  Must be models.Field subclasses.
 
     Relations:
 
@@ -38,7 +38,7 @@ class Content(MasterModel):
         :return: The natural key.
         :rtype: tuple
         """
-        return (getattr(self, f.name) for f in self.natural_key_fields)
+        return tuple(getattr(self, f.name) for f in self.natural_key_fields)
 
     def natural_key_digest(self):
         """
