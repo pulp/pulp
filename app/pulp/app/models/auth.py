@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     A custom Django User class for Pulp.
     """
     username = models.CharField(
-        _('username'),
+        verbose_name=_('username'),
         max_length=150,
         unique=True,
         validators=[
