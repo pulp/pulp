@@ -967,8 +967,8 @@ SELinux policy for Pulp's components
 %pre selinux
 # Record old version so we can limit which restorecon statement are executed later
 test -e %{_localstatedir}/lib/rpm-state/%{name} || mkdir -p %{_localstatedir}/lib/rpm-state/%{name}
-oldversion=$(semodule -l | grep pulp-server)
-echo ${oldversion:12} > %{_localstatedir}/lib/rpm-state/%{name}/old-version
+oldversion=$(rpm -qa pulp-selinux)
+echo ${oldversion:13} > %{_localstatedir}/lib/rpm-state/%{name}/old-version
 
 exit 0
 %post selinux
