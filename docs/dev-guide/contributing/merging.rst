@@ -155,6 +155,5 @@ strategy "ours".
 
 In either case, git's history records that your fix has been applied to each
 branch. Make sure the human-readable description of your fix accurately
-describes its scope. For example, a good commit message would be "Fixed memory
-use issue in ABC system, which was removed in pulp 2.8", or "Fixed a python 2.4
-compatibility issue that is no longer applicable as of pulp 2.8".
+describes its scope. For more on how to write a good commit message, see the
+Commit Messages section of our `branching page </dev-guide/branching>`_.
