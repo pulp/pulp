@@ -168,45 +168,6 @@ class TestCleanConfigDict(unittest.TestCase):
         result = importer.clean_config_dict(mock_config)
         self.assertTrue(result is None)
 
-    def test_feed_with_basic_auth_username_password(self):
-        """
-        Ensure that username and password are removed from the feed and put into the config.
-        """
-        mock_config = {'feed': 'http://mock_user:mock_pass@realfeed.com'}
-        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock_user',
-                                 'basic_auth_password': 'mock_pass'}
-        result = importer.clean_config_dict(mock_config)
-        self.assertDictEqual(expected_clean_config, result)
-
-    def test_feed_with_basic_auth_username(self):
-        """
-        Ensure that the username is moved to config even if password is not present.
-        """
-        mock_config = {'feed': 'http://mock_user@realfeed.com'}
-        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock_user'}
-        result = importer.clean_config_dict(mock_config)
-        self.assertDictEqual(expected_clean_config, result)
-
-    def test_feed_with_basic_auth_password(self):
-        """
-        If password but not username is in the feed, move the password config set username empty ''.
-        """
-        mock_config = {'feed': 'http://:mock_pass@realfeed.com'}
-        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': '',
-                                 'basic_auth_password': 'mock_pass'}
-        result = importer.clean_config_dict(mock_config)
-        self.assertDictEqual(expected_clean_config, result)
-
-    def test_feed_with_basic_auth_username_password_at_symbol(self):
-        """
-        Ensure that usernames and passwords can contain the '@' symbol.
-        """
-        mock_config = {'feed': 'http://mock@user:mock@pass@realfeed.com'}
-        expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock@user',
-                                 'basic_auth_password': 'mock@pass'}
-        result = importer.clean_config_dict(mock_config)
-        self.assertDictEqual(expected_clean_config, result)
-
 
 @mock.patch('pulp.server.controllers.importer.set_importer')
 @mock.patch('pulp.server.controllers.importer.tags')
@@ -437,7 +398,8 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_ser = mock_model.Importer.SERIALIZER
         mock_validate_config.return_value = (True, 'message')
 
-        result = importer.update_importer_config('mrepo', {'test': 'change', 'dont_keep': None})
+        result = importer.update_importer_config(
+            'mrepo', {'test': 'change', 'dont_keep': None, 'unknown': None})
         mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
                                                      {'test': 'change', 'keep': 'keep'})
         self.assertDictEqual(mock_importer.config, {'test': 'change', 'keep': 'keep'})

@@ -271,12 +271,7 @@ class RepoUnitAssociationManager(object):
             copied_units = importer_instance.import_units(
                 transfer_source_repo, transfer_dest_repo, conduit, call_config,
                 units=transfer_units)
-            if isinstance(copied_units, tuple):
-                suc_units_ids = [u.to_id_dict() for u in copied_units[0] if u is not None]
-                unsuc_units_ids = [u.to_id_dict() for u in copied_units[1]]
-                repo_controller.rebuild_content_unit_counts(dest_repo)
-                return {'units_successful': suc_units_ids,
-                        'units_failed_signature_filter': unsuc_units_ids}
+
             unit_ids = [u.to_id_dict() for u in copied_units if u is not None]
             repo_controller.rebuild_content_unit_counts(dest_repo)
             return {'units_successful': unit_ids}

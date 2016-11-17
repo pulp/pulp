@@ -1,6 +1,5 @@
 from gettext import gettext as _
 from itertools import chain
-import copy
 import logging
 import os
 import sys
@@ -739,8 +738,7 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     except plugin_exceptions.PluginNotFound:
         raise pulp_exceptions.MissingResource(repository=repo_id)
 
-    importer_config = importer_controller.clean_config_dict(copy.deepcopy(repo_importer.config))
-    call_config = PluginCallConfiguration(imp_config, importer_config, sync_config_override)
+    call_config = PluginCallConfiguration(imp_config, repo_importer.config, sync_config_override)
     transfer_repo.working_dir = common_utils.get_working_directory()
     conduit = RepoSyncConduit(repo_id, repo_importer.importer_type_id, repo_importer.id)
     sync_result_collection = RepoSyncResult.get_collection()
@@ -800,10 +798,6 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
                                                                sync_start_timestamp, summary,
                                                                details, result_code,
                                                                before_sync_unit_count)
-        # Update the override config if it has changed
-        if check_override_config_change(repo_id, call_config):
-            model.Importer.objects(repo_id=repo_id).\
-                update(set__last_override_config=call_config.override_config)
         # Do an update instead of a save in case the importer has changed the scratchpad
         model.Importer.objects(repo_id=repo_obj.repo_id).update(set__last_sync=sync_end_timestamp)
         # Add a sync history entry for this run
@@ -820,124 +814,6 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
     if download_policy == importer_constants.DOWNLOAD_BACKGROUND:
         spawned_tasks.append(queue_download_repo(repo_obj.repo_id).task_id)
     return TaskResult(sync_result, spawned_tasks=spawned_tasks)
-
-
-def check_unit_removed_since_last_sync(conduit, repo_id):
-    """
-    Checks whether a content unit has been removed since the last_sync timestamp.
-
-    :param conduit: allows the plugin to interact with core pulp
-    :type  conduit: pulp.plugins.conduits.repo_sync.RepoSyncConduit
-    :param repo_id: identifies the repo to sync
-    :type  repo_id: str
-
-    :return:  Whether a content unit has been removed since the last_sync timestamp
-    :rtype:   bool
-    """
-    last_sync = conduit.last_sync()
-
-    if last_sync is None:
-        return False
-
-    # convert the iso8601 datetime string to a python datetime object
-    last_sync = dateutils.parse_iso8601_datetime(last_sync)
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id=repo_id)
-    last_removed = repo_obj.last_unit_removed
-
-    # check if a unit has been removed since the past sync
-    if last_removed is not None:
-        if last_removed > last_sync:
-            return True
-
-    return False
-
-
-def check_config_updated_since_last_sync(conduit, repo_id):
-    """
-    Checks whether the config has been changed since the last sync occurred.
-
-    :param conduit: allows the plugin to interact with core pulp
-    :type  conduit: pulp.plugins.conduits.repo_sync.RepoSyncConduit
-    :param repo_id: identifies the repo to sync
-    :type  repo_id: str
-
-    :return:  Whether the config has been changed since the last sync occurred.
-    :rtype:   bool
-    """
-    last_sync = conduit.last_sync()
-
-    if last_sync is None:
-        return False
-
-    # convert the iso8601 datetime string to a python datetime object
-    last_sync = dateutils.parse_iso8601_datetime(last_sync)
-    repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
-    # the timestamp of the last configuration change
-    last_updated = repo_importer.last_updated
-
-    # check if a configuration change occurred after the most recent sync
-    if last_updated is not None:
-        if last_sync < last_updated:
-            return True
-
-    return False
-
-
-def check_override_config_change(repo_id, call_config):
-    """
-    Checks whether the override config is different from the override config on
-    the previous sync.
-
-    :param repo_id:     identifies the repo to sync
-    :type  repo_id:     str
-    :param call_config: Plugin Call Configuration
-    :type  call_config: pulp.plugins.config.PluginCallConfiguration
-
-    :return:  Whether the override config is different from the override config on
-    the previous sync.
-    :rtype:   bool
-    """
-    repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
-
-    # check if the override config is different from the last override config,
-    # excluding the 'force_full' key.  otherwise using the --force-full flag
-    # would always trigger a full sync on the next sync too
-    prev_config = repo_importer.last_override_config.copy()
-    current_config = call_config.override_config.copy()
-
-    prev_config.pop('force_full', False)
-    current_config.pop('force_full', False)
-
-    return prev_config != current_config
-
-
-def check_perform_full_sync(repo_id, conduit, call_config):
-    """
-    Performs generic checks to determine if the sync should be a "full" sync.
-    Checks if the "force full" flag has been set, if content has been removed
-    since the last sync, and whether the configuration has changed since the
-    last sync (including override configs).
-
-    Plugins may want to perform additional checks beyond the ones appearing here.
-
-    :param repo_id:     identifies the repo to sync
-    :type  repo_id:     str
-    :param conduit: allows the plugin to interact with core pulp
-    :type  conduit: pulp.plugins.conduits.repo_sync.RepoSyncConduit
-    :param call_config: Plugin Call Configuration
-    :type  call_config: pulp.plugins.config.PluginCallConfiguration
-
-    :return:  Whether a full sync needs to be performed
-    :rtype:  bool
-    """
-    force_full = call_config.get('force_full', False)
-    first_sync = conduit.last_sync() is None
-
-    content_removed = check_unit_removed_since_last_sync(conduit, repo_id)
-    config_changed = check_config_updated_since_last_sync(conduit, repo_id)
-    override_config_changed = check_override_config_change(repo_id, call_config)
-
-    return force_full or first_sync or content_removed or config_changed or override_config_changed
 
 
 def _reposync_result(repo, importer, sync_start, summary, details, result_code, initial_unit_count):

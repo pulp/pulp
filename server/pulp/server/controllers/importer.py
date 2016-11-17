@@ -1,12 +1,10 @@
 import logging
 import sys
-import urlparse
 
 import celery
 from mongoengine import ValidationError
 
 from pulp.common import error_codes, tags
-from pulp.common.plugins import importer_constants
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
@@ -37,10 +35,7 @@ def build_resource_tag(repo_id, importer_type_id):
 
 def clean_config_dict(config):
     """
-    Ensure that the config is ready to be passed to the plugin. There are two things that must
-    occur:
-        1. Remove keys from the dict that have a value None.
-        2. If they exist, move basic auth credentials from the feed_url to the config.
+    Remove keys from a dict that have a value None.
 
     :param config: configuration for plugin
     :type  config: dict
@@ -48,16 +43,8 @@ def clean_config_dict(config):
     :return: config without the keys whose values were None
     :rtype:  dict:
     """
-    if config is not None:
-        feed_url = config.get('feed')
-        if feed_url:
-            parsed = urlparse.urlparse(feed_url)
-            if parsed.username or parsed.password:
-                new_url = parsed._replace(netloc=parsed.netloc.rsplit('@', 1)[1])
-                config[importer_constants.KEY_BASIC_AUTH_USER] = parsed.username
-                config[importer_constants.KEY_BASIC_AUTH_PASS] = parsed.password
-                config['feed'] = new_url.geturl()
 
+    if config is not None:
         return dict([(k, v) for k, v in config.items() if v is not None])
     else:
         return None
@@ -262,7 +249,7 @@ def update_importer_config(repo_id, importer_config):
     # repo_importer.config needs to be changed
     for k, v in importer_config.iteritems():
         if v is None:
-            repo_importer.config.pop(k)
+            repo_importer.config.pop(k, None)
         else:
             repo_importer.config[k] = v
 

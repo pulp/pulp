@@ -1,11 +1,9 @@
 """
 This module contains tests for the pulp.client.extensions.exceptions module.
 """
-import logging
 import os
 from _socket import gaierror
 from socket import error as socket_error
-from gettext import gettext as _
 
 import mock
 from M2Crypto.SSL.Checker import WrongHost
@@ -418,42 +416,3 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         # Verify
         self.assertEqual(date, 'May  9 12:39:37 2013 GMT')
-
-    @mock.patch.object(logging.Logger, 'getEffectiveLevel', autospec=True)
-    def test__get_v_flag_count(self, mock_getEffectiveLevel):
-        """Test if _get_v_flag_count() if logger level is -vv flags."""
-        mock_getEffectiveLevel.return_value = logging.DEBUG
-        self.assertEqual(2, self.exception_handler._get_v_flag_count())
-
-    @mock.patch.object(logging.Logger, 'getEffectiveLevel', autospec=True)
-    def test__get_v_flag_count_wrong_level(self, mock_getEffectiveLevel):
-        """Test if _get_v_flag_count() if logger level is not set by -v flags."""
-        mock_getEffectiveLevel.return_value = logging.NOTSET
-        self.assertEqual(None, self.exception_handler._get_v_flag_count())
-
-    @mock.patch.object(handler.ExceptionHandler, "_get_v_flag_count", autospec=True)
-    def test_handle_v_flags_2v(self, mock__get_v_flag_count):
-        """Test handle_v_flags with two v flags."""
-        mock__get_v_flag_count.return_value = 2
-        self.assertEqual("", self.exception_handler.handle_v_flags())
-
-    @mock.patch.object(handler.ExceptionHandler, "_get_v_flag_count", autospec=True)
-    def test_handle_v_flags_v(self, mock__get_v_flag_count):
-        """Test handle_v_flags with v flag."""
-        mock__get_v_flag_count.return_value = 1
-        expected_text = _('More information may be found using the -vv flag.')
-        self.assertEqual(expected_text, self.exception_handler.handle_v_flags())
-
-    @mock.patch.object(handler.ExceptionHandler, "_get_v_flag_count", autospec=True)
-    def test_handle_v_flags_no_v(self, mock__get_v_flag_count):
-        """Test handle_v_flags without v flag."""
-        mock__get_v_flag_count.return_value = 0
-        expected_text = _('More information may be found using the -v flag.')
-        self.assertEqual(expected_text, self.exception_handler.handle_v_flags())
-
-    @mock.patch.object(handler.ExceptionHandler, "_get_v_flag_count", autospec=True)
-    def test_handle_v_flags_unknown_v(self, mock__get_v_flag_count):
-        """Test handle_v_flags with unknown number of v flag."""
-        mock__get_v_flag_count.return_value = None
-        expected_text = _('More information may be found using the -v flag.')
-        self.assertEqual(expected_text, self.exception_handler.handle_v_flags())
