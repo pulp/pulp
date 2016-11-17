@@ -258,7 +258,7 @@ class Scheduler(beat.Scheduler):
                           % {'celerybeat_name': self.celerybeat_name})
             ret = self.call_tick(self, self.celerybeat_name)
         except TaskLock.DoesNotExist:
-            TaskLock.objects.get(name=self.celerybeat_name, timestamp__lte=old_timestamp).delete()
+            TaskLock.objects.filter(lock=TaskLock.CELERY_BEAT, timestamp__lte=old_timestamp).delete()
             try:
                 # Insert new lock entry
                 TaskLock.objects.create(name=self.celerybeat_name, lock=TaskLock.CELERY_BEAT)
