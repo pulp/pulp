@@ -11,6 +11,11 @@ import sys
 import time
 from gettext import gettext as _
 
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulp.app.settings')
+import django
+django.setup()
+
 from celery.signals import celeryd_after_setup
 from django.db.utils import IntegrityError
 
@@ -19,10 +24,10 @@ from pulp.tasking import delete_worker, storage
 from pulp.tasking.constants import TASKING_CONSTANTS
 
 # This import is here so that Celery will find our application instance
-from pulp.tasking.celery_instance import celery  # noqa
+from pulp.celery_instance import celery  # noqa
 
 # This import is here so Celery will discover all tasks
-import pulp.tasking.registry  # noqa
+import pulp.tasking.registry # noqa
 
 
 _logger = logging.getLogger(__name__)

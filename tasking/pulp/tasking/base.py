@@ -15,8 +15,8 @@ from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Work
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
 from pulp.exceptions import MissingResource, PulpException
 from pulp.tasking import storage
-from pulp.tasking.celery_instance import celery
-from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
+from pulp.celery_instance import celery
+from pulp.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
 from pulp.tasking.constants import TASKING_CONSTANTS
 
 celery_controller = control.Control(app=celery)
