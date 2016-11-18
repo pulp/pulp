@@ -8,14 +8,15 @@ from gettext import gettext as _
 from celery import Task as CeleryTask, current_task, task
 from celery.app import control
 from celery.result import AsyncResult
+from django.db import transaction
 from django.db.models import Count
 
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
 from pulp.exceptions import MissingResource, PulpException
 from pulp.tasking import storage
-from pulp.tasking.celery_instance import celery
-from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
+from pulp.celery_instance import celery
+from pulp.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
 from pulp.tasking.constants import TASKING_CONSTANTS
 
 celery_controller = control.Control(app=celery)
@@ -141,16 +142,19 @@ def delete_worker(name, normal_shutdown=False):
         msg = msg % {'name': name}
         _logger.error(msg)
 
-    worker = Worker.objects.get(name=name)
+    try:
+        worker = Worker.objects.get(name=name)
+    except Worker.DoesNotExist:
+        pass
+    else:
+        # Cancel all of the tasks that were assigned to this worker's queue
+        for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
+            cancel(task_status.pk)
 
-    # Cancel all of the tasks that were assigned to this worker's queue
-    for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
-        cancel(task_status.pk)
+        worker.delete()
 
-    worker.delete()
-
-    if name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
-        TaskLock.objects.filter(name=name).delete()
+        if name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+            TaskLock.objects.filter(name=name).delete()
 
 
 @task(base=PulpTask)
@@ -180,7 +184,7 @@ def _release_resource(task_id):
 
         new_task.on_failure(runtime_exception, task_id, (), {}, MyEinfo)
 
-    ReservedResource.objects.get(task__pk=task_id).delete()
+    ReservedResource.objects.filter(task__pk=task_id).delete()
 
 
 class UserFacingTask(PulpTask):
@@ -247,11 +251,14 @@ class UserFacingTask(PulpTask):
         group_id = kwargs.get('group_id', None)
 
         # Set the parent attribute if being dispatched inside of a Task
-        parent_arg = self._get_parent_arg
+        parent_arg = self._get_parent_arg()
 
         # Create a new task status with the task id and tags.
-        TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING, tags=tag_list,
-                                  group=group_id, **parent_arg)
+        with transaction.atomic():
+            task_status = TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING,
+                                                    group=group_id, **parent_arg)
+            for tag in tag_list:
+                task_status.tags.create(name=tag)
 
         # Call the outer task which is a promise to call the real task when it can.
         _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
@@ -285,11 +292,15 @@ class UserFacingTask(PulpTask):
         async_result.tags = tag_list
 
         # Set the parent attribute if being dispatched inside of a Task
-        parent_arg = self._get_parent_arg
+        parent_arg = self._get_parent_arg()
 
         # Create a new task status with the task id and tags.
-        TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING, tags=tag_list,
-                                  group=group_id, **parent_arg)
+        with transaction.atomic():
+            task_status = TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING,
+                                                    group=group_id, **parent_arg)
+            for tag in tag_list:
+                task_status.tags.create(name=tag)
+
         return async_result
 
     def __call__(self, *args, **kwargs):

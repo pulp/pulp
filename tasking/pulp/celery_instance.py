@@ -3,13 +3,12 @@ import ssl
 
 from celery import Celery
 
-from pulp.app import settings
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulp.app.settings')
+
+from django.conf import settings
 
 broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)
-
 
 DEDICATED_QUEUE_EXCHANGE = 'C.dq'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
@@ -18,7 +17,7 @@ CELERYBEAT_SCHEDULE = {
 
 
 celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
-celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
+celery.conf.update(CELERYBEAT_SCHEDULER='pulp.tasking.scheduler.Scheduler')
 celery.conf.update(CELERY_WORKER_DIRECT=True)
 celery.conf.update(CELERY_TASK_SERIALIZER='json')
 celery.conf.update(CELERY_ACCEPT_CONTENT=['json'])

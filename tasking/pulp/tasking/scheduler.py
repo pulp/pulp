@@ -11,7 +11,7 @@ from django.db import IntegrityError
 
 from pulp.app.models.task import TaskLock, Worker
 from pulp.tasking import worker_watcher
-from pulp.tasking.celery_instance import celery as app
+from pulp.celery_instance import celery as app
 from pulp.tasking.constants import TASKING_CONSTANTS as constants
 from pulp.tasking import delete_worker
 
@@ -258,7 +258,7 @@ class Scheduler(beat.Scheduler):
                           % {'celerybeat_name': self.celerybeat_name})
             ret = self.call_tick(self, self.celerybeat_name)
         except TaskLock.DoesNotExist:
-            TaskLock.objects.get(name=self.celerybeat_name, timestamp__lte=old_timestamp).delete()
+            TaskLock.objects.filter(name=self.celerybeat_name, timestamp__lte=old_timestamp).delete()
             try:
                 # Insert new lock entry
                 TaskLock.objects.create(name=self.celerybeat_name, lock=TaskLock.CELERY_BEAT)
