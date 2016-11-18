@@ -151,7 +151,8 @@ class Task(Model):
             result (dict): The result to save on the :class:`~pulp.app.models.Task`
         """
         self.finished_at = timezone.now()
-        self.result = result
+        if result is not None:
+            self.result = result
 
         # Only set the state to finished if it's not already in a complete state. This is
         # important for when the task has been canceled, so we don't move the task from canceled
