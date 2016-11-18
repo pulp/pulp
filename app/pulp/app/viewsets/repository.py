@@ -1,10 +1,11 @@
 from django_filters.rest_framework import filters, filterset
 from rest_framework import decorators, pagination
 
-from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup
+from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup, RepositoryContent
 from pulp.app.pagination import UUIDPagination
 from pulp.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
-                                  RepositorySerializer, RepositoryGroupSerializer)
+                                  RepositorySerializer, RepositoryGroupSerializer,
+                                  RepositoryContentSerializer)
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
 
@@ -77,3 +78,9 @@ class RepositoryGroupViewSet(NamedModelViewSet):
     queryset = RepositoryGroup.objects.all()
     serializer_class = RepositoryGroupSerializer
     lookup_field = 'name'
+
+
+class RepositoryContentViewSet(NamedModelViewSet):
+    endpoint_name = 'repositorycontents'
+    queryset = RepositoryContent.objects.all()
+    serializer_class = RepositoryContentSerializer
