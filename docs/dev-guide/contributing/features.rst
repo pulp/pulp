@@ -38,27 +38,35 @@ Acceptance Criteria
   testing criteria, or other deliverables that need to be completed to define what "done"
   looks like.
 
-Once an author feels a story is ready, visit ``#pulp-dev`` and for a review of it. If
-the reviewer agrees the story is ready, the reviewer marks the ``Groomed`` flag as
-True. It is the author's responsibility to continue the conversation until the story is Groomed.
 
+Grooming
+--------
+
+Story grooming is the process of preparing a story to be accepted as a Sprint Candidate,
+ensuring that the Story meets the standards outlined in the previous section.
+
+To request story grooming, post a link to it to the
+`Pulp Story Grooming Etherpad <https://etherpad.net/p/pulp-story-grooming>`_, and optionally
+visit the ``#pulp-dev`` IRC channel on freenode and ask for a review of it. If a reviewer
+agrees the story is ready, the reviewer sets the ``Groomed`` flag on the Story.
+
+It is the author's responsibility to continue the conversation until the story is Groomed.
 
 Sprint Candidate
 ----------------
 
-An individual contributor is free to work on any story they wish, but for the core developers
-we work in Sprints and any work to be done needs to be put on a Sprint.
+Individual contributors are free to work on any story they wish. The core Pulp developers
+work in sprints, and any work to be done needs to be put on a sprint. In order to be
+considered for inclusion in an upcoming sprint, as story must be marked as a Sprint Candidate.
 
-An author who wishes to nominate their work to be included in a sprint should set the
-``Sprint Candidate`` flag to True. The story must already be in a Groomed state before this
-happens.
-
+To nominate a story to be included in a sprint, a story author must first get the story groomed,
+and then set the ``Sprint Candidate`` flag on the story.
 
 Adding Stories to Sprints
 -------------------------
 
-Stories picked by the core developers are discussed at a sprint planning meeting. If accepted,
+Groomed stories marked as Sprint Candidate are discussed at a sprint planning meeting. If accepted,
 the story is added to the next sprint.
 
-If the story is not accepted onto the next sprint, the story has its ``Sprint Candidate`` boolean
-set to False and must be re-nominated by the author for a later sprint.
+If the story is not accepted onto the next sprint, the story has its ``Sprint Candidate`` flag
+unset and must be re-nominated by the author for a later sprint.
