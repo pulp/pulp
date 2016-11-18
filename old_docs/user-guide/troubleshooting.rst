@@ -26,6 +26,11 @@ CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
    rsyslog typically only displays INFO and higher, so if you set Pulp to DEBUG it will still be
    filtered by rsyslog. See the :ref:`rsyslogd` section for more information.
 
+.. note::
+
+   Pulp reads the log level configuration during startup. If the log level is changed while Pulp is
+   running, then you will need to restart it.
+
 journald
 ^^^^^^^^
 

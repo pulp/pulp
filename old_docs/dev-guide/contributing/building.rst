@@ -286,15 +286,26 @@ fedorapeople::
 Reconcile Redmine Issues
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before starting a release build, ensure that there are no issues in a ``MODIFIED`` state without
-a Target Platform Release (See the "``MODIFIED`` - No Release" report in Redmine). All ``MODIFIED``
-issues should include a link to the pull request for the related bugfix or feature, and the
-target release can usually be determined by examining the destination branch of the pull
-request. If in doubt, consult with the developer that fixed the issue to know which target
+Before starting a release build, ensure that there are no issues
+blocking the version of Pulp about to be released by checking the
+`Open Blockers <https://pulp.plan.io/projects/pulp/issues?query_id=75>`_ report in Redmine.
+
+If a release is not blocked, make sure that any issues in a ``MODIFIED`` state that apply
+to the branch being released have the Platform Release field set correctly. See the
+`MODIFIED - No Release <https://pulp.plan.io/projects/pulp/issues?query_id=65>`_ report in Redmine
+for a list of issues that are ``MODIFIED`` but not value for the Platform Release field.
+
+All ``MODIFIED`` issues should include a link to the pull request for the related bugfix or feature.
+The target release can be determined by examining the destination branch of the pull request:
+
+* Changes made on an ``x.y-dev`` branch belong in the next bugfix (Z) release.
+* Changes made on master go into the next feature (Y) release.
+
+If in doubt, check with the developer that fixed the issue to determine which target
 release is appropriate.
 
 Similarly, if there are any issues that are ``NEW``, ``ASSIGNED``, or ``POST`` and inappropriately given
-a Target Platform Release, set the Target Platform Release field to none on those issues.
+a Platform Release, set the Platform Release field to none on those issues.
 
 Submit to Koji
 ^^^^^^^^^^^^^^
