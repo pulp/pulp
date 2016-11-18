@@ -242,3 +242,12 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
     def get_object(self, *args, **kwargs):
         # return the cast object, not the generic contentunit
         return super(DetailRelatedField, self).get_object(*args, **kwargs).cast()
+
+    def use_pk_only_optimization(self):
+        """
+        If the lookup field is `pk`, DRF substitutes a PKOnlyObject as an optimization. This
+        optimization breaks with Detail fields like this one which need access to their Meta
+        class to get the relevant `view_name`.
+        """
+        return False
+
