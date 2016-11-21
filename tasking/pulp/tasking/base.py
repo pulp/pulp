@@ -325,7 +325,7 @@ class UserFacingTask(PulpTask):
         _logger.debug("Task successful : [%s]" % task_id)
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)
-            task_status.set_success(retval)
+            task_status.set_completed(retval)
 
         storage.delete_working_directory()
 
