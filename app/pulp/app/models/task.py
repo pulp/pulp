@@ -123,7 +123,7 @@ class Task(Model):
     finished_at = models.DateTimeField(null=True)
 
     non_fatal_errors = JSONField(default=list)
-    result = JSONField(default=list)
+    result = JSONField(null=True)
 
     parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
     worker = models.ForeignKey("Worker", null=True, related_name="tasks")
