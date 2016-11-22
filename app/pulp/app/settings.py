@@ -184,7 +184,7 @@ _DEFAULT_PULP_SETTINGS = {
         'working_directory': '/var/cache/pulp',
     },
     'broker': {
-        'url': 'qpid://localhost/',
+        'url': 'amqp://guest@localhost//',
         'celery_require_ssl': False,
         'ssl_ca_certificate': '/etc/pki/pulp/qpid/ca.crt',
         'ssl_client_key': '/etc/pki/pulp/qpid/client.crt',
