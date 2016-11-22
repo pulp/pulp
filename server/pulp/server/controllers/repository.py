@@ -45,7 +45,8 @@ from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
 from pulp.server.util import InvalidChecksumType
-from pulp.tasking import PulpTask, UserFacingTask, get_current_task_id
+from pulp.tasking.tasks import PulpTask, UserFacingTask
+from pulp.tasking.util import get_current_task_id
 from pulp.tasking.storage import get_working_directory
 
 _logger = logging.getLogger(__name__)

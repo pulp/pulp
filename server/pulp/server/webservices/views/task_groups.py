@@ -10,7 +10,7 @@ from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import generate_json_response, \
     generate_json_response_with_pulp_encoder
-from pulp.tasking import cancel
+from pulp.tasking.util import cancel
 
 
 class TaskGroupView(View):

@@ -10,14 +10,13 @@ from django.utils import timezone
 from django.db import IntegrityError
 
 from pulp.app.models.task import TaskLock, Worker
-from pulp.tasking import worker_watcher
-from pulp.tasking.celery_instance import celery as app
+from pulp.tasking.celery_app import celery as app
 from pulp.tasking.constants import TASKING_CONSTANTS as constants
-from pulp.tasking import delete_worker
+from pulp.tasking.services import worker_watcher
 
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
-# first and only Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it
+# first and only Pulp module to be imported by celerybeat, and by importing pulp.app.logs, it
 # configures the celerybeat logging to log as Pulp does.
 import pulp.app.logs  # noqa
 
@@ -121,7 +120,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
             if worker.name.startswith(constants.CELERYBEAT_WORKER_NAME):
                 worker.delete()
             else:
-                delete_worker(worker.name)
+                worker_watcher.delete_worker(worker.name)
 
         worker_count = Worker.objects.exclude(
             name__startswith=constants.RESOURCE_MANAGER_WORKER_NAME).exclude(
@@ -283,5 +282,5 @@ class Scheduler(beat.Scheduler):
         raise NotImplementedError
 
     def close(self):
-        delete_worker(self.celerybeat_name, normal_shutdown=True)
+        worker_watcher.delete_worker(self.celerybeat_name, normal_shutdown=True)
         super(Scheduler, self).close()

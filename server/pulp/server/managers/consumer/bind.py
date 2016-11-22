@@ -12,7 +12,7 @@ from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = getLogger(__name__)

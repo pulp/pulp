@@ -7,8 +7,8 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=true
 WorkingDirectory=/var/run/pulp/
-ExecStart=/usr/bin/python3 -m  pulp.tasking.manage_workers start
-ExecStop=/usr/bin/python3 -m  pulp.tasking.manage_workers stop
+ExecStart=/usr/bin/python3 -m  pulp.tasking.services.manage_workers start
+ExecStop=/usr/bin/python3 -m  pulp.tasking.services.manage_workers stop
 
 [Install]
 WantedBy=multi-user.target

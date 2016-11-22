@@ -18,7 +18,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 from pulp.plugins.util.misc import paginate
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = getLogger(__name__)

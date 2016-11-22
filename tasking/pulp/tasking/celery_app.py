@@ -14,15 +14,15 @@ from gettext import gettext as _
 from celery.signals import celeryd_after_setup
 from django.db.utils import IntegrityError
 
-from pulp.app.models.task import TaskLock, Worker
-from pulp.tasking import delete_worker, storage
-from pulp.tasking.constants import TASKING_CONSTANTS
-
-# This import is here so that Celery will find our application instance
+# This import is here so that Celery will find our application instance. It's important that other
+# Pulp and Django code not get used until after the Celery app is instantiated and does its "fixup"
+# of Django.
 from pulp.tasking.celery_instance import celery  # noqa
+from pulp.tasking.constants import TASKING_CONSTANTS
+from pulp.tasking.services import storage
 
-# This import is here so Celery will discover all tasks
-import pulp.tasking.registry  # noqa
+
+celery.autodiscover_tasks()
 
 
 _logger = logging.getLogger(__name__)
@@ -69,6 +69,8 @@ def initialize_worker(sender, instance, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
+    from pulp.tasking.services.worker_watcher import delete_worker
+
     # Delete any potential old state
     delete_worker(sender, normal_shutdown=True)
 
@@ -92,6 +94,7 @@ def get_resource_manager_lock(name):
     :param name:   The hostname of the worker
     :type  name:   basestring
     """
+    from pulp.app.models.task import TaskLock, Worker
     assert name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
 
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)

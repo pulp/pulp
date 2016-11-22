@@ -12,7 +12,7 @@ from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 from pulp.tasking.storage import get_working_directory
 
 

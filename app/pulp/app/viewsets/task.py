@@ -4,7 +4,7 @@ from pulp.app.models import Task, Worker
 from pulp.app.serializers import TaskSerializer, WorkerSerializer
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
-from pulp.tasking.base import cancel as cancel_task
+from pulp.tasking.util import cancel as cancel_task
 
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
