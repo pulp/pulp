@@ -46,8 +46,10 @@ class RepositoryViewSet(NamedModelViewSet):
 
     @decorators.detail_route()
     def importers(self, request, name):
-        # Creates a repositories/<repo>/importers/ endpoint.
-        # This will link to all importers that are associated within the repository.
+        """
+        Creates a nested `importers/` endpoint that returns each importer associated with this
+        repository.
+        """
         repo = self.get_object()
         importers = Importer.objects.filter(repository__name=repo.name)
         paginator = UUIDPagination()
@@ -57,14 +59,9 @@ class RepositoryViewSet(NamedModelViewSet):
 
 
 class ImporterViewSet(NamedModelViewSet):
-    # Indicates that importer urls should be routed through their associated repository.
-    nested_parent = RepositoryViewSet
-    # Name the parameter to generate the link. This is important because `name` in this url refers
-    # to `Importer.name`, not `Repository.name`
-    nested_parent_lookup_name = 'repo_name'
-    endpoint_name = 'importers'
-    serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
+    serializer_class = ImporterSerializer
+    endpoint_name = 'importers'
 
 
 class PublisherViewSet(NamedModelViewSet):
