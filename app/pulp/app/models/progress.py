@@ -27,6 +27,8 @@ class ProgressReport(Model):
         total: (models.IntegerField) The total count of items to be handled by the ProgressBar
             (required)
         done (models.IntegerField): The count of items already processed. Defaults to 0.
+        suffix (models.TextField): Customizable suffix rendered with the progress report
+            See `docs https://github.com/verigak/progress>`_. for more info.
 
     Relations:
 
@@ -54,6 +56,7 @@ class ProgressReport(Model):
     done = models.IntegerField(default=0)
 
     task = models.ForeignKey("Task", on_delete=models.CASCADE)
+    suffix = models.TextField(default='')
 
     def save(self, *args, **kwargs):
         """

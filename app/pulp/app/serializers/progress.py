@@ -30,6 +30,11 @@ class ProgressReportSerializer(ModelSerializer):
         read_only=True
     )
 
+    suffix = serializers.CharField(
+        help_text=_("The suffix to be shown with the progress report."),
+        read_only=True
+    )
+
     task = serializers.HyperlinkedRelatedField(
         help_text=_("The task associated with this progress report."),
         read_only=True,
@@ -41,4 +46,4 @@ class ProgressReportSerializer(ModelSerializer):
         # this serializer is meant to be nested inside Task serializer,
         # so it will not have its own endpoint, that's why
         # we need to explicitly define fields to exclude '_href' field.
-        fields = ('message', 'state', 'total', 'done', 'task')
+        fields = ('message', 'state', 'total', 'done', 'suffix', 'task')
