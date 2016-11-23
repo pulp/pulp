@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-oid_validation',
-    version='2.10.4a1',
+    version='2.10.3b2',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
