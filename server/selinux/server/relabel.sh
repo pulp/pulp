@@ -6,6 +6,12 @@ function version_less_than () {
     [[ $(echo -e $1'\n'$2|sort -V|head -n 1) != $2 ]]
 }
 
+# Set the previous version to 0.0 if one is not passed in
+if [ -z $1 ]
+then
+    set -- "0.0"
+fi
+
 # If upgrading from before 2.4.0
 if version_less_than $1 '2.4.0'
 then
