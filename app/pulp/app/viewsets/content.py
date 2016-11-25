@@ -10,9 +10,10 @@ class ContentFilter(filterset.FilterSet):
     Plugin content filters would need:
      - to inherit from this class
      - to add any plugin-specific filters if needed
-     - to define its own `Meta` class in which it is needed:
-     -- to specify plugin content model
-     -- to extend `fields` with plugin-specific ones
+     - to define its own `Meta` class which needs:
+
+       - to specify plugin content model
+       - to extend `fields` with plugin-specific ones
     """
     class Meta:
         model = Content

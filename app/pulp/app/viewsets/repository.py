@@ -68,12 +68,14 @@ class ImporterViewSet(NamedModelViewSet):
 class ContentAdaptorFilter(filterset.FilterSet):
     """
     A base ContentAdaptor filter which cannot be used on its own.
+
     Importer/Publisher base filters would need:
      - to inherit from this class
      - to add any specific filters if needed
      - to define its own `Meta` class which needs:
-     -- to specify model for which filter is defined
-     -- to extend `fields` with specific ones
+
+       - to specify model for which filter is defined
+       - to extend `fields` with specific ones
     """
     repo_name = CharFilter(name="repository__name")
 
@@ -89,8 +91,9 @@ class PublisherFilter(ContentAdaptorFilter):
      - to inherit from this class
      - to add any specific filters if needed
      - to define its own `Meta` class which needs:
-     -- to specify a plugin publisher model for which filter is defined
-     -- to extend `fields` with specific ones
+
+       - to specify a plugin publisher model for which filter is defined
+       - to extend `fields` with specific ones
     """
     class Meta:
         model = Publisher
