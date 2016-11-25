@@ -36,11 +36,10 @@ from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.content.sources.constants import HEADERS, MAX_CONCURRENT, SSL_VALIDATION
 from pulp.server.content.storage import mkdir
-from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller
 from pulp.server.db import connection, model
-from pulp.server.db.model.repository import RepoContentUnit, RepoPublishResult, RepoSyncResult
+from pulp.server.db.model.repository import RepoPublishResult, RepoSyncResult
 from pulp.server.exceptions import PulpCodedTaskException
 from pulp.server.lazy import URL, Key
 from pulp.server.managers import factory as manager_factory
@@ -475,93 +474,6 @@ def get_importer_by_id(object_id):
     plugin, cfg = plugin_api.get_importer_by_id(document.importer_type_id)
     call_conf = PluginCallConfiguration(cfg, document.config)
     return plugin, call_conf, document
-
-
-@celery.task(base=UserFacingTask, name='pulp.server.tasks.repository.delete')
-def delete(repo_id):
-    """
-    Delete a repository and inform other affected collections.
-
-    :param repo_id: id of the repository to delete.
-    :type  repo_id: str
-
-    :raise pulp_exceptions.PulpExecutionException: if any part of the process fails; the exception
-                                                   will contain information on which sections failed
-    """
-
-    # With so much going on during a delete, it's possible that a few things could go wrong while
-    # others are successful. We track lesser errors that shouldn't abort the entire process until
-    # the end and then raise an exception describing the incompleteness of the delete. The exception
-    # arguments are captured as the second element in the tuple, but the user will have to look at
-    # the server logs for more information.
-    error_tuples = []  # tuple of failed step and exception arguments
-
-    # Inform the importer
-    repo_importer = model.Importer.objects(repo_id=repo_id).first()
-    if repo_importer is not None:
-        try:
-            importer_controller.remove_importer(repo_id)
-        except Exception, e:
-            _logger.exception('Error received removing importer [%s] from repo [%s]' % (
-                repo_importer.importer_type_id, repo_id))
-            error_tuples.append(e)
-
-    # Inform all distributors
-    for distributor in model.Distributor.objects(repo_id=repo_id):
-        try:
-            dist_controller.delete(distributor.repo_id, distributor.distributor_id)
-        except Exception, e:
-            _logger.exception('Error received removing distributor [%s] from repo [%s]' % (
-                distributor.id, repo_id))
-            error_tuples.append(e)
-
-    # Database Updates
-    repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    repo.delete()
-
-    try:
-        # Remove all importers and distributors from the repo. This is likely already done by the
-        # calls to other methods in this manager, but in case those failed we still want to attempt
-        # to keep the database clean.
-        model.Distributor.objects(repo_id=repo_id).delete()
-        model.Importer.objects(repo_id=repo_id).delete()
-        RepoSyncResult.get_collection().remove({'repo_id': repo_id})
-        RepoPublishResult.get_collection().remove({'repo_id': repo_id})
-        RepoContentUnit.get_collection().remove({'repo_id': repo_id})
-    except Exception, e:
-        msg = _('Error updating one or more database collections while removing repo [%(r)s]')
-        msg = msg % {'r': repo_id}
-        _logger.exception(msg)
-        error_tuples.append(e)
-
-    # remove the repo from any groups it was a member of
-    group_manager = manager_factory.repo_group_manager()
-    group_manager.remove_repo_from_groups(repo_id)
-
-    if len(error_tuples) > 0:
-        pe = pulp_exceptions.PulpExecutionException()
-        pe.child_exceptions = error_tuples
-        raise pe
-
-    # append unbind itineraries foreach bound consumer
-    options = {}
-    consumer_bind_manager = manager_factory.consumer_bind_manager()
-
-    additional_tasks = []
-    errors = []
-    for bind in consumer_bind_manager.find_by_repo(repo_id):
-        try:
-            report = consumer_controller.unbind(bind['consumer_id'], bind['repo_id'],
-                                                bind['distributor_id'], options)
-            if report:
-                additional_tasks.extend(report.spawned_tasks)
-        except Exception, e:
-            errors.append(e)
-
-    if len(errors) > 0:
-        error = pulp_exceptions.PulpCodedException(error_codes.PLP0007, repo_id=repo_id)
-        error.child_exceptions = errors
-        raise error
 
 
 def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_configs):
