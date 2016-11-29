@@ -3,7 +3,7 @@ pulp.app.viewsets
 
 All viewsets documented here should be imported directly from the ``pulp.app.viewsets`` namespace.
 
-Viewsets that dispatch tasks that are descendants of :class:`~pulp.tasking.base.UserFacingTask`
+Viewsets that dispatch tasks that are descendants of :class:`~pulp.tasking.tasks.UserFacingTask`
 should return an :class:`~pulp.app.response.OperationPostponedResponse`.
 
 .. automodule:: pulp.app.viewsets
