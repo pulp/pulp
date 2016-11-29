@@ -96,7 +96,7 @@ pygments_style = 'sphinx'
 # Show class inheritance, and group class members together by type (attr, method, etc)
 autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
 autodoc_member_order = 'groupwise'
-
+autoclass_content = 'both'
 
 # -- Options for HTML output ---------------------------------------------------
 
