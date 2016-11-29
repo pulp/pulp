@@ -16,7 +16,7 @@ from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingResource,
                                     PulpDataException)
 from pulp.server.managers import factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen

@@ -7,7 +7,7 @@ from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
 from pulp.server.db import model
 from pulp.server.db.model import celery_result, consumer, repo_group, repository
-from pulp.tasking import PulpTask, UserFacingTask
+from pulp.tasking.tasks import PulpTask, UserFacingTask
 
 
 # Add collections to reap here. The keys in this datastructure are the Model classes that represent

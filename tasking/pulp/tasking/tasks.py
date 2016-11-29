@@ -1,23 +1,21 @@
 import logging
 import time
-import traceback
 import uuid
-from contextlib import suppress
 from gettext import gettext as _
 
-from celery import Task as CeleryTask, current_task, task
+from celery import Task as CeleryTask, task
 from celery.app import control
 from celery.result import AsyncResult
 from django.db import transaction
-from django.db.models import Count
 
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
 from pulp.exceptions import MissingResource, PulpException
-from pulp.tasking import storage
+from pulp.tasking import util
 from pulp.tasking.celery_instance import celery
 from pulp.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE
-from pulp.tasking.constants import TASKING_CONSTANTS
+from pulp.tasking.services import storage
+
 
 celery_controller = control.Control(app=celery)
 _logger = logging.getLogger(__name__)
@@ -40,7 +38,7 @@ class PulpTask(CeleryTask):
 
 
 @task(base=PulpTask, acks_late=True)
-def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
+def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwargs):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
     called the "inner" task, and a task name, UUID, and accepts a list of positional args
@@ -75,7 +73,7 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
             break
 
         try:
-            worker = _get_unreserved_worker()
+            worker = Worker.objects.get_unreserved_worker()
         except Worker.DoesNotExist:
             pass
         else:
@@ -84,79 +82,18 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
         # No worker is ready for this work, so we need to wait
         time.sleep(0.25)
 
-    task_status = TaskStatus.objects.get(pk=task_id)
+    task_status = TaskStatus.objects.get(pk=inner_task_id)
     ReservedResource.objects.create(task=task_status, worker=worker, resource=resource_id)
 
     inner_kwargs['routing_key'] = worker.name
     inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
-    inner_kwargs['task_id'] = task_id
+    inner_kwargs['task_id'] = inner_task_id
 
     try:
         celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
     finally:
-        _release_resource.apply_async((task_id, ), routing_key=worker.name,
+        _release_resource.apply_async((inner_task_id, ), routing_key=worker.name,
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
-
-
-def _get_unreserved_worker():
-    """
-    Find an unreserved Worker
-
-    Return the Worker instance that has no ReservedResource associated with it. If all workers have
-    ReservedResource relationships a Worker.DoesNotExist pulp.app.model.Worker exception is
-    raised.
-
-    This function also provides randomization for worker selection.
-
-    :raises Worker.DoesNotExist: If all workers have ReservedResource entries associated with them.
-
-    :returns:          The Worker instance that has no reserved_resource
-                       entries associated with it.
-    :rtype:            pulp.app.model.Worker
-    """
-    free_workers_qs = Worker.objects.annotate(Count('reservations')).filter(reservations__count=0)
-    if free_workers_qs.count() == 0:
-        raise Worker.DoesNotExist()
-    return free_workers_qs.order_by('?').first()
-
-
-def delete_worker(name, normal_shutdown=False):
-    """
-    Delete the Worker with name from the database, cancel any associated tasks and reservations
-
-    If the worker shutdown normally, no message is logged, otherwise an error level message is
-    logged. Default is to assume the worker did not shut down normally.
-
-    Any resource reservations associated with this worker are cleaned up by this function.
-
-    Any tasks associated with this worker are explicitly canceled.
-
-    :param name:            The name of the worker you wish to delete.
-    :type  name:            basestring
-    :param normal_shutdown: True if the worker shutdown normally, False otherwise. Defaults to
-                            False.
-    :type normal_shutdown:  bool
-    """
-    if not normal_shutdown:
-        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-        msg = msg % {'name': name}
-        _logger.error(msg)
-
-    try:
-        worker = Worker.objects.get(name=name)
-    except Worker.DoesNotExist:
-        pass
-    else:
-        # Cancel all of the tasks that were assigned to this worker's queue
-        for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
-            cancel(task_status.pk)
-
-        worker.delete()
-
-    is_resource_manager = name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
-    is_celerybeat = name.startswith(TASKING_CONSTANTS.CELERYBEAT_WORKER_NAME)
-    if is_celerybeat or is_resource_manager:
-        TaskLock.objects.filter(name=name).delete()
 
 
 @task(base=PulpTask)
@@ -257,7 +194,7 @@ class UserFacingTask(PulpTask):
 
         # Create a new task status with the task id and tags.
         with transaction.atomic():
-            task_status = TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING,
+            task_status = TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
                                                     group=group_id, **parent_arg)
             for tag in tag_list:
                 task_status.tags.create(name=tag)
@@ -374,50 +311,8 @@ class UserFacingTask(PulpTask):
     def _get_parent_arg(self):
         """Return a dictionary with the parent set if running inside of a Task"""
         parent_arg = {}
-        current_task_id = get_current_task_id()
+        current_task_id = util.get_current_task_id()
         if current_task_id is not None:
-            current_task_obj = TaskStatus.objects.get(current_task_id)
+            current_task_obj = TaskStatus.objects.get(pk=current_task_id)
             parent_arg['parent'] = current_task_obj
         return parent_arg
-
-
-def cancel(task_id):
-    """
-    Cancel the task that is represented by the given task_id. This method cancels only the task
-    with given task_id, not the spawned tasks. This also updates task's state to 'canceled'.
-
-    :param task_id: The ID of the task you wish to cancel
-    :type  task_id: basestring
-
-    :raises MissingResource: if a task with given task_id does not exist
-    """
-    try:
-        task_status = TaskStatus.objects.get(pk=task_id)
-    except TaskStatus.DoesNotExist:
-        raise MissingResource(task_id)
-
-    if task_status.state in TASK_FINAL_STATES:
-        # If the task is already done, just stop
-        msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
-        _logger.info(msg % {'task_id': task_id, 'state': task_status.state})
-        return
-
-    celery_controller.revoke(task_id, terminate=True)
-    task_status.state = TaskStatus.CANCELED
-    task_status.save()
-
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
-    _logger.info(msg)
-
-
-def get_current_task_id():
-    """"
-    Get the current task id from celery. If this is called outside of a running
-    celery task it will return None
-
-    :return: The ID of the currently running celery task or None if not in a task
-    :rtype: str
-    """
-    with suppress(AttributeError):
-        return current_task.request.id

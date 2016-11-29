@@ -15,7 +15,7 @@ from pulp.server.controllers import units as units_controller
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db import model
 from pulp.server.exceptions import MissingResource
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
 from pulp.server.db import model
 from pulp.server.managers import factory as managers
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -108,47 +108,6 @@ def queue_delete(distributor):
         tags.RESOURCE_REPOSITORY_TYPE, distributor.repo_id,
         [distributor.repo_id, distributor.distributor_id], tags=task_tags)
     return async_result
-
-
-@celery.task(base=UserFacingTask, name='pulp.server.tasks.repository.distributor_delete')
-def delete(repo_id, dist_id):
-    """
-    Removes a distributor from a repository and unbinds any bound consumers.
-
-    :param distributor: distributor to be deleted
-    :type  distributor: pulp.server.db.model.Distributor
-    """
-
-    distributor = model.Distributor.objects.get_or_404(repo_id=repo_id, distributor_id=dist_id)
-    managers.repo_publish_schedule_manager().delete_by_distributor_id(repo_id, dist_id)
-
-    # Call the distributor's cleanup method
-    dist_instance, plugin_config = plugin_api.get_distributor_by_id(distributor.distributor_type_id)
-
-    call_config = PluginCallConfiguration(plugin_config, distributor.config)
-    repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    dist_instance.distributor_removed(repo.to_transfer_repo(), call_config)
-    distributor.delete()
-
-    unbind_errors = []
-    additional_tasks = []
-    options = {}
-
-    bind_manager = managers.consumer_bind_manager()
-    for bind in bind_manager.find_by_distributor(repo_id, dist_id):
-        try:
-            report = bind_manager.unbind(bind['consumer_id'], bind['repo_id'],
-                                         bind['distributor_id'], options)
-            if report:
-                additional_tasks.extend(report.spawned_tasks)
-        except Exception, e:
-            unbind_errors.append(e)
-
-    if unbind_errors:
-        bind_error = exceptions.PulpCodedException(PLP0003, repo_id=repo_id,
-                                                   distributor_id=dist_id)
-        bind_error.child_exceptions = unbind_errors
-        raise bind_error
 
 
 def queue_update(distributor, config, delta):

@@ -1,6 +1,6 @@
 from pulp.app import models
 from pulp.exceptions import exception_to_dict
-from pulp.tasking import get_current_task_id
+from pulp.tasking.util import get_current_task_id
 
 
 class Task(object):

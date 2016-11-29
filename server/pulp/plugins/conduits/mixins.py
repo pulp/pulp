@@ -11,7 +11,7 @@ from pulp.server.db.model import TaskStatus
 from pulp.server import exceptions as pulp_exceptions
 import pulp.plugins.conduits._common as common_utils
 import pulp.server.managers.factory as manager_factory
-from pulp.tasking import get_current_task_id
+from pulp.tasking.util import get_current_task_id
 
 
 _logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import UnitProfile
 from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.managers import factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 class ProfileManager(object):

@@ -16,7 +16,7 @@ from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue
 from pulp.server.managers import factory
 from pulp.server.managers.schedule import utils as schedule_utils
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _CONSUMER_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen

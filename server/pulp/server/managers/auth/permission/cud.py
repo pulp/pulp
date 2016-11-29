@@ -14,7 +14,7 @@ from pulp.server.exceptions import (
     DuplicateResource, InvalidValue, MissingResource, PulpDataException,
     PulpExecutionException)
 from pulp.server.managers import factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 class PermissionManager(object):

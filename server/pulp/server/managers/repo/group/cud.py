@@ -9,7 +9,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db import model
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
