@@ -41,23 +41,25 @@ class WorkerManager(models.Manager):
         """
         Randomly selects an unreserved :class:`~pulp.app.models.Worker`
 
-        Return the Worker instance that has no :class:`~pulp.app.models.ReservedResource`
-        associated with it. If all workers have ReservedResource relationships, a
+        Return a random Worker instance that has no :class:`~pulp.app.models.ReservedResource`
+        associated with it. If all workers have at least one ReservedResource relationship, a
         :class:`pulp.app.models.Worker.DoesNotExist` exception is raised.
 
-        This method also provides randomization for worker selection.
+        This method provides randomization for Worker selection to distribute load across workers.
 
-        :raises Worker.DoesNotExist: If all workers have ReservedResource entries associated with
-                                     them.
+        Returns:
+            :class:`pulp.app.models.Worker`: A randomly-selected Worker instance that has zero
+                :class:`~pulp.app.models.ReservedResource` entries associated with it.
 
-        :returns:          A randomly-selected Worker instance that has no ReservedResource
-                           entries associated with it.
-        :rtype:            pulp.app.models.Worker
+        Raises:
+            Worker.DoesNotExist: If all Workers have at least one ReservedResource entry.
         """
-        free_workers_qs = self.annotate(models.Count('reservations')).filter(reservations__count=0)
-        if free_workers_qs.count() == 0:
+        workers_only_qs = self.filter(name__startswith='reserved')
+        workers_only_qs_with_counts = workers_only_qs.annotate(models.Count('reservations'))
+        try:
+            return workers_only_qs_with_counts.filter(reservations__count=0).order_by('?')[0]
+        except IndexError:
             raise self.model.DoesNotExist()
-        return free_workers_qs.order_by('?').first()
 
 
 class Worker(Model):

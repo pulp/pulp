@@ -11,7 +11,7 @@ broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)
 
 
-DEDICATED_QUEUE_EXCHANGE = 'C.dq'
+DEDICATED_QUEUE_EXCHANGE = 'C.dq2'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 CELERYBEAT_SCHEDULE = {
 }

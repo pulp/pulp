@@ -6,7 +6,7 @@ from gettext import gettext as _
 from celery import Task as CeleryTask, task
 from celery.app import control
 from celery.result import AsyncResult
-from django.db import transaction
+from django.db import transaction, IntegrityError
 
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
@@ -235,10 +235,16 @@ class UserFacingTask(PulpTask):
 
         # Create a new task status with the task id and tags.
         with transaction.atomic():
-            task_status = TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING,
-                                                    group=group_id, **parent_arg)
-            for tag in tag_list:
-                task_status.tags.create(name=tag)
+            try:
+                task_status = TaskStatus.objects.create(pk=async_result.id,
+                                                        state=TaskStatus.WAITING,
+                                                        group=group_id, **parent_arg)
+            except IntegrityError:
+                # The TaskStatus was already created with the call to apply_async_with_reservation
+                pass
+            else:
+                for tag in tag_list:
+                    task_status.tags.create(name=tag)
 
         return async_result
 
@@ -309,10 +315,14 @@ class UserFacingTask(PulpTask):
         storage.delete_working_directory()
 
     def _get_parent_arg(self):
-        """Return a dictionary with the parent set if running inside of a Task"""
+        """Return a dictionary with the 'parent' set if running inside of a UserFacingTask"""
         parent_arg = {}
         current_task_id = util.get_current_task_id()
         if current_task_id is not None:
-            current_task_obj = TaskStatus.objects.get(pk=current_task_id)
-            parent_arg['parent'] = current_task_obj
+            try:
+                current_task_obj = TaskStatus.objects.get(pk=current_task_id)
+            except TaskStatus.DoesNotExist:
+                pass
+            else:
+                parent_arg['parent'] = current_task_obj
         return parent_arg
