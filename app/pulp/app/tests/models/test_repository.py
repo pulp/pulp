@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from pulp.app.models import Repository, RepositoryGroup, Importer, Publisher
+from pulp.app.models import Repository, Importer, Publisher
 
 
 class TestRepository(TestCase):
@@ -8,13 +8,6 @@ class TestRepository(TestCase):
     def test_natural_key(self):
         repository = Repository(name='test')
         self.assertEqual(repository.natural_key(), (repository.name,))
-
-
-class TestRepositoryGroup(TestCase):
-
-    def test_natural_key(self):
-        group = RepositoryGroup(name='test')
-        self.assertEqual(group.natural_key(), (group.name,))
 
 
 class RepositoryExample(TestCase):

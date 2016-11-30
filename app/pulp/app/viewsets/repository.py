@@ -3,12 +3,11 @@ from django_filters import CharFilter
 from rest_framework import decorators, pagination
 
 from pulp.app import tasks
-from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup, RepositoryContent
+from pulp.app.models import Importer, Publisher, Repository, RepositoryContent
 from pulp.app.pagination import UUIDPagination
 from pulp.app.response import OperationPostponedResponse
 from pulp.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
-                                  RepositorySerializer, RepositoryGroupSerializer,
-                                  RepositoryContentSerializer)
+                                  RepositorySerializer, RepositoryContentSerializer)
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
 from pulp.common import tags
@@ -139,13 +138,6 @@ class PublisherViewSet(NamedModelViewSet):
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
-
-
-class RepositoryGroupViewSet(NamedModelViewSet):
-    endpoint_name = 'repo_groups'
-    queryset = RepositoryGroup.objects.all()
-    serializer_class = RepositoryGroupSerializer
-    lookup_field = 'name'
 
 
 class RepositoryContentViewSet(NamedModelViewSet):
