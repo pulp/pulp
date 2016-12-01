@@ -6,6 +6,7 @@ from pulp.app.serializers.base import (DetailRelatedField, GenericKeyValueRelate
 from pulp.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField)  # NOQA
 from pulp.app.serializers.generic import (ConfigKeyValueRelatedField,  # NOQA
     NotesKeyValueRelatedField, ScratchpadKeyValueRelatedField)  # NOQA
+from pulp.app.serializers.catalog import DownloadCatalogSerializer  # NOQA
 from pulp.app.serializers.consumer import ConsumerSerializer  # NOQA
 from pulp.app.serializers.content import ContentSerializer, ArtifactSerializer  # NOQA
 from pulp.app.serializers.progress import ProgressReportSerializer  # NOQA
