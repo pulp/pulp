@@ -3,7 +3,7 @@ from celery import task
 from pulp.common.tags import action_tag
 from pulp.server.managers.consumer.applicability import RepoProfileApplicabilityManager
 
-from pulp.tasking import PulpTask, UserFacingTask
+from pulp.tasking.tasks import PulpTask, UserFacingTask
 
 
 @task(base=PulpTask)

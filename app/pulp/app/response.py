@@ -8,7 +8,7 @@ class OperationPostponedResponse(Response):
 
     This response object should be used by views that dispatch asynchronous tasks. The most common
     use case is for sync and publish operations. When JSON is requested, the response will look
-    like the following:
+    like the following::
 
         [
             {
@@ -25,7 +25,8 @@ class OperationPostponedResponse(Response):
     def __init__(self, task_results):
         """
         Args:
-            task_results (list): List of AsyncResult objects used to generate the response.
+            task_results (list): List of :class:`celery.result.AsyncResult` objects used to
+                                 generate the response.
         """
         tasks = []
         for result in task_results:

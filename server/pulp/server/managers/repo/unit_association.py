@@ -22,7 +22,7 @@ from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.conduits._common as conduit_common_utils
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 # Valid sort strings

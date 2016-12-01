@@ -12,7 +12,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
 from pulp.server.db import model
 from pulp.server.managers import factory as manager_factory
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _logger = logging.getLogger(__name__)
@@ -169,29 +169,6 @@ def validate_importer_config(repo_obj, importer_type_id, config):
     if not valid_config:
         raise exceptions.PulpDataException(message)
 
-
-@celery.task(base=UserFacingTask, name='pulp.server.managers.repo.importer.remove_importer')
-def remove_importer(repo_id):
-    """
-    Removes an importer from a repository.
-
-    :param repo_id: identifies the repo
-    :type  repo_id: str
-    """
-    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
-    repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
-
-    # remove schedules
-    sync_manager = manager_factory.repo_sync_schedule_manager()
-    sync_manager.delete_by_importer_id(repo_id, repo_importer.importer_type_id)
-
-    # Call the importer's cleanup method
-    importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer.importer_type_id)
-
-    call_config = PluginCallConfiguration(plugin_config, repo_importer.config)
-    transfer_repo = repo_obj.to_transfer_repo()
-    importer_instance.importer_removed(transfer_repo, call_config)
-    repo_importer.delete()
 
 
 def queue_remove_importer(repo_id, importer_type_id):

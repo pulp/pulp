@@ -11,7 +11,7 @@ from pulp.plugins.conduits.mixins import (ContentSourcesConduitException, Status
 from pulp.plugins.util.publish_step import Step
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.exceptions import PulpCodedTaskException
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 _logger = getLogger(__name__)
 

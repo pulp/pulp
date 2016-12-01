@@ -14,7 +14,7 @@ from pulp.server.exceptions import (InvalidValue, MissingResource, PulpDataExcep
                                     PulpExecutionException)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen

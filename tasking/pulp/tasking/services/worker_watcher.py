@@ -17,8 +17,10 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
-from pulp.app.models import Worker
-from pulp.tasking import delete_worker
+from pulp.app.models import Worker, TaskLock
+from pulp.common import TASK_INCOMPLETE_STATES
+from pulp.tasking.constants import TASKING_CONSTANTS
+from pulp.tasking.util import cancel
 
 _logger = logging.getLogger(__name__)
 
@@ -100,3 +102,42 @@ def handle_worker_offline(event):
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
     delete_worker(event_info['worker_name'], normal_shutdown=True)
+
+
+def delete_worker(name, normal_shutdown=False):
+    """
+    Delete the :class:`~pulp.app.models.Worker` from the database and cancel associated tasks.
+
+    If the worker shutdown normally, no message is logged, otherwise an error level message is
+    logged. Default is to assume the worker did not shut down normally.
+
+    Any resource reservations associated with this worker are cleaned up by this function.
+
+    Any tasks associated with this worker are explicitly canceled.
+
+    :param name:            The name of the worker you wish to delete.
+    :type  name:            basestring
+    :param normal_shutdown: True if the worker shutdown normally, False otherwise. Defaults to
+                            False.
+    :type normal_shutdown:  bool
+    """
+    if not normal_shutdown:
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+        msg = msg % {'name': name}
+        _logger.error(msg)
+
+    try:
+        worker = Worker.objects.get(name=name)
+    except Worker.DoesNotExist:
+        pass
+    else:
+        # Cancel all of the tasks that were assigned to this worker's queue
+        for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
+            cancel(task_status.pk)
+
+        worker.delete()
+
+    is_resource_manager = name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
+    is_celerybeat = name.startswith(TASKING_CONSTANTS.CELERYBEAT_WORKER_NAME)
+    if is_celerybeat or is_resource_manager:
+        TaskLock.objects.filter(name=name).delete()

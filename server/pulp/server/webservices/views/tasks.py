@@ -18,7 +18,7 @@ from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.serializers import dispatch as serial_dispatch
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder)
-from pulp.tasking import cancel
+from pulp.tasking.util import cancel
 
 
 # This constant set is used for deleting the completed tasks from the collection.

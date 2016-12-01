@@ -16,7 +16,7 @@ from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException, PulpCodedException)
 from pulp.server.controllers import repository as repo_controller
-from pulp.tasking import UserFacingTask
+from pulp.tasking.tasks import UserFacingTask
 
 
 logger = logging.getLogger(__name__)

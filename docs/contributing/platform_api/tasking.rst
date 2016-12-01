@@ -1,13 +1,8 @@
 
 pulp.tasking
-===============
+============
 
 .. automodule:: pulp.tasking
-
-pulp.tasking.base
------------------
-
-.. automodule:: pulp.tasking.base
 
 pulp.tasking.celery_app
 -----------------------
@@ -24,27 +19,35 @@ pulp.tasking.constants
 
 .. automodule:: pulp.tasking.constants
 
-pulp.tasking.manage_workers
----------------------------
+pulp.tasking.services.manage_workers
+------------------------------------
 
-.. automodule:: pulp.tasking.manage_workers
+.. automodule:: pulp.tasking.services.manage_workers
 
-pulp.tasking.registry
----------------------
+pulp.tasking.services.scheduler
+-------------------------------
 
-.. automodule:: pulp.tasking.registry
+.. automodule:: pulp.tasking.services.scheduler
 
-pulp.tasking.scheduler
-----------------------
+pulp.tasking.services.storage
+-----------------------------
 
-.. automodule:: pulp.tasking.scheduler
+.. automodule:: pulp.tasking.services.storage
 
-pulp.tasking.storage
---------------------
+pulp.tasking.services.worker_watcher
+------------------------------------
 
-.. automodule:: pulp.tasking.storage
+.. automodule:: pulp.tasking.services.worker_watcher
 
-pulp.tasking.worker_watcher
----------------------------
+pulp.tasking.tasks
+------------------
 
-.. automodule:: pulp.tasking.worker_watcher
+.. automodule:: pulp.tasking.tasks
+
+
+pulp.tasking.util
+-----------------
+
+.. automodule:: pulp.tasking.util
+
+
