@@ -6,7 +6,7 @@ import logging
 
 from django.db import models
 
-from pulp import tasking
+from pulp.tasking import util
 from pulp.app.models import Model, Task
 
 _logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class ProgressReport(Model):
         kwargs (dict): keyword arguments to be passed on to the real save
         """
         if self.task_id is None:
-            self.task_id = Task.objects.get(id=tasking.get_current_task_id())
+            self.task_id = Task.objects.get(id=util.get_current_task_id())
         super(ProgressReport, self).save(*args, **kwargs)
 
     def __enter__(self):
