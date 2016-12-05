@@ -17,7 +17,6 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
-from pulp.app.models import Worker, TaskLock
 from pulp.common import TASK_INCOMPLETE_STATES
 from pulp.tasking.constants import TASKING_CONSTANTS
 from pulp.tasking.util import cancel
@@ -72,6 +71,8 @@ def handle_worker_heartbeat(event):
     :param event: A celery event to handle.
     :type event: dict
     """
+    from pulp.app.models import Worker
+
     event_info = _parse_and_log_event(event)
     existing_worker, created = Worker.objects.get_or_create(name=event_info['worker_name'])
     if created:
@@ -121,6 +122,8 @@ def delete_worker(name, normal_shutdown=False):
                             False.
     :type normal_shutdown:  bool
     """
+    from pulp.app.models import Worker, TaskLock
+
     if not normal_shutdown:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}

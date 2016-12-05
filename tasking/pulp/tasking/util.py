@@ -5,7 +5,6 @@ import logging
 from celery import current_app, current_task
 from celery.app import control
 
-from pulp.app.models import Task
 from pulp.common import TASK_FINAL_STATES
 from pulp.exceptions import MissingResource, PulpException
 
@@ -26,6 +25,8 @@ def cancel(task_id):
 
     :raises MissingResource: if a task with given task_id does not exist
     """
+    from pulp.app.models import Task
+
     try:
         task_status = Task.objects.get(pk=task_id)
     except Task.DoesNotExist:
