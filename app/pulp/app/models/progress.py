@@ -181,6 +181,11 @@ class ProgressBar(ProgressReport):
 
     ProgressBar objects are associated with a Task and auto-discover and populate the task id when
     saved.
+
+    When using threads to update a ProgressBar in parallel, it is recommended that all threads
+    share the same in-memory instance. Django does not synchronize in-memory model instances, so
+    multiple instances of a specific ProgressBar will diverge as they are written to from separate
+    threads.
     """
 
     class Meta:
