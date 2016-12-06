@@ -34,8 +34,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.10.2
-Release: 2%{?dist}
+Version: 2.10.3
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -967,8 +967,8 @@ SELinux policy for Pulp's components
 %pre selinux
 # Record old version so we can limit which restorecon statement are executed later
 test -e %{_localstatedir}/lib/rpm-state/%{name} || mkdir -p %{_localstatedir}/lib/rpm-state/%{name}
-oldversion=$(semodule -l | grep pulp-server)
-echo ${oldversion:12} > %{_localstatedir}/lib/rpm-state/%{name}/old-version
+oldversion=$(rpm -qa pulp-selinux)
+echo ${oldversion:13} > %{_localstatedir}/lib/rpm-state/%{name}/old-version
 
 exit 0
 %post selinux
@@ -1048,10 +1048,10 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Thu Nov 17 2016 Sean Myers <sean.myers@redhat.com> 2.10.2-2
+* Thu Dec 01 2016 Sean Myers <sean.myers@redhat.com> 2.10.3-1
 - Pulp rebuild
 
-* Tue Nov 15 2016 Sean Myers <sean.myers@redhat.com> 2.10.2-0.3.beta
+* Wed Nov 23 2016 Sean Myers <sean.myers@redhat.com> 2.10.3-0.2.beta
 - Pulp rebuild
 
 * Mon Oct 24 2016 Sean Myers <sean.myers@redhat.com> 2.10.1-0.2.beta
