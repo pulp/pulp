@@ -300,4 +300,7 @@ def _start_logging():
 
 def _user_input_continue(question):
     reply = str(raw_input(_(question + ' (y/N): '))).lower().strip()
-    return reply[0] == 'y'
+    try:
+        return reply[0] == 'y'
+    except IndexError:
+        return False
