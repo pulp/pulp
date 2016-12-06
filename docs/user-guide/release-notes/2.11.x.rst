@@ -24,9 +24,18 @@ New Features
 * For RPM content, a full sync will be forced if the sync configuration has been changed or content
   has been removed since the last sync.
 
-* When pulp-manage-db is run, prompt the user to continue if there are Pulp services still running.
+* When ``pulp-manage-db`` is run, prompt the user to continue if there are Pulp services still running.
 
 * Memory improvements! Worker process recycling can be enabled to release unused memory back to
   the system after tasks complete. This feature is disabled by default. See the
   :ref:`process recycling documentation<process_recycling>` for more info. Thank you to Jan-Otto
   Kröpke for contributing this feature.
+
+Known Issue
+-----------
+
+When upgrading to Pulp 2.11, it's possible that the new feature to ensure all workers are stopped
+before migrating the database will erroneously report that the workers are still running. During a
+manual upgrade, this is simple to bypass, but if you are using a configuration management tools like
+Ansible or Puppet your automation may stall on this. See the :ref:`troubleshooting guide
+<ignore-running-workers>` for updating your automation to bypass this check.
