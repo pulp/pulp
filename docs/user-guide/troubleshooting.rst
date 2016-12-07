@@ -287,13 +287,10 @@ Workers not releasing memory
 See the :ref:`process recycling documentation<process_recycling>` for more information on how to
 have your Pulp workers return memory back to the system.
 
-.. _ignore-running-workers:
-
 pulp-manage-db prompts for running workers when running automated upgrade
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-While running an automated upgrade from a version of Pulp older than 2.11, ``pulp-manage-db`` may
-prompt you that you have running workers even though all workers are stopped. If this happens,
-call ``pulp-manage-db`` with the ``--ignore-running-workers`` flag. This flag is intended to be used
-in automation, and the automation is responsible for ensuring all pulp processes are stopped before
-the upgrade can proceed.
+While running an automated upgrade to Pulp 2.11.x Pulp will prompt you that you have running
+workers even though all workers are stopped. When this happens please call `pulp-manage-db` with
+the `--ignore-running-workers` flag. This flag should only be used in automation, and the
+automation is responsible for ensuring all pulp processes are stopped before the upgrade proceeds.
