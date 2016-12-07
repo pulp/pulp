@@ -40,6 +40,10 @@ class PulpPluginAppConfig(apps.AppConfig):
         self.named_viewsets = None
 
     def ready(self):
+        # register signals here as suggested in Django docs
+        # https://docs.djangoproject.com/en/1.8/topics/signals/#connecting-receiver-functions
+        import pulp.app.signals  # noqa
+
         self.import_viewsets()
 
     def import_viewsets(self):
