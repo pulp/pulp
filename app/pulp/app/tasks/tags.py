@@ -1,0 +1,1 @@
+RESOURCE_REPOSITORY_TYPE = 'repository'

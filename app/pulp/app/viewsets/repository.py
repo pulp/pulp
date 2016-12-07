@@ -4,9 +4,11 @@ from rest_framework import decorators, pagination
 
 from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup, RepositoryContent
 from pulp.app.pagination import UUIDPagination
+from pulp.app.response import OperationPostponedResponse
 from pulp.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
                                   RepositorySerializer, RepositoryGroupSerializer,
                                   RepositoryContentSerializer)
+from pulp.app.tasks import repository, tags
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
 
@@ -57,6 +59,12 @@ class RepositoryViewSet(NamedModelViewSet):
         page = paginator.paginate_queryset(importers, request)
         serializer = ImporterSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
+
+    def destroy(self, request, name):
+        repo = self.get_object()
+        async_result = repository.delete.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, repo.name, kwargs={'repo_name': repo.name})
+        return OperationPostponedResponse([async_result])
 
 
 class ImporterViewSet(NamedModelViewSet):
