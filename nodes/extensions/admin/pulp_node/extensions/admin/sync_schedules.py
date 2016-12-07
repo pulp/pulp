@@ -5,6 +5,7 @@ from pulp.client.commands.schedule import (
     UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
 
 from pulp_node import constants
+from pulp_node.error import CLI_DEPRECATION_WARNING
 from pulp_node.extensions.admin.options import (NODE_ID_OPTION, MAX_BANDWIDTH_OPTION,
                                                 MAX_CONCURRENCY_OPTION)
 
@@ -25,6 +26,10 @@ class NodeListScheduleCommand(ListScheduleCommand):
         super(self.__class__, self).__init__(context, strategy, description=DESC_LIST)
         self.add_option(NODE_ID_OPTION)
 
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeListScheduleCommand, self).run(**kwargs)
+
 
 class NodeCreateScheduleCommand(CreateScheduleCommand):
     def __init__(self, context):
@@ -34,12 +39,20 @@ class NodeCreateScheduleCommand(CreateScheduleCommand):
         self.add_option(MAX_BANDWIDTH_OPTION)
         self.add_option(MAX_CONCURRENCY_OPTION)
 
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeCreateScheduleCommand, self).run(**kwargs)
+
 
 class NodeDeleteScheduleCommand(DeleteScheduleCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
         super(self.__class__, self).__init__(context, strategy, description=DESC_DELETE)
         self.add_option(NODE_ID_OPTION)
+
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeDeleteScheduleCommand, self).run(**kwargs)
 
 
 class NodeUpdateScheduleCommand(UpdateScheduleCommand):
@@ -48,12 +61,20 @@ class NodeUpdateScheduleCommand(UpdateScheduleCommand):
         super(self.__class__, self).__init__(context, strategy, description=DESC_UPDATE)
         self.add_option(NODE_ID_OPTION)
 
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeUpdateScheduleCommand, self).run(**kwargs)
+
 
 class NodeNextRunCommand(NextRunCommand):
     def __init__(self, context):
         strategy = NodeSyncScheduleStrategy(context)
         super(self.__class__, self).__init__(context, strategy, description=DESC_NEXT_RUN)
         self.add_option(NODE_ID_OPTION)
+
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeNextRunCommand, self).run(**kwargs)
 
 
 class NodeSyncScheduleStrategy(ScheduleStrategy):
@@ -94,3 +115,7 @@ class NodeSyncScheduleStrategy(ScheduleStrategy):
     def update_schedule(self, schedule_id, **kwargs):
         node_id = kwargs.pop(NODE_ID_OPTION.keyword)
         return self.api.update_schedule(SYNC_OPERATION, node_id, schedule_id, **kwargs)
+
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeSyncScheduleStrategy, self).run(**kwargs)

@@ -112,8 +112,8 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 4)
-        self.assertTrue('Child Nodes' in lines[1])
+        self.assertEqual(len(lines), 6)
+        self.assertTrue('Child Nodes' in lines[3])
 
     @patch(CONSUMER_LIST_API, return_value=Response(200, CONSUMERS_AND_NODES))
     def test_list_nodes(self, mock_binding):
@@ -123,8 +123,8 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 9)
-        self.assertTrue(commands.NODE_LIST_TITLE in lines[1])
+        self.assertEqual(len(lines), 11)
+        self.assertTrue(commands.NODE_LIST_TITLE in lines[3])
 
     @patch(CONSUMER_LIST_API, return_value=Response(200, NODES_WITH_BINDINGS))
     def test_list_nodes_with_bindings(self, mock_binding):
@@ -134,8 +134,8 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 16)
-        self.assertTrue(commands.NODE_LIST_TITLE in lines[1])
+        self.assertEqual(len(lines), 18)
+        self.assertTrue(commands.NODE_LIST_TITLE in lines[3])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
     @patch(DISTRIBUTORS_API, return_value=Response(200, NON_NODES_DISTRIBUTORS_ONLY))
@@ -146,8 +146,8 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 4)
-        self.assertTrue(commands.REPO_LIST_TITLE in lines[1])
+        self.assertEqual(len(lines), 6)
+        self.assertTrue(commands.REPO_LIST_TITLE in lines[3])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
     @patch(DISTRIBUTORS_API, return_value=Response(200, MIXED_DISTRIBUTORS))
@@ -158,8 +158,8 @@ class TestListCommands(ClientTests):
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines
-        self.assertEqual(len(lines), 9)
-        self.assertTrue(commands.REPO_LIST_TITLE in lines[1])
+        self.assertEqual(len(lines), 11)
+        self.assertTrue(commands.REPO_LIST_TITLE in lines[3])
 
 
 class TestPublishCommand(ClientTests):

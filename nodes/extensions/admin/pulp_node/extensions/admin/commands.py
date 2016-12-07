@@ -12,6 +12,7 @@ from pulp.client.commands.options import OPTION_REPO_ID, OPTION_CONSUMER_ID
 from pulp.client.commands.repo.cudl import ListRepositoriesCommand
 
 from pulp_node import constants
+from pulp_node.error import CLI_DEPRECATION_WARNING
 from pulp_node.extension import (missing_resources, node_activated, repository_enabled,
                                  ensure_node_section)
 from pulp_node.extensions.admin import sync_schedules
@@ -174,6 +175,10 @@ class NodeListCommand(ConsumerListCommand):
             repo_ids.append(repo_id)
         consumer[key] = formatted
 
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeListCommand, self).run(**kwargs)
+
 
 class NodeListRepositoriesCommand(ListRepositoriesCommand):
 
@@ -195,6 +200,10 @@ class NodeListRepositoriesCommand(ListRepositoriesCommand):
                     enabled.append(repository)
         return enabled
 
+    def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+        super(NodeListRepositoriesCommand, self).run(**kwargs)
+
 
 # --- publishing -------------------------------------------------------------
 
@@ -205,6 +214,7 @@ class NodeRepoPublishCommand(PollingCommand):
         self.add_option(OPTION_REPO_ID)
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
         repo_id = kwargs[OPTION_REPO_ID.keyword]
 
         if not repository_enabled(self.context, repo_id):
@@ -243,6 +253,7 @@ class NodeActivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         consumer_id = kwargs[OPTION_CONSUMER_ID.keyword]
         strategy = kwargs[STRATEGY_OPTION.keyword]
@@ -279,6 +290,7 @@ class NodeDeactivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         consumer_id = kwargs[NODE_ID_OPTION.keyword]
         delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
@@ -312,6 +324,7 @@ class NodeRepoEnableCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         convert_boolean_arguments([AUTO_PUBLISH_OPTION.keyword], kwargs)
 
@@ -353,6 +366,7 @@ class NodeRepoDisableCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         repo_id = kwargs[OPTION_REPO_ID.keyword]
 
@@ -400,6 +414,7 @@ class NodeBindCommand(BindingCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         node_id = kwargs[NODE_ID_OPTION.keyword]
@@ -442,6 +457,7 @@ class NodeUnbindCommand(BindingCommand):
         self.context = context
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         node_id = kwargs[NODE_ID_OPTION.keyword]
@@ -473,6 +489,7 @@ class NodeUpdateCommand(PollingCommand):
         self.tracker = ProgressTracker(self.context.prompt)
 
     def run(self, **kwargs):
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
         node_id = kwargs[NODE_ID_OPTION.keyword]
         max_bandwidth = kwargs[MAX_BANDWIDTH_OPTION.keyword]
         max_concurrency = kwargs[MAX_CONCURRENCY_OPTION.keyword]

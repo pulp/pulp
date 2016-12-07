@@ -9,3 +9,11 @@ New Features
 ------------
 
  * Task profiling can now be enabled. This will use cProfiling on an individual task and write the profile to a directory for a given task. While this can impact performance, this can enable users to get some insight into what a task is doing or use the output to give to a developer for debugging.
+
+Deprecation
+-----------
+
+* Pulp Nodes is now deprecated and will be removed in Pulp 3.0. Users can use a
+  Pulp instance and sync repositories to this instance from their main Pulp
+  instance instead. For more information, see `our blog post on the subject of
+  deprecating Nodes <http://pulpproject.org/2016/12/06/deprecating-nodes/>`_.

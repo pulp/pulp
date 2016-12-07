@@ -10,6 +10,7 @@ the responsibility of the nodes importers.
 
 import httplib
 from logging import getLogger
+import warnings
 
 from pulp.bindings.exceptions import NotFoundException
 from pulp.common.bundle import Bundle
@@ -17,7 +18,8 @@ from pulp.common.plugins import importer_constants
 
 from pulp_node import constants
 from pulp_node import resources
-from pulp_node.error import PurgeOrphansError, RepoSyncRestError, GetBindingsError
+from pulp_node.error import GetBindingsError, NodeDeprecationWarning, \
+    PurgeOrphansError, RepoSyncRestError, TASK_DEPRECATION_WARNING
 from pulp_node.poller import TaskPoller
 
 
@@ -47,6 +49,8 @@ class Entity(object):
         """
         Purge orphaned units within the inventory.
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         bindings = resources.pulp_bindings()
         http = bindings.content_orphan.remove_all()
         if http.response_code != httplib.ACCEPTED:
@@ -267,6 +271,8 @@ class Repository(Entity):
         :type options: dict
         :return: The task result.
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         bindings = resources.pulp_bindings()
         poller = TaskPoller(bindings)
         max_download = options.get(

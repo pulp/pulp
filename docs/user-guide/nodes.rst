@@ -3,6 +3,14 @@
 Nodes
 =====
 
+.. warning::
+
+  As of Pulp 2.12, Pulp Nodes is deprecated and will be removed in Pulp 3.0.
+  Instead, users can set up a separate Pulp instance and sync content to this
+  instance using Pulp's built-in publish+sync functionality. For more
+  information, see `our blog post on the subject of deprecating Nodes
+  <http://pulpproject.org/2016/12/07/deprecating-nodes/>`_.
+
 Overview
 --------
 

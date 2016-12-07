@@ -1,5 +1,13 @@
 from gettext import gettext as _
 
+CLI_DEPRECATION_WARNING = \
+    _('Warning: this Nodes command is deprecated as the Nodes functionality will be '
+      'removed from Pulp 3.0.')
+
+TASK_DEPRECATION_WARNING = \
+    _('Warning: this Nodes task is deprecated as the Nodes functionality will be '
+      'removed from Pulp 3.0.')
+
 
 class NodeError(Exception):
 
@@ -220,3 +228,7 @@ class ErrorList(list):
         """
         for e in self:
             e.details.update(details)
+
+
+class NodeDeprecationWarning(Warning):
+    pass
