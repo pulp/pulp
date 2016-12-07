@@ -1,7 +1,6 @@
 """
 This module's main() function becomes the pulp-manage-db.py script.
 """
-from datetime import datetime, timedelta
 from gettext import gettext as _
 from optparse import OptionParser
 import logging
@@ -9,7 +8,6 @@ import os
 import sys
 import traceback
 
-from pulp.common import constants
 from pulp.plugins.loader.api import load_content_types
 from pulp.plugins.loader.manager import PluginManager
 from pulp.server import logs
@@ -17,11 +15,9 @@ from pulp.server.db import connection
 from pulp.server.db.migrate import models
 from pulp.server.db import model
 from pulp.server.db.migrations.lib import managers
-from pulp.server.db.fields import UTCDateTimeField
-from pulp.server.managers import factory, status
+from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 
-from pymongo.errors import ServerSelectionTimeoutError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
@@ -54,11 +50,6 @@ def parse_args():
     parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
                       help=_('Perform a dry run with no changes made. Returns 1 if there are '
                              'migrations to apply.'))
-
-    parser.add_option('--ignore-running-workers', action='store_true',
-                      dest='ignore_running_workers', default=False,
-                      help=_('Runs migrations without checking for running workers. '
-                             'Please ensure there are no running works before using this flag.'))
     options, args = parser.parse_args()
     if args:
         parser.error(_('Unknown arguments: %s') % ', '.join(args))
@@ -200,16 +191,6 @@ def main():
         options = parse_args()
         _start_logging()
         connection.initialize(max_timeout=1)
-
-        if not options.ignore_running_workers:
-            # Prompt the user if there are workers that have not timed out
-            if filter(lambda worker: (UTCDateTimeField().to_python(datetime.now()) -
-                                      worker['last_heartbeat']) <
-                      timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS), status.get_workers()):
-                if not _user_input_continue('There are still running workers, continuing could '
-                                            'corrupt your Pulp installation. Are you sure you wish '
-                                            'to continue?'):
-                    return os.EX_OK
         return _auto_manage_db(options)
     except UnperformedMigrationException:
         return 1
@@ -218,9 +199,6 @@ def main():
         _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_DATAERR
     except models.MigrationRemovedError:
-        return os.EX_SOFTWARE
-    except ServerSelectionTimeoutError:
-        _logger.info(_('Cannot connect to database, please validate that the database is up.'))
         return os.EX_SOFTWARE
     except Exception, e:
         _logger.critical(str(e))
@@ -296,8 +274,3 @@ def _start_logging():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     _logger.root.addHandler(console_handler)
-
-
-def _user_input_continue(question):
-    reply = str(raw_input(_(question + ' (y/N): '))).lower().strip()
-    return reply[0] == 'y'
