@@ -24,9 +24,8 @@ New Features
 * For RPM content, a full sync will be forced if the sync configuration has been changed or content
   has been removed since the last sync.
 
-* When pulp-manage-db is run, prompt the user to continue if there are Pulp services still running.
-
 * Memory improvements! Worker process recycling can be enabled to release unused memory back to
   the system after tasks complete. This feature is disabled by default. See the
   :ref:`process recycling documentation<process_recycling>` for more info. Thank you to Jan-Otto
   Kröpke for contributing this feature.
+
