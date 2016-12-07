@@ -3,14 +3,27 @@ Debugging
 
 .. _runtime_permormance:
 
-Runtime Performance Analysis
-----------------------------
+Task Performance Analysis
+-------------------------
 
 The Python standard library provides a `cProfile` module to assist developers in collecting a set
 of statistics that describes how often and for how long various parts of the program executed. Full
-documentation for this module can be found `here <https://docs.python.org/2/library/profile.htm>`_.
-To capture information about all function calls, add the following lines of code before the code
-you are interested in analyzing::
+documentation for this module can be found `here <https://docs.python.org/2/library/profile.htm>`_. There is built in support for profiling individual tasks. This can be enabled by editing the `server.conf` file:
+
+    [profiling]
+    enabled: true
+
+This will, by default, put task profile output into `/var/lib/pulp/c_profiles` named per task ID. You can modify the location these profiles are stored:
+
+    [profiling]
+    enabled: true
+    directory: /var/www/html/pub
+
+
+Custom Runtime Performance Analysis
+-----------------------------------
+
+Custom code locations be analyzed as well. To capture information about all function calls, add the following lines of code before the code you are interested in analyzing::
 
     import cProfile
     pr = cProfile.Profile()
@@ -24,6 +37,10 @@ After the code that is of interest, add the following two lines::
 .. note::
   The file should be written to somewhere the application has write access. `/tmp` does not seem to
   work for this use case. `/var/lib/pulp/` is guaranteed to provide Pulp write access.
+
+
+Analyzing Profiles
+------------------
 
 Once the captured statistics are written to a file, the file can be examined in two ways. Using
 `pstats` module in the Python standard library or
