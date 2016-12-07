@@ -1,7 +1,7 @@
 """
 This module's main() function becomes the pulp-manage-db.py script.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 from gettext import gettext as _
 from optparse import OptionParser
 import logging
@@ -198,8 +198,8 @@ def main():
 
         # Prompt the user if there are workers that have not timed out
         if filter(lambda worker: (UTCDateTimeField().to_python(datetime.now()) -
-                                  worker['last_heartbeat']) <
-                  timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS), status.get_workers()):
+                                  worker['last_heartbeat']).total_seconds() <
+                  constants.CELERY_TIMEOUT_SECONDS, status.get_workers()):
             if not _user_input_continue('There are still running workers, continuing could '
                                         'corrupt your Pulp installation. Are you sure you wish '
                                         'to continue?'):
@@ -294,4 +294,6 @@ def _start_logging():
 
 def _user_input_continue(question):
     reply = str(raw_input(_(question + ' (y/N): '))).lower().strip()
-    return reply[0] == 'y'
+    if reply[0] == 'y':
+        return True
+    return False
