@@ -54,11 +54,6 @@ def parse_args():
     parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
                       help=_('Perform a dry run with no changes made. Returns 1 if there are '
                              'migrations to apply.'))
-
-    parser.add_option('--ignore-running-workers', action='store_true',
-                      dest='ignore_running_workers', default=False,
-                      help=_('Runs migrations without checking for running workers. '
-                             'Please ensure there are no running works before using this flag.'))
     options, args = parser.parse_args()
     if args:
         parser.error(_('Unknown arguments: %s') % ', '.join(args))
@@ -201,15 +196,14 @@ def main():
         _start_logging()
         connection.initialize(max_timeout=1)
 
-        if not options.ignore_running_workers:
-            # Prompt the user if there are workers that have not timed out
-            if filter(lambda worker: (UTCDateTimeField().to_python(datetime.now()) -
-                                      worker['last_heartbeat']) <
-                      timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS), status.get_workers()):
-                if not _user_input_continue('There are still running workers, continuing could '
-                                            'corrupt your Pulp installation. Are you sure you wish '
-                                            'to continue?'):
-                    return os.EX_OK
+        # Prompt the user if there are workers that have not timed out
+        if filter(lambda worker: (UTCDateTimeField().to_python(datetime.now()) -
+                                  worker['last_heartbeat']) <
+                  timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS), status.get_workers()):
+            if not _user_input_continue('There are still running workers, continuing could '
+                                        'corrupt your Pulp installation. Are you sure you wish '
+                                        'to continue?'):
+                return os.EX_OK
         return _auto_manage_db(options)
     except UnperformedMigrationException:
         return 1

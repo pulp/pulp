@@ -592,7 +592,7 @@ class TestManageDB(MigrationTest):
                                 mocked_apply_migration, mock_entry, getLogger, mock_ensure_indexes):
         logger = MagicMock()
         getLogger.return_value = logger
-        mock_args = Namespace(dry_run=True, test=False, ignore_running_workers=True)
+        mock_args = Namespace(dry_run=True, test=False)
         mock_parse_args.return_value = mock_args
 
         # Test that when dry run is on, it returns 1 if migrations remain
