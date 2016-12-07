@@ -136,6 +136,10 @@ _default_values = {
         'download_interval': '30',
         'download_concurrency': '5'
     },
+    'profiling': {
+        'enabled': 'false',
+        'directory': '/var/lib/pulp/c_profiles'
+    }
 }
 
 # to add a default configuration file, list the full path here

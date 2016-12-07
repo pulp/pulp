@@ -5,6 +5,7 @@ import signal
 import time
 import traceback
 import uuid
+import cProfile
 
 from bson.json_util import dumps as bson_dumps
 from bson.json_util import loads as bson_loads
@@ -20,6 +21,7 @@ from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
     PulpCodedException
+from pulp.server.config import config
 from pulp.server.db.model import Worker, ReservedResource, TaskStatus, ResourceManagerLock
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers.repo import _common as common_utils
@@ -485,6 +487,11 @@ class Task(PulpTask, ReservedTaskMixin):
                 set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
+
+        if config.get('profiling', 'enabled') is True:
+            self.pr = cProfile.Profile()
+            self.pr.enable()
+
         return super(Task, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
@@ -534,6 +541,12 @@ class Task(PulpTask, ReservedTaskMixin):
                 task_status['result'] = None
 
             task_status.save()
+
+            if config.get('profiling', 'enabled') is True:
+                profile_directory = config.get('profiling', 'directory')
+                self.pr.disable()
+                self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
+
             common_utils.delete_working_directory()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -569,6 +582,12 @@ class Task(PulpTask, ReservedTaskMixin):
             task_status['error'] = exc.to_dict()
 
             task_status.save()
+
+            if config.get('profiling', 'enabled') is True:
+                profile_directory = config.get('profiling', 'directory')
+                self.pr.disable()
+                self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
+
             common_utils.delete_working_directory()
 
 
