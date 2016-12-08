@@ -2,15 +2,16 @@ from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
 from rest_framework import decorators, pagination
 
+from pulp.app import tasks
 from pulp.app.models import Importer, Publisher, Repository, RepositoryGroup, RepositoryContent
 from pulp.app.pagination import UUIDPagination
 from pulp.app.response import OperationPostponedResponse
 from pulp.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
                                   RepositorySerializer, RepositoryGroupSerializer,
                                   RepositoryContentSerializer)
-from pulp.app.tasks import repository, tags
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
+from pulp.common import tags
 
 
 class RepositoryPagination(pagination.CursorPagination):
@@ -62,7 +63,7 @@ class RepositoryViewSet(NamedModelViewSet):
 
     def destroy(self, request, name):
         repo = self.get_object()
-        async_result = repository.delete.apply_async_with_reservation(
+        async_result = tasks.repository.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo.name, kwargs={'repo_name': repo.name})
         return OperationPostponedResponse([async_result])
 
@@ -71,6 +72,15 @@ class ImporterViewSet(NamedModelViewSet):
     queryset = Importer.objects.all()
     serializer_class = ImporterSerializer
     endpoint_name = 'importers'
+
+    def destroy(self, request, pk):
+        importer = self.get_object()
+        async_result = tasks.importer.delete.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
+            kwargs={'repo_name': importer.repository.name,
+                    'importer_name': importer.name}
+        )
+        return OperationPostponedResponse([async_result])
 
 
 class ContentAdaptorFilter(filterset.FilterSet):
