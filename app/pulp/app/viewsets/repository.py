@@ -68,21 +68,6 @@ class RepositoryViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result])
 
 
-class ImporterViewSet(NamedModelViewSet):
-    queryset = Importer.objects.all()
-    serializer_class = ImporterSerializer
-    endpoint_name = 'importers'
-
-    def destroy(self, request, pk):
-        importer = self.get_object()
-        async_result = tasks.importer.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
-            kwargs={'repo_name': importer.repository.name,
-                    'importer_name': importer.name}
-        )
-        return OperationPostponedResponse([async_result])
-
-
 class ContentAdaptorFilter(filterset.FilterSet):
     """
     A base ContentAdaptor filter which cannot be used on its own.
@@ -103,6 +88,21 @@ class ContentAdaptorFilter(filterset.FilterSet):
         fields = ['name', 'last_updated', 'repo_name']
 
 
+class ImporterFilter(ContentAdaptorFilter):
+    """
+    Plugin importer filter would need:
+     - to inherit from this class
+     - to add any specific filters if needed
+     - to define its own `Meta` class which needs:
+
+       - to specify a plugin importer model for which filter is defined
+       - to extend `fields` with specific ones
+    """
+    class Meta:
+        model = Importer
+        fields = ContentAdaptorFilter.Meta.fields
+
+
 class PublisherFilter(ContentAdaptorFilter):
     """
     Plugin publisher filter would need:
@@ -116,6 +116,22 @@ class PublisherFilter(ContentAdaptorFilter):
     class Meta:
         model = Publisher
         fields = ContentAdaptorFilter.Meta.fields
+
+
+class ImporterViewSet(NamedModelViewSet):
+    queryset = Importer.objects.all()
+    serializer_class = ImporterSerializer
+    endpoint_name = 'importers'
+    filter_class = ImporterFilter
+
+    def destroy(self, request, pk):
+        importer = self.get_object()
+        async_result = tasks.importer.delete.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
+            kwargs={'repo_name': importer.repository.name,
+                    'importer_name': importer.name}
+        )
+        return OperationPostponedResponse([async_result])
 
 
 class PublisherViewSet(NamedModelViewSet):
