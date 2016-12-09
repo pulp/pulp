@@ -137,6 +137,16 @@ class PublisherViewSet(NamedModelViewSet):
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
 
+    def destroy(self, request, pk):
+        publisher = self.get_object()
+        repo_name = publisher.repository.name
+        task_params = {'repo_name': repo_name,
+                       'publisher_name': publisher.name}
+        async_result = tasks.publisher.delete.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, repo_name, **task_params)
+
+        return OperationPostponedResponse([async_result])
+
 
 class RepositoryContentViewSet(NamedModelViewSet):
     endpoint_name = 'repositorycontents'
