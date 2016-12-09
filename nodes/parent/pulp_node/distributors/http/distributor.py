@@ -3,6 +3,7 @@
 from gettext import gettext as _
 from logging import getLogger
 import os
+import warnings
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.db import model
@@ -13,6 +14,7 @@ from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
 from pulp_node.distributors.http.publisher import HttpPublisher
+from pulp_node.error import TASK_DEPRECATION_WARNING, NodeDeprecationWarning
 
 
 _logger = getLogger(__name__)
@@ -101,6 +103,8 @@ class NodesHttpDistributor(Distributor):
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         nodes_conduit = NodesConduit()
         units = nodes_conduit.get_units(repo.id)
         with self.publisher(repo, config) as publisher:
@@ -164,6 +168,8 @@ class NodesHttpDistributor(Distributor):
         :param config:  plugin config
         :type  config:  pulp.plugins.config.PluginCallConfiguration
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         _logger.debug(_('removing published node data for repo %s' % repo.id))
         repo_publish_path = self._get_publish_dir(repo.id, config)
         os.system('rm -rf %s' % repo_publish_path)

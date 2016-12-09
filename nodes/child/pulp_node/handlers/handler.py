@@ -1,11 +1,13 @@
 from logging import getLogger
+import warnings
 
 from pulp.agent.lib.handler import ContentHandler
 from pulp.agent.lib.report import ContentReport
 
 from pulp_node import constants
 from pulp_node import resources
-from pulp_node.error import GetBindingsError
+from pulp_node.error import GetBindingsError, NodeDeprecationWarning, \
+    TASK_DEPRECATION_WARNING
 from pulp_node.handlers.model import RepositoryBinding
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
 from pulp_node.handlers.strategies import find_strategy, Request
@@ -64,6 +66,8 @@ class NodeHandler(ContentHandler):
         :return: An update report.
         :rtype: ContentReport
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         handler_report = ContentReport()
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
@@ -135,6 +139,8 @@ class RepositoryHandler(ContentHandler):
         :return: An update report.
         :rtype: ContentReport
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         repo_ids = [key['repo_id'] for key in units if key]

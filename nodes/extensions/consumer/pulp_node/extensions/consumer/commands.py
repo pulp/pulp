@@ -10,6 +10,7 @@ from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.consumer_utils import load_consumer_id
 
 from pulp_node import constants
+from pulp_node.error import CLI_DEPRECATION_WARNING
 from pulp_node.extension import ensure_node_section, node_activated, repository_enabled
 from pulp_node.extension import missing_resources
 
@@ -89,6 +90,8 @@ class NodeActivateCommand(PulpCliCommand):
 
     def run(self, **kwargs):
 
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+
         consumer_id = load_consumer_id(self.context)
         strategy = kwargs[STRATEGY_OPTION.keyword]
         delta = {'notes': {constants.NODE_NOTE_KEY: True, constants.STRATEGY_NOTE_KEY: strategy}}
@@ -121,6 +124,8 @@ class NodeDeactivateCommand(PulpCliCommand):
         self.context = context
 
     def run(self, **kwargs):
+
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
 
         consumer_id = load_consumer_id(self.context)
         delta = {'notes': {constants.NODE_NOTE_KEY: None, constants.STRATEGY_NOTE_KEY: None}}
@@ -170,6 +175,8 @@ class NodeBindCommand(BindingCommand):
 
     def run(self, **kwargs):
 
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
+
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         node_id = load_consumer_id(self.context)
         dist_id = constants.HTTP_DISTRIBUTOR
@@ -211,6 +218,7 @@ class NodeUnbindCommand(BindingCommand):
 
     def run(self, **kwargs):
 
+        self.context.prompt.render_warning_message(CLI_DEPRECATION_WARNING)
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         node_id = load_consumer_id(self.context)
         dist_id = constants.HTTP_DISTRIBUTOR

@@ -14,6 +14,7 @@
 from logging import getLogger
 from gettext import gettext as _
 from threading import Event
+import warnings
 
 from nectar.downloaders.threaded import HTTPThreadedDownloader as Downloader
 
@@ -22,7 +23,8 @@ from pulp.plugins.importer import Importer
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 
 from pulp_node import constants
-from pulp_node.error import CaughtException
+from pulp_node.error import CaughtException, NodeDeprecationWarning, \
+    TASK_DEPRECATION_WARNING
 from pulp_node.reports import RepositoryProgress
 from pulp_node.importers.reports import SummaryReport, ProgressListener
 from pulp_node.importers.strategies import find_strategy, Request
@@ -116,6 +118,8 @@ class NodesHttpImporter(Importer):
         :return: A report describing the result.
         :rtype: pulp.server.plugins.model.SyncReport
         """
+        warnings.warn(TASK_DEPRECATION_WARNING, NodeDeprecationWarning)
+
         summary_report = SummaryReport()
         downloader = None
 
