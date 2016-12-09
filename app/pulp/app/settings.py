@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import sys
+from importlib import import_module
 
 import yaml
 
@@ -44,9 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # third-party
     'django_filters',
-    'crispy_forms',
     'rest_framework',
-    'django_extensions',
     # pulp platform app
     'pulp.app',
 ]
@@ -63,6 +62,20 @@ for plugin in PULP_PLUGINS:
     # behavior to the content unit master class. For now...we'll just
     # add it to INSTALLED_APPS. :)
     INSTALLED_APPS.append(plugin)
+
+# Optional apps that help with development, or augment Pulp in some non-critical way
+OPTIONAL_APPS = [
+    'crispy_forms',
+    'django_extensions',
+]
+
+for app in OPTIONAL_APPS:
+    try:
+        import_module(app)
+        INSTALLED_APPS.append(app)
+    except ImportError:
+        # app module not installed
+        pass
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
