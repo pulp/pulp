@@ -33,6 +33,6 @@ setup(
     },
     install_requires=[
         'blinker', 'celery >=3.1.0, <3.2.0', 'httplib2', 'iniparse', 'isodate>=0.5.0',
-        'mongoengine>=0.10.0', 'oauth2>=1.5.211', 'pymongo>=3.0.0', 'setuptools',
+        'mongoengine>=0.10.0', 'oauth2>=1.5.211', 'kobo', 'pymongo>=3.0.0', 'setuptools',
         DJANGO_REQUIRES, SEMVER_REQUIRES, M2CRYPTO_REQUIRES],
 )
