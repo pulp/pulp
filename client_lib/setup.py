@@ -18,5 +18,5 @@ setup(
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
-    install_requires=['isodate>0.5.0', 'okaara>=1.0.32', 'setuptools', M2CRYPTO_REQUIRES]
+    install_requires=['isodate>0.5.0', 'okaara>=1.0.32,<1.0.36', 'setuptools', M2CRYPTO_REQUIRES]
 )
