@@ -10,7 +10,7 @@ Subclasses should be sure to call the super class constructor to ensure the
 default options to the command are added. The subclass can then add any
 additional options as necessary for its custom behavior.
 """
-
+import datetime
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
@@ -300,6 +300,9 @@ class ListRepositoriesCommand(PulpCliCommand):
         d = _('if specified, detailed configuration information is displayed for each repository')
         self.add_option(PulpCliFlag('--details', d))
 
+        d = _('if specified, list last syncs')
+        self.add_option(PulpCliFlag('--syncs', d))
+
         d = _('comma-separated list of repository fields; '
               'Example: "id,description,display_name,content_unit_counts". '
               'If specified, only the given fields will be displayed.')
@@ -364,7 +367,26 @@ class ListRepositoriesCommand(PulpCliCommand):
             if 'id' not in filters:
                 filters.append('id')
             order = ['id']
-        if kwargs.get('repo-id') is not None:
+        if kwargs.get('syncs'):
+            query_params = {'importers': True, 'distributors': True}
+            repo_list = self.get_repositories(query_params, **kwargs)
+            last_syncs_list = []
+            for repo in repo_list:
+                repo_syncs_list = self.context.server.repo_history.sync_history(
+                    repo['id'], limit=1).response_body
+                if not repo_syncs_list:
+                    continue
+                started = repo_syncs_list[0].get('started', None)
+                last_sync = repo_syncs_list[0].get('completed', None)
+                status = repo_syncs_list[0].get('result', None)
+                duration = (
+                    datetime.datetime.strptime(last_sync, "%Y-%m-%dT%H:%M:%SZ") -
+                    datetime.datetime.strptime(started, "%Y-%m-%dT%H:%M:%SZ"))
+                last_syncs_list.append(
+                    dict(repo_id=repo['id'],
+                         last_sync=last_sync, status=status, duration=duration))
+            _last_syncs_view(last_syncs_list, self.prompt)
+        elif kwargs.get('repo-id') is not None:
             repo = self.get_repository(kwargs['repo-id'], query_params, **kwargs)
             self.prompt.render_document(repo, filters=filters, order=order)
         else:
@@ -536,3 +558,28 @@ def _default_summary_view(repo_list, prompt):
             name_value = name_value[:max_name_width]
             line = line_template % (id_value, name_value)
             prompt.write(line, skip_wrap=True)
+
+
+def _last_syncs_view(sync_list, prompt):
+    """
+    Rendering a view of last syncs of repositories.
+
+    :param sync_list: list of dicts with keys 'repo_id', 'status',
+                      'duration', 'last_sync'.
+    :type  sync_list: list
+    :param prompt:    a `PulpPrompt` instance (derived from `okaara.prompt.Prompt`).
+    :type  prompt:    pulp.client.extensions.core.PulpPrompt
+    """
+    if (not isinstance(sync_list, list)) or (sync_list == []):
+        return
+    terminal_width = prompt.terminal_size()[0]
+    # set column widths. Left column stretched dynamicallly if space is available.
+    FORMAT = "{:<%ss} {:<20s} {:>8s} {:<8s}" % max(40, terminal_width - 39)
+    prompt.write(
+        FORMAT.format(
+            _("Repository"), _("Last Sync"), _("Duration"), _("Status")), skip_wrap=True)
+    prompt.write(FORMAT.replace(":", ":-").format("", "", "", ""), skip_wrap=True)
+    for val in sync_list:
+        prompt.write(FORMAT.format(
+            val['repo_id'], val['last_sync'], val.get("duration"), val.get("status")),
+            skip_wrap=True)
