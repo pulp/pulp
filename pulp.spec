@@ -787,7 +787,7 @@ Summary: Pulp client extensions framework
 Group: Development/Languages
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
-Requires: python-okaara >= 1.0.32
+Requires: python-okaara >= 1.0.32,python-okaara < 1.0.36
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
