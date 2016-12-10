@@ -28,7 +28,7 @@ class ProgressReport(Model):
             (required)
         done (models.IntegerField): The count of items already processed. Defaults to 0.
         suffix (models.TextField): Customizable suffix rendered with the progress report
-            See `docs https://github.com/verigak/progress>`_. for more info.
+            See `the docs <https://github.com/verigak/progress>`_. for more info.
 
     Relations:
 
