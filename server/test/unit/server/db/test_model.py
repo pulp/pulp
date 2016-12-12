@@ -476,7 +476,7 @@ class TestFileContentUnit(unittest.TestCase):
         file_storage.assert_called_once_with()
         storage.__enter__.assert_called_once_with()
         storage.__exit__.assert_called_once_with(None, None, None)
-        storage.put.assert_called_once_with(unit, path, None)
+        storage.put.assert_called_once_with(unit, path, None, None)
 
     @patch('os.path.isfile')
     @patch('pulp.server.db.model.FileStorage')
@@ -498,7 +498,7 @@ class TestFileContentUnit(unittest.TestCase):
         file_storage.assert_called_once_with()
         storage.__enter__.assert_called_once_with()
         storage.__exit__.assert_called_once_with(None, None, None)
-        storage.put.assert_called_once_with(unit, path, location)
+        storage.put.assert_called_once_with(unit, path, location, None)
 
     def test_import_content_unit_not_saved(self):
         try:

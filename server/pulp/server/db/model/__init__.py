@@ -852,7 +852,7 @@ class FileContentUnit(ContentUnit):
                 raise ValueError(_('must be relative path'))
         self._storage_path = path
 
-    def import_content(self, path, location=None):
+    def import_content(self, path, location=None, destination=None):
         """
         Import a content file into platform storage.
         The (optional) *location* may be used to specify a path within the unit
@@ -866,6 +866,8 @@ class FileContentUnit(ContentUnit):
         :param location: The (optional) location within the unit storage path
             where the content is to be stored.
         :type location: str
+        :param destination: The (optional) location where the content is to be stored.
+        :type  destination: str
 
         :raises ImportError: if the unit has not been saved.
         :raises PulpCodedException: PLP0037 if *path* is not an existing file.
@@ -876,7 +878,7 @@ class FileContentUnit(ContentUnit):
         if not os.path.isfile(path):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0037, path=path)
         with FileStorage() as storage:
-            storage.put(self, path, location)
+            storage.put(self, path, location, destination)
 
     def save_and_import_content(self, path, location=None):
         """

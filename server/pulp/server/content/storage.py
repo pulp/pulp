@@ -104,7 +104,7 @@ class FileStorage(ContentStorage):
             digest[0:2],
             digest[2:])
 
-    def put(self, unit, path, location=None):
+    def put(self, unit, path, location=None, destination=None):
         """
         Put the content defined by the content unit into storage.
         The file at the specified *path* is transferred into storage.
@@ -116,8 +116,11 @@ class FileStorage(ContentStorage):
         :param location: The (optional) location within the path
             where the content is to be stored.
         :type location: str
+        :param destination: The (optional) location where the content is to be stored.
+        :type  destination: str
         """
-        destination = unit.storage_path
+        if destination is None:
+            destination = unit.storage_path
         if location:
             destination = os.path.join(destination, location.lstrip('/'))
         mkdir(os.path.dirname(destination))
