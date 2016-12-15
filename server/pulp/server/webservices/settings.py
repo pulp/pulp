@@ -12,6 +12,12 @@ SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 DEBUG = False
 
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    },
+]
+
 ALLOWED_HOSTS = ['*']
 
 
