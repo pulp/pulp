@@ -14,13 +14,13 @@ from celery.app import control, defaults
 from celery.result import AsyncResult
 from mongoengine.queryset import DoesNotExist
 
-from pulp.common.constants import SCHEDULER_WORKER_NAME
+from pulp.common.constants import SCHEDULER_WORKER_NAME, RESOURCE_MANAGER_WORKER_NAME
 from pulp.common import constants, dateutils, tags
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
     PulpCodedException
-from pulp.server.db.model import Worker, ReservedResource, TaskStatus
+from pulp.server.db.model import Worker, ReservedResource, TaskStatus, ResourceManagerLock
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers import factory as managers
@@ -245,6 +245,10 @@ def _delete_worker(name, normal_shutdown=False):
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}
         _logger.error(msg)
+
+    # If the worker is a resource manager, we also need to delete the associated lock
+    if name.startswith(RESOURCE_MANAGER_WORKER_NAME):
+        ResourceManagerLock.objects(name=name).delete()
 
     # Delete the worker document
     Worker.objects(name=name).delete()

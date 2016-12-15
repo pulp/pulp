@@ -220,14 +220,13 @@ Server
       $ sudo systemctl enable pulp_celerybeat
       $ sudo systemctl start pulp_celerybeat
 
-   .. warning::
+   Lastly, a ``pulp_resource_manager`` process must be running in the installation. This process
+   acts as a task router, deciding which worker should perform certain types of tasks. As with
+   ``pulp_celerybeat``, multiple instances of ``pulp_resource_manager`` may be run concurrently on
+   separate hosts to increase fault tolerance, however, only one instance will ever be active at a
+   time.  Should the active instance become unavailable, another instance will take over after some
+   delay.
 
-      ``pulp_resource_manager`` must be singleton, so be sure that you
-      only enable this on one host if you are Pulp's clustered deployment.
-
-   Lastly, one ``pulp_resource_manager`` process must be running in the installation. This process
-   acts as a task router, deciding which worker should perform certain types of tasks. Apologies
-   for the repetitive message, but it is important that this process only be enabled on one host.
    Edit ``/etc/default/pulp_resource_manager`` to your liking. Then, for upstart::
 
       $ sudo chkconfig pulp_resource_manager on

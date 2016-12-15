@@ -37,7 +37,9 @@ Pulp consists of several components:
 
 * ``pulp_resource_manager`` - The resource manager assigns tasks to workers,
   and ensures multiple conflicting tasks on a repo are not executed at the same
-  time. In a Pulp cluster, exactly one of these should be running!
+  time. Multiple instances of ``pulp_resource_manager`` can be running at a time,
+  but if the active ``pulp_resource_manager`` instance becomes unavailable, there
+  will be a delay before another can take over, potentially causing a gap in service.
 
 Additionally, Pulp relies on other components:
 
@@ -45,9 +47,6 @@ Additionally, Pulp relies on other components:
 
 * `Apache Qpid`_ or `RabbitMQ`_ - the queuing system that Pulp uses to assign
   work to workers. Pulp can operate equally well with either Qpid or RabbitMQ.
-
-.. warning:: It is critical to note that ``pulp_resource_manager`` should
-   *never* have more than a single instance running under any circumstance!
 
 The diagram below shows an example default deployment.
 
@@ -131,8 +130,7 @@ httpd workers are.
     `Load Balancing Requirements`_ for more information.
 
 To add additional httpd server capacity, configure the desired number of
-`Pulp clustered servers` and start ``httpd`` on them. Remember only one
-instance of ``pulp_resource_manager`` should be running across all `Pulp clustered servers`.
+`Pulp clustered servers` and start ``httpd`` on them.
 
 
 Scaling workers
