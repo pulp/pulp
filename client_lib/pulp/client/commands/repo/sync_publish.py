@@ -25,10 +25,13 @@ DESC_VERIFY_ALL_FLAG = _('check all units in the repository for corrupted or '
                          'missing files and re-download files as necessary '
                          'rather than just downloading files that are known '
                          'to be missing.')
-DESC_FORCE_FULL_FLAG = _('forces to publish from scratch, even if no changes were '
-                         'introduced since last publish')
+DESC_FORCE_FULL_FLAG_PUBLISH = _('forces to publish from scratch, even if no changes were '
+                                 'introduced since last publish')
+DESC_FORCE_FULL_FLAG_SYNC = _('forces to sync from scratch, even if no changes were '
+                              'introduced since last sync')
 FLAG_VERIFY_ALL = PulpCliFlag('--verify-all', DESC_VERIFY_ALL_FLAG, aliases=['-a'])
-FLAG_FORCE_FULL = PulpCliFlag('--force-full', DESC_FORCE_FULL_FLAG)
+FLAG_FORCE_FULL_PUBLISH = PulpCliFlag('--force-full', DESC_FORCE_FULL_FLAG_PUBLISH)
+FLAG_FORCE_FULL_SYNC = PulpCliFlag('--force-full', DESC_FORCE_FULL_FLAG_SYNC)
 
 
 class StatusRenderer(object):
@@ -46,7 +49,7 @@ class SyncPublishCommand(polling.PollingCommand):
     It is not intended to be used by itself. It is intended to be used as a common superclass.
     """
 
-    def __init__(self, name, description, method, context, renderer):
+    def __init__(self, name, description, method, context, renderer, override_config_options=()):
         """
         Initialize the command, and call the superclass __init__().
 
@@ -60,6 +63,11 @@ class SyncPublishCommand(polling.PollingCommand):
         :type  context:     pulp.client.extensions.core.ClientContext
         :param renderer:    The renderer to be used to print progress reports
         :type  renderer:    StatusRenderer
+        :param override_config_options: Additionaloptions to be accepted from user. These
+                                        options will override respective options from the default
+                                        config. Each entry should be either a PulpCliOption
+                                        or PulpCliFlag instance
+        :type override_config_options: tuple
         """
         if method is None:
             method = self.run
@@ -70,6 +78,16 @@ class SyncPublishCommand(polling.PollingCommand):
         self.add_option(options.OPTION_REPO_ID)
         self.context = context
         self.prompt = context.prompt
+        self.override_config_keywords = []
+
+        # Process and add config override options in their own group and save option keywords
+        if override_config_options:
+            override_config_group = PulpCliOptionGroup(_("Options"))
+            self.add_option_group(override_config_group)
+
+            for option in override_config_options:
+                override_config_group.add_option(option)
+                self.override_config_keywords.append(option.keyword)
 
     def progress(self, task, spinner):
         """
@@ -94,6 +112,24 @@ class SyncPublishCommand(polling.PollingCommand):
         """
         pass
 
+    def generate_override_config(self, **kwargs):
+        """
+        Check if any of the override config options is passed by the user and create override_config
+        dictionary
+
+        :param kwargs: all keyword arguments passed in by the user on the command line
+        :type kwargs:  dict
+        :return:       config option dictionary consisting of option values passed by user for valid
+                       config options (stored in override_config_keywords)
+        :rtype:        dict
+        """
+        override_config = {}
+        for option in self.override_config_keywords:
+            if kwargs[option]:
+                # Replace hyphens in option keywords to underscores eg. iso-prefix to iso_prefix
+                override_config[option.replace('-', '_')] = kwargs[option]
+        return override_config
+
 
 class RunSyncRepositoryCommand(SyncPublishCommand):
     """
@@ -101,13 +137,28 @@ class RunSyncRepositoryCommand(SyncPublishCommand):
     postponed or rejected), the provided renderer will be used to track its
     progress. The user has the option to exit the progress polling or skip it
     entirely through a flag on the run command.
+    List of additional configuration override options can be passed in override_config_options.
     """
 
-    def __init__(self, context, renderer, name='run', description=DESC_SYNC_RUN, method=None):
+    def __init__(self, context, renderer, name='run', description=DESC_SYNC_RUN, method=None,
+                 override_config_options=()):
         """
+        :param context: Pulp client context
+        :type context: See okaara
+
+        :param renderer: StatusRenderer subclass that will interpret the sync or publish progress
+                         report
         :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
+
+        :param override_config_options: Additional sync options to be accepted from user. These
+                                        options will override respective options from the default
+                                        sync config. Each entry should be either a PulpCliOption
+                                        or PulpCliFlag instance
+        :type override_config_options: tuple
         """
-        super(RunSyncRepositoryCommand, self).__init__(name, description, method, context, renderer)
+        override_config_options += (FLAG_FORCE_FULL_SYNC, )
+        super(RunSyncRepositoryCommand, self).__init__(name, description, method, context, renderer,
+                                                       override_config_options)
 
     def run(self, **kwargs):
         """
@@ -119,8 +170,19 @@ class RunSyncRepositoryCommand(SyncPublishCommand):
         """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         background = kwargs[polling.FLAG_BACKGROUND.keyword]
+        override_config = {}
+
+        # Generate override_config if any of the override options are passed.
+        if self.override_config_keywords:
+            override_config = self.generate_override_config(**kwargs)
 
         self.prompt.render_title(_('Synchronizing Repository [%(r)s]') % {'r': repo_id})
+
+        # Display override configuration used
+        if override_config:
+            self.prompt.render_paragraph(
+                _('The following publish configuration options will be used:'))
+            self.prompt.render_document(override_config)
 
         # See if an existing sync is running for the repo. If it is, resume
         # progress tracking.
@@ -135,7 +197,9 @@ class RunSyncRepositoryCommand(SyncPublishCommand):
 
         else:
             # Trigger the actual sync
-            response = self.context.server.repo_actions.sync(repo_id, None)
+            if not override_config:
+                override_config = None
+            response = self.context.server.repo_actions.sync(repo_id, override_config)
             sync_task = response.response_body
             self.poll([sync_task], kwargs)
 
@@ -195,21 +259,11 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
                                         or PulpCliFlag instance
         :type override_config_options: tuple
         """
+        override_config_options += (FLAG_FORCE_FULL_PUBLISH, )
         super(RunPublishRepositoryCommand, self).__init__(name, description, method, context,
-                                                          renderer)
+                                                          renderer, override_config_options)
 
         self.distributor_id = distributor_id
-        self.override_config_keywords = []
-        override_config_options += (FLAG_FORCE_FULL, )
-
-        # Process and add config override options in their own group and save option keywords
-        if override_config_options:
-            override_config_group = PulpCliOptionGroup(_("Publish Options"))
-            self.add_option_group(override_config_group)
-
-            for option in override_config_options:
-                override_config_group.add_option(option)
-                self.override_config_keywords.append(option.keyword)
 
     def run(self, **kwargs):
         """
@@ -251,24 +305,6 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
                                                                 override_config)
             task_id = response.response_body
             self.poll([task_id], kwargs)
-
-    def generate_override_config(self, **kwargs):
-        """
-        Check if any of the override config options is passed by the user and create override_config
-        dictionary
-
-        :param kwargs: all keyword arguments passed in by the user on the command line
-        :type kwargs:  dict
-        :return:       config option dictionary consisting of option values passed by user for valid
-                       publish config options (stored in override_config_keywords)
-        :rtype:        dict
-        """
-        override_config = {}
-        for option in self.override_config_keywords:
-            if kwargs[option]:
-                # Replace hyphens in option keywords to underscores eg. iso-prefix to iso_prefix
-                override_config[option.replace('-', '_')] = kwargs[option]
-        return override_config
 
 
 class PublishStatusCommand(SyncPublishCommand):
