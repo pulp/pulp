@@ -25,7 +25,10 @@ DESC_VERIFY_ALL_FLAG = _('check all units in the repository for corrupted or '
                          'missing files and re-download files as necessary '
                          'rather than just downloading files that are known '
                          'to be missing.')
+DESC_FORCE_FULL_FLAG = _('forces to publish from scratch, even if no changes were '
+                         'introduced since last publish')
 FLAG_VERIFY_ALL = PulpCliFlag('--verify-all', DESC_VERIFY_ALL_FLAG, aliases=['-a'])
+FLAG_FORCE_FULL = PulpCliFlag('--force-full', DESC_FORCE_FULL_FLAG)
 
 
 class StatusRenderer(object):
@@ -190,13 +193,14 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
                                         options will override respective options from the default
                                         publish config. Each entry should be either a PulpCliOption
                                         or PulpCliFlag instance
-        :type override_config_options: list
+        :type override_config_options: tuple
         """
         super(RunPublishRepositoryCommand, self).__init__(name, description, method, context,
                                                           renderer)
 
         self.distributor_id = distributor_id
         self.override_config_keywords = []
+        override_config_options += (FLAG_FORCE_FULL, )
 
         # Process and add config override options in their own group and save option keywords
         if override_config_options:
