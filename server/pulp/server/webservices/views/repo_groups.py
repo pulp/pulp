@@ -14,13 +14,13 @@ from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (
     generate_json_response, generate_json_response_with_pulp_encoder, generate_redirect_response,
-    parse_json_body
+    parse_json_body,
 )
 
 
 def _add_group_link(repo_group):
     """
-    Adds an href to the repo_group.
+    Adds an href to the repo_group
     """
     repo_group['_href'] = reverse('repo_group_resource', kwargs={'repo_group_id': repo_group['id']})
     return repo_group
