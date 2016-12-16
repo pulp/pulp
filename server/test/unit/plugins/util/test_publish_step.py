@@ -301,19 +301,6 @@ class PluginStepTests(PluginBase):
         step = publish_step.PluginStep('foo_step')
         self.assertEquals(None, step.get_conduit())
 
-    @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
-        self.pluginstep.repo.content_unit_counts = {'FOO_TYPE': 1}
-        mock_get_units.return_value = ['mock_unit']
-        step = publish_step.PluginStep('foo_step')
-        step.parent = self.pluginstep
-        step.finalize = Mock(side_effect=Exception())
-        self.assertRaises(Exception, step.process)
-        self.assertEquals(step.state, reporting_constants.STATE_FAILED)
-        self.assertEquals(step.progress_successes, 1)
-        self.assertEquals(step.progress_failures, 1)
-        self.assertEquals(step.total_units, 1)
-
     def test_cancel_before_processing(self):
         self.pluginstep.repo.content_unit_counts = {'FOO_TYPE': 2}
         step = publish_step.PluginStep('foo_step')
