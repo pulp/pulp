@@ -24,7 +24,7 @@ DESC_TO_REPO = _('destination repository to copy units into')
 OPTION_TO_REPO = PulpCliOption('--to-repo-id', DESC_TO_REPO, aliases=['-t'], required=True)
 
 OPTION_TYPE = PulpCliOption('--type',
-                            _('restrict to one content type such as "rpm", "errata", '
+                            _('restrict to one content type such as "rpm", "erratum", '
                               '"puppet_module", etc.'),
                             required=False)
 OPTION_UNIT_ID = \

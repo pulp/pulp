@@ -209,22 +209,24 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 1)
 
-        self.orphan_manager.delete_all_orphans()
+        result = self.orphan_manager.delete_all_orphans()
 
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 0)
         self.assertEqual(self.number_of_files_in_content_root(), 0)
+        self.assertEqual(1, result[PHONY_TYPE_1.id])
 
     def test_delete_one_orphan_with_directory_using_generators(self):
         gen_content_unit_with_directory(PHONY_TYPE_1.id, self.content_root)
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 1)
 
-        self.orphan_manager.delete_all_orphans()
+        result = self.orphan_manager.delete_all_orphans()
 
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 0)
         self.assertEqual(self.number_of_files_in_content_root(), 0)
+        self.assertEqual(1, result[PHONY_TYPE_1.id])
 
     # NOTE this test is disabled for normal test runs
     def _test_delete_using_generators_performance_single_content_type(self):
