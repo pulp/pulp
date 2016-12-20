@@ -5,7 +5,6 @@ This module contains tests for the pulp.server.async.app module.
 import mongoengine
 import platform
 import unittest
-import signal
 
 import mock
 
@@ -88,40 +87,3 @@ class InitializeWorkerTestCase(unittest.TestCase):
 
         self.assertEquals(2, len(mock_rm_lock().save.mock_calls))
         mock_time.sleep.assert_called_once_with(CELERY_CHECK_INTERVAL)
-
-    @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    def test_custom_sigterm_handler(self, _delete_worker, mock_sys):
-        """
-        Assert that the signal handler installed by the custom_sigterm_handler context manager
-        calls the delete_worker cleanup routine with the correct worker name and then exits.
-        """
-        name = RESOURCE_MANAGER_WORKER_NAME + '@' + platform.node()
-
-        with app.custom_sigterm_handler(name):
-            handler = signal.getsignal(signal.SIGTERM)
-            self.assertNotEquals(handler, signal.SIG_DFL)
-
-            handler(None, None)
-
-            _delete_worker.assert_called_once_with(name, normal_shutdown=True)
-            mock_sys.exit.assert_called_once_with(0)
-
-    @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    def test_custom_sigterm_handler_context_manager(self, _delete_worker, mock_sys):
-        """
-        Assert that the custom_sigterm_handler context manager properly sets and restores the
-        SIGTERM signal handler upon entry and exit.
-        """
-        handler = signal.getsignal(signal.SIGTERM)
-        self.assertEquals(handler, signal.SIG_DFL)
-
-        name = RESOURCE_MANAGER_WORKER_NAME + '@' + platform.node()
-
-        with app.custom_sigterm_handler(name):
-            handler = signal.getsignal(signal.SIGTERM)
-            handler(None, None)
-
-        handler = signal.getsignal(signal.SIGTERM)
-        self.assertEquals(handler, signal.SIG_DFL)

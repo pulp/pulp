@@ -4,16 +4,13 @@ will see the "celery" module attribute and use it. This module also initializes 
 Celery setup finishes.
 """
 
-import contextlib
 import logging
-import sys
-import signal
 import time
 from datetime import datetime
 from gettext import gettext as _
 
 import mongoengine
-from celery.signals import celeryd_after_setup
+from celery.signals import celeryd_after_setup, worker_shutdown
 
 from pulp.common import constants
 from pulp.server import initialization
@@ -87,14 +84,32 @@ def initialize_worker(sender, instance, **kwargs):
         get_resource_manager_lock(sender)
 
 
+@worker_shutdown.connect
+def shutdown_worker(signal, sender):
+    """
+    Called when a worker is shutdown.
+
+    So far, this just cleans up the database by removing the worker's record in
+    the workers collection.
+
+    :param signal:   The signal being sent to the worker
+    :type  signal:   int
+    :param instance: The hostname of the worker
+    :type  instance: celery.apps.worker.Worker
+    """
+    tasks._delete_worker(sender.hostname, normal_shutdown=True)
+
+
 def get_resource_manager_lock(name):
     """
-    Tries to acquire the resource manager lock. If the lock cannot be acquired immediately, it
-    will wait until the currently active instance becomes unavailable, at which point the worker
-    cleanup routine will clear the lock for us to acquire. A worker record will be created so that
-    the waiting resource manager will appear in the Status API. We override the SIGTERM signal
-    handler so that that the worker record will be immediately cleaned up if the process is killed
-    while in this states.
+    Tries to acquire the resource manager lock.
+
+    If the lock cannot be acquired immediately, it will wait until the
+    currently active instance becomes unavailable, at which point the worker
+    cleanup routine will clear the lock for us to acquire. A worker record will
+    be created so that the waiting resource manager will appear in the Status
+    API. This worker record will be cleaned up through the regular worker
+    shutdown routine.
 
     :param name:   The hostname of the worker
     :type  name:   basestring
@@ -103,47 +118,27 @@ def get_resource_manager_lock(name):
 
     lock = ResourceManagerLock(name=name)
 
-    with custom_sigterm_handler(name):
-        # Whether this is the first lock availability check for this instance
-        _first_check = True
+    # Whether this is the first lock availability check for this instance
+    _first_check = True
 
-        while True:
-            # Create / update the worker record so that Pulp knows we exist
-            Worker.objects(name=name).update_one(set__last_heartbeat=datetime.utcnow(),
-                                                 upsert=True)
-            try:
-                lock.save()
+    while True:
+        # Create / update the worker record so that Pulp knows we exist
+        Worker.objects(name=name).update_one(set__last_heartbeat=datetime.utcnow(),
+                                             upsert=True)
+        try:
+            lock.save()
 
-                msg = _("Resource manager '%s' has acquired the resource manager lock" % name)
+            msg = _("Resource manager '%s' has acquired the resource manager lock") % name
+            _logger.info(msg)
+            break
+        except mongoengine.NotUniqueError:
+            # Only log the message the first time
+            if _first_check:
+                msg = _("Resource manager '%(name)s' attempted to acquire the the resource manager "
+                        "lock but was unable to do so. It will retry every %(interval)d seconds "
+                        "until the lock can be acquired.") % \
+                    {'name': name, 'interval': constants.CELERY_CHECK_INTERVAL}
                 _logger.info(msg)
-                break
-            except mongoengine.NotUniqueError:
-                # Only log the message the first time
-                if _first_check:
-                    msg = _("Resource manager '%s' attempted to acquire the the resource manager "
-                            "lock but was unable to do so. It will retry every %d seconds until "
-                            "the lock can be acquired." % (name, constants.CELERY_CHECK_INTERVAL))
-                    _logger.info(msg)
-                    _first_check = False
+                _first_check = False
 
-                time.sleep(constants.CELERY_CHECK_INTERVAL)
-
-
-@contextlib.contextmanager
-def custom_sigterm_handler(name):
-    """
-    Temporarily installs a custom SIGTERM handler that performs cleanup of the worker record with
-    the provided name. Resets the signal handler to the default one after leaving.
-
-    :param name:   The hostname of the worker
-    :type  name:   basestring
-    """
-    def sigterm_handler(_signo, _stack_frame):
-        msg = _("Worker '%s' shutdown" % name)
-        _logger.info(msg)
-        tasks._delete_worker(name, normal_shutdown=True)
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    yield
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+            time.sleep(constants.CELERY_CHECK_INTERVAL)
