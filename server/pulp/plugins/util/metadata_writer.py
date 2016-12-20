@@ -295,7 +295,8 @@ class FastForwardXmlFileContext(XmlFileContext):
         :type metadata_file_path: str
         :param root_tag: The root tag for the xml tree
         :type root_tag: str
-        :param search_tag: The tag that denotes the beginning of content to copy
+        :param search_tag: The tag that denotes the beginning of content to copy.
+                           If None, no content will be copied.
         :param root_attributes: Any attributes to populate on the root xml tag
         :type root_attributes: dict of str, str
         :param args: any positional arguments to be passed to the superclass
@@ -370,10 +371,12 @@ class FastForwardXmlFileContext(XmlFileContext):
 
     def _write_file_header(self):
         """
-        Write out the beginning of the file only if we are not in fast forward mode
+        Write out the beginning of the file only if we are not in fast forward mode.
+
+        No fast forward will happen if search_tag attribute is None or not found.
         """
         super(FastForwardXmlFileContext, self)._write_file_header()
-        if self.fast_forward:
+        if self.fast_forward and self.search_tag is not None:
             start_tag = '<%s' % self.search_tag
             end_tag = '</%s' % self.root_tag
 
