@@ -20,7 +20,7 @@ from django.db.utils import IntegrityError
 from pulp.tasking.celery_instance import celery  # noqa
 from pulp.tasking.constants import TASKING_CONSTANTS
 from pulp.tasking.services import storage
-
+from pulp.tasking.services.worker_watcher import delete_worker
 
 celery.autodiscover_tasks()
 
@@ -69,8 +69,6 @@ def initialize_worker(sender, instance, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
-    from pulp.tasking.services.worker_watcher import delete_worker
-
     # Delete any potential old state
     delete_worker(sender, normal_shutdown=True)
 
