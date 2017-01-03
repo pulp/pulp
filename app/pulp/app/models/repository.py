@@ -63,36 +63,6 @@ class Repository(Model):
         return "<{}: {}>".format(self._meta.model.__name__, self.name)
 
 
-class RepositoryGroup(Model):
-    """
-    A group of repositories.
-
-    Fields:
-
-        name (models.TextField): The group name.
-        description (models.TextField): An optional description.
-
-    Relations:
-        notes (GenericKeyValueRelation): Arbitrary group properties.
-        members (models.ManyToManyField): Repositories associated with the group.
-    """
-    name = models.TextField(db_index=True, unique=True)
-    description = models.TextField(blank=True)
-
-    members = models.ManyToManyField('Repository')
-    scratchpad = GenericKeyValueRelation(Scratchpad)
-    notes = GenericKeyValueRelation(Notes)
-
-    def natural_key(self):
-        """
-        Get the model's natural key.
-
-        :return: The model's natural key.
-        :rtype: tuple
-        """
-        return (self.name,)
-
-
 class ContentAdaptor(MasterModel):
     """
     An Abstract model for objects that import or publish content.

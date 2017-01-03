@@ -43,30 +43,6 @@ class RepositorySerializer(ModelSerializer):
                                                 'last_content_added', 'last_content_removed')
 
 
-class RepositoryGroupSerializer(ModelSerializer):
-
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='repo_groups-detail',
-        lookup_field='name',
-    )
-
-    name = serializers.CharField(
-        help_text=_('A unique name for this repository group.')
-    )
-    description = serializers.CharField(
-        help_text=_('An optional description of the repository group.'),
-        required=False
-    )
-    members = RepositoryRelatedField(many=True)
-    scratchpad = ScratchpadKeyValueRelatedField()
-    notes = NotesKeyValueRelatedField()
-
-    class Meta:
-        model = models.RepositoryGroup
-        fields = ModelSerializer.Meta.fields + ('name', 'description', 'members', 'scratchpad',
-                                                'notes')
-
-
 class ImporterSerializer(MasterModelSerializer):
     """
     Every importer defined by a plugin should have an Importer serializer that inherits from this
