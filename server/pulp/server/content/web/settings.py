@@ -40,6 +40,11 @@ LOGGING = {
         'django': {
             'handlers': ['syslog'],
         },
+        # 404 responses trigger logs at WARNING level, which is inappropriate
+        # for Pulp.
+        'django.request': {
+            'level': 'ERROR',
+        },
     }
 }
 
