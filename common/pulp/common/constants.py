@@ -66,6 +66,11 @@ CELERY_CHECK_INTERVAL = 60
 # The maximum number of seconds that will ever elapse before the scheduler looks for
 # new or changed schedules
 CELERY_MAX_INTERVAL = 90
+# The amount of time the migration script will wait to confirm that no processes are running.
+# This is the 90s CELERY_TICK_DEFAULT_WAIT_TIME used in Pulp version < 2.12 and a 2s buffer.
+# This ensures that the process check feature works correctly even in cases where a user
+# forgot to restart pulp_celerybeat while upgrading from Pulp 2.11 or earlier.
+MIGRATION_WAIT_TIME = 92
 
 # resource manager constants
 
