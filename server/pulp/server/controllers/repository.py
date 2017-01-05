@@ -810,6 +810,10 @@ def sync(repo_id, sync_config_override=None, scheduled_call_id=None):
         sync_result_collection.save(sync_result)
         # Ensure counts are updated
         rebuild_content_unit_counts(repo_obj)
+        if sync_result['added_count'] > 0:
+            update_last_unit_added(repo_obj.repo_id)
+        if sync_result['removed_count'] > 0:
+            update_last_unit_removed(repo_obj.repo_id)
 
     fire_manager.fire_repo_sync_finished(sync_result)
     if sync_result.result == RepoSyncResult.RESULT_FAILED:
