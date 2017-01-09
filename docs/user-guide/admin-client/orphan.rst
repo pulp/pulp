@@ -78,11 +78,7 @@ It has three flags:
  State:        Successful
  Start Time:   2012-12-09T03:26:51Z
  Finish Time:  2012-12-09T03:26:51Z
- Result:
-   Erratum:          4
-   Package Category: 1
-   Package Group:    2
-   Rpm:              32
+ Result:       N/A
  Task Id:      e239ae4f-7fad-4004-bfb6-8e06f17d22ef
  Progress:
 

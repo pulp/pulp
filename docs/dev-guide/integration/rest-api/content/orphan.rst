@@ -143,9 +143,7 @@ return a :ref:`call_report`
 
 Remove All Orphaned Content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Remove all orphaned content units, regardless of type. The task that gets
-instantiated will have a count of units that get deleted indexed by content
-type id in the result field once the task completes successfully.
+Remove all orphaned content units, regardless of type.
 
 | :method:`delete`
 | :path:`/v2/content/orphans/`
