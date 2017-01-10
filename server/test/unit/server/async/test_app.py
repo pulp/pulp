@@ -8,7 +8,7 @@ import unittest
 
 import mock
 
-from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, CELERY_CHECK_INTERVAL
+from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, PULP_PROCESS_HEARTBEAT_INTERVAL
 from pulp.server.async import app
 from pulp.server.managers.factory import initialize
 
@@ -86,4 +86,4 @@ class InitializeWorkerTestCase(unittest.TestCase):
             assert_called_with(set__last_heartbeat=mock_datetime.utcnow(), upsert=True)
 
         self.assertEquals(2, len(mock_rm_lock().save.mock_calls))
-        mock_time.sleep.assert_called_once_with(CELERY_CHECK_INTERVAL)
+        mock_time.sleep.assert_called_once_with(PULP_PROCESS_HEARTBEAT_INTERVAL)

@@ -989,8 +989,8 @@ class CeleryBeatLock(AutoRetryDocument):
     """
     Single document collection which gives information about the current celerybeat lock.
 
-    :ivar celerybeat_name: string representing the celerybeat instance name
-    :type celerybeat_name: basestring
+    :ivar name: string representing the celerybeat instance name
+    :type name: basestring
     :ivar timestamp: The timestamp(UTC) at which lock is acquired
     :type timestamp: datetime.datetime
     :ivar lock: A unique key set to "locked" when lock is acquired.
@@ -998,7 +998,7 @@ class CeleryBeatLock(AutoRetryDocument):
     :ivar _ns: (Deprecated), Contains the name of the collection this model represents
     :type _ns: mongoengine.StringField
     """
-    celerybeat_name = StringField(required=True)
+    name = StringField(required=True)
     timestamp = UTCDateTimeField(required=True)
     lock = StringField(required=True, default="locked", unique=True)
 
@@ -1012,12 +1012,15 @@ class ResourceManagerLock(AutoRetryDocument):
 
     :ivar name: string representing the resource manager instance name
     :type name: basestring
+    :ivar timestamp: The timestamp(UTC) at which lock is acquired
+    :type timestamp: datetime.datetime
     :ivar lock: A unique key set to "locked" when lock is acquired.
     :type lock: basestring
     :ivar _ns: (Deprecated), Contains the name of the collection this model represents
     :type _ns: mongoengine.StringField
     """
     name = StringField(required=True)
+    timestamp = UTCDateTimeField(required=True)
     lock = StringField(required=True, default="locked", unique=True)
 
     # For backward compatibility

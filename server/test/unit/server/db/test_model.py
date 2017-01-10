@@ -1255,8 +1255,8 @@ class TestCeleryBeatLock(unittest.TestCase):
         self.assertTrue(isinstance(sample_model, Document))
 
     def test_attributes(self):
-        self.assertTrue(isinstance(model.CeleryBeatLock.celerybeat_name, StringField))
-        self.assertTrue(model.CeleryBeatLock.celerybeat_name.required)
+        self.assertTrue(isinstance(model.CeleryBeatLock.name, StringField))
+        self.assertTrue(model.CeleryBeatLock.name.required)
 
         self.assertTrue(isinstance(model.CeleryBeatLock.timestamp, DateTimeField))
         self.assertTrue(model.CeleryBeatLock.timestamp.required)

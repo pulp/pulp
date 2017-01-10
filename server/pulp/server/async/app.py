@@ -6,13 +6,13 @@ Celery setup finishes.
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from gettext import gettext as _
 
 import mongoengine
 from celery.signals import celeryd_after_setup, worker_shutdown
 
-from pulp.common import constants
+from pulp.common import constants, dateutils
 from pulp.server import initialization
 from pulp.server.async import tasks
 from pulp.server.db.model import ResourceManagerLock, Worker
@@ -122,10 +122,17 @@ def get_resource_manager_lock(name):
     _first_check = True
 
     while True:
+
+        now = dateutils.ensure_tz(datetime.utcnow())
+        old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        ResourceManagerLock.objects(timestamp__lte=old_timestamp).delete()
+
         # Create / update the worker record so that Pulp knows we exist
         Worker.objects(name=name).update_one(set__last_heartbeat=datetime.utcnow(),
                                              upsert=True)
         try:
+            lock.timestamp = now
             lock.save()
 
             msg = _("Resource manager '%s' has acquired the resource manager lock") % name
@@ -134,11 +141,8 @@ def get_resource_manager_lock(name):
         except mongoengine.NotUniqueError:
             # Only log the message the first time
             if _first_check:
-                msg = _("Resource manager '%(name)s' attempted to acquire the the resource manager "
-                        "lock but was unable to do so. It will retry every %(interval)d seconds "
-                        "until the lock can be acquired.") % \
-                    {'name': name, 'interval': constants.CELERY_CHECK_INTERVAL}
-                _logger.info(msg)
+                _logger.info(_("Hot spare pulp_resource_manager instance '%(name)s' detected.")
+                             % {'name': name})
                 _first_check = False
 
-            time.sleep(constants.CELERY_CHECK_INTERVAL)
+            time.sleep(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
