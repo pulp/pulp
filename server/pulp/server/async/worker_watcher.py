@@ -78,9 +78,6 @@ def handle_worker_heartbeat(event):
         msg = _("New worker '%(worker_name)s' discovered") % event_info
         _logger.info(msg)
 
-    Worker.objects(name=event_info['worker_name']).\
-        update_one(set__last_heartbeat=event_info['local_received'], upsert=True)
-
 
 def handle_worker_offline(event):
     """

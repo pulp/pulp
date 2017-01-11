@@ -13,6 +13,9 @@ New Features
    processes are running. This will prevent the user from corrupting their Pulp installation by
    migrating with running workers. This works in both standalone and clustered installations. Pulp
    may wait up to 92 seconds to determine if workers are running.
+ * pulp_workers, pulp_resource_manager, and pulp_celerybeat record their own hearbeats to the
+   database. pulp_celerybeat does not need to be running to determine if pulp_resource_manager and
+   pulp_workers are online.
 
 Deprecation
 -----------

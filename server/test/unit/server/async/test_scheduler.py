@@ -111,32 +111,28 @@ class TestSchedulerTick(unittest.TestCase):
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
     @mock.patch('pulp.server.async.scheduler.CELERYBEAT_NAME', 'test@some_host')
-    @mock.patch('pulp.server.async.scheduler.time')
-    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.datetime')
+    @mock.patch('pulp.server.async.scheduler.Worker')
     @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
-    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, time,
+    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker, time,
                                     mock_tick):
         sched_instance = scheduler.Scheduler()
-        time.time.return_value = 1449261335.275528
+        time.utcnow.return_value = datetime.utcnow()
 
         sched_instance.tick()
 
-        expected_event = {
-            'timestamp': 1449261335.275528,
-            'local_received': 1449261335.275528,
-            'type': 'scheduler-event',
-            'hostname': 'test@some_host'
-        }
-        mock_worker_watcher.handle_worker_heartbeat.assert_called_once_with(expected_event)
-        mock_worker_watcher.assert_called_once()
+        mock_worker.objects.assert_called_once_with(name='test@some_host')
+        mock_worker.objects.return_value.\
+            update_one.assert_called_once_with(set__last_heartbeat=time.utcnow.return_value,
+                                               upsert=True)
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('pulp.server.async.scheduler.datetime')
-    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.Worker')
     @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
     @mock.patch('celery.beat.Scheduler.tick')
     def test_heartbeat_lock_insert_success(self, mock_tick, mock_celerybeatlock,
-                                           mock_worker_watcher, mock_timestamp):
+                                           mock_worker, mock_timestamp):
 
         sched_instance = scheduler.Scheduler()
         sched_instance.tick()

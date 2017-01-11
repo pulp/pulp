@@ -10,6 +10,7 @@ from datetime import datetime
 from gettext import gettext as _
 
 import mongoengine
+from celery import bootsteps
 from celery.signals import celeryd_after_setup, worker_shutdown
 
 from pulp.common import constants
@@ -28,6 +29,50 @@ from pulp.server.async.celery_instance import celery  # noqa
 import pulp.server.tasks  # noqa
 
 _logger = logging.getLogger(__name__)
+
+
+class HeartbeatStep(bootsteps.StartStopStep):
+
+    requires = ('celery.worker.components:Timer', )
+
+    def __init__(self, consumer, **kwargs):
+        """
+        The step init is called when the Consumer instance is created, It is called with the
+        consumer instance as the first argument and all keyword arguments from the original
+        Consumer.__init__ call.
+        """
+        self.tref = None
+
+    def start(self, consumer):
+        """
+        This method is called when the worker starts up and also whenever the AMQP connection is
+        reset (which triggers an internal restart). The timer is reset when the connection is lost,
+        so we have to install the timer again for every call to self.start.
+        """
+        self.tref = consumer.timer.call_repeatedly(
+            30.0, self.record_heartbeat, (consumer, ), priority=10,
+        )
+        self.record_heartbeat(consumer)
+
+    def stop(self, consumer):
+        # the Consumer calls stop every time the consumer is restarted (i.e. connection is lost)
+        # and also at shutdown.  The Worker will call stop at shutdown only.
+        if self.tref:
+            self.tref.cancel()
+            self.tref = None
+
+    def shutdown(self, consumer):
+        # shutdown is called by the Consumer at shutdown, it's not
+        # called by Worker.
+        tasks._delete_worker(consumer.hostname, normal_shutdown=True)
+
+    def record_heartbeat(self, consumer):
+        timestamp = datetime.utcnow()
+        Worker.objects(name=consumer.hostname).\
+            update_one(set__last_heartbeat=timestamp, upsert=True)
+
+
+celery.steps['worker'].add(HeartbeatStep)
 
 
 @celeryd_after_setup.connect
