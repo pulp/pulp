@@ -11,6 +11,7 @@ import time
 import threading
 import traceback
 import unittest
+import warnings
 
 import mock
 
@@ -694,6 +695,17 @@ class TestStartLogging(unittest.TestCase):
 
         _blacklist_loggers.assert_called_once_with()
 
+    @mock.patch('pulp.server.logs.sys')
+    @mock.patch('pulp.server.logs.warnings')
+    def test_calls_simplefilter(self, _warnings, mock_sys):
+        """
+        Ensure that start_logging() calls warnings.simplefilter
+        """
+        mock_sys.warnoptions = False
+        logs.start_logging()
+
+        _warnings.simplefilter.assert_called_once_with("ignore", DeprecationWarning)
+
     @mock.patch('pulp.server.logs.logging')
     def test_calls__captureWarnings(self, _logging):
         """
@@ -898,6 +910,26 @@ class TestStartLogging(unittest.TestCase):
 
         # And the handler should have the formatter with our format string
         self.assertTrue(isinstance(root_handler.formatter, logs.TaskLogFormatter))
+
+    @mock.patch('pulp.server.logs.sys')
+    def test_deprecation_warnings_suppressed(self, mock_sys):
+        with warnings.catch_warnings(record=True) as recorded_warnings:
+            # reset warnings filter to include DeprecationWarnings
+            #  https://docs.python.org/2/library/warnings.html#updating-code-for-new-versions-of-python
+            warnings.simplefilter('default')
+
+            # this warning should be emitted and caught prior to calling start_logging
+            warnings.warn("caught", DeprecationWarning)
+
+            mock_sys.warnoptions = False
+            logs.start_logging()
+
+            # this warning should be emitted and ignored after calling start_logging
+            warnings.warn("ignored", DeprecationWarning)
+
+        # Only one warning was caught, and it's the one that was expected.
+        self.assertEqual(len(recorded_warnings), 1)
+        self.assertEqual(repr(recorded_warnings[0].message), repr(DeprecationWarning("caught")))
 
 
 class TestStopLogging(unittest.TestCase):
