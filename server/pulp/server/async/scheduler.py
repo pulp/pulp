@@ -97,7 +97,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         """
         _logger.info(_('Worker Timeout Monitor Started'))
         while True:
-            time.sleep(constants.CELERY_CHECK_INTERVAL)
+            time.sleep(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
             try:
                 self.check_celery_processes()
             except Exception as e:
@@ -117,10 +117,10 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         correctly.
         """
         msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes '
-                'are missing for more than %d seconds') % constants.CELERY_TIMEOUT_SECONDS
+                'are missing for more than %d seconds') % constants.PULP_PROCESS_TIMEOUT_INTERVAL
         _logger.debug(msg)
         now = ensure_tz(datetime.utcnow())
-        oldest_heartbeat_time = now - timedelta(seconds=constants.CELERY_TIMEOUT_SECONDS)
+        oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
         worker_list = Worker.objects.all()
         worker_count = 0
         resource_manager_count = 0
@@ -179,7 +179,7 @@ class Scheduler(beat.Scheduler):
 
     # the superclass reads this attribute, which is the maximum number of seconds
     # that will ever elapse before the scheduler looks for new or changed schedules.
-    max_interval = constants.CELERY_MAX_INTERVAL
+    max_interval = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
 
     # allows mongo initialization to occur exactly once during the first call to setup_schedule()
     _mongo_initialized = False
@@ -194,6 +194,7 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._loaded_from_db_count = 0
+        self._retry_msg_already_logged = False
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
         kwargs['app'] = app
@@ -255,10 +256,11 @@ class Scheduler(beat.Scheduler):
 
         worker_watcher.handle_worker_heartbeat(scheduler_event)
 
-        old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
+        now = ensure_tz(datetime.utcnow())
+        old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
 
         # Updating the current lock if lock is on this instance of celerybeat
-        result = CeleryBeatLock.objects(celerybeat_name=CELERYBEAT_NAME).\
+        result = CeleryBeatLock.objects(name=CELERYBEAT_NAME).\
             update(set__timestamp=datetime.utcnow())
 
         # If current instance has lock and updated lock_timestamp, call super
@@ -273,8 +275,7 @@ class Scheduler(beat.Scheduler):
                 lock_timestamp = datetime.utcnow()
 
                 # Insert new lock entry
-                new_lock = CeleryBeatLock(celerybeat_name=CELERYBEAT_NAME,
-                                          timestamp=lock_timestamp)
+                new_lock = CeleryBeatLock(name=CELERYBEAT_NAME, timestamp=lock_timestamp)
                 new_lock.save()
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
                              {'celerybeat_name': CELERYBEAT_NAME})
@@ -283,10 +284,12 @@ class Scheduler(beat.Scheduler):
 
             except mongoengine.NotUniqueError:
                 # Setting a default wait time for celerybeat instances with no lock
-                ret = constants.CELERY_TICK_DEFAULT_WAIT_TIME
-                _logger.info(_("Duplicate or new celerybeat Instance, "
-                               "ticking again in %(ret)s seconds.")
-                             % {'ret': ret})
+                ret = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
+
+                if not self._retry_msg_already_logged:
+                    _logger.info(_("Hot spare celerybeat instance '%(celerybeat_name)s' detected.")
+                                 % {'celerybeat_name': CELERYBEAT_NAME})
+                    self._retry_msg_already_logged = True
         return ret
 
     def setup_schedule(self):

@@ -17,8 +17,9 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
+from pulp.common import constants
 from pulp.server.async.tasks import _delete_worker
-from pulp.server.db.model import Worker
+from pulp.server.db.model import Worker, ResourceManagerLock
 
 
 _logger = logging.getLogger(__name__)
@@ -72,14 +73,21 @@ def handle_worker_heartbeat(event):
     :type event: dict
     """
     event_info = _parse_and_log_event(event)
-    worker = Worker.objects(name=event_info['worker_name']).first()
+    existing_worker = Worker.objects(name=event_info['worker_name']).first()
 
-    if not worker:
+    if not existing_worker:
         msg = _("New worker '%(worker_name)s' discovered") % event_info
         _logger.info(msg)
 
+    # Update the worker timestamp, and create a new worker record if the worker did not previously
+    # exist
     Worker.objects(name=event_info['worker_name']).\
         update_one(set__last_heartbeat=event_info['local_received'], upsert=True)
+
+    # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
+    if event_info['worker_name'].startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
+        ResourceManagerLock.objects(name=event_info['worker_name']).\
+            update_one(set__timestamp=datetime.utcnow(), upsert=False)
 
 
 def handle_worker_offline(event):

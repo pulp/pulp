@@ -50,29 +50,21 @@ PRIMARY_ID = '___/primary/___'
 # this is used by both platform and plugins to find the default CA path
 DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
-# celerybeat constants
-
 # Scheduler worker name
 SCHEDULER_WORKER_NAME = 'scheduler'
-# Constant used as the default wait time for celerybeat instances with no lock
-CELERY_TICK_DEFAULT_WAIT_TIME = 90
-# Constant used to determine whether a CeleryBeatLock should be removed due to age
-CELERYBEAT_LOCK_MAX_AGE = 200
-# The amount of time in seconds before a Celery process is considered missing
-CELERY_TIMEOUT_SECONDS = 300
-# The interval in seconds for which the Celery Process monitor thread sleeps between
-# checking for missing Celery processes.
-CELERY_CHECK_INTERVAL = 60
-# The maximum number of seconds that will ever elapse before the scheduler looks for
-# new or changed schedules
-CELERY_MAX_INTERVAL = 90
+
+# Resource manager worker name
+RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'
+
+# The amount of time (in seconds) between process wakeups to "heartbeat" and perform
+# their tasks.
+PULP_PROCESS_HEARTBEAT_INTERVAL = 5
+
+# The amount of time (in seconds) after which a Celery process is considered missing.
+PULP_PROCESS_TIMEOUT_INTERVAL = 25
+
 # The amount of time the migration script will wait to confirm that no processes are running.
 # This is the 90s CELERY_TICK_DEFAULT_WAIT_TIME used in Pulp version < 2.12 and a 2s buffer.
 # This ensures that the process check feature works correctly even in cases where a user
 # forgot to restart pulp_celerybeat while upgrading from Pulp 2.11 or earlier.
 MIGRATION_WAIT_TIME = 92
-
-# resource manager constants
-
-# Resource manager worker name
-RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'

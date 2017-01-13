@@ -18,12 +18,12 @@ For a recap of Pulp components and the work they are responsible for, read :ref:
 
 * If a ``pulp_worker`` dies, the dispatched Pulp tasks destined for that worker (both the task
   currently being worked on and queued/related tasks) will not be processed. They will stall for
-  at most six minutes before being canceled. Status of the tasks is marked as canceled after
-  5 minutes or in case the worker has been re-started, whichever action occurs first.
-  Cancellation after 5 minutes is dependent on ``pulp_celerybeat`` service running. A monitoring
+  at most 30 seconds before being canceled. Status of the tasks is marked as canceled after
+  30 seconds or in case the worker has been re-started, whichever action occurs first.
+  Cancellation after 30 seconds is dependent on ``pulp_celerybeat`` service running. A monitoring
   component inside of ``pulp_celerybeat`` monitors all workers' heartbeats. If a worker does not
-  heartbeat within five minutes, it is considered missing. This check occurs once a minute, causing
-  a maximum delay of six minutes before a worker is considered missing and tasks canceled by Pulp.
+  heartbeat within 25 seconds, it is considered missing. This check occurs every 5 seconds, causing
+  a maximum delay of 30 seconds before a worker is considered missing and tasks canceled by Pulp.
 
   A missing worker has all tasks destined for it canceled, and no new work is assigned to the
   missing worker. This causes new Pulp operations dispatched to continue normally with the other
