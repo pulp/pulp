@@ -42,7 +42,7 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
     def test_handle_worker_heartbeat_new(self, mock__parse_and_log_event,
                                          mock_worker, mock_logger):
         """
-        Ensure that we save a record and log when a new worker comes online.
+        Ensure that we log when a new worker comes online.
         """
 
         mock_event = mock.Mock()
@@ -53,8 +53,6 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
 
         worker_watcher.handle_worker_heartbeat(mock_event)
 
-        mock_worker.objects.return_value.update_one.\
-            assert_called_once_with(set__last_heartbeat='2014-12-08T15:52:36Z', upsert=True)
         mock_logger.info.assert_called_once_with('New worker \'fake-worker\' discovered')
 
     @mock.patch('pulp.server.async.worker_watcher._logger')
@@ -63,7 +61,7 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
     def test_handle_worker_heartbeat_update(self, mock__parse_and_log_event,
                                             mock_worker, mock_logger):
         """
-        Ensure that we save a record but don't log when an existing worker is updated.
+        Ensure that we don't log when an existing worker is updated.
         """
 
         mock_event = mock.Mock()
@@ -74,8 +72,6 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
 
         worker_watcher.handle_worker_heartbeat(mock_event)
 
-        mock_worker.objects.return_value.update_one.\
-            assert_called_once_with(set__last_heartbeat='2014-12-08T15:52:48Z', upsert=True)
         self.assertEquals(mock_logger.info.called, False)
 
 

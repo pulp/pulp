@@ -238,28 +238,19 @@ class Scheduler(beat.Scheduler):
         """
         Superclass runs a tick, that is one iteration of the scheduler. Executes all due tasks.
 
-        This method updates the last heartbeat time of the scheduler. We do not actually send a
-        heartbeat message since it would just get read again by this class.
+        This method updates the last heartbeat time of the scheduler.
 
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
-        # this is not an event that gets sent anywhere. We process it
-        # immediately.
-        scheduler_event = {
-            'timestamp': time.time(),
-            'local_received': time.time(),
-            'type': 'scheduler-event',
-            'hostname': CELERYBEAT_NAME
-        }
+        timestamp = datetime.utcnow()
+        Worker.objects(name=CELERYBEAT_NAME).update_one(set__last_heartbeat=timestamp, upsert=True)
 
-        worker_watcher.handle_worker_heartbeat(scheduler_event)
-
-        old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
+        old_timestamp = timestamp - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
 
         # Updating the current lock if lock is on this instance of celerybeat
         result = CeleryBeatLock.objects(celerybeat_name=CELERYBEAT_NAME).\
-            update(set__timestamp=datetime.utcnow())
+            update(set__timestamp=timestamp)
 
         # If current instance has lock and updated lock_timestamp, call super
         if result == 1:
