@@ -201,7 +201,7 @@ class TestCleanConfigDict(unittest.TestCase):
         """
         Ensure that usernames and passwords can contain the '@' symbol.
         """
-        mock_config = {'feed': 'http://mock@user:mock@pass@realfeed.com'}
+        mock_config = {'feed': 'http://mock%40user:mock%40pass@realfeed.com'}
         expected_clean_config = {'feed': 'http://realfeed.com', 'basic_auth_username': 'mock@user',
                                  'basic_auth_password': 'mock@pass'}
         result = importer.clean_config_dict(mock_config)
