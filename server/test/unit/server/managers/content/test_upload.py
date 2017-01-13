@@ -6,6 +6,7 @@ import unittest
 import mock
 
 from .... import base
+from pulp.common import dateutils
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.server.controllers import importer as importer_controller
@@ -167,6 +168,7 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
         key = {'key': 'value'}
         metadata = {'k1': 'v1'}
+        timestamp_pre_upload = dateutils.now_utc_datetime_with_tzinfo()
 
         mock_repo = mock_repo_qs.get_repo_or_missing_resource.return_value
         importer_return_report = {'success_flag': True, 'summary': '', 'details': {}}
@@ -195,8 +197,11 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertTrue(isinstance(conduit, UploadConduit))
         self.assertEqual(call_args[5].repo_id, 'repo-u')
 
-        # It is now platform's responsiblity to update plugin content unit counts
+        # It is now platform's responsibility to update plugin content unit counts
         self.assertTrue(mock_rebuild.called, "rebuild_content_unit_counts must be called")
+
+        # Make sure that the last_unit_added timestamp was updated
+        self.assertTrue(mock_repo.last_unit_added > timestamp_pre_upload)
 
         # Clean up
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = None
