@@ -1,5 +1,6 @@
 import logging
 import sys
+import urllib
 import urlparse
 
 import celery
@@ -54,8 +55,10 @@ def clean_config_dict(config):
             parsed = urlparse.urlparse(feed_url)
             if parsed.username or parsed.password:
                 new_url = parsed._replace(netloc=parsed.netloc.rsplit('@', 1)[1])
-                config[importer_constants.KEY_BASIC_AUTH_USER] = parsed.username
-                config[importer_constants.KEY_BASIC_AUTH_PASS] = parsed.password
+                if parsed.username is not None:
+                    config[importer_constants.KEY_BASIC_AUTH_USER] = urllib.unquote(parsed.username)
+                if parsed.password is not None:
+                    config[importer_constants.KEY_BASIC_AUTH_PASS] = urllib.unquote(parsed.password)
                 config['feed'] = new_url.geturl()
 
         return dict([(k, v) for k, v in config.items() if v is not None])
