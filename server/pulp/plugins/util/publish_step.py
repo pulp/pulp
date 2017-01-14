@@ -1307,11 +1307,17 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         storage_dir = os.path.join(pulp_config.get('server', 'storage_dir'), 'content', 'units')
         relative_content_unit_path = os.path.relpath(item.storage_path, storage_dir)
         self.parent.content_unit_file_list.append(relative_content_unit_path)
-        filename = item.get_symlink_name()
+        if self.published_unit_path:
+            filename = item.get_symlink_name()
+            published_unit_path = self.published_unit_path
+        else:
+            dirname, filename = os.path.split(item.get_symlink_name())
+            published_unit_path = dirname.split('/')
+
         symlink = self.make_link_unit(item, filename, self.get_working_dir(),
                                       self.remote_repo_path,
                                       self.get_config().get("remote")["root"],
-                                      self.published_unit_path)
+                                      published_unit_path)
         self.parent.symlink_list.append(symlink)
 
     def make_link_unit(self, unit, filename, working_dir, remote_repo_path, remote_root,
@@ -1353,7 +1359,9 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         if os.path.islink(dest):
             os.remove(dest)
         os.symlink(link_source, dest)
-        return os.path.join(*(published_unit_path + [filename]))
+        if self.published_unit_path:
+            return os.path.join(*(published_unit_path + [filename]))
+        return unit.get_symlink_name()
 
     def get_origin_rel_path(self, unit):
         """
