@@ -29,3 +29,20 @@ Deprecation
   Pulp instance and sync repositories to this instance from their main Pulp
   instance instead. For more information, see `our blog post on the subject of
   deprecating Nodes <http://pulpproject.org/2016/12/06/deprecating-nodes/>`_.
+
+Upgrade instructions
+--------------------
+
+Upgrade using the normal process::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+
+``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.12.0`
