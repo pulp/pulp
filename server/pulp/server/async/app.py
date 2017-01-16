@@ -136,7 +136,12 @@ def get_resource_manager_lock(name):
             lock.save()
 
             msg = _("Resource manager '%s' has acquired the resource manager lock") % name
-            _logger.info(msg)
+            _logger.debug(msg)
+
+            if not _first_check:
+                msg = _("Failover occurred: '%s' is now the primary resource manager") % name
+                _logger.warning(msg)
+
             break
         except mongoengine.NotUniqueError:
             # Only log the message the first time

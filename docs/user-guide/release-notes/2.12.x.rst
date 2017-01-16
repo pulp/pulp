@@ -25,6 +25,10 @@ New Features
   the result on the orphan removal task. This count is broken down by content unit type. In
   pulp-admin, the result can be looked up with the ``tasks details`` command.
 
+* Failover events for instances of pulp_resource_manager and pulp_celerybeat are now logged at the
+  WARNING level. The log message explicitly states that failover has occurred, along with the
+  name of the hot spare process which has taken over as primary.
+
 
 Deprecation
 -----------
