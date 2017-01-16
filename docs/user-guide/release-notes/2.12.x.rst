@@ -21,6 +21,9 @@ New Features
 * Worker failure detection and high availability failover occurs within 30 seconds. Pulp processes are
   considered missing after 25 seconds, and heartbeats occur every 5 seconds.
 
+* Failover events are now logged at the WARNING level with a message which explicitly states that
+  failover has occurred.
+
 
 Deprecation
 -----------

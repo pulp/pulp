@@ -194,7 +194,7 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._loaded_from_db_count = 0
-        self._retry_msg_already_logged = False
+        self._first_lock_acq_check = True
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
         kwargs['app'] = app
@@ -279,6 +279,12 @@ class Scheduler(beat.Scheduler):
                 new_lock.save()
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
                              {'celerybeat_name': CELERYBEAT_NAME})
+
+                if not self._first_lock_acq_check:
+                    msg = _("Failover occurred: '%s' is now the primary celerybeat "
+                            "instance") % CELERYBEAT_NAME
+                    _logger.warning(msg)
+
                 # After acquiring new lock call super to dispatch tasks
                 ret = self.call_tick(self, CELERYBEAT_NAME)
 
@@ -286,10 +292,11 @@ class Scheduler(beat.Scheduler):
                 # Setting a default wait time for celerybeat instances with no lock
                 ret = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
 
-                if not self._retry_msg_already_logged:
+                if self._first_lock_acq_check:
                     _logger.info(_("Hot spare celerybeat instance '%(celerybeat_name)s' detected.")
                                  % {'celerybeat_name': CELERYBEAT_NAME})
-                    self._retry_msg_already_logged = True
+
+        self._first_lock_acq_check = False
         return ret
 
     def setup_schedule(self):
