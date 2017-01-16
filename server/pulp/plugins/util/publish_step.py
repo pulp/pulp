@@ -162,7 +162,10 @@ class Step(object):
             for step in _post_order(self):
                 step.process()
         finally:
-            self.report_progress(force=True)
+            try:
+                self.report_progress(force=True)
+            except Exception:
+                _logger.exception(_('Progress reporting failed'))
 
     def is_skipped(self):
         """
@@ -257,7 +260,10 @@ class Step(object):
                     return
             finally:
                 # Always call finalize to allow cleanup of file handles
-                self.finalize()
+                try:
+                    self.finalize()
+                except Exception:
+                    _logger.exception(_('Finalizing failed'))
             self.post_process()
         except Exception as e:
             tb = sys.exc_info()[2]
@@ -902,11 +908,8 @@ class AtomicDirectoryPublishStep(PluginStep):
 
         try:
             os.rename(self.source_dir, timestamp_master_dir)
-            try:
+            if selinux.is_selinux_enabled():
                 selinux.restorecon(timestamp_master_dir.encode('utf-8'), recursive=True)
-            except OSError as e:
-                if e.errno not in [errno.EPERM, errno.ENODATA]:
-                    raise
         except OSError as e:
             if e.errno == errno.EXDEV:
                 copytree(self.source_dir, timestamp_master_dir, symlinks=True)

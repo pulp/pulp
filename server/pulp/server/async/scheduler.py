@@ -28,6 +28,9 @@ import pulp.server.logs  # noqa
 
 _logger = logging.getLogger(__name__)
 
+# setting the celerybeat name
+CELERYBEAT_NAME = constants.SCHEDULER_WORKER_NAME + "@" + platform.node()
+
 
 class EventMonitor(threading.Thread):
     """
@@ -241,16 +244,13 @@ class Scheduler(beat.Scheduler):
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
-        # Setting the celerybeat name
-        celerybeat_name = constants.SCHEDULER_WORKER_NAME + "@" + platform.node()
-
         # this is not an event that gets sent anywhere. We process it
         # immediately.
         scheduler_event = {
             'timestamp': time.time(),
             'local_received': time.time(),
             'type': 'scheduler-event',
-            'hostname': celerybeat_name
+            'hostname': CELERYBEAT_NAME
         }
 
         worker_watcher.handle_worker_heartbeat(scheduler_event)
@@ -258,14 +258,14 @@ class Scheduler(beat.Scheduler):
         old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
 
         # Updating the current lock if lock is on this instance of celerybeat
-        result = CeleryBeatLock.objects(celerybeat_name=celerybeat_name).\
+        result = CeleryBeatLock.objects(celerybeat_name=CELERYBEAT_NAME).\
             update(set__timestamp=datetime.utcnow())
 
         # If current instance has lock and updated lock_timestamp, call super
         if result == 1:
             _logger.debug(_('Lock updated by %(celerybeat_name)s')
-                          % {'celerybeat_name': celerybeat_name})
-            ret = self.call_tick(self, celerybeat_name)
+                          % {'celerybeat_name': CELERYBEAT_NAME})
+            ret = self.call_tick(self, CELERYBEAT_NAME)
         else:
             # check for old enough time_stamp and remove if such lock is present
             CeleryBeatLock.objects(timestamp__lte=old_timestamp).delete()
@@ -273,13 +273,13 @@ class Scheduler(beat.Scheduler):
                 lock_timestamp = datetime.utcnow()
 
                 # Insert new lock entry
-                new_lock = CeleryBeatLock(celerybeat_name=celerybeat_name,
+                new_lock = CeleryBeatLock(celerybeat_name=CELERYBEAT_NAME,
                                           timestamp=lock_timestamp)
                 new_lock.save()
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
-                             {'celerybeat_name': celerybeat_name})
+                             {'celerybeat_name': CELERYBEAT_NAME})
                 # After acquiring new lock call super to dispatch tasks
-                ret = self.call_tick(self, celerybeat_name)
+                ret = self.call_tick(self, CELERYBEAT_NAME)
 
             except mongoengine.NotUniqueError:
                 # Setting a default wait time for celerybeat instances with no lock
@@ -368,3 +368,8 @@ class Scheduler(beat.Scheduler):
         entries to the database, and they will be picked up automatically.
         """
         raise NotImplementedError
+
+    def close(self):
+        """This is called when celerybeat is being shutdown."""
+        _delete_worker(CELERYBEAT_NAME, normal_shutdown=True)
+        super(Scheduler, self).close()

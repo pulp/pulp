@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.11.0
+Version: 2.11.1
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -793,7 +793,7 @@ Group: Development/Languages
 Provides: python2-pulp-client-lib
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
-Requires: python-okaara >= 1.0.32
+Requires: python-okaara >= 1.0.32,python-okaara < 1.0.36
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-setuptools
 Obsoletes: pulp-client-lib
@@ -1048,10 +1048,10 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Wed Dec 14 2016 Patrick Creech <pcreech@redhat.com> 2.11.0-1
+* Mon Jan 16 2017 Sean Myers <sean.myers@redhat.com> 2.11.1-1
 - Pulp rebuild
 
-* Fri Dec 09 2016 Patrick Creech <pcreech@redhat.com> 2.11.0-0.5.rc
+* Mon Jan 09 2017 Sean Myers <sean.myers@redhat.com> 2.11.1-0.1.beta
 - Pulp rebuild
 
 * Wed Nov 23 2016 Sean Myers <sean.myers@redhat.com> 2.11.0-0.4.beta
