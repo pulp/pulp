@@ -21,6 +21,10 @@ New Features
 * Worker failure detection and high availability failover occurs within 30 seconds. Pulp processes are
   considered missing after 25 seconds, and heartbeats occur every 5 seconds.
 
+* When removing orphan content, the number of items being that have been removed is now stored as
+  the result on the orphan removal task. This count is broken down by content unit type. In
+  pulp-admin, the result can be looked up with the ``tasks details`` command.
+
 
 Deprecation
 -----------
