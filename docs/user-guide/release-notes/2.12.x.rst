@@ -2,6 +2,21 @@
 Pulp 2.12 Release Notes
 =======================
 
+
+EL6 Support Changes
+===================
+
+The 2.12 releases no longer support deploying Pulp on EL6.
+
+However, running ``pulp-agent`` on EL6 is still supported, and the syncing and publishing
+of EL6 repositories, is still be supported.
+
+EL6 users are encouraged to upgrade their Pulp environments to EL7. See this
+`mailing list discussion <https://www.redhat.com/archives/pulp-list/2016-November/msg00022.html>`_ or
+this `blog post <http://pulpproject.org/2016/11/17/django14-epel6-retirement/>`_ for background and
+motivation for this decision.
+
+
 Pulp 2.12.0
 ===========
 
