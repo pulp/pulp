@@ -4,10 +4,11 @@ from setuptools import setup, find_packages
 
 PYTHON_MAJOR_MINOR = '%s.%s' % (sys.version_info[0], sys.version_info[1])
 
+requires = {'install_requires': ['mock<1.1']}
+
 if PYTHON_MAJOR_MINOR < '2.7':
-    requires = {'install_requires': ['argparse']}
-else:
-    requires = {}
+    requires['install_requires'].append('argparse')
+
 
 setup(
     name='pulp-devel',
