@@ -810,7 +810,7 @@ class TestStartLogging(unittest.TestCase):
         self.assertEqual(root_handler.facility, logs.CompliantSysLogHandler.LOG_DAEMON)
 
         # And the handler should have the formatter with our format string
-        self.assertEqual(root_handler.formatter._fmt, logs.LOG_FORMAT_STRING)
+        self.assertTrue(isinstance(root_handler.formatter, logs.TaskLogFormatter))
 
 
 class TestStopLogging(unittest.TestCase):
