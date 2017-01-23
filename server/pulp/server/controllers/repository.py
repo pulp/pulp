@@ -1711,7 +1711,7 @@ class LazyUnitDownloadStep(DownloadEventListener):
             self.progress_successes += 1
             path_entry[PATH_DOWNLOADED] = True
         except (InvalidChecksumType, VerificationException, IOError), e:
-            _logger.debug(_('Download of {path} failed: {reason}.').format(
+            _logger.info(_('Download of {path} failed: {reason}.').format(
                 path=catalog_entry.path, reason=str(e)))
             path_entry[PATH_DOWNLOADED] = False
             self.progress_failures += 1
