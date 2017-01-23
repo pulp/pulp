@@ -9,6 +9,7 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import ClientContext, PulpPrompt, PulpCli
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
+from pulp.common.constants import DEFAULT_CA_PATH
 
 
 # Copy the config here from pulp.client.admin.config so we don't have to start an import chain
@@ -19,7 +20,7 @@ DEFAULT_CONFIG = {
         'port': '443',
         'api_prefix': '/pulp/api',
         'verify_ssl': 'true',
-        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+        'ca_path': DEFAULT_CA_PATH,
         'upload_chunk_size': '1048576',
     },
     'client': {

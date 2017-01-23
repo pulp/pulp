@@ -1,11 +1,12 @@
 from pulp.common.config import ANY, BOOL, Config, REQUIRED
+from pulp.common.constants import DEFAULT_CA_PATH
 
 
 NODE_CONFIGURATION_PATH = '/etc/pulp/nodes.conf'
 
 DEFAULT = {
     'main': {
-        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+        'ca_path': DEFAULT_CA_PATH,
         'node_certificate': '/etc/pki/pulp/nodes/node.crt',
         'verify_ssl': 'true',
     },
