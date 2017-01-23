@@ -1,11 +1,13 @@
+import cProfile
 from datetime import datetime
+import errno
 from gettext import gettext as _
 import logging
+import os
 import signal
 import time
 import traceback
 import uuid
-import cProfile
 
 from bson.json_util import dumps as bson_dumps
 from bson.json_util import loads as bson_loads
@@ -496,7 +498,7 @@ class Task(PulpTask, ReservedTaskMixin):
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
 
-        if config.get('profiling', 'enabled') is True:
+        if config.getboolean('profiling', 'enabled') is True:
             self.pr = cProfile.Profile()
             self.pr.enable()
 
@@ -549,12 +551,7 @@ class Task(PulpTask, ReservedTaskMixin):
                 task_status['result'] = None
 
             task_status.save()
-
-            if config.get('profiling', 'enabled') is True:
-                profile_directory = config.get('profiling', 'directory')
-                self.pr.disable()
-                self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
-
+            self._handle_cProfile(task_id)
             common_utils.delete_working_directory()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -588,15 +585,26 @@ class Task(PulpTask, ReservedTaskMixin):
             if not isinstance(exc, PulpException):
                 exc = PulpException(str(exc))
             task_status['error'] = exc.to_dict()
-
             task_status.save()
-
-            if config.get('profiling', 'enabled') is True:
-                profile_directory = config.get('profiling', 'directory')
-                self.pr.disable()
-                self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
-
+            self._handle_cProfile(task_id)
             common_utils.delete_working_directory()
+
+    def _handle_cProfile(self, task_id):
+        """
+        If cProfiling is enabled, stop the profiler and write out the data.
+
+        :param task_id: the id of the task
+        :type task_id: unicode
+        """
+        if config.getboolean('profiling', 'enabled') is True:
+            self.pr.disable()
+            profile_directory = config.get('profiling', 'directory')
+            try:
+                os.makedirs(profile_directory, 0755)
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
 
 
 def cancel(task_id):
