@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-repoauth',
-    version='2.11.2b1',
+    version='2.11.3a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
