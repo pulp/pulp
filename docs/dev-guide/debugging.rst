@@ -6,24 +6,36 @@ Debugging
 Task Performance Analysis
 -------------------------
 
-The Python standard library provides a `cProfile` module to assist developers in collecting a set
-of statistics that describes how often and for how long various parts of the program executed. Full
-documentation for this module can be found `here <https://docs.python.org/2/library/profile.htm>`_. There is built in support for profiling individual tasks. This can be enabled by editing the `server.conf` file:
+The Python standard library provides the `cProfile <https://docs.python.org/2/library/profile.htm>`_
+module to assist developers in collecting statistics that describes how often and for how long which
+parts of the program executed.
+
+.. note::
+    Enabling cProfiling may cause a reduction in performance. It is not recommended for production
+    unless enabled temporarily.
+
+There is built in support for profiling individual tasks. This can be enabled by editing the
+`server.conf` file::
 
     [profiling]
     enabled: true
 
-This will, by default, put task profile output into `/var/lib/pulp/c_profiles` named per task ID. You can modify the location these profiles are stored:
+This will, by default, put task profile output into `/var/lib/pulp/c_profiles` named per task ID.
+You can modify the location these profiles are stored::
 
     [profiling]
     enabled: true
     directory: /var/www/html/pub
 
+.. note::
+    The ``apache`` user must be able to write to the path specified by ``directory``.
+
 
 Custom Runtime Performance Analysis
 -----------------------------------
 
-Custom code locations be analyzed as well. To capture information about all function calls, add the following lines of code before the code you are interested in analyzing::
+Custom code locations be analyzed as well. To capture information about all function calls, add the
+following lines of code before the code you are interested in analyzing::
 
     import cProfile
     pr = cProfile.Profile()
@@ -62,8 +74,9 @@ by installing `cprofilev` from PyPi and running it::
 At this point, browse to http://localhost:4000/ to view profiling information.
 
 In addition, `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ can convert the profiling output
-into a dot graph. Make sure `graphviz <http://www.graphviz.org/Download.php>`_ is installed by yum or dnf before using
-this tool. Then you can get statistics graph by installing `gprof2dot` from PyPi and running it::
+into a dot graph. Make sure `graphviz <http://www.graphviz.org/Download.php>`_ is installed by yum
+or dnf before using this tool. Then you can get statistics graph by installing `gprof2dot` from PyPI
+and running it::
 
     $ sudo pip install gprof2dot
     $ gprof2dot -f pstats ~/devel/profile_stats_dump | dot -Tpng -o output.png
