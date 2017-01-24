@@ -95,12 +95,30 @@ found here:
    your branch to origin? Delete it and re-push after the rebase.
 
 
+.. _merging-checklist:
+
+Merging Checklist
+-----------------
+
+Before you merge your Pull Request on Github, here is a list of things to
+consider. Note that not all may be applicable to your change. For example, a
+pulp-smash test plan is not needed for changes that only refactor code.
+
+- Post the Github pull request URL as a comment on the plan.io issue and
+  transition the state of the issue to POST
+- Add and associate a `pulp-smash test plan
+  <https://github.com/PulpQE/pulp-smash/issues>`_ to your plan.io issue if
+  needed
+- If your change is a new feature, add a release note
+- If your change is a new feature, add documentation for the feature
+
+
 .. _merging-your-changes:
 
 Merging your Changes
 --------------------
 
-After a PR is marked as "LGTM" (Looks Good To Me), you can then merge your
+After a PR is marked as approved by all reviewers, you can then merge your
 changes. First, hit the "Merge pull request" button on your PR on the Github
 website.
 
