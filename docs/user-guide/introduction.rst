@@ -57,6 +57,10 @@ Platform Support Policy
 CentOS/Red Hat Enterprise Linux (RHEL)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+We currently support Red Hat Enterprise Linux 7 as well as CentOS 7.
+
+Starting with Pulp 2.12, we *no longer* support Red Hat Enterprise Linux 6 or CentOS 6.
+
 The Pulp team aims to provide RPM builds for the last two major releases of RHEL. For
 example, if the latest version is RHEL 8, builds should be available for RHEL 8 and
 RHEL 7. However, due to the long life cycle of these platforms and the relatively rapid
@@ -65,11 +69,10 @@ the older platform before the next major release of RHEL. If this does occur, an
 will be made well in advance.
 
 .. note::
-  It is likely that support for Red Hat Enterprise Linux 6 will be removed prior to
-  the release of Red Hat Enterprise Linux 8. This is due to the difficulty of
-  supporting both Python 2.6 and Python 3 at the same time.
-
-Currently we support Red Hat Enterprise Linux 6 and 7 as well as CentOS 6 and 7.
+  Support for Red Hat Enterprise Linux 6 has been removed prior to
+  the release of Red Hat Enterprise Linux 8. There are multiple reasons for this,
+  including the difficulty of continuing to support Python 2.6, and the removal
+  of some of Pulp's dependencies from the EPEL 6 repository.
 
 
 Fedora
