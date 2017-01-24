@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import threading
+import warnings
 
 from celery.signals import setup_logging
 
@@ -41,6 +42,11 @@ def start_logging(*args, **kwargs):
     :param kwargs: Unused
     :type  kwargs: dict
     """
+    # Filter out all deprecation warnings before setting up the logger,
+    # unless user-specified warning settings are passed using '-W'.
+    if not sys.warnoptions:
+        warnings.simplefilter('ignore', DeprecationWarning)
+
     # Get and set up the root logger with our configured log level
     try:
         log_level = config.config.get('server', 'log_level')
