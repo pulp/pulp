@@ -1272,9 +1272,10 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     dist = model.Distributor.objects.get_or_404(
         repo_id=repo_obj.repo_id, distributor_id=dist_id)
 
-    # Use raw pymongo not to fire the signal hander
-    model.Distributor.objects(repo_id=repo_obj.repo_id, distributor_id=dist_id).\
-        update(set__last_publish=publish_end_timestamp)
+    if not publish_report.canceled_flag:
+        # Use raw pymongo not to fire the signal hander
+        model.Distributor.objects(repo_id=repo_obj.repo_id, distributor_id=dist_id).\
+            update(set__last_publish=publish_end_timestamp)
 
     # Add a publish entry
     summary = publish_report.summary
