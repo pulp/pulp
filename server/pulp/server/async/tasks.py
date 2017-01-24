@@ -213,7 +213,7 @@ def _get_unreserved_worker():
     """
 
     # Build a mapping of queue names to Worker objects
-    workers_dict = dict((worker['name'], worker) for worker in Worker.objects())
+    workers_dict = dict((worker['name'], worker) for worker in Worker.objects.get_online())
     worker_names = workers_dict.keys()
     reserved_names = [r['worker_name'] for r in ReservedResource.objects.all()]
 
