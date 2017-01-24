@@ -13,7 +13,7 @@ else:
 
 setup(
     name='pulp-bindings',
-    version='2.12b1',
+    version='2.12c2',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',

@@ -35,7 +35,7 @@
 
 Name: pulp
 Version: 2.12.0
-Release: 0.1.beta%{?dist}
+Release: 0.2.rc%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
