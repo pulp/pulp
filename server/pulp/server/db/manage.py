@@ -200,7 +200,7 @@ def main():
         active_workers = status.get_workers()
         if active_workers:
             last_worker_time = max([worker['last_heartbeat'] for worker in active_workers])
-            time_from_last_worker = UTCDateTimeField().to_python(datetime.now()) - last_worker_time
+            time_from_last_worker = UTCDateTimeField().to_python(datetime.utcnow()) - last_worker_time
             wait_time = timedelta(seconds=constants.MIGRATION_WAIT_TIME) - time_from_last_worker
 
             if wait_time > timedelta(0):
