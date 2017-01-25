@@ -16,33 +16,8 @@ from pulp.server.managers.factory import initialize
 initialize()
 
 
-class TestEventMonitorEvents(unittest.TestCase):
-    def setUp(self):
-        self.event_monitor = scheduler.EventMonitor()
-
-    @mock.patch('pulp.server.async.scheduler.app.events.Receiver')
-    def test_handlers_declared(self, mock_receiver):
-        self.event_monitor.monitor_events()
-
-        self.assertEqual(mock_receiver.call_count, 1)
-        self.assertEqual(mock_receiver.return_value.capture.call_count, 1)
-        handlers = mock_receiver.call_args[1]['handlers']
-
-        self.assertTrue('worker-heartbeat' in handlers)
-        self.assertTrue('worker-offline' in handlers)
-        self.assertTrue('worker-online' in handlers)
-
-    @mock.patch('pulp.server.async.scheduler.app.connection')
-    @mock.patch('pulp.server.async.scheduler.app.events.Receiver')
-    def test_connection_passed(self, mock_receiver, mock_connection):
-        self.event_monitor.monitor_events()
-        self.assertTrue(mock_receiver.call_args[0][0] is
-                        mock_connection.return_value.__enter__.return_value)
-        capture = mock_receiver.return_value.capture
-        capture.assert_called_once_with(limit=None, timeout=None, wakeup=True)
-
-
 class TestSchedulerInit(unittest.TestCase):
+
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule', new=mock.MagicMock())
     @mock.patch('celery.beat.Scheduler.__init__')
     @mock.patch.object(scheduler.Scheduler, 'spawn_pulp_monitor_threads')
@@ -62,16 +37,14 @@ class TestSchedulerInit(unittest.TestCase):
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch.object(scheduler.Scheduler, 'spawn_pulp_monitor_threads')
-    @mock.patch('pulp.server.async.scheduler.EventMonitor')
-    def test__init__lazy_is_True(self, mock_event_monitor, mock_spawn_pulp_monitor_threads):
+    def test__init__lazy_is_True(self, mock_spawn_pulp_monitor_threads):
         mock_app = mock.Mock()
         scheduler.Scheduler(mock_app, lazy=True)
         self.assertTrue(not mock_spawn_pulp_monitor_threads.called)
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch.object(scheduler.Scheduler, 'spawn_pulp_monitor_threads')
-    @mock.patch('pulp.server.async.scheduler.EventMonitor')
-    def test__init__lazy_is_False(self, mock_event_monitor, mock_spawn_pulp_monitor_threads):
+    def test__init__lazy_is_False(self, mock_spawn_pulp_monitor_threads):
         mock_app = mock.Mock()
         scheduler.Scheduler(mock_app, lazy=False)
         self.assertTrue(mock_spawn_pulp_monitor_threads.called)
@@ -80,16 +53,11 @@ class TestSchedulerInit(unittest.TestCase):
 class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
-    @mock.patch('pulp.server.async.scheduler.EventMonitor')
     @mock.patch('pulp.server.async.scheduler.CeleryProcessTimeoutMonitor')
-    def test_spawn_pulp_monitor_threads(self, mock_celery_timeout_monitor, mock_event_monitor):
+    def test_spawn_pulp_monitor_threads(self, mock_celery_timeout_monitor):
         my_scheduler = scheduler.Scheduler()
 
         my_scheduler.spawn_pulp_monitor_threads()
-
-        mock_event_monitor.assert_called_once_with()
-        self.assertTrue(mock_event_monitor.return_value.daemon)
-        mock_event_monitor.return_value.start.assert_called_once()
 
         mock_celery_timeout_monitor.assert_called_once_with()
         self.assertTrue(mock_celery_timeout_monitor.return_value.daemon)
@@ -97,6 +65,7 @@ class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
 
 
 class TestSchedulerTick(unittest.TestCase):
+
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
     @mock.patch('pulp.server.async.scheduler.worker_watcher')
@@ -114,20 +83,14 @@ class TestSchedulerTick(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.time')
     @mock.patch('pulp.server.async.scheduler.worker_watcher')
     @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
-    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, time,
+    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, mock_time,
                                     mock_tick):
         sched_instance = scheduler.Scheduler()
-        time.time.return_value = 1449261335.275528
+        mock_time.time.return_value = 1449261335.275528
 
         sched_instance.tick()
 
-        expected_event = {
-            'timestamp': 1449261335.275528,
-            'local_received': 1449261335.275528,
-            'type': 'scheduler-event',
-            'hostname': 'test@some_host'
-        }
-        mock_worker_watcher.handle_worker_heartbeat.assert_called_once_with(expected_event)
+        mock_worker_watcher.handle_worker_heartbeat.assert_called_once_with('test@some_host')
         mock_worker_watcher.assert_called_once()
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
@@ -252,6 +215,7 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
 
 
 class TestSchedulerScheduleChanged(unittest.TestCase):
+
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled')
@@ -301,6 +265,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
 
 
 class TestSchedulerSchedule(unittest.TestCase):
+
     @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch.object(scheduler.Scheduler, 'get_schedule')
@@ -337,57 +302,13 @@ class TestSchedulerSchedule(unittest.TestCase):
 
 
 class TestSchedulerAdd(unittest.TestCase):
+
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     def test_not_implemented(self, mock_setup_schedule):
         sched_instance = scheduler.Scheduler()
 
         self.assertRaises(NotImplementedError, sched_instance.add)
-
-
-class TestEventMonitorRun(unittest.TestCase):
-    class SleepException(Exception):
-        pass
-
-    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
-    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_sleeps(self, mock_sleep, mock_monitor_events):
-        # raising an exception is the only way we have to break out of the
-        # infinite loop
-        mock_sleep.side_effect = self.SleepException
-
-        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
-
-        # verify the frequency
-        mock_sleep.assert_called_once_with(10)
-
-    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
-    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
-    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_monitor_events(self, mock_sleep, mock_monitor_events, mock_log_error):
-
-        # raising an exception is the only way we have to break out of the
-        # infinite loop
-        mock_monitor_events.side_effect = self.SleepException
-        mock_log_error.side_effect = self.SleepException
-
-        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
-
-        mock_monitor_events.assert_called_once_with()
-
-    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
-    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
-    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_logs_exception(self, mock_sleep, mock_monitor_events, mock_log_error):
-
-        # raising an exception is the only way we have to break out of the
-        # infinite loop
-        mock_monitor_events.side_effect = self.SleepException
-        mock_log_error.side_effect = self.SleepException
-
-        self.assertRaises(self.SleepException, scheduler.EventMonitor().run)
-
-        self.assertEqual(mock_log_error.call_count, 1)
 
 
 class TestCeleryProcessTimeoutMonitorRun(unittest.TestCase):
@@ -453,7 +374,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     def test_deletes_workers(self, mock_worker, mock_delete_worker):
         mock_worker.objects.all.return_value = [
-            Worker(name='name1', last_heartbeat=datetime.utcnow() - timedelta(seconds=400)),
+            Worker(name='name1', last_heartbeat=datetime.utcnow() -
+                   timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL + 10)),
             Worker(name='name2', last_heartbeat=datetime.utcnow()),
         ]
 

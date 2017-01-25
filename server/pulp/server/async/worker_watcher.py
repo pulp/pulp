@@ -17,97 +17,48 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
-from pulp.common import constants
 from pulp.server.async.tasks import _delete_worker
-from pulp.server.db.model import Worker, ResourceManagerLock
+from pulp.server.db.model import Worker
 
 
 _logger = logging.getLogger(__name__)
 
 
-def _parse_and_log_event(event):
+def handle_worker_heartbeat(worker_name):
     """
-    Parse and return the event information we are interested in. Also log it.
+    This is a generic function for updating worker heartbeat records.
 
-    A new dict is returned containing the keys 'timestamp', 'local_received', 'type', and
-    'worker_name'. The data transformations here are on the timestamp and local_received. They
-    both arrive as seconds since the epoch, and are converted to a naive datetime.datetime object in
-    UTC. The timestamp is set by the sender, and the local_received time is set by the receiver.
-    Beware of a bug in the value of the timestamp as of the time of this commit as it suffers from
-    issues in localities that use daylight savings time during the non-daylight savings time part of
-    the year. See https://github.com/celery/celery/issues/1802#issuecomment-161916587 for discussion
-    around this issue. Until that issue is resolved, consider using the local_received time instead
-    of the timestamp.
+    Existing Worker objects are searched for one to update. If an existing one is found, it is
+    updated. Otherwise a new Worker entry is created. Logging at the info level is also done.
 
-    Logging is done through a call to _log_event().
-
-    :param event: A celery event
-    :type  event: dict
-    :return:      A dict containing the keys 'timestamp', 'local_received', 'type', and
-                  'worker_name'. 'timestamp' and 'local_received' are naive datetime.datetime
-                  objects reported in UTC. 'type' is the event name as a string
-                  (ie: 'worker-heartbeat'), and 'worker_name' is the name of the worker as a string.
-    :rtype:       dict
+    :param worker_name: The hostname of the worker
+    :type  worker_name: basestring
     """
-    event_info = {
-        'timestamp': datetime.utcfromtimestamp(event['timestamp']),
-        'local_received': datetime.utcfromtimestamp(event['local_received']), 'type': event['type'],
-        'worker_name': event['hostname']}
-    msg = _("'%(type)s' sent at time %(timestamp)s from %(worker_name)s, received at time: "
-            "%(local_received)s")
-    msg = msg % event_info
-    _logger.debug(msg)
-    return event_info
-
-
-def handle_worker_heartbeat(event):
-    """
-    Celery event handler for 'worker-heartbeat' events.
-
-    The event is first parsed and logged.  Then the existing Worker objects are
-    searched for one to update. If an existing one is found, it is updated.
-    Otherwise a new Worker entry is created. Logging at the info and debug
-    level is also done.
-
-    :param event: A celery event to handle.
-    :type event: dict
-    """
-    event_info = _parse_and_log_event(event)
-    existing_worker = Worker.objects(name=event_info['worker_name']).first()
+    existing_worker = Worker.objects(name=worker_name).first()
 
     if not existing_worker:
-        msg = _("New worker '%(worker_name)s' discovered") % event_info
+        msg = _("New worker '%s' discovered") % worker_name
         _logger.info(msg)
 
-    # Update the worker timestamp, and create a new worker record if the worker did not previously
-    # exist
-    Worker.objects(name=event_info['worker_name']).\
-        update_one(set__last_heartbeat=event_info['local_received'], upsert=True)
+    timestamp = datetime.utcnow()
+    msg = _("Worker heartbeat from '{name}' at time {timestamp}").format(timestamp=timestamp,
+                                                                         name=worker_name)
+    _logger.debug(msg)
 
-    # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
-    if event_info['worker_name'].startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
-        ResourceManagerLock.objects(name=event_info['worker_name']).\
-            update_one(set__timestamp=datetime.utcnow(), upsert=False)
+    Worker.objects(name=worker_name).update_one(set__last_heartbeat=timestamp,
+                                                upsert=True)
 
 
-def handle_worker_offline(event):
+def handle_worker_offline(worker_name):
     """
-    Celery event handler for 'worker-offline' events.
+    This is a generic function for handling workers going offline.
 
-    The 'worker-offline' event is emitted when a worker gracefully shuts down. It is not
-    emitted when a worker is killed instantly.
+    _delete_worker() task is called to handle any work cleanup associated with a worker going
+    offline. Logging at the info level is also done.
 
-    The event is first parsed and logged. If this event is from the resource manager, there is
-    no further processing to be done. Otherwise, a worker is shutting down, and a
-    _delete_worker() task is dispatched so that the resource manager will remove the record,
-    and handle any work cleanup associated with a worker going offline. Logging at the info
-    and debug level is also done.
-
-    :param event: A celery event to handle.
-    :type event: dict
+    :param worker_name: The hostname of the worker
+    :type  worker_name: basestring
     """
-    event_info = _parse_and_log_event(event)
-
-    msg = _("Worker '%(worker_name)s' shutdown") % event_info
+    msg = _("Worker '%s' shutdown") % worker_name
     _logger.info(msg)
-    _delete_worker(event_info['worker_name'], normal_shutdown=True)
+    _delete_worker(worker_name, normal_shutdown=True)

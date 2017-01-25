@@ -27,7 +27,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
     @mock.patch('pulp.server.async.app.get_resource_manager_lock')
     def test_initialize_worker(self,
                                mock_get_resource_manager_lock,
-                               _delete_worker, initialize,
+                               _delete_worker, mock_initialize,
                                create_worker_working_directory,
                                delete_worker_working_directory):
         """
@@ -38,7 +38,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
         # The instance argument isn't used and don't matter, so we'll just pass a mock
         app.initialize_worker(sender, mock.MagicMock())
 
-        initialize.assert_called_once_with()
+        mock_initialize.assert_called_once_with()
         _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
         create_worker_working_directory.assert_called_once_with(sender)
         delete_worker_working_directory.assert_called_once_with(sender)
@@ -51,7 +51,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
     @mock.patch('pulp.server.async.app.get_resource_manager_lock')
     def test_initialize_worker_resource_manager(self,
                                                 mock_get_resource_manager_lock,
-                                                _delete_worker, initialize,
+                                                _delete_worker, mock_initialize,
                                                 create_worker_working_directory,
                                                 delete_worker_working_directory):
         """
@@ -62,7 +62,7 @@ class InitializeWorkerTestCase(unittest.TestCase):
         # The instance argument isn't used and don't matter, so we'll just pass a mock
         app.initialize_worker(sender, mock.MagicMock())
 
-        initialize.assert_called_once_with()
+        mock_initialize.assert_called_once_with()
         _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
         create_worker_working_directory.assert_called_once_with(sender)
         delete_worker_working_directory.assert_called_once_with(sender)
