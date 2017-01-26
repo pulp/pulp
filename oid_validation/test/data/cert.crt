@@ -6,7 +6,7 @@ Certificate:
         Issuer: C=US, ST=NJ, L=Mickleton, O=Red Hat, OU=Pulp, CN=pulp-ca
         Validity
             Not Before: Mar 30 15:26:02 2016 GMT
-            Not After : Mar  6 15:26:02 2116 GMT
+            Not After : Mar  6 15:26:02 2046 GMT
         Subject: C=US, ST=NJ, O=Red Hat, OU=Pulp, CN=pulp-server
         Subject Public Key Info:
             Public Key Algorithm: rsaEncryption
