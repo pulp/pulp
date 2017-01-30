@@ -21,7 +21,7 @@ else:
 
 setup(
     name='pulp-server',
-    version='2.11.2b1',
+    version='2.11.2',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
