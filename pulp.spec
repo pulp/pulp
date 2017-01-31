@@ -34,7 +34,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.11.1
+Version: 2.11.2
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -1048,7 +1048,10 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Mon Jan 16 2017 Sean Myers <sean.myers@redhat.com> 2.11.1-1
+* Mon Jan 30 2017 Sean Myers <sean.myers@redhat.com> 2.11.2-1
+- Pulp rebuild
+
+* Mon Jan 23 2017 Sean Myers <sean.myers@redhat.com> 2.11.2-0.1.beta
 - Pulp rebuild
 
 * Mon Jan 09 2017 Sean Myers <sean.myers@redhat.com> 2.11.1-0.1.beta
