@@ -1,6 +1,6 @@
-from threading import RLock
 import logging
 import subprocess
+import uuid
 
 from M2Crypto import X509, EVP, RSA, util
 
@@ -21,11 +21,11 @@ class CertGenerationManager(object):
         """
         Generates a x509 certificate for an admin user.
 
-        @param user: identification the certificate will be created for; may not be None
-        @type  user: pulp.server.db.model.User
+        :param user: identification the certificate will be created for; may not be None
+        :type  user: pulp.server.db.model.User
 
-        @return: tuple of PEM encoded private key and certificate
-        @rtype:  (str, str)
+        :return: tuple of PEM encoded private key and certificate
+        :rtype:  (str, str)
         """
         expiration = config.config.getint('security', 'user_cert_expiration')
         return self.make_cert(self.encode_admin_user(user), expiration)
@@ -35,15 +35,15 @@ class CertGenerationManager(object):
         Generate an x509 certificate with the Subject set to the cn passed into this method:
         Subject: CN=someconsumer.example.com
 
-        @param cn: ID to be embedded in the certificate
-        @type  cn: string
+        :param cn: ID to be embedded in the certificate
+        :type  cn: string
 
-        @param uid: The optional userid.  In pulp, this is the DB document _id
+        :param uid: The optional userid.  In pulp, this is the DB document _id
             for both users and consumers.
-        @type uid: str
+        :type uid: str
 
-        @return: tuple of PEM encoded private key and certificate
-        @rtype:  (str, str)
+        :return: tuple of PEM encoded private key and certificate
+        :rtype:  (str, str)
         """
         # Ensure we are dealing with a string and not unicode
         try:
@@ -72,7 +72,7 @@ class CertGenerationManager(object):
         ca_key = config.config.get('security', 'cakey')
 
         sn = SerialNumber()
-        serial = sn.next()
+        serial = sn.getSerialNumber()
 
         cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
               (ca_cert, ca_key, serial, expiration)
@@ -90,11 +90,11 @@ class CertGenerationManager(object):
         '''
         Ensures the given certificate can be verified against the server's CA.
 
-        @param cert_pem: PEM encoded certificate to be verified
-        @type  cert_pem: string
+        :param cert_pem: PEM encoded certificate to be verified
+        :type  cert_pem: string
 
-        @return: True if the certificate is successfully verified against the CA; False otherwise
-        @rtype:  boolean
+        :return: True if the certificate is successfully verified against the CA; False otherwise
+        :rtype:  boolean
         '''
 
         # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
@@ -123,12 +123,12 @@ class CertGenerationManager(object):
         Encodes an admin user's identity into a single line suitable for identification.
         This is intended to be the identity used in admin certificates.
 
-        @param user: admin user; may not be None
-        @type user:  pulp.server.db.model.User
+        :param user: admin user; may not be None
+        :type user:  pulp.server.db.model.User
 
-        @return: single line identification of the admin user safe for public visibility;
+        :return: single line identification of the admin user safe for public visibility;
                  any sensitive information is hashed
-        @rtype:  string
+        :rtype:  string
         '''
         return '%s%s%s%s' % (ADMIN_PREFIX, user.login, ADMIN_SPLITTER, str(user.id))
 
@@ -137,11 +137,11 @@ class CertGenerationManager(object):
         Decodes the single line admin user identification produced by encode_admin_user
         into all of the parts that make up that identification.
 
-        @param encoded_string: string representation of the user provided by encode_admin_user
-        @type  encoded_string: string
+        :param encoded_string: string representation of the user provided by encode_admin_user
+        :type  encoded_string: string
 
-        @return: tuple of information describing the admin user; (username, id)
-        @rtype:  (string, string)
+        :return: tuple of information describing the admin user; (username, id)
+        :rtype:  (string, string)
         '''
 
         # Strip off the leading "admin:" prefix
@@ -161,42 +161,20 @@ class CertGenerationManager(object):
 
 class SerialNumber:
 
-    PATH = config.config.get('security', 'serial_number_path')
-    __mutex = RLock()
     __metaclass__ = Singleton
 
-    def next(self):
+    def getSerialNumber(self):
         """
-        Get the next serial#
-        @return: The next serial#
-        @rtype: int
-        """
-        self.__mutex.acquire()
-        try:
-            fp = open(self.PATH, 'a+')
-            try:
-                sn = int(fp.read()) + 1
-            except:
-                sn = 1
-            fp.seek(0)
-            fp.truncate(0)
-            fp.write(str(sn))
-            fp.close()
-            return sn
-        finally:
-            self.__mutex.release()
+        Returns a uuid to use for the next serial number.
 
-    def reset(self):
+        x509 standards indicate that serial number must be unique, not that it must be
+        monotonically increasing. By using a uuid the chance of collision is very low.
+
+        :return: A serial number
+        :rtype: int
         """
-        Reset the serial number
-        """
-        self.__mutex.acquire()
-        try:
-            fp = open(self.PATH, 'w')
-            fp.write('0')
-            fp.close()
-        finally:
-            self.__mutex.release()
+
+        return int(uuid.uuid4())
 
 
 def _make_priv_key():

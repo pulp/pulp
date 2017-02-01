@@ -492,6 +492,9 @@ chown root:apache $KEY_PATH
 chown root:apache $KEY_PATH_PUB
 ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
 
+# Remove old serial number file
+rm -f /var/lib/pulp/sn.dat
+
 # CA certificate
 if [ $1 -eq 1 ]; # not an upgrade
 then
