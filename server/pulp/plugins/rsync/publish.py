@@ -304,7 +304,7 @@ class Publisher(PublishStep):
             string_date = None
         if self.predistributor:
             search_params = {'repo_id': repo.id,
-                             'distributor_id': self.predistributor["id"],
+                             'distributor_id': self.predistributor["distributor_id"],
                              'started': {"$gte": string_date}}
             self.predist_history = RepoPublishResult.get_collection().find(search_params)
         else:
@@ -313,7 +313,7 @@ class Publisher(PublishStep):
         self.remote_path = self.get_remote_repo_path()
 
         if self.is_fastforward():
-            start_date = self.last_published
+            start_date = self.predistributor_publish
             end_date = None
             if self.predistributor:
                 end_date = self.predistributor["last_publish"]

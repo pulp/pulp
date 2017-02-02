@@ -1263,6 +1263,7 @@ class Distributor(AutoRetryDocument):
     auto_publish = BooleanField(default=False)
     last_publish = UTCDateTimeField()
     last_updated = UTCDateTimeField()
+    predistributor_publish = UTCDateTimeField()
     last_override_config = DictField()
     scratchpad = DictField()
 
