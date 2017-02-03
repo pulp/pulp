@@ -1,7 +1,7 @@
 .. _MongoDB: http://www.mongodb.org/
 .. _Apache Qpid: https://qpid.apache.org/
 .. _RabbitMQ: http://www.rabbitmq.com/
-.. _MongoDB Deployment: http://www.mongodb.org/about/introduction/#deployment-architectures
+.. _MongoDB Replication: https://docs.mongodb.com/manual/replication/
 .. _Apache Qpid HA docs: https://qpid.apache.org/releases/qpid-0.28/cpp-broker/book/chapter-ha.html
 .. _RabbitMQ HA docs: http://www.rabbitmq.com/ha.html
 .. _mod_status: https://httpd.apache.org/docs/2.2/mod/mod_status.html
@@ -95,7 +95,7 @@ Another consideration for installations with a large number of repositories
 or repositories with a large numbers of RPMs is to have a dedicated server
 or set of servers for MongoDB. Pulp does not store actual content in the
 MongoDB database, but all metadata is stored there. More information on
-scaling MongoDB is available in the `MongoDB Deployment`_ docs.
+scaling MongoDB is available in the `MongoDB Replication`_ docs.
 
 Pulp uses either RabbitMQ or Apache Qpid as its messaging backend. Pulp does
 not generate many messages in comparison to other applications, so it is not
