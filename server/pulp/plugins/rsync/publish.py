@@ -304,7 +304,7 @@ class Publisher(PublishStep):
             string_date = None
         if self.predistributor:
             search_params = {'repo_id': repo.id,
-                             'distributor_id': self.predistributor["id"],
+                             'distributor_id': self.predistributor["distributor_id"],
                              'started': {"$gte": string_date}}
             self.predist_history = RepoPublishResult.get_collection().find(search_params)
         else:
