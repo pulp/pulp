@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
-%if 0%{?rhel} == 5
+%if 0%{?rhel} <= 6
 %define pulp_admin 0
 %define pulp_client_oauth 0
 %define pulp_server 0
@@ -325,6 +325,7 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
 cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
+mkdir -p %{buildroot}/%{_sysconfdir}/bash_completion.d
 cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdir}/bash_completion.d/
 %endif
 
