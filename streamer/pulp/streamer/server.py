@@ -1,20 +1,21 @@
-from gettext import gettext as _
-from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE
-from urlparse import urlparse
 import logging
 
+from gettext import gettext as _
+from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR
+from urlparse import urlparse
+
 from mongoengine import DoesNotExist, NotUniqueError
-from nectar import listener as nectar_listener
-import requests
+from nectar.listener import AggregatingEventListener
+from requests import Session
 from twisted.internet import reactor
-from twisted.web import resource
+from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 
-from pulp.plugins.loader import api as plugins_api
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
-from pulp.server.content.sources import container as content_container
-from pulp.server.content.sources import model as content_models
-from pulp.server.db import model
+from pulp.server.content.sources.container import ContentContainer
+from pulp.server.content.sources.model import Request as ContainerRequest
+from pulp.server.db.model import DeferredDownload, LazyCatalogEntry
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.streamer import adapters as pulp_adapters
@@ -40,92 +41,30 @@ HOP_BY_HOP_HEADERS = [
 ]
 
 
-class StreamerListener(nectar_listener.DownloadEventListener):
+class DownloadFailed(Exception):
     """
-    This DownloadEventListener subclass's purpose is to set the
-    response headers on the given HTTP request. This includes setting
-    the cache-control header with the max-age which is loaded from the
-    streamer configuration file.
+    Download failed.
     """
 
-    def __init__(self, request, streamer_config, catalog_entry, pulp_request=False):
-        """
-        Initialize a StreamerNectarListener.
 
-        :param request:         the request to set the response headers for.
-        :type  request:         twisted.web.server.Request
-        :param streamer_config: The configuration for this streamer instance.
-        :type  streamer_config: ConfigParser.SafeConfigParser
-        :param catalog_entry:   Catalog entry for the file requested.
-        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
-        :param pulp_request:    True if this request originated from Pulp.
-        :type  pulp_request:    bool
-        """
-        super(StreamerListener, self).__init__()
-        self.request = request
-        self.streamer_config = streamer_config
-        self.catalog_entry = catalog_entry
-        self.pulp_request = pulp_request
-
-    def download_headers(self, report):
-        """
-        Forward a subset of the HTTP headers received from the upstream server as
-        well as set the cache-control header to the value specified by the streamer
-        configuration file. This header is used by clients to determine how to
-        cache the response.
-
-        :param report: The download report for this request.
-        :type  report: nectar.report.DownloadReport
-        """
-        for header_key, header_value in report.headers.items():
-            if header_key.lower() not in HOP_BY_HOP_HEADERS:
-                self.request.setHeader(header_key, header_value)
-
-        max_age = {'max_age': self.streamer_config.get('streamer', 'cache_timeout')}
-        cache_header = 'public, s-maxage=%(max_age)s, max-age=%(max_age)s' % max_age
-        self.request.setHeader('Cache-Control', cache_header)
+class DownloadListener(AggregatingEventListener):
+    """
+    Nectar download listener.
+    """
 
     def download_failed(self, report):
         """
-        Perform cleanup on failed downloads. Specifically, Nectar does not download
-        any content if the server returns a non-200 code. This is problematic because
-        it will return headers to the client which include a Content-Length that is
-        likely not 0, since most servers provide pages detailing the problem that
-        occurred.
+        Log download failures.
 
-        :param report: The download report for this request.
+        :param report: The download report.
         :type  report: nectar.report.DownloadReport
         """
-        # Currently Nectar returns headers with a content-length even
-        # when it doesn't download anything.
-        self.request.setHeader('Content-Length', '0')
-        if 'response_code' in report.error_report:
-            self.request.setResponseCode(report.error_report['response_code'])
-        else:
-            # Nectar doesn't give us a good way to know exactly went wrong; return
-            # a generic HTTP 503 and hope Nectar logged enough to be useful
-            self.request.setResponseCode(SERVICE_UNAVAILABLE)
-
-    def download_succeeded(self, report):
-        """
-        If the download was successful, add a deferred download entry.
-
-        :param report: The download report for this request.
-        :type  report: nectar.report.DownloadReport
-        """
-        if not self.pulp_request:
-            try:
-                download = model.DeferredDownload(
-                    unit_id=self.catalog_entry.unit_id,
-                    unit_type_id=self.catalog_entry.unit_type_id
-                )
-                download.save()
-            except NotUniqueError:
-                # There's already an entry for this unit.
-                pass
+        super(DownloadListener, self).download_failed(report)
+        code = report.error_report.get('response_code', '')
+        logger.info(_('Download failed [{code}]: {url}').format(code=code, url=report.url))
 
 
-class Streamer(resource.Resource):
+class Streamer(Resource):
     """
     Define the web resource that streams content from the upstream repository
     to the client.
@@ -141,12 +80,12 @@ class Streamer(resource.Resource):
         :param config: The configuration for this streamer instance.
         :type  config: ConfigParser.SafeConfigParser
         """
-        resource.Resource.__init__(self)
+        Resource.__init__(self)
         self.config = config
         # Used to pool TCP connections for upstream requests. Once requests #2863 is
         # fixed and available, remove the PulpHTTPAdapter. This is a short-term work-around
         # to avoid carrying the package.
-        self.session = requests.Session()
+        self.session = Session()
         self.session.mount('https://', pulp_adapters.PulpHTTPAdapter())
 
     def render_GET(self, request):
@@ -174,84 +113,185 @@ class Streamer(resource.Resource):
         Download the requested content using the content unit catalog and dispatch
         a celery task that causes Pulp to download the newly cached unit.
 
-        :param request: The content request.
+        :param request: An HTTP request.
         :type  request: twisted.web.server.Request
         """
-        catalog_path = urlparse(request.uri).path
         with Responder(request) as responder:
             try:
-                catalog_entry = model.LazyCatalogEntry.objects(
-                    path=catalog_path).order_by('importer_id').first()
-                if not catalog_entry:
-                    raise DoesNotExist()
-                self._download(catalog_entry, request, responder)
-            except DoesNotExist:
-                logger.error(_('Failed to find a catalog entry with path'
-                               ' "{rel}".'.format(rel=catalog_path)))
-                request.setResponseCode(NOT_FOUND)
-            except PluginNotFound:
-                msg = _('Catalog entry for {rel} references a plugin id'
-                        ' which is not valid.')
-                logger.error(msg.format(rel=catalog_path))
-                request.setResponseCode(INTERNAL_SERVER_ERROR)
+                path = urlparse(request.uri).path
+                q_set = LazyCatalogEntry.objects.filter(path=path)
+                q_set = q_set.order_by('-_id', '-revision')
+                count = q_set.count()
+                if not count:
+                    logger.error(_('No catalog entry found. path={p}'.format(p=path)))
+                    request.setResponseCode(NOT_FOUND)
+                    return
+                for entry in q_set.all():
+                    logger.info('Trying URL: {url}'.format(url=entry.url))
+                    try:
+                        last_report = self._download(entry, responder)
+                        self._on_succeeded(entry, request, last_report)
+                        return
+                    except (DownloadFailed, DoesNotExist, PluginNotFound):
+                        # try another
+                        continue
+                # Failed
+                self._on_all_failed(request)
             except Exception:
-                logger.exception(_('An unexpected error occurred while handling the request.'))
+                logger.exception(_('An unexpected error occurred: {url}').format(url=request.uri))
                 request.setResponseCode(INTERNAL_SERVER_ERROR)
+                request.setHeader('Content-Length', '0')
 
-    def _download(self, catalog_entry, request, responder):
+    def _on_succeeded(self, entry, request, report):
         """
-        Build a nectar downloader and download the content from the catalog entry.
-        The download is performed by the alternate content container, so it is possible
-        to use the streamer in conjunction with alternate content sources.
+        The download succeeded.
 
-        :param catalog_entry:   The catalog entry to download.
-        :type  catalog_entry:   pulp.server.db.model.LazyCatalogEntry
-        :param request:         The client content request.
-        :type  request:         twisted.web.server.Request
-        :param responder:       The file-like object that nectar should write to.
-        :type  responder:       Responder
+        :param entry: A catalog entry.
+        :type  entry: LazyCatalogEntry
+        :param request: An HTTP request.
+        :type  request: twisted.web.server.Request
+        :param report: A download report.
+        :type  report: nectar.report.DownloadReport
         """
-        # Configure the primary downloader for alternate content sources
-        plugin_importer, config, db_importer = repo_controller.get_importer_by_id(
-            catalog_entry.importer_id)
-        # There is an unfortunate mess of configuration classes and attributes, and
-        # multiple "models" floating around. The MongoEngine class that corresponds
-        # to the database entry only contains the repository config. The ``config``
-        # variable above contains the repository configuration _and_ the plugin-wide
-        # configuration, so here we override the db_importer.config because it doesn't
-        # have the whole config. In the future the importer object should seemlessly
-        # load and apply the plugin-wide configuration.
-        db_importer.config = config.flatten()
-        primary_downloader = plugin_importer.get_downloader_for_db_importer(
-            db_importer, catalog_entry.url, working_dir='/tmp')
-        pulp_request = request.getHeader(PULP_STREAM_REQUEST_HEADER)
-        listener = StreamerListener(request, self.config, catalog_entry, pulp_request)
-        primary_downloader.session = self.session
-        primary_downloader.event_listener = listener
+        self._set_headers(request, report)
+        pulp_requested = request.getHeader(PULP_STREAM_REQUEST_HEADER)
+        if not pulp_requested:
+            self._insert_deferred(entry)
 
-        # Build the alternate content source download request
-        unit_model = plugins_api.get_unit_model_by_id(catalog_entry.unit_type_id)
-        qs = unit_model.objects.filter(id=catalog_entry.unit_id).only(*unit_model.unit_key_fields)
+    @staticmethod
+    def _on_all_failed(request):
+        """
+        All downloads failed.
+
+        :param request: An HTTP request.
+        :type  request: twisted.web.server.Request
+        """
+        logger.error(_('All download attempts failed: {url}').format(url=request.uri))
+        request.setHeader('Content-Length', '0')
+        request.setResponseCode(NOT_FOUND)
+
+    def _download(self, entry, responder):
+        """
+        Download the file.
+
+        :param entry: The catalog entry to download.
+        :type  entry: pulp.server.db.model.LazyCatalogEntry
+        :param responder: The file-like object that nectar should write to.
+        :type  responder: Responder
+        :return: The download report.
+        :rtype: nectar.report.DownloadReport
+        """
+        downloader = None
+
         try:
-            unit = qs.get()
-            download_request = content_models.Request(
-                catalog_entry.unit_type_id,
+            unit = self._get_unit(entry)
+            downloader = self._get_downloader(entry)
+            alt_request = ContainerRequest(
+                entry.unit_type_id,
                 unit.unit_key,
-                catalog_entry.url,
-                responder,
-            )
-
-            alt_content_container = content_container.ContentContainer(threaded=False)
-            alt_content_container.download(primary_downloader, [download_request], listener)
-        except DoesNotExist:
-            # A catalog entry is referencing a unit that doesn't exist which is bad.
-            msg = _('The catalog entry for {path} references {unit_type}:{id}, but '
-                    'that unit is not in the database.')
-            logger.error(msg.format(path=catalog_entry.path, unit_type=catalog_entry.unit_type_id,
-                                    id=catalog_entry.unit_id))
-            request.setResponseCode(NOT_FOUND)
+                entry.url,
+                responder)
+            listener = downloader.event_listener
+            container = ContentContainer(threaded=False)
+            container.download(downloader, [alt_request], listener)
+            if listener.succeeded_reports:
+                return listener.succeeded_reports[0]
+            else:
+                raise DownloadFailed()
         finally:
-            primary_downloader.config.finalize()
+            try:
+                downloader.config.finalize()
+            except Exception:
+                # ignored.
+                pass
+
+    def _get_downloader(self, entry):
+        """
+        Get the configured downloader.
+
+        :param entry: A catalog entry.
+        :type  entry: LazyCatalogEntry
+        :return: The configured downloader.
+        :rtype:  nectar.downloaders.base.Downloader
+        :raise: PluginNotFound: when plugin not found.
+        :raise: DoesNotExist: when importer not found.
+        """
+        try:
+            importer, config, model = \
+                repo_controller.get_importer_by_id(entry.importer_id)
+            model.config = config.flatten()
+            downloader = importer.get_downloader_for_db_importer(
+                model, entry.url, working_dir='/tmp')
+            listener = DownloadListener()
+            downloader.event_listener = listener
+            downloader.session = self.session
+            return downloader
+        except (PluginNotFound, DoesNotExist):
+            msg = _('Plugin not-found: referenced by catalog entry for {path}')
+            logger.error(msg.format(path=entry.path))
+            raise
+
+    @staticmethod
+    def _get_unit(entry):
+        """
+        Get the content unit referenced by the catalog entry.
+
+        :param entry: A catalog entry.
+        :type  entry: LazyCatalogEntry 
+        :return: The unit.
+        :raises DoesNotExist: when not found.
+        """
+        try:
+            model = plugin_api.get_unit_model_by_id(entry.unit_type_id)
+            q_set = model.objects.filter(id=entry.unit_id)
+            q_set = q_set.only(*model.unit_key_fields)
+            return q_set.get()
+        except DoesNotExist:
+            msg = _('The catalog entry for {path} references unknown unit: {unit_type}:{id}')
+            logger.error(msg.format(
+                path=entry.path,
+                unit_type=entry.unit_type_id,
+                id=entry.unit_id))
+            raise
+
+    def _set_headers(self, request, report):
+        """
+        Forward response headers to the original client HTTP request.
+        This includes adding the cache-control header with the max-age
+        which is loaded from the configuration.
+
+        :param request: An HTTP request.
+        :type  request: twisted.web.server.Request
+        :param report: The download report.
+        :type  report: nectar.report.DownloadReport
+        :return:
+        """
+        # forward
+        for key, value in report.headers.items():
+            if key.lower() not in HOP_BY_HOP_HEADERS:
+                request.setHeader(key, value)
+        # additions
+        max_age = self.config.get('streamer', 'cache_timeout')
+        cache_control = 'public, s-maxage={m}, max-age={m}'.format(m=max_age)
+        request.setHeader('Cache-Control', cache_control)
+
+    @staticmethod
+    def _insert_deferred(entry):
+        """
+        Request deferred download.
+        Add deferred download record for background processing.
+
+        :param entry: A catalog entry.
+        :type  entry: LazyCatalogEntry
+        """
+        try:
+            model = DeferredDownload(
+                unit_id=entry.unit_id,
+                unit_type_id=entry.unit_type_id)
+            model.save()
+        except NotUniqueError:
+            # There's already an entry for this unit.
+            pass
 
 
 class Responder(object):
@@ -278,28 +318,30 @@ class Responder(object):
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_value, traceback):
         """
         Closes the Responder, which invokes the
         twisted.web.server.Request.finish method
 
         :param exc_type: The exception type, if any.
         :type  exc_type: type.TypeType
-        :param exc_val: The exception instance, if any.
-        :type  exc_val: Exception
-        :param exc_tb: The traceback of the exception, if any.
-        :type  exc_tb: traceback
-        :return:
+        :param exc_value: The exception instance, if any.
+        :type  exc_value: Exception
+        :param traceback: The traceback of the exception, if any.
+        :type  traceback: traceback
+        :return: False so exception is re-raised.
+        :rtype: bool
         """
         self.close()
+        return False
 
     def close(self):
         """
         Forward the call to close the 'file' to the request.finish method.
         """
-        reactor.callFromThread(self.finish_wrapper)
+        reactor.callFromThread(self.finish)
 
-    def finish_wrapper(self):
+    def finish(self):
         """
         Handles RuntimeErrors raised by calling ``finish`` on a request after
         the connection is closed.
