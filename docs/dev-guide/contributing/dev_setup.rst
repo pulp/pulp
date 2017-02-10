@@ -35,6 +35,10 @@ Reasons to prefer docker:
 * improved performance
 * host may freely access processes within the guest (e.g. for debugging)
 
+.. note::
+  ``libvirt`` is the only officially supported and tested provider and will work in all cases.
+  ``docker`` provider is available, but might not be fully functional.
+
 Prerequisites for libvirt
 -------------------------
 
@@ -42,17 +46,17 @@ Follow these steps:
 
 #. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
    deployed virtual machine::
-   
+
       $ sudo dnf install ansible nfs-utils vagrant-libvirt
 
 #. You will need to grant the nfsnobody user rx access to the folder that you check out your code
    under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
    does not allow such access to other users. If your code is in $HOME, you will need to::
-   
+
       $ setfacl -m user:nfsnobody:r-x $HOME  # Season to taste, as per above
 
    .. warning::
-   
+
       Wherever you have hosted your code, it would be good to verify that nfsnobody is able to read
       it. If you experience an error message similar to
       "mount.nfs: access denied by server while mounting 192.168.121.1:/path/to/my/code/dir"
@@ -64,11 +68,17 @@ Follow these steps:
       $ sudo systemctl enable nfs-server && sudo systemctl start nfs-server
 
 #. You will need to allow NFS services through your firewall::
-   
+
       $ sudo firewall-cmd --permanent --add-service=nfs
       $ sudo firewall-cmd --permanent --add-service=rpc-bind
       $ sudo firewall-cmd --permanent --add-service=mountd
       $ sudo firewall-cmd --reload
+
+.. note::
+
+  If Vagrant will not start due to the error message
+  ``error creating bridge interface virbr0: File exists``, you can solve it by using
+  ``ifconfig virbr0 down`` and ``brctl delbr virbr``
 
 Prerequisites for docker
 ------------------------
@@ -76,7 +86,7 @@ Prerequisites for docker
 Follow these steps:
 
 #. Install vagrant, ansible, and docker::
-   
+
       $ sudo dnf install vagrant ansible docker
 
 #. Enable and start the docker service::
@@ -117,7 +127,7 @@ After preparing either the libvirt or docker prerequisites using the instruction
    Vagrant environment. We will finish by running ``vagrant reload``. This allows the machine to
    reboot after provisioning.::
 
-      $ cd pulp
+      $ cd devel
       $ cp Vagrantfile.example Vagrantfile
       # Choose ONE of the following, for your preferred provider:
       $ vagrant up --provider=libvirt
@@ -146,6 +156,26 @@ pulp_python, and so forth. Any plugins in folders that start with ``pulp_`` that
 in your host machine's code folder alongside the Pulp platform repository should have been installed
 and configured for virtualenv.
 
+Using Vagrant
+-------------
+
+The Vagrant environment provides some useful built-in commands by default.
+More information about them can be found in command ``phelp``.
+
+List of most useful commands:
+
+* ``pstart`` - Starts all pulp related servicies
+* ``ppopulate`` - Load default testing repositories
+
+.. note::
+
+    You have to issue ``pstart`` after starting vagrant.
+
+.. note::
+
+    If Vagrant is stopped incorrectly, mongo may not be able to start.
+    This can be solved by removing the file ``/var/lib/mongodb/mongod.lock``.
+    To avoid this, always stop your Vagrant environment with ``vagrant halt``.
 
 Advanced Vagrant
 ^^^^^^^^^^^^^^^^
@@ -337,9 +367,9 @@ pulls in the latest dependencies according to the spec file.
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 #. Install some additional dependencies for development::
-   
+
         $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
-        qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
+        qpid-cpp-server qpid-cpp-server-linearstore python-qpid-qmf python-nose \
         python-mock python-paste python-pip python-flake8
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
@@ -474,4 +504,3 @@ into the local source directory. It is run using the ``-U`` flag:
 Each python package installed above must be removed by its package name.::
 
   $ sudo pip uninstall <package name>
-

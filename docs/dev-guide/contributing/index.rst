@@ -19,10 +19,10 @@ For New Contributors
 
 If you are interested in contributing to Pulp, the best way is to select a bug
 that interests you and submit a patch for it. We use `Redmine
-<https://pulp.plan.io/projects/pulp/issues/new>`_
+<https://pulp.plan.io/projects/pulp/issues>`_
 for tracking bugs. Of course, you may have your own idea for a feature or
 bugfix as well! You may want to send an email to pulp-list@redhat.com or ask in
-the #pulp channel on freenode before working on your feature or bugfix. The
+the #pulp-dev channel on freenode before working on your feature or bugfix. The
 other contributors will be able to give you pointers and advice on how to
 proceed. Additionally, if you are looking for a bug that is suitable for a
 first-time contributor, feel free to ask.
@@ -41,30 +41,34 @@ available on the `GitHub help page <https://help.github.com/>`_.
 Contribution Checklist
 ^^^^^^^^^^^^^^^^^^^^^^
 
-1. Make sure that you choose the appropriate upstream branch.
+#. Make sure that you choose the appropriate upstream branch.
 
    :doc:`Branching <branching>`
 
-2. Test your code. We ask that all new code has 100% coverage.
+#. Test your code. We ask that all new code has 100% coverage.
 
    :doc:`Testing </dev-guide/policies/testing>`
 
-3. Please ensure that your code follows our style guide.
+#. Please ensure that your code follows our style guide.
 
    :doc:`Style Guide </dev-guide/policies/style>`
 
-4. Please make sure that any new features are documented and that changes are
+#. Please make sure that any new features are documented and that changes are
    reflected in existing docs.
 
    :doc:`Documentation <documenting>`
 
-5. Please squash your commits and use our commit message guidelines.
+#. Please squash your commits and use our commit message guidelines.
 
    :ref:`rebasing-and-squashing`
 
-6. Make sure your name is in our AUTHORS file found at the root of each of our
+#. Make sure your name is in our AUTHORS file found at the root of each of our
    repositories. That way you can prove to all your friends that you
    contributed to Pulp!
+
+#. Make a PR!
+
+    :ref:`Pull Requests <pull-requests>`
 
 Developer Guide
 ^^^^^^^^^^^^^^^

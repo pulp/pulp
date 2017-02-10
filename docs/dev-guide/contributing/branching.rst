@@ -80,21 +80,29 @@ When a hotfix needs to be made, a branch will be created from the most recent
 fork to the hotfix branch), a new tag will be built from the tip of the hotfix
 branch, and the hotfix branch can be merged to ``x.y-dev``.
 
+.. _bug_fix_branches:
 
 Bug Fix Branches
 ----------------
 
 When creating a Pull Request (PR) that fixes a specific bug, title the PR as
-you would the :ref:`git commit message <commit_messages>`.
+you would a :ref:`git commit message <commit_messages>` with a short,
+human-readable description. Bug fixes should always be made against
+the latest available ``x.y-dev`` branch.
 
+
+.. _feature_branches:
 
 Feature Branches
 ----------------
 
-Similar to bug fix branches, when creating a pull request that holds features
-until they are merged into a development branch, the pull request branch should
-be a brief name relevant to the feature. For example, a branch to add persistent
-named searches might be named "feature/named-searches".
+Similar to bug fix branches, the name of a feature branch and its associated
+Pull Request should be a short, human-readable description of the feature being added.
+For example, a branch to add persistent named searches might be named
+``feature/named-searches``. Also new features should go into latest ``x.y-dev`` branch
+which does not have corresponding ``x.y-release`` branch. In case there is
+no such branch then the ``master`` branch is the right one. If you are not sure
+``master`` branch is always the correct one.
 
 
 .. _choosing-upstream-branch:
@@ -103,8 +111,21 @@ Choosing an Upstream Branch
 ---------------------------
 
 When creating a bug fix or feature branch, it is very important to choose the
-right upstream branch. The general rule is to always choose the oldest upstream
-branch that will need to contain your work.
+right upstream branch. The general rule is to always choose the oldest supported upstream
+branch that will need to contain your work. For more info see above
+:ref:`Feature Branches <feature_branches>` or :ref:`Bug Fix Branches <bug_fix_branches>`.
+
+
+.. _naming-of-the-new-branch:
+
+Naming of the new Branch
+------------------------
+
+It is advised to use the number of your issue or story when you are creating your new branch name.
+Some examples of naming:
+
+  * Issue #2524 - Vagrant enviroment is not starting properly => ``2524-vagrant-init-fix``
+  * Story #2523 - Implement regex upload of packages => ``2523-regex-upload``
 
 .. _commit_messages:
 
@@ -147,6 +168,10 @@ Putting this altogether, the following is an example of a good commit message::
 
     closes #1392
     https://pulp.plan.io/issues/1392
+
+.. note::
+  In case you have multiple commits use ``re`` or ``ref`` in all of them and ``fixes`` or ``close``
+  only in the last one to avoid closing the issue before it's completely done.
 
 Cherry-picking and Rebasing
 ---------------------------
