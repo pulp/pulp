@@ -1,228 +1,423 @@
-from httplib import INTERNAL_SERVER_ERROR, NOT_FOUND, SERVICE_UNAVAILABLE
+from httplib import NOT_FOUND, INTERNAL_SERVER_ERROR
 
-from mock import Mock, patch
-from mongoengine import NotUniqueError
-from twisted.web.server import Request
+from mock import Mock, patch, call
+from mongoengine import DoesNotExist, NotUniqueError
+from nectar.report import DownloadReport
 
 from pulp.common.compat import unittest
+from pulp.devel.unit.util import SideEffect
 from pulp.plugins.loader.exceptions import PluginNotFound
-from pulp.streamer import Responder, StreamerListener, Streamer
+from pulp.server import constants
+from pulp.streamer.server import (
+    Responder, Streamer, DownloadListener, DownloadFailed, HOP_BY_HOP_HEADERS
+)
 
 
 MODULE_PREFIX = 'pulp.streamer.server.'
 
 
-class TestStreamerListener(unittest.TestCase):
-
-    def setUp(self):
-        self.mock_config = Mock()
-        self.mock_config.get.return_value = '1'
-        self.mock_report = Mock()
-        self.mock_report.headers = {}
-        self.listener = StreamerListener(
-            Mock(),
-            self.mock_config,
-            Mock(unit_id='abc', unit_type_id='123'),
-        )
-
-    def test_download_headers_cache_control(self):
-        """
-        The cache-control headers are set appropriately.
-        """
-        self.listener.download_headers(self.mock_report)
-        self.listener.request.setHeader.assert_called_once_with(
-            'Cache-Control',
-            'public, s-maxage=1, max-age=1',
-        )
-
-    def test_download_headers_hop(self):
-        """
-        The cache-control headers are set appropriately.
-        """
-        self.mock_report.headers = {
-            'Content-Length': '1234',
-            'Connection': 'close-if-you-want',
-            'Keep-Alive': 'timeout=UINT_MAX, max=UINT_MAX',
-            'Public': 'True',
-            'Proxy-Authenticate': 'username=alot, password=hunter2',
-            'Transfer-Encoding': 'Braille',
-            'Upgrade': 'True',
-            'Some-Header': 'value'
-        }
-        expected_headers = (
-            ('Content-Length', '1234'),
-            ('Some-Header', 'value'),
-            ('Cache-Control', 'public, s-maxage=1, max-age=1'),
-        )
-
-        self.listener.download_headers(self.mock_report)
-        actual_headers = [c[0] for c in self.listener.request.setHeader.call_args_list]
-        for expected, actual in zip(expected_headers, actual_headers):
-            self.assertEqual(expected, actual)
+class TestListener(unittest.TestCase):
 
     def test_download_failed(self):
-        """
-        The content-length is corrected since Nectar does not download anything if
-        it receives a non-200 response.
-        """
-        self.mock_report.error_report = {'response_code': '418', 'response_msg': 'I am a teapot.'}
-        self.mock_report.url = 'https://example.com/teapot/'
+        report = DownloadReport('', '')
+        report.error_report['response_code'] = 1234
 
-        self.listener.download_failed(self.mock_report)
-        self.assertEqual(('Content-Length', '0'),
-                         self.listener.request.setHeader.call_args_list[0][0])
-        self.listener.request.setResponseCode.assert_called_once_with('418')
+        # test
+        listener = DownloadListener()
+        listener.download_failed(report)
 
-    def test_download_failed_no_response(self):
-        """
-        The content-length is corrected since Nectar does not download anything if
-        it receives a non-200 response.
-        """
-        self.mock_report.error_report = {}
-        self.mock_report.url = 'https://example.com/no_response_for_you'
+    def test_download_failed_not_code(self):
+        report = DownloadReport('', '')
 
-        self.listener.download_failed(self.mock_report)
-        self.assertEqual(('Content-Length', '0'),
-                         self.listener.request.setHeader.call_args_list[0][0])
-        self.listener.request.setResponseCode.assert_called_once_with(SERVICE_UNAVAILABLE)
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload')
-    def test_download_succeeded(self, mock_deferred_download):
-        """Assert a deferred download entry is made."""
-        self.listener.download_succeeded(None)
-        mock_deferred_download.assert_called_once_with(unit_id='abc', unit_type_id='123')
-        mock_deferred_download.return_value.save.assert_called_once_with()
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload')
-    def test_download_succeeded_entry_not_unique(self, mock_deferred_download):
-        """Assert NotUniqueError exceptions are ignored."""
-        # Setup
-        mock_deferred_download.return_value.save.side_effect = NotUniqueError()
-
-        # Test
-        self.listener.download_succeeded(None)
-        mock_deferred_download.return_value.save.assert_called_once_with()
-
-    @patch(MODULE_PREFIX + 'model.DeferredDownload')
-    def test_download_succeeded_pulp_request(self, mock_deferred_download):
-        # Setup
-        self.listener.pulp_request = True
-
-        # Test
-        self.listener.download_succeeded(None)
-        self.assertEqual(0, mock_deferred_download.call_count)
+        # test
+        listener = DownloadListener()
+        listener.download_failed(report)
 
 
 class TestStreamer(unittest.TestCase):
 
-    def setUp(self):
-        self.config = Mock()
-        self.streamer = Streamer(self.config)
-        self.request = Mock(spec=Request)
+    @patch(MODULE_PREFIX + 'reactor')
+    def test_render_GET(self, reactor):
+        request = Mock()
 
-    @patch(MODULE_PREFIX + 'reactor', autospec=True)
-    def test_render_GET(self, mock_reactor):
-        """
-        The handler for GET requests is invoked in a thread so that nectar is safe
-        to use.
-        """
-        self.streamer.render_GET(self.request)
-        mock_reactor.callInThread.assert_called_once_with(self.streamer._handle_get,
-                                                          self.request)
+        # test
+        streamer = Streamer(Mock())
+        streamer.render_GET(request)
 
-    @patch(MODULE_PREFIX + 'model')
-    @patch(MODULE_PREFIX + 'Responder.__exit__')
-    @patch(MODULE_PREFIX + 'Responder.__enter__')
+        # validation
+        reactor.callInThread.assert_called_once_with(streamer._handle_get, request)
+
+    @patch(MODULE_PREFIX + 'Responder')
+    @patch(MODULE_PREFIX + 'Streamer._on_succeeded')
     @patch(MODULE_PREFIX + 'Streamer._download')
-    def test_handle_get(self, mock_download, mock_enter, mock_exit, mock_model):
+    @patch(MODULE_PREFIX + 'LazyCatalogEntry')
+    @patch(MODULE_PREFIX + 'reactor', Mock())
+    def test_handle_get(self, model, _download, _on_succeeded, responder):
         """
-        When the streamer receives a request, the content is downloaded and a task
-        is dispatched.
+         Three catalog entries.
+         The 1st download fails but succeeds on the 2nd.
+         The 3rd is not tried.
         """
-        # Setup
-        self.streamer._add_deferred_download_entry = Mock()
-        self.request.uri = '/a/resource?k=v'
-        self.request.getHeader.return_value = None
-        mock_catalog = mock_model.LazyCatalogEntry.objects.return_value.order_by(
-            '-plugin_id').first.return_value
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        responder.return_value.__enter__.return_value = responder.return_value
+        report = DownloadReport('', '')
+        _download.side_effect = SideEffect(
+            DownloadFailed(report),
+            report,
+            None)
+        catalog = [
+            Mock(url='url-a'),
+            Mock(url='url-b'),
+            Mock(url='url-c'),  # not tried.
+        ]
+        model.objects.filter.return_value.order_by.return_value.all.return_value = catalog
+        model.objects.filter.return_value.order_by.return_value.count.return_value = len(catalog)
 
-        # Test
-        self.streamer._handle_get(self.request)
-        mock_exit.assert_called_once_with(None, None, None)
-        mock_model.LazyCatalogEntry.objects.assert_called_once_with(path='/a/resource')
-        query_set = mock_model.LazyCatalogEntry.objects.return_value
-        self.assertEqual(1, query_set.order_by('importer_id').first.call_count)
-        mock_download.assert_called_once_with(mock_catalog, self.request,
-                                              mock_enter.return_value)
+        # test
+        streamer = Streamer(Mock())
+        streamer._handle_get(request)
 
-    @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
-    @patch(MODULE_PREFIX + 'model', Mock())
-    def test_handle_get_no_plugin(self, mock_repo_controller):
+        # validation
+        model.objects.filter.assert_called_once_with(path='/content/bear.rpm')
+        model.objects.filter.return_value.order_by.\
+            assert_called_once_with('-_id', '-revision')
+        responder.assert_called_once_with(request)
+        _on_succeeded.assert_called_once_with(catalog[1], request, report)
+        self.assertEqual(
+            _download.call_args_list,
+            [
+                call(catalog[0], responder.return_value),
+                call(catalog[1], responder.return_value)
+            ])
+
+    @patch(MODULE_PREFIX + 'Responder')
+    @patch(MODULE_PREFIX + 'Streamer._on_all_failed')
+    @patch(MODULE_PREFIX + 'Streamer._download')
+    @patch(MODULE_PREFIX + 'LazyCatalogEntry')
+    @patch(MODULE_PREFIX + 'reactor', Mock())
+    def test_handle_get_all_failed(self, model, _download, _on_all_failed, responder):
         """
-        When the _download helper method fails to find the plugin, it raises an exception.
+         Three catalog entries.
+         All (3) failed.
         """
-        self.request.uri = '/a/resource?k=v'
-        mock_repo_controller.get_importer_by_id.side_effect = PluginNotFound()
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        responder.return_value.__enter__.return_value = responder.return_value
+        report = DownloadReport('', '')
+        _download.side_effect = SideEffect(
+            PluginNotFound(),
+            DoesNotExist(),
+            DownloadFailed(report))
+        catalog = [
+            Mock(url='url-a'),
+            Mock(url='url-b'),
+            Mock(url='url-c'),
+        ]
+        model.objects.filter.return_value.order_by.return_value.all.return_value = catalog
+        model.objects.filter.return_value.order_by.return_value.count.return_value = len(catalog)
 
-        self.streamer._handle_get(self.request)
-        self.request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
+        # test
+        streamer = Streamer(Mock())
+        streamer._handle_get(request)
 
-    @patch(MODULE_PREFIX + 'logger')
-    @patch(MODULE_PREFIX + 'model')
-    def test_handle_get_no_catalog(self, mock_model, mock_logger):
+        # validation
+        model.objects.filter.assert_called_once_with(path='/content/bear.rpm')
+        model.objects.filter.return_value.order_by.\
+            assert_called_once_with('-_id', '-revision')
+        responder.assert_called_once_with(request)
+        _on_all_failed.assert_called_once_with(request)
+        self.assertEqual(
+            _download.call_args_list,
+            [
+                call(catalog[0], responder.return_value),
+                call(catalog[1], responder.return_value),
+                call(catalog[2], responder.return_value)
+            ])
+
+    @patch(MODULE_PREFIX + 'Responder')
+    @patch(MODULE_PREFIX + 'Streamer._download')
+    @patch(MODULE_PREFIX + 'LazyCatalogEntry')
+    @patch(MODULE_PREFIX + 'reactor', Mock())
+    def test_handle_get_no_catalog_matched(self, model, _download, responder):
         """
-        When there is no catalog entry a DoesNotExist exception is raised and handled.
+        No catalog entries matched.
         """
-        self.request.uri = '/a/resource?k=v'
-        mock_model.LazyCatalogEntry.objects.return_value.\
-            order_by('importer_id').first.return_value = None
+        responder.return_value.__enter__.return_value = responder.return_value
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        catalog = []
+        model.objects.filter.return_value.order_by.return_value.all.return_value = catalog
+        model.objects.filter.return_value.order_by.return_value.count.return_value = len(catalog)
 
-        self.streamer._handle_get(self.request)
-        mock_logger.error.assert_called_once_with('Failed to find a catalog entry '
-                                                  'with path "/a/resource".')
-        self.request.setResponseCode.assert_called_once_with(NOT_FOUND)
+        # test
+        streamer = Streamer(Mock())
+        streamer._handle_get(request)
 
-    @patch(MODULE_PREFIX + 'logger')
-    @patch(MODULE_PREFIX + 'model')
-    def test_handle_get_unexpected_failure(self, mock_model, mock_logger):
-        """
-        When an unexpected exception occurs, the exception is logged. Further, an
-        HTTP 500 is returned.
-        """
-        self.request.uri = '/a/resource?k=v'
-        mock_model.LazyCatalogEntry.objects.return_value. \
-            order_by('importer_id').first = OSError('Disaster.')
+        # validation
+        model.objects.filter.assert_called_once_with(path='/content/bear.rpm')
+        model.objects.filter.return_value.order_by.\
+            assert_called_once_with('-_id', '-revision')
+        request.setResponseCode.assert_called_once_with(NOT_FOUND)
+        self.assertFalse(_download.called)
 
-        self.streamer._handle_get(self.request)
-        mock_logger.exception.assert_called_once_with('An unexpected error occurred while '
-                                                      'handling the request.')
-        self.request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
+    @patch(MODULE_PREFIX + 'LazyCatalogEntry')
+    @patch(MODULE_PREFIX + 'reactor', Mock())
+    def test_handle_get_failed_badly(self, model):
+        request = Mock()
+        model.objects.filter.side_effect = ValueError()
 
-    @patch(MODULE_PREFIX + 'content_container.ContentContainer')
-    @patch(MODULE_PREFIX + 'plugins_api.get_unit_model_by_id')
-    @patch(MODULE_PREFIX + 'repo_controller', autospec=True)
-    def test_download(self, mock_repo_controller, mock_get_unit_model, mock_container):
-        # Setup
-        mock_catalog = Mock(importer_id='mock_id', url='http://dev.null/', working_dir='/tmp',
-                            data={'k': 'v'})
-        mock_request = Mock()
-        mock_responder = Mock()
-        mock_importer = Mock()
-        mock_importer_config = Mock()
-        mock_db_importer = Mock()
-        mock_repo_controller.get_importer_by_id.return_value = (
-            mock_importer, mock_importer_config, mock_db_importer)
-        mock_get_unit_model.return_value.unit_key_fields = tuple()
+        # test
+        streamer = Streamer(Mock())
+        streamer._handle_get(request)
 
-        # Test
-        self.streamer._download(mock_catalog, mock_request, mock_responder)
-        mock_repo_controller.get_importer_by_id.assert_called_once_with(mock_catalog.importer_id)
-        mock_importer.get_downloader_for_db_importer.assert_called_once_with(
-            mock_db_importer,
-            mock_catalog.url,
-            working_dir=mock_catalog.working_dir)
+        # validation
+        request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
 
-        mock_container.return_value.download.assert_called_once()
+    @patch(MODULE_PREFIX + 'Streamer._insert_deferred')
+    @patch(MODULE_PREFIX + 'Streamer._set_headers')
+    def test_on_succeeded_client_requested(self, _set_headers, _insert_deferred):
+        entry = Mock(url='url-a')
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        request.getHeader.side_effect = {
+            constants.PULP_STREAM_REQUEST_HEADER: False
+        }.__getitem__
+        report = DownloadReport('', '')
+        report.headers = {
+            'A': 1,
+            'B': 2,
+        }
+
+        # test
+        streamer = Streamer(Mock())
+        streamer._on_succeeded(entry, request, report)
+
+        # validation
+        _set_headers.assert_called_once_with(request, report)
+        _insert_deferred.assert_called_once_with(entry)
+
+    @patch(MODULE_PREFIX + 'Streamer._insert_deferred')
+    @patch(MODULE_PREFIX + 'Streamer._set_headers')
+    def test_on_succeeded_pulp_requested(self, _set_headers, _insert_deferred):
+        entry = Mock(url='url-a')
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        request.getHeader.side_effect = {
+            constants.PULP_STREAM_REQUEST_HEADER: True
+        }.__getitem__
+        report = DownloadReport('', '')
+        report.headers = {
+            'A': 1,
+            'B': 2,
+        }
+
+        # test
+        streamer = Streamer(Mock())
+        streamer._on_succeeded(entry, request, report)
+
+        # validation
+        _set_headers.assert_called_once_with(request, report)
+        self.assertFalse(_insert_deferred.called)
+
+    def test_on_all_failed(self):
+        request = Mock(uri='http://content-world.com/content/bear.rpm')
+        request.getHeader.side_effect = {
+            constants.PULP_STREAM_REQUEST_HEADER: True
+        }.__getitem__
+
+        # test
+        streamer = Streamer(Mock())
+        streamer._on_all_failed(request)
+
+        # validation
+        request.setHeader.assert_called_once_with('Content-Length', '0')
+        request.setResponseCode.assert_called_once_with(NOT_FOUND)
+
+    @patch(MODULE_PREFIX + 'ContainerRequest')
+    @patch(MODULE_PREFIX + 'ContentContainer')
+    @patch(MODULE_PREFIX + 'Streamer._get_downloader')
+    @patch(MODULE_PREFIX + 'Streamer._get_unit')
+    def test_download(self, _get_unit, _get_downloader, container, request):
+        unit = Mock(unit_id=12, unit_type_id='test')
+        listener = Mock(
+            succeeded_reports=[
+                Mock()
+            ],
+            failed_reports=[])
+        downloader = Mock(event_listener=listener)
+        responder = Mock()
+        entry = Mock(url='url-a')
+        _get_unit.return_value = unit
+        _get_downloader.return_value = downloader
+
+        # test
+        streamer = Streamer(Mock())
+        report = streamer._download(entry, responder)
+
+        # validation
+        _get_unit.assert_called_once_with(entry)
+        _get_downloader.assert_called_once_with(entry)
+        request.assert_called_once_with(
+            entry.unit_type_id,
+            unit.unit_key,
+            entry.url,
+            responder)
+        container.assert_called_once_with(threaded=False)
+        container.return_value.download(downloader, [request.return_value], listener)
+        downloader.config.finalize.assert_called_once_with()
+        self.assertEqual(report, listener.succeeded_reports[0])
+
+    @patch(MODULE_PREFIX + 'ContainerRequest')
+    @patch(MODULE_PREFIX + 'ContentContainer')
+    @patch(MODULE_PREFIX + 'Streamer._get_downloader')
+    @patch(MODULE_PREFIX + 'Streamer._get_unit')
+    def test_download_404(self, _get_unit, _get_downloader, container, request):
+        unit = Mock(unit_id=12, unit_type_id='test')
+        listener = Mock(
+            succeeded_reports=[],
+            failed_reports=[
+                Mock()
+            ])
+        downloader = Mock(event_listener=listener)
+        downloader.config.finalize.side_effect = ValueError()
+        responder = Mock()
+        entry = Mock(url='url-a')
+        _get_unit.return_value = unit
+        _get_downloader.return_value = downloader
+
+        # test
+        streamer = Streamer(Mock())
+        self.assertRaises(DownloadFailed, streamer._download, entry, responder)
+
+        # validation
+        _get_unit.assert_called_once_with(entry)
+        _get_downloader.assert_called_once_with(entry)
+        request.assert_called_once_with(
+            entry.unit_type_id,
+            unit.unit_key,
+            entry.url,
+            responder)
+        container.assert_called_once_with(threaded=False)
+        container.return_value.download(downloader, [request.return_value], listener)
+        downloader.config.finalize.assert_called_once_with()
+
+    @patch(MODULE_PREFIX + 'DownloadListener')
+    @patch(MODULE_PREFIX + 'repo_controller')
+    def test_get_downloader(self, controller, listener):
+        entry = Mock(importer_id='123')
+        importer = Mock()
+        config = Mock()
+        model = Mock()
+        plugin = (importer, config, model)
+        controller.get_importer_by_id.return_value = plugin
+
+        # test
+        streamer = Streamer(Mock())
+        streamer.session = Mock()
+        downloader = streamer._get_downloader(entry)
+
+        # validation
+        controller.get_importer_by_id.assert_called_once_with(entry.importer_id)
+        config.flatten.assert_called_once_with()
+        importer.get_downloader_for_db_importer.assert_called_once_with(
+            model, entry.url, working_dir='/tmp')
+        self.assertEqual(downloader, importer.get_downloader_for_db_importer.return_value)
+        self.assertEqual(downloader.event_listener, listener.return_value)
+        self.assertEqual(downloader.session, streamer.session)
+
+    @patch(MODULE_PREFIX + 'AggregatingEventListener')
+    @patch(MODULE_PREFIX + 'repo_controller')
+    def test_get_downloader_not_found(self, controller, listener):
+        entry = Mock(importer_id='123')
+        controller.get_importer_by_id.side_effect = PluginNotFound()
+
+        # test
+        streamer = Streamer(Mock())
+        self.assertRaises(PluginNotFound, streamer._get_downloader, entry)
+
+    @patch(MODULE_PREFIX + 'plugin_api')
+    def test_get_unit(self, plugin_api):
+        q_set = Mock()
+        q_set.filter.return_value = q_set
+        q_set.only.return_value = q_set
+        model = Mock(
+            objects=q_set,
+            unit_key_fields=[1, 2])
+        entry = Mock(importer_id='123', unit_id=345, unit_type_id='xx')
+        plugin_api.get_unit_model_by_id.return_value = model
+
+        # test
+        streamer = Streamer(Mock())
+        unit = streamer._get_unit(entry)
+
+        # validation
+        plugin_api.get_unit_model_by_id.assert_called_once_with(entry.unit_type_id)
+        q_set.filter.assert_called_once_with(id=entry.unit_id)
+        q_set.only.assert_called_once_with(*model.unit_key_fields)
+        self.assertEqual(unit, q_set.get.return_value)
+
+    @patch(MODULE_PREFIX + 'plugin_api')
+    def test_get_unit_not_found(self, plugin_api):
+        q_set = Mock()
+        q_set.filter.return_value = q_set
+        q_set.only.return_value = q_set
+        model = Mock(
+            objects=q_set,
+            unit_key_fields=[1, 2])
+        entry = Mock(importer_id='123', unit_id=345, unit_type_id='xx')
+        plugin_api.get_unit_model_by_id.return_value = model
+        q_set.get.side_effect = DoesNotExist
+
+        # test
+        streamer = Streamer(Mock())
+        self.assertRaises(DoesNotExist, streamer._get_unit, entry)
+
+    def test_set_headers(self):
+        request = Mock(
+            uri='http://content-world.com/content/bear.rpm',
+            headers={})
+        request.setHeader.side_effect = request.headers.__setitem__
+        report = DownloadReport('', '')
+        report.headers = {
+            'A': 1,
+            'B': 2,
+        }
+
+        # should be ignored.
+        report.headers.update({k: '' for k in HOP_BY_HOP_HEADERS})
+
+        config = Mock(properties={
+            'streamer': {
+                'cache_timeout': 100
+            }
+        })
+
+        def get(s, p):
+            return config.properties[s][p]
+
+        config.get.side_effect = get
+
+        # test
+        streamer = Streamer(config)
+        streamer._set_headers(request, report)
+
+        # validation
+        self.assertEqual(
+            request.headers,
+            {
+                'Cache-Control': 'public, s-maxage=100, max-age=100',
+                'A': 1,
+                'B': 2,
+            })
+
+    @patch(MODULE_PREFIX + 'DeferredDownload')
+    def test_insert_deferred(self, model):
+        entry = Mock(unit_id=123, unit_type_id='xx')
+        model.return_value.save.side_effect = NotUniqueError()
+
+        # test
+        streamer = Streamer(Mock())
+        streamer._insert_deferred(entry)
+
+        # validation
+        model.assert_called_once_with(unit_id=entry.unit_id, unit_type_id=entry.unit_type_id)
+        model.return_value.save.assert_called_once_with()
 
 
 class TestResponder(unittest.TestCase):
@@ -252,20 +447,20 @@ class TestResponder(unittest.TestCase):
         """
         responder = Responder(Mock())
         responder.close()
-        mock_reactor.callFromThread.assert_called_once_with(responder.finish_wrapper)
+        mock_reactor.callFromThread.assert_called_once_with(responder.finish)
 
-    def test_finish_wrapper(self):
+    def test_finish(self):
         """Assert the ``finish`` method is called by its wrapper"""
         responder = Responder(Mock())
-        responder.finish_wrapper()
+        responder.finish()
         responder.request.finish.assert_called_once_with()
 
     @patch(MODULE_PREFIX + 'logger')
-    def test_finish_wrapper_exception(self, mock_logger):
+    def test_finish_exception(self, mock_logger):
         """Assert that if ``finish`` raises a RuntimeError, it's logged."""
         responder = Responder(Mock())
         responder.request.finish.side_effect = RuntimeError('Womp womp')
-        responder.finish_wrapper()
+        responder.finish()
         responder.request.finish.assert_called_once_with()
         mock_logger.debug.assert_called_once_with('Womp womp')
 
@@ -290,4 +485,4 @@ class TestResponder(unittest.TestCase):
 
         mock_calls = mock_reactor.callFromThread.call_args_list
         self.assertEqual((mock_request.write, 'some data'), mock_calls[0][0])
-        self.assertEqual((r.finish_wrapper,), mock_calls[1][0])
+        self.assertEqual((r.finish,), mock_calls[1][0])
