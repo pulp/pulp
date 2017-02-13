@@ -16,8 +16,9 @@ class StatusManagerTests(PulpServerTests):
 
     @patch('pulp.server.db.model.Worker.objects')
     def test_get_workers(self, mock_worker_objects):
-        mock_worker_objects.return_value = [{"last_heartbeat": "123456", "name": "some_worker_1"},
-                                            {"last_heartbeat": "123456", "name": "some_worker_2"}]
+        get_online = mock_worker_objects.get_online
+        get_online.return_value = [{"last_heartbeat": "123456", "name": "some_worker_1"},
+                                   {"last_heartbeat": "123456", "name": "some_worker_2"}]
 
         self.assertEquals(status_manager.get_workers(), [{"last_heartbeat": "123456",
                                                           "name": "some_worker_1"},

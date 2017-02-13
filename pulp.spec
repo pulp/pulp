@@ -35,7 +35,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.12.1
+Version: 2.13.0
 Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -496,6 +496,9 @@ chmod 644 $KEY_PATH_PUB
 chown root:apache $KEY_PATH
 chown root:apache $KEY_PATH_PUB
 ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
+
+# Remove old serial number file
+rm -f /var/lib/pulp/sn.dat
 
 # CA certificate
 if [ $1 -eq 1 ]; # not an upgrade
@@ -1053,13 +1056,6 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Tue Jan 17 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-0.1.beta
-- 752 - Fixed: Suggestion to add -v remains even if you use -v
-  (fdobrovo@redhat.com)
-- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
-- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
-- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
-
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 

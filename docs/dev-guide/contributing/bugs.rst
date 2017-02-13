@@ -93,7 +93,8 @@ Developer
    as well as a brief description of what the change is. It is not required to find and assign
    someone to do the review.
 #. When the pull request is submitted, the developer changes the status of the bug to ``POST`` and
-   includes a link to the open pull request.
+   includes a link to the open pull request. Pull requests with the ``Work In Progress`` label
+   should remain in ``ASSIGNED`` state until the ``Work In Progress`` label is removed.
 #. Wait for someone to review the pull request. The reviewer(s) will either approve the pull request
    or request changes that must be addressed before the pull request can be merged. Pull requests
    should have at least one approved review and no reviews requesting changes before being merged.
