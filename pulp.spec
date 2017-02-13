@@ -1,7 +1,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
-%if 0%{?rhel} == 5
+# don't use <= 6 here, since %{?rhel} is empty on fedora, and 0 is <= 6
+%if 0%{?rhel} == 5 || 0%{?rhel} == 6
 %define pulp_admin 0
 %define pulp_client_oauth 0
 %define pulp_server 0
@@ -35,7 +36,7 @@
 
 Name: pulp
 Version: 2.12.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -325,6 +326,7 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
 cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
+mkdir -p %{buildroot}/%{_sysconfdir}/bash_completion.d
 cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdir}/bash_completion.d/
 %endif
 
@@ -491,6 +493,9 @@ chmod 644 $KEY_PATH_PUB
 chown root:apache $KEY_PATH
 chown root:apache $KEY_PATH_PUB
 ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
+
+# Remove old serial number file
+rm -f /var/lib/pulp/sn.dat
 
 # CA certificate
 if [ $1 -eq 1 ]; # not an upgrade
@@ -1048,22 +1053,6 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Wed Feb 01 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-1
-- Pulp rebuild
-
-* Wed Jan 25 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-0.3.rc
-- Pulp rebuild
-
-* Tue Jan 24 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-0.2.rc
-- Pulp rebuild
-
-* Tue Jan 17 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-0.1.beta
-- 752 - Fixed: Suggestion to add -v remains even if you use -v
-  (fdobrovo@redhat.com)
-- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
-- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
-- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
-
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild
 
