@@ -433,7 +433,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %else
 # Install the systemd unit files
 %defattr(-,root,root,-)
-%{_usr}/lib/systemd/system/*
+# list these explicitly (don't glob) to prevent pulling in extra service files
+%{_usr}/lib/systemd/system/pulp_celerybeat.service
+%{_usr}/lib/systemd/system/pulp_workers.service
+%{_usr}/lib/systemd/system/pulp_resource_manager.service
 %defattr(-,root,root,-)
 %{_usr}/lib/tmpfiles.d/
 %endif
