@@ -115,6 +115,7 @@ _default_values = {
         'debugging_mode': 'false',
         'storage_dir': '/var/lib/pulp/',
         'log_level': 'INFO',
+        'log_type': 'syslog',
         'key_url': '/pulp/gpg',
         'ks_url': '/pulp/ks',
         'working_directory': '/var/cache/pulp'
