@@ -18,19 +18,58 @@ MODULE_PREFIX = 'pulp.streamer.server.'
 
 class TestListener(unittest.TestCase):
 
+    def test_download_headers(self):
+        request = Mock(
+            uri='http://content-world.com/content/bear.rpm',
+            headers={})
+        request.setHeader.side_effect = request.headers.__setitem__
+        report = DownloadReport('', '')
+        report.headers = {
+            'A': 1,
+            'B': 2,
+        }
+
+        # should be ignored.
+        report.headers.update({k: '' for k in HOP_BY_HOP_HEADERS})
+
+        config = Mock(properties={
+            'streamer': {
+                'cache_timeout': 100
+            }
+        })
+
+        def get(s, p):
+            return config.properties[s][p]
+
+        config.get.side_effect = get
+        streamer = Mock(config=config)
+
+        # test
+        listener = DownloadListener(streamer, request)
+        listener.download_headers(report)
+
+        # validation
+        self.assertEqual(
+            request.headers,
+            {
+                'Cache-Control': 'public, s-maxage=100, max-age=100',
+                'A': 1,
+                'B': 2,
+            })
+
     def test_download_failed(self):
         report = DownloadReport('', '')
         report.error_report['response_code'] = 1234
 
         # test
-        listener = DownloadListener()
+        listener = DownloadListener(None, None)
         listener.download_failed(report)
 
     def test_download_failed_not_code(self):
         report = DownloadReport('', '')
 
         # test
-        listener = DownloadListener()
+        listener = DownloadListener(None, None)
         listener.download_failed(report)
 
 
@@ -86,8 +125,8 @@ class TestStreamer(unittest.TestCase):
         self.assertEqual(
             _download.call_args_list,
             [
-                call(catalog[0], responder.return_value),
-                call(catalog[1], responder.return_value)
+                call(request, catalog[0], responder.return_value),
+                call(request, catalog[1], responder.return_value)
             ])
 
     @patch(MODULE_PREFIX + 'Responder')
@@ -128,9 +167,9 @@ class TestStreamer(unittest.TestCase):
         self.assertEqual(
             _download.call_args_list,
             [
-                call(catalog[0], responder.return_value),
-                call(catalog[1], responder.return_value),
-                call(catalog[2], responder.return_value)
+                call(request, catalog[0], responder.return_value),
+                call(request, catalog[1], responder.return_value),
+                call(request, catalog[2], responder.return_value)
             ])
 
     @patch(MODULE_PREFIX + 'Responder')
@@ -172,8 +211,7 @@ class TestStreamer(unittest.TestCase):
         request.setResponseCode.assert_called_once_with(INTERNAL_SERVER_ERROR)
 
     @patch(MODULE_PREFIX + 'Streamer._insert_deferred')
-    @patch(MODULE_PREFIX + 'Streamer._set_headers')
-    def test_on_succeeded_client_requested(self, _set_headers, _insert_deferred):
+    def test_on_succeeded_client_requested(self, _insert_deferred):
         entry = Mock(url='url-a')
         request = Mock(uri='http://content-world.com/content/bear.rpm')
         request.getHeader.side_effect = {
@@ -190,12 +228,10 @@ class TestStreamer(unittest.TestCase):
         streamer._on_succeeded(entry, request, report)
 
         # validation
-        _set_headers.assert_called_once_with(request, report)
         _insert_deferred.assert_called_once_with(entry)
 
     @patch(MODULE_PREFIX + 'Streamer._insert_deferred')
-    @patch(MODULE_PREFIX + 'Streamer._set_headers')
-    def test_on_succeeded_pulp_requested(self, _set_headers, _insert_deferred):
+    def test_on_succeeded_pulp_requested(self, _insert_deferred):
         entry = Mock(url='url-a')
         request = Mock(uri='http://content-world.com/content/bear.rpm')
         request.getHeader.side_effect = {
@@ -212,7 +248,6 @@ class TestStreamer(unittest.TestCase):
         streamer._on_succeeded(entry, request, report)
 
         # validation
-        _set_headers.assert_called_once_with(request, report)
         self.assertFalse(_insert_deferred.called)
 
     def test_on_all_failed(self):
@@ -234,6 +269,7 @@ class TestStreamer(unittest.TestCase):
     @patch(MODULE_PREFIX + 'Streamer._get_downloader')
     @patch(MODULE_PREFIX + 'Streamer._get_unit')
     def test_download(self, _get_unit, _get_downloader, container, request):
+        twisted_request = Mock()
         unit = Mock(unit_id=12, unit_type_id='test')
         listener = Mock(
             succeeded_reports=[
@@ -248,11 +284,11 @@ class TestStreamer(unittest.TestCase):
 
         # test
         streamer = Streamer(Mock())
-        report = streamer._download(entry, responder)
+        report = streamer._download(twisted_request, entry, responder)
 
         # validation
         _get_unit.assert_called_once_with(entry)
-        _get_downloader.assert_called_once_with(entry)
+        _get_downloader.assert_called_once_with(twisted_request, entry)
         request.assert_called_once_with(
             entry.unit_type_id,
             unit.unit_key,
@@ -268,6 +304,7 @@ class TestStreamer(unittest.TestCase):
     @patch(MODULE_PREFIX + 'Streamer._get_downloader')
     @patch(MODULE_PREFIX + 'Streamer._get_unit')
     def test_download_404(self, _get_unit, _get_downloader, container, request):
+        twisted_request = Mock()
         unit = Mock(unit_id=12, unit_type_id='test')
         listener = Mock(
             succeeded_reports=[],
@@ -283,11 +320,11 @@ class TestStreamer(unittest.TestCase):
 
         # test
         streamer = Streamer(Mock())
-        self.assertRaises(DownloadFailed, streamer._download, entry, responder)
+        self.assertRaises(DownloadFailed, streamer._download, twisted_request, entry, responder)
 
         # validation
         _get_unit.assert_called_once_with(entry)
-        _get_downloader.assert_called_once_with(entry)
+        _get_downloader.assert_called_once_with(twisted_request, entry)
         request.assert_called_once_with(
             entry.unit_type_id,
             unit.unit_key,
@@ -300,6 +337,7 @@ class TestStreamer(unittest.TestCase):
     @patch(MODULE_PREFIX + 'DownloadListener')
     @patch(MODULE_PREFIX + 'repo_controller')
     def test_get_downloader(self, controller, listener):
+        request = Mock()
         entry = Mock(importer_id='123')
         importer = Mock()
         config = Mock()
@@ -310,13 +348,14 @@ class TestStreamer(unittest.TestCase):
         # test
         streamer = Streamer(Mock())
         streamer.session = Mock()
-        downloader = streamer._get_downloader(entry)
+        downloader = streamer._get_downloader(request, entry)
 
         # validation
         controller.get_importer_by_id.assert_called_once_with(entry.importer_id)
         config.flatten.assert_called_once_with()
         importer.get_downloader_for_db_importer.assert_called_once_with(
             model, entry.url, working_dir='/tmp')
+        listener.assert_called_once_with(streamer, request)
         self.assertEqual(downloader, importer.get_downloader_for_db_importer.return_value)
         self.assertEqual(downloader.event_listener, listener.return_value)
         self.assertEqual(downloader.session, streamer.session)
@@ -329,7 +368,7 @@ class TestStreamer(unittest.TestCase):
 
         # test
         streamer = Streamer(Mock())
-        self.assertRaises(PluginNotFound, streamer._get_downloader, entry)
+        self.assertRaises(PluginNotFound, streamer._get_downloader, Mock(), entry)
 
     @patch(MODULE_PREFIX + 'plugin_api')
     def test_get_unit(self, plugin_api):
@@ -367,44 +406,6 @@ class TestStreamer(unittest.TestCase):
         # test
         streamer = Streamer(Mock())
         self.assertRaises(DoesNotExist, streamer._get_unit, entry)
-
-    def test_set_headers(self):
-        request = Mock(
-            uri='http://content-world.com/content/bear.rpm',
-            headers={})
-        request.setHeader.side_effect = request.headers.__setitem__
-        report = DownloadReport('', '')
-        report.headers = {
-            'A': 1,
-            'B': 2,
-        }
-
-        # should be ignored.
-        report.headers.update({k: '' for k in HOP_BY_HOP_HEADERS})
-
-        config = Mock(properties={
-            'streamer': {
-                'cache_timeout': 100
-            }
-        })
-
-        def get(s, p):
-            return config.properties[s][p]
-
-        config.get.side_effect = get
-
-        # test
-        streamer = Streamer(config)
-        streamer._set_headers(request, report)
-
-        # validation
-        self.assertEqual(
-            request.headers,
-            {
-                'Cache-Control': 'public, s-maxage=100, max-age=100',
-                'A': 1,
-                'B': 2,
-            })
 
     @patch(MODULE_PREFIX + 'DeferredDownload')
     def test_insert_deferred(self, model):
