@@ -52,6 +52,36 @@ class DownloadListener(AggregatingEventListener):
     Nectar download listener.
     """
 
+    def __init__(self, streamer, request):
+        """
+        :param streamer: The streamer.
+        :type  streamer: Streamer
+        :param request: The original twisted client HTTP request being handled by the streamer.
+        :type  request: twisted.web.server.Request
+        """
+        super(DownloadListener, self).__init__()
+        self.streamer = streamer
+        self.request = request
+
+    def download_headers(self, report):
+        """
+        Forward response headers to the original client HTTP request.
+        This includes adding the cache-control header with the max-age
+        which is loaded from the configuration.
+
+        :param report: The download report.
+        :type  report: nectar.report.DownloadReport
+        """
+        super(DownloadListener, self).download_headers(report)
+        # forward
+        for key, value in report.headers.items():
+            if key.lower() not in HOP_BY_HOP_HEADERS:
+                self.request.setHeader(key, value)
+        # additions
+        max_age = self.streamer.config.get('streamer', 'cache_timeout')
+        cache_control = 'public, s-maxage={m}, max-age={m}'.format(m=max_age)
+        self.request.setHeader('Cache-Control', cache_control)
+
     def download_failed(self, report):
         """
         Log download failures.
@@ -102,7 +132,7 @@ class Streamer(Resource):
             * The file is downloaded using the Nectar downloader and the content
               is streamed to the client as it is received.
 
-        :param request: the request to process.
+        :param request: The original twisted client HTTP request being handled by the streamer.
         :type  request: twisted.web.server.Request
         """
         reactor.callInThread(self._handle_get, request)
@@ -113,7 +143,7 @@ class Streamer(Resource):
         Download the requested content using the content unit catalog and dispatch
         a celery task that causes Pulp to download the newly cached unit.
 
-        :param request: An HTTP request.
+        :param request: The original twisted client HTTP request being handled by the streamer.
         :type  request: twisted.web.server.Request
         """
         with Responder(request) as responder:
@@ -129,7 +159,7 @@ class Streamer(Resource):
                 for entry in q_set.all():
                     logger.info('Trying URL: {url}'.format(url=entry.url))
                     try:
-                        last_report = self._download(entry, responder)
+                        last_report = self._download(request, entry, responder)
                         self._on_succeeded(entry, request, last_report)
                         return
                     except (DownloadFailed, DoesNotExist, PluginNotFound):
@@ -153,7 +183,6 @@ class Streamer(Resource):
         :param report: A download report.
         :type  report: nectar.report.DownloadReport
         """
-        self._set_headers(request, report)
         pulp_requested = request.getHeader(PULP_STREAM_REQUEST_HEADER)
         if not pulp_requested:
             self._insert_deferred(entry)
@@ -163,17 +192,19 @@ class Streamer(Resource):
         """
         All downloads failed.
 
-        :param request: An HTTP request.
+        :param request: The original twisted client HTTP request being handled by the streamer.
         :type  request: twisted.web.server.Request
         """
         logger.error(_('All download attempts failed: {url}').format(url=request.uri))
         request.setHeader('Content-Length', '0')
         request.setResponseCode(NOT_FOUND)
 
-    def _download(self, entry, responder):
+    def _download(self, request, entry, responder):
         """
         Download the file.
 
+        :param request: The original twisted client HTTP request being handled by the streamer.
+        :type  request: twisted.web.server.Request
         :param entry: The catalog entry to download.
         :type  entry: pulp.server.db.model.LazyCatalogEntry
         :param responder: The file-like object that nectar should write to.
@@ -185,7 +216,7 @@ class Streamer(Resource):
 
         try:
             unit = self._get_unit(entry)
-            downloader = self._get_downloader(entry)
+            downloader = self._get_downloader(request, entry)
             alt_request = ContainerRequest(
                 entry.unit_type_id,
                 unit.unit_key,
@@ -205,10 +236,12 @@ class Streamer(Resource):
                 # ignored.
                 pass
 
-    def _get_downloader(self, entry):
+    def _get_downloader(self, request, entry):
         """
         Get the configured downloader.
 
+        :param request: The original twisted client HTTP request being handled by the streamer.
+        :type  request: twisted.web.server.Request
         :param entry: A catalog entry.
         :type  entry: LazyCatalogEntry
         :return: The configured downloader.
@@ -222,7 +255,7 @@ class Streamer(Resource):
             model.config = config.flatten()
             downloader = importer.get_downloader_for_db_importer(
                 model, entry.url, working_dir='/tmp')
-            listener = DownloadListener()
+            listener = DownloadListener(self, request)
             downloader.event_listener = listener
             downloader.session = self.session
             return downloader
@@ -254,27 +287,6 @@ class Streamer(Resource):
                 id=entry.unit_id))
             raise
 
-    def _set_headers(self, request, report):
-        """
-        Forward response headers to the original client HTTP request.
-        This includes adding the cache-control header with the max-age
-        which is loaded from the configuration.
-
-        :param request: An HTTP request.
-        :type  request: twisted.web.server.Request
-        :param report: The download report.
-        :type  report: nectar.report.DownloadReport
-        :return:
-        """
-        # forward
-        for key, value in report.headers.items():
-            if key.lower() not in HOP_BY_HOP_HEADERS:
-                request.setHeader(key, value)
-        # additions
-        max_age = self.config.get('streamer', 'cache_timeout')
-        cache_control = 'public, s-maxage={m}, max-age={m}'.format(m=max_age)
-        request.setHeader('Cache-Control', cache_control)
-
     @staticmethod
     def _insert_deferred(entry):
         """
@@ -304,7 +316,7 @@ class Responder(object):
         """
         Initialize a new Responder.
 
-        :param request: the request to forward the written data to.
+        :param request: The original twisted client HTTP request being handled by the streamer.
         :type  request: twisted.web.server.Request
         """
         self.request = request
