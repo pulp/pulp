@@ -11,7 +11,7 @@ else:
 
 setup(
     name='pulp-devel',
-    version='2.12.1a1',
+    version='2.12.1b1',
     license='GPLv2+',
     packages=find_packages(exclude=['test', 'test.*']),
     author='Pulp Team',
