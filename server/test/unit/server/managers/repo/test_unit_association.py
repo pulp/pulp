@@ -230,13 +230,12 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_imp_inst.import_units.call_count)
         self.assertEqual(ret.get('units_successful'), [])
 
-    @mock.patch('pulp.server.controllers.repository.update_last_unit_added')
     @mock.patch('pulp.server.controllers.repository.rebuild_content_unit_counts', spec_set=True)
     @mock.patch('pulp.server.managers.repo.unit_association.UnitAssociationCriteria')
     @mock.patch('pulp.server.managers.repo.unit_association.plugin_api')
     @mock.patch('pulp.server.managers.repo.unit_association.model.Importer')
     def test_associate_from_repo_return_tuple(self, mock_importer, mock_plugin, mock_repo,
-                                              mock_crit, mock_rebuild_count, mock_last_unit_added):
+                                              mock_crit, mock_rebuild_count):
         mock_imp_inst = mock.MagicMock()
         mock_plugin.get_importer_by_id.return_value = (mock_imp_inst, mock.MagicMock())
         source_repo = mock.MagicMock(repo_id='source-repo')
@@ -249,7 +248,6 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         mock_imp_inst.import_units.return_value = (list(), list())
         ret = self.manager.associate_from_repo('source_repo', 'dest_repo', mock_crit)
 
-        mock_last_unit_added.assert_called_once()
         self.assertEqual(1, mock_imp_inst.import_units.call_count)
         self.assertEqual(ret.get('units_successful'), [])
         self.assertEqual(ret.get('units_failed_signature_filter'), [])

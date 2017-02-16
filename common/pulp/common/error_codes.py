@@ -122,6 +122,11 @@ PLP0047 = Error("PLP0047", _("The importer %(importer_id)s indicated a failed re
                 ['importer_id', 'unit_type', 'repo_id'])
 PLP0048 = Error("PLP0048", _("The file is expected to be present, but is not, for unit %(unit)s"),
                 ['unit'])
+PLP0049 = Error(
+    "PLP0049",
+    _('Worker terminated abnormally while processing task %(task_id)s.  '
+      'Check the logs for details'),
+    ['task_id'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
