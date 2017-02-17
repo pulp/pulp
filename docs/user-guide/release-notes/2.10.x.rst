@@ -20,7 +20,7 @@ Known Issues
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.10.2`
+See the list of :fixedbugs_pulp:`2.10.2`
 
 
 Pulp 2.10.1
@@ -29,7 +29,7 @@ Pulp 2.10.1
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.10.1`
+See the list of :fixedbugs_pulp:`2.10.1`
 
 
 Pulp 2.10.0

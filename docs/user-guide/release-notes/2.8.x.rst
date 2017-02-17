@@ -8,7 +8,7 @@ Pulp 2.8.7
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.8.7`
+See the list of :fixedbugs_pulp:`2.8.7`
 
 
 Pulp 2.8.6
@@ -17,7 +17,7 @@ Pulp 2.8.6
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.8.6`
+See the list of :fixedbugs_pulp:`2.8.6`
 
 
 Pulp 2.8.5
@@ -30,7 +30,7 @@ Pulp 2.8.5
 
 2.8.5 is a security and bugfix release.
 
-Included in the list of :fixedbugs:`2.8.5` are two CVEs:
+Included in the list of :fixedbugs_pulp:`2.8.5` are two CVEs:
 
     * `CVE-2016-3696 <https://pulp.plan.io/issues/1854>`_: Leakage of CA key in pulp-qpid-ssl-cfg
     * `CVE-2016-3704 <https://pulp.plan.io/issues/1858>`_: Unsafe use of bash $RANDOM for NSS DB
@@ -87,7 +87,7 @@ with migrations, should be followed::
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.8.4`
+See the list of :fixedbugs_pulp:`2.8.4`
 
 
 Pulp 2.8.3
@@ -100,7 +100,7 @@ Pulp 2.8.3
 
 2.8.3 is a security and bugfix release. This release includes new migrations that need to be run.
 
-Included in the list of :fixedbugs:`2.8.3` are a number of CVEs:
+Included in the list of :fixedbugs_pulp:`2.8.3` are a number of CVEs:
 
     * `CVE-2016-3106 <https://pulp.plan.io/issues/1827>`_: Insecure creation of temporary directory
       when generating new CA key
@@ -274,7 +274,7 @@ Pulp 2.8.1
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.8.1`
+See the list of :fixedbugs_pulp:`2.8.1`
 
 
 Pulp 2.8.0

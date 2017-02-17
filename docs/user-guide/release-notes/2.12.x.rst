@@ -84,4 +84,4 @@ Upgrade using the normal process::
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.12.0`
+See the list of :fixedbugs_pulp:`2.12.0`

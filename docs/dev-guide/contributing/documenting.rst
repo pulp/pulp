@@ -81,17 +81,23 @@ text for the link using this syntax::
      :redmine:`my new link text <123>`
 
 Which creates this link: :redmine:`my new link text <123>` There is also a
-``:fixedbugs:`` directive to link to all bugs for a specific version of Pulp.
+``:fixedbugs_<project name>:`` directive to link to all bugs for a specific
+version of Pulp or its plugins.
 This is useful in release notes. For example::
 
-     :fixedbugs:`2.6.0`
+     :fixedbugs_pulp:`2.6.0`
 
-Create a link to bugs fixed in 2.6.0 like this: :fixedbugs:`2.6.0`. This can
+Create a link to bugs fixed in Pulp 2.6.0 like this: :fixedbugs_pulp:`2.6.0`. This can
 have its link text set using the syntax::
 
-     :fixedbugs:`these great bugs were fixed <2.6.0>`
+     :fixedbugs_pulp:`these great bugs were fixed <2.6.0>`
 
-Which creates this link: :fixedbugs:`these great bugs were fixed <2.6.0>`
+Which creates this link: :fixedbugs_pulp:`these great bugs were fixed <2.6.0>`.
+
+To create a link to bugs fixed in plugins, use their github project name in the directive.
+For example, for RPM plugin, use the ``:fixedbugs_pulp_rpm:`` directive::
+
+     :fixedbugs_pulp_rpm:`2.6.0`
 
 Build Docs Locally
 ------------------

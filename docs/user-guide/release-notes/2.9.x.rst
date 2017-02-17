@@ -8,7 +8,7 @@ Pulp 2.9.3
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.9.3`
+See the list of :fixedbugs_pulp:`2.9.3`
 
 
 Pulp 2.9.2
@@ -19,7 +19,7 @@ This is a hotfix release to address critical issues discovered after the release
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.9.2`
+See the list of :fixedbugs_pulp:`2.9.2`
 
 
 Pulp 2.9.1
@@ -28,7 +28,7 @@ Pulp 2.9.1
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.9.1`
+See the list of :fixedbugs_pulp:`2.9.1`
 
 
 Pulp 2.9.0
@@ -48,4 +48,4 @@ New Features
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.9.0`
+See the list of :fixedbugs_pulp:`2.9.0`
