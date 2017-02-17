@@ -100,7 +100,7 @@ After the database migrations finish, restart `httpd`, `pulp_workers`, `pulp_cel
 Bugs
 ----
 
-This release has fixes for :fixedbugs:`these issues <2.7.0>`.
+This release has fixes for :fixedbugs_pulp:`these issues <2.7.0>`.
 
 Known Issues
 ------------
