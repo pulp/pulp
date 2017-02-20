@@ -14,13 +14,13 @@ Pulp 2.6.5
 Bug Fixes
 ---------
 
-This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.5>`.
+This is a minor release which contains bug fixes for :fixedbugs_pulp:`these issues <2.6.5>`.
 
 Pulp 2.6.4
 ==========
 
 Pulp 2.6.4 is an important security update. It fixes
-:fixedbugs:`one issue <2.6.4>`.
+:fixedbugs_pulp:`one issue <2.6.4>`.
 
 A security flaw (CVE-2015-5263) was discovered in Pulp's consumer
 management system. When the pulp-consumer CLI is used to register to the
@@ -63,7 +63,7 @@ for more detail.
 Bug Fixes
 ---------
 
-This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.3>`.
+This is a minor release which contains bug fixes for :fixedbugs_pulp:`these issues <2.6.3>`.
 
 Pulp 2.6.2
 ==========
@@ -71,7 +71,7 @@ Pulp 2.6.2
 Bug Fixes
 ---------
 
-This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.2>`.
+This is a minor release which contains bug fixes for :fixedbugs_pulp:`these issues <2.6.2>`.
 
 Pulp 2.6.1
 ==========
@@ -79,7 +79,7 @@ Pulp 2.6.1
 Bug Fixes
 ---------
 
-This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.1>`.
+This is a minor release which contains bug fixes for :fixedbugs_pulp:`these issues <2.6.1>`.
 
 Improvements
 ------------
@@ -175,7 +175,7 @@ After the database migrations finish, restart `httpd`, `pulp_workers`, `pulp_cel
 Bugs
 ----
 
-This release has fixes for :fixedbugs:`these issues <2.6.0>`.
+This release has fixes for :fixedbugs_pulp:`these issues <2.6.0>`.
 
 Known Issues
 ------------
