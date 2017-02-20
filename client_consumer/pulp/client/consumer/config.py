@@ -1,8 +1,8 @@
 import os
 import socket
 
-from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL, OPTIONAL, get_from_default_paths
-from pulp.common.constants import DEFAULT_CA_PATH_LIST
+from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL, OPTIONAL
+from pulp.common.constants import DEFAULT_CA_PATH
 
 
 DEFAULT = {
@@ -12,7 +12,7 @@ DEFAULT = {
         'api_prefix': '/pulp/api',
         'rsa_pub': '/etc/pki/pulp/consumer/server/rsa_pub.key',
         'verify_ssl': 'true',
-        'ca_path': get_from_default_paths(DEFAULT_CA_PATH_LIST),
+        'ca_path': DEFAULT_CA_PATH,
     },
     'authentication': {
         'rsa_key': '/etc/pki/pulp/consumer/rsa.key',
