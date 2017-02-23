@@ -17,6 +17,15 @@ this `blog post <http://pulpproject.org/2016/11/17/django14-epel6-retirement/>`_
 motivation for this decision.
 
 
+Pulp 2.12.1
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.12.1`
+
+
 Pulp 2.12.0
 ===========
 
