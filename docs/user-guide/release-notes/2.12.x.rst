@@ -48,6 +48,9 @@ New Features
   not exist, it will be created. If the tag exists however, it will be updated as tag name is unique
   per repository and can point to only one manifest.
 
+* Pulp Python plugin now supports wheel packages. More information can be found in the `Python
+  Plugin release notes <../../plugins/pulp_python/release-notes/2.0.html>`_.
+
 
 Deprecation
 -----------

@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 SAFE_STORAGE_SUBDIRS = ('published', 'content', 'static')
 
+# xsendfile doesn't use Content-Encoding, so create a mimetypes instance that has no encodings
+# to ensure it only ever returns Content-Type guesses without the Content-Encoding component
+mimetypes_noencoding = mimetypes.MimeTypes()
+mimetypes_noencoding.encodings_map.clear()
+
 
 class ContentView(View):
     """
@@ -76,7 +81,7 @@ class ContentView(View):
         :rtype: django.http.HttpResponse
         """
         if os.access(path, os.R_OK):
-            content_type = mimetypes.guess_type(path)[0]
+            content_type = mimetypes_noencoding.guess_type(path)[0]
             # If the content type can't be detected by mimetypes, send it as arbitrary
             # binary data. See https://tools.ietf.org/html/rfc2046#section-4.5.1 for
             # more information.

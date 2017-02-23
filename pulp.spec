@@ -35,8 +35,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.12.0
-Release: 2%{?dist}
+Version: 2.12.1
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -433,7 +433,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %else
 # Install the systemd unit files
 %defattr(-,root,root,-)
-%{_usr}/lib/systemd/system/*
+# list these explicitly (don't glob) to prevent pulling in extra service files
+%{_usr}/lib/systemd/system/pulp_celerybeat.service
+%{_usr}/lib/systemd/system/pulp_workers.service
+%{_usr}/lib/systemd/system/pulp_resource_manager.service
 %defattr(-,root,root,-)
 %{_usr}/lib/tmpfiles.d/
 %endif
@@ -493,9 +496,6 @@ chmod 644 $KEY_PATH_PUB
 chown root:apache $KEY_PATH
 chown root:apache $KEY_PATH_PUB
 ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
-
-# Remove old serial number file
-rm -f /var/lib/pulp/sn.dat
 
 # CA certificate
 if [ $1 -eq 1 ]; # not an upgrade
@@ -1053,8 +1053,18 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Mon Feb 13 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-2
+* Thu Feb 23 2017 werwty <bihan.zh@gmail.com> 2.12.1-1
 - Pulp rebuild
+
+* Thu Feb 16 2017 Unknown name 2.12.1-0.1.beta
+- Pulp rebuild
+
+* Tue Jan 17 2017 Sean Myers <sean.myers@redhat.com> 2.12.0-0.1.beta
+- 752 - Fixed: Suggestion to add -v remains even if you use -v
+  (fdobrovo@redhat.com)
+- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
+- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
+- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
 
 * Wed Apr 06 2016 Sean Myers <sean.myers@redhat.com> 2.8.2-1
 - Pulp rebuild

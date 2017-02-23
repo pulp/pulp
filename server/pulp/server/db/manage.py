@@ -311,3 +311,8 @@ def _start_logging():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     _logger.root.addHandler(console_handler)
+    # Django will un-set our default ignoring DeprecationWarning *unless* sys.warnoptions is set.
+    # So, set it as though '-W ignore::DeprecationWarning' was passed on the commandline. Our code
+    # that sets DeprecationWarnings as ignored also checks warnoptions, so this must be added after
+    # pulp.server.logs.start_logging is called but before Django is initialized.
+    sys.warnoptions.append('ignore::DeprecationWarning')
