@@ -9,7 +9,7 @@ from datetime import timedelta
 import os
 import ssl
 
-from celery import Celery
+from celery import Celery, __version__ as celery_version
 
 from pulp.server.config import config
 from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
@@ -19,8 +19,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", PULP_DJANGO_SETTINGS_MODULE)
 broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', broker=broker_url)
 
-
-DEDICATED_QUEUE_EXCHANGE = 'C.dq'
+DEDICATED_QUEUE_EXCHANGE = 'C.dq2' if celery_version.startswith('4') else 'C.dq'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 CELERYBEAT_SCHEDULE = {
     'reap_expired_documents': {

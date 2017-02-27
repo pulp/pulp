@@ -12,7 +12,7 @@ import uuid
 from bson.json_util import dumps as bson_dumps
 from bson.json_util import loads as bson_loads
 from bson import ObjectId
-from celery import task, Task as CeleryTask, current_task
+from celery import task, Task as CeleryTask, current_task, __version__ as celery_version
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from mongoengine.queryset import DoesNotExist
@@ -451,8 +451,12 @@ class Task(PulpTask, ReservedTaskMixin):
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
-        routing_key = kwargs.get('routing_key',
-                                 defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
+        if celery_version.startswith('4'):
+            routing_key = kwargs.get('routing_key',
+                                     defaults.NAMESPACES['task']['default_routing_key'].default)
+        else:
+            routing_key = kwargs.get('routing_key',
+                                     defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tag_list = kwargs.pop('tags', [])
         group_id = kwargs.pop('group_id', None)
         async_result = super(Task, self).apply_async(*args, **kwargs)
