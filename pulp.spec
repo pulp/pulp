@@ -17,7 +17,7 @@
 %if %{pulp_server}
 #SELinux
 %define selinux_variants mls strict targeted
-%define selinux_policyver %(rpm --qf "%%{version}-%%{release}" -q selinux-policy)
+%global selinux_policyver %(rpm --qf "%%{version}-%%{release}" -q selinux-policy)
 %define moduletype apps
 %endif
 
