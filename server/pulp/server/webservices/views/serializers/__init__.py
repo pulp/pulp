@@ -349,6 +349,19 @@ class ModelSerializer(BaseSerializer):
             crit_dict['fields'] = [self.translate_field(model, field) for field in crit.fields]
         return Criteria.from_dict(crit_dict)
 
+    def serialize(self, instance):
+        """Help convert a single unit to it's dictionary form, handling special field types.
+
+        This object is modified in-place, and should only be invoked by calling
+        :py:func:`pulp.server.webservices.views.serializers.content.serialize_unit_with_serializer`
+        in responses that still serialize pymongo dicts.
+
+        :param instance: The object to be converted
+        :type instance: dict
+        """
+        # base implementation is a no-op
+        pass
+
 
 class Repository(ModelSerializer):
     """

@@ -290,7 +290,7 @@ class RepoUnitSearch(search.SearchView):
         else:
             units = manager.get_units(repo_id, criteria=criteria)
         for unit in units:
-            content.remap_fields_with_serializer(unit['metadata'])
+            content.serialize_unit_with_serializer(unit['metadata'])
         return generate_json_response_with_pulp_encoder(units)
 
 
