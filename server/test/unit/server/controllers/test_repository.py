@@ -375,6 +375,15 @@ class TestDisassociateUnits(unittest.TestCase):
         m_rcu_objects.return_value.delete.assert_called_once()
         m_update_last_unit_removed.assert_called_once_with('foo')
 
+    @patch('pulp.server.controllers.repository.update_last_unit_removed')
+    def test_disassociate_units_empty_iterable(self, m_update_last_unit_removed):
+        """"
+        Test that timestamp for units removal is not updated when no units are removed
+        """
+        repo = MagicMock(repo_id='foo')
+        repo_controller.disassociate_units(repo, [])
+        self.assertFalse(m_update_last_unit_removed.called)
+
 
 @mock.patch('pulp.server.controllers.repository.dist_controller')
 @mock.patch('pulp.server.controllers.repository.importer_controller')
