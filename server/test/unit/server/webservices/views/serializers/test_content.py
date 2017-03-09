@@ -54,7 +54,7 @@ class TestRemapFieldsFromSerializer(TestCase):
     @patch('pulp.plugins.loader.api.get_unit_model_by_id')
     def test_remap_fields(self, mock_get_model):
         mock_get_model.return_value = self.content_unit_model
-        content.remap_fields_with_serializer(self.content_unit)
+        content.serialize_unit_with_serializer(self.content_unit)
         self.assertTrue('type_specific_id' not in self.content_unit,
                         'type-specific ID field not remapped')
         self.assertTrue('id' in self.content_unit)
