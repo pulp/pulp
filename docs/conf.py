@@ -46,7 +46,7 @@ master_doc = 'index'
 project = u'Pulp Project'
 
 # Set copyright to current year
-copyright = '2012-{}, Pulp Team'.format(date.today().year)
+copyright = u'2012-{0}, Pulp Team'.format(date.today().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

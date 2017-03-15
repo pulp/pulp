@@ -904,7 +904,7 @@ class AtomicDirectoryPublishStep(PluginStep):
             try:
                 selinux.restorecon(timestamp_master_dir.encode('utf-8'), recursive=True)
             except OSError as e:
-                if e.errno != errno.EPERM:
+                if e.errno not in [errno.EPERM, errno.ENODATA]:
                     raise
         except OSError as e:
             if e.errno == errno.EXDEV:

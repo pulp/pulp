@@ -280,11 +280,11 @@ class RepoUnitAssociationManager(object):
             unit_ids = [u.to_id_dict() for u in copied_units if u is not None]
             repo_controller.rebuild_content_unit_counts(dest_repo)
             return {'units_successful': unit_ids}
-        except Exception:
+        except Exception as e:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')
             msg_dict = {'i': dest_repo_importer.importer_type_id, 'r': dest_repo_id}
             logger.exception(msg % msg_dict)
-            raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
+            raise (e, None, sys.exc_info()[2])
 
     def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, notify_plugins=True):
         """
