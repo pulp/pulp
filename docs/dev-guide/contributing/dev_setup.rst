@@ -193,7 +193,7 @@ More information about them can be found in command ``phelp``.
 
 List of most useful commands:
 
-* ``pstart`` - Starts all pulp related servicies
+* ``pstart`` - Starts all pulp related services
 * ``ppopulate`` - Load default testing repositories
 
 .. note::
