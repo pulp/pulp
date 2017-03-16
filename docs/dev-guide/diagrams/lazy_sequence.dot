@@ -1,0 +1,63 @@
+@startuml
+autonumber
+
+title Lazy Sync Sequence Diagram
+
+participant Client
+
+box "Pulp Core Services"
+participant "Pulp Apache"
+participant "Pulp Worker"
+participant ErrorDocument
+participant Django
+participant MongoDB
+end box
+
+box "Pulp Lazy Sync Services"
+participant "Apache Reverse Proxy"
+participant "Squid Cache"
+participant "Pulp Streamer"
+end box
+
+
+
+' Request content
+Client [#orange]-> "Pulp Apache" : pulp.example.com/pulp/repos/zoo/pig.rpm
+
+' Apache Custom 404 handler to /pulp/v2/redirect
+"Pulp Apache" [#red]-> ErrorDocument : 404 Not Found
+ErrorDocument [#red]-> "Pulp Apache" : pulp.example.com/pulp/v2/redirect
+"Pulp Apache" [#red]-> Django : Redirect View
+
+' Load lazy loader location and 302 the client if the content exists
+Django [#red]-> "Pulp Apache" : lazy.example.com/zoo/pig.rpm
+"Pulp Apache" [#orange]-> Client : 302 lazy.example.com/zoo/pig.rpm
+
+' Client fetches content from the lazy compontent
+Client [#orange]-> "Apache Reverse Proxy" : lazy.example.com/zoo/pig.rpm
+
+' Lazy components
+"Apache Reverse Proxy" [#red]-> "Squid Cache" : lazy.example.com/zoo/pig.rpm
+"Squid Cache" [#red]-> "Pulp Streamer" : lazy.example.com/zoo/pig.rpm
+"Pulp Streamer" [#cyan]-> MongoDB : Upstream repo settings
+"Pulp Streamer" [#green]-> "Upstream Repo" : upstream.com/zoo/pig.rpm
+"Squid Cache" <-[#red] "Pulp Streamer" : pig.rpm
+"Apache Reverse Proxy" <-[#red] "Squid Cache" : pig.rpm
+Client <-[#orange] "Apache Reverse Proxy" : pig.rpm
+
+' The streamer issues the Celery task to ensure thousands of tasks don't get queued
+"Pulp Streamer" [#cyan]-> "Pulp Worker" : Download Content Unit
+"Pulp Worker" [#orange]-> "Apache Reverse Proxy" : lazy.example.com/zoo/pig.rpm
+"Apache Reverse Proxy" [#red]-> "Squid Cache" : lazy.example.com/zoo/pig.rpm
+"Apache Reverse Proxy" <-[#red] "Squid Cache" : pig.rpm
+"Pulp Worker" <-[#orange] "Apache Reverse Proxy" : pig.rpm
+
+
+legend right
+  (Green) -> TLS with upstream client certificate
+  (Orange) -> TLS with Pulp client certificate
+  (Cyan) -> TLS with no client certificate
+  (Red) -> no TLS
+endlegend
+
+@enduml
