@@ -1,113 +1,140 @@
-import os
 import hashlib
+
+from gettext import gettext as _
+from logging import getLogger
+
+
+log = getLogger(__name__)
 
 
 class ValidationError(Exception):
     """
     Downloaded file failed validation.
-
-    Attributes:
-        path (str): The absolute path to the file.
-        reason (str): The reason why validation failed.
-
-    """
-
-    def __init__(self, path, reason=''):
-        """
-        Args:
-            path (str): The absolute path to the file.
-            reason (str, optional): The reason why validation failed.
-
-        """
-        self.path = path
-        self.reason = reason
-
-
-class ReadError(ValidationError):
-    """
-    File could not be opened for reading.
     """
     pass
 
 
-class SizeMismatch(ValidationError):
+class MismatchError(ValidationError):
+
+    def __init__(self, expected, actual):
+        super(MismatchError, self).__init__()
+        self.expected = expected
+        self.actual = actual
+
+
+class SizeMismatch(MismatchError):
     """
     The file size does not match what is expected.
     """
-    pass
+
+    def __str__(self):
+        return _(
+            'File size mismatch: expected={e} actual={a}'.format(
+                e=self.expected,
+                a=self.actual))
 
 
-class DigestMismatch(ValidationError):
+class DigestMismatch(MismatchError):
     """
     The digest (checksum) did not match what was expected.
     """
-    pass
+
+    def __str__(self):
+        return _(
+            'Digest mismatch: expected={e} actual={c}'.format(
+                e=self.expected,
+                a=self.actual))
 
 
-class FileValidator:
+class Validation:
     """
-    Validate downloaded file.
+    Validation.
+
+    Attributes:
+        enforced (bool): Validation enforced.
     """
 
-    def __call__(self, request):
+    def __init__(self, enforced=True):
         """
-        Validate the file downloaded by the request.
-        Looks at the request.destination.
+        Args:
+            enforced (bool): Validation enforced.
+        """
+        self.enforced = enforced
+
+    def update(self, bfr):
+        """
+        Update collected information.
 
         Args:
-            request (pulp3.download.Request): A download request.
+            bfr (str): The actual bytes downloaded.
+
+        Notes:
+            Must be implemented by subclass.
+        """
+        raise NotImplementedError()
+
+    def apply(self):
+        """
+        Apply the validation.
 
         Raises:
             ValidationError: When validation has failed.
 
         Notes:
             Must be implemented by subclass.
-
         """
         raise NotImplementedError()
 
 
-class SizeValidator(FileValidator):
+class SizeValidation(Validation):
     """
     Validate the size of the downloaded file matches what is expected.
 
     Attributes:
-        size (int): The expected file size in bytes.
-
+        expected (int): The expected size in bytes.
+        actual (int): The actual size in bytes.
     """
 
-    def __init__(self, size=None):
+    def __init__(self, expected, enforced=True):
         """
         Args:
-            size (int): The expected file size in bytes.
-
+            expected (int): The expected file size in bytes.
+            enforced (bool): Validation enforced.
         """
-        self.size = size
+        super(SizeValidation, self).__init__(enforced)
+        self.expected = expected
+        self.actual = 0
 
-    def __call__(self, request):
+    def update(self, bfr):
         """
-        Validate the file downloaded by the request.
+        Update collected information.
 
         Args:
-            request (pulp3.download.Request): A download request.
+            bfr (str): The actual bytes downloaded.
+        """
+        self.actual += len(bfr)
+
+    def apply(self):
+        """
+        Apply the validation.
 
         Raises:
-            SizeMismatch: When validation has failed.
-
+            ValidationError: When validation has failed.
         """
-        path = request.destination
-        if self.size != os.path.getsize(path):
-            raise SizeMismatch(path)
+        if not self.enforced:
+            return
+        if self.expected != self.actual:
+            raise SizeMismatch(expected=self.expected, actual=self.actual)
 
 
-class DigestValidator(FileValidator):
+class DigestValidation(Validation):
     """
     Validate the digest (checksum) of the downloaded file matches what is expected.
 
     Attributes:
         algorithm (hashlib.Algorithm): The hash algorithm.
-        digest (str): The expected digest.
-
+        expected (int): The expected hex digest.
+        actual (int): The actual (calculated) hex digest.
     """
 
     # ordered by strength
@@ -135,41 +162,43 @@ class DigestValidator(FileValidator):
             ValueError: When not found.
         """
         try:
-            return getattr(hashlib, name)
+            return getattr(hashlib, name.lower())()
         except AttributeError:
             raise ValueError('Algorithm {} not supported'.format(name))
 
-    def __init__(self, algorithm, digest):
+    def __init__(self, algorithm, digest, enforced=True):
         """
         Args:
             algorithm (str): The hash algorithm.
             digest (str): The expected digest.
+            enforced (bool): Validation enforced.
 
         Raises:
             ValueError: When `algorithm` not supported by hashlib.
-
         """
+        super(DigestValidation, self).__init__(enforced)
         self.algorithm = self._find_algorithm(algorithm)
-        self.digest = digest
+        self.expected = digest
+        self.actual = None
 
-    def __call__(self, request):
+    def update(self, bfr):
         """
-        Validate the file downloaded by the request.
+        Update collected information.
 
         Args:
-            request (pulp3.download.Request): A download request.
+            bfr (str): The actual bytes downloaded.
+        """
+        self.algorithm.update(bfr)
+        self.actual = self.algorithm.hexdigest()
+
+    def apply(self):
+        """
+        Apply the validation.
 
         Raises:
-            DigestMismatch: When validation has failed.
-
+            ValidationError: When validation has failed.
         """
-        path = request.destination
-        with open(path, 'rb') as fp:
-            while True:
-                bfr = fp.read(1024000)
-                if bfr:
-                    self.algorithm.update(bfr)
-                else:
-                    break
-        if self.digest != self.algorithm.hexdigest():
-            raise DigestMismatch(path)
+        if not self.enforced:
+            return
+        if self.expected != self.actual:
+            raise DigestMismatch(expected=self.expected, actual=self.actual)

@@ -1,5 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
-from queue import Queue
+from gettext import gettext as _
+from logging import getLogger, DEBUG
+from queue import Queue, Empty
+from threading import Thread, current_thread
+
+from .single import Context
 
 
 # The default queuing backlog.
@@ -8,89 +13,108 @@ BACKLOG = 1024
 CONCURRENT = 10
 
 
+log = getLogger(__name__)
+
+
 class Batch:
     """
-    Provides batching and concurrent execution of download requests.
+    Provides batching and concurrent execution of downloads.
 
     Attributes:
-        requests (generator): A generator of requests.
-        executor (ThreadPoolExecutor): The thread pool.
-        scratchpad (dict): A scratchpad for sharing information with requests.
+        downloads (generator): A generator of downloads.
+        concurrent (int): The number of downloads to execute in concurrently.
+        iterator (PlanIterator): Used to iterate downloads as they complete.
+        context (SharedContext): A shared download context.
+        feeder (DownloadFeeder): Used to feed submit downloads to the executor.
+        is_shutdown (bool): Batch has been shutdown.
 
     Notes:
         * The batch should be used as a context manager.
-        * Or, `end()` must be called manually.
+        * Or, `shutdown()` must be called manually.
 
     Examples:
 
         >>>
-        >>> from pulp.download import Batch, HttpRequest
+        >>> from pulp.download import HttpDownload
         >>>
-        >>> url = 'http://redhat.com/content/great.rpm'
-        >>> destination = '/tmp/working/great.rpm'
-        >>> requests = (HttpRequest(url, destination) for _ in range(10))
+        >>> url = 'http://content.org/dog.rpm'
+        >>> path = '/tmp/working/dog.rpm'
+        >>> downloads = (HttpDownload(url, path) for _ in range(10))
         >>>
-        >>> with Batch(requests) as batch:
-        >>>     for request in batch.download():
-        >>>         if request.succeeded():
-        >>>             # Use the downloaded file
+        >>> # Using context manager (highly recommended)
+        >>>
+        >>> with Batch(downloads) as batch:
+        >>>     for plan in batch():
+        >>>         if plan.succeeded:
+        >>>             # Use the downloaded file \o/
         >>>         else:
         >>>             # Log something
         >>>
-
+        >>> # Not using context manager
+        >>>
+        >>> batch = Batch(downloads)
+        >>> try:
+        >>>     for plan in batch():
+        >>>         if plan.succeeded:
+        >>>             # Use the downloaded file \o/
+        >>>         else:
+        >>>             # Log something
+        >>> finally:
+        >>>     batch.shutdown()
+        >>>
     """
 
-    def __init__(self, requests, concurrent=CONCURRENT, **scratchpad):
+    def __init__(self, downloads, concurrent=CONCURRENT, backlog=BACKLOG, **context):
         """
         Args:
-            requests (generator): A generator of requests.
-            concurrent (int): The number of requests to execute in concurrently.
-            **scratchpad (dict): A scratchpad for sharing information with requests.
+            downloads (generator): A generator of downloads.
+            concurrent (int): The number of downloads to execute in concurrently.
+            backlog (int): The number of downloads kept in memory.
+            **context (dict): Download context properties to be shared with downloads
+                such as sessions and auth tokens.  See the specific download documentation
+                for details on supported properties.
 
+        Raises:
+            ValueError: concurrent less than 2 or backlog is less than concurrent.
         """
         super(Batch, self).__init__()
-        self.requests = requests
-        self.executor = ThreadPoolExecutor(max_workers=concurrent)
-        self.executor.queue = Queue(maxsize=concurrent)
-        self.scratchpad = scratchpad
+        self.downloads = downloads
+        self.concurrent = concurrent
+        self.iterator = PlanIterator(backlog)
+        self.executor = BatchExecutor(concurrent=concurrent, backlog=backlog)
+        self.context = Context(**context)
+        self.feeder = DownloadFeeder(self)
+        self.is_shutdown = False
+        if concurrent < 2:
+            raise ValueError(_('concurrent may not be < 2'))
+        if backlog < concurrent:
+            raise ValueError(_('backlog may not be < concurrent'))
 
-    def download(self, backlog=BACKLOG):
+    def download(self):
         """
-        Download the batch by executing all of the requests.
-
-        Args:
-            backlog (int): The number of download requests in memory.
+        Execute all of the downloads.
 
         Returns:
-            RequestIterator: A request iterator.
-                The iterator will render the requests in the order completed.
-
+            PlanIterator: A plan iterator.
+                The iterator will yield the download `Plan`s in the order completed.
         """
-        iterator = RequestIterator(backlog)
-        self.executor.submit(self._feed, iterator)
-        return iterator
+        log.debug(_('%(batch)s - download started'), {'batch': self})
+        self.feeder.start()
+        return self.iterator
 
-    def _feed(self, iterator):
-        n = 0
-        try:
-            scratchpad = self.scratchpad
-            for request in self.requests:
-                scratchpad.update(request.scratchpad)
-                request.scratchpad = scratchpad
-                future = self.executor.submit(BatchRequest(request))
-                future.add_done_callback(iterator.add)
-                n += 1
-        except Exception as e:
-            iterator.raised(e)
-            n += 1
-        if n:
-            iterator.total = n
-        else:
-            iterator.empty()
-
-    def end(self):
+    def __call__(self):
         """
-        End processing and shutdown the thread pool.
+        Execute all of the downloads.
+
+        Returns:
+            PlanIterator: A plan iterator.
+                The iterator will yield the download `Plan`s in the order completed.
+        """
+        return self.download()
+
+    def shutdown(self):
+        """
+        End processing and shutdown the feeder and the thread pool.
 
         Notes:
             This must be called to prevent leaking resources unless the Batch
@@ -98,15 +122,142 @@ class Batch:
             >>>
             >>> with Batch(..) as batch:
             >>>    # ...
-
         """
+        if self.is_shutdown:
+            return
+        self.is_shutdown = True
+        log.debug(_('%(batch)s - shutdown'), {'batch': self})
+        self.feeder.shutdown()
         self.executor.shutdown()
 
     def __enter__(self):
         return self
 
     def __exit__(self, *unused):
-        self.end()
+        try:
+            self.shutdown()
+        except Exception:
+            if log.isEnabledFor(DEBUG):
+                log.exception(_('Batch shutdown failed.'))
+
+    def __str__(self):
+        _id = str(id(self))[-4:]
+        return _('Batch: id={s} concurrent={c}').format(s=_id, c=self.concurrent)
+
+
+class BatchExecutor(ThreadPoolExecutor):
+    """
+    Batch thread pool executor.
+    """
+
+    def __init__(self, concurrent=CONCURRENT, backlog=BACKLOG):
+        """
+        A thread pool executor tailored for the batch.
+        The worker queue size is restricted to limit memory footprint.
+
+        Args:
+            concurrent (int): The number of downloads to execute in concurrently.
+            backlog (int): The number of downloads kept in memory.
+
+        Raises:
+            ValueError: concurrent less than 2 or backlog is less than concurrent.
+        """
+        super(BatchExecutor, self).__init__(max_workers=concurrent)
+        self._work_queue = Queue(maxsize=backlog)
+        if concurrent < 2:
+            raise ValueError(_('concurrent may not be < 2'))
+        if backlog < concurrent:
+            raise ValueError(_('backlog may not be < concurrent'))
+
+
+class DownloadFeeder(Thread):
+    """
+    Download feeder.
+    A thread used to feed each batched download into the executor.
+    May be interrupted and terminated by calling shutdown().
+
+    Attributes:
+        batch (Batch): A batch to feed.
+        total (int): The total number of downloads queued.
+        is_shutdown (bool): Feeder has been shutdown.
+    """
+
+    def __init__(self, batch):
+        super(DownloadFeeder, self).__init__(name='feeder')
+        self.batch = batch
+        self.daemon = True
+        self.total = 0
+        self.is_shutdown = False
+
+    @property
+    def iterator(self):
+        return self.batch.iterator
+
+    @property
+    def executor(self):
+        return self.batch.executor
+
+    @property
+    def downloads(self):
+        return self.batch.downloads
+
+    @property
+    def context(self):
+        return self.batch.context
+
+    def shutdown(self, wait=True):
+        """
+        Shutdown.
+        Abort feeding and terminate.
+
+        Args:
+            wait (bool): Wait for thread to terminate.
+        """
+        if self.is_shutdown:
+            return
+        self.is_shutdown = True
+        if wait:
+            self.join()
+
+    def run(self):
+        """
+        Thread (main) loop.
+        Submit each download to the batch executor.
+        """
+        try:
+            for download in self.downloads:
+                if self.is_shutdown:
+                    self.done()
+                    return
+                log.debug(
+                    _('%(feeder)s - feed #%(total)d url=%(url)s'),
+                    {
+                        'feeder': self,
+                        'total': self.total,
+                        'url': download.url
+                    })
+                download.context = self.context
+                future = self.executor.submit(Plan(self.batch, download))
+                future.add_done_callback(self.iterator.add)
+                self.total += 1
+        except Exception as e:
+            self.iterator.raised(e)
+            self.total += 1
+        finally:
+            self.done()
+
+    def done(self):
+        """
+        Done feeding downloads and need to update the iterator appropriately.
+        """
+        if self.total:
+            self.iterator.total = self.total
+        else:
+            self.iterator.empty()
+
+    def __str__(self):
+        _id = str(id(self))[-4:]
+        return _('DownloadFeeder: id={s} shutdown={a}').format(s=_id, a=self.is_shutdown)
 
 
 class QueueIterator:
@@ -121,14 +272,33 @@ class QueueIterator:
             the total is not yet known.
     """
 
-    NEXT = 0x00
-    EXCEPTION = 0x02
-    EMPTY = 0x03
+    NEXT = 'NEXT'
+    EXCEPTION = 'EXCEPTION'
+    END = 'END'
 
     def __init__(self, backlog=BACKLOG):
         self.queue = Queue(maxsize=backlog)
         self.iterated = 0
         self.total = -1
+
+    def put(self, code, payload=None, block=True):
+        """
+        Enqueue a message.
+
+        Args:
+            code (str): The message code.
+            payload (object): The message payload.
+            block (bool): Block when queue is full (default:True).
+        """
+        log.debug(
+            _('%(iterator)s put: code=%(code)s payload=%(payload)s'),
+            {
+                'iterator': self,
+                'code': code,
+                'payload': payload
+            })
+        message = (code, payload)
+        self.queue.put(message, block=block)
 
     def add(self, payload):
         """
@@ -136,9 +306,8 @@ class QueueIterator:
 
         Args:
             payload: An object to be rendered by `__next__()`.
-
         """
-        self.queue.put((QueueIterator.NEXT, payload))
+        self.put(self.NEXT, payload)
 
     def raised(self, exception):
         """
@@ -147,9 +316,20 @@ class QueueIterator:
 
         Args:
             exception: An exception to be raised by `__next__()`.
-
         """
-        self.queue.put((QueueIterator.EXCEPTION, exception))
+        self.put(self.EXCEPTION, exception)
+
+    def drain(self):
+        """:
+        Drain the input queue.
+        """
+        log.debug(_('%(iterator)s - input drained'), {'iterator': self})
+        while True:
+            try:
+                self.queue.get(block=False)
+            except Empty:
+                break
+        self.end()
 
     def empty(self):
         """
@@ -157,7 +337,14 @@ class QueueIterator:
         queue will always be empty.  The object feeding the queue has nothing
         to be iterated.
         """
-        self.queue.put((QueueIterator.EMPTY, None))
+        self.drain()
+        self.end()
+
+    def end(self):
+        """
+        Add an message to the input queue that marks the end of input.
+        """
+        self.put(self.END)
 
     def __next__(self):
         """
@@ -168,26 +355,43 @@ class QueueIterator:
 
         Raises:
             StopIteration: when finished iterating.
-
         """
+        log.debug(_('%(iterator)s - next'), {'iterator': self})
+
         if self.iterated == self.total:
             raise StopIteration()
 
         code, payload = self.queue.get()
 
+        log.debug(
+            _('%(iterator)s next: code=%(code)s payload=%(payload)s'),
+            {
+                'iterator': self,
+                'code': code,
+                'payload': payload
+            })
+
         # next
-        if code == QueueIterator.NEXT:
+        if code == self.NEXT:
             self.iterated += 1
             return payload
         # fatal
-        if code == QueueIterator.EXCEPTION:
+        if code == self.EXCEPTION:
             raise payload
         # empty
-        if code == QueueIterator.EMPTY:
+        if code == self.END:
             raise StopIteration()
 
     def __iter__(self):
         return self
+
+    def __str__(self):
+        _id = str(id(self))[-4:]
+        description = _('Iterator: id={s} iterated={i}/{t}')
+        return description.format(
+            s=_id,
+            i=self.iterated,
+            t=self.total)
 
 
 class FutureIterator(QueueIterator):
@@ -204,28 +408,127 @@ class FutureIterator(QueueIterator):
 
         Raises:
             Anything raised by the object executed.
-
         """
         future = super(FutureIterator, self).__next__()
         exception = future.exception()
         if exception:
+            log.debug(
+                _('%(iterator)s - raising: %(exception)s'),
+                {
+                    'iterator': self,
+                    'exception': exception
+                })
             raise exception
         else:
             return future.result()
 
 
-class RequestIterator(FutureIterator):
+class PlanIterator(FutureIterator):
     """
-    Provided for semantic clarity.
+    Batched download plan iterator.
     """
-    pass
+
+    def __next__(self):
+        """
+        Get the next completed download plan and propagate any raised exceptions.
+
+        Returns:
+            Plan: The next completed download execution plan.
+
+        Raises:
+            Anything raised by the object executed.
+        """
+        while True:
+            download = super(PlanIterator, self).__next__()
+            if download:
+                return download
 
 
-class BatchRequest:
+class Plan:
+    """
+    Batch download execution plan.
+    The plan provides:
+      - Ensure self is returned in the future.result.
+      - Catch and stored exceptions raised by the download. This ensure that
+        only fatal batch framework exceptions are raised during iteration.
 
-    def __init__(self, request):
-        self.request = request
+    Attributes:
+        batch (Batch): The batch.
+        download (Download): The wrapped download.
+        error (Exception): An exception raised by the download.
+    """
+
+    def __init__(self, batch, download):
+        """
+
+        Args:
+            batch (Batch): The batch.
+            download (Download): The wrapped download.
+        """
+        self.batch = batch
+        self.download = download
+        self.executed = False
+        self.error = None
+
+    @property
+    def succeeded(self):
+        """
+        The plan has been executed and the download succeeded.
+
+        Returns:
+            bool: True if succeeded.
+        """
+        return self.executed and not self.error
+
+    @property
+    def failed(self):
+        """
+        The plan has been executed and the download failed.
+
+        Returns:
+            bool: True if failed.
+        """
+        return self.executed and self.error
 
     def __call__(self):
-        self.request()
-        return self.request
+        """
+        Execute the plan.
+
+        Returns: self
+        """
+        if self.batch.is_shutdown:
+            return
+
+        with self as download:
+            self.executed = True
+            try:
+                download()
+            except Exception as error:
+                self.error = error
+        return self
+
+    def __enter__(self):
+        thread = current_thread()
+        log.debug(_(
+            '%(download)s thread=%(thread)s - started'),
+            {
+                'thread': thread.getName(),
+                'download': self
+            })
+        return self.download
+
+    def __exit__(self, *unused):
+        thread = current_thread()
+        log.debug(_(
+            '%(download)s thread=%(thread)s - end'),
+            {
+                'thread': thread.getName(),
+                'download': self
+            })
+
+    def __str__(self):
+        return _(
+            'Plan: {download} executed: {executed} error: {error}'.format(
+                download=self.download,
+                executed=self.executed,
+                error=self.error))

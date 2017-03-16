@@ -1,13 +1,36 @@
-import os
 import errno
 
+from gettext import gettext as _
+from logging import getLogger
 from http import HTTPStatus
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry, Response
-from threading import RLock
+from requests.exceptions import SSLError
 
 
-from .request import Request
+from .single import Download, DownloadFailed
+
+
+log = getLogger(__name__)
+
+
+class HttpFailed(DownloadFailed):
+    """
+    Download failed.
+
+    Attributes:
+        download (Download): The failed download.
+        status (int): The status (code) in the server reply.
+    """
+
+    def __init__(self, download, status):
+        """
+        Args:
+            download (Download): The failed download.
+            status (int): The status (code) in the server reply.
+        """
+        super(HttpFailed, self).__init__(download, 'HTTP [{}]'.format(status))
+        self.status = status
 
 
 class LocalAdapter(HTTPAdapter):
@@ -15,26 +38,31 @@ class LocalAdapter(HTTPAdapter):
     Handle `file://` URLs.
     """
 
-    def send(self, request, **unused):
+    STATUS = {
+        errno.ENOENT: int(HTTPStatus.NOT_FOUND),
+        errno.EPERM:  int(HTTPStatus.FORBIDDEN),
+    }
+
+    def send(self, download, **unused):
         """
-        Send the request.
+        Send the download.
 
         Args:
-            request: The request to send.
+            download: The download to send.
             unused: Unused.
 
         Returns:
-            A 200 response.
-
-        Raises:
-            Anything raised when opening the file.
-
+            Response: Always.
         """
-        path = request.url[7:]
         response = Response()
-        response.raw = open(path, 'rb')
-        response.url = request.url
-        response.status_code = 200
+        response.url = download.url
+        try:
+            path = download.url[7:]
+            response.raw = open(path, 'rb')
+            response.status_code = HTTPStatus.OK
+        except IOError as e:
+            status = self.STATUS.get(e.errno, int(HTTPStatus.INTERNAL_SERVER_ERROR))
+            response.status_code = status
         return response
 
     def close(self):
@@ -44,33 +72,27 @@ class LocalAdapter(HTTPAdapter):
         pass
 
 
-class HttpRequest(Request):
+class HttpDownload(Download):
     """
-    An HTTP request.
+    An HTTP download.
 
     Attributes:
-        ssl_ca_certificate (str): An optional absolute path to an PEM encoded CA certificate.
-        ssl_client_certificate (str): An optional absolute path to an PEM encoded
-            client certificate.
-        ssl_client_key (str): An optional absolute path to an PEM encoded
-            client private key.
-        user (str): An optional username for basic authentication.
-        password (str): An optional password used for basic authentication.
         proxy_url (str): An optional proxy URL.
-        headers (dict): Optional HTTP headers.
-        http_code (int): The HTTP status code returned by the server.
+        headers (dict): The optional HTTP headers.
 
     Examples:
         >>>
-        >>> from pulp.download import HttpRequest
+        >>> from pulp.download import HttpDownload
         >>>
         >>> url = ...
-        >>> destination = ...
-        >>> request = HttpRequest(url, destination)
-        >>> request()
+        >>> path = ...
+        >>> download = HttpDownload(url, path)
+        >>> download()
         >>> # Go read the downloaded file \o/
         >>>
 
+    Notes:
+        The 'session' may be shared through the context.session.
     """
 
     @staticmethod
@@ -89,116 +111,164 @@ class HttpRequest(Request):
         session.mount('https://', adapter)
         return session
 
-    def __init__(self, url, destination):
+    def __init__(self, url, path=None, method='GET'):
         """
         Args:
             url (str): A file download URL.
-            destination (str): An absolute path to where the downloaded file is stored.
-
+            path (str): The storage path for the downloaded file.
         """
-        super(HttpRequest, self).__init__(url, destination)
-        self.ssl_ca_certificate = None
-        self.ssl_client_certificate = None
-        self.ssl_client_key = None
-        self.user = None
-        self.password = None
+        super(HttpDownload, self).__init__(url, path)
+        self.method = self._find_method(method)
         self.proxy_url = None
         self.headers = None
-        self.http_code = 0
-        self._mutex = RLock()
+
+    @property
+    def status(self):
+        """
+        The status code in the reply.
+
+        Returns:
+            (int): The reply status.
+
+        """
+        try:
+            return self.reply.status_code
+        except AttributeError:
+            return 0
 
     @property
     def session(self):
         """
-        The `requests` session.
+        The `downloads` session.
 
         Returns:
             Session: The shared or newly created session.
 
         Notes:
-            The session can be shared between request but this needs to be
+            The session can be shared between download but this needs to be
             facilitated by a 3rd object by setting the `shared` dictionary
             to be the same.
-
         """
-        key = 'session'
-        with self._mutex:
+        with self.context as context:
             try:
-                return self.scratchpad[key]
-            except KeyError:
+                return context.session
+            except AttributeError:
                 session = self.create_session()
-                self.scratchpad[key] = session
+                context.session = session
                 return session
 
-    def create_directory(self):
+    def _find_method(self, name):
         """
-        Create the directory as needed.
-
-        Raises:
-            OSError: When the directory cannot be created.
-        """
-        try:
-            os.makedirs(os.path.dirname(self.destination))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-
-    def store_content(self, result):
-        """
-        Read the input stream and write the file content to the destination.
+        Find an http method by name.
 
         Args:
-            result: The `requests` result.
-
-        Raises:
-            OSError: When the file cannot be opened/created.
-            IOError: When the file cannot be written.
-
-        """
-        n_bytes = 0x100000  # 1mb
-        with open(self.destination, 'w+') as fp:
-            for bfr in result.iter_content(chunk_size=n_bytes):
-                fp.write(str(bfr))
-
-    def on_succeeded(self, result):
-        """
-        Handle a successful download result.
-        The destination is created and the file written to the `destination`.
-
-        Args:
-            result: The `requests` result.
-
-        Raises:
-            OSError: When the directory cannot be created.
-            IOError: When the file cannot be written.
-
-        """
-        super(HttpRequest, self).on_succeeded(result)
-        self.create_directory()
-        self.store_content(result)
-
-    def failed(self):
-        """
-        Get whether the request has failed.
+            name: The method name.  see: METHODS.
 
         Returns:
-            bool: True when http_code is not 200.
+            instancemethod: When matched.
 
+        Raises:
+            ValueError: When not matched.
         """
-        return self.http_code != HTTPStatus.OK
+        methods = {
+            'GET': self.get,
+            'HEAD': self.head,
+        }
+        try:
+            return methods[name.upper()]
+        except KeyError:
+            _list = '|'.join(sorted(methods.keys()))
+            msg = _('method must be: ({list})'.format(list=_list))
+            raise ValueError(msg)
 
-    def __call__(self):
+    @property
+    def options(self):
         """
-        Send the HTTP request using the `requests` session.
+        Get `downloads` keyword options based on attributes.
 
+        Returns:
+            dict: The options.
         """
-        result = self.session.get(self.url)
-        self.http_code = result.status_code
-        if self.succeeded():
-            self.on_succeeded(result)
-        else:
-            self.on_failed(result)
+        options = {
+            'stream': True,
+            'timeout': (self.connect_timeout, self.read_timeout)
+        }
+
+        # Basic Auth
+        if self.user:
+            options['auth'] = (self.user, self.password)
+
+        # Proxy
+        if self.proxy_url:
+            options['proxies'] = {
+                'http': self.proxy_url,
+                'https': self.proxy_url,
+                'ftp': self.proxy_url,
+            }
+
+        # Headers
+        if self.headers:
+            options['headers'] = self.headers
+
+        # SSL validation
+        if self.ssl_ca_certificate:
+            options['verify'] = self.ssl_ca_certificate
+
+        # SSL client certificate
+        if self.ssl_client_certificate:
+            options['cert'] = self.ssl_client_certificate
+
+        # SSL client key
+        if self.ssl_client_key:
+            options['cert'] = (options['cert'], self.ssl_client_key)
+
+        return options
+
+    def get(self):
+        """
+        Send the HTTP `GET` download.
+
+        Returns:
+            download.Response
+
+        Raises:
+            SSLError: On SSL error.
+        """
+        return self.session.get(self.url, **self.options)
+
+    def head(self):
+        """
+        Send the HTTP `HEAD` download.
+
+        Returns:
+            download.Response
+
+        Raises:
+            SSLError: On SSL error.
+        """
+        return self.session.head(self.url, **self.options)
+
+    def _send(self):
+        """
+        Send the HTTP download request.
+
+        Raises:
+            HttpFailed: The download failed and could not be repaired.
+        """
+        try:
+            self.reply = self.method()
+            if self.status != HTTPStatus.OK:
+                raise HttpFailed(self, self.status)
+            for bfr in self.reply.iter_content(chunk_size=self.BLOCK):
+                self.writer.append(bfr)
+        except SSLError:
+            raise HttpFailed(self, int(HTTPStatus.UNAUTHORIZED))
 
     def __str__(self):
-        # Testing
-        return str(self.__dict__)
+        base = super(HttpDownload, self).__str__()
+        description = _('{b} | http: status={s} proxy={P} headers={h}')
+        return description.format(
+            b=base,
+            s=self.status,
+            P=self.proxy_url,
+            h=self.headers)

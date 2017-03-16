@@ -1,4 +1,5 @@
 from pulp.app.models import Importer as PlatformImporter
+from pulp.download import DigestValidation, HttpDownload, SizeValidation
 
 
 class Importer(PlatformImporter):
@@ -68,3 +69,37 @@ class Importer(PlatformImporter):
         Subclasses are designed to override this default implementation and should not call super().
         """
         raise NotImplementedError()
+
+    def get_artifact_download(self, artifact, url, destination):
+        """
+        Build an artifact download object.
+
+        Args:
+            artifact (Artifact): The associated artifact.
+            url (str): The download URL.
+            destination (str): The absolute path to where the downloaded file is to be stored.
+
+        Returns:
+            pulp3.download.Download: The appropriate download.
+        """
+        download = HttpDownload(url, destination)
+        download.ssl_ca_certificate = self.ssl_ca_certificate
+        download.ssl_client_certificate = self.ssl_client_certificate
+        download.ssl_client_key = self.ssl_client_key
+        download.proxy_url = self.proxy_url
+        download.headers = self.headers
+        if artifact.size:
+            validation = SizeValidation(artifact.size)
+            download.validations.append(validation)
+        for algorithm in DigestValidation.ALGORITHMS:
+            try:
+                digest = getattr(artifact, algorithm)
+                if not digest:
+                    continue
+            except AttributeError:
+                continue
+            else:
+                validation = DigestValidation(algorithm, digest)
+                download.validations.append(validation)
+                break
+        return download
