@@ -61,7 +61,7 @@ Prerequisites
   clients with pulp-consumer using Qpid. Users who want to use Qpid instead of
   RabbitMQ and manage these RHEL 5 or CentOS 5 clients will need to build
   python-qpid from source.
-  
+
 
 .. warning::
   MongoDB is known to have
@@ -79,7 +79,10 @@ allocate plenty of storage within ``/var/lib/mongodb``.
 Repositories
 ------------
 
-1. Download the appropriate repo definition file from the Pulp repository:
+Pulp
+^^^^
+
+Download the appropriate repo definition file from the Pulp repository:
 
  * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
@@ -88,16 +91,19 @@ Repositories
    If you would like to install the RHEL 5 Client for Pulp, please use the
    `RHEL 5 repository <https://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
 
-2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
-   appropriate repositories for RHEL6 and RHEL7 respectively:
+EPEL for RHEL & CentOS
+^^^^^^^^^^^^^^^^^^^^^^
 
-   RHEL6::
+For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
+appropriate repositories for RHEL/CentOS 6 and 7 respectively:
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+EPEL 6::
 
-   RHEL7::
+   $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+EPEL 7::
+
+   $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 
 .. note::
    The above EPEL URLs change with each release of the epel-release package. If you receive a 404
@@ -110,16 +116,22 @@ Repositories
    Details are described
    `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
 
-3. For RHEL 5 systems, subscribe to the following RHN channels:
+
+For RHEL 5, Subscribe to the following RHN channels:
 
  * MRG Messaging v. 1
  * MRG Messaging Base v. 1
 
-.. note::
-   See the `Qpid packaging docs <http://qpid.apache.org/packages.html>`_ or the
-   `RabbitMQ installation docs <http://www.rabbitmq.com/download.html>`_ for information on
-   where to get broker packages for your OS.
+Message Broker
+^^^^^^^^^^^^^^
 
+Qpid is the default message broker for pulp, and is the broker used in this guide.
+
+See the `Qpid packaging docs <http://qpid.apache.org/packages.html>`_ for information on
+where to get Qpid packages for your OS.
+
+If you would like to use RabbitMQ instead, see the
+`RabbitMQ installation docs <http://www.rabbitmq.com/download.html>`_.
 
 .. _server_installation:
 
@@ -138,8 +150,6 @@ Server
    will need to grant the ``readWrite`` and ``dbAdmin`` roles to the user you provision for Pulp to
    use. The ``dbAdmin`` role allows Pulp to create collections and install indices on them.
 
-.. _configure MongoDB to use SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
-
    After installing MongoDB, you should configure it to start at boot and start it. For Upstart
    based systems::
 
@@ -156,23 +166,14 @@ Server
       accept connections until it finishes. When this happens, Pulp will wait for MongoDB to
       become available before starting.
 
+   .. _configure MongoDB to use SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
 
 #. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
    is tested with Qpid, and uses Qpid by default. This can be on the same host that you will
    run Pulp on, or elsewhere as you please. To install Qpid on a yum based system, use
    this command::
-    
-    $ sudo yum install qpid-cpp-server qpid-cpp-server-store
 
-   .. note::
-      In environments that use Qpid, the ``qpid-cpp-server-store`` package provides durability, a
-      feature that saves broker state if the broker is restarted. This is a required feature for
-      the correct operation of Pulp. Qpid provides a higher performance durability package named
-      ``qpid-cpp-server-linearstore`` which can be used instead of ``qpid-cpp-server-store``, but
-      may not be available on all versions of Qpid. If ``qpid-cpp-server-linearstore`` is available
-      in your environment, consider uninstalling ``qpid-cpp-server-store`` and installing
-      ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
-      this package, you will need to restart the Qpid broker to enable the durability feature.
+    $ sudo yum install qpid-cpp-server qpid-cpp-server-linearstore qpid-tools
 
    Pulp uses the ``ANONYMOUS`` Qpid authentication mechanism by default. To
    enable username/password-based ``PLAIN`` broker authentication, you will need
@@ -228,16 +229,16 @@ Server
 
    $ sudo -u apache pulp-manage-db
 
-  .. note::
+   .. note::
       If Apache or Pulp services are already running, restart them after running the
       ``pulp-manage-db`` command.
 
-  .. warning::
-     It is recommended that you configure your web server to refuse SSLv3.0. In Apache, you can do
-     this by editing ``/etc/httpd/conf.d/ssl.conf`` and configuring the ``SSLProtocol`` directive
-     like this::
+   .. warning::
+      It is recommended that you configure your web server to refuse SSLv3.0. In Apache, you can do
+      this by editing ``/etc/httpd/conf.d/ssl.conf`` and configuring the ``SSLProtocol`` directive
+      like this::
 
-        `SSLProtocol all -SSLv2 -SSLv3`
+         `SSLProtocol all -SSLv2 -SSLv3`
 
 #. Start Apache httpd and set it to start on boot. For Upstart based systems::
 
@@ -426,7 +427,7 @@ to use to serve Pulp, or you may configure Pulp's various clients not to perform
 validation.
 
 .. note:
-   
+
    Even Pulp's server makes client connections in some cases. For example, a Child Node will act as
    a client to its parent.
 
@@ -496,7 +497,7 @@ Turning off Validation
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. warning::
-   
+
    It is strongly recommended that you make or acquire :ref:`signed certificates` to prevent
    man-in-the-middle attacks or other nefarious activities. It is very risky to assume that the
    other end of the connection is who they claim to be. SSL uses a combination of encryption and
