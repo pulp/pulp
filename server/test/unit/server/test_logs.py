@@ -3,7 +3,6 @@
 This module contains tests for the pulp.server.logs module.
 """
 from cStringIO import StringIO
-import ConfigParser
 import logging
 import os
 import Queue
@@ -678,7 +677,6 @@ def console_logging_side_effect(section, key):
             return 'INFO'
         elif key == 'log_type':
             return 'console'
-    return DEFAULT
 
 
 class TestStartLogging(unittest.TestCase):
@@ -765,8 +763,7 @@ class TestStartLogging(unittest.TestCase):
         # We should have used the user's setting
         root_logger.setLevel.assert_called_once_with(logging.ERROR)
 
-    @mock.patch('pulp.server.logs.config.config.get',
-                side_effect=ConfigParser.NoOptionError('server', 'log_level'))
+    @mock.patch('pulp.server.logs.config.config.get', return_value='INFO')
     @mock.patch('pulp.server.logs.logging.getLogger')
     def test_log_level_unset(self, getLogger, get):
         """

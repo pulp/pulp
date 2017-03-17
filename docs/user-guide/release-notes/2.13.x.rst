@@ -19,6 +19,11 @@ New Features
 * serial_number_path is removed from server.conf. Pulp now generates the serial number
   randomly and does not use the sn.dat file. This is a part of the fix for :redmine:`1839`
 
+* Console logging added in addition the the syslog default. Choose the logger using the `log_type`
+  option added to the `[server]` section of `server.conf`. This is especially useful for running
+  Pulp in container environments which usually do no have syslog. See :redmine:`2548` for more
+  details.
+
 Bug Fixes
 ---------
 
