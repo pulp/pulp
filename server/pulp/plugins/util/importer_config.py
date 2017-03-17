@@ -43,7 +43,7 @@ def validate_config(config):
     for v in VALIDATIONS:
         try:
             v(config)
-        except ValueError, e:
+        except (ValueError, TypeError), e:
             potential_exception.add_failure_message(e[0])
 
     if potential_exception.has_errors():
@@ -60,7 +60,7 @@ def validate_feed_requirement(config):
     if feed_url and not isinstance(feed_url, basestring):
         msg = _('<%(feed_url)s> must be a string.')
         msg = msg % {'feed_url': importer_constants.KEY_FEED}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_ssl_validation_flag(config):
@@ -86,7 +86,7 @@ def validate_ssl_ca_cert(config):
     if not isinstance(ssl_ca_cert, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_SSL_CA_CERT, 'type': type(ssl_ca_cert)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_ssl_client_cert(config):
@@ -102,12 +102,12 @@ def validate_ssl_client_cert(config):
                 'to also be set.')
         msg = msg % {'key_name': importer_constants.KEY_SSL_CLIENT_KEY,
                      'cert_name': importer_constants.KEY_SSL_CLIENT_CERT}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(ssl_client_cert, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_SSL_CLIENT_CERT, 'type': type(ssl_client_cert)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_ssl_client_key(config):
@@ -121,7 +121,7 @@ def validate_ssl_client_key(config):
     if not isinstance(ssl_client_key, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_SSL_CLIENT_KEY, 'type': type(ssl_client_key)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_max_speed(config):
@@ -136,12 +136,12 @@ def validate_max_speed(config):
         max_speed = float(max_speed)
         if max_speed <= 0:
             raise ValueError()
-    except ValueError:
+    except (ValueError, TypeError):
         msg = _('The configuration parameter <%(max_speed_name)s> must be set to a positive '
                 'numerical value, but is currently set to <%(max_speed_value)s>.')
         msg = msg % {'max_speed_name': importer_constants.KEY_MAX_SPEED,
                      'max_speed_value': max_speed}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_max_downloads(config):
@@ -156,12 +156,12 @@ def validate_max_downloads(config):
         max_downloads = _cast_to_int_without_allowing_floats(max_downloads)
         if max_downloads < 1:
             raise ValueError()
-    except ValueError:
+    except (ValueError, TypeError):
         msg = _('The configuration parameter <%(num_threads_name)s> must be set to a positive '
                 'integer, but is currently set to <%(num_threads)s>.')
         msg = msg % {'num_threads_name': importer_constants.KEY_MAX_DOWNLOADS,
                      'num_threads': max_downloads}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_proxy_host(config):
@@ -180,12 +180,12 @@ def validate_proxy_host(config):
         msg = _('The configuration parameter <%(name)s> is required when any of the following '
                 'other parameters are defined: ' + ', '.join(dependencies) + '.')
         msg = msg % {'name': importer_constants.KEY_PROXY_HOST}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(proxy_url, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_PROXY_HOST, 'type': type(proxy_url)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_proxy_port(config):
@@ -204,11 +204,11 @@ def validate_proxy_port(config):
         proxy_port = _cast_to_int_without_allowing_floats(proxy_port)
         if proxy_port < 1:
             raise ValueError()
-    except ValueError:
+    except (ValueError, TypeError):
         msg = _('The configuration parameter <%(name)s> must be set to a positive integer, but is '
                 'currently set to <%(value)s>.')
         msg = msg % {'name': importer_constants.KEY_PROXY_PORT, 'value': proxy_port}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_proxy_username(config):
@@ -229,12 +229,12 @@ def validate_proxy_username(config):
                 'parameter to also be set.')
         msg = msg % {'password_name': importer_constants.KEY_PROXY_PASS,
                      'username_name': importer_constants.KEY_PROXY_USER}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(proxy_username, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_PROXY_USER, 'type': type(proxy_username)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_proxy_password(config):
@@ -254,14 +254,14 @@ def validate_proxy_password(config):
                 'parameter to also be set.')
         msg = msg % {'password_name': importer_constants.KEY_PROXY_PASS,
                      'username_name': importer_constants.KEY_PROXY_USER}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(proxy_password, basestring):
         msg = _('The configuration parameter <%(proxy_password_name)s> should be a string, but it '
                 'was %(type)s.')
         msg = msg % {'proxy_password_name': importer_constants.KEY_PROXY_PASS,
                      'type': type(proxy_password)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_basic_auth_username(config):
@@ -282,13 +282,13 @@ def validate_basic_auth_username(config):
                 'parameter to also be set.')
         msg = msg % {'password_name': importer_constants.KEY_BASIC_AUTH_PASS,
                      'username_name': importer_constants.KEY_BASIC_AUTH_USER}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(basic_auth_username, basestring):
         msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
         msg = msg % {'name': importer_constants.KEY_BASIC_AUTH_USER,
                      'type': type(basic_auth_username)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_basic_auth_password(config):
@@ -308,14 +308,14 @@ def validate_basic_auth_password(config):
                 'parameter to also be set.')
         msg = msg % {'password_name': importer_constants.KEY_BASIC_AUTH_PASS,
                      'username_name': importer_constants.KEY_BASIC_AUTH_USER}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if not isinstance(basic_auth_password, basestring):
         msg = _('The configuration parameter <%(basic_auth_password_name)s> should be a string, '
                 'but it was %(type)s.')
         msg = msg % {'basic_auth_password_name': importer_constants.KEY_BASIC_AUTH_PASS,
                      'type': type(basic_auth_password)}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_validate_downloads(config):
@@ -355,12 +355,12 @@ def validate_retain_old_count(config):
         retain_old_count = _cast_to_int_without_allowing_floats(retain_old_count)
         if retain_old_count < 0:
             raise ValueError()
-    except ValueError:
+    except (ValueError, TypeError):
         msg = _('The configuration parameter <%(old_count_name)s> must be set to an integer '
                 'greater than or equal to zero, but is currently set to <%(old_count)s>.')
         msg = msg % {'old_count_name': importer_constants.KEY_UNITS_RETAIN_OLD_COUNT,
                      'old_count': retain_old_count}
-        raise ValueError(msg)
+        raise TypeError(msg)
 
 
 def validate_download_policy(config):
@@ -425,7 +425,7 @@ def _run_validate_is_non_required_bool(config, setting_name):
     msg = _('The configuration parameter <%(name)s> must be set to a boolean value, but is '
             'currently set to <%(value)s>.')
     msg = msg % {'name': setting_name, 'value': original_setting}
-    raise ValueError(msg)
+    raise TypeError(msg)
 
 
 VALIDATIONS = (
