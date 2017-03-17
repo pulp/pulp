@@ -8,13 +8,14 @@ downloads concurrently.
 
 The model:
 
-          Download *-------1 Batch
-              ^
-              |
-       ---------------
-       ^              ^
-       |              |
-  HttpDownload  FtpDownload
+                    |*-------1 Batch
+           Download |--------------------------------------------------|
+              ^     |1-----------------* Validation *-----------------1| Writer
+              |                               ^                            ^
+       ---------------                        |                            |
+       |              |             ---------------------           -----------------
+       |              |             |                    |          |               |
+  HttpDownload  FtpDownload    SizeValidation  DigestValidation  FileWriter    TextWriter
 
 Recipes:
 
