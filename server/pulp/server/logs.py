@@ -21,6 +21,7 @@ LOG_BLACKLIST = ['qpid.messaging.io.ops', 'qpid.messaging.io.raw']
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
 TASK_LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: [%(task_id)-8s] %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
+VALID_LOGGERS = ['syslog', 'console']
 
 
 def _blacklist_loggers():
@@ -53,13 +54,29 @@ def start_logging(*args, **kwargs):
         log_level = DEFAULT_LOG_LEVEL
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
+    try:
+        log_type = config.config.get('server', 'log_type')
+    except (ConfigParser.NoOptionError, AttributeError):
+        log_type = 'syslog'
+
+    if log_type not in VALID_LOGGERS:
+        print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
+        log_type = 'syslog'
 
     # Set up our handler and add it to the root logger
-    if not os.path.exists(LOG_PATH):
-        print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
-        sys.exit(os.EX_UNAVAILABLE)
+    if log_type == 'syslog':
+        if not os.path.exists(LOG_PATH):
+            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            sys.exit(os.EX_UNAVAILABLE)
 
-    handler = CompliantSysLogHandler(address=LOG_PATH, facility=CompliantSysLogHandler.LOG_DAEMON)
+        handler = CompliantSysLogHandler(
+            address=LOG_PATH,
+            facility=CompliantSysLogHandler.LOG_DAEMON
+        )
+
+    elif log_type == 'console':
+        handler = logging.StreamHandler()
+
     task_filter = TaskIDFilter()
     handler.addFilter(task_filter)
     formatter = TaskLogFormatter()

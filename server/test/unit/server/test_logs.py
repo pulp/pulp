@@ -672,6 +672,15 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertTrue(check_same == 10)
 
 
+def console_logging_side_effect(section, key):
+    if section == 'server':
+        if key == 'log_level':
+            return 'INFO'
+        elif key == 'log_type':
+            return 'console'
+    return DEFAULT
+
+
 class TestStartLogging(unittest.TestCase):
     """
     Test the configure_pulp_logging() function.
@@ -728,7 +737,7 @@ class TestStartLogging(unittest.TestCase):
         logs.start_logging()
 
         # The config should have been queried for log level
-        get.assert_called_once_with('server', 'log_level')
+        get.assert_has_calls(mock.call('server', 'log_level'))
         # We should have defaulted
         root_logger.setLevel.assert_called_once_with(logging.INFO)
 
@@ -752,7 +761,7 @@ class TestStartLogging(unittest.TestCase):
         logs.start_logging()
 
         # The config should have been queried for log level
-        get.assert_called_once_with('server', 'log_level')
+        get.assert_has_calls(mock.call('server', 'log_level'))
         # We should have used the user's setting
         root_logger.setLevel.assert_called_once_with(logging.ERROR)
 
@@ -778,13 +787,13 @@ class TestStartLogging(unittest.TestCase):
         logs.start_logging()
 
         # The config should have been queried for log level
-        get.assert_called_once_with('server', 'log_level')
+        get.assert_has_calls(mock.call('server', 'log_level'))
         # We should have defaulted
         root_logger.setLevel.assert_called_once_with(logs.DEFAULT_LOG_LEVEL)
 
     @mock.patch('pulp.server.logs.config.config.get', return_value='Debug')
     @mock.patch('pulp.server.logs.logging.getLogger')
-    def test_root_logger_configured(self, getLogger, get):
+    def test_root_logger_configured_default(self, getLogger, get):
         """
         This test ensures that the root logger is configured appropriately.
         """
@@ -808,6 +817,87 @@ class TestStartLogging(unittest.TestCase):
         self.assertTrue(isinstance(root_handler, logs.CompliantSysLogHandler))
         self.assertEqual(root_handler.address, os.path.join('/', 'dev', 'log'))
         self.assertEqual(root_handler.facility, logs.CompliantSysLogHandler.LOG_DAEMON)
+
+        # And the handler should have the formatter with our format string
+        self.assertTrue(isinstance(root_handler.formatter, logs.TaskLogFormatter))
+
+    @mock.patch('pulp.server.logs.config.config.get', return_value='something wrong')
+    @mock.patch('pulp.server.logs.logging.getLogger')
+    def test_log_type_invalid(self, getLogger, get):
+        """
+        Test that we still default to syslog if the user sets some non-existing log type.
+        """
+        root_logger = mock.MagicMock(spec=logging.Logger)
+        root_logger.manager = mock.MagicMock()
+        root_logger.manager.loggerDict = {}
+
+        def fake_getLogger(name=None):
+            if name is None:
+                return root_logger
+            root_logger.manager.loggerDict[name] = mock.MagicMock()
+            return root_logger.manager.loggerDict[name]
+        getLogger.side_effect = fake_getLogger
+
+        logs.start_logging()
+
+        # The config should have been queried for log type
+        get.assert_has_calls(mock.call('server', 'log_type'))
+        # We should have defaulted
+        root_logger.addHandler.assert_called_once()
+        root_handler = root_logger.addHandler.mock_calls[0][1][0]
+        self.assertTrue(isinstance(root_handler, logs.CompliantSysLogHandler))
+
+    @mock.patch('pulp.server.logs.config.config.get', return_value='console')
+    @mock.patch('pulp.server.logs.logging.getLogger')
+    def test_log_type_set(self, getLogger, get):
+        """
+        Test that we correctly allow users to set their log type.
+        """
+        root_logger = mock.MagicMock(spec=logging.Logger)
+        root_logger.manager = mock.MagicMock()
+        root_logger.manager.loggerDict = {}
+
+        def fake_getLogger(name=None):
+            if name is None:
+                return root_logger
+            root_logger.manager.loggerDict[name] = mock.MagicMock()
+            return root_logger.manager.loggerDict[name]
+        getLogger.side_effect = fake_getLogger
+
+        logs.start_logging()
+
+        # The config should have been queried for log level
+        get.assert_has_calls(mock.call('server', 'log_type'))
+        # We should have used the user's setting
+        root_logger.addHandler.assert_called_once()
+        root_handler = root_logger.addHandler.mock_calls[0][1][0]
+        self.assertTrue(isinstance(root_handler, logging.StreamHandler))
+
+    @mock.patch('pulp.server.logs.config.config.get', side_effect=console_logging_side_effect)
+    @mock.patch('pulp.server.logs.logging.getLogger')
+    def test_root_logger_configured_console(self, getLogger, get):
+        """
+        This test ensures that the root logger is configured appropriately when
+        console logging set.
+        """
+        root_logger = mock.MagicMock(spec=logging.Logger)
+        root_logger.manager = mock.MagicMock()
+        root_logger.manager.loggerDict = {}
+
+        def fake_getLogger(name=None):
+            if name is None:
+                return root_logger
+            if name not in root_logger.manager.loggerDict:
+                root_logger.manager.loggerDict[name] = mock.MagicMock()
+            return root_logger.manager.loggerDict[name]
+        getLogger.side_effect = fake_getLogger
+
+        logs.start_logging()
+
+        # Let's make sure the handler is setup right
+        self.assertEqual(root_logger.addHandler.call_count, 1)
+        root_handler = root_logger.addHandler.mock_calls[0][1][0]
+        self.assertTrue(isinstance(root_handler, logging.StreamHandler))
 
         # And the handler should have the formatter with our format string
         self.assertTrue(isinstance(root_handler.formatter, logs.TaskLogFormatter))
