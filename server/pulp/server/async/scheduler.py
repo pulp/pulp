@@ -6,7 +6,7 @@ import platform
 import threading
 import time
 
-from celery import beat, __version__ as celery_version
+from celery import beat
 import mongoengine
 
 from pulp.common import constants
@@ -199,9 +199,6 @@ class Scheduler(beat.Scheduler):
         """
         worker_watcher.handle_worker_heartbeat(CELERYBEAT_NAME)
 
-        if celery_version.startswith('4') and self.schedule_changed:
-            self._heap = None
-
         now = ensure_tz(datetime.utcnow())
         old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
 
@@ -256,13 +253,7 @@ class Scheduler(beat.Scheduler):
             Scheduler._mongo_initialized = True
         _logger.debug(_('loading schedules from app'))
         self._schedule = {}
-
-        if celery_version.startswith('4'):
-            items = self.app.conf.beat_schedule.iteritems()
-        else:
-            items = self.app.conf.CELERYBEAT_SCHEDULE.iteritems()
-
-        for key, value in items:
+        for key, value in self.app.conf.CELERYBEAT_SCHEDULE.iteritems():
             self._schedule[key] = beat.ScheduleEntry(**dict(value, name=key))
 
         # include a "0" as the default in case there are no schedules to load
