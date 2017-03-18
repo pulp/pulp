@@ -85,11 +85,12 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
     task_status = TaskStatus.objects.get(pk=inner_task_id)
     ReservedResource.objects.create(task=task_status, worker=worker, resource=resource_id)
 
+    inner_kwargs['routing_key'] = worker.name
+    inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
+    inner_kwargs['task_id'] = inner_task_id
 
     try:
-        celery.tasks[name].apply_async(inner_args, kwargs=inner_kwargs, task_id=inner_task_id,
-                                       routing_key=worker.name, exchange=DEDICATED_QUEUE_EXCHANGE)
-
+        celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
     finally:
         _release_resource.apply_async((inner_task_id, ), routing_key=worker.name,
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
@@ -226,8 +227,7 @@ class UserFacingTask(PulpTask):
         """
         tag_list = kwargs.pop('tags', [])
         group_id = kwargs.pop('group_id', None)
-
-        async_result = super(UserFacingTask, self).apply_async(args, **kwargs)
+        async_result = super(UserFacingTask, self).apply_async(*args, **kwargs)
         async_result.tags = tag_list
 
         # Set the parent attribute if being dispatched inside of a Task
