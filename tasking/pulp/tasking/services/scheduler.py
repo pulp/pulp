@@ -170,6 +170,9 @@ class Scheduler(beat.Scheduler):
     # that will ever elapse before the scheduler looks for new or changed schedules.
     max_interval = constants.CELERYBEAT_MAX_SLEEP_INTERVAL
 
+    # Setting the celerybeat name
+    celerybeat_name = constants.CELERYBEAT_WORKER_NAME + "@" + platform.node()
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the Scheduler object.
@@ -180,9 +183,6 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._loaded_from_db_count = 0
-
-        # Setting the celerybeat name
-        self.celerybeat_name = constants.CELERYBEAT_WORKER_NAME + "@" + platform.node()
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
         kwargs['app'] = app
@@ -258,9 +258,11 @@ class Scheduler(beat.Scheduler):
             ret = self.call_tick(self, self.celerybeat_name)
         except TaskLock.DoesNotExist:
             TaskLock.objects.filter(lock=TaskLock.CELERY_BEAT, timestamp__lte=old_timestamp).delete()
+
             try:
                 # Insert new lock entry
                 TaskLock.objects.create(name=self.celerybeat_name, lock=TaskLock.CELERY_BEAT)
+
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
                              {'celerybeat_name': self.celerybeat_name})
                 # After acquiring new lock call super to dispatch tasks

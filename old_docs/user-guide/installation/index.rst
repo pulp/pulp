@@ -70,6 +70,7 @@ Pulp stores its content in ``/var/lib/pulp``. The size requirements of this
 directory vary depending on how much content you wish to download.
 
 .. note::
+
    Making ``/var/lib/pulp`` a symbolic link to a different directory is possible,
    but it is recommended that you use a bind mount instead. As of Pulp 2.8.0, using
    a symbolic link requires you modify an Apache configuration. This configuration

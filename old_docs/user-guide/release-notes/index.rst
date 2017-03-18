@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    3.0.x
+   2.12.x
    2.11.x
    2.10.x
    2.9.x

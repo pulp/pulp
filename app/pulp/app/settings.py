@@ -191,6 +191,10 @@ _DEFAULT_PULP_SETTINGS = {
         'ssl_client_certificate': '/etc/pki/pulp/qpid/client.crt',
         'login_method': None
     },
+    'profiling': {
+        'enabled': 'false',
+        'directory': '/var/lib/pulp/c_profiles'
+    },
 }
 
 

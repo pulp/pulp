@@ -22,7 +22,7 @@ using the ``pulp-admin auth user`` commands.
 Once an apache authorization module is configured, pulp will read and trust the
 ``REMOTE_USER`` variable from apache.
 
-.. note:
+.. note::
 
     Enabling apache preauthentication as described below *disables* authorization
     against the built-in user database, so you will not be able to authenticate

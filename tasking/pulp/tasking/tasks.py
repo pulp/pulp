@@ -1,12 +1,14 @@
 import logging
 import time
 import uuid
+import cProfile
 from gettext import gettext as _
 
 from celery import Task as CeleryTask, task
 from celery.app import control
 from celery.result import AsyncResult
 from django.db import transaction, IntegrityError
+from django.conf import settings as pulp_settings
 
 from pulp.app.models import ReservedResource, Task as TaskStatus, TaskLock, Worker
 from pulp.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
@@ -258,6 +260,11 @@ class UserFacingTask(PulpTask):
             task_status = TaskStatus.objects.get(pk=self.request.id)
             task_status.set_running()
         _logger.debug("Running task : [%s]" % self.request.id)
+
+        if pulp_settings.PROFILING['enabled'] is True:
+            self.pr = cProfile.Profile()
+            self.pr.enable()
+
         return super(UserFacingTask, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
@@ -282,6 +289,11 @@ class UserFacingTask(PulpTask):
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_completed(retval)
+
+        if pulp_settings.PROFILING['enabled'] is True:
+            profile_directory = pulp_settings.PROFILING['directory']
+            self.pr.disable()
+            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
 
         storage.delete_working_directory()
 
@@ -311,6 +323,11 @@ class UserFacingTask(PulpTask):
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_failed(exc, einfo)
+
+        if pulp_settings.PROFILING['enabled'] is True:
+            profile_directory = pulp_settings.PROFILING['directory']
+            self.pr.disable()
+            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
 
         storage.delete_working_directory()
 
