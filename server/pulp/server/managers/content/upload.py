@@ -224,6 +224,7 @@ class ContentUploadManager(object):
                 )
 
             repo_controller.rebuild_content_unit_counts(repo_obj)
+            repo_controller.update_last_unit_added(repo_obj.repo_id)
             return result
 
         except PulpException:
