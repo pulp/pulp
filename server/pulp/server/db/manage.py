@@ -1,13 +1,16 @@
 """
 This module's main() function becomes the pulp-manage-db.py script.
 """
+from datetime import datetime, timedelta
 from gettext import gettext as _
 from optparse import OptionParser
 import logging
 import os
 import sys
+import time
 import traceback
 
+from pulp.common import constants
 from pulp.plugins.loader.api import load_content_types
 from pulp.plugins.loader.manager import PluginManager
 from pulp.server import logs
@@ -15,9 +18,11 @@ from pulp.server.db import connection
 from pulp.server.db.migrate import models
 from pulp.server.db import model
 from pulp.server.db.migrations.lib import managers
-from pulp.server.managers import factory
+from pulp.server.db.fields import UTCDateTimeField
+from pulp.server.managers import factory, status
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 
+from pymongo.errors import ServerSelectionTimeoutError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
@@ -191,6 +196,34 @@ def main():
         options = parse_args()
         _start_logging()
         connection.initialize(max_timeout=1)
+
+        active_workers = status.get_workers()
+        if active_workers:
+            last_worker_time = max([worker['last_heartbeat'] for worker in active_workers])
+            time_from_last_worker = UTCDateTimeField().to_python(datetime.now()) - last_worker_time
+            wait_time = timedelta(seconds=constants.MIGRATION_WAIT_TIME) - time_from_last_worker
+
+            if wait_time > timedelta(0):
+                print _('\nThe following processes might still be running:')
+                for worker in active_workers:
+                    print _('\t%s' % worker['name'])
+
+                for i in range(wait_time.seconds, 0, -1):
+                    print _('\rPlease wait %s seconds while Pulp confirms this.' % i),
+                    sys.stdout.flush()
+                    time.sleep(1)
+
+                still_active_workers = [worker for worker in status.get_workers() if
+                                        worker['last_heartbeat'] > last_worker_time]
+
+                if still_active_workers:
+                    print >> sys.stderr, _('\n\nThe following processes are still running, please'
+                                           ' stop the running workers before retrying the'
+                                           ' pulp-manage-db command.')
+                    for worker in still_active_workers:
+                        print _('\t%s' % worker['name'])
+
+                    return os.EX_SOFTWARE
         return _auto_manage_db(options)
     except UnperformedMigrationException:
         return 1
@@ -199,6 +232,10 @@ def main():
         _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_DATAERR
     except models.MigrationRemovedError:
+        return os.EX_SOFTWARE
+    except ServerSelectionTimeoutError:
+        _logger.info(_('Cannot connect to the database, please validate that the database is online'
+                       ' and accessible.'))
         return os.EX_SOFTWARE
     except Exception, e:
         _logger.critical(str(e))

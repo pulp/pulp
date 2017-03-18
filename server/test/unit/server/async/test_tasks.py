@@ -168,7 +168,7 @@ class TestDeleteWorker(ResourceReservationTests):
 
     def test_normal_shutdown_true_logs_correctly(self):
         tasking.delete_worker('worker1', normal_shutdown=True)
-        self.assertTrue(not self.mock_gettext.called)
+        self.assertTrue(self.mock_gettext.called)
         self.assertTrue(not self.mock_logger.error.called)
 
     def test_normal_shutdown_not_specified_logs(self):

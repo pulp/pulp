@@ -4,14 +4,12 @@ will see the "celery" module attribute and use it. This module also initializes 
 Celery setup finishes.
 """
 
-import contextlib
 import logging
-import signal
-import sys
+
 import time
 from gettext import gettext as _
 
-from celery.signals import celeryd_after_setup
+from celery.signals import celeryd_after_setup, worker_shutdown
 from django.db.utils import IntegrityError
 
 # This import is here so that Celery will find our application instance. It's important that other
@@ -81,15 +79,32 @@ def initialize_worker(sender, instance, **kwargs):
         get_resource_manager_lock(sender)
 
 
+@worker_shutdown.connect
+def shutdown_worker(signal, sender):
+    """
+    Called when a worker is shutdown.
+
+    So far, this just cleans up the database by removing the worker's record in
+    the workers collection.
+
+    :param signal:   The signal being sent to the worker
+    :type  signal:   int
+    :param instance: The hostname of the worker
+    :type  instance: celery.apps.worker.Worker
+    """
+    tasks._delete_worker(sender.hostname, normal_shutdown=True)
+
+
 def get_resource_manager_lock(name):
     """Block until the the resource manager lock is acquired.
+    Tries to acquire the resource manager lock.
 
-    Tries to acquire the resource manager lock. If the lock cannot be acquired immediately, it
-    will wait until the currently active instance becomes unavailable, at which point the worker
-    cleanup routine will clear the lock for us to acquire. A worker record will be created so that
-    the waiting resource manager will appear in the Status API. We override the SIGTERM signal
-    handler so that that the worker record will be immediately cleaned up if the process is killed
-    while in this states.
+    If the lock cannot be acquired immediately, it will wait until the
+    currently active instance becomes unavailable, at which point the worker
+    cleanup routine will clear the lock for us to acquire. A worker record will
+    be created so that the waiting resource manager will appear in the Status
+    API. This worker record will be cleaned up through the regular worker
+    shutdown routine.
 
     :param name:   The hostname of the worker
     :type  name:   basestring
@@ -100,47 +115,27 @@ def get_resource_manager_lock(name):
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)
     worker, created = Worker.objects.get_or_create(name=name)
 
-    with custom_sigterm_handler(name):
-        # Whether this is the first lock availability check for this instance
-        _first_check = True
+    # Whether this is the first lock availability check for this instance
+    _first_check = True
 
-        while True:
-            worker.save_heartbeat()
+    while True:
+        # Create / update the worker record so that Pulp knows we exist
+        worker.save_heartbeat()
 
-            try:
-                lock.save()
-            except IntegrityError:
-                # Only log the message the first time
-                if _first_check:
-                    msg = _("Resource manager '%s' attempted to acquire the the resource manager "
-                            "lock but was unable to do so. It will retry every %d seconds until "
-                            "the lock can be acquired." % (
-                                name, TASKING_CONSTANTS.CELERY_CHECK_INTERVAL))
-                    _logger.info(msg)
-                    _first_check = False
+        try:
+            lock.save()
 
-                time.sleep(TASKING_CONSTANTS.CELERY_CHECK_INTERVAL)
-            else:
-                msg = _("Resource manager '%s' has acquired the resource manager lock" % name)
+            msg = _("Resource manager '%s' has acquired the resource manager lock") % name
+            _logger.info(msg)
+            break
+        except IntegrityError:
+            # Only log the message the first time
+            if _first_check:
+                msg = _("Resource manager '%s' attempted to acquire the the resource manager "
+                        "lock but was unable to do so. It will retry every %d seconds until "
+                        "the lock can be acquired." % (
+                            name, TASKING_CONSTANTS.CELERY_CHECK_INTERVAL))
                 _logger.info(msg)
-                break
+                _first_check = False
 
-
-@contextlib.contextmanager
-def custom_sigterm_handler(name):
-    """
-    Temporarily installs a custom SIGTERM handler that performs cleanup of the worker record with
-    the provided name. Resets the signal handler to the default one after leaving.
-
-    :param name:   The hostname of the worker
-    :type  name:   basestring
-    """
-    def sigterm_handler(_signo, _stack_frame):
-        msg = _("Worker '%s' shutdown" % name)
-        _logger.info(msg)
-        delete_worker(name, normal_shutdown=True)
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    yield
-    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+            time.sleep(TASKING_CONSTANTS.CELERY_CHECK_INTERVAL)

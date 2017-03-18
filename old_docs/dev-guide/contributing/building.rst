@@ -252,10 +252,10 @@ Test Building Pulp and the plugins
 ----------------------------------
 
 Are you ready to build something? The next step is to ensure that the build that you are going to do
-has an appropriate yaml file in ``pulp_packaging/ci/config/releases/<build-name>.yaml`` (explained in
-detail above). Double check for each repository that the ``git_branch`` field points to the branch or tag
-that you wish to build from and that the ``version`` field is correct. The ``pulp_packaging/ci/build-all.py``
-script which will perform the following actions:
+has an appropriate yaml file in ``pulp_packaging/ci/config/releases/<build-name>.yaml`` (explained
+in detail above). Double check for each repository that the ``git_branch`` field points to the
+branch or tag that you wish to build from and that the ``version`` field is correct. The
+``pulp_packaging/ci/build-all.py`` script which will perform the following actions:
 
 #. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
 #. Clone all the required git repositories to the ``working/<repo_name>`` directory.
@@ -267,7 +267,8 @@ script which will perform the following actions:
 #. Check koji to determine if the version in the spec already exists in koji.
 #. Test build all the packages that do not already exist in koji.
 #. Optionally (if ``--release`` is passed), create tag and push it to GitHub.
-#. Optionally (if ``--release`` is passed), release build all the packages that do not already exist in koji.
+#. Optionally (if ``--release`` is passed), release build all the packages that do not already exist
+   in Koji.
 #. Download the already existing packages from koji.
 #. Download the scratch built packages from koji.
 #. Assemble the repositories for all the associated distributions.
@@ -304,8 +305,8 @@ The target release can be determined by examining the destination branch of the 
 If in doubt, check with the developer that fixed the issue to determine which target
 release is appropriate.
 
-Similarly, if there are any issues that are ``NEW``, ``ASSIGNED``, or ``POST`` and inappropriately given
-a Platform Release, set the Platform Release field to none on those issues.
+Similarly, if there are any issues that are ``NEW``, ``ASSIGNED``, or ``POST`` and inappropriately
+given a Platform Release, set the Platform Release field to none on those issues.
 
 Submit to Koji
 ^^^^^^^^^^^^^^
@@ -338,22 +339,22 @@ way forward to master.
    Do not use the ours strategy, as that will drop the changelog entries. You must manually resolve
    the conflicts!
 
-You will experience conflicts with this step if you are building a stream that is not the latest stream.
-Be sure to merge forward on all of the repositories, keeping the changelog entries in chronological
-order. Be cautious not to clobber the versions in the spec file! Then you can ``git push <branch>:<branch>``
-after you check the diff to make sure it is correct. Lastly, do a new git checkout elsewhere and check that
-``tito build --srpm`` is tagged correctly and builds.
+You will experience conflicts with this step if you are building a stream that is not the latest
+stream. Be sure to merge forward on all of the repositories, keeping the changelog entries in
+chronological order. Be cautious not to clobber the versions in the spec file! Then you can
+``git push <branch>:<branch>`` after you check the diff to make sure it is correct. Lastly, do a new
+git checkout elsewhere and check that ``tito build --srpm`` is tagged correctly and builds.
 
 .. _building-updating-versions:
 
 Updating Versions
 ^^^^^^^^^^^^^^^^^
 
-We use Jenkins to make nightly builds, so once you have built the package successfully and merged the
-changelog forward, you should update the yaml file that Jenkins uses and bump the versions of all the
-projects that were included in this build. You can use ``update-version-and-merge-forward.py`` to update
-the versions. This script checks out all the projects and updates the version in the spec file and
-in all of the setup.py files.
+We use Jenkins to make nightly builds, so once you have built the package successfully and merged
+the changelog forward, you should update the yaml file that Jenkins uses and bump the versions of
+all the projects that were included in this build. You can use
+``update-version-and-merge-forward.py`` to update the versions. This script checks out all the
+projects and updates the version in the spec file and in all of the setup.py files.
 
 This script should be run on dev branches after the first prerelease (beta and rc releases)
 of a given version to ensure that the nightly builds for that branch are clearly newer than the
@@ -369,16 +370,25 @@ You should also push the changes in the release config yaml file to Github.
 Updating Docs
 -------------
 
-When releasing a new X or Y release, the release config for those docs must exist, e.g.
-``2.8-release``, and be up to date in the packaging repo. The jenkins docs buiding job for that
-release config must also exist. If it doesn't, update jenkins job builder definitions to include
-the release config:
+When releasing a new X or Y release, ensure the following:
 
-https://github.com/pulp/pulp_packaging/blob/master/ci/jobs/projects.yaml
+* The release config must exist and be up to date in `the packaging repo <https://github.com/pulp/
+  pulp_packaging/tree/master/ci/config/releases/>`_. For pre-releases this is expected to be named
+  ``x.y-build``, and for GA releases it is expected to be named ``x.y-release`` config.
 
-After ensuring that release config is pushed and the docs building job for that release exists,
-run the docs building job for that release. This should be done for pre-releases (using the
-x.y-build release config) and GA releases (using the x.y-release config).
+* The Jenkins docs buiding job for the release config must also exist. If it doesn't, update `the
+  Jenkins job builder definitions <https://github.com/pulp/pulp_packaging/blob/master/ci/jobs/
+  projects.yaml>`_ to include the release config. Use Jenkins Job Builder to push the job to
+  Jenkins.
+
+* For GA releases, check that the `LATEST variable <https://github.com/pulp/pulp_packaging/blob/
+  master/ci/docs-builder.py#L15>`_ is up to date. This ensures the latest GA docs will be published
+  at the root of the docs.pulpproject.org site.
+
+Once the above changes are merged and the docs building job for the release exists, run the docs
+building job for that release from the `Docs Builders page <https://pulp-jenkins.rhev-ci-vms.eng.
+rdu2.redhat.com/view/Docs%20Builders/>`_. This should be done for pre-releases (using the
+``x.y-build`` release config) and GA releases (using the ``x.y-release`` config).
 
 Testing the Build
 -----------------

@@ -125,6 +125,9 @@ def delete_worker(name, normal_shutdown=False):
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}
         _logger.error(msg)
+    else:
+        msg = _("Cleaning up shutdown worker '%s'.") % name
+        _logger.info(msg)
 
     try:
         worker = Worker.objects.get(name=name)

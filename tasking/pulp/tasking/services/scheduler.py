@@ -22,6 +22,9 @@ import pulp.app.logs  # noqa
 
 _logger = logging.getLogger(__name__)
 
+# setting the celerybeat name
+CELERYBEAT_NAME = constants.CELERYBEAT_WORKER_NAME + "@" + platform.node()
+
 
 class EventMonitor(threading.Thread):
     """
@@ -170,9 +173,6 @@ class Scheduler(beat.Scheduler):
     # that will ever elapse before the scheduler looks for new or changed schedules.
     max_interval = constants.CELERYBEAT_MAX_SLEEP_INTERVAL
 
-    # Setting the celerybeat name
-    celerybeat_name = constants.CELERYBEAT_WORKER_NAME + "@" + platform.node()
-
     def __init__(self, *args, **kwargs):
         """
         Initialize the Scheduler object.
@@ -240,7 +240,7 @@ class Scheduler(beat.Scheduler):
             'timestamp': time.time(),
             'local_received': time.time(),
             'type': 'scheduler-event',
-            'hostname': self.celerybeat_name
+            'hostname': CELERYBEAT_NAME
         }
 
         worker_watcher.handle_worker_heartbeat(scheduler_event)
@@ -249,24 +249,25 @@ class Scheduler(beat.Scheduler):
 
         # Updating the current lock if lock is on this instance of celerybeat
         try:
-            celerybeat_lock = TaskLock.objects.get(name=self.celerybeat_name)
+            celerybeat_lock = TaskLock.objects.get(name=CELERYBEAT_NAME)
             celerybeat_lock.timestamp = timezone.now()
             celerybeat_lock.save()
             # If current instance has lock and updated lock_timestamp, call super
             _logger.debug(_('Lock updated by %(celerybeat_name)s')
-                          % {'celerybeat_name': self.celerybeat_name})
-            ret = self.call_tick(self, self.celerybeat_name)
+                          % {'celerybeat_name': CELERYBEAT_NAME})
+            ret = self.call_tick(self, CELERYBEAT_NAME)
         except TaskLock.DoesNotExist:
             TaskLock.objects.filter(lock=TaskLock.CELERY_BEAT, timestamp__lte=old_timestamp).delete()
 
             try:
                 # Insert new lock entry
-                TaskLock.objects.create(name=self.celerybeat_name, lock=TaskLock.CELERY_BEAT)
+                lock_timestamp = datetime.utcnow()
+                TaskLock.objects.create(name=CELERYBEAT_NAME, lock=TaskLock.CELERY_BEAT, timestamp=lock_timestamp)
 
                 _logger.info(_("New lock acquired by %(celerybeat_name)s") %
-                             {'celerybeat_name': self.celerybeat_name})
+                             {'celerybeat_name': CELERYBEAT_NAME})
                 # After acquiring new lock call super to dispatch tasks
-                ret = self.call_tick(self, self.celerybeat_name)
+                ret = self.call_tick(self, CELERYBEAT_NAME)
 
             except IntegrityError:
                 # Setting a default wait time for celerybeat instances with no lock
@@ -284,5 +285,6 @@ class Scheduler(beat.Scheduler):
         raise NotImplementedError
 
     def close(self):
-        worker_watcher.delete_worker(self.celerybeat_name, normal_shutdown=True)
+        """This is called when celerybeat is being shutdown."""
+        worker_watcher.delete_worker(CELERYBEAT_NAME, normal_shutdown=True)
         super(Scheduler, self).close()

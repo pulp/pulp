@@ -3,10 +3,7 @@ This module contains tests for the pulp.server.async.app module.
 """
 
 import platform
-import signal
 import unittest
-
-from django.db.utils import IntegrityError
 
 import mock
 
@@ -86,43 +83,5 @@ class InitializeWorkerTestCase(unittest.TestCase):
 
         mock_worker.objects.get_or_create.assert_called_once_with(name=sender)
         self.assertEquals(2, mock_worker_inst.heartbeat.call_count)
-
         self.assertEquals(2, mock_lock().save.call_count)
         mock_time.sleep.assert_called_once_with(TASKING_CONSTANTS.CELERY_CHECK_INTERVAL)
-
-    @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks.delete_worker')
-    def test_custom_sigterm_handler(self, delete_worker, mock_sys):
-        """
-        Assert that the signal handler installed by the custom_sigterm_handler context manager
-        calls the delete_worker cleanup routine with the correct worker name and then exits.
-        """
-        name = TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME + '@' + platform.node()
-
-        with app.custom_sigterm_handler(name):
-            handler = signal.getsignal(signal.SIGTERM)
-            self.assertNotEquals(handler, signal.SIG_DFL)
-
-            handler(None, None)
-
-            delete_worker.assert_called_once_with(name, normal_shutdown=True)
-            mock_sys.exit.assert_called_once_with(0)
-
-    @mock.patch('pulp.server.async.app.sys')
-    @mock.patch('pulp.server.async.app.tasks.delete_worker')
-    def test_custom_sigterm_handler_context_manager(self, delete_worker, mock_sys):
-        """
-        Assert that the custom_sigterm_handler context manager properly sets and restores the
-        SIGTERM signal handler upon entry and exit.
-        """
-        handler = signal.getsignal(signal.SIGTERM)
-        self.assertEquals(handler, signal.SIG_DFL)
-
-        name = TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME + '@' + platform.node()
-
-        with app.custom_sigterm_handler(name):
-            handler = signal.getsignal(signal.SIGTERM)
-            handler(None, None)
-
-        handler = signal.getsignal(signal.SIGTERM)
-        self.assertEquals(handler, signal.SIG_DFL)
