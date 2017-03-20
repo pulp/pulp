@@ -91,7 +91,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         """
         _logger.info(_('Worker Timeout Monitor Started'))
         while True:
-            time.sleep(constants.CELERY_CHECK_INTERVAL)
+            time.sleep(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
             try:
                 self.check_celery_processes()
             except Exception as e:
@@ -111,10 +111,10 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         correctly.
         """
         msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes '
-                'are missing for more than %d seconds') % constants.HEARTBEAT_MAX_AGE
+                'are missing for more than %d seconds') % constants.PULP_PROCESS_TIMEOUT_INTERVAL
         _logger.debug(msg)
         now = timezone.now()
-        oldest_heartbeat_time = now - timedelta(seconds=constants.HEARTBEAT_MAX_AGE)
+        oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
 
         for worker in Worker.objects.filter(last_heartbeat__lt=oldest_heartbeat_time):
             msg = _("Worker '%s' has gone missing, removing from list of workers") % worker.name
@@ -171,7 +171,7 @@ class Scheduler(beat.Scheduler):
     """
     # the superclass reads this attribute, which is the maximum number of seconds
     # that will ever elapse before the scheduler looks for new or changed schedules.
-    max_interval = constants.CELERYBEAT_MAX_SLEEP_INTERVAL
+    max_interval = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
 
     def __init__(self, *args, **kwargs):
         """
@@ -183,6 +183,7 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._loaded_from_db_count = 0
+        self._retry_msg_already_logged = False
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
         kwargs['app'] = app
@@ -245,7 +246,8 @@ class Scheduler(beat.Scheduler):
 
         worker_watcher.handle_worker_heartbeat(scheduler_event)
 
-        old_timestamp = datetime.utcnow() - timedelta(seconds=constants.CELERYBEAT_LOCK_MAX_AGE)
+        now = timezone.now()
+        old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
 
         # Updating the current lock if lock is on this instance of celerybeat
         try:
@@ -253,6 +255,7 @@ class Scheduler(beat.Scheduler):
             celerybeat_lock.timestamp = timezone.now()
             celerybeat_lock.save()
             # If current instance has lock and updated lock_timestamp, call super
+
             _logger.debug(_('Lock updated by %(celerybeat_name)s')
                           % {'celerybeat_name': CELERYBEAT_NAME})
             ret = self.call_tick(self, CELERYBEAT_NAME)
@@ -271,10 +274,13 @@ class Scheduler(beat.Scheduler):
 
             except IntegrityError:
                 # Setting a default wait time for celerybeat instances with no lock
-                ret = constants.CELERYBEAT_LOCK_RETRY_TIME
-                _logger.info(_("Duplicate or new celerybeat Instance, "
-                               "ticking again in %(ret)s seconds.")
-                             % {'ret': ret})
+                ret = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
+
+        if not self._retry_msg_already_logged:
+            _logger.info(_("Hot spare celerybeat instance '%(celerybeat_name)s' detected.")
+                         % {'celerybeat_name': CELERYBEAT_NAME})
+            self._retry_msg_already_logged = True
+
         return ret
 
     def add(self, **kwargs):

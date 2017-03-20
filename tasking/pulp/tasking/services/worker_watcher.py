@@ -17,10 +17,13 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 
+from django.utils import timezone
+
 from pulp.app.models import Worker, TaskLock
 from pulp.common import TASK_INCOMPLETE_STATES
 from pulp.tasking.constants import TASKING_CONSTANTS
 from pulp.tasking.util import cancel
+
 
 _logger = logging.getLogger(__name__)
 
@@ -80,6 +83,14 @@ def handle_worker_heartbeat(event):
     else:
         existing_worker.save_heartbeat()
 
+    # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
+    if event_info['worker_name'].startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+        resource_manager_lock, created = TaskLock.objects.get_or_create(
+            name=event_info['worker_name'],
+            lock=TaskLock.RESOURCE_MANAGER)
+        resource_manager_lock.timestamp = timezone.now()
+        resource_manager_lock.save()
+
 
 def handle_worker_offline(event):
     """
@@ -137,7 +148,6 @@ def delete_worker(name, normal_shutdown=False):
         # Cancel all of the tasks that were assigned to this worker's queue
         for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
             cancel(task_status.pk)
-
         worker.delete()
 
     is_resource_manager = name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)

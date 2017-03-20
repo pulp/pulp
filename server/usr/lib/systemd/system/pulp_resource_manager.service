@@ -9,7 +9,7 @@ User=apache
 WorkingDirectory=/var/run/pulp/
 ExecStart=/usr/bin/celery worker -A pulp.tasking.celery_app:celery -n resource_manager@%%h\
           -Q resource_manager -c 1 --events --umask 18 --pidfile=/var/run/pulp/resource_manager.pid\
-          --heartbeat-interval=30
+          --heartbeat-interval=5
 
 [Install]
 WantedBy=multi-user.target

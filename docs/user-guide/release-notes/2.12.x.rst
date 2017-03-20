@@ -8,11 +8,23 @@ Pulp 2.12.0
 New Features
 ------------
 
- * Task profiling can now be enabled. This will use cProfiling on an individual task and write the profile to a directory for a given task. While this can impact performance, this can enable users to get some insight into what a task is doing or use the output to give to a developer for debugging.
- * ``pulp-manage-db`` will not continue if pulp_celerybeat, pulp_resource_manager, or pulp_workers
-   processes are running. This will prevent the user from corrupting their Pulp installation by
-   migrating with running workers. This works in both standalone and clustered installations. Pulp
-   may wait up to 92 seconds to determine if workers are running.
+* Task profiling can now be enabled. This will use `cProfile
+  <https://docs.python.org/2/library/profile.html#module-cProfile>`_ on an individual task and write
+  the profile to a directory for a given task. While this can impact performance, this enables users
+  to get some insight into what a task is doing or give the output to give to a developer for debugging.
+
+* ``pulp-manage-db`` will not continue if pulp_celerybeat, pulp_resource_manager, or pulp_workers
+  processes are running. This prevents the user from corrupting their Pulp installation by applying
+  migrations while workers or pulp_celerybeat are running. This works in both standalone and clustered
+  installations. Pulp may wait up to 92 seconds to determine if workers are running.
+
+* Worker failure detection and high availability failover occurs within 30 seconds. Pulp processes are
+  considered missing after 25 seconds, and heartbeats occur every 5 seconds.
+
+* When removing orphan content, the number of items being that have been removed is now stored as
+  the result on the orphan removal task. This count is broken down by content unit type. In
+  pulp-admin, the result can be looked up with the ``tasks details`` command.
+
 
 Deprecation
 -----------
@@ -21,3 +33,20 @@ Deprecation
   Pulp instance and sync repositories to this instance from their main Pulp
   instance instead. For more information, see `our blog post on the subject of
   deprecating Nodes <http://pulpproject.org/2016/12/06/deprecating-nodes/>`_.
+
+Upgrade instructions
+--------------------
+
+Upgrade using the normal process::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+
+``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs:`2.12.0`

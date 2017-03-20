@@ -7,10 +7,12 @@ Celery setup finishes.
 import logging
 
 import time
+from datetime import timedelta
 from gettext import gettext as _
 
 from celery.signals import celeryd_after_setup, worker_shutdown
 from django.db.utils import IntegrityError
+from django.utils import timezone
 
 # This import is here so that Celery will find our application instance. It's important that other
 # Pulp and Django code not get used until after the Celery app is instantiated and does its "fixup"
@@ -87,12 +89,14 @@ def shutdown_worker(signal, sender):
     So far, this just cleans up the database by removing the worker's record in
     the workers collection.
 
-    :param signal:   The signal being sent to the worker
-    :type  signal:   int
+    :param signal:   The signal being sent to the workerTaskLock
+
     :param instance: The hostname of the worker
     :type  instance: celery.apps.worker.Worker
     """
-    tasks._delete_worker(sender.hostname, normal_shutdown=True)
+    from pulp.tasking.services.worker_watcher import delete_worker
+    # Delete any potential old state
+    delete_worker(sender.hostname, normal_shutdown=True)
 
 
 def get_resource_manager_lock(name):
@@ -119,10 +123,18 @@ def get_resource_manager_lock(name):
     _first_check = True
 
     while True:
+
+        now = timezone.now()
+        old_timestamp = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        TaskLock.objects.filter(lock=TaskLock.RESOURCE_MANAGER,
+                                timestamp__lte=old_timestamp).delete()
+
         # Create / update the worker record so that Pulp knows we exist
         worker.save_heartbeat()
 
         try:
+            lock.timestamp = now
             lock.save()
 
             msg = _("Resource manager '%s' has acquired the resource manager lock") % name
@@ -131,11 +143,8 @@ def get_resource_manager_lock(name):
         except IntegrityError:
             # Only log the message the first time
             if _first_check:
-                msg = _("Resource manager '%s' attempted to acquire the the resource manager "
-                        "lock but was unable to do so. It will retry every %d seconds until "
-                        "the lock can be acquired." % (
-                            name, TASKING_CONSTANTS.CELERY_CHECK_INTERVAL))
-                _logger.info(msg)
+                _logger.info(_("Hot spare pulp_resource_manager instance '%(name)s' detected.")
+                             % {'name': name})
                 _first_check = False
 
-            time.sleep(TASKING_CONSTANTS.CELERY_CHECK_INTERVAL)
+            time.sleep(TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL)

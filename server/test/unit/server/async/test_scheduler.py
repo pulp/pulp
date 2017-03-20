@@ -6,7 +6,7 @@ from celery.beat import ScheduleEntry
 import mock
 from mongoengine import NotUniqueError
 
-from pulp.common.constants import SCHEDULER_WORKER_NAME
+
 from pulp.server.async import scheduler
 from pulp.server.db.model import dispatch, Worker
 from pulp.server.managers.factory import initialize
@@ -142,10 +142,10 @@ class TestSchedulerTick(unittest.TestCase):
         sched_instance.tick()
 
         lock_timestamp = mock_timestamp.utcnow()
-        celerybeat_name = SCHEDULER_WORKER_NAME + "@" + platform.node()
+        celerybeat_name = TASKING_CONSTANTS.SCHEDULER_WORKER_NAME + "@" + platform.node()
 
         mock_celerybeatlock.assert_called_once_with(
-            timestamp=lock_timestamp, celerybeat_name=celerybeat_name)
+            timestamp=lock_timestamp, name=celerybeat_name)
         mock_celerybeatlock.objects().save().assert_called_once()
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
@@ -406,7 +406,7 @@ class TestCeleryProcessTimeoutMonitorRun(unittest.TestCase):
         self.assertRaises(self.SleepException, scheduler.CeleryProcessTimeoutMonitor().run)
 
         # verify the frequency
-        mock_sleep.assert_called_once_with(60)
+        mock_sleep.assert_called_once_with(TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL)
 
     @mock.patch.object(scheduler._logger, 'error', spec_set=True)
     @mock.patch.object(scheduler.CeleryProcessTimeoutMonitor, 'check_celery_processes',
@@ -483,7 +483,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_logs_resource_manager_missing(self, mock__logger, mock_worker, mock_delete_worker):
         mock_worker.objects.all.return_value = [
-            Worker(name=SCHEDULER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
+            Worker(name=TASKING_CONSTANTS.SCHEDULER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
             Worker(name='name2', last_heartbeat=datetime.utcnow()),
         ]
 
@@ -497,20 +497,27 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_debug_logging(self, mock__logger, mock_worker, mock_delete_worker):
+        combined_delay = TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL + \
+            TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL
+        now = datetime.utcnow()
+
         mock_worker.objects.all.return_value = [
-            Worker(name='name1', last_heartbeat=datetime.utcnow() - timedelta(seconds=400)),
-            Worker(name='name2', last_heartbeat=datetime.utcnow()),
-            Worker(name=TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME,
-                   last_heartbeat=datetime.utcnow()),
-            Worker(name=SCHEDULER_WORKER_NAME, last_heartbeat=datetime.utcnow()),
+            Worker(name='name1', last_heartbeat=now - timedelta(seconds=combined_delay)),
+            Worker(name='name2', last_heartbeat=now),
+            Worker(name=TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME, last_heartbeat=now),
+            Worker(name=TASKING_CONSTANTS.SCHEDULER_WORKER_NAME, last_heartbeat=now),
         ]
 
         scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
         mock__logger.debug.assert_has_calls([
-            mock.call('Checking if pulp_workers, pulp_celerybeat, or '
-                      'pulp_resource_manager processes are missing for more than 300 seconds'),
-            mock.call('1 pulp_worker processes, 1 pulp_celerybeat processes, '
-                      'and 1 pulp_resource_manager processes')
+            mock.call(
+                'Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes are '
+                'missing for more than %d seconds' % TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL
+            ),
+            mock.call(
+                '1 pulp_worker processes, 1 pulp_celerybeat processes, '
+                'and 1 pulp_resource_manager processes'
+            )
         ])
 
 
