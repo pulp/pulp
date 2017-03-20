@@ -54,11 +54,8 @@ def start_logging(*args, **kwargs):
         log_level = DEFAULT_LOG_LEVEL
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    try:
-        log_type = config.config.get('server', 'log_type')
-    except (ConfigParser.NoOptionError, AttributeError):
-        log_type = 'syslog'
 
+    log_type = config.config.get('server', 'log_type')
     if log_type not in VALID_LOGGERS:
         print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
         log_type = 'syslog'
