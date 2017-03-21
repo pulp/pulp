@@ -143,8 +143,7 @@ After preparing either the libvirt or docker prerequisites using the instruction
 
 #. You can open the Vagrantfile in your favorite editor and modify it to better fit your
    development preferences. This step is entirely optional as the default Vagrantfile should
-   work for most users. Refer to the :ref:`Advanced Vagrant <dev-setup-advanced-vagrant>` section
-   below for some helpful tips. ::
+   work for most users. Refer to the :ref:`Advanced Vagrant <dev-setup-advanced-vagrant>` section below for some helpful tips.
 
       $ vim Vagrantfile
 
