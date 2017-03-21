@@ -9,10 +9,7 @@ is a Vagrantfile in the `devel <https://github.com/pulp/devel/>`_ git
 repository that can automatically deploy a virtual machine or container on your
 host with a Pulp development environment configured. Alternatively, there is a
 script that can turn a blank running virtual machine into a Pulp development
-environment. This document assumes that you are running a recent version of Fedora
-although these steps should be roughly the same on other distributions. Package managers
-and package names may differ if you're not using Fedora as your development platform so
-be aware as you follow this document.
+environment.
 
 Vagrant
 ^^^^^^^
@@ -23,11 +20,12 @@ development environments. Pulp has provided an example ``Vagrantfile`` in the
 is the easiest way to get started on developing with Pulp if you aren't sure which method
 you prefer. Vagrant is available in Fedora.
 
-There are two Vagrant providers that the Pulp project has made available for use:
-``libvirt`` (using a virtual machine) and ``docker`` (using a `docker <https://www.docker.com/>`_ container).
+There are two Vagrant providers available for use: ``libvirt`` (using a virtual machine) and
+``docker`` (using a `docker <https://www.docker.com/>`_ container).
 
 Reasons to prefer libvirt:
 
+* doesn't require disabling SELinux on host
 * doesn't grant the development environment root-equivalent privileges on host
 * may run a different kernel on host vs guest
 
@@ -36,42 +34,29 @@ Reasons to prefer docker:
 * uses less resources (RAM, CPU and disk)
 * improved performance
 * host may freely access processes within the guest (e.g. for debugging)
-* no extra firewall ports to open on your development platform
-
-Prerequisites for Vagrant
--------------------------
-
-#. Install Vagrant and Ansible. Vagrant will manage your development vms or containers and Ansible
-   is used to configure the system once it is running. ::
-
-      $ sudo dnf install vagrant ansible
-
-.. note::
-  ``libvirt`` is the only officially supported and tested provider and will work in all cases.
-  ``docker`` provider is available, but might not be fully functional.
 
 Prerequisites for libvirt
 -------------------------
 
 Follow these steps:
 
-#. Install Vagrant, Ansible, and nfs-utils. NFS will be used to share your code directory with the
+#. Install vagrant, ansible, and nfs-utils. NFS will be used to share your code directory with the
    deployed virtual machine::
-
-      $ sudo dnf install nfs-utils vagrant-libvirt
+   
+      $ sudo dnf install ansible nfs-utils vagrant-libvirt
 
 #. You will need to grant the nfsnobody user rx access to the folder that you check out your code
    under. Many developers check out code into $HOME/devel or similar. In Fedora, $HOME typically
    does not allow such access to other users. If your code is in $HOME, you will need to::
-
+   
       $ setfacl -m user:nfsnobody:r-x $HOME  # Season to taste, as per above
 
    .. warning::
-
+   
       Wherever you have hosted your code, it would be good to verify that nfsnobody is able to read
       it. If you experience an error message similar to
       "mount.nfs: access denied by server while mounting 192.168.121.1:/path/to/my/code/dir"
-      during the Vagrant up later, it is likely that nfsnobody is being blocked from reading your
+      during the vagrant up later, it is likely that nfsnobody is being blocked from reading your
       code directory by either filesystem permissions or SELinux.
 
 #. Start and enable the nfs-server service::
@@ -79,26 +64,20 @@ Follow these steps:
       $ sudo systemctl enable nfs-server && sudo systemctl start nfs-server
 
 #. You will need to allow NFS services through your firewall::
-
+   
       $ sudo firewall-cmd --permanent --add-service=nfs
       $ sudo firewall-cmd --permanent --add-service=rpc-bind
       $ sudo firewall-cmd --permanent --add-service=mountd
       $ sudo firewall-cmd --reload
-
-.. note::
-
-  If Vagrant will not start due to the error message
-  ``error creating bridge interface virbr0: File exists``, you can solve it by using
-  ``ifconfig virbr0 down`` and ``brctl delbr virbr``
 
 Prerequisites for docker
 ------------------------
 
 Follow these steps:
 
-#. Install docker::
-
-      $ sudo dnf install docker
+#. Install vagrant, ansible, and docker::
+   
+      $ sudo dnf install vagrant ansible docker
 
 #. Enable and start the docker service::
 
@@ -110,12 +89,10 @@ Creating the Vagrant environment
 
 After preparing either the libvirt or docker prerequisites using the instructions above:
 
-#. You are now prepared to check out the Pulp code into your preferred location.
-   All of the repositories must exist parallel to each other for the default configuration in Vagrant.
-   Change directories to the location that you want your Pulp git repositories to exist
-   and check out the development tools repository and the Pulp platform repository::
+#. You are now prepared to check out the Pulp code into your preferred location. Change directories
+   to that location, and check out the development tools repository and the Pulp platform repository::
 
-      $ cd $HOME/devel  # Season to taste.
+      $ cd $HOME/devel  # Season to taste
       $ git clone git@github.com:pulp/devel.git
       $ git clone git@github.com:pulp/pulp.git
 
@@ -136,38 +113,22 @@ After preparing either the libvirt or docker prerequisites using the instruction
       should be compatible.
 
 #. Next, cd into the ``devel`` directory. The Pulp project provides an example Vagrantfile that you can
-   use as a starting point by copying it. ::
-
-      $ cd devel
-      $ cp Vagrantfile.example Vagrantfile
-
-#. You can open the Vagrantfile in your favorite editor and modify it to better fit your
-   development preferences. This step is entirely optional as the default Vagrantfile should
-   work for most users. Refer to the :ref:`Advanced Vagrant <dev-setup-advanced-vagrant>` section
-   below for some helpful tips. ::
-
-      $ vim Vagrantfile
-
-#. After you've happy with your Vagrantfile, you can begin provisioning your
+   use as a starting point by copying it. After you've done that, you can begin provisioning your
    Vagrant environment. We will finish by running ``vagrant reload``. This allows the machine to
-   reboot after provisioning. ::
+   reboot after provisioning.::
 
+      $ cd pulp
+      $ cp Vagrantfile.example Vagrantfile
       # Choose ONE of the following, for your preferred provider:
       $ vagrant up --provider=libvirt
-      $ sudo vagrant up --provider=docker
-      # The above will run for a while while it provisions your development environment.
+      $ vagrant up --provider=docker
       $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
 
    .. note::
 
-      If you want to do a ``vagrant up`` without having to enter your sudo password, please follow the
+      If you want to do a vagrant up without having to enter your sudo password, please follow the
       instructions mentioned in the 'Root Privilege Requirement' section of
       `Vagrant docs <https://www.vagrantup.com/docs/synced-folders/nfs.html>`_.
-
-   .. note::
-
-      You may need to run ``vagrant`` as sudo if using docker. The docker daemon is typically
-      only available to the root user.
 
 #. Once you have followed the steps above, you should have a running deployed Pulp development
    machine. ssh into your Vagrant environment::
@@ -185,40 +146,12 @@ pulp_python, and so forth. Any plugins in folders that start with ``pulp_`` that
 in your host machine's code folder alongside the Pulp platform repository should have been installed
 and configured for virtualenv.
 
-Using Vagrant
--------------
-
-The Vagrant environment provides some useful built-in commands by default.
-More information about them can be found in command ``phelp``.
-
-List of most useful commands:
-
-* ``pstart`` - Starts all pulp related services
-* ``ppopulate`` - Load default testing repositories
-
-.. note::
-
-    You have to issue ``pstart`` after starting vagrant.
-
-.. note::
-
-    If Vagrant is stopped incorrectly, mongo may not be able to start.
-    This can be solved by removing the file ``/var/lib/mongodb/mongod.lock``.
-    To avoid this, always stop your Vagrant environment with ``vagrant halt``.
-
-.. _dev-setup-advanced-vagrant:
 
 Advanced Vagrant
 ^^^^^^^^^^^^^^^^
 
 The following steps are all optional, so feel free to pick and choose which you would like to
 follow.
-
-#. If your provisioning of the Vagrant box fails or you make modifications to the scripts
-   or Ansible roles that provision the Vagrant box, you must re-run the provisioning in Vagrant
-   because it will only run once. ::
-
-      $ vagrant provision
 
 #. You can configure your Vagrant enviroment to cache RPM packages you download with dnf. To do
    this, uncomment the line ``'.dnf-cache' => '/var/cache/dnf'``, which syncs the ``.dnf-cache``
@@ -267,11 +200,11 @@ follow.
     Fortunately, the code you are working on will be shared from your host via NFS so your work
     should have data safety.
 
-#. You can use SSHFS rather than NFS if you're using libvirt. The downside is SSHFS does not perform
-   quite as well as NFS, but the upside is you do not need to configure or run NFS, nor do you need
-   to allow Vagrant to edit your /etc/exports file. At the time of this writing, the ``vagrant-sshfs``
-   package is not yet in Fedora, although the package is in the process of being reviewed. The author
-   provides a COPR repository you can enable to install the RPM::
+#. You can use SSHFS rather than NFS. The downside is SSHFS does not perform quite as well as NFS,
+   but the upside is you do not need to configure or run NFS, nor do you need to allow Vagrant to
+   edit your /etc/exports file. At the time of this writing, the ``vagrant-sshfs`` package is not
+   yet in Fedora, although the package is in the process of being reviewed. The author provides a
+   COPR repository you can enable to install the RPM::
 
     $ sudo dnf copr enable dustymabe/vagrant-sshfs
     $ sudo dnf install vagrant-sshfs
@@ -327,7 +260,7 @@ unresolved reference and prevents jumping to the declaration (Ctrl + B).
 
 To resolve this, configure your project with a Vagrant-aware, remote interpreter. In settings,
 find the 'Project Interpreter' area and add a Remote Interpreter. Select 'Vagrant'
-and give it the path to your Vagrant file. In my case this is ``/home/<username>/devel/pulp``.
+and give it the path to your vagrant file. In my case this is ``/home/<username>/devel/pulp``.
 
    .. note:: The remote interpreter copies the indexed remote code locally into PyCharm's cache.
              Be aware, when you jump to a declaration (Ctrl + B), you are being shown PyCharm's
@@ -404,9 +337,9 @@ pulls in the latest dependencies according to the spec file.
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
 
 #. Install some additional dependencies for development::
-
+   
         $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
-        qpid-cpp-server qpid-cpp-server-linearstore python-qpid-qmf python-nose \
+        qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
         python-mock python-paste python-pip python-flake8
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
@@ -490,7 +423,7 @@ Pulp or make sure the mod_python module is not loaded in the Apache config.
 Start Pulp and Related Services
 -------------------------------
 
-The instructions below are written to be a simple process to start Pulp. You should read the user docs for more information on each of these services. Systemd shown below,see user docs for upstart commands.
+The instructions below are written to be a simple process to start pulp. You should read the user docs for more information on each of these services. Systemd shown below,see user docs for upstart commands.
 
 Start the broker (Though qpid shown here, it is not your only option)::
 
@@ -516,7 +449,7 @@ Start the server::
 
     sudo systemctl start httpd
 
-Start Pulp services::
+Start pulp services::
 
     sudo systemctl start pulp_workers
     sudo systemctl start pulp_celerybeat
@@ -541,3 +474,4 @@ into the local source directory. It is run using the ``-U`` flag:
 Each python package installed above must be removed by its package name.::
 
   $ sudo pip uninstall <package name>
+

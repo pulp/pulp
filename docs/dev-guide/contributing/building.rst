@@ -308,10 +308,6 @@ release is appropriate.
 Similarly, if there are any issues that are ``NEW``, ``ASSIGNED``, or ``POST`` and inappropriately
 given a Platform Release, set the Platform Release field to none on those issues.
 
-Finally, check the `Verification Required <https://pulp.plan.io/issues?query_id=84>`_ report and
-ensure that there are no unverified issues related to this release, or any releases with a lower
-version number.
-
 Submit to Koji
 ^^^^^^^^^^^^^^
 
@@ -560,8 +556,8 @@ If you have published a stable build, there are a few more items to take care of
 #. Update the "latest release" text on http://www.pulpproject.org/.
 #. Run the Jenkins job to update the documentation for this version.
 #. Update the channel topic in #pulp on Freenode with the new release.
-#. Move all bugs that were in the ``MODIFIED`` or ``ON_QA`` state for this target release to
-   ``CLOSED CURRENTRELEASE``.
+#. Move all bugs that were in the ``MODIFIED``, ``ON_QA``, or ``VERIFIED`` state for this target
+   release to ``CLOSED CURRENTRELEASE``.
 #. Update the Redmine report for this release type for the next release of that type. For example,
    if this was a z-stream bugfix release, update the 'Next Bugfix Release' to point to the next
    version to be released in that stream. Redmine may need to have that version added before the

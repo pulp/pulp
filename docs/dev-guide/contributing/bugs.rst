@@ -80,30 +80,6 @@ Fixing
 
 When fixing a bug, all bugs will follow this process, regardless of how trivial.
 
-First of all you need to reproduce this bug. If this error is connected with client try to use
-``-vv`` flag to obtain complete information. It can also be useful to look into server log.
-If there is a traceback, try to look there first and individualy look for the bug. In some cases
-you can try to reproduce the error in the python console. Be aware of the fact that bug can not only
-be caused by just the plugin or just the platform, it could also be caused by the interaction
-of faults present in both components. Always fix any unittests broken by a change, and add
-new test code to cover code additions. Before you commit manualy test if bug is fixed after
-that you should run all unittests via ``run-tests.py`` to check whether something got
-broken by your fix. If tests pass you are good to push and submit PR by rules mentioned below.
-
-.. note::
-  In systems that use systemd such as RHEL 7 (and later) and Fedora 15 (and later) you can use
-  ::
-
-      journalctl -u goferd.service \
-                 -u httpd.service \
-                 -u pulp_workers.service \
-                 -u pulp_celerybeat.service \
-                 -u pulp_resource_manager.service \
-                 -u pulp_streamer.service
-
-  also you can add ``--boot`` switch to view logs only from the current boot of the system. On other
-  systems take a look into ``/var/log/messages``.
-
 Developer
 ^^^^^^^^^
 
@@ -117,8 +93,7 @@ Developer
    as well as a brief description of what the change is. It is not required to find and assign
    someone to do the review.
 #. When the pull request is submitted, the developer changes the status of the bug to ``POST`` and
-   includes a link to the open pull request. Pull requests with the ``Work In Progress`` label
-   should remain in ``ASSIGNED`` state until the ``Work In Progress`` label is removed.
+   includes a link to the open pull request.
 #. Wait for someone to review the pull request. The reviewer(s) will either approve the pull request
    or request changes that must be addressed before the pull request can be merged. Pull requests
    should have at least one approved review and no reviews requesting changes before being merged.

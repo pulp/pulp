@@ -1000,8 +1000,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_worker_returned_when_one_worker_is_not_reserved(self, mock_reserved_resource,
                                                              mock_worker_objects):
-        get_online = mock_worker_objects.get_online
-        get_online.return_value = [{'name': 'a'}, {'name': 'b'}]
+        mock_worker_objects.return_value = [{'name': 'a'}, {'name': 'b'}]
         mock_reserved_resource.objects.all.return_value = [{'worker_name': 'a'}]
         result = tasks._get_unreserved_worker()
         self.assertEqual(result, {'name': 'b'})

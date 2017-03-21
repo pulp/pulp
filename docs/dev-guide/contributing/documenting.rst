@@ -102,11 +102,11 @@ For example, for RPM plugin, use the ``:fixedbugs_pulp_rpm:`` directive::
 Build Docs Locally
 ------------------
 
-Building docs locally is easy:
+Building docs locally is easy::
 
-1. Navigate to the Sphinx project folder
-2. ``make html``
-3. Browse the docs the folder ``docs/_build/html``.
+    1. Navigate to the Sphinx project folder
+    2. ``make html``
+    3. Browse the docs the folder ``docs/_build/html``.
 
 The Vagrant environment comes pre-loaded with all the dependencies you need
 to build the docs.

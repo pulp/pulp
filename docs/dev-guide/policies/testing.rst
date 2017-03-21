@@ -79,7 +79,3 @@ The python ``coverage`` library is used to produce the reports and must be
 installed before running that script. An HTML version of the coverage report
 is created in the git repository root under ``coverage/index.html``.
 
-.. note::
-
-    If you want to see coverage report with lines which were not covered use
-    ``coverage report -m --omit="*/test/*"`` after running ``run-tests.py`` script.

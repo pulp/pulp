@@ -25,7 +25,7 @@ def get_workers():
     :returns:          list of workers with their heartbeats
     :rtype:            list
     """
-    return Worker.objects.get_online()
+    return Worker.objects()
 
 
 def get_mongo_conn_status():

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os.path
 
 # key used in a repository's "notes" field with a value describing what type
 # of content is in the repository.
@@ -49,19 +48,7 @@ CALL_STATES = (CALL_WAITING_STATE, CALL_SKIPPED_STATE, CALL_ACCEPTED_STATE, CALL
 PRIMARY_ID = '___/primary/___'
 
 # this is used by both platform and plugins to find the default CA path
-DEFAULT_CA_PATH_LIST = [
-    '/etc/pki/tls/certs/ca-bundle.crt',    # Fedora/RHEL
-    '/etc/ssl/certs/ca-certificates.crt',  # Debian/Ubuntu/Gentoo etc.
-    '/etc/ssl/ca-bundle.pem',              # OpenSUSE
-    '/etc/pki/tls/cacert.pem',             # OpenELEC
-]
-# set DEFAULT_CA_PATH based on DEFAULT_CA_PATH_LIST for backward compatibility with plugins
-for path in DEFAULT_CA_PATH_LIST:
-    if os.path.exists(path):
-        DEFAULT_CA_PATH = path
-        break
-else:
-    DEFAULT_CA_PATH = None
+DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
 # Scheduler worker name
 SCHEDULER_WORKER_NAME = 'scheduler'
