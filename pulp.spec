@@ -418,6 +418,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_datadir}/%{name}/wsgi/content.wsgi
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
+%{_bindir}/pulp-setup
+%{_bindir}/pulp-gen-key-pair
 %{_bindir}/pulp-gen-ca-certificate
 %dir %{_usr}/lib/%{name}/plugins/types
 %{python_sitelib}/%{name}/server/
@@ -475,37 +477,6 @@ if [ $1 -gt 1 ] ; then
     %endif
 fi
 
-%post server
-
-# RSA key pair
-KEY_DIR="%{_sysconfdir}/pki/%{name}"
-KEY_PATH="$KEY_DIR/rsa.key"
-KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
-if [ ! -f $KEY_PATH ]
-then
-  # Ensure the key generated is only readable by the owner.
-  OLD_UMASK=$(umask)
-  umask 077
-  openssl genrsa -out $KEY_PATH 2048 &> /dev/null
-  openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
-  umask $OLD_UMASK
-fi
-chmod 640 $KEY_PATH
-chmod 644 $KEY_PATH_PUB
-chown root:apache $KEY_PATH
-chown root:apache $KEY_PATH_PUB
-ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
-
-# Remove old serial number file
-rm -f /var/lib/pulp/sn.dat
-
-# CA certificate
-if [ $1 -eq 1 ]; # not an upgrade
-then
-  pulp-gen-ca-certificate
-fi
-
-
 %preun server
 # If we are uninstalling
 if [ $1 -eq 0 ] ; then
@@ -546,21 +517,11 @@ Pulp nodes common modules.
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
 %defattr(640,root,apache,-)
+%ghost %{_sysconfdir}/pki/pulp/nodes/node.crt
 # The nodes.conf file contains OAuth secrets, so we don't want it to be world readable
 %config(noreplace) %{_sysconfdir}/pulp/nodes.conf
 %defattr(-,root,root,-)
 %doc
-
-%post nodes-common
-# Generate the certificate used to access the local server.
-pulp-gen-nodes-certificate
-
-%postun nodes-common
-# clean up the nodes certificate.
-if [ $1 -eq 0 ]; then
-  rm -rf /etc/pki/pulp/nodes
-fi
-
 
 # ---- Parent Nodes ----------------------------------------------------------
 

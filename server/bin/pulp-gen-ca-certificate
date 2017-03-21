@@ -1,17 +1,9 @@
 #!/bin/bash
-# Copyright (c) 2013 Red Hat, Inc.
 #
-# This software is licensed to you under the GNU General Public License,
-# version 2 (GPLv2). There is NO WARRANTY for this software, express or
-# implied, including the implied warranties of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
-# along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+# Generate the Pulp CA private key and certificate.
+# They are generated only when both do not already exist.
 #
-# Red Hat trademarks are not licensed under GPLv2. No permission is
-# granted to use or replicate Red Hat trademarks that are incorporated
-# in this software or its documentation.
-#
+
 set -e
 
 READ_PULP_CONF=\
@@ -24,25 +16,30 @@ END
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 
-# This temporary folder will contain the certificate signing request.
 TMP="$(mktemp -d)"
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
 CN=`hostname --fqdn`
 ORG="PULP"
 
-OLD_UMASK="$(umask)"
+if [ -f ${CA_KEY} ] && [ -f ${CA_CRT} ]
+then
+  echo "Both ${CA_KEY} and ${CA_CRT} already exist."
+  echo "Nothing generated."
+  exit 0
+fi
+
 umask 027
+
 # create CA key
-openssl genrsa -out $CA_KEY 4096 &> /dev/null
-# Allow httpd to read the key
-chgrp apache $CA_KEY
+openssl genrsa -out ${CA_KEY} 4096 &> /dev/null
+chgrp apache ${CA_KEY}
 
 # create signing request
 openssl req \
   -new \
-  -key $CA_KEY \
-  -out $TMP/ca.req \
+  -key ${CA_KEY} \
+  -out ${TMP}/ca.req \
   -subj "/CN=$CN/O=$ORG" &> /dev/null
 
 # create a self-signed CA certificate
@@ -51,12 +48,13 @@ openssl x509 \
   -days 7035 \
   -sha1 \
   -extensions ca  \
-  -signkey $CA_KEY \
-  -in $TMP/ca.req \
-  -out $CA_CRT &> /dev/null
-chgrp apache $CA_CRT
-umask $OLD_UMASK
+  -signkey ${CA_KEY} \
+  -in ${TMP}/ca.req \
+  -out ${CA_CRT} &> /dev/null
+chgrp apache ${CA_CRT}
 
 # clean
-rm $TMP/ca.req
-rmdir $TMP
+rm ${TMP}/ca.req
+rmdir ${TMP}
+
+echo "Created: ${CA_KEY} and ${CA_CRT}"

@@ -120,6 +120,11 @@ Now we are ready to install and configure the Pulp server!
      :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
+#. Generate RSA key pair and SSL CA certificate::
+
+   $ sudo pulp-gen-key-pair
+   $ sudo pulp-gen-ca-certificate
+
 #. Initialize Pulp's database. It is important that the broker is running before initializing
    Pulp's database. It is also important to do this before starting Apache or any Pulp services.
    The database initialization needs to be run as the ``apache`` user, which can be done by

@@ -377,6 +377,8 @@ def install(opts):
 
         # Generate certificates
         print 'generating certificates'
+        if not os.path.exists('/etc/pki/pulp/rsa.key'):
+            os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-key-pair'))
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
             os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
