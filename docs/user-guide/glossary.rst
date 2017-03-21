@@ -10,7 +10,7 @@ Glossary
     & control API which is used by the Pulp server to initiate content changes
     on the consumer.  It also sends scheduled reports concerning consumer
     status and installed content profiles to the Pulp server.
-
+    
   binding
     An association between a :term:`consumer` and a :term:`repository`
     :term:`distributor` for the purpose of installing :term:`content units <content unit>`
@@ -29,12 +29,12 @@ Glossary
     A managed system that is the consumer of content.  Consumption refers
     to the installation of software contained within a :term:`repository` and
     published by an associated :term:`distributor`.
-
+    
   content unit
     An individual piece of content managed by the Pulp server. A unit does not
     necessarily correspond to a file. It is possible that a content unit is
     defined as the aggregation of other content units as a grouping mechanism.
-
+    
   distributor
     Server-side plugin that takes content from a repository and publishes it
     for consumption. The process by which a distributor publishes content varies
@@ -86,9 +86,6 @@ Glossary
     to another Pulp server. Parent nodes provide content to child nodes. Child
     nodes consume content from a parent node as registered :term:`consumers <consumer>`.
 
-  publish
-    Make content available to users.
-
   registration
     The association of a :term:`consumer` to a Pulp server.  Once registered,
     a consumer is added to Pulp's inventory and may be :term:`bound <binding>` to
@@ -101,10 +98,6 @@ Glossary
     by the configured :term:`importer`. A repository may have multiple
     :term:`distributors <distributor>` associated which are used to publish
     its content to multiple destinations, formats, or protocols.
-
-    sync
-      Fetch metadata about content into pulp, can also download the
-      actual content.
 
   unit profile
     A list of :term:`content unit` installed on a :term:`consumer`.  The
