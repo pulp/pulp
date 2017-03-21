@@ -107,6 +107,7 @@ _default_values = {
         'ssl_ca_certificate': '/etc/pki/pulp/ssl_ca.crt',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
+        'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
         'server_name': socket.getfqdn(),

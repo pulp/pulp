@@ -6,6 +6,10 @@ from pulp.common.compat import unittest
 from pulp.server.async import celery_instance
 from pulp.server.db.model import TaskStatus, ReservedResource, Worker
 from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+
+
+SerialNumber.PATH = '/tmp/sn.dat'
 
 
 class PulpServerTests(unittest.TestCase):
