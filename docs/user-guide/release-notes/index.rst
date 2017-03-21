@@ -6,7 +6,6 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   2.13.x
    2.12.x
    2.11.x
    2.10.x

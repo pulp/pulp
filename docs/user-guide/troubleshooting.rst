@@ -90,12 +90,12 @@ Task ID
 
 Since Pulp is a multi-process application, Pulp will attempt to log a shortened 8 character version
 of the task id if the log entry is emitted from a task process. This can be used to look up the task
-in ``pulp-admin tasks`` commands.  An example of a log statement with a task id would be::
+in ``pulp-admin tasks`` commands.  An example of a log statement with a task id would be:
 
     Jan 20 23:12:02 myhost pulp[30687]: pulp_rpm.plugins.importers.yum.sync:INFO: [338bdde4] Downloading 32 RPMs
 
 Here the shortened task id is ``338bdde4``. The full task id would be
-``338bdde4-608a-44ab-a79c-49c28b0fe037``. A statement without a task id would look like::
+``338bdde4-608a-44ab-a79c-49c28b0fe037``. A statement without a task id would look like:
 
     Jan 21 23:12:02 myhost pulp[30482]: pulp.server.async.worker_watcher:INFO: New worker 'resource_manager@myhost' discovered
 
