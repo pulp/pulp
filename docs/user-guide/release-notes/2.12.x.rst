@@ -2,6 +2,21 @@
 Pulp 2.12 Release Notes
 =======================
 
+
+EL6 Support Changes
+===================
+
+The 2.12 releases no longer support deploying Pulp on EL6.
+
+However, running ``pulp-agent`` on EL6 is still supported, and the syncing and publishing
+of EL6 repositories, is still be supported.
+
+EL6 users are encouraged to upgrade their Pulp environments to EL7. See this
+`mailing list discussion <https://www.redhat.com/archives/pulp-list/2016-November/msg00022.html>`_ or
+this `blog post <http://pulpproject.org/2016/11/17/django14-epel6-retirement/>`_ for background and
+motivation for this decision.
+
+
 Pulp 2.12.0
 ===========
 
@@ -24,6 +39,10 @@ New Features
 * When removing orphan content, the number of items being that have been removed is now stored as
   the result on the orphan removal task. This count is broken down by content unit type. In
   pulp-admin, the result can be looked up with the ``tasks details`` command.
+
+* Failover events for instances of pulp_resource_manager and pulp_celerybeat are now logged at the
+  WARNING level. The log message explicitly states that failover has occurred, along with the
+  name of the hot spare process which has taken over as primary.
 
 
 Deprecation
