@@ -10,7 +10,6 @@ import threading
 from celery.signals import setup_logging
 
 from pulp.server import config
-from pulp.server.async.tasks import get_current_task_id
 
 
 DEFAULT_LOG_LEVEL = logging.INFO
@@ -19,7 +18,6 @@ DEFAULT_LOG_LEVEL = logging.INFO
 # future.
 LOG_BLACKLIST = ['qpid.messaging.io.ops', 'qpid.messaging.io.raw']
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
-TASK_LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: [%(task_id)-8s] %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
 
 
@@ -60,9 +58,7 @@ def start_logging(*args, **kwargs):
         sys.exit(os.EX_UNAVAILABLE)
 
     handler = CompliantSysLogHandler(address=LOG_PATH, facility=CompliantSysLogHandler.LOG_DAEMON)
-    task_filter = TaskIDFilter()
-    handler.addFilter(task_filter)
-    formatter = TaskLogFormatter()
+    formatter = logging.Formatter(LOG_FORMAT_STRING)
     handler.setFormatter(formatter)
     root_logger.handlers = []
     root_logger.addHandler(handler)
@@ -86,29 +82,6 @@ def stop_logging():
     logging.shutdown()
     root_logger = logging.getLogger()
     root_logger.handlers = []
-
-
-class TaskIDFilter(logging.Filter):
-    """
-    This is a filter which injects the current task id from celery into the log.
-    """
-    def filter(self, record):
-        record.task_id = get_current_task_id()
-        return True
-
-
-class TaskLogFormatter(logging.Formatter):
-    """
-    This formatter changes format depending on whether there is a task_id in
-    the LogRecord
-    """
-    def format(self, record):
-        if record.task_id is None:
-            self._fmt = LOG_FORMAT_STRING
-        else:
-            record.task_id = record.task_id[:8]
-            self._fmt = TASK_LOG_FORMAT_STRING
-        return logging.Formatter.format(self, record)
 
 
 class CompliantSysLogHandler(logging.handlers.SysLogHandler):
@@ -183,8 +156,6 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
                     name=record.name, level=record.levelno, pathname=record.pathname,
                     lineno=record.lineno, msg=message_chunk, args=tuple(),
                     exc_info=None, func=record.funcName)
-
-                self.filter(new_record)
                 # In Python 2.6 and earlier, the SysLogHandler is not a new-style class. This means
                 # that super() cannot be used, so we will just call the SysLogHandler's emit()
                 # directly.
