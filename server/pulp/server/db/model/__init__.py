@@ -26,8 +26,7 @@ from pulp.server.compat import digestmod
 from pulp.server.db.fields import ISO8601StringField, UTCDateTimeField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.db.model import base
-from pulp.server.db.querysets import (CriteriaQuerySet, RepoQuerySet, RepositoryContentUnitQuerySet,
-                                      WorkerQuerySet)
+from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet, RepositoryContentUnitQuerySet
 from pulp.server.managers import factory
 from pulp.server.util import Singleton
 from pulp.server.webservices.views import serializers
@@ -412,7 +411,7 @@ class Worker(AutoRetryDocument):
     meta = {'collection': 'workers',
             'indexes': [],  # this is a small collection that does not need an index
             'allow_inheritance': False,
-            'queryset_class': WorkerQuerySet}
+            'queryset_class': CriteriaQuerySet}
 
     @property
     def queue_name(self):
