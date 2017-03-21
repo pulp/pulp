@@ -192,7 +192,7 @@ _DEFAULT_PULP_SETTINGS = {
         'login_method': None
     },
     'profiling': {
-        'enabled': 'false',
+        'enabled': False,
         'directory': '/var/lib/pulp/c_profiles'
     },
 }

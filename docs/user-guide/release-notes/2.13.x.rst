@@ -1,0 +1,13 @@
+=======================
+Pulp 2.13 Release Notes
+=======================
+
+Pulp 2.13.0
+===========
+
+New Features
+------------
+
+* Log statements which are emitted from task processes now include a short task
+  id of 8 characters (i.e. ``pulp.server.sync::INFO: [0ca4399c] ...``) which
+  can be used to look up a task.

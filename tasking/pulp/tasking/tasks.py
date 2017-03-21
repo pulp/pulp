@@ -1,7 +1,9 @@
+import cProfile
+import errno
 import logging
+import os
 import time
 import uuid
-import cProfile
 from gettext import gettext as _
 
 from celery import Task as CeleryTask, task
@@ -290,10 +292,7 @@ class UserFacingTask(PulpTask):
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_completed(retval)
 
-        if pulp_settings.PROFILING['enabled'] is True:
-            profile_directory = pulp_settings.PROFILING['directory']
-            self.pr.disable()
-            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
+            self._handle_cProfile(task_id)
 
         storage.delete_working_directory()
 
@@ -324,10 +323,7 @@ class UserFacingTask(PulpTask):
             task_status = TaskStatus.objects.get(pk=task_id)
             task_status.set_failed(exc, einfo)
 
-        if pulp_settings.PROFILING['enabled'] is True:
-            profile_directory = pulp_settings.PROFILING['directory']
-            self.pr.disable()
-            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
+            self._handle_cProfile(task_id)
 
         storage.delete_working_directory()
 
@@ -343,3 +339,20 @@ class UserFacingTask(PulpTask):
             else:
                 parent_arg['parent'] = current_task_obj
         return parent_arg
+
+    def _handle_cProfile(self, task_id):
+        """
+        If cProfiling is enabled, stop the profiler and write out the data.
+
+        :param task_id: the id of the task
+        :type task_id: unicode
+        """
+        if pulp_settings.PROFILING['enabled'] is True:
+            self.pr.disable()
+            profile_directory = pulp_settings.PROFILING['directory']
+            try:
+                os.makedirs(profile_directory, mode=0o755)
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+            self.pr.dump_stats("%s/%s" % (profile_directory, task_id))

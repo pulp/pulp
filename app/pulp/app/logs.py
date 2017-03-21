@@ -6,7 +6,6 @@ import logging
 import os
 import threading
 
-
 DEFAULT_LOG_LEVEL = logging.INFO
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
@@ -82,6 +81,7 @@ class CompliantSysLogHandler(handlers.SysLogHandler):
                     name=record.name, level=record.levelno, pathname=record.pathname,
                     lineno=record.lineno, msg=message_chunk, args=tuple(),
                     exc_info=None, func=record.funcName)
+
                 # In Python 2.6 and earlier, the SysLogHandler is not a new-style class. This means
                 # that super() cannot be used, so we will just call the SysLogHandler's emit()
                 # directly.
