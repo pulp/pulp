@@ -91,6 +91,17 @@ class TestContentView(TestCase):
         self.assertEqual(reply['Content-Type'], 'application/x-rpm')
 
     @patch('os.access')
+    def test_x_send_mime_type_noencoding(self, access):
+        path = '/my/path.xml.gz'
+        access.return_value = True
+        reply = ContentView.x_send(path)
+        access.assert_called_once_with(path, os.R_OK)
+        self.assertEqual(reply['X-SENDFILE'], path)
+        # If the normal mimetypes module was used, this would be 'text/xml' instead.
+        # Most OSes return the 'gzip' version, but some (el6) return 'x-gzip'. Either is fine.
+        self.assertTrue(reply['Content-Type'] in ('application/gzip', 'application/x-gzip'))
+
+    @patch('os.access')
     @patch(MODULE + '.HttpResponseForbidden')
     def test_x_send_cannot_read(self, forbidden, access):
         path = '/my/path'

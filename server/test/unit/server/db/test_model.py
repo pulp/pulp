@@ -22,7 +22,7 @@ from pulp.server import constants, exceptions
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
-from pulp.server.db.querysets import CriteriaQuerySet
+from pulp.server.db.querysets import CriteriaQuerySet, WorkerQuerySet
 from pulp.server.webservices.views import serializers
 
 
@@ -707,7 +707,7 @@ class TestWorkerModel(unittest.TestCase):
         self.assertEqual(model.Worker._meta['allow_inheritance'], False)
 
     def test_meta_queryset(self):
-        self.assertEqual(model.Worker._meta['queryset_class'], CriteriaQuerySet)
+        self.assertEqual(model.Worker._meta['queryset_class'], WorkerQuerySet)
         self.assertTrue(issubclass(model.Worker.objects.__class__, QuerySetNoCache))
 
 

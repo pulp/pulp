@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from gettext import gettext as _
 import operator
 
@@ -5,6 +6,8 @@ from mongoengine import Q
 from mongoengine.queryset import DoesNotExist, QuerySetNoCache
 from pymongo import ASCENDING
 
+from pulp.common import constants
+from pulp.common.dateutils import ensure_tz
 from pulp.server import exceptions as pulp_exceptions
 
 
@@ -114,6 +117,27 @@ class CriteriaQuerySet(QuerySetPreventCache):
             return self.get(**kwargs)
         except DoesNotExist:
             raise pulp_exceptions.MissingResource(**kwargs)
+
+
+class WorkerQuerySet(CriteriaQuerySet):
+    """
+    Custom queryset for workers
+    """
+
+    def get_online(self):
+        """
+        Returns a queryset with a subset of Worker documents.
+
+        The queryset is filtered to remove any Worker document that has not been updated in the
+        last 25 seconds.
+
+        :return: mongoengine queryset object
+        :rtype:  mongoengine.queryset.QuerySet
+        """
+        query_set = self
+        now = ensure_tz(datetime.utcnow())
+        oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+        return query_set.filter(last_heartbeat__gte=oldest_heartbeat_time)
 
 
 class RepoQuerySet(CriteriaQuerySet):

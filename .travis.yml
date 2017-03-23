@@ -18,3 +18,4 @@ before_script:
 script:
     - "flake8 --config flake8.cfg app/"
     - "app/pulp/app/db-reset.sh && python manage.py test app"
+    - "git diff HEAD^ '*.py' | flake8 --diff --config flake8.cfg"
