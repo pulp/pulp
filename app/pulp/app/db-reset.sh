@@ -15,7 +15,7 @@ sleep 1
 fi
 
 python manage.py reset_db --noinput
-python manage.py makemigrations pulp_app --noinput
+python manage.py makemigrations pulp_app testapp --noinput
 python manage.py migrate --noinput
 python manage.py reset-admin-password --random
 popd
