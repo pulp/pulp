@@ -20,12 +20,24 @@ class Model(models.Model):
         * https://www.postgresql.org/docs/current/static/datatype-uuid.html
 
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # ...we have zero interest in using a mongo-specific datatype (ObjectId) as
-    # the django PK.
+    # the django PK, but it is possible to convert ObjectIds to UUIDs if we want to
+    # maintain PKs from mongo to postgres.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     class Meta:
         abstract = True
+
+    def __str__(self):
+        try:
+            # if we have a name, use it
+            return '<{}: {}>'.format(self._meta.object_name, self.name)
+        except AttributeError:
+            # if we don't, use the pk
+            return '<{}: pk={}>'.format(self._meta.object_name, self.pk)
+
+    def __repr__(self):
+        return str(self)
 
 
 class MasterModel(Model):
@@ -111,8 +123,16 @@ class MasterModel(Model):
         else:
             return self
 
-    def __repr__(self):
-        return '<{} "{}">'.format(type(self).__name__, str(self))
+    def __str__(self):
+        # similar to Model's __str__, but type-aware
+        cast = self.cast()
+        if cast is self:
+            return super(MasterModel, self).__str__()
+
+        try:
+            return '<{} (type={}): {}>'.format(self._meta.object_name, cast.TYPE, cast.name)
+        except AttributeError:
+            return '<{} (type={}): pk={}>'.format(self._meta.object_name, cast.TYPE, cast.pk)
 
 
 # Add properties to model _meta info to support master/detail models

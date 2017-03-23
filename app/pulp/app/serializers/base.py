@@ -189,6 +189,23 @@ class MasterModelSerializer(ModelSerializer):
         return ret
 
 
+class MatchingNullViewName(object):
+    """Object that can be used as the default view name for detail fields
+
+    This is needed to bypass a view name check done in DRF's to_internal_value method
+    that checks that the view name for the incoming data matches the view name it expects
+    for the object being represented. Since we don't know the view name for that object
+    until it's been cast, and it doesn't get cast until get_object is called, and this
+    check happens immediately before get_object is called, this check is probitive to our
+    implementation. Setting the default view_name attr of a Detail related or identity
+    field to an instance of this class should ensure the the view_name attribute of one
+    of these related fields is equal to any view name it's compared to, bypassing DRF's
+    view_name matching check.
+    """
+    def __eq__(self, other):
+        return True
+
+
 class _DetailFieldMixin:
     """Mixin class containing code common to DetailIdentityField and DetailRelatedField"""
     def __init__(self, view_name=None, **kwargs):
@@ -197,7 +214,7 @@ class _DetailFieldMixin:
             # Anything that accesses self.view_name after __init__
             # needs to have it set before being called. Unfortunately, a model instance
             # is required to derive this value, so we can't make a view_name property.
-            view_name = ''
+            view_name = MatchingNullViewName()
         super(_DetailFieldMixin, self).__init__(view_name, **kwargs)
 
     def _view_name(self, obj):

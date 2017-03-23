@@ -68,3 +68,6 @@ class Importer(PlatformImporter):
         Subclasses are designed to override this default implementation and should not call super().
         """
         raise NotImplementedError()
+
+    class Meta:
+        abstract = True

@@ -39,8 +39,6 @@ class RepositoryViewSet(NamedModelViewSet):
 
     @decorators.detail_route()
     def content(self, request, name):
-        # XXX Not sure if we actually want to put a content view on repos like this, this is
-        #     just an example of how you might include a related queryset, and in a paginated way.
         repo = self.get_object()
         paginator = UUIDPagination()
         page = paginator.paginate_queryset(repo.content, request)

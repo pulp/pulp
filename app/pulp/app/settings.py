@@ -28,6 +28,12 @@ SECRET_KEY = '*u&ouzf)09#*dnm8t9jxahz-y=uwe0g&yn9ir-(lj@l*$cc%qo'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Silenced warnings
+# - fields.W342 is the warning for having "unique=True" on a ForeignKeyField, which is something
+#   we explicitly want, so we can enforce a single Importer per-repository in 3.0, but easily
+#   allow for multiple importers per-repository in a later version by lifting the contraint.
+SILENCED_SYSTEM_CHECKS = ["fields.W342"]
+
 ALLOWED_HOSTS = ['*']
 
 MEDIA_ROOT = '/var/lib/pulp/content/'
