@@ -13,11 +13,16 @@ class Command(BaseCommand):
     help = _('Resets "admin" user\'s password.')
 
     def add_arguments(self, parser):
-        parser.add_argument('--random',
-                            action='store_true',
-                            dest='random',
-                            default=False,
-                            help=_('Generate random password for \'admin\' user.'))
+        exclusive = parser.add_mutually_exclusive_group()
+        exclusive.add_argument('--random',
+                               action='store_true',
+                               dest='random',
+                               default=False,
+                               help=_('Generate random password for \'admin\' user.'))
+        exclusive.add_argument('-p', '--password',
+                               dest='password',
+                               default=None,
+                               help=_('INSECURE: Use the given password for \'admin\' user.'))
 
     def handle(self, *args, **options):
         user = User.objects.get_or_create(username='admin', is_superuser=True)[0]
@@ -27,13 +32,20 @@ class Command(BaseCommand):
             user.save()
             self.stdout.write(_('Successfully set "admin" user\'s password to "%s".') % password)
         else:
-            password = getpass(_('Please enter new password for user "admin": '))
-            password2 = getpass(_('Please enter new password for user "admin" again: '))
+            if options['password']:
+                password = options['password']
+            else:
+                # this bit duplicates behavior in the builtin "changepassword" command, so
+                # at this point we can probably just call out to that command, leaving this one
+                # focused on generating random passwords or setting passwords in automation
+                password = getpass(_('Please enter new password for user "admin": '))
+                password2 = getpass(_('Please enter new password for user "admin" again: '))
+                if password != password2:
+                    raise CommandError(_('The passwords did not match.'))
+
             if not password:
                 raise CommandError(_("The password must be at least 1 character long."))
-            if password == password2:
-                user.set_password(password)
-                user.save()
-                self.stdout.write(_('Successfully set password for "admin" user.'))
-            else:
-                raise CommandError(_('The passwords did not match.'))
+
+            user.set_password(password)
+            user.save()
+            self.stdout.write(_('Successfully set password for "admin" user.'))

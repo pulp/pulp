@@ -1,0 +1,4 @@
+# python packages handy for developers, but not required by pulp
+django-crispy-forms
+django-extensions
+ipython
