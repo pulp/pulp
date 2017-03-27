@@ -18,10 +18,9 @@ from django.utils import timezone
 # This import is here so that Celery will find our application instance. It's important that other
 # Pulp and Django code not get used until after the Celery app is instantiated and does its "fixup"
 # of Django.
-from pulp.app.models.task import TaskLock, Worker
 from pulp.tasking.celery_instance import celery  # noqa
 from pulp.tasking.constants import TASKING_CONSTANTS
-from pulp.tasking.services import storage, worker_watcher
+from pulp.tasking.services import storage
 
 celery.autodiscover_tasks()
 
@@ -100,7 +99,9 @@ class HeartbeatStep(bootsteps.StartStopStep):
         :param worker: The worker instance
         :type  worker: celery.apps.worker.Worker
         """
-        worker_watcher.handle_worker_offline(worker.hostname)
+        from pulp.tasking.services.worker_watcher import handle_worker_offline
+
+        handle_worker_offline(worker.hostname)
 
     def _record_heartbeat(self, worker):
         """
@@ -109,13 +110,18 @@ class HeartbeatStep(bootsteps.StartStopStep):
         :param worker: The worker instance
         :type  worker: celery.apps.worker.Worker
         """
+        from pulp.tasking.services.worker_watcher import handle_worker_heartbeat
+        from pulp.app.models.task import Worker
+
         name = worker.hostname
         # Update the worker record timestamp and handle logging new workers
-        worker_watcher.handle_worker_heartbeat(name)
+        handle_worker_heartbeat(name)
 
         # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
         if name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
-            TaskLock.objects(name=name).update(timestamp=datetime.utcnow())
+            worker_lock = Worker.objects.get(name=name)
+            worker_lock.timestamp = timezone.now()
+            worker_lock.save()
 
 
 celery.steps['worker'].add(HeartbeatStep)
@@ -162,8 +168,11 @@ def initialize_worker(sender, instance, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
+    from pulp.tasking.services.worker_watcher import delete_worker
+
+
     # Delete any potential old state
-    worker_watcher.delete_worker(sender, normal_shutdown=True)
+    delete_worker(sender, normal_shutdown=True)
 
     storage.delete_worker_working_directory(sender)
     storage.create_worker_working_directory(sender)
@@ -173,7 +182,7 @@ def initialize_worker(sender, instance, **kwargs):
 
 
 @worker_shutdown.connect
-def shutdown_worker(signal, sender):
+def shutdown_worker(signal, sender, **kwargs):
     """
     Called when a worker is shutdown.
     So far, this just cleans up the database by removing the worker's record in
@@ -185,8 +194,10 @@ def shutdown_worker(signal, sender):
     :param instance: The hostname of the worker
     :type  instance: celery.apps.worker.Worker
     """
+    from pulp.tasking.services.worker_watcher import delete_worker
+
     # Delete any potential old state
-    worker_watcher.delete_worker(sender.hostname, normal_shutdown=True)
+    delete_worker(sender.hostname, normal_shutdown=True)
 
 
 def get_resource_manager_lock(name):
@@ -203,6 +214,9 @@ def get_resource_manager_lock(name):
     :param name:   The hostname of the worker
     :type  name:   basestring
     """
+    from pulp.app.models.task import TaskLock, Worker
+
+
     assert name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
 
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)
