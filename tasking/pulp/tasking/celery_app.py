@@ -10,6 +10,7 @@ import time
 from datetime import timedelta
 from gettext import gettext as _
 
+from celery import bootsteps
 from celery.signals import celeryd_after_setup, worker_shutdown
 from django.db.utils import IntegrityError
 from django.utils import timezone
@@ -21,11 +22,109 @@ from pulp.tasking.celery_instance import celery  # noqa
 from pulp.tasking.constants import TASKING_CONSTANTS
 from pulp.tasking.services import storage
 
-
 celery.autodiscover_tasks()
 
 
 _logger = logging.getLogger(__name__)
+
+
+class HeartbeatStep(bootsteps.StartStopStep):
+    """
+    Adds pulp heartbeat updating to celery workers.
+
+    This class is a celery "Blueprint". It extends the functionality of the celery
+    worker by establishing a timer on worker startup which calls the '_record_heartbeat()'
+    method periodically. This allows each worker to write its own worker record to the
+    database, instead of relying on pulp_celerybeat to do so.
+
+    http://docs.celeryproject.org/en/master/userguide/extending.html
+    https://groups.google.com/d/msg/celery-users/3fs0ocREYqw/C7U1lCAp56sJ
+
+    :param worker: The worker instance (unused)
+    :type  worker: celery.apps.worker.Worker
+    """
+
+    requires = ('celery.worker.components:Timer', )
+
+    def __init__(self, worker, **kwargs):
+        """
+        Create variable for timer reference.
+
+        The step init is called when the worker instance is created, It is called with the
+        worker instance as the first argument and all keyword arguments from the original
+        worker.__init__ call.
+
+        :param worker: The worker instance (unused)
+        :type  worker: celery.apps.worker.Worker
+        """
+        self.timer_ref = None
+
+    def start(self, worker):
+        """
+        Create a timer which periodically runs the heartbeat routine.
+
+        This method is called when the worker starts up and also whenever the AMQP connection is
+        reset (which triggers an internal restart). The timer is reset when the connection is lost,
+        so we have to install the timer again for every call to self.start.
+
+        :param worker: The worker instance
+        :type  worker: celery.apps.worker.Worker
+        """
+        self.timer_ref = worker.timer.call_repeatedly(
+            TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL,
+            self._record_heartbeat,
+            (worker, ),
+            priority=10,
+        )
+        self._record_heartbeat(worker)
+
+    def stop(self, worker):
+        """
+        Stop the timer when the worker is stopped.
+
+        This method is called every time the worker is restarted (i.e. connection is lost)
+        and also at shutdown.
+
+        :param worker: The worker instance (unused)
+        :type  worker: celery.apps.worker.Worker
+        """
+        if self.timer_ref:
+            self.timer_ref.cancel()
+            self.timer_ref = None
+
+    def terminate(self, worker):
+        """
+        Clean up the worker record and log when the celery worker is terminated.
+
+        :param worker: The worker instance
+        :type  worker: celery.apps.worker.Worker
+        """
+        from pulp.tasking.services.worker_watcher import handle_worker_offline
+
+        handle_worker_offline(worker.hostname)
+
+    def _record_heartbeat(self, worker):
+        """
+        This method creates or updates the worker record
+
+        :param worker: The worker instance
+        :type  worker: celery.apps.worker.Worker
+        """
+        from pulp.tasking.services.worker_watcher import handle_worker_heartbeat
+        from pulp.app.models.task import Worker
+
+        name = worker.hostname
+        # Update the worker record timestamp and handle logging new workers
+        handle_worker_heartbeat(name)
+
+        # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
+        if name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+            worker_lock = Worker.objects.get(name=name)
+            worker_lock.timestamp = timezone.now()
+            worker_lock.save()
+
+
+celery.steps['worker'].add(HeartbeatStep)
 
 
 @celeryd_after_setup.connect
@@ -71,6 +170,7 @@ def initialize_worker(sender, instance, **kwargs):
     """
     from pulp.tasking.services.worker_watcher import delete_worker
 
+
     # Delete any potential old state
     delete_worker(sender, normal_shutdown=True)
 
@@ -82,19 +182,20 @@ def initialize_worker(sender, instance, **kwargs):
 
 
 @worker_shutdown.connect
-def shutdown_worker(signal, sender):
+def shutdown_worker(signal, sender, **kwargs):
     """
     Called when a worker is shutdown.
-
     So far, this just cleans up the database by removing the worker's record in
     the workers collection.
 
     :param signal:   The signal being sent to the workerTaskLock
+    :param type:     int
 
     :param instance: The hostname of the worker
     :type  instance: celery.apps.worker.Worker
     """
     from pulp.tasking.services.worker_watcher import delete_worker
+
     # Delete any potential old state
     delete_worker(sender.hostname, normal_shutdown=True)
 
@@ -114,6 +215,8 @@ def get_resource_manager_lock(name):
     :type  name:   basestring
     """
     from pulp.app.models.task import TaskLock, Worker
+
+
     assert name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
 
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)

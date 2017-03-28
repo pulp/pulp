@@ -26,56 +26,6 @@ _logger = logging.getLogger(__name__)
 CELERYBEAT_NAME = constants.CELERYBEAT_WORKER_NAME + "@" + platform.node()
 
 
-class EventMonitor(threading.Thread):
-    """
-    The EventMonitor is a thread dedicated to handling worker discovery/departure.
-    """
-
-    def __init__(self):
-        super(EventMonitor, self).__init__()
-
-    def run(self):
-        """
-        The thread entry point, which calls monitor_events().
-
-        monitor_events() is a blocking call, but in the case where an unexpected Exception is
-        raised, a log-but-continue behavior is desired. This is especially the case given this is
-        a background thread. Exiting is not a concern because this is a daemon=True thread. The
-        method loops unconditionally using a try/except pattern around the call to
-        monitor_events() to log and then re-enter if an exception is encountered.
-        """
-        while True:
-            try:
-                self.monitor_events()
-            except Exception as e:
-                _logger.error(e)
-            time.sleep(10)
-
-    def monitor_events(self):
-        """
-        Process Celery events.
-
-        Receives events from Celery and matches each with the appropriate handler function. The
-        following events are monitored for: 'task-failed', 'task-succeeded', 'worker-heartbeat',
-        and 'worker-offline'. The call to capture() is blocking, and does not return.
-
-        Capture is called with wakeup=True causing a gratuitous 'worker-heartbeat' to be sent
-        from all workers. This should handle the case of worker discovery where workers already
-        exist, and this EventMonitor is started afterwards.
-
-        The call to capture is wrapped in a log-but-continue try/except statement, which along
-        with the loop will cause the capture method to be re-entered.
-        """
-        with app.connection() as connection:
-            recv = app.events.Receiver(connection, handlers={
-                'worker-heartbeat': worker_watcher.handle_worker_heartbeat,
-                'worker-offline': worker_watcher.handle_worker_offline,
-                'worker-online': worker_watcher.handle_worker_heartbeat,
-            })
-            _logger.info(_('Event Monitor Starting'))
-            recv.capture(limit=None, timeout=None, wakeup=True)
-
-
 class CeleryProcessTimeoutMonitor(threading.Thread):
     """
     A thread dedicated to monitoring Celery processes that have stopped checking in.
@@ -84,7 +34,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
     """
     def run(self):
         """
-        The thread entry point. Sleep for FREQUENCY seconds, then call check_celery_processes()
+        The thread entry point. Sleep for the heartbeat interval, then call check_celery_processes()
 
         This method has a try/except block around check_celery_processes() to add durability to
         this background thread.
@@ -198,27 +148,30 @@ class Scheduler(beat.Scheduler):
         """
         Start two threads that are important to Pulp. One monitors workers, the other, events.
 
-        Two threads are started, one that uses EventMonitor, and handles all Celery events. The
-        second, is a WorkerTimeoutMonitor thread that watches for cases where all workers
+        A WorkerTimeoutMonitor thread is started that watches for cases where all workers
         disappear at once.
 
-        Both threads are set with daemon = True so that if the main thread exits, both will
-        close automatically. After being daemonized they are each started with a call to start().
+        The thread is set with daemon = True so that if the main thread exits, it will close
+        automatically.
 
         This method should be called only in certain situations, see docstrings on the object for
         more details.
         """
-        # start monitoring events in a thread
-        event_monitor = EventMonitor()
-        event_monitor.daemon = True
-        event_monitor.start()
         # start monitoring workers who may timeout
         worker_timeout_monitor = CeleryProcessTimeoutMonitor()
         worker_timeout_monitor.daemon = True
         worker_timeout_monitor.start()
 
-    @staticmethod
     def call_tick(self, celerybeat_name):
+        """
+        Call the superclass tick method and log a debug message.
+
+        :param celerybeat_name: hostname of the celerybeat instance
+        :type  celerybeat_name: basestring
+
+        :return:                seconds until the next tick
+        :rtype:                 integer
+        """
         ret = super(Scheduler, self).tick()
         _logger.debug(_("%(celerybeat_name)s will tick again in %(ret)s secs")
                       % {'ret': ret, 'celerybeat_name': celerybeat_name})
@@ -228,23 +181,12 @@ class Scheduler(beat.Scheduler):
         """
         Superclass runs a tick, that is one iteration of the scheduler. Executes all due tasks.
 
-        This method updates the last heartbeat time of the scheduler. We do not actually send a
-        heartbeat message since it would just get read again by this class.
+        This method updates the last heartbeat time of the scheduler.
 
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
-
-        # this is not an event that gets sent anywhere. We process it
-        # immediately.
-        scheduler_event = {
-            'timestamp': time.time(),
-            'local_received': time.time(),
-            'type': 'scheduler-event',
-            'hostname': CELERYBEAT_NAME
-        }
-
-        worker_watcher.handle_worker_heartbeat(scheduler_event)
+        worker_watcher.handle_worker_heartbeat(CELERYBEAT_NAME)
 
         now = timezone.now()
         old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
@@ -258,7 +200,7 @@ class Scheduler(beat.Scheduler):
 
             _logger.debug(_('Lock updated by %(celerybeat_name)s')
                           % {'celerybeat_name': CELERYBEAT_NAME})
-            ret = self.call_tick(self, CELERYBEAT_NAME)
+            ret = self.call_tick(CELERYBEAT_NAME)
         except TaskLock.DoesNotExist:
             TaskLock.objects.filter(lock=TaskLock.CELERY_BEAT, timestamp__lte=old_timestamp).delete()
 
@@ -277,7 +219,7 @@ class Scheduler(beat.Scheduler):
                     _logger.warning(msg)
 
                 # After acquiring new lock call super to dispatch tasks
-                ret = self.call_tick(self, CELERYBEAT_NAME)
+                ret = self.call_tick(CELERYBEAT_NAME)
 
             except IntegrityError:
                 # Setting a default wait time for celerybeat instances with no lock
@@ -299,5 +241,5 @@ class Scheduler(beat.Scheduler):
 
     def close(self):
         """This is called when celerybeat is being shutdown."""
-        worker_watcher.delete_worker(CELERYBEAT_NAME, normal_shutdown=True)
+        worker_watcher.handle_worker_offline(CELERYBEAT_NAME)
         super(Scheduler, self).close()
