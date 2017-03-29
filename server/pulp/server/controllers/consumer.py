@@ -125,7 +125,7 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
 
 
 @celery.task(base=Task, name='pulp.server.tasks.consumer.install_content')
-def install_content(consumer_id, units, options):
+def install_content(consumer_id, units, options, scheduled_call_id=None):
     """
     Install units on a consumer
 
@@ -135,6 +135,8 @@ def install_content(consumer_id, units, options):
     :type units: list or tuple
     :param options: options to pass to the install manager
     :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
     :returns Dictionary representation of a task status
     :rtype: dictionary
     """
@@ -163,7 +165,7 @@ def update_content(consumer_id, units, options, scheduled_call_id=None):
 
 
 @celery.task(base=Task, name='pulp.server.tasks.consumer.uninstall_content')
-def uninstall_content(consumer_id, units, options):
+def uninstall_content(consumer_id, units, options, scheduled_call_id=None):
     """
     Uninstall content from a consumer.
 
@@ -173,6 +175,8 @@ def uninstall_content(consumer_id, units, options):
     :type units: list or tuple
     :param options: options to pass to the install manager
     :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
     :returns Dictionary representation of a task status
     :rtype: dictionary
     """
