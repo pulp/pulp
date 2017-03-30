@@ -2,7 +2,7 @@ import errno
 import os
 import shutil
 import stat
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 
 from celery import task
 from django.conf import settings as pulp_settings
@@ -137,3 +137,15 @@ def _rmtree_fix_permissions(directory_path):
             shutil.rmtree(directory_path)
         else:
             raise
+
+@contextmanager
+def working_dir_context():
+    """
+    Prepares a working directory that is removed after the context has ended.
+    """
+    try:
+        working_dir = get_working_directory()
+        os.chdir(working_dir)
+        yield working_dir
+    finally:
+        delete_working_directory()

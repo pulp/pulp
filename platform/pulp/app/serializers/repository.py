@@ -130,8 +130,7 @@ class ImporterSerializer(MasterModelSerializer):
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'last_updated', 'feed_url', 'validate', 'ssl_ca_certificate',
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
-            'basic_auth_user', 'basic_auth_password', 'max_download_bandwidth',
-            'max_concurrent_downloads', 'download_policy', 'last_sync', 'repository',
+            'basic_auth_user', 'basic_auth_password', 'download_policy', 'last_sync', 'repository',
         )
 
 
