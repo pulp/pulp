@@ -358,7 +358,7 @@ Requires: pulp-selinux
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-repoauth = %{pulp_version}
 Requires: python-blinker
-Requires: python-celery >= 3.1.0
+Requires: python-celery >= 3.1.17
 Requires: python-pymongo >= 3.0.0
 Requires: python-mongoengine >= 0.10.0
 Requires: python-setuptools
