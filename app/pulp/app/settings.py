@@ -112,10 +112,9 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulp.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',)
 }
 
-if not DEBUG:
-    REST_FRAMEWORK['DEFAULT_PERMISSIONS_CLASSES'] = ('rest_framework.permissions.IsAuthenticated',)
 
 AUTH_USER_MODEL = 'pulp_app.User'
 
