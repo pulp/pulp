@@ -145,6 +145,20 @@ popd
 
 
 %changelog
+* Thu Mar 30 2017 Tatiana Tereshchenko <ttereshc@redhat.com> 3.1.17-1
+- Upgrade to celery 3.1.17 (ttereshc@redhat.com)
+- Removing fc22 from the list of supported platforms. (ipanova@redhat.com)
+- Carry over fc23 external deps into fc24 (sean.myers@redhat.com)
+- Adds fc23 to dist_list.txt config and removes fc21. (dkliban@redhat.com)
+- Makes some README file changes to Pulp dependencies (bbouters@redhat.com)
+- Remove FC20 from dist_lists.txt (dkliban@redhat.com)
+- Adding fc22 to dist list of celery and semantic versioning
+  (dkliban@redhat.com)
+- Removed F22 from dist_list (dkliban@redhat.com)
+- Added Fedora 22 to the dist list (dkliban@redhat.com)
+- Build updates for Fedora 21. (cduryee@redhat.com)
+- Build for EL 7. (rbarlow@redhat.com)
+
 * Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.1.11-1
 - Upgrade to celery-3.1.11. (rbarlow@redhat.com)
 
