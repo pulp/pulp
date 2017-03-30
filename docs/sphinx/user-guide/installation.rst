@@ -85,7 +85,7 @@ Repositories
 
    RHEL7::
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm
+    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 
 .. note::
    EPEL requires users of RHEL 6.x to enable the ``optional`` repository,
