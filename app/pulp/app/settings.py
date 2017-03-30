@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 import os
 import sys
 from importlib import import_module
+from pkg_resources import iter_entry_points
 
 import yaml
 
@@ -27,6 +28,12 @@ SECRET_KEY = '*u&ouzf)09#*dnm8t9jxahz-y=uwe0g&yn9ir-(lj@l*$cc%qo'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# Silenced warnings
+# - fields.W342 is the warning for having "unique=True" on a ForeignKeyField, which is something
+#   we explicitly want, so we can enforce a single Importer per-repository in 3.0, but easily
+#   allow for multiple importers per-repository in a later version by lifting the contraint.
+SILENCED_SYSTEM_CHECKS = ["fields.W342"]
 
 ALLOWED_HOSTS = ['*']
 
@@ -50,18 +57,10 @@ INSTALLED_APPS = [
     'pulp.app',
 ]
 
-# XXX Disabled until we figure out plugin loading via entry points
-# PULP_PLUGINS = ['pulp_rpm.apps.PulpRpmConfig']
-PULP_PLUGINS = []
-for plugin in PULP_PLUGINS:
-    # since the actual list of plugins would come from entry points, we
-    # don't really need to do much validation here, just add the
-    # discovered plugins to INSTALLED_APPS. We may want similar hooks in
-    # urls.py and for API resources to make sure all content types are
-    # exposed via views, or potentially do that dynamically by adding
-    # behavior to the content unit master class. For now...we'll just
-    # add it to INSTALLED_APPS. :)
-    INSTALLED_APPS.append(plugin)
+# add plugins to INSTALLED_APPS after platform
+for entry_point in iter_entry_points('pulp.plugin'):
+    plugin_app_config = entry_point.load()
+    INSTALLED_APPS.append(plugin_app_config)
 
 # Optional apps that help with development, or augment Pulp in some non-critical way
 OPTIONAL_APPS = [
@@ -113,8 +112,10 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulp.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
 }
+
+if not DEBUG:
+    REST_FRAMEWORK['DEFAULT_PERMISSIONS_CLASSES'] = ('rest_framework.permissions.IsAuthenticated',)
 
 AUTH_USER_MODEL = 'pulp_app.User'
 

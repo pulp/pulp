@@ -59,9 +59,6 @@ class Repository(Model):
         """
         return (self.name,)
 
-    def __str__(self):
-        return "<{}: {}>".format(self._meta.model.__name__, self.name)
-
 
 class ContentAdaptor(MasterModel):
     """
@@ -78,8 +75,6 @@ class ContentAdaptor(MasterModel):
     """
     name = models.TextField(db_index=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
-
-    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -137,6 +132,17 @@ class Importer(ContentAdaptor):
         (ON_DEMAND, 'Download On Demand'),
         (BACKGROUND, 'Download In Background'))
 
+    # Setting this with "unique=True" will trigger a model validation warning, telling us that we
+    # should use a OneToOneField here instead. While it is correct, doing it this way makes it
+    # easy to allow multiple importers later: Move the 'repository' field from Importer and
+    # Publisher to ContentAdaptor (without unique=True). This should make any migration that
+    # allows multiple importers to be simple, since all that's needed is removing a constraint.
+    # Using a OneToOneField here would break forward-compatibility with the idea of having
+    # multiple importers associated with a Repository, since this exposes a ManyRelatedManager
+    # on Repository with name "importers", and a OneToOneField would instead expose the single
+    # related Importer instance.
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE, unique=True)
+
     feed_url = models.TextField()
     validate = models.BooleanField(default=True)
 
@@ -177,6 +183,8 @@ class Publisher(ContentAdaptor):
 
     """
     TYPE = 'publisher'
+
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 
     auto_publish = models.BooleanField(default=True)
     relative_path = models.TextField(blank=True)

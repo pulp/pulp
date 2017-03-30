@@ -5,7 +5,6 @@ import hashlib
 
 from django.db import models
 
-
 from pulp.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
 from pulp.app.models.storage import StoragePath
 
@@ -59,6 +58,15 @@ class Content(MasterModel):
             else:
                 h.update(value)
         return h.hexdigest()
+
+    def __str__(self):
+        cast = self.cast()
+
+        # so here's a pretty good case for making namedtuples for content types
+        # the third replacement string results in "natural_key_fieldname_0=repr(field_value), ..."
+        natural_key_zip = zip(cast.natural_key_fields, cast.natural_key())
+        natural_key_string = ', '.join(('='.join((t[0].name, repr(t[1]))) for t in natural_key_zip))
+        return '<{} (type={}): {}>'.format(self._meta.object_name, cast.TYPE, natural_key_string)
 
 
 class Artifact(Model):

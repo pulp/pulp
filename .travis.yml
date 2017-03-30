@@ -16,6 +16,9 @@ before_script:
     - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
 script:
-    - "flake8 --config flake8.cfg app/"
-    - "app/pulp/app/db-reset.sh && python manage.py test app"
+    # flake8 the diff
     - "git diff HEAD^ '*.py' | flake8 --diff --config flake8.cfg"
+    # tests can't run without migrations being made
+    - "python manage.py makemigrations pulp_app"
+    # run the tests!
+    - "python manage.py test app"

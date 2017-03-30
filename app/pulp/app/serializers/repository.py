@@ -3,9 +3,10 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulp.app import models
-from pulp.app.serializers import (MasterModelSerializer, ModelSerializer,
+from pulp.app.serializers import (MasterModelSerializer, ModelSerializer, DetailIdentityField,
                                   NotesKeyValueRelatedField, RepositoryRelatedField,
-                                  ScratchpadKeyValueRelatedField, ContentRelatedField)
+                                  ScratchpadKeyValueRelatedField, ContentRelatedField,
+                                  ImporterRelatedField, PublisherRelatedField)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -36,11 +37,18 @@ class RepositorySerializer(ModelSerializer):
     )
     notes = NotesKeyValueRelatedField()
     scratchpad = ScratchpadKeyValueRelatedField()
+    importers = ImporterRelatedField(many=True)
+    publishers = PublisherRelatedField(many=True)
+    content = serializers.HyperlinkedIdentityField(
+        view_name='repositories-content',
+        lookup_field='name'
+    )
 
     class Meta:
         model = models.Repository
         fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes', 'scratchpad',
-                                                'last_content_added', 'last_content_removed')
+                                                'last_content_added', 'last_content_removed',
+                                                'importers', 'publishers', 'content')
 
 
 class ImporterSerializer(MasterModelSerializer):
@@ -50,10 +58,7 @@ class ImporterSerializer(MasterModelSerializer):
     """
     # _href is normally provided by the base class, but Importers's
     # "name" lookup field means _href must be explicitly declared.
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='importers-detail',
-        lookup_field='name',
-    )
+    _href = DetailIdentityField()
 
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
@@ -145,10 +150,7 @@ class PublisherSerializer(MasterModelSerializer):
     """
     # Every subclass must override the `_href` field with a `RepositoryNestedIdentityField` that
     # defines the view_name.
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='publishers-detail',
-        lookup_field='name',
-    )
+    _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A name for this publisher, unique within the associated repository.')
     )
