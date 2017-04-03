@@ -13,3 +13,14 @@ class UUIDPagination(pagination.CursorPagination):
 
     """
     ordering = 'id'
+
+
+class NamePagination(pagination.CursorPagination):
+    """
+    Paginate an API view based on the value of the 'name' field of objects being iterated over.
+
+    This Paginator should be used for any model that has a 'name' field and requires a value,
+    allowing for a more obvious and user-friendly pagination than the default by-uuid pagination.
+
+    """
+    ordering = 'name'
