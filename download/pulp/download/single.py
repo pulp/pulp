@@ -42,8 +42,9 @@ class Download:
     Attributes:
         url (str): A file download URL.
         writer (path): The storage path for the downloaded file.
-        retries (int): Total number of retries possible.
+        validations (list): Collection of Validations to be applied.
         context (Context): The download context.
+        retries (int): Total number of retries possible.
         delegate (Delegate): Download delegate.
         attachment: Arbitrary object attached to the download.
         reply: The remote server reply.
@@ -60,7 +61,7 @@ class Download:
         read_timeout (int): Read timeout in seconds.
 
     Notes:
-        The validation is applied in order listed.
+        The validations are applied in order listed.
     """
 
     # Data transfer buffer size in bytes.
@@ -78,8 +79,9 @@ class Download:
             self.writer = FileWriter(path)
         else:
             self.writer = TextWriter()
-        self.retries = 1
+        self.validations = []
         self.context = Context()
+        self.retries = 1
         self.delegate = None
         self.attachment = None
         self.reply = None
@@ -102,16 +104,6 @@ class Download:
             str: The absolute path.
         """
         return self.writer.path
-
-    @property
-    def validations(self):
-        """
-        The collection of validations applied to the downloaded file.
-
-        Returns:
-            list: of validations.
-        """
-        return self.writer.validations
 
     @delegate
     def prepare(self):
@@ -196,7 +188,7 @@ class Download:
                 repaired = self.on_error()
                 if repaired:
                     try:
-                        self._try()
+                        self._attempt()
                         break
                     except DownloadFailed as rf:
                         repaired = False
@@ -210,9 +202,20 @@ class Download:
             log.exception(_('Repair failed.'))
             raise error
 
-    def _try(self):
+    def _write(self, bfr):
         """
-        Try to download.
+        Write downloaded content.
+
+        Args:
+            bfr (bytes): A buffer to append.
+        """
+        self.writer.append(bfr)
+        for validation in self.validations:
+            validation.update(bfr)
+
+    def _attempt(self):
+        """
+        Attempt to download.
         """
         with self.writer:
             self._send()
@@ -229,7 +232,7 @@ class Download:
         """
         try:
             self.prepare()
-            self._try()
+            self._attempt()
         except DownloadFailed as error:
             self._repair(error)
 

@@ -19,5 +19,5 @@ class FtpDownload(Download):
             ftp.login(user=self.user, passwd=self.password)
             ftp.retrbinary(
                 cmd='RETR {}'.format(parsed_url.path),
-                callback=self.writer.append,
+                callback=self._write,
                 blocksize=self.BLOCK)

@@ -260,7 +260,7 @@ class HttpDownload(Download):
             if self.status != HTTPStatus.OK:
                 raise HttpFailed(self, self.status)
             for bfr in self.reply.iter_content(chunk_size=self.BLOCK):
-                self.writer.append(bfr)
+                self._write(bfr)
         except SSLError:
             raise HttpFailed(self, int(HTTPStatus.UNAUTHORIZED))
 

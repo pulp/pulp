@@ -14,7 +14,6 @@ class Writer:
 
     Attributes:
         path (str): The absolute path to the file. May be None.
-        validations (list): Collection of Validations to be applied.
         fp: An open file-like object used for writing.
     """
 
@@ -25,7 +24,6 @@ class Writer:
             fp: An open file-like object used for writing.
         """
         self.path = path
-        self.validations = []
         self.fp = fp
 
     @property
@@ -55,8 +53,6 @@ class Writer:
         Returns:
             int: The number of bytes appended.
         """
-        for validation in self.validations:
-            validation.update(bfr)
         return self.fp.write(bfr)
 
     def close(self):
