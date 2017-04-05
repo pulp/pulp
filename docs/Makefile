@@ -14,7 +14,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext diagrams
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -41,7 +41,16 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html:
+diagrams:
+	plantuml user-guide/diagrams/*.dot
+	cp user-guide/diagrams/*.png user-guide/images/
+	rm user-guide/diagrams/*.png
+
+	plantuml dev-guide/diagrams/*.dot
+	cp dev-guide/diagrams/*.png dev-guide/images/
+	rm dev-guide/diagrams/*.png
+
+html: diagrams
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

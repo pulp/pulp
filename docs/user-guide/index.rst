@@ -18,6 +18,7 @@ Contents:
    consumer-client/index
    nodes
    content-sources
+   lazy
    general-reference
    glossary
    troubleshooting
