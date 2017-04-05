@@ -336,18 +336,25 @@ def associate_single_unit(repository, unit):
 
 def disassociate_units(repository, unit_iterable):
     """
-    Disassociate all units in the iterable from the repository
+    Disassociate all units in the iterable from the repository.
+    Update `last_unit_removed` timestamp for the repository if needed.
 
     :param repository: The repository to update.
     :type repository: pulp.server.db.model.Repository
     :param unit_iterable: The units to disassociate from the repository.
     :type unit_iterable: iterable of pulp.server.db.model.ContentUnit
     """
+    # track if units are removed so last_unit_removed is only updated when units are removed
+    units_removed = 0
     for unit_group in paginate(unit_iterable):
         unit_id_list = [unit.id for unit in unit_group]
         qs = model.RepositoryContentUnit.objects(
             repo_id=repository.repo_id, unit_id__in=unit_id_list)
-        qs.delete()
+        # queryset delete returns the number of records deleted
+        units_removed += qs.delete()
+
+    if units_removed:
+        update_last_unit_removed(repository.repo_id)
 
 
 def create_repo(repo_id, display_name=None, description=None, notes=None, importer_type_id=None,

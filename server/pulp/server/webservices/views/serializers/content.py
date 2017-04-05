@@ -12,11 +12,12 @@ _logger = logging.getLogger(__name__)
 CONTENT_URI_PATH = http.API_V2_HREF + '/content'
 
 
-def remap_fields_with_serializer(content_unit):
-    """Remap fields in place in a pymongo object using a mongoengine serializer
+def serialize_unit_with_serializer(content_unit):
+    """
+    Serialize unit in-place to its dictionary form using its serializer.
 
-    :param content_unit: Content unit to modify
-    :type content_unit: dict
+    This will also handle remapping that unit's fields from MongoEngine field names to their
+    expected field names in the API
 
     This is a small workaround to help in cases where REST views are returning the older objects
     coming out of pymongo, but still need to have their fields remapped according to the rules of
@@ -25,8 +26,11 @@ def remap_fields_with_serializer(content_unit):
 
     Usage of pymongo objects is deprecated. Since this function is only concerned with serializing
     pymongo objects, its usage is also deprecated. Furthermore, this function is only intended to
-    be used in the final serialization of objects before presentation in the REST API.
+    be used in the final serialization of objects before presentation in the REST API, and as a
+    result modifies objects in-place.
 
+    :param content_unit: Content unit to be converted
+    :type content_unit: dict
     """
     try:
         content_type_id = content_unit['_content_type_id']
@@ -41,16 +45,22 @@ def remap_fields_with_serializer(content_unit):
         # No serializer, nothing to do
         return
 
-    # build the list of fields that need to be remapped
+    # use the serialize method to do any needed unit-specific serialization on fields
+    serializer.serialize(content_unit)
+
+    # remap fields before responding -- do this after serializing exotic fields since
+    # the serialize method will be working with the non-remapped field names.
     field_map = {}
     for field in content_unit:
         remapped_field = serializer.translate_field_reverse(field)
         if remapped_field != field:
             field_map[field] = remapped_field
 
-    # do the remapping
     for original_field, remapped_field in field_map.items():
         content_unit[remapped_field] = content_unit.pop(original_field)
+# remap_fields_with_serializer was renamed to serialize_unit_with_serializer. Alias the old
+# name for backward compatibility in the unlikely event that the old name is still in use.
+remap_fields_with_serializer = serialize_unit_with_serializer
 
 
 def content_unit_obj(content_unit):
@@ -58,7 +68,7 @@ def content_unit_obj(content_unit):
     Serialize a content unit.
     """
     serial = db.scrub_mongo_fields(content_unit)
-    remap_fields_with_serializer(content_unit)
+    serialize_unit_with_serializer(content_unit)
     last_updated = content_unit.get('_last_updated')
     if last_updated:
         content_unit['_last_updated'] = dateutils.format_iso8601_utc_timestamp(last_updated)

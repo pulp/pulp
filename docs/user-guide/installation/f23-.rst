@@ -14,7 +14,15 @@ Pulp
 Download the appropriate repo definition file from the Pulp repository:
 
  * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
- * RHEL 6+: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+ * RHEL 6 Server: https://repos.fedorapeople.org/repos/pulp/pulp/rhel6-pulp.repo
+ * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+
+.. note::
+   The RHEL repo contains the latest stable Pulp release. This has the pulp packages for RHEL 7+,
+   and the pulp-consumer and pulp-nodes packages for RHEL 6 and 7.
+
+   The RHEL 6 repo contains the the Pulp 2.11 packages. Pulp 2.11 is the last supported release
+   for EL6. EL6 users are encouraged to upgrade their Pulp environments to EL7.
 
 
 EPEL for RHEL & CentOS
