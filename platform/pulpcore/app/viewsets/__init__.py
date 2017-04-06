@@ -4,3 +4,4 @@ from pulpcore.app.viewsets.repository import (ImporterViewSet, PublisherViewSet,
     RepositoryViewSet, RepositoryContentViewSet)  # noqa
 from pulpcore.app.viewsets.task import TaskViewSet, WorkerViewSet  # noqa
 from pulpcore.app.viewsets.user import UserViewSet  # noqa
+from pulpcore.app.viewsets.catalog import DownloadCatalogViewSet  # noqa
