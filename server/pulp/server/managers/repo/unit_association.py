@@ -275,10 +275,14 @@ class RepoUnitAssociationManager(object):
                 suc_units_ids = [u.to_id_dict() for u in copied_units[0] if u is not None]
                 unsuc_units_ids = [u.to_id_dict() for u in copied_units[1]]
                 repo_controller.rebuild_content_unit_counts(dest_repo)
+                if suc_units_ids:
+                    repo_controller.update_last_unit_added(dest_repo.repo_id)
                 return {'units_successful': suc_units_ids,
                         'units_failed_signature_filter': unsuc_units_ids}
             unit_ids = [u.to_id_dict() for u in copied_units if u is not None]
             repo_controller.rebuild_content_unit_counts(dest_repo)
+            if unit_ids:
+                repo_controller.update_last_unit_added(dest_repo.repo_id)
             return {'units_successful': unit_ids}
         except Exception as e:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')

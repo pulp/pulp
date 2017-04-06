@@ -7,6 +7,15 @@ PEP-8
 New Pulp code should adhere as closely as is reasonable to PEP-8. One modification is that our line
 length limit is 100 characters, which we chose to prevent line wrapping on GitHub.
 
+It is **recommended** to enable `flake8 <http://flake8.readthedocs.io/>`_ in your text editor.
+
+You should also place ``setup.cfg`` file in top directory with all pulp content,
+which will look like this::
+
+  [flake8]
+  ignore = D203
+  max-line-length = 100
+
 
 In-code Documentation
 ---------------------

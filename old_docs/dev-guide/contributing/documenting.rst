@@ -96,11 +96,11 @@ Which creates this link: :fixedbugs:`these great bugs were fixed <2.6.0>`
 Build Docs Locally
 ------------------
 
-Building docs locally is easy::
+Building docs locally is easy:
 
-    1. Navigate to the Sphinx project folder
-    2. ``make html``
-    3. Browse the docs the folder ``docs/_build/html``.
+1. Navigate to the Sphinx project folder
+2. ``make html``
+3. Browse the docs the folder ``docs/_build/html``.
 
 The Vagrant environment comes pre-loaded with all the dependencies you need
 to build the docs.
