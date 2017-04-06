@@ -11,9 +11,13 @@ New Features
 * Log statements which are emitted from task processes now include a short task
   id of 8 characters (i.e. ``pulp.server.sync::INFO: [0ca4399c] ...``) which
   can be used to look up a task.
+
 * Users no longer need to have pulp_celerybeat running to know whether pulp_workers or
   pulp_resource_manager are online. All workers now write their own heartbeat records to the
   database, eliminating the dependence on pulp_celerybeat.
+
+* serial_number_path is removed from server.conf. Pulp now generates the serial number
+  randomly and does not use the sn.dat file. This is a part of the fix for :redmine:`1839`
 
 Bug Fixes
 ---------

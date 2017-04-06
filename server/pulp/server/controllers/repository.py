@@ -1164,9 +1164,10 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     dist = model.Distributor.objects.get_or_404(
         repo_id=repo_obj.repo_id, distributor_id=dist_id)
 
-    # Use raw pymongo not to fire the signal hander
-    model.Distributor.objects(repo_id=repo_obj.repo_id, distributor_id=dist_id).\
-        update(set__last_publish=publish_end_timestamp)
+    if not publish_report.canceled_flag:
+        # Use raw pymongo not to fire the signal hander
+        model.Distributor.objects(repo_id=repo_obj.repo_id, distributor_id=dist_id).\
+            update(set__last_publish=publish_end_timestamp)
 
     # Add a publish entry
     summary = publish_report.summary
@@ -1603,7 +1604,7 @@ class LazyUnitDownloadStep(DownloadEventListener):
             self.progress_successes += 1
             path_entry[PATH_DOWNLOADED] = True
         except (InvalidChecksumType, VerificationException, IOError), e:
-            _logger.debug(_('Download of {path} failed: {reason}.').format(
+            _logger.info(_('Download of {path} failed: {reason}.').format(
                 path=catalog_entry.path, reason=str(e)))
             path_entry[PATH_DOWNLOADED] = False
             self.progress_failures += 1

@@ -4,13 +4,9 @@ import logging
 import unittest
 
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.auth.cert.cert_generator import SerialNumber, _make_priv_key
+from pulp.server.managers.auth.cert.cert_generator import _make_priv_key
 
 manager_factory.initialize()
-
-SerialNumber.PATH = '/tmp/sn.dat'
-sn = SerialNumber()
-sn.reset()
 
 
 # The following cert was signed by a non-pulp CA
