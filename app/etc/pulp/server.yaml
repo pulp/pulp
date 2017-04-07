@@ -37,10 +37,8 @@
 #
 # logging:
 #   loggers:
-#     django:
-#       level: INFO
-#     pulp.app:
-#       level: INFO
+#     '':
+#       'handlers': ["stream"]
 
 # Broker configuration
 #
