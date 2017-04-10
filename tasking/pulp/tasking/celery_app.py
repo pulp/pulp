@@ -193,6 +193,8 @@ def shutdown_worker(signal, sender, **kwargs):
 
     :param instance: The hostname of the worker
     :type  instance: celery.apps.worker.Worker
+    :param kwargs:   Other params (unused)
+    :type  kwargs:   dict
     """
     from pulp.tasking.services.worker_watcher import delete_worker
 

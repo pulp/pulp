@@ -361,11 +361,11 @@ class AssociateSingleUnitTests(unittest.TestCase):
 
 
 class TestDisassociateUnits(unittest.TestCase):
-
+    @patch('pulp.server.controllers.repository.update_last_unit_removed')
     @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
-    def test_disaccociate_units(self, m_rcu_objects):
+    def test_disassociate_units(self, m_rcu_objects, m_update_last_unit_removed):
         """"
-        Test that multiple objects are all deleted
+        Test that multiple objects are all deleted and timestamp for units removal updated
         """
         test_unit1 = DemoModel(id='bar', key_field='baz')
         test_unit2 = DemoModel(id='baz', key_field='baz')
@@ -373,6 +373,16 @@ class TestDisassociateUnits(unittest.TestCase):
         repo_controller.disassociate_units(repo, [test_unit1, test_unit2])
         m_rcu_objects.assert_called_once_with(repo_id='foo', unit_id__in=['bar', 'baz'])
         m_rcu_objects.return_value.delete.assert_called_once()
+        m_update_last_unit_removed.assert_called_once_with('foo')
+
+    @patch('pulp.server.controllers.repository.update_last_unit_removed')
+    def test_disassociate_units_empty_iterable(self, m_update_last_unit_removed):
+        """"
+        Test that timestamp for units removal is not updated when no units are removed
+        """
+        repo = MagicMock(repo_id='foo')
+        repo_controller.disassociate_units(repo, [])
+        self.assertFalse(m_update_last_unit_removed.called)
 
 
 @mock.patch('pulp.server.controllers.repository.dist_controller')

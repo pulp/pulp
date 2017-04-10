@@ -8,7 +8,6 @@ import time
 from bson import ObjectId
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
-from celery.utils.timeutils import timedelta_seconds
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
@@ -16,6 +15,17 @@ from pulp.server.managers import factory
 from pulp.tasking.celery_instance import celery as app
 
 _logger = logging.getLogger(__name__)
+
+
+def timedelta_total_seconds(timedelta):
+    """
+    Python 2.6 (RHEL6) does not provide the total_seconds() method on timedelta objects.
+    Adding an alternative here for compatability purposes, but this can be removed
+    once we transition to Python 3.
+    """
+    return (
+        timedelta.microseconds + 0.0 +
+        (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
 
 
 class ScheduledCall(Model):
@@ -297,9 +307,9 @@ class ScheduledCall(Model):
             if self.last_run_at is not None:
                 last_run_dt = dateutils.to_utc_datetime(
                     dateutils.parse_iso8601_datetime(str(self.last_run_at)))
-                run_every_s = timedelta_seconds(interval.totimedelta(start=last_run_dt))
+                run_every_s = timedelta_total_seconds(interval.totimedelta(start=last_run_dt))
             else:
-                run_every_s = timedelta_seconds(interval.totimedelta(start=first_run_dt))
+                run_every_s = timedelta_total_seconds(interval.totimedelta(start=first_run_dt))
 
             # This discovers how many runs should have occurred based on the schedule
             expected_runs = 0
@@ -315,11 +325,11 @@ class ScheduledCall(Model):
                 current_run_s = calendar.timegm(current_run.utctimetuple())
                 if current_run_s < now_s:
                     expected_runs += 1
-                    last_scheduled_run_s += timedelta_seconds(current_interval)
+                    last_scheduled_run_s += timedelta_total_seconds(current_interval)
                 else:
                     break
         else:
-            run_every_s = timedelta_seconds(interval)
+            run_every_s = timedelta_total_seconds(interval)
             # don't want this to be negative
             expected_runs = max(int(since_first_s / run_every_s), 0)
             last_scheduled_run_s = first_run_s + expected_runs * run_every_s
