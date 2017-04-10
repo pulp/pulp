@@ -75,3 +75,74 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
 
     bind_manager = managers.consumer_bind_manager()
     bind_manager.delete(consumer_id, repo_id, distributor_id, True)
+
+    response = TaskResult()
+
+    if binding['notify_agent']:
+        agent_manager = managers.consumer_agent_manager()
+        task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
+        # we only want the task's ID, not the full task
+        response.spawned_tasks.append({'task_id': task['task_id']})
+
+    return response
+
+
+@celery.task(base=Task, name='pulp.server.tasks.consumer.install_content')
+def install_content(consumer_id, units, options, scheduled_call_id=None):
+    """
+    Install units on a consumer
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.install_content(consumer_id, units, options)
+
+
+@celery.task(base=Task, name='pulp.server.tasks.consumer.update_content')
+def update_content(consumer_id, units, options, scheduled_call_id=None):
+    """
+    Update units on a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.update_content(consumer_id, units, options)
+
+
+@celery.task(base=Task, name='pulp.server.tasks.consumer.uninstall_content')
+def uninstall_content(consumer_id, units, options, scheduled_call_id=None):
+    """
+    Uninstall content from a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :param scheduled_call_id: id of scheduled call that dispatched this task
+    :type scheduled_call_id: str
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.uninstall_content(consumer_id, units, options)
+
