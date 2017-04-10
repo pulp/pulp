@@ -2,6 +2,8 @@ import os
 import socket
 from ConfigParser import SafeConfigParser
 
+from pulp.common.constants import DEFAULT_CA_PATH
+
 
 class LazyConfigParser(SafeConfigParser):
     def __init__(self, *args, **kwargs):
@@ -41,6 +43,7 @@ class LazyConfigParser(SafeConfigParser):
         check_config_files()
         self.read(_config_files)
 
+
 config = LazyConfigParser()
 
 # to guarantee that a section and/or setting exists, add a default value here
@@ -70,7 +73,7 @@ _default_values = {
         'ssl_keyfile': '',
         'ssl_certfile': '',
         'verify_ssl': 'true',
-        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+        'ca_path': DEFAULT_CA_PATH,
         'unsafe_autoretry': 'false',
         'write_concern': 'majority',
     },

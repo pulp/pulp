@@ -21,7 +21,7 @@ Pulp 2.11.1
 Bug Fixes
 ---------
 
-See the list of :fixedbugs:`2.11.1`
+See the list of :fixedbugs_pulp:`2.11.1`
 
 
 Pulp 2.11.0

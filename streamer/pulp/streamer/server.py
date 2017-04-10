@@ -270,7 +270,7 @@ class Streamer(Resource):
         Get the content unit referenced by the catalog entry.
 
         :param entry: A catalog entry.
-        :type  entry: LazyCatalogEntry 
+        :type  entry: LazyCatalogEntry
         :return: The unit.
         :raises DoesNotExist: when not found.
         """

@@ -103,7 +103,7 @@ class OrphanManager(object):
         content_units_collection = content_types_db.type_units_collection(content_type_id)
         repo_content_units_collection = RepoContentUnit.get_collection()
 
-        for content_unit in content_units_collection.find({}, projection=fields):
+        for content_unit in content_units_collection.find({}, projection=fields).batch_size(100):
 
             repo_content_units_cursor = repo_content_units_collection.find(
                 {'unit_id': content_unit['_id']})
