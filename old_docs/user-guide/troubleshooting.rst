@@ -1,38 +1,26 @@
 Troubleshooting
 ===============
 
-.. _logging:
+.. _troubleshoot_logging:
 
 Logging
 -------
 
-Starting with 2.4.0, Pulp uses syslog for its log messages. How to read Pulp's log messages
-therefore depends on which log handler your operating system uses. Two different log handlers that
-are commonly used will be documented here, journald and rsyslogd. If you happen to use a different
-syslog handler on your operating system, please refer to its documentation to learn how to access
-Pulp's log messages.
+Starting with 2.4.0, Pulp uses syslog by default for its log messages. Other options
+are available and you can find the setting for your system in ``/etc/pulp/server.conf``.
+How to read Pulp’s log messages therefore depends on which log handler your
+configuration specifies and how your operating system implements that configuration.
+Two different log handlers that are commonly used will be documented here: syslog and console.
 
-Log Level
-^^^^^^^^^
+Syslog
+^^^^^^
 
-Pulp's log level can be adjusted with the ``log_level`` setting in the ``[server]`` section of
-``/etc/pulp/server.conf``. This setting is optional and defaults to INFO. Valid choices are
-CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
-
-.. note::
-
-   This setting will only adjust the verbosity of the messages that Pulp emits. If you wish to see
-   all of these messages, you may also need to set the log level on your syslog handler. For example,
-   rsyslog typically only displays INFO and higher, so if you set Pulp to DEBUG it will still be
-   filtered by rsyslog. See the :ref:`rsyslogd` section for more information.
-
-.. note::
-
-   Pulp reads the log level configuration during startup. If the log level is changed while Pulp is
-   running, then you will need to restart it.
+The two common syslog utilities covered in this guide are journald and rsyslog.
+If you happen to use a different syslog handler on your operating system, please
+refer to its documentation to learn how to access Pulp’s log messages.
 
 journald
-^^^^^^^^
+~~~~~~~~
 
 journald is the logging daemon that is distributed as part of systemd. If you are using Fedora
 this is your primary logging daemon, though it's possible that you also have rsyslogd installed.
@@ -48,10 +36,7 @@ will display most of Pulp's log messages::
 We'll leave it to the systemd team to thoroughly document ``journalctl``, but it's worth mentioning
 that it can be used to aggregate the logs from Pulp's various processes together into one handy
 view using it's ``+`` operator. Pulp server runs in a variety of units, and if there are problems
-starting Pulp, you may wish to see log messages from httpd or celery. If you wanted to see the
-log messages from all server processes together you could use this command::
-
-    $ sudo journalctl SYSLOG_IDENTIFIER=pulp + SYSLOG_IDENTIFIER=celery + SYSLOG_IDENTIFIER=httpd
+startinudo journalctl SYSLOG_IDENTIFIER=pulp + SYSLOG_IDENTIFIER=celery + SYSLOG_IDENTIFIER=httpd
 
 A ``journalctl`` flag to know about is ``-f``, which performs a similar function
 as ``tail``'s ``-f`` flag.
@@ -59,7 +44,7 @@ as ``tail``'s ``-f`` flag.
 .. _rsyslogd:
 
 rsyslogd
-^^^^^^^^
+~~~~~~~~
 
 rsyslogd is another popular logging daemon. If you are using RHEL 6, this is your logging daemon.
 On many distributions, it is configured to log most messages to ``/var/log/messages``. If this is
@@ -74,30 +59,6 @@ If you wish to match Pulp messages and have them logged to a different file than
 ``/var/log/messages``, you may adjust your ``/etc/rsyslog.conf``. See RSyslog_ for
 details. An alternative could be to use ``tail`` and ``grep`` to view Pulp messages logged to
 ``/var/log/messages``.
-
-Why Syslog?
-^^^^^^^^^^^
-
-Pulp's use of syslog is a departure from previous Pulp releases which used to write their own log
-files to /var/log/pulp/. This was problematic for Pulp's 2.4.0 release as Pulp evolved to use a
-multi-process distributed architecture. Python's file-based log handler cannot be used by multiple
-processes to write to the same file path, and so Pulp had to do something different. Syslog is a
-widely used logging protocol, and given the distributed nature of Pulp it was the most appropriate
-logging solution available.
-
-Task ID
-^^^^^^^
-
-Since Pulp is a multi-process application, Pulp will attempt to log a shortened 8 character version
-of the task id if the log entry is emitted from a task process. This can be used to look up the task
-in ``pulp-admin tasks`` commands.  An example of a log statement with a task id would be::
-
-    Jan 20 23:12:02 myhost pulp[30687]: pulp_rpm.plugins.importers.yum.sync:INFO: [338bdde4] Downloading 32 RPMs
-
-Here the shortened task id is ``338bdde4``. The full task id would be
-``338bdde4-608a-44ab-a79c-49c28b0fe037``. A statement without a task id would look like::
-
-    Jan 21 23:12:02 myhost pulp[30482]: pulp.server.async.worker_watcher:INFO: New worker 'resource_manager@myhost' discovered
 
 Other logs
 ^^^^^^^^^^
