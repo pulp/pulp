@@ -33,7 +33,7 @@ class HeartbeatStep(bootsteps.StartStopStep):
     Adds pulp heartbeat updating to celery workers.
 
     This class is a celery "Blueprint". It extends the functionality of the celery
-    worker by establishing a timer on worker startup which calls the '_record_heartbeat()'
+    worker by establishing a timer on consumer startup which calls the '_record_heartbeat()'
     method periodically. This allows each worker to write its own worker record to the
     database, instead of relying on pulp_celerybeat to do so.
 
@@ -44,22 +44,20 @@ class HeartbeatStep(bootsteps.StartStopStep):
     :type  worker: celery.apps.worker.Worker
     """
 
-    requires = ('celery.worker.components:Timer', )
-
-    def __init__(self, worker, **kwargs):
+    def __init__(self, consumer, **kwargs):
         """
         Create variable for timer reference.
 
-        The step init is called when the worker instance is created, It is called with the
-        worker instance as the first argument and all keyword arguments from the original
-        worker.__init__ call.
+        The step init is called when the consumer instance is created, It is called with the
+        consumer instance as the first argument and all keyword arguments from the original
+        consumer.__init__ call.
 
-        :param worker: The worker instance (unused)
-        :type  worker: celery.apps.worker.Worker
+        :param worker: The consumer instance (unused)
+        :type  worker: celery.worker.consumer.Consumer
         """
         self.timer_ref = None
 
-    def start(self, worker):
+    def start(self, consumer):
         """
         Create a timer which periodically runs the heartbeat routine.
 
@@ -67,53 +65,44 @@ class HeartbeatStep(bootsteps.StartStopStep):
         reset (which triggers an internal restart). The timer is reset when the connection is lost,
         so we have to install the timer again for every call to self.start.
 
-        :param worker: The worker instance
-        :type  worker: celery.apps.worker.Worker
+        :param worker: The consumer instance
+        :type  worker: celery.worker.consumer.Consumer
         """
-        self.timer_ref = worker.timer.call_repeatedly(
+
+        self.timer_ref = consumer.timer.call_repeatedly(
             TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL,
             self._record_heartbeat,
-            (worker, ),
+            (consumer, ),
             priority=10,
         )
-        self._record_heartbeat(worker)
+        self._record_heartbeat(consumer)
 
-    def stop(self, worker):
+    def stop(self, consumer):
         """
         Stop the timer when the worker is stopped.
 
         This method is called every time the worker is restarted (i.e. connection is lost)
         and also at shutdown.
 
-        :param worker: The worker instance (unused)
-        :type  worker: celery.apps.worker.Worker
+        :param worker: The consumer instance (unused)
+        :type  worker: celery.worker.consumer.Consumer
         """
         if self.timer_ref:
             self.timer_ref.cancel()
             self.timer_ref = None
 
-    def terminate(self, worker):
-        """
-        Clean up the worker record and log when the celery worker is terminated.
 
-        :param worker: The worker instance
-        :type  worker: celery.apps.worker.Worker
-        """
-        from pulp.tasking.services.worker_watcher import handle_worker_offline
-
-        handle_worker_offline(worker.hostname)
-
-    def _record_heartbeat(self, worker):
+    def _record_heartbeat(self, consumer):
         """
         This method creates or updates the worker record
 
-        :param worker: The worker instance
-        :type  worker: celery.apps.worker.Worker
+        :param worker: The consumer instance
+        :type  worker: celery.worker.consumer.Consumer
         """
         from pulp.tasking.services.worker_watcher import handle_worker_heartbeat
         from pulp.app.models.task import Worker
 
-        name = worker.hostname
+        name = consumer.hostname
         # Update the worker record timestamp and handle logging new workers
         handle_worker_heartbeat(name)
 
@@ -124,7 +113,7 @@ class HeartbeatStep(bootsteps.StartStopStep):
             worker_lock.save()
 
 
-celery.steps['worker'].add(HeartbeatStep)
+celery.steps['consumer'].add(HeartbeatStep)
 
 
 @celeryd_after_setup.connect
