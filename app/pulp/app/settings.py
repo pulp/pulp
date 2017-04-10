@@ -183,13 +183,9 @@ _DEFAULT_PULP_SETTINGS = {
             },
         },
         'loggers': {
-            'pulp.app': {
-                'handlers': ['stream'],
-                'level': 'INFO',
-            },
-            'django': {
-                'handlers': ['stream'],
-                'level': 'INFO',
+            '': {
+                # The root logger
+                'handlers': ["stream"],
             },
         }
     },

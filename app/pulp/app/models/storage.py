@@ -92,6 +92,28 @@ class FileSystem(Storage):
                 raise
 
     @staticmethod
+    def delete_empty_dirs(path, root):
+        """
+        Delete empty directories in the specified path.
+
+        Args:
+            path (str): An absolute path to directory to delete
+            root (str): An absolute path to directory which should not be removed even if empty
+        """
+        if root == path:
+            return
+        try:
+            os.rmdir(path)
+        except OSError as e:
+            if e.errno in [errno.ENOENT, errno.ENOTEMPTY]:
+                return
+            else:
+                raise
+        else:
+            dir_up = os.path.dirname(path)
+            FileSystem.delete_empty_dirs(dir_up, root)
+
+    @staticmethod
     def _open(path, mode='rb'):
         """
         Open the file at the specified path.

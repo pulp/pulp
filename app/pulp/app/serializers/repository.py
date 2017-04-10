@@ -112,14 +112,6 @@ class ImporterSerializer(MasterModelSerializer):
         write_only=True,
         required=False,
     )
-    max_download_bandwidth = serializers.IntegerField(
-        help_text='The max amount of bandwidth used per download (Bps).',
-        required=False,
-    )
-    max_concurrent_downloads = serializers.IntegerField(
-        help_text='The number of concurrent downloads permitted.',
-        required=False,
-    )
     download_policy = serializers.MultipleChoiceField(
         help_text='The policy for downloading content.',
         allow_empty=False,

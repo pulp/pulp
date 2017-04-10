@@ -110,10 +110,6 @@ class Importer(ContentAdaptor):
             Format: scheme://user:password@host:port
         basic_auth_user (models.TextField): The user used in HTTP basic authentication.
         basic_auth_password (models.TextField): The password used in HTTP basic authentication.
-        max_download_bandwidth (models.IntegerField): The max amount of bandwidth used per download
-            in bytes per second.
-        max_concurrent_downloads (models.IntegerField): The number of concurrent downloads
-            permitted.
         download_policy (models.TextField): The policy for downloading content.
         last_sync (models.DatetimeField): When the last successful synchronization occurred.
 
@@ -155,9 +151,6 @@ class Importer(ContentAdaptor):
 
     basic_auth_user = models.TextField(blank=True)
     basic_auth_password = models.TextField(blank=True)
-
-    max_download_bandwidth = models.IntegerField(null=True)
-    max_concurrent_downloads = models.IntegerField(null=True)
 
     download_policy = models.TextField(choices=DOWNLOAD_POLICIES)
     last_sync = models.DateTimeField(blank=True, null=True)

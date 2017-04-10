@@ -161,26 +161,6 @@ class OrphanManager(object):
                                               content_unit=content_unit_id)
 
     @staticmethod
-    def delete_all_orphans():
-        """
-        Delete all orphaned content units.
-
-        :return: count of units deleted indexed by content_type_id
-        :rtype: dict
-        """
-        ret = {}
-        for content_type_id in content_types_db.all_type_ids():
-            count = OrphanManager.delete_orphans_by_type(content_type_id)
-            if count > 0:
-                ret[content_type_id] = count
-
-        for content_type_id in plugin_api.list_unit_models():
-            count = OrphanManager.delete_orphan_content_units_by_type(content_type_id)
-            if count > 0:
-                ret[content_type_id] = count
-        return ret
-
-    @staticmethod
     def delete_orphans_by_id(content_unit_list):
         """
         Delete the given orphaned content units.
@@ -401,6 +381,7 @@ class OrphanManager(object):
             _logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
 
 
-delete_all_orphans = task(OrphanManager.delete_all_orphans, base=UserFacingTask, ignore_result=True)
-delete_orphans_by_id = task(OrphanManager.delete_orphans_by_id, base=UserFacingTask, ignore_result=True)
-delete_orphans_by_type = task(OrphanManager.delete_orphans_by_type, base=UserFacingTask, ignore_result=True)
+delete_orphans_by_id = task(OrphanManager.delete_orphans_by_id, base=UserFacingTask,
+                            ignore_result=True)
+delete_orphans_by_type = task(OrphanManager.delete_orphans_by_type, base=UserFacingTask,
+                              ignore_result=True)

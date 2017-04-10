@@ -118,8 +118,3 @@ class Artifact(Model):
 
     class Meta:
         unique_together = ('content', 'relative_path')
-
-    def delete(self, *args, **kwargs):
-        if self.downloaded:
-            self.file.delete()
-        super(Artifact, self).delete(*args, **kwargs)
