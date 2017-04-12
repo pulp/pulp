@@ -181,8 +181,8 @@ class RepoUnitAssociationManager(object):
             unit_fields=criteria['unit_fields'],
             yield_content_unit=True)
 
-    @classmethod
-    def associate_from_repo(cls, source_repo_id, dest_repo_id, criteria,
+    @staticmethod
+    def associate_from_repo(source_repo_id, dest_repo_id, criteria,
                             import_config_override=None):
         """
         Creates associations in a repository based on the contents of a source
@@ -239,7 +239,7 @@ class RepoUnitAssociationManager(object):
         transfer_units = None
         # if all source types have been converted to mongo - search via new style
         if source_repo_unit_types.issubset(set(plugin_api.list_unit_models())):
-            transfer_units = cls._units_from_criteria(source_repo, criteria)
+            transfer_units = RepoUnitAssociationManager._units_from_criteria(source_repo, criteria)
         else:
             # else, search via old style
             associate_us = load_associated_units(source_repo_id, criteria)
@@ -342,8 +342,8 @@ class RepoUnitAssociationManager(object):
         return self.unassociate_by_criteria(repo_id, criteria,
                                             notify_plugins=notify_plugins)
 
-    @classmethod
-    def unassociate_by_criteria(cls, repo_id, criteria, notify_plugins=True):
+    @staticmethod
+    def unassociate_by_criteria(repo_id, criteria, notify_plugins=True):
         """
         Unassociate units that are matched by the given criteria.
 
@@ -366,7 +366,7 @@ class RepoUnitAssociationManager(object):
         # If all source types have been converted to mongo, search via new style.
         repo_unit_types = set(repo.content_unit_counts.keys())
         if repo_unit_types.issubset(set(plugin_api.list_unit_models())):
-            transfer_units = list(cls._units_from_criteria(repo, criteria))
+            transfer_units = list(RepoUnitAssociationManager._units_from_criteria(repo, criteria))
         else:
             transfer_units = None
             if unassociate_units is not None:
@@ -384,10 +384,11 @@ class RepoUnitAssociationManager(object):
         collection = RepoContentUnit.get_collection()
 
         for unit_type_id, unit_ids in unit_map.items():
-            spec = {'repo_id': repo_id,
-                    'unit_type_id': unit_type_id,
-                    'unit_id': {'$in': unit_ids}
-                    }
+            spec = {
+                'repo_id': repo_id,
+                'unit_type_id': unit_type_id,
+                'unit_id': {'$in': unit_ids}
+            }
             collection.remove(spec)
 
             unique_count = sum(

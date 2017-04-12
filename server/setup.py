@@ -21,7 +21,7 @@ else:
 
 setup(
     name='pulp-server',
-    version='2.12.1',
+    version='2.12.2',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
@@ -32,7 +32,7 @@ setup(
         ]
     },
     install_requires=[
-        'blinker', 'celery >=3.1.0, <3.2.0', 'httplib2', 'iniparse', 'isodate>=0.5.0',
+        'blinker', 'celery >=3.1.0', 'httplib2', 'iniparse', 'isodate>=0.5.0',
         'mongoengine>=0.10.0', 'oauth2>=1.5.211', 'pymongo>=3.0.0', 'setuptools',
         DJANGO_REQUIRES, SEMVER_REQUIRES, M2CRYPTO_REQUIRES],
 )

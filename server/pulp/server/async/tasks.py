@@ -12,7 +12,7 @@ import uuid
 from bson.json_util import dumps as bson_dumps
 from bson.json_util import loads as bson_loads
 from bson import ObjectId
-from celery import task, Task as CeleryTask, current_task
+from celery import task, Task as CeleryTask, current_task, __version__ as celery_version
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from mongoengine.queryset import DoesNotExist
@@ -22,11 +22,10 @@ from pulp.common import constants, dateutils, tags
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
-    PulpCodedException
+    NoWorkers, PulpCodedException, error_codes
 from pulp.server.config import config
 from pulp.server.db.model import Worker, ReservedResource, TaskStatus, \
     ResourceManagerLock, CeleryBeatLock
-from pulp.server.exceptions import NoWorkers
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers import factory as managers
 from pulp.server.managers.schedule import utils
@@ -289,14 +288,12 @@ def _release_resource(task_id):
     running_task_qs = TaskStatus.objects.filter(task_id=task_id, state=constants.CALL_RUNNING_STATE)
     for running_task in running_task_qs:
         new_task = Task()
-        msg = _('The task status %(task_id)s exited immediately for some reason. Marking as '
-                'errored. Check the logs for more details')
-        runtime_exception = RuntimeError(msg % {'task_id': task_id})
+        exception = PulpCodedException(error_codes.PLP0049, task_id=task_id)
 
         class MyEinfo(object):
             traceback = None
 
-        new_task.on_failure(runtime_exception, task_id, (), {}, MyEinfo)
+        new_task.on_failure(exception, task_id, (), {}, MyEinfo)
     ReservedResource.objects(task_id=task_id).delete()
 
 
@@ -454,8 +451,12 @@ class Task(PulpTask, ReservedTaskMixin):
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
-        routing_key = kwargs.get('routing_key',
-                                 defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
+        if celery_version.startswith('4'):
+            routing_key = kwargs.get('routing_key',
+                                     defaults.NAMESPACES['task']['default_routing_key'].default)
+        else:
+            routing_key = kwargs.get('routing_key',
+                                     defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tag_list = kwargs.pop('tags', [])
         group_id = kwargs.pop('group_id', None)
         async_result = super(Task, self).apply_async(*args, **kwargs)

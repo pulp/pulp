@@ -35,7 +35,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.12.1
+Version: 2.12.2
 Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -359,7 +359,6 @@ Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-repoauth = %{pulp_version}
 Requires: python-blinker
 Requires: python-celery >= 3.1.0
-Requires: python-celery < 3.2.0
 Requires: python-pymongo >= 3.0.0
 Requires: python-mongoengine >= 0.10.0
 Requires: python-setuptools
@@ -1053,6 +1052,16 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Wed Apr 12 2017 werwty <bihan.zh@gmail.com> 2.12.2-1
+- Pulp rebuild
+
+* Wed Apr 05 2017 werwty <bihan.zh@gmail.com> 2.12.2-0.2.beta
+- 752 - Fixed: Suggestion to add -v remains even if you use -v
+  (fdobrovo@redhat.com)
+- 1498 - logrotate for /var/log/pulp/*.log (pronix.service@gmail.com)
+- 1982 - Added --force-full option to importer pulp-admin (fdobrovo@redhat.com)
+- 1829 - Fixed repo list summary view (fdobrovo@redhat.com)
+
 * Thu Feb 23 2017 werwty <bihan.zh@gmail.com> 2.12.1-1
 - Pulp rebuild
 
