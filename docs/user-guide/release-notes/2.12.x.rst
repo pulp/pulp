@@ -16,6 +16,14 @@ EL6 users are encouraged to upgrade their Pulp environments to EL7. See this
 this `blog post <http://pulpproject.org/2016/11/17/django14-epel6-retirement/>`_ for background and
 motivation for this decision.
 
+Pulp 2.12.2
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.12.2`
+
 
 Pulp 2.12.1
 ===========
