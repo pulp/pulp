@@ -75,7 +75,7 @@ class RSyncPublishStep(PublishStep):
         """
         tmpdir = os.path.join(self.get_working_dir(), '.tmp')
         os.makedirs(os.path.join(tmpdir, path.lstrip("/")))
-        args = ['rsync', '-avr', '-f+ */']
+        args = ['rsync', '-avrK', '-f+ */']
         args.extend(self.make_authentication())
         args.append("%s/" % tmpdir)
         args.append(self.make_destination(path).replace(str(path), ""))
