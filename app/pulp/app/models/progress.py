@@ -3,13 +3,18 @@ Django models related to progress reporting
 """
 from gettext import gettext as _
 import logging
+import datetime
 
 from django.db import models
 
 from pulp.tasking import util
 from pulp.app.models import Model, Task
+from django.utils import timezone
 
 _logger = logging.getLogger(__name__)
+
+# number of ms between save() calls when _using_context_manager is set
+BATCH_INTERVAL = 500
 
 
 class ProgressReport(Model):
@@ -58,6 +63,9 @@ class ProgressReport(Model):
     task = models.ForeignKey("Task", on_delete=models.CASCADE)
     suffix = models.TextField(default='')
 
+    _using_context_manager = False
+    _last_save_time = None
+
     def save(self, *args, **kwargs):
         """
         Auto-set the task_id if running inside a task
@@ -70,7 +78,16 @@ class ProgressReport(Model):
         """
         if self.task_id is None:
             self.task_id = Task.objects.get(id=util.get_current_task_id())
-        super(ProgressReport, self).save(*args, **kwargs)
+
+        now = timezone.now()
+
+        if self._using_context_manager and self._last_save_time:
+            if now - self._last_save_time >= datetime.timedelta(milliseconds=BATCH_INTERVAL):
+                super(ProgressReport, self).save(*args, **kwargs)
+        else:
+            super(ProgressReport, self).save(*args, **kwargs)
+
+        self._last_save_time = now
 
     def __enter__(self):
         """
@@ -78,6 +95,10 @@ class ProgressReport(Model):
         """
         self.state = self.RUNNING
         self.save()
+
+        # Save needs occurs immediately so it is called before _using_context_manager is set
+        self._using_context_manager = True
+        return self
 
     def __exit__(self, type, value, traceback):
         """
@@ -89,6 +110,7 @@ class ProgressReport(Model):
 
         See the context manager documentation for more info on __exit__ parameters
         """
+        self._using_context_manager = False
         if type is None:
             self.state = self.COMPLETED
             self.save()
@@ -115,7 +137,9 @@ class ProgressSpinner(ProgressReport):
         >>> metadata_progress.save()
 
     The ProgressSpinner() is a context manager that provides automatic state transitions and saving
-    for the RUNNING COMPLETED and FAILED states. Use it as follows:
+    for the RUNNING COMPLETED and FAILED states. When ProgressSpinner() is used as a context
+    manager progress reporting is rate limited to every 500 milliseconds.
+    Use it as follows:
 
         >>> spinner = ProgressSpinner('Publishing Metadata')
         >>> spinner.save() # spinner is saved as 'waiting'
@@ -157,7 +181,9 @@ class ProgressBar(ProgressReport):
 
     The ProgressBar() is a context manager that provides automatic state transitions and saving for
     the RUNNING COMPLETED and FAILED states. The increment() method can be called in the loop as
-    work is completed. Use it as follows:
+    work is completed. When ProgressBar() is used as a context manager progress reporting is rate
+    limited to every 500 milliseconds.
+    Use it as follows:
 
         >>> progress_bar = ProgressBar(message='Publishing files', total=len(files_iterator))
         >>> progress_bar.save()
