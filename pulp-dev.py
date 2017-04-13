@@ -235,13 +235,13 @@ def get_paths_to_copy():
                       'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
     elif LSB_VERSION >= 7.0:
-        paths.append({'source': 'server/etc/default/systemd_pulp_celerybeat',
+        paths.append({'source': 'app/etc/default/systemd_pulp_celerybeat',
                       'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/systemd_pulp_workers',
+        paths.append({'source': 'app/etc/default/systemd_pulp_workers',
                       'destination': '/etc/default/pulp_workers', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/systemd_pulp_resource_manager',
+        paths.append({'source': 'app/etc/default/systemd_pulp_resource_manager',
                       'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
         paths.append({'source': 'server/usr/lib/tmpfiles.d/pulp.conf',
@@ -316,12 +316,12 @@ def getlinks():
         links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
     elif LSB_VERSION >= 7.0:
-        links.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
+        links.append(('app/usr/lib/systemd/system/pulp_celerybeat.service',
                       '/etc/systemd/system/pulp_celerybeat.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
+        links.append(('app/usr/lib/systemd/system/pulp_resource_manager.service',
                       '/etc/systemd/system/pulp_resource_manager.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_workers.service',
-                      '/etc/systemd/system/pulp_workers.service'))
+        links.append(('app/usr/lib/systemd/system/pulp_worker@.service',
+                      '/etc/systemd/system/pulp_worker@.service'))
         links.append(('streamer/usr/lib/systemd/system/pulp_streamer.service',
                       '/etc/systemd/system/pulp_streamer.service'))
 
