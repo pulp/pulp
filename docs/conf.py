@@ -94,7 +94,7 @@ pygments_style = 'sphinx'
 # Set autodoc default options
 # Document all module/class/etc members, even if they have no docstring.
 # Show class inheritance, and group class members together by type (attr, method, etc)
-autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
+autodoc_default_flags = ['members', 'undoc-members']
 autodoc_member_order = 'groupwise'
 autoclass_content = 'both'
 
@@ -301,3 +301,6 @@ extlinks = {'redmine': ('https://pulp.plan.io/issues/%s', '#'),
 # napoleon uses .. attribute by default, but :ivar: is more succinct and looks better,
 # particularly on classes with a lot of attributes, like django models and related objects
 napoleon_use_ivar = True
+
+# set primary domain to python so we don't have to include :py: in xref links
+default_domain = 'py'

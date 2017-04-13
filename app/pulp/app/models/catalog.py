@@ -20,9 +20,9 @@ class DownloadCatalog(Model):
 
     Relations:
 
-        artifact (Artifact): The artifact that is expected to be present at
-            ``url``.
-        importer (Importer): The importer that contains the
+        artifact (pulp.app.models.Artifact): The artifact that is expected
+            to be present at ``url``.
+        importer (pulp.app.models.Importer): The importer that contains the
             configuration necessary to access ``url``.
 
     """
