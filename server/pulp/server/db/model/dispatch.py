@@ -22,6 +22,8 @@ from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
 import isodate
+import mongoengine
+
 
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery as app
@@ -614,7 +616,8 @@ class TaskStatus(Model, ReaperMixin):
         update = {'$set': stuff_to_update}
         if set_on_insert:
             update['$setOnInsert'] = set_on_insert
-        self.get_collection().update(
-            {'task_id': task_id},
-            update,
-            upsert=True)
+
+        wc_param = 'write_option' if mongoengine.get_version()  < "0.9.0" else 'write_concern'
+        update_kwargs = {wc_param: {'w':1, 'fsync':True}}
+
+        self.get_collection().update({'task_id': task_id}, update, upsert=True, **update_kwargs)
