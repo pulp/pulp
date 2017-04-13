@@ -1,23 +1,16 @@
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
-from rest_framework import decorators, pagination
+from rest_framework import decorators
 
 from pulp.app import tasks
 from pulp.app.models import Importer, Publisher, Repository, RepositoryContent
-from pulp.app.pagination import UUIDPagination
+from pulp.app.pagination import UUIDPagination, NamePagination
 from pulp.app.response import OperationPostponedResponse
 from pulp.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
                                   RepositorySerializer, RepositoryContentSerializer)
 from pulp.app.viewsets import NamedModelViewSet
 from pulp.app.viewsets.custom_filters import CharInFilter
 from pulp.common import tags
-
-
-class RepositoryPagination(pagination.CursorPagination):
-    """
-    Repository paginator, orders repositories by name when paginating.
-    """
-    ordering = 'name'
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -34,7 +27,7 @@ class RepositoryViewSet(NamedModelViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
-    pagination_class = RepositoryPagination
+    pagination_class = NamePagination
     filter_class = RepositoryFilter
 
     @decorators.detail_route()
