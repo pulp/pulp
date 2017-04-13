@@ -48,7 +48,7 @@ class MasterModel(Model):
 
     Attributes:
 
-        MasterModel.TYPE (str): Default constant value saved into the ``type``
+        TYPE (str): Default constant value saved into the ``type``
             field of Model instances
 
     Fields:

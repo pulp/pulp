@@ -29,6 +29,12 @@ PyObject.doc_field_types.extend([
                  can_collapse=True),
 ])
 
+# Similar to the extensions above, but this rewrites the 'variable' type used for class attrs to
+# use the data rolename, which prevents sphinx from attempting to cross-reference class attrs.
+for field in PyObject.doc_field_types:
+    if field.name == 'variable':
+        field.rolename = 'data'
+
 
 class DjangoGoogleDocstring(GoogleDocstring):
     """Add support for Django-specific sections to napoleon's GoogleDocstring parser.
