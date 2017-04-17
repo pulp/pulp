@@ -14,11 +14,8 @@ services:
 install:
     # dev_requirements should not be needed for testing; don't install them to make sure
     - "pip install -r test_requirements.txt"
-    - "pushd app/ && python setup.py develop && popd"
+    - "pushd platform/ && python setup.py develop && popd"
     - "pushd common/ && python setup.py develop && popd"
-    - "pushd exceptions/ && python setup.py develop && popd"
-    - "pushd plugin/ && python setup.py develop && popd"
-    - "pushd tasking/ && python setup.py develop && popd"
 before_script:
     - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
@@ -28,4 +25,4 @@ script:
     # tests can't run without migrations being made
     - "python manage.py makemigrations pulp_app"
     # chain these so we don't try to run tests if the db reset fails
-    - "app/pulp/app/db-reset.sh && python manage.py test app"
+    - "platform/pulp/app/db-reset.sh && python manage.py test"
