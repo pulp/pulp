@@ -56,6 +56,7 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         additional_unit_fields = additional_unit_fields or []
         try:
             unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
+            serializer = units_controller.get_model_serializer_for_type(content_type_id)
 
             # Query repo association manager to get all units of given type
             # associated with given repo. Limit data by requesting only the fields
@@ -69,6 +70,8 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
             # Convert units to plugin units with unit_key and required metadata values for each unit
             all_units = []
             for unit in units:
+                if serializer:
+                    serializer.serialize(unit['metadata'])
                 unit_key = {}
                 metadata = {}
                 for k in unit_key_fields:

@@ -13,6 +13,7 @@ from pulp.server.exceptions import PulpCodedException
 _logger = logging.getLogger(__name__)
 
 ENTRY_POINT_UNIT_MODELS = 'pulp.unit_models'
+ENTRY_POINT_AUXILIARY_MODELS = 'pulp.auxiliary_models'
 
 
 class PluginManager(object):
@@ -29,9 +30,11 @@ class PluginManager(object):
         self.profilers = _PluginMap()
         self.catalogers = _PluginMap()
         self.unit_models = dict()
+        self.auxiliary_models = dict()
 
         # Load the unit models
         self._load_unit_models()
+        self._load_auxiliary_models()
 
     def _load_unit_models(self):
         """"
@@ -40,8 +43,8 @@ class PluginManager(object):
         Attach the signals to the models here since the mongoengine signals will not be
         sent correctly if they are attached to the base class.
 
-        :raises: TypeError if a model is not a subclass of ContentUnit
-        :raises: PLP0038 if two models are defined with the same id
+        :raises TypeError: if a model is not a subclass of ContentUnit
+        :raises PulpCodedException: PLP0038 if two models are defined with the same id
         """
         _logger.debug(_("Loading Unit Models"))
         for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_UNIT_MODELS):
@@ -65,6 +68,27 @@ class PluginManager(object):
             model_class.attach_signals()
 
         _logger.debug(_("Unit Model Loading Completed"))
+
+    def _load_auxiliary_models(self):
+        """
+        Load all auxiliary models from the ENTRY_POINT_AUXILIARY_MODELS.
+        Auxiliary models are plugin specific but they are not unit models themselves.
+
+        :raises PulpCodedException: PLP0038 if two models are defined with the same id
+        """
+        _logger.debug(_("Loading Auxiliary Models"))
+        for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_AUXILIARY_MODELS):
+            msg = _('Loading auxiliary model: %s' % str(entry_point))
+            _logger.info(msg)
+            model_id = entry_point.name
+            model_class = entry_point.load()
+            class_name = model_class.__class__.__module__ + "." + model_class.__class__.__name__
+            if model_id in self.auxiliary_models:
+                raise PulpCodedException(error_code=error_codes.PLP0038,
+                                         model_id=model_id,
+                                         model_class=class_name)
+            self.auxiliary_models[model_id] = model_class
+        _logger.debug(_("Auxiliary Model Loading Completed"))
 
 
 class _PluginMap(object):
