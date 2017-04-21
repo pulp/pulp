@@ -19,6 +19,11 @@ The two common syslog utilities covered in this guide are journald and rsyslog.
 If you happen to use a different syslog handler on your operating system, please
 refer to its documentation to learn how to access Pulp’s log messages.
 
+.. note::
+
+   Pulp reads the log level configuration during startup. If the log level is changed while Pulp is
+   running, then you will need to restart it.
+
 journald
 ~~~~~~~~
 
