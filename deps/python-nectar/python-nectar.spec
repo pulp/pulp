@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.5.3
+Version:        1.5.4
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,11 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Fri Apr 21 2017 Ina Panova <ipanova@redhat.com> 1.5.4-1
+- Re-enable request streaming (alex@linfratech.co.uk)
+- Better logging at INFO level for downloads (daviddavis@redhat.com)
+- update mention-bot userBlacklist (seanokeeffe797@gmail.com)
+
 * Wed Sep 14 2016 Ina Panova <ipanova@redhat.com> 1.5.3-1
 - Change how Nectar configures requests to be thread-safe (jeremy@jcline.org)
 - Add mention-bot blacklist (jeremy@jcline.org)
