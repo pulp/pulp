@@ -123,6 +123,16 @@ class ImporterViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result])
 
+    @decorators.detail_route()
+    def sync(self, request, pk):
+        importer = self.get_object()
+        async_result = tasks.importer.sync.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
+            kwargs={'repo_name': importer.repository.name,
+                    'importer_name': importer.name}
+        )
+        return OperationPostponedResponse([async_result])
+
 
 class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
