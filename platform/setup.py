@@ -12,7 +12,7 @@ requirements = [
 ]
 
 setup(
-    name='pulp-app',
+    name='pulp-platform',
     description='Pulp Django Application and Related Modules',
     version='3.0a1',
     license='GPLv2+',
