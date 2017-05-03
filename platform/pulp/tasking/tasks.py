@@ -294,8 +294,6 @@ class UserFacingTask(PulpTask):
 
             self._handle_cProfile(task_id)
 
-        storage.delete_working_directory()
-
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
         Update the :class:`pulp.app.models.Task` object, log, and save the results.
@@ -324,8 +322,6 @@ class UserFacingTask(PulpTask):
             task_status.set_failed(exc, einfo)
 
             self._handle_cProfile(task_id)
-
-        storage.delete_working_directory()
 
     def _get_parent_arg(self):
         """Return a dictionary with the 'parent' set if running inside of a UserFacingTask"""
