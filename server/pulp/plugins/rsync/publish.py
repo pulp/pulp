@@ -299,6 +299,7 @@ class Publisher(PublishStep):
             string_date = dateutils.format_iso8601_datetime(self.last_published)
         else:
             string_date = None
+
         if self.predistributor:
             search_params = {'repo_id': repo.id,
                              'distributor_id': self.predistributor["distributor_id"],
@@ -309,14 +310,36 @@ class Publisher(PublishStep):
 
         self.remote_path = self.get_remote_repo_path()
 
-        if self.is_fastforward():
+        # If the publish is a force publish, publish all units, disregarding normal filtering
+        if self.publish_is_forced():
+            date_filter = None
+        # If a unit has been deleted, publish all units up to the last predistributor publish (if one exists)
+        elif self.publish_includes_delete():
+            if self.predistributor:
+                if self.predistributor["last_publish"]:
+                    date_filter = self.create_date_range_filter(end_date=self.predistributor["last_publish"])
+                else:
+                    pass
+                    # Should be no-op?  Need to figure out best way to do this, if it is desired behavior
+                    # Currently it's just publishing everything
+            else:
+                date_filter = None
+        # Otherwise we do a fastforward publish
+        else:
             start_date = self.last_published
             end_date = None
+
             if self.predistributor:
-                end_date = self.predistributor["last_publish"]
+                start_date = None
+
+                if self.predistributor["last_publish"]:
+                    end_date = self.predistributor["last_publish"]
+                else:
+                    pass
+                    # Should be no-op?  Need to figure out best way to do this, if it is desired behavior
+                    # Currently it's just publishing everything
+
             date_filter = self.create_date_range_filter(start_date=start_date, end_date=end_date)
-        else:
-            date_filter = None
 
         self.symlink_list = []
         self.content_unit_file_list = []
@@ -324,11 +347,31 @@ class Publisher(PublishStep):
 
         self._add_necesary_steps(date_filter=date_filter, config=config)
 
-    def is_fastforward(self):
+    def publish_includes_delete(self):
         """
-        This method checks whether this publish should be a fastforward publish.
+        This method checks whether the publish includes a deletion.
 
-        :return: Whether or not this publish should be in fast forward mode
+        :return: Whether or not this publish includes a deletion
+        :rtype: bool
+        """
+        if self.last_published:
+            last_published = self.last_published.replace(tzinfo=None)
+        else:
+            last_published = None
+
+        if self.last_deleted:
+            last_deleted = self.last_deleted.replace(tzinfo=None)
+        else:
+            last_deleted = None
+
+        delete = self.get_config().get("delete", False)
+        return delete or (last_deleted and last_published and (last_published < last_deleted))
+
+    def publish_is_forced(self):
+        """
+        This method checks whether this publish should be a force publish.
+
+        :return: Whether or not this publish should be a force publish
         :rtype: bool
         """
         force_full = False
@@ -338,22 +381,9 @@ class Publisher(PublishStep):
             force_full |= predistributor_force_full
             if entry.get("result", "error") == "error":
                 force_full = True
-        if self.last_published:
-            last_published = self.last_published.replace(tzinfo=None)
-        else:
-            last_published = None
-        if self.last_deleted:
-            last_deleted = self.last_deleted.replace(tzinfo=None)
-        else:
-            last_deleted = None
 
         config_force_full = self.get_config().get("force_full", False)
-        force_full = force_full | config_force_full
-        delete = self.get_config().get("delete", False)
-
-        return last_published and ((last_deleted and last_published > last_deleted) or
-                                   not last_deleted) and not force_full and\
-            not delete
+        return force_full | config_force_full
 
     def create_date_range_filter(self, start_date=None, end_date=None):
         """
@@ -374,7 +404,10 @@ class Publisher(PublishStep):
             end_date = dateutils.format_iso8601_datetime(end_date)
 
         if start_date and end_date:
-            return mongoengine.Q(created__gte=start_date, created__lte=end_date)
+            if start_date < end_date:
+                return mongoengine.Q(created__gte=start_date, created__lte=end_date)
+            else:
+                return type(None)
         elif start_date:
             return mongoengine.Q(created__gte=start_date)
         elif end_date:
