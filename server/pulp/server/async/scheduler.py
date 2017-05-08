@@ -94,7 +94,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
 
         if resource_manager_count == 0:
             msg = _("There are 0 pulp_resource_manager processes running. Pulp will not operate "
-                    "correctly without at least one pulp_resource_mananger process running.")
+                    "correctly without at least one pulp_resource_manager process running.")
             _logger.error(msg)
 
         if scheduler_count == 0:
