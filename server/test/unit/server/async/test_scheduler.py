@@ -412,7 +412,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
 
         mock__logger.error.assert_called_once_with(
             'There are 0 pulp_resource_manager processes running. Pulp will not operate '
-            'correctly without at least one pulp_resource_mananger process running.')
+            'correctly without at least one pulp_resource_manager process running.')
 
     @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
