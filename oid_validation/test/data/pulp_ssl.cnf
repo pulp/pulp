@@ -47,6 +47,8 @@ basicConstraints = CA:TRUE
 [ limited_entitlement ]
 # entitled only to the fedora-14 path
 basicConstraints = CA:FALSE
+1.3.6.1.4.1.2312.9.4.1 = ASN1:UTF8:fake-order-name
+1.3.6.1.4.1.2312.9.2.14.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.14.1.1 = ASN1:UTF8String:Pulp-14
 1.3.6.1.4.1.2312.9.2.14.1.2 = ASN1:UTF8String:pulp-14
 1.3.6.1.4.1.2312.9.2.14.1.6 = ASN1:UTF8String:repos/pulp/pulp/fedora-14/x86_64/
@@ -54,9 +56,12 @@ basicConstraints = CA:FALSE
 [ full_entitlement ]
 # entitled to both fedora-13 and fedora-14
 basicConstraints = CA:FALSE
+1.3.6.1.4.1.2312.9.4.1 = ASN1:UTF8:fake-order-name
+1.3.6.1.4.1.2312.9.2.13.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.13.1.1 = ASN1:UTF8String:Pulp-13
 1.3.6.1.4.1.2312.9.2.13.1.2 = ASN1:UTF8String:pulp-13
 1.3.6.1.4.1.2312.9.2.13.1.6 = ASN1:UTF8String:repos/pulp/pulp/fedora-13/x86_64/
+1.3.6.1.4.1.2312.9.2.14.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.14.1.1 = ASN1:UTF8String:Pulp-14
 1.3.6.1.4.1.2312.9.2.14.1.2 = ASN1:UTF8String:pulp-14
 1.3.6.1.4.1.2312.9.2.14.1.6 = ASN1:UTF8String:repos/pulp/pulp/fedora-14/x86_64/
@@ -64,9 +69,12 @@ basicConstraints = CA:FALSE
 [ variable_entitlement ]
 # multiple entitelements including the basearch variable
 basicConstraints = CA:FALSE
+1.3.6.1.4.1.2312.9.4.1 = ASN1:UTF8:fake-order-name
+1.3.6.1.4.1.2312.9.2.13.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.13.1.1 = ASN1:UTF8String:Pulp Production Fedora 13
 1.3.6.1.4.1.2312.9.2.13.1.2 = ASN1:UTF8String:pulp-prod-f13
 1.3.6.1.4.1.2312.9.2.13.1.6 = ASN1:UTF8String:repos/pulp/pulp/fedora-13/\$basearch/
+1.3.6.1.4.1.2312.9.2.14.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.14.1.1 = ASN1:UTF8String:Pulp Production Fedora 14
 1.3.6.1.4.1.2312.9.2.14.1.2 = ASN1:UTF8String:pulp-prod-f14
 1.3.6.1.4.1.2312.9.2.14.1.6 = ASN1:UTF8String:repos/pulp/pulp/fedora-14/\$basearch/
@@ -74,6 +82,8 @@ basicConstraints = CA:FALSE
 [ wildcard_entitlement ]
 # entitlement includes releasever and basearch variables
 basicConstraints = CA:FALSE
+1.3.6.1.4.1.2312.9.4.1 = ASN1:UTF8:fake-order-name
+1.3.6.1.4.1.2312.9.2.0.1 = ASN1:UTF8String:yum
 1.3.6.1.4.1.2312.9.2.0.1.1 = ASN1:UTF8String:Pulp Production MyRepo
 1.3.6.1.4.1.2312.9.2.0.1.2 = ASN1:UTF8String:pulp-prod-myrepo
 1.3.6.1.4.1.2312.9.2.0.1.6 = ASN1:UTF8String:repos/pulp/pulp/\$releasever/\$basearch/os
