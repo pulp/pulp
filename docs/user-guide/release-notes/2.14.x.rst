@@ -1,0 +1,30 @@
+=======================
+Pulp 2.14 Release Notes
+=======================
+
+Pulp 2.14.0
+===========
+
+New Features
+------------
+
+* An additional `header` property has been added to the alternate content source descriptor.
+  This allows users to specify additional HTTP headers when using an alternate content source.
+
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.14.0`
+
+Upgrade instructions
+--------------------
+
+Upgrade using the normal process::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+
+``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.
