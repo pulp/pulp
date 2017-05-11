@@ -2,8 +2,8 @@ from gettext import gettext as _
 
 from pulpcore.app import models
 
-# pulpcore.serializers is still initializing, so the pulpcore.serializers namespace isn't importable.
-# fields loads after base, so bring it in with a relative import
+# pulpcore.serializers is still initializing, so the pulpcore.serializers namespace isn't
+# importable. fields loads after base, so bring it in with a relative import
 from . import base
 
 

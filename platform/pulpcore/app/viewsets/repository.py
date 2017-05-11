@@ -7,7 +7,7 @@ from pulpcore.app.models import Importer, Publisher, Repository, RepositoryConte
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
-                                  RepositorySerializer, RepositoryContentSerializer)
+                                      RepositorySerializer, RepositoryContentSerializer)
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags

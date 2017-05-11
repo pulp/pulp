@@ -4,9 +4,9 @@ from rest_framework import serializers
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer, DetailIdentityField,
-                                  NotesKeyValueRelatedField, RepositoryRelatedField,
-                                  ScratchpadKeyValueRelatedField, ContentRelatedField,
-                                  ImporterRelatedField, PublisherRelatedField, FileField)
+                                      NotesKeyValueRelatedField, RepositoryRelatedField,
+                                      ScratchpadKeyValueRelatedField, ContentRelatedField,
+                                      ImporterRelatedField, PublisherRelatedField, FileField)
 
 
 class RepositorySerializer(ModelSerializer):

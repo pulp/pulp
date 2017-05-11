@@ -7,8 +7,8 @@ class Cataloger(object):
     :class: `~nectar.downloaders.base.Downloader` object. Using this interface, content that is
     stored locally or in multiple locations can be fetched more efficiently.
 
-    The platform will use one :class: `~pulpcore.plugin.Cataloger` instance per content source so this
-    object only needs to be concerned with indexing a single source provided in the config.
+    The platform will use one :class: `~pulpcore.plugin.Cataloger` instance per content source so
+    this object only needs to be concerned with indexing a single source provided in the config.
 
     :ivar config: The content source configuration
     :type config: dict
