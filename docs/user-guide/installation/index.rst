@@ -42,6 +42,10 @@ Prerequisites
   `serious limitations <http://docs.mongodb.org/manual/faq/fundamentals/#what-are-the-32-bit-limitations>`_
   on 32-bit architectures. It is strongly advised that you run MongoDB on a 64-bit architecture.
 
+.. warning::
+  `MongoDB documentation <https://docs.mongodb.com/manual/tutorial/transparent-huge-pages/>`_
+  suggests disabling Transparent Huge Pages to ensure best performance with MongoDB.
+
 
 Message Broker
 ^^^^^^^^^^^^^^
