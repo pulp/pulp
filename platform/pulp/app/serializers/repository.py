@@ -112,9 +112,9 @@ class ImporterSerializer(MasterModelSerializer):
         write_only=True,
         required=False,
     )
-    download_policy = serializers.MultipleChoiceField(
+    download_policy = serializers.ChoiceField(
         help_text='The policy for downloading content.',
-        allow_empty=False,
+        allow_blank=False,
         choices=models.Importer.DOWNLOAD_POLICIES,
     )
     last_sync = serializers.DateTimeField(
