@@ -2,6 +2,12 @@
 
 pushd `dirname "$0"`
 
+# If an optional argument to a virtual environment is passed, activate it.
+if [ $# -gt 0 ]
+  then
+    source $1/bin/activate
+fi
+
 if [ -d migrations ]
 then
 # weird indentation here because the heredoc EOF terminator can't be indented
@@ -24,4 +30,9 @@ python manage.py reset_db --noinput
 python manage.py migrate --noinput auth
 python manage.py migrate --noinput
 python manage.py reset-admin-password --password admin
+
+if [ $# -gt 0 ]
+  then
+    deactivate
+fi
 popd
