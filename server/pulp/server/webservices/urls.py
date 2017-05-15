@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from pulp.server.webservices.views.consumers import (ConsumerBindingsView,
                                                      ConsumerRepoBindingView,
@@ -82,7 +82,7 @@ handler404 = 'pulp.server.webservices.views.util.page_not_found'
 
 
 urlpatterns = [
-    url(r'^v2/actions/login/$', LoginView.as_view(), name='login'), # flake8: noqa
+    url(r'^v2/actions/login/$', LoginView.as_view(), name='login'),
     url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),
     url(r'^v2/consumers/$', ConsumersView.as_view(), name='consumers'),
     url(r'^v2/consumers/search/$', ConsumerSearchView.as_view(), name='consumer_search'),
@@ -96,7 +96,7 @@ urlpatterns = [
         ConsumerBindingsView.as_view(), name='bindings'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/(?P<repo_id>[^/]+)/$',
         ConsumerRepoBindingView.as_view(), name='bindings_repo'),
-    url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/(?P<repo_id>[^/]+)/(?P<distributor_id>[^/]+)/$',
+    url(r'^v2/consumers/(?P<consumer_id>[^/]+)/bindings/(?P<repo_id>[^/]+)/(?P<distributor_id>[^/]+)/$',  # noqa
         ConsumerBindingResourceView.as_view(), name='consumer_binding_resource'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/actions/content/regenerate_applicability/$',
         ConsumerResourceContentApplicRegenerationView.as_view(), name='consumer_appl_regen'),
@@ -120,7 +120,7 @@ urlpatterns = [
         UnitUpdateScheduleResourceView.as_view(), name='schedule_content_update_resource'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/schedules/content/uninstall/$',
         UnitUninstallSchedulesView.as_view(), name='schedule_content_uninstall'),
-    url(r'^v2/consumers/(?P<consumer_id>[^/]+)/schedules/content/uninstall/(?P<schedule_id>[^/]+)/$',
+    url(r'^v2/consumers/(?P<consumer_id>[^/]+)/schedules/content/uninstall/(?P<schedule_id>[^/]+)/$',  # noqa
         UnitUninstallScheduleResourceView.as_view(), name='schedule_content_uninstall_resource'),
     url(r'^v2/consumers/(?P<consumer_id>[^/]+)/history/$',
         ConsumerHistoryView.as_view(), name='consumer_history'),
@@ -165,7 +165,8 @@ urlpatterns = [
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/$',
         ContentUnitResourceView.as_view(), name='content_unit_resource'),
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/pulp_user_metadata/$',
-        ContentUnitUserMetadataResourceView.as_view(), name='content_unit_user_metadata_resource'),
+        ContentUnitUserMetadataResourceView.as_view(),
+        name='content_unit_user_metadata_resource'),
     url(r'^v2/content/uploads/$', UploadsCollectionView.as_view(), name='content_uploads'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/$', UploadResourceView.as_view(),
         name='content_upload_resource'),
@@ -174,12 +175,17 @@ urlpatterns = [
     url(r'^v2/distributors/search/$', RepoDistributorsSearchView.as_view(),
         name='distributor_search'),
     url(r'^v2/events/$', EventView.as_view(), name='events'),
-    url(r'^v2/events/(?P<event_listener_id>[^/]+)/$', EventResourceView.as_view(), name='event_resource'),
+    url(r'^v2/events/(?P<event_listener_id>[^/]+)/$',
+        EventResourceView.as_view(), name='event_resource'),
     url(r'^v2/permissions/$', PermissionView.as_view(), name='permissions'),
-    url(r'^v2/permissions/actions/grant_to_role/$', GrantToRoleView.as_view(), name='grant_to_role'),
-    url(r'^v2/permissions/actions/grant_to_user/$', GrantToUserView.as_view(), name='grant_to_user'),
-    url(r'^v2/permissions/actions/revoke_from_role/$', RevokeFromRoleView.as_view(), name='revoke_from_role'),
-    url(r'^v2/permissions/actions/revoke_from_user/$', RevokeFromUserView.as_view(), name='revoke_from_user'),
+    url(r'^v2/permissions/actions/grant_to_role/$', GrantToRoleView.as_view(),
+        name='grant_to_role'),
+    url(r'^v2/permissions/actions/grant_to_user/$', GrantToUserView.as_view(),
+        name='grant_to_user'),
+    url(r'^v2/permissions/actions/revoke_from_role/$',
+        RevokeFromRoleView.as_view(), name='revoke_from_role'),
+    url(r'^v2/permissions/actions/revoke_from_user/$',
+        RevokeFromUserView.as_view(), name='revoke_from_user'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),
     url(r'^v2/plugins/distributors/(?P<distributor_id>[^/]+)/$', DistributorResourceView.as_view(),
         name='plugin_distributor_resource'),
@@ -208,22 +214,23 @@ urlpatterns = [
     url(r'^v2/repositories/actions/content/regenerate_applicability/$',
         ContentApplicabilityRegenerationView.as_view(), name='repo_content_app_regen'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/$', RepoResourceView.as_view(), name='repo_resource'),
-    url(r'^v2/repositories/(?P<repo_id>[^/]+)/search/units/$', RepoUnitSearch.as_view(), name='repo_unit_search'),
+    url(r'^v2/repositories/(?P<repo_id>[^/]+)/search/units/$',
+        RepoUnitSearch.as_view(), name='repo_unit_search'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/importers/$', RepoImportersView.as_view(),
         name='repo_importers'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/importers/(?P<importer_id>[^/]+)/$',
         RepoImporterResourceView.as_view(), name='repo_importer_resource'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/importers/(?P<importer_id>[^/]+)/schedules/sync/$',
         RepoSyncSchedulesView.as_view(), name='repo_sync_schedules'),
-    url(r'^v2/repositories/(?P<repo_id>[^/]+)/importers/(?P<importer_id>[^/]+)/schedules/sync/(?P<schedule_id>[^/]+)/$',
+    url(r'^v2/repositories/(?P<repo_id>[^/]+)/importers/(?P<importer_id>[^/]+)/schedules/sync/(?P<schedule_id>[^/]+)/$',  # noqa
         RepoSyncScheduleResourceView.as_view(), name='repo_sync_schedule_resource'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/$', RepoDistributorsView.as_view(),
         name='repo_distributors'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/$',
         RepoDistributorResourceView.as_view(), name='repo_distributor_resource'),
-    url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/schedules/publish/$',
+    url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/schedules/publish/$',  # noqa
         RepoPublishSchedulesView.as_view(), name='repo_publish_schedules'),
-    url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/schedules/publish/(?P<schedule_id>[^/]+)/$',
+    url(r'^v2/repositories/(?P<repo_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/schedules/publish/(?P<schedule_id>[^/]+)/$',  # noqa
         RepoPublishScheduleResourceView.as_view(), name='repo_publish_schedule_resource'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/history/sync/$', RepoSyncHistory.as_view(),
         name='repo_sync_history'),
@@ -244,7 +251,8 @@ urlpatterns = [
     url(r'^v2/roles/$', RolesView.as_view(), name='roles'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/$', RoleResourceView.as_view(), name='role_resource'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/$', RoleUsersView.as_view(), name='role_users'),
-    url(r'^v2/roles/(?P<role_id>[^/]+)/users/(?P<login>[^/]+)/$', RoleUserView.as_view(), name='role_user'),
+    url(r'^v2/roles/(?P<role_id>[^/]+)/users/(?P<login>[^/]+)/$',
+        RoleUserView.as_view(), name='role_user'),
     url(r'^v2/status/$', StatusView.as_view(), name='status'),
     url(r'^v2/tasks/$', tasks.TaskCollectionView.as_view(), name='task_collection'),
     url(r'^v2/tasks/search/$', tasks.TaskSearchView.as_view(), name='task_search'),
