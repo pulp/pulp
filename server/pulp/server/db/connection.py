@@ -8,6 +8,13 @@ import time
 from gettext import gettext as _
 
 import mongoengine
+
+# in mongoengine 0.11 ConnectionError was renamed to MongoEngineConnectionError
+try:
+    from mongoengine.connection import MongoEngineConnectionError
+except ImportError:
+    from mongoengine.connection import ConnectionError as MongoEngineConnectionError
+
 from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector
@@ -189,7 +196,7 @@ def _connect_to_one_of_seeds(connection_kwargs, seeds_list, db_name):
             _logger.debug(_('Connection Arguments: %s') % shadow_connection_kwargs)
             connection = mongoengine.connect(db_name, **connection_kwargs)
             return connection
-        except mongoengine.connection.ConnectionError as e:
+        except MongoEngineConnectionError as e:
             msg = _("Could not connect to MongoDB at %(url)s:\n%(e)s\n")
             _logger.info(msg % {'url': seed, 'e': str(e)})
 
