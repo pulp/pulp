@@ -60,9 +60,11 @@ OPTIONAL = 0
 ANY = None
 NUMBER = '^\d+$'
 BOOL = '(^YES$|^TRUE$|^1$|^NO$|^FALSE$|^0$)', re.I
+HEADER = '^\S*=\S*$'
 
 # Regular expression to test if a value is a valid boolean type
 BOOL_RE = re.compile(*BOOL)
+HEADER_RE = re.compile(HEADER)
 
 
 class ValidationException(Exception):
@@ -140,6 +142,27 @@ def parse_bool(value):
         raise Unparsable()
 
     return value.upper() in ('YES', 'TRUE', '1')
+
+def parse_header(headers):
+    """
+       Parses the given header into its dictionary representation.
+       @param headers: headers to parse
+       @type value: str
+       @return: dictionary of headers
+       @rtype: dict
+       @raise Unparsable: if the value is not one of the accepted values for
+              indicating a header field
+       """
+    headers_dict = {}
+    for header in re.split(r'\s+', headers):
+        header = header.strip()
+        if header == '\\':
+            continue
+        if not HEADER_RE.match(header):
+            raise Unparsable()
+        field, value = header.split("=")
+        headers_dict.update({field: value})
+    return headers_dict
 
 
 class Config(dict):
