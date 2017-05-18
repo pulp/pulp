@@ -77,7 +77,7 @@ class ProgressReport(Model):
         kwargs (dict): keyword arguments to be passed on to the real save
         """
         if self.task_id is None:
-            self.task_id = Task.objects.get(id=util.get_current_task_id())
+            self.task = Task.objects.get(id=util.get_current_task_id())
 
         now = timezone.now()
 
