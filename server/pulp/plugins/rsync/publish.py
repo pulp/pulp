@@ -213,6 +213,9 @@ class RSyncPublishStep(PublishStep):
             args.append("--links")
         else:
             args.append("--copy-links")
+        if self.get_config().get("rsync_extra_args"):
+            args.extend(self.get_config().get("rsync_extra_args"))
+
         args.append(source_prefix)
         args.append(self.make_destination(dest_prefix))
         return args
