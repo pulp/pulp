@@ -27,7 +27,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
 )
 
-if django.VERSION[0] == 1 and django.VERSION[2] <= 6:
+if django.VERSION[0] == 1 and django.VERSION[1] <= 6:
     ROOT_URLCONF = 'pulp.server.webservices.compat_urls'
 else:
     ROOT_URLCONF = 'pulp.server.webservices.urls'
