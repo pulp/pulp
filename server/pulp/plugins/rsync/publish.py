@@ -102,10 +102,7 @@ class RSyncPublishStep(PublishStep):
         key = self.get_config().flatten()["remote"]['ssh_identity_file']
         cmd += ['-i', key,
                 '-o', 'StrictHostKeyChecking no',
-                '-o', 'UserKnownHostsFile /dev/null',
-                '-S', '/tmp/rsync_distributor-%r@%h:%p',
-                '-o', 'ControlMaster auto',
-                '-o', 'ControlPersist 10']
+                '-o', 'UserKnownHostsFile /dev/null']
         if args:
             cmd += args
         return cmd
@@ -348,7 +345,7 @@ class Publisher(PublishStep):
         if self.last_deleted:
             last_deleted = self.last_deleted.replace(tzinfo=None)
         else:
-            last_published = None
+            last_deleted = None
 
         config_force_full = self.get_config().get("force_full", False)
         force_full = force_full | config_force_full

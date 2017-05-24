@@ -1129,6 +1129,7 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
     :rtype:  pulp.server.db.model.repository.RepoPublishResult
     """
     force_full = call_config.get('force_full', False)
+    predistributor_id = call_config.get('predistributor_id')
     config_override = call_config.override_config
     last_published = conduit.last_publish()
     last_unit_removed = repo_obj.last_unit_removed
@@ -1140,15 +1141,20 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                                                            updated__gte=the_timestamp).count()
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
-    else:
-        published_after_predistributor = False
-    predistributor_id = call_config.get('predistributor_id')
+
+    skip_for_predistributor = False
     if predistributor_id:
         predistributor = model.Distributor.objects.get_or_404(repo_id=repo_obj.repo_id,
                                                               distributor_id=predistributor_id)
         predistributor_last_published = predistributor["last_publish"]
+        published_after_predistributor = False
+
         if predistributor_last_published and last_published:
             published_after_predistributor = last_published > predistributor_last_published
+
+        # Check if he predistributor has not published since the last publish.
+        skip_for_predistributor = published_after_predistributor or not \
+            predistributor_last_published
 
     same_override = dist.last_override_config == config_override
     if not same_override:
@@ -1157,10 +1163,6 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
             repo_id=repo_obj.repo_id,
             distributor_id=dist_id).update(set__last_override_config=config_override)
 
-    # Check if a predistributor is configured and the predistributor has not published since the
-    # last publish.
-    skip_for_predistributor = (predistributor_id and (published_after_predistributor or
-                                                      not predistributor_last_published))
     # Check if content has not changed since last publish and a predistributor is not defined.
     unchanged_content_and_no_predistributor = last_published and not last_updated and \
         not units_removed and not predistributor_id
