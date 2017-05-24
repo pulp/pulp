@@ -1016,6 +1016,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Wed May 24 2017 werwty <bihan.zh@gmail.com> 2.13.1-1
+- Pulp rebuild
+
 * Tue May 16 2017 werwty <bihan.zh@gmail.com> 2.13.1-0.1.beta
 - Pulp rebuild
 
