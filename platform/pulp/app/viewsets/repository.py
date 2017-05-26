@@ -150,6 +150,16 @@ class PublisherViewSet(NamedModelViewSet):
 
         return OperationPostponedResponse([async_result])
 
+    @decorators.detail_route()
+    def publish(self, request, pk):
+        publisher = self.get_object()
+        async_result = tasks.publisher.publish.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, publisher.repository.name,
+            kwargs={'repo_name': publisher.repository.name,
+                    'publisher_name': publisher.name}
+        )
+        return OperationPostponedResponse([async_result])
+
 
 class RepositoryContentViewSet(NamedModelViewSet):
     endpoint_name = 'repositorycontents'
