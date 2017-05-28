@@ -65,7 +65,7 @@ openssl x509 \
   -req  \
   -in $TMP/$BASE.req \
   -out $TMP/$BASE.crt \
-  -sha1 \
+  -sha256 \
   -CA $CA_CRT \
   -CAkey $CA_KEY \
   -CAcreateserial \
