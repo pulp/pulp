@@ -1,5 +1,2 @@
-# Sphinx version is limited only due to the following bug:
-# https://github.com/sphinx-doc/sphinx/issues/3779.
-# Whenever it will be resolved, remove this version limitation
-sphinx<1.6.1
+sphinx
 sphinx-rtd-theme
