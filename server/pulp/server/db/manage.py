@@ -196,8 +196,11 @@ def main():
         options = parse_args()
         _start_logging()
         connection.initialize(max_timeout=1)
+        active_workers = None
 
-        active_workers = status.get_workers()
+        if not options.dry_run:
+            active_workers = status.get_workers()
+
         if active_workers:
             last_worker_time = max([worker['last_heartbeat'] for worker in active_workers])
             time_from_last = UTCDateTimeField().to_python(datetime.utcnow()) - last_worker_time
