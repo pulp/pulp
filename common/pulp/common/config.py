@@ -160,7 +160,7 @@ def parse_header(headers):
             continue
         if not HEADER_RE.match(header):
             raise Unparsable()
-        field, value = header.split("=", 1)
+        field, value = header.split("=")
         headers_dict.update({field: value})
     return headers_dict
 

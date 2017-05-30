@@ -18,7 +18,7 @@ name: Unit World
 priority: 1
 max_concurrent: 10
 base_url: file:///unit-world/
-headers: headerfield=headervalue==;@#$^&*()_+!
+headers: headerfield=headervalue
 """ % UNIT_WORLD
 
 MISSING_ENABLED = """
