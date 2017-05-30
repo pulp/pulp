@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mock import patch, Mock
 
-from pulp.common.config import Config, Unparsable
+from pulp.common.config import Config
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.descriptor import is_valid, to_seconds, nectar_config
 
@@ -18,7 +18,6 @@ name: Unit World
 priority: 1
 max_concurrent: 10
 base_url: file:///unit-world/
-headers: headerfield=headervalue
 """ % UNIT_WORLD
 
 MISSING_ENABLED = """
@@ -69,14 +68,6 @@ class TestDescriptor(TestCase):
                 self.assertFalse(is_valid(source_id, descriptor))
 
     @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
-    def test_unparsable_header(self):
-        def test_nectar_config(self):
-            descriptor = {
-                constants.HEADERS: 'X-RHUI-ID1234'
-            }
-            self.assertRaises(Unparsable, nectar_config, descriptor)
-
-    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
     def test_nectar_config(self):
         descriptor = {
             constants.MAX_CONCURRENT: '10',
@@ -90,8 +81,7 @@ class TestDescriptor(TestCase):
             constants.PROXY_USERID: 'proxy-userid',
             constants.PROXY_PASSWORD: 'proxy-password',
             constants.BASIC_AUTH_USERID: 'basic_auth-userid',
-            constants.BASIC_AUTH_PASSWORD: 'basic_auth-password',
-            constants.HEADERS: 'X-RHUI-ID=1234'
+            constants.BASIC_AUTH_PASSWORD: 'basic_auth-password'
         }
         conf = nectar_config(descriptor)
         self.assertEqual(conf.max_concurrent, 10)
@@ -106,4 +96,3 @@ class TestDescriptor(TestCase):
         self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])
         self.assertEqual(conf.basic_auth_username, descriptor[constants.BASIC_AUTH_USERID])
         self.assertEqual(conf.basic_auth_password, descriptor[constants.BASIC_AUTH_PASSWORD])
-        self.assertEqual(conf.headers, {'X-RHUI-ID': '1234'})

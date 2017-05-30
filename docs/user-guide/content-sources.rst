@@ -15,7 +15,7 @@ finally downloaded from the original (primary) source.
 Defining A Content Source
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Content sources are defined in ``/etc/pulp/content/sources/conf.d/``. Each file with a .conf suffix
+Content sources are defined in ``/etc/pulp/content/sources/conf.d``. Each file with a .conf suffix
 may contain one or more sections. Each section defines a content source.
 
 The [section] defines the content source ID. The following properties
@@ -61,9 +61,6 @@ are supported:
      An *optional* basic auth username.
  - **basic_auth_password** <str>
      An *optional* basic auth password.
- - **headers** <str>
-     An *optional* list of HTTP headers. Delimited by space or newline. Has to be of the format
-     headerfield=headervalue. Conflicting headers are overwritten, not merged.
 
 Example:
  
@@ -76,17 +73,15 @@ Example:
  name: Content World
  type: yum
  base_url: http://content-world/content/
- paths: f18/x86_64/os/
-        f18/i386/os/
-        f19/x86_64/os
+ paths: f18/x86_64/os/ \
+        f18/i386/os/ \
+        f19/x86_64/os \
         f19/i386/os
  max_concurrent: 10
  max_speed: 1000
  ssl_ca_cert: /etc/pki/tls/certs/content-world.ca
  ssl_client_key: /etc/pki/tls/private/content-world.key
  ssl_client_cert: /etc/pki/tls/certs/content-world.crt
- headers: X-RHUI-ID=1234
-          X-Csrf-Token=31415926535897
 
 
 Recipes
@@ -103,7 +98,6 @@ The pulp-admin client can be use to list all defined content sources as follows:
   Base URL:       http://content-world/content/
   Enabled:        1
   Expires:        3d
-  Headers:        X-RHUI-ID=1234 X-Csrf-Token=31415926535897
   Max Concurrent: 2
   Name:           Content World
   Paths:          f18/x86_64/os/ f18/i386/os/ f19/x86_64/os f19/i386/os

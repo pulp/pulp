@@ -110,7 +110,6 @@ SCHEMA = [
         (constants.PROXY_PORT, OPTIONAL, NUMBER),
         (constants.PROXY_USERID, OPTIONAL, ANY),
         (constants.PROXY_PASSWORD, OPTIONAL, ANY),
-        (constants.HEADERS, OPTIONAL, ANY),
     )
 ]
 
