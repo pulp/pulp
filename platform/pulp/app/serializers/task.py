@@ -43,12 +43,14 @@ class TaskSerializer(ModelSerializer):
     )
 
     non_fatal_errors = serializers.JSONField(
-        help_text=_("A JSON Object of errors encountered during the execution of this task."),
+        help_text=_("A JSON Object of non-fatal errors encountered during the execution of this "
+                    "task."),
         read_only=True
     )
 
-    result = serializers.JSONField(
-        help_text=_("A JSON Object of what this task returned (if any)."),
+    error = serializers.JSONField(
+        help_text=_("A JSON Object of a fatal error encountered during the execution of this "
+                    "task."),
         read_only=True
     )
 
@@ -75,7 +77,7 @@ class TaskSerializer(ModelSerializer):
         model = models.Task
         fields = ModelSerializer.Meta.fields + ('group', 'state', 'started_at',
                                                 'finished_at', 'non_fatal_errors',
-                                                'result', 'worker', 'parent', 'tags')
+                                                'error', 'worker', 'parent', 'tags')
 
 
 class WorkerSerializer(ModelSerializer):
