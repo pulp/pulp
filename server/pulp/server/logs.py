@@ -33,6 +33,31 @@ def _blacklist_loggers():
         logger.disabled = True
         logger.propagate = False
 
+def get_log_type():
+    log_type = config.config.get('server', 'log_type')
+    if log_type not in VALID_LOGGERS:
+        print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
+        log_type = 'syslog'
+
+    if log_type == 'syslog':
+        if not os.path.exists(LOG_PATH):
+            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            sys.exit(os.EX_UNAVAILABLE)
+
+    return log_type
+
+def get_log_level():
+    log_level = None
+
+    try:
+        log_level = config.config.get('server', 'log_level')
+        log_level = getattr(logging, log_level.upper())
+    except (ConfigParser.NoOptionError, AttributeError):
+        # If the user didn't provide a log level, or if they provided an invalid one, let's use the
+        # default log level
+        log_level = DEFAULT_LOG_LEVEL
+
+    return log_level
 
 @setup_logging.connect
 def start_logging(*args, **kwargs):
@@ -44,22 +69,10 @@ def start_logging(*args, **kwargs):
     :param kwargs: Unused
     :type  kwargs: dict
     """
-    # Get and set up the root logger with our configured log level
-    try:
-        log_level = config.config.get('server', 'log_level')
-        log_level = getattr(logging, log_level.upper())
-    except (ConfigParser.NoOptionError, AttributeError):
-        # If the user didn't provide a log level, or if they provided an invalid one, let's use the
-        # default log level
-        log_level = DEFAULT_LOG_LEVEL
     root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
+    root_logger.setLevel(get_log_level())
 
-    log_type = config.config.get('server', 'log_type')
-    if log_type not in VALID_LOGGERS:
-        print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
-        log_type = 'syslog'
-
+    log_type = get_log_type()
     # Set up our handler and add it to the root logger
     if log_type == 'syslog':
         if not os.path.exists(LOG_PATH):

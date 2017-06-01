@@ -6,13 +6,26 @@ from pulp.server import logs as pulp_logs
 from pulp.server import config
 
 
-try:
-    log_level = config.config.get('server', 'log_level')
-    log_level = getattr(logging, log_level.upper())
-except (ConfigParser.NoOptionError, AttributeError):
-    # If the user didn't provide a log level, or if they provided an invalid one, let's use the
-    # default log level
-    log_level = pulp_logs.DEFAULT_LOG_LEVEL
+log_level = pulp_logs.get_log_level()
+log_type = pulp_logs.get_log_type()
+
+# Set up our handler and add it to the root logger
+if log_type == 'syslog':
+    handler = {
+        'syslog': {
+            'address': pulp_logs.LOG_PATH,
+            'facility': pulp_logs.CompliantSysLogHandler.LOG_DAEMON,
+            'class': 'pulp.server.logs.CompliantSysLogHandler',
+            'formatter': 'simple',
+        },
+    }
+elif log_type == 'console':
+    handler = {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    }
 
 # Rather than using `pulp.server.logs.start_logging`, which dates back to the
 # pre-Django days, use Django to set up the logging. This is intended to mimic
@@ -22,27 +35,21 @@ LOGGING = {
     'formatters': {
         'simple': {'format': pulp_logs.LOG_FORMAT_STRING},
     },
-    'handlers': {
-        'syslog': {
-            'address': pulp_logs.LOG_PATH,
-            'facility': pulp_logs.CompliantSysLogHandler.LOG_DAEMON,
-            'class': 'pulp.server.logs.CompliantSysLogHandler',
-            'formatter': 'simple',
-        },
-    },
+    'handlers': handler,
     'loggers': {
         # Logger for the content.wsgi application.
         'pulp.server.content.web': {
-            'handlers': ['syslog'],
+            'handlers': [log_type],
             'level': log_level,
         },
         # Logs from unhandled exceptions in the view layer come from django
         'django': {
-            'handlers': ['syslog'],
+            'handlers': [log_type],
         },
         # 404 responses trigger logs at WARNING level, which is inappropriate
         # for Pulp.
         'django.request': {
+            'handlers': [log_type],
             'level': 'ERROR',
         },
     }
