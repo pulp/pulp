@@ -1,6 +1,6 @@
 pulp.app.models
 ===============
 
-.. automodule:: pulp.app.models
+.. automodule:: pulpcore.app.models
     :undoc-members:
     :imported-members:

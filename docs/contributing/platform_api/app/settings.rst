@@ -1,4 +1,4 @@
 pulp.app.settings
 =================
 
-.. automodule:: pulp.app.settings
+.. automodule:: pulpcore.app.settings

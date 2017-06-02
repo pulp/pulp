@@ -30,7 +30,7 @@ setup(
     ),
     entry_points={
         'console_scripts': [
-            'pulp-manager=pulp.app.entry_points:pulp_manager_entry_point'
+            'pulp-manager=pulpcore.app.entry_points:pulp_manager_entry_point'
         ]
     },
 )

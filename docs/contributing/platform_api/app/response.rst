@@ -1,6 +1,6 @@
 pulp.app.response
 =================
 
-All response objects documented here should be imported directly from the ``pulp.app.response`` namespace.
+All response objects documented here should be imported directly from the ``pulpcore.app.response`` namespace.
 
-.. automodule:: pulp.app.response
+.. automodule:: pulpcore.app.response

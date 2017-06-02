@@ -1,7 +1,7 @@
 from mock import Mock, patch, call
 
-from pulp.streamer.config import load_configuration, DEFAULT_VALUES
-from pulp.common.compat import unittest
+from pulpcore.streamer.config import load_configuration, DEFAULT_VALUES
+from pulpcore.common.compat import unittest
 
 
 class TestConfig(unittest.TestCase):

@@ -1,4 +1,4 @@
 pulp.app.urls
 =============
 
-.. automodule:: pulp.app.urls
+.. automodule:: pulpcore.app.urls

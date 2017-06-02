@@ -4,11 +4,11 @@ from mock import Mock, patch, call
 from mongoengine import DoesNotExist, NotUniqueError
 from nectar.report import DownloadReport
 
-from pulp.common.compat import unittest
-from pulp.devel.unit.util import SideEffect
-from pulp.plugins.loader.exceptions import PluginNotFound
-from pulp.server import constants
-from pulp.streamer.server import (
+from pulpcore.common.compat import unittest
+from pulpcore.devel.unit.util import SideEffect
+from pulpcore.plugins.loader.exceptions import PluginNotFound
+from pulpcore.server import constants
+from pulpcore.streamer.server import (
     Responder, Streamer, DownloadListener, DownloadFailed, HOP_BY_HOP_HEADERS
 )
 
