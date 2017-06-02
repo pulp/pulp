@@ -9,17 +9,19 @@ requirements = [
     'psycopg2',
     'PyYAML',
     'setuptools',
+    'pulpcore-common'
 ]
 
 setup(
-    name='pulp-platform',
+    name='pulpcore',
     description='Pulp Django Application and Related Modules',
-    version='3.0a1',
+    version='3.0.0a1.dev0',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
     install_requires=requirements,
+    url='http://www.pulpproject.org',
     classifiers=(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX :: Linux',
