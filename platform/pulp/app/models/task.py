@@ -54,7 +54,7 @@ class WorkerManager(models.Manager):
         Raises:
             Worker.DoesNotExist: If all Workers have at least one ReservedResource entry.
         """
-        workers_only_qs = self.filter(name__startswith='reserved')
+        workers_only_qs = self.filter(name__startswith='reserved', online=True)
         workers_only_qs_with_counts = workers_only_qs.annotate(models.Count('reservations'))
         try:
             return workers_only_qs_with_counts.filter(reservations__count=0).order_by('?')[0]
@@ -70,20 +70,26 @@ class Worker(Model):
 
         name (models.TextField): The name of the worker, in the format "worker_type@hostname"
         last_heartbeat (models.DateTimeField): A timestamp of this worker's last heartbeat
+        online (models.BooleanField): Whether is the worker online or not. Default is True.
     """
     objects = WorkerManager()
 
     name = models.TextField(db_index=True, unique=True)
     last_heartbeat = models.DateTimeField(auto_now=True)
+    online = models.BooleanField(default=True)
 
     def save_heartbeat(self):
         """Save a worker heartbeat
 
         Update the last_heartbeat field to now and save it.
 
-        Warning:
+        Warnings:
 
-            Only the last_heartbeat field will be saved. No other changes will be saved.
+            1) Only the last_heartbeat field will be saved. No other changes will be saved.
+
+        Raises:
+            ValueError: When the model instance has never been saved before. This method can
+                only update an existing database record.
         """
         self.save(update_fields=['last_heartbeat'])
 

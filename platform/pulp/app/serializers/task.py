@@ -96,6 +96,11 @@ class WorkerSerializer(ModelSerializer):
         read_only=True
     )
 
+    online = serializers.BooleanField(
+        help_text='Whether the worker is online or not. Defaults to True.',
+        read_only=True
+    )
+
     class Meta:
         model = models.Worker
-        fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat')
+        fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat', 'online')

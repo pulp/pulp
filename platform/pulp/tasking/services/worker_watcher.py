@@ -42,6 +42,11 @@ def handle_worker_heartbeat(worker_name):
     if created:
         msg = _("New worker '{name}' discovered").format(name=worker_name)
         _logger.info(msg)
+    elif existing_worker.online is False:
+        msg = _("Worker '{name}' is back online.").format(name=worker_name)
+        _logger.info(msg)
+        existing_worker.online = True
+        existing_worker.save()
     else:
         existing_worker.save_heartbeat()
 
@@ -51,7 +56,6 @@ def handle_worker_heartbeat(worker_name):
     )
 
     _logger.debug(msg)
-
 
 
 def handle_worker_offline(worker_name):
@@ -66,12 +70,12 @@ def handle_worker_offline(worker_name):
     """
     msg = _("Worker '%s' shutdown") % worker_name
     _logger.info(msg)
-    delete_worker(worker_name, normal_shutdown=True)
+    mark_worker_offline(worker_name, normal_shutdown=True)
 
 
-def delete_worker(name, normal_shutdown=False):
+def mark_worker_offline(name, normal_shutdown=False):
     """
-    Delete the :class:`~pulp.app.models.Worker` from the database and cancel associated tasks.
+    Mark the :class:`~pulp.app.models.Worker` as offline and cancel associated tasks.
 
     If the worker shutdown normally, no message is logged, otherwise an error level message is
     logged. Default is to assume the worker did not shut down normally.
@@ -80,31 +84,33 @@ def delete_worker(name, normal_shutdown=False):
 
     Any tasks associated with this worker are explicitly canceled.
 
-    :param name:            The name of the worker you wish to delete.
+    :param name:            The name of the worker you wish to be marked as offline.
     :type  name:            basestring
     :param normal_shutdown: True if the worker shutdown normally, False otherwise. Defaults to
                             False.
     :type normal_shutdown:  bool
     """
+    is_resource_manager = name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
+    is_celerybeat = name.startswith(TASKING_CONSTANTS.CELERYBEAT_WORKER_NAME)
+
     if not normal_shutdown:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}
         _logger.error(msg)
-    else:
+    elif is_celerybeat is False:
         msg = _("Cleaning up shutdown worker '%s'.") % name
         _logger.info(msg)
 
     try:
-        worker = Worker.objects.get(name=name)
+        worker = Worker.objects.get(name=name, online=True)
     except Worker.DoesNotExist:
         pass
     else:
         # Cancel all of the tasks that were assigned to this worker's queue
         for task_status in worker.tasks.filter(state__in=TASK_INCOMPLETE_STATES):
             cancel(task_status.pk)
-        worker.delete()
+        worker.online = False
+        worker.save()
 
-    is_resource_manager = name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
-    is_celerybeat = name.startswith(TASKING_CONSTANTS.CELERYBEAT_WORKER_NAME)
     if is_celerybeat or is_resource_manager:
         TaskLock.objects.filter(name=name).delete()

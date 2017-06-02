@@ -53,8 +53,8 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
 
         To find a missing Celery process, filter the Workers model for entries older than
         utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
-        a comparable datetime. For each missing worker found, call delete_worker() synchronously
-        for cleanup.
+        a comparable datetime. For each missing worker found, call mark_worker_offline()
+        synchronously for cleanup.
 
         This method also checks that at least one resource_manager and one scheduler process is
         present. If there are zero of either, log at the error level that Pulp will not operate
@@ -66,24 +66,21 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         now = timezone.now()
         oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
 
-        for worker in Worker.objects.filter(last_heartbeat__lt=oldest_heartbeat_time):
+        for worker in Worker.objects.filter(last_heartbeat__lt=oldest_heartbeat_time, online=True):
             msg = _("Worker '%s' has gone missing, removing from list of workers") % worker.name
             _logger.error(msg)
 
-            if worker.name.startswith(constants.CELERYBEAT_WORKER_NAME):
-                worker.delete()
-            else:
-                worker_watcher.delete_worker(worker.name)
+            worker_watcher.mark_worker_offline(worker.name)
 
         worker_count = Worker.objects.exclude(
             name__startswith=constants.RESOURCE_MANAGER_WORKER_NAME).exclude(
-            name__startswith=constants.CELERYBEAT_WORKER_NAME).count()
+            name__startswith=constants.CELERYBEAT_WORKER_NAME).filter(online=True).count()
 
         scheduler_count = Worker.objects.filter(
-            name__startswith=constants.CELERYBEAT_WORKER_NAME).count()
+            name__startswith=constants.CELERYBEAT_WORKER_NAME).filter(online=True).count()
 
         resource_manager_count = Worker.objects.filter(
-            name__startswith=constants.RESOURCE_MANAGER_WORKER_NAME).count()
+            name__startswith=constants.RESOURCE_MANAGER_WORKER_NAME).filter(online=True).count()
 
         if resource_manager_count == 0:
             msg = _("There are 0 pulp_resource_manager processes running. Pulp will not operate "

@@ -124,11 +124,12 @@ def initialize_worker(sender, instance, **kwargs):
     We clean up old state in case this worker was previously running, but died unexpectedly.
     In such cases, any Pulp tasks that were running or waiting on this worker will show incorrect
     state. Any reserved_resource reservations associated with the previous worker will also be
-    removed along with the worker entry in the database itself. The working directory specified in
-    /etc/pulp/server.conf (/var/cache/pulp/<worker_name>) by default is removed and recreated. This
-    is called early in the worker start process, and later when it's fully online, pulp_celerybeat
-    will discover the worker as usual to allow new work to arrive at this worker. If there is no
-    previous work to cleanup, this method still runs, but has no effect on the database.
+    removed along with the setting of online=False on the worker record in the database itself.
+    The working directory specified in /etc/pulp/server.conf (/var/cache/pulp/<worker_name>)
+    by default is removed and recreated. This is called early in the worker start process,
+    and later when it's fully online, pulp_celerybeat will discover the worker as usual to allow
+    new work to arrive at this worker. If there is no previous work to cleanup, this method
+    still runs, but has no effect on the database.
 
     After cleaning up old state, it ensures the existence of the worker's working directory.
 
@@ -157,11 +158,11 @@ def initialize_worker(sender, instance, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
-    from pulp.tasking.services.worker_watcher import delete_worker
+    from pulp.tasking.services.worker_watcher import mark_worker_offline
 
 
-    # Delete any potential old state
-    delete_worker(sender, normal_shutdown=True)
+    # Mark if present old instance of worker as offline
+    mark_worker_offline(sender, normal_shutdown=True)
 
     storage.delete_worker_working_directory(sender)
     storage.create_worker_working_directory(sender)
@@ -174,8 +175,7 @@ def initialize_worker(sender, instance, **kwargs):
 def shutdown_worker(signal, sender, **kwargs):
     """
     Called when a worker is shutdown.
-    So far, this just cleans up the database by removing the worker's record in
-    the workers collection.
+    So far, this just marks the worker as offline.
 
     :param signal:   The signal being sent to the workerTaskLock
     :param type:     int
@@ -185,10 +185,10 @@ def shutdown_worker(signal, sender, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
-    from pulp.tasking.services.worker_watcher import delete_worker
+    from pulp.tasking.services.worker_watcher import mark_worker_offline
 
-    # Delete any potential old state
-    delete_worker(sender.hostname, normal_shutdown=True)
+    # Mark the worker as offline
+    mark_worker_offline(sender.hostname, normal_shutdown=True)
 
 
 def get_resource_manager_lock(name):
@@ -213,6 +213,11 @@ def get_resource_manager_lock(name):
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)
     worker, created = Worker.objects.get_or_create(name=name)
 
+    if not created:
+        worker.online = True
+    # Because the method save_heartbeat() can't save new models we have to save it now
+    worker.save()
+
     # Whether this is the first lock availability check for this instance
     _first_check = True
 
@@ -224,7 +229,7 @@ def get_resource_manager_lock(name):
         TaskLock.objects.filter(lock=TaskLock.RESOURCE_MANAGER,
                                 timestamp__lte=old_timestamp).delete()
 
-        # Create / update the worker record so that Pulp knows we exist
+        # Update the worker record so that Pulp knows we exist
         worker.save_heartbeat()
 
         try:
