@@ -128,6 +128,12 @@ def validate_config(repo, config, config_conduit):
     """
     _config = config.flatten()  # now config is {}
     err_list = []
+
+    if "rsync_extra_args" in _config:
+        (valid, err) = TypeValidation([list])(_config["rsync_extra_args"], _config)
+        if not valid:
+            err_list.append("rsync_extra_args: %s" % err)
+
     if "remote" not in _config or ("remote" in _config and not isinstance(_config["remote"], dict)):
         err_list.append("'remote' dict missing in distributor's configuration")
     else:
