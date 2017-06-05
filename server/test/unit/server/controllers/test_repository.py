@@ -1371,11 +1371,13 @@ class TestDoPublish(unittest.TestCase):
         fake_repo = model.Repository(repo_id='repo1')
         mock_inst = mock.MagicMock()
         m_dist = m_dist_qs.get_or_404.return_value
+        config = {}
 
         result = repo_controller._do_publish(fake_repo, 'dist', mock_inst,
                                              fake_repo.to_transfer_repo(), 'conduit',
-                                             'conf')
-        m_dist_qs.return_value.update.assert_called_once_with(set__last_publish=mock_now())
+                                             config)
+        m_dist_qs.return_value.update.assert_called_once_with(set__last_publish=mock_now(),
+                                                              set__predistributor_publish=None)
         m_repo_pub_result.expected_result.assert_called_once_with(
             fake_repo.repo_id, m_dist.distributor_id, m_dist.distributor_type_id, mock_now(),
             mock_now(), 'summary', 'details', m_repo_pub_result.RESULT_SUCCESS

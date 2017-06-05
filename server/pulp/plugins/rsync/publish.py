@@ -310,7 +310,7 @@ class Publisher(PublishStep):
         self.remote_path = self.get_remote_repo_path()
 
         if self.is_fastforward():
-            start_date = self.last_published
+            start_date = self.predistributor_publish
             end_date = None
             if self.predistributor:
                 end_date = self.predistributor["last_publish"]
