@@ -348,6 +348,10 @@ class Publisher(PublishStep):
         else:
             date_filter = None
 
+            if self.predistributor:
+                end_date = self.predistributor["last_publish"]
+                date_filter = self.create_date_range_filter(None, end_date=end_date)
+
         self.symlink_list = []
         self.content_unit_file_list = []
         self.symlink_src = os.path.join(self.get_working_dir(), '.relative/')
@@ -368,10 +372,12 @@ class Publisher(PublishStep):
             force_full |= predistributor_force_full
             if entry.get("result", "error") == "error":
                 force_full = True
+
         if self.last_published:
             last_published = self.last_published.replace(tzinfo=None)
         else:
             last_published = None
+
         if self.last_deleted:
             last_deleted = self.last_deleted.replace(tzinfo=None)
         else:
