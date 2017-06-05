@@ -12,6 +12,27 @@ import sys
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
 
+# From: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python/377028#377028
+def which(program):
+    import os
+
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+
 def run_tests(packages, tests_all_platforms, tests_non_rhel5,
               flake8_paths=None, flake8_exclude=None):
     """
@@ -33,6 +54,15 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
     :return: the exit code from nosetests
     :rtype:  integer
     """
+
+    # Test to make sure the necessary executables exist
+    if which('flake8') is None:
+        print 'flake8 not found or is not executable! Please correct before running tests.'
+        exit(2)
+    if which('nosetests') is None:
+        print 'nosetests not found or is not executable! Please correct before running tests.'
+        exit(2)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--xunit-file')
     parser.add_argument('--with-xunit', action='store_true')

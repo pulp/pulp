@@ -10,7 +10,7 @@ from pulp.server.constants import PULP_DJANGO_SETTINGS_MODULE
 
 
 # Find and eradicate any existing .pyc files, so they do not eradicate us!
-PROJECT_DIR = os.path.dirname(__file__)
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 # These paths should all pass PEP-8 checks
