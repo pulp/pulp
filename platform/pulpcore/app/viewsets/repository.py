@@ -132,6 +132,18 @@ class ImporterViewSet(NamedModelViewSet):
     endpoint_name = 'importers'
     filter_class = ImporterFilter
 
+    def update(self, request, pk, partial=False):
+        importer = self.get_object()
+        serializer = self.get_serializer(importer, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        app_label = importer._meta.app_label
+        async_result = tasks.importer.update.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
+            args=(importer.id, app_label, serializer.__class__.__name__),
+            kwargs={'data': request.data, 'partial': partial}
+        )
+        return OperationPostponedResponse([async_result])
+
     def destroy(self, request, pk):
         importer = self.get_object()
         async_result = tasks.importer.delete.apply_async_with_reservation(
