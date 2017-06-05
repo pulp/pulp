@@ -1,5 +1,6 @@
 import sys
 
+
 from setuptools import setup, find_packages
 
 PYTHON_MAJOR_MINOR = '%s.%s' % (sys.version_info[0], sys.version_info[1])
