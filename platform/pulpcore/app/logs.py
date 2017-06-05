@@ -7,7 +7,7 @@ import os
 import threading
 
 DEFAULT_LOG_LEVEL = logging.INFO
-LOG_FORMAT_STRING = 'pulpcore: %(name)s:%(levelname)s: %(message)s'
+LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
 LOG_PATH = os.path.join('/', 'dev', 'log')
 VALID_LOGGERS = ['syslog', 'console']
 
