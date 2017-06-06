@@ -1,7 +1,7 @@
 pulp.plugin.models
 ==================
 
-All models documented here should be imported directly from the ``pulp.plugin.models`` namespace.
+All models documented here should be imported directly from the ``pulpcore.plugin.models`` namespace.
 
-.. automodule:: pulp.plugin.models
+.. automodule:: pulpcore.plugin.models
     :imported-members:

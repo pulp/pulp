@@ -16,12 +16,12 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 # These paths should all pass PEP-8 checks
 paths_to_check = [PROJECT_DIR]
 
-paths_to_ignore = ['common/pulp/common/backports/pkgutil.py']
+paths_to_ignore = ['common/pulpcore/common/backports/pkgutil.py']
 os.environ['DJANGO_SETTINGS_MODULE'] = PULP_DJANGO_SETTINGS_MODULE
 
 PACKAGES = [
     os.path.dirname(__file__),
-    'pulp',
+    'pulpcore',
 ]
 
 

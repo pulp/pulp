@@ -6,11 +6,11 @@ Plugin API
     serializers
     viewsets
 
-.. automodule:: pulp.plugin
+.. automodule:: pulpcore.plugin
     :imported-members:
 
-.. automodule:: pulp.plugin.cataloger
+.. automodule:: pulpcore.plugin.cataloger
 
-.. automodule:: pulp.plugin.profiler
+.. automodule:: pulpcore.plugin.profiler
 
-.. automodule:: pulp.plugin.tasking
+.. automodule:: pulpcore.plugin.tasking

@@ -1,8 +1,8 @@
 pulp.plugin.serializers
 =======================
 
-All serializers documented here should be imported directly from the ``pulp.plugin.serializers``
+All serializers documented here should be imported directly from the ``pulpcore.plugin.serializers``
 namespace.
 
-.. automodule:: pulp.plugin.serializers
+.. automodule:: pulpcore.plugin.serializers
     :imported-members:

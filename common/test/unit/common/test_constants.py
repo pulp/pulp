@@ -2,12 +2,12 @@
 
 import unittest
 
-from pulp.common import constants
+from pulpcore.common import constants
 
 
 class TestConstants(unittest.TestCase):
     """
-    This class contains tests for the pulp.common.constants configuration.
+    This class contains tests for the pulpcore.common.constants configuration.
     """
 
     def test_default_ca_path(self):

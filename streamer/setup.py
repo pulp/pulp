@@ -10,12 +10,13 @@ else:
     twisted = ['twisted']
 
 setup(
-    name='pulp-streamer',
-    version='2.13a1',
+    name='pulpcore-streamer',
+    version='3.0.0a1.dev0',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
+    url='http://www.pulpproject.org',
     install_requires=[
         'iniparse',
         'mongoengine >= 0.7.10',

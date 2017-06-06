@@ -3,14 +3,14 @@ pulp.exceptions
 
 All exceptions documented here should be imported directly from the ``pulp.exceptions`` namespace.
 
-.. automodule:: pulp.exceptions
+.. automodule:: pulpcore.exceptions
 
 pulp.exceptions.base
 --------------------
 
-.. automodule:: pulp.exceptions.base
+.. automodule:: pulpcore.exceptions.base
 
 pulp.exceptions.http
 --------------------
 
-.. automodule:: pulp.exceptions.http
+.. automodule:: pulpcore.exceptions.http

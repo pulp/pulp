@@ -1,4 +1,4 @@
 pulp.app.pagination
 ===================
 
-.. automodule:: pulp.app.pagination
+.. automodule:: pulpcore.app.pagination
