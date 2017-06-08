@@ -16,9 +16,9 @@ Plugin API
 ----------
 
 The Pulp :doc:`../plugin_api/index` is versioned separately from the Pulp Platform, and consists
-of everything importable withing the :mod:`pulp.plugin` namespace. When writing plugins, care should
+of everything importable withing the :mod:`pulpcore.plugin` namespace. When writing plugins, care should
 be taken to only import Pulp Platform components exposed in this namespace; importing from elsewhere
-within the Pulp Platform (e.g. importing directly from ``pulp.app``, ``pulp.exceptions``, etc.)
+within the Pulp Platform (e.g. importing directly from ``pulpcore.app``, ``pulpcore.exceptions``, etc.)
 is unsupported, and not protected by the Pulp Plugin API's semantic versioning guarantees.
 
 .. warning::
@@ -84,3 +84,13 @@ of a plugin app, and so on.
 
 This matching of module names is required for the Pulp Platform to be able to auto-discover
 plugin components, particularly for both models and viewsets.
+
+
+Packaging
+---------
+
+The Plugin API is available from PyPI as pulpcore-plugin. A plugin writer needs to specify the
+minimum version of pulpcore-plugin their plugin is dependent on. A plugin writer does not need to
+specify which version of pulpcore would work with their plugin since pulpcore-plugin will
+resolve the pulpcore dependency. Please see :doc:`release notes <../../release_notes/index>`
+for the supported versions of pulpcore.
