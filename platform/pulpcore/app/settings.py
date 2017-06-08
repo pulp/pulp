@@ -103,7 +103,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
+WSGI_APPLICATION = 'pulpcore.app.wsgi.application'
 
 REST_FRAMEWORK = {
     'URL_FIELD_NAME': '_href',
