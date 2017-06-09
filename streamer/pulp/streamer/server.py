@@ -253,7 +253,7 @@ class Streamer(Resource):
                 model, entry.url, working_dir='/tmp')
             listener = DownloadListener(self, request)
             downloader.event_listener = listener
-            downloader.session = self.session_cache.get(request.uri, downloader)
+            downloader.session = self.session_cache.get_or_create(request.uri, downloader)
             return downloader
         except (PluginNotFound, DoesNotExist):
             msg = _('Plugin not-found: referenced by catalog entry for {path}')

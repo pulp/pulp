@@ -334,9 +334,10 @@ class TestStreamer(unittest.TestCase):
         container.return_value.download(downloader, [request.return_value], listener)
         downloader.config.finalize.assert_called_once_with()
 
+    @patch(MODULE_PREFIX + 'Session')
     @patch(MODULE_PREFIX + 'DownloadListener')
     @patch(MODULE_PREFIX + 'repo_controller')
-    def test_get_downloader(self, controller, listener):
+    def test_get_downloader(self, controller, listener, session):
         request = Mock(uri='http://pulp.org/content')
         entry = Mock(importer_id='123')
         importer = Mock()
@@ -347,7 +348,6 @@ class TestStreamer(unittest.TestCase):
 
         # test
         streamer = Streamer(Mock())
-        streamer.session_cache = Mock()
         downloader = streamer._get_downloader(request, entry)
 
         # validation
@@ -358,7 +358,7 @@ class TestStreamer(unittest.TestCase):
         listener.assert_called_once_with(streamer, request)
         self.assertEqual(downloader, importer.get_downloader_for_db_importer.return_value)
         self.assertEqual(downloader.event_listener, listener.return_value)
-        self.assertEqual(downloader.session, streamer.session_cache.get.return_value)
+        self.assertEqual(downloader.session, session.return_value)
 
     @patch(MODULE_PREFIX + 'AggregatingEventListener')
     @patch(MODULE_PREFIX + 'repo_controller')
