@@ -101,7 +101,7 @@ PLP0037 = Error(
     "PLP0037",
     _("Content import of %(path)s failed - must be an existing file."),
     ['path'])
-PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
+PLP0038 = Error("PLP0038", _("The model with id %(model_id)s and class "
                              "%(model_class)s failed to register. Another model has already "
                              "been registered with the same id."), ['model_id', 'model_class'])
 PLP0040 = Error("PLP0040", _("Database 'seeds' config must include at least one hostname:port "

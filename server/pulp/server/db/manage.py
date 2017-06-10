@@ -184,6 +184,11 @@ def ensure_database_indexes():
             model_class._build_index_specs(model_class._meta['indexes'])
         model_class.ensure_indexes()
 
+    for model_type, model_class in plugin_manager.auxiliary_models.items():
+        model_class._meta['index_specs'] = \
+            model_class._build_index_specs(model_class._meta['indexes'])
+        model_class.ensure_indexes()
+
 
 def main():
     """
