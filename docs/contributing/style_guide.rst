@@ -20,6 +20,9 @@ Modifications:
 **************
 line length: We limit to 100 characters, rather than 79.
 
+
+.. _google-docstrings:
+
 In-code Documentation
 ---------------------
 Most classes and functions should have a docstring that follows the conventions described in

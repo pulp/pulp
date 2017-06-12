@@ -24,4 +24,13 @@ please file an issue in Redmine (related to https://pulp.plan.io/issues/2247) to
 track the conversion of the dependency to support Python 3 and begin working with
 upstream to convert the package.
 
+Docstrings
+----------
 
+`PUP-2 <https://github.com/pulp/pups/blob/master/pup-0002.md>`_ adopted Google style for :ref:`google-docstrings`. When porting code from Pulp 2 to Pulp 3, convert all the docstrings to the new style. vim-style regexes can be used to speed up the process. Together, these will convert all of the parameters to Google Style::
+
+    # Typed params
+    %s/\(\s*\):param\s\+\(.*\):\s\+\(.*\)\n\s*:type\s\+.\+:\s\+\(.*\)/\1 \2 (\4): \3
+
+    # Untyped params
+    %s/\(\s*\):param\s\+\(.*\):\s\+\(.*\)/\1 \2: \3
