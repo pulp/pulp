@@ -89,6 +89,8 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
         time.sleep(0.25)
 
     task_status = TaskStatus.objects.get(pk=inner_task_id)
+    task_status.worker = worker
+    task_status.save()
     ReservedResource.objects.create(task=task_status, worker=worker, resource=resource_id)
 
     try:
@@ -243,14 +245,25 @@ class UserFacingTask(PulpTask):
 
     def __call__(self, *args, **kwargs):
         """
-        Set the :class:`pulpcore.app.models.Task` object in the running state and log some output.
+        Called on the worker just before the task begins executing.
 
-        Skip the status updating if the task is called synchronously.
+        Set the :class:`pulpcore.app.models.Task` object in the running state,
+        associate the worker, and log a message.
         """
-        if not self.request.called_directly:
-            task_status = TaskStatus.objects.get(pk=self.request.id)
-            task_status.set_running()
-        _logger.debug("Running task : [%s]" % self.request.id)
+        task_status = TaskStatus.objects.get(pk=self.request.id)
+        task_status.set_running()
+
+        try:
+            worker = Worker.objects.get(name=self.request.hostname)
+        except Worker.DoesNotExist:
+            _logger.warning(_("Failed to find worker with hostname {host}").format(
+                host=self.request.hostname))
+        else:
+            if not task_status.worker:
+                task_status.worker = worker
+                task_status.save()
+
+        _logger.debug(_("Running task : [%s]") % self.request.id)
 
         if pulp_settings.PROFILING['enabled'] is True:
             self.pr = cProfile.Profile()
