@@ -6,7 +6,7 @@ from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer, DetailIdentityField,
                                   NotesKeyValueRelatedField, RepositoryRelatedField,
                                   ScratchpadKeyValueRelatedField, ContentRelatedField,
-                                  ImporterRelatedField, PublisherRelatedField)
+                                  ImporterRelatedField, PublisherRelatedField, FileField)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -78,18 +78,18 @@ class ImporterSerializer(MasterModelSerializer):
         required=False,
     )
 
-    ssl_ca_certificate = serializers.CharField(
+    ssl_ca_certificate = FileField(
         help_text='A PEM encoded CA certificate used to validate the server '
                   'certificate presented by the external source.',
         write_only=True,
         required=False,
     )
-    ssl_client_certificate = serializers.CharField(
+    ssl_client_certificate = FileField(
         help_text='A PEM encoded client certificate used for authentication.',
         write_only=True,
         required=False,
     )
-    ssl_client_key = serializers.CharField(
+    ssl_client_key = FileField(
         help_text='A PEM encoded private key used for authentication.',
         write_only=True,
         required=False,

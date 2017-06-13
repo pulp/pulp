@@ -4,8 +4,8 @@
 from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # NOQA
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
     viewset_for_model)
-from pulpcore.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField,  # NOQA
-    ImporterRelatedField, PublisherRelatedField)
+from pulpcore.app.serializers.fields import (FileField, ContentRelatedField,  # NOQA
+    RepositoryRelatedField, ImporterRelatedField, PublisherRelatedField)  # NOQA
 from pulpcore.app.serializers.generic import (ConfigKeyValueRelatedField,  # NOQA
     NotesKeyValueRelatedField, ScratchpadKeyValueRelatedField)  # NOQA
 from pulpcore.app.serializers.catalog import DownloadCatalogSerializer  # NOQA

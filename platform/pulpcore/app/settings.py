@@ -35,7 +35,7 @@ SILENCED_SYSTEM_CHECKS = ["fields.W342"]
 
 ALLOWED_HOSTS = ['*']
 
-MEDIA_ROOT = '/var/lib/pulp/content/'
+MEDIA_ROOT = '/var/lib/pulp/'
 DEFAULT_FILE_STORAGE = 'pulpcore.app.models.storage.FileSystem'
 
 # Application definition

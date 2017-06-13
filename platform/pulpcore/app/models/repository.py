@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from pulpcore.app.models import Model, Notes, Scratchpad, MasterModel, GenericKeyValueRelation
+from pulpcore.app.models.storage import TLSLocation
 
 
 class Repository(Model):
@@ -142,9 +143,13 @@ class Importer(ContentAdaptor):
     feed_url = models.TextField()
     validate = models.BooleanField(default=True)
 
-    ssl_ca_certificate = models.TextField(blank=True)
-    ssl_client_certificate = models.TextField(blank=True)
-    ssl_client_key = models.TextField(blank=True)
+    ssl_ca_certificate = models.FileField(
+        blank=True, upload_to=TLSLocation('ca.pem'), max_length=255)
+    ssl_client_certificate = models.FileField(
+        blank=True, upload_to=TLSLocation('certificate.pem'), max_length=255)
+    ssl_client_key = models.FileField(
+        blank=True, upload_to=TLSLocation('key.pem'), max_length=255)
+
     ssl_validation = models.BooleanField(default=True)
 
     proxy_url = models.TextField(blank=True)

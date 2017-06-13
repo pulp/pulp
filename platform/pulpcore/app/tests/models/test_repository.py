@@ -1,6 +1,7 @@
+
 from django.test import TestCase
 
-from pulpcore.app.models import Repository, Importer, Publisher
+from pulpcore.app.models import Repository, Importer, Publisher, FileContent
 
 
 class TestRepository(TestCase):
@@ -35,14 +36,17 @@ class RepositoryExample(TestCase):
         """
         Add an importer with feed URL and some standard settings.
         """
+        ca = 'MY-CA'
+        certificate = 'MY-CERTIFICATE'
+        key = 'MY-KEY'
         repository = Repository.objects.get(name=RepositoryExample.NAME)
         importer = Importer(repository=repository)
         importer.name = 'Upstream'
         importer.feed_url = 'http://content-world/everyting/'
         importer.ssl_validation = True
-        importer.ssl_ca_certificate = 'MY-CA'
-        importer.ssl_client_certificate = 'MY-CERTIFICATE'
-        importer.ssl_client_key = 'MY-KEY'
+        importer.ssl_ca_certificate = FileContent(ca)
+        importer.ssl_client_certificate = FileContent(certificate)
+        importer.ssl_client_key = FileContent(key)
         importer.proxy_url = 'http://elmer:fudd@warnerbrothers.com'
         importer.basic_auth_user = 'Elmer'
         importer.basic_auth_password = 'Fudd'
@@ -95,9 +99,16 @@ class RepositoryExample(TestCase):
 
         # SSL
         self.assertTrue(importer.ssl_validation)
-        self.assertEqual(importer.ssl_ca_certificate, 'MY-CA')
-        self.assertEqual(importer.ssl_client_certificate, 'MY-CERTIFICATE')
-        self.assertEqual(importer.ssl_client_key, 'MY-KEY')
+        # Lousy test that leaks files but fine for initial sanity testing.
+        self.assertEqual(
+            open(str(importer.ssl_ca_certificate)).read(),
+            'MY-CA')
+        self.assertEqual(
+            open(str(importer.ssl_client_certificate)).read(),
+            'MY-CERTIFICATE')
+        self.assertEqual(
+            open(str(importer.ssl_client_key)).read(),
+            'MY-KEY')
 
         # Basic auth settings
         self.assertEqual(importer.basic_auth_user, 'Elmer')

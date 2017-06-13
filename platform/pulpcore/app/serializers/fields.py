@@ -32,3 +32,15 @@ class PublisherRelatedField(DetailRelatedField):
     Serializer Field for use when relating to Publisher Detail Models
     """
     queryset = models.Publisher.objects.all()
+
+
+class FileField(serializers.CharField):
+    """
+    Serializer Field for model.FileField and REST API passing file content.
+    """
+
+    def to_internal_value(self, data):
+        return models.FileContent(data)
+
+    def to_representation(self, value):
+        return str(value)

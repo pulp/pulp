@@ -6,7 +6,7 @@ import hashlib
 from django.db import models
 
 from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
-from pulpcore.app.models.storage import StoragePath
+from pulpcore.app.models.storage import ArtifactLocation
 
 
 class Content(MasterModel):
@@ -96,17 +96,11 @@ class Artifact(Model):
         content (models.ForeignKey): The associated content.
     """
 
-    # Note: The FileField does not support unique indexes and has
-    # other undesirable behavior and complexities.  Using a custom
-    # field should be investigated.
-
-    file = models.FileField(db_index=True, upload_to=StoragePath(), max_length=255)
+    file = models.FileField(db_index=True, upload_to=ArtifactLocation(), max_length=255)
     downloaded = models.BooleanField(db_index=True, default=False)
     requested = models.BooleanField(db_index=True, default=False)
     relative_path = models.TextField(db_index=True, blank=False, default=None)
-
     size = models.IntegerField(blank=True, null=True)
-
     md5 = models.CharField(max_length=32, blank=True, null=True)
     sha1 = models.CharField(max_length=40, blank=True, null=True)
     sha224 = models.CharField(max_length=56, blank=True, null=True)

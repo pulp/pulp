@@ -1,6 +1,7 @@
 import os
 import errno
-import shutil
+import io
+import stat
 
 from datetime import datetime
 
@@ -10,11 +11,102 @@ from django.core.files.storage import Storage
 from django.utils.deconstruct import deconstructible
 
 
+class FileContent(File):
+    """
+    An in-memory file.
+    Designed to be used by FileField when content is known.
+
+    Attributes:
+        content (str): The actual content.
+
+    Examples:
+        >>>
+        >>> from django.db import models
+        >>>
+        >>> class Person(models.Model):
+        >>>     ssl_certificate = models.FileField()
+        >>>
+        >>> person = Person()
+        >>> certificate = 'PEM ENCODED CERTIFICATE HERE'
+        >>> person.ssl_certificate = FileContent(certificate)
+        >>>
+    """
+
+    def __init__(self, content):
+        """
+        Args:
+            content (str): The file content.
+
+        Notes:
+            The name is set to '-' to ensure that model.FileField
+            will work properly.  Using '-' is arbitrary and just need to
+            something other than None or ''.
+        """
+        super(FileContent, self).__init__(io.StringIO(content), '-')
+        self.content = content
+        self.size = len(content)
+
+    def open(self, mode='r'):
+        """
+        Open for reading.
+
+        Args:
+            mode (str): See: open() mode.
+        """
+        if 'b' in mode:
+            self.file = io.BytesIO(bytearray(self.content, encoding='utf8'))
+        else:
+            self.file = io.StringIO(self.content)
+
+    def __bool__(self):
+        return len(self.content) > 0
+
+
 @deconstructible
-class StoragePath(object):
+class TLSLocation:
     """
-    Content storage path.
+    Determine storage location (path) for PEM encoded TLS keys and certificates
+    associated with any model.
+
+    Attributes:
+        name (str): The file name.
     """
+
+    MEDIA_TYPE = 'tls'
+
+    def __init__(self, name):
+        """
+        Args:
+            name (str): The file name.
+        """
+        self.name = name
+
+    def __call__(self, model, name):
+        """
+        Determine storage location as: MEDIA_ROOT/tls/<model>/<id>/<name>.
+
+        Args:
+            model (pulpcore.app.models.Model): The model object.
+            name (str): The (unused) input file path.
+
+        Returns:
+            str: An absolute (base) path
+        """
+        return os.path.join(
+            settings.MEDIA_ROOT,
+            self.MEDIA_TYPE,
+            type(model).__name__,
+            str(model.id),
+            self.name)
+
+
+@deconstructible
+class ArtifactLocation:
+    """
+    Determine storage location (path) for file associated with content artifacts.
+    """
+
+    MEDIA_TYPE = 'content'
 
     @staticmethod
     def base_path(artifact):
@@ -31,6 +123,7 @@ class StoragePath(object):
         digest = artifact.content.natural_key_digest()
         return os.path.join(
             settings.MEDIA_ROOT,
+            ArtifactLocation.MEDIA_TYPE,
             'units',
             artifact.content.type,
             digest[0:2],
@@ -41,6 +134,8 @@ class StoragePath(object):
         Get the absolute path used to store a file associated
         with the specified artifact.
 
+        Stored at: MEDIA_ROOT/content/units/<type>/digest[0:2]/digest[2:]/<rel_path>
+
         Args:
             artifact (pulpcore.app.models.content.Artifact): Content artifact.
             name (str): Unused, here to match Django's FileField API.
@@ -48,7 +143,7 @@ class StoragePath(object):
         Returns:
             str: Absolute path.
         """
-        return os.path.join(StoragePath.base_path(artifact), artifact.relative_path)
+        return os.path.join(self.base_path(artifact), artifact.relative_path)
 
 
 class FileSystem(Storage):
@@ -142,8 +237,22 @@ class FileSystem(Storage):
         Returns:
             str: Final storage page.
         """
+        # Create dir
         FileSystem.mkdir(os.path.dirname(path))
-        shutil.copy(content.name, path)
+        # Transfer content
+        content.open(mode='rb')
+        with content:
+            with open(path, 'wb+') as fp:
+                while True:
+                    bfr = content.read(1024000)
+                    if bfr:
+                        fp.write(bfr)
+                    else:
+                        break
+        # Propagate permissions
+        if os.path.exists(content.name):
+            st = os.stat(content.name)
+            os.chmod(path, stat.S_IMODE(st.st_mode))
         return path
 
     def get_available_name(self, name, max_length=None):
@@ -153,7 +262,7 @@ class FileSystem(Storage):
 
         Args:
             name (str): File name.
-            max_lenth (int): Maximum length, in characters, of the returned path.
+            max_length (int): Maximum length, in characters, of the returned path.
 
         Returns:
             str: Available name.
