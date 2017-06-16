@@ -7,6 +7,7 @@ from django.conf.urls import url, include
 from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
+from pulpcore.app.views.status import StatusView
 
 root_router = routers.DefaultRouter(
     schema_title='Pulp API',
@@ -63,6 +64,7 @@ except AppRegistryNotReady as ex:
 
 urlpatterns = [
     url(r'^api/v3/', include(root_router.urls)),
+    url(r'^api/v3/status/', StatusView.as_view()),
 ]
 
 
