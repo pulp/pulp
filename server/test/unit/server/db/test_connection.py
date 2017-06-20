@@ -15,7 +15,7 @@ from pulp.server.exceptions import PulpCodedException
 MONGO_MIN_TEST_VERSION = "2.4.0"
 
 
-class MongoEngineConnectionError(Exception):
+class TestMongoEngineConnectionError(Exception):
     pass
 
 
@@ -714,13 +714,13 @@ class TestDatabaseAuthentication(unittest.TestCase):
                                                               MONGO_MIN_TEST_VERSION}
         self.assertRaises(Exception, connection.initialize)
 
-    @patch('pulp.server.db.connection.OperationFailure', new=MongoEngineConnectionError)
+    @patch('pulp.server.db.connection.OperationFailure', new=TestMongoEngineConnectionError)
     @patch('pulp.server.db.connection.mongoengine')
     def test_authentication_fails_with_RuntimeError(self, mock_mongoengine):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               MONGO_MIN_TEST_VERSION}
-        exc = MongoEngineConnectionError()
+        exc = TestMongoEngineConnectionError()
         exc.code = 18
         mock_mongoengine.connection.get_db.side_effect = exc
         self.assertRaises(RuntimeError, connection.initialize)
@@ -730,20 +730,21 @@ class TestDatabaseRetryOnInitialConnectionSupport(unittest.TestCase):
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
+    @patch('pulp.server.db.connection.MongoEngineConnectionError', TestMongoEngineConnectionError)
     @patch('pulp.server.db.connection.mongoengine')
     @patch('pulp.server.db.connection.time.sleep', Mock())
     def test_retry_waits_when_mongoengine_connection_error_is_raised(self, mock_mongoengine):
         def break_out_on_second(*args, **kwargs):
             mock_mongoengine.connect.side_effect = StopIteration()
-            raise MongoEngineConnectionError()
+            raise TestMongoEngineConnectionError()
 
         mock_mongoengine.connect.side_effect = break_out_on_second
-        mock_mongoengine.connection.ConnectionError = MongoEngineConnectionError
 
         self.assertRaises(StopIteration, connection.initialize)
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
+    @patch('pulp.server.db.connection.MongoEngineConnectionError', TestMongoEngineConnectionError)
     @patch('pulp.server.db.connection.time.sleep')
     @patch('pulp.server.db.connection.mongoengine')
     def test_retry_sleeps_with_backoff(self, mock_mongoengine, mock_sleep):
@@ -751,8 +752,7 @@ class TestDatabaseRetryOnInitialConnectionSupport(unittest.TestCase):
             mock_sleep.side_effect = StopIteration()
 
         mock_sleep.side_effect = break_out_on_second
-        mock_mongoengine.connect.side_effect = MongoEngineConnectionError()
-        mock_mongoengine.connection.ConnectionError = MongoEngineConnectionError
+        mock_mongoengine.connect.side_effect = TestMongoEngineConnectionError()
 
         self.assertRaises(StopIteration, connection.initialize)
 
@@ -760,6 +760,7 @@ class TestDatabaseRetryOnInitialConnectionSupport(unittest.TestCase):
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
+    @patch('pulp.server.db.connection.MongoEngineConnectionError', TestMongoEngineConnectionError)
     @patch('pulp.server.db.connection.time.sleep')
     @patch('pulp.server.db.connection.mongoengine')
     def test_retry_with_max_timeout(self, mock_mongoengine, mock_sleep):
@@ -767,8 +768,7 @@ class TestDatabaseRetryOnInitialConnectionSupport(unittest.TestCase):
             mock_sleep.side_effect = StopIteration()
 
         mock_sleep.side_effect = break_out_on_second
-        mock_mongoengine.connect.side_effect = MongoEngineConnectionError()
-        mock_mongoengine.connection.ConnectionError = MongoEngineConnectionError
+        mock_mongoengine.connect.side_effect = TestMongoEngineConnectionError()
 
         self.assertRaises(StopIteration, connection.initialize, max_timeout=1)
 

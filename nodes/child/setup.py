@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp_node_child',
-    version='2.13.1',
+    version='2.13.2b1',
     license='GPLv2+',
     packages=find_packages(),
     author='Pulp Team',

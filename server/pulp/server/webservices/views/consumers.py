@@ -951,7 +951,7 @@ class ConsumerResourceContentApplicRegenerationView(View):
         consumer_query_manager = factory.consumer_query_manager()
         if consumer_query_manager.find_by_id(consumer_id) is None:
             raise MissingResource(consumer_id=consumer_id)
-        consumer_criteria = Criteria(filters={'consumer_id': consumer_id})
+        consumer_criteria = Criteria(filters={'id': consumer_id})
 
         task_tags = [tags.action_tag('consumer_content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(

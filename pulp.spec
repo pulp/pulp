@@ -35,8 +35,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.13.1
-Release: 1%{?dist}
+Version: 2.13.2
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -621,6 +621,7 @@ Pulp nodes consumer client extensions.
 Summary: The pulp lazy streamer
 Group: Development/Languages
 Provides: python2-pulp-streamer
+Obsoletes: python2-pulp-streamer < %{version}
 Requires: httpd
 Requires: pulp-server
 Requires: python-mongoengine
@@ -689,6 +690,7 @@ Summary: Pulp common python packages
 Group: Development/Languages
 Obsoletes: pulp-common
 Provides: python2-pulp-common
+Obsoletes: python2-pulp-common < %{version}
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
 # RHEL5 ONLY
@@ -715,6 +717,7 @@ A collection of components that are common between the pulp server and client.
 Summary: Pulp devel python packages
 Group: Development/Languages
 Provides: python2-pulp-devel
+Obsoletes: python2-pulp-devel < %{version}
 %if 0%{?rhel} == 6
 Requires: python-unittest2
 %endif
@@ -737,6 +740,7 @@ A collection of tools used for developing & testing Pulp plugins
 Summary: Pulp REST bindings for python
 Group: Development/Languages
 Provides: python2-pulp-bindings
+Obsoletes: python2-pulp-bindings < %{version}
 Requires: python-%{name}-common = %{pulp_version}
 %if %{pulp_client_oauth}
 Requires: python-oauth2 >= 1.5.170-2.pulp
@@ -759,6 +763,7 @@ The Pulp REST API bindings for python.
 Summary: Pulp client extensions framework
 Group: Development/Languages
 Provides: python2-pulp-client-lib
+Obsoletes: python2-pulp-client-lib < %{version}
 Requires: m2crypto
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-okaara >= 1.0.32
@@ -787,6 +792,7 @@ A framework for loading Pulp client extensions.
 Summary: Pulp agent handler framework
 Group: Development/Languages
 Provides: python2-pulp-agent-lib
+Obsoletes: python2-pulp-agent-lib < %{version}
 Requires: python-%{name}-common = %{pulp_version}
 
 %description -n python-pulp-agent-lib
@@ -980,6 +986,7 @@ exit 0
 Summary: Framework for cert-based repo authentication
 Group: Development/Languages
 Provides: python2-pulp-repoauth
+Obsoletes: python2-pulp-repoauth < %{version}
 Requires: httpd
 Requires: mod_ssl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -1002,6 +1009,7 @@ Cert-based repo authentication for Pulp
 Summary: Cert-based repo authentication for Pulp
 Group: Development/Languages
 Provides: python2-pulp-oid-validation
+Obsoletes: python2-pulp-oid-validation < %{version}
 Requires: python-rhsm
 Requires: python-pulp-repoauth = %{pulp_version}
 

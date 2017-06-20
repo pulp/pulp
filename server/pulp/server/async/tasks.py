@@ -420,8 +420,15 @@ class ReservedTaskMixin(object):
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
         task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
-        _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
-                                         queue=RESOURCE_MANAGER_QUEUE)
+        try:
+            _queue_reserved_task.apply_async(
+                args=[task_name, inner_task_id, resource_id, args, kwargs],
+                queue=RESOURCE_MANAGER_QUEUE
+            )
+        except:
+            TaskStatus.objects(task_id=task_status.task_id).update(state=constants.CALL_ERROR_STATE)
+            raise
+
         return AsyncResult(inner_task_id)
 
 
@@ -459,7 +466,16 @@ class Task(PulpTask, ReservedTaskMixin):
                                      defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tag_list = kwargs.pop('tags', [])
         group_id = kwargs.pop('group_id', None)
-        async_result = super(Task, self).apply_async(*args, **kwargs)
+
+        try:
+            async_result = super(Task, self).apply_async(*args, **kwargs)
+        except:
+            if 'task_id' in kwargs:
+                TaskStatus.objects(task_id=kwargs['task_id']).update(
+                    state=constants.CALL_ERROR_STATE
+                )
+            raise
+
         async_result.tags = tag_list
 
         # Create a new task status with the task id and tags.
