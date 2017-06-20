@@ -307,7 +307,7 @@ class HTTPSServerWrapper(object):
 
         if self.pulp_connection.username and self.pulp_connection.password:
             raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
-            encoded = base64.encodestring(raw)[:-1]
+            encoded = base64.b64encode(raw)
             headers['Authorization'] = 'Basic ' + encoded
         elif self.pulp_connection.cert_filename:
             ssl_context.load_cert(self.pulp_connection.cert_filename)
