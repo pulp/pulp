@@ -2,10 +2,10 @@ Contributing Guide
 ==================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    3.0-development/index
-   dev-setup
+   dev-setup/index
    platform_api/index
    plugin_api/index
    git
