@@ -261,6 +261,27 @@ class RSyncPublishStep(PublishStep):
             raise PulpCodedException(message=output)
 
 
+class UpdateLastPredistDateStep(PublishStep):
+    """
+    After a publish of the Predistributor completes, store the date in the scratchpad.
+    """
+    def __init__(self, distributor, predist_pub_date):
+        super(UpdateLastPredistDateStep, self).__init__("UpdateLastPredistDate")
+        self.distributor = distributor
+        self.date = predist_pub_date
+
+    def process_main(self):
+        """
+        Save last_predist_last_published.
+        """
+        if "scratchpad" not in self.distributor:
+            self.distributor["scratchpad"] = {}
+
+        self.distributor["scratchpad"]["last_predist_last_published"] = self.date
+
+        self.get_conduit().set_scratchpad(self.distributor["scratchpad"])
+
+
 class Publisher(PublishStep):
     """
     RSync publisher class that provides the common code for publishing to remote server. Each
@@ -291,17 +312,24 @@ class Publisher(PublishStep):
                                         publish_conduit, config,
                                         distributor_type=distributor_type)
 
-        distributor = Distributor.objects.get_or_404(repo_id=self.repo.id,
-                                                     distributor_id=publish_conduit.distributor_id)
-        self.last_published = distributor["last_publish"]
+        self.distributor = Distributor.objects.get_or_404(
+            repo_id=self.repo.id,
+            distributor_id=publish_conduit.distributor_id)
+        self.last_published = self.distributor["last_publish"]
         self.last_deleted = repo.last_unit_removed
         self.repo = repo
         self.predistributor = self._get_predistributor()
+
+        self.last_predist_last_published = None
+        if self.predistributor:
+            scratchpad = self.distributor.scratchpad or {}
+            self.last_predist_last_published = scratchpad.get("last_predist_last_published")
 
         if self.last_published:
             string_date = dateutils.format_iso8601_datetime(self.last_published)
         else:
             string_date = None
+
         if self.predistributor:
             search_params = {'repo_id': repo.id,
                              'distributor_id': self.predistributor["distributor_id"],
@@ -313,10 +341,12 @@ class Publisher(PublishStep):
         self.remote_path = self.get_remote_repo_path()
 
         if self.is_fastforward():
-            start_date = self.last_published
+            start_date = self.last_predist_last_published
             end_date = None
+
             if self.predistributor:
                 end_date = self.predistributor["last_publish"]
+
             date_filter = self.create_date_range_filter(start_date=start_date, end_date=end_date)
         else:
             date_filter = None
@@ -354,9 +384,8 @@ class Publisher(PublishStep):
         force_full = force_full | config_force_full
         delete = self.get_config().get("delete", False)
 
-        return last_published and ((last_deleted and last_published > last_deleted) or
-                                   not last_deleted) and not force_full and\
-            not delete
+        return not force_full and not delete and not self.last_predist_last_published and \
+            ((last_deleted and last_published and last_published > last_deleted) or not last_deleted)
 
     def create_date_range_filter(self, start_date=None, end_date=None):
         """
