@@ -51,10 +51,28 @@ class RepositoryViewSet(NamedModelViewSet):
         serializer = ImporterSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
+    def update(self, request, name, partial=False):
+        """
+        Generates a Task to update a :class:`~pulpcore.app.models.Repository`
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        async_result = tasks.repository.update.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, str(instance.id),
+            args=(instance.id, ),
+            kwargs={'data': request.data,
+                    'partial': partial}
+        )
+        return OperationPostponedResponse([async_result])
+
     def destroy(self, request, name):
+        """
+        Generates a Task to delete a :class:`~pulpcore.app.models.Repository`
+        """
         repo = self.get_object()
         async_result = tasks.repository.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo.name, kwargs={'repo_name': repo.name})
+            tags.RESOURCE_REPOSITORY_TYPE, str(repo.id), kwargs={'repo_id': repo.id})
         return OperationPostponedResponse([async_result])
 
 

@@ -483,64 +483,6 @@ def get_importer_by_id(object_id):
     return plugin, call_conf, document
 
 
-def update_repo_and_plugins(repo, repo_delta, importer_config, distributor_configs):
-    """
-    Update a repository and its related collections.
-
-    All details do not need to be specified; if a piece is omitted it's configuration is not
-    touched, nor is it removed from the repository. The same holds true for the distributor_configs
-    dict, not every distributor must be represented.
-
-    This call will attempt to update the repository object, then the importer, then the
-    distributors. If an exception occurs during any of these steps, the updates stop and the
-    exception is immediately raised. Any updates that have already taken place are not rolled back.
-
-    Distributor updates are asynchronous as there could be a very large number of consumers to
-    update. Repository and importer updates are done synchronously.
-
-    :param repo: repository object
-    :type  repo: pulp.server.db.model.Repository
-    :param repo_delta: list of attributes to change and their new values; if None, no attempt to
-                       update the repository object will be made
-    :type  repo_delta: dict, None
-    :param importer_config: new configuration to use for the repo's importer; if None, no attempt
-                            will be made to update the importer
-    :type  importer_config: dict, None
-    :param distributor_configs: mapping of distributor ID to the new configuration to set for it
-    :type  distributor_configs: dict, None
-
-    :return: Dictionary result that contains the updated repository object
-    :rtype:  dict
-
-    :raises pulp_exceptions.InvalidValue: if repo_delta is not a dictionary
-    """
-    if repo_delta:
-        if isinstance(repo_delta, dict):
-            repo.update_from_delta(repo_delta)
-            repo.save()
-        else:
-            raise pulp_exceptions.PulpCodedValidationException(
-                error_code=error_codes.PLP1010, field='delta', field_type='dict', value=repo_delta)
-
-    if importer_config is not None:
-        importer_controller.update_importer_config(repo.repo_id, importer_config)
-
-    additional_tasks = []
-    if distributor_configs is not None:
-        for dist_id, dist_config in distributor_configs.items():
-            task_tags = [
-                tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id),
-                tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                  dist_id),
-                tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR)
-            ]
-            async_result = dist_controller.update.apply_async_with_reservation(
-                tags.RESOURCE_REPOSITORY_TYPE, repo.repo_id,
-                [repo.repo_id, dist_id, dist_config, None], tags=task_tags)
-            additional_tasks.append(async_result)
-    return repo
-
-
 def update_unit_count(repo_id, unit_type_id, delta):
     """
     Updates the total count of units associated with the repo. Each repo has an attribute
