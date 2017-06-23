@@ -17,8 +17,7 @@ class RepositorySerializer(ModelSerializer):
         lookup_field='name',
     )
     name = serializers.CharField(
-        help_text=_('A unique name for this repository.'),
-        write_only=True
+        help_text=_('A unique name for this repository.')
     )
 
     description = serializers.CharField(
