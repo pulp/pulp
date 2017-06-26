@@ -34,6 +34,9 @@ class DownloadCatalog(Model):
     artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE)
     importer = models.ForeignKey(Importer, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('artifact', 'importer')
+
     def __str__(self):
         """
         Human-readable representation of this model.
@@ -42,5 +45,8 @@ class DownloadCatalog(Model):
         interface.
         """
 
-        return _('{artifact} is retrievable at {url} by {importer}'.format(
-            artifact=self.artifact, url=self.url, importer=self.importer))
+        return _(
+            '{artifact} is retrievable at {url} by {importer}'.format(
+                artifact=self.artifact,
+                url=self.url,
+                importer=self.importer))
