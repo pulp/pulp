@@ -89,3 +89,7 @@ be synchronized to the child node.
   --repo-id - (required) unique identifier; only alphanumeric, -, and _ allowed
 
 .. note:: Only activated nodes and enabled repositories may be specified.
+
+.. note:: The **pulp-consumer** command line client must be executed with enough permissions 
+    to write system-level configuration and credential files. If permission errors are 
+    encountered, you may need ``root`` privileges.
