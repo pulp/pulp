@@ -1,10 +1,37 @@
-from gettext import gettext as _
-
 from celery import shared_task
+from django.http import QueryDict
 
 from pulpcore.app import models
+from pulpcore.app.apps import get_plugin_config
 from pulpcore.tasking.services import storage
 from pulpcore.tasking.tasks import UserFacingTask
+
+
+@shared_task(base=UserFacingTask)
+def update(publisher_id, app_label, serializer_name, data=None, partial=False):
+    """
+    Update an instance of a :class:`~pulpcore.app.models.Publisher`
+
+    Args:
+        publisher_id (str): id of the publisher instance
+        app_label (str): the Django app label of the plugin that provides the publisher
+        serializer_name (str): name of the serializer class for this publisher
+        data (dict): Data to update on the publisher. keys are field names, values are new values.
+        partial (bool): When true, update only the specified fields. When false, omitted fields
+            are set to None.
+    Raises:
+        :class:`rest_framework.exceptions.ValidationError`: When serializer instance can't be saved
+            due to validation error. This theoretically should never occur since validation is
+            performed before the task is dispatched.
+    """
+    instance = models.Publisher.objects.get(id=publisher_id).cast()
+    data_querydict = QueryDict("", mutable=True)
+    data_querydict.update(data)
+    # The publisher serializer class is different for each plugin
+    serializer_class = get_plugin_config(app_label).named_serializers[serializer_name]
+    serializer = serializer_class(instance, data=data_querydict, partial=partial)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
 
 
 @shared_task(base=UserFacingTask)
@@ -18,6 +45,7 @@ def delete(repo_name, publisher_name):
     :type  publisher_name:  str
     """
     models.Publisher.objects.filter(name=publisher_name, repository__name=repo_name).delete()
+
 
 @shared_task(base=UserFacingTask)
 def publish(repo_name, publisher_name):

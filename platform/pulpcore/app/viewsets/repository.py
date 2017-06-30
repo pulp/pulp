@@ -170,6 +170,18 @@ class PublisherViewSet(NamedModelViewSet):
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
 
+    def update(self, request, pk, partial=False):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        app_label = instance._meta.app_label
+        async_result = tasks.publisher.update.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, instance.repository.name,
+            args=(instance.id, app_label, serializer.__class__.__name__),
+            kwargs={'data': request.data, 'partial': partial}
+        )
+        return OperationPostponedResponse([async_result])
+
     def destroy(self, request, pk):
         publisher = self.get_object()
         repo_name = publisher.repository.name
