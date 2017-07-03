@@ -256,8 +256,10 @@ def copytree(src, dst, symlinks=False, ignore=None):
             elif os.path.isdir(srcname):
                 copytree(srcname, dstname, symlinks, ignore)
             else:
-                # Don't need to copy attributes
+                # Copy mtime and atime attributes
                 copy(srcname, dstname)
+                st = os.stat(srcname)
+                os.utime(dstname, (st.st_atime, st.st_mtime))
             # XXX What about devices, sockets etc.?
         except (IOError, os.error) as why:
             errors.append((srcname, dstname, str(why)))
