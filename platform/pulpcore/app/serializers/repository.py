@@ -157,7 +157,8 @@ class PublisherSerializer(MasterModelSerializer):
     )
     relative_path = serializers.CharField(
         help_text=_('The (relative) path component of the published url'),
-        required=False
+        required=False,
+        allow_blank=True
     )
     last_published = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent successful publish.'),
