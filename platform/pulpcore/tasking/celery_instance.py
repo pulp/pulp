@@ -5,7 +5,7 @@ from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulpcore.app.settings')
 
-from django.conf import settings  # NOQA
+from django.conf import settings  # noqa
 
 broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)

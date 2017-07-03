@@ -64,7 +64,7 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
             concurrently with yours.
         inner_args (tuple): The positional arguments to pass on to the task.
         inner_kwargs (dict): The keyword arguments to pass on to the task.
-        options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # NOQA
+        options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
     Returns:
         An AsyncResult instance as returned by Celery's apply_async
@@ -177,7 +177,7 @@ class UserFacingTask(PulpTask):
                 This is an optional argument which is pulled out of kwargs.
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
-            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # NOQA
+            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async
@@ -217,7 +217,7 @@ class UserFacingTask(PulpTask):
             group_id (uuid.UUID): The id that identifies which group of tasks a task belongs to
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
-            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # NOQA
+            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async
