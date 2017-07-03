@@ -13,11 +13,8 @@ Other functions in this module are helper functions designed to deduplicate the 
 code between the event handlers.
 """
 
-from datetime import datetime
 from gettext import gettext as _
 import logging
-
-from django.utils import timezone
 
 from pulpcore.app.models import Worker, TaskLock
 from pulpcore.common import TASK_INCOMPLETE_STATES

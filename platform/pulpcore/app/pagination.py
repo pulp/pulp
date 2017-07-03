@@ -8,8 +8,8 @@ class UUIDPagination(pagination.CursorPagination):
     This assumes that the objects being iterated over have an 'id' field, that the value of this
     field is a UUID, and that the field is indexed.
 
-    This assumption should be True for all Models inheriting `pulpcore.app.models.Model`, the Pulp base
-    Model class.
+    This assumption should be True for all Models inheriting `pulpcore.app.models.Model`, the Pulp
+    base Model class.
 
     """
     ordering = 'id'

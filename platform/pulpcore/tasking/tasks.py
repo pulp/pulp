@@ -14,12 +14,12 @@ from django.conf import settings as pulp_settings
 from django.db import IntegrityError, transaction
 
 from pulpcore.app.models import Task as TaskStatus
-from pulpcore.app.models import ReservedResource, TaskLock, Worker
-from pulpcore.common import TASK_FINAL_STATES, TASK_INCOMPLETE_STATES, TASK_STATES
-from pulpcore.exceptions import MissingResource, PulpException
+from pulpcore.app.models import ReservedResource, Worker
+from pulpcore.common import TASK_STATES
+from pulpcore.exceptions import PulpException
 from pulpcore.tasking import util
-from pulpcore.tasking.celery_instance import DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE, celery
-from pulpcore.tasking.services import storage
+from pulpcore.tasking.celery_instance import (DEDICATED_QUEUE_EXCHANGE, RESOURCE_MANAGER_QUEUE,
+                                              celery)
 
 celery_controller = control.Control(app=celery)
 _logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
             concurrently with yours.
         inner_args (tuple): The positional arguments to pass on to the task.
         inner_kwargs (dict): The keyword arguments to pass on to the task.
-        options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
+        options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
     Returns:
         An AsyncResult instance as returned by Celery's apply_async
@@ -177,7 +177,7 @@ class UserFacingTask(PulpTask):
                 This is an optional argument which is pulled out of kwargs.
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
-            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
+            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async
@@ -217,7 +217,7 @@ class UserFacingTask(PulpTask):
             group_id (uuid.UUID): The id that identifies which group of tasks a task belongs to
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
-            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
+            options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
 
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async

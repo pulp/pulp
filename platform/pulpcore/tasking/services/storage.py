@@ -138,6 +138,7 @@ def _rmtree_fix_permissions(directory_path):
         else:
             raise
 
+
 @contextmanager
 def working_dir_context():
     """

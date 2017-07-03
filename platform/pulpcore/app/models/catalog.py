@@ -10,9 +10,9 @@ from pulpcore.app.models import Model, Artifact, Importer
 
 class DownloadCatalog(Model):
     """
-    Each :class:`DownloadCatalog` maps an :class:`pulpcore.app.models.content.Artifact` to a URL where
-    it is stored remotely and to the :class:`pulpcore.app.models.repository.Importer` which contains
-    the network configuration required to access that URL.
+    Each :class:`DownloadCatalog` maps an :class:`pulpcore.app.models.content.Artifact` to a URL
+    where it is stored remotely and to the :class:`pulpcore.app.models.repository.Importer` which
+    contains the network configuration required to access that URL.
 
     Fields:
 

@@ -21,8 +21,8 @@ before_script:
     - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
     - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
 script:
-    # flake8 the diff
-    - "git diff HEAD^ '*.py' | flake8 --diff --config flake8.cfg"
+    # flake8
+    - "flake8 --config flake8.cfg"
     # add secret key to django settings.py
     - echo "SECRET_KEY= '$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(-_=+)' | head -c 50)'" >> platform/pulpcore/app/settings.py
     # tests can't run without migrations being made

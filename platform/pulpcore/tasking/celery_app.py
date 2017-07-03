@@ -91,7 +91,6 @@ class HeartbeatStep(bootsteps.StartStopStep):
             self.timer_ref.cancel()
             self.timer_ref = None
 
-
     def _record_heartbeat(self, consumer):
         """
         This method creates or updates the worker record
@@ -205,7 +204,6 @@ def get_resource_manager_lock(name):
     :type  name:   basestring
     """
     from pulpcore.app.models.task import TaskLock, Worker
-
 
     assert name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
 

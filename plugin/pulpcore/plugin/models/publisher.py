@@ -32,8 +32,8 @@ class Publisher(PlatformPublisher):
         subclassed Publisher.
 
         The model attributes encapsulate all of the information required to publish. This includes
-        the platform :class: `pulpcore.app.models.Publisher` base attributes and any custom attributes
-        defined by the subclass.
+        the platform :class: `pulpcore.app.models.Publisher` base attributes and any custom
+        attributes defined by the subclass.
 
         Instantiation and calling of the publish method by the platform is defined by
         :meth: `pulpcore.app.tasks.publisher.publish`.

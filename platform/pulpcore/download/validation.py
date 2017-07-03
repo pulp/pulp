@@ -163,9 +163,8 @@ class SizeValidation(Validation):
 
     def __str__(self):
         return _(
-            'SizeValidation: expected={e} actual={a}').format(
-                e=self.expected,
-                a=self.actual)
+            'SizeValidation: expected={e} actual={a}').format(e=self.expected,
+                                                              a=self.actual)
 
 
 class DigestValidation(Validation):
@@ -270,7 +269,6 @@ class DigestValidation(Validation):
 
     def __str__(self):
         return _(
-            'DigestValidation: alg={al} expected={e} actual={a}').format(
-                al=self.algorithm,
-                e=self.expected,
-                a=self.actual)
+            'DigestValidation: alg={al} expected={e} actual={a}').format(al=self.algorithm,
+                                                                         e=self.expected,
+                                                                         a=self.actual)

@@ -5,7 +5,7 @@ from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'pulpcore.app.settings')
 
-from django.conf import settings  # NOQA
+from django.conf import settings  # noqa
 
 broker_url = settings.BROKER['url']
 celery = Celery('tasks', broker=broker_url)
@@ -45,6 +45,7 @@ def configure_SSL():
             'cert_reqs': ssl.CERT_REQUIRED,
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
+
 
 configure_SSL()
 configure_login_method()

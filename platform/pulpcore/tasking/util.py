@@ -7,7 +7,7 @@ from celery.app import control
 
 from pulpcore.app.models import Task
 from pulpcore.common import TASK_FINAL_STATES
-from pulpcore.exceptions import MissingResource, PulpException
+from pulpcore.exceptions import MissingResource
 
 
 celery_controller = control.Control(app=current_app)
