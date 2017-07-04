@@ -1,19 +1,8 @@
-==================
-Installation Guide
-==================
-
-PyPI
-----
-
-CentOS, RHEL, Fedora
---------------------
-
-Source
-------
-
-
 Configuration Files
--------------------
+===================
+
+server.yaml
+-----------
 
 Pulp's server configuration file is located at `/etc/pulp/server.yaml`
 
@@ -31,4 +20,3 @@ SECRET_KEY
 
    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
    print(''.join(random.choice(chars) for i in range(50)))
-
