@@ -8,5 +8,5 @@ Pulp Documentation
    integration_guide/index
    contributing/index
    release_notes/index
-   getting_help/index
+   troubleshooting/index
    glossary
