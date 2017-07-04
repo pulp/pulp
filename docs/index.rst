@@ -4,6 +4,7 @@ Pulp Documentation
    :maxdepth: 2
 
    installation/index
+   workflows/index
    cli_guide/index
    integration_guide/index
    contributing/index
