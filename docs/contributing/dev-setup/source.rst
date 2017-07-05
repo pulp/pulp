@@ -3,7 +3,7 @@
 Get the Source
 ==============
 
-It is assumed that any Pulp project repositories are cloned into one directory. As long as Ansible has read and write permissions, it doesnt matter where your **development directory** is.
+It is assumed that any Pulp project repositories are cloned into one directory. As long as Ansible has read and write permissions, it doesn't matter where your **development directory** is.
 
 .. note::
 
