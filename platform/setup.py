@@ -6,6 +6,7 @@ requirements = [
     'Django>=1.8,<1.9',
     'django-filter',
     'djangorestframework',
+    'drf-nested-routers',
     'psycopg2',
     'PyYAML',
     'setuptools',

@@ -1,12 +1,15 @@
 from gettext import gettext as _
 
 from rest_framework import serializers
+from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
-from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer, DetailIdentityField,
+from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
                                       NotesKeyValueRelatedField, RepositoryRelatedField,
                                       ScratchpadKeyValueRelatedField, ContentRelatedField,
-                                      ImporterRelatedField, PublisherRelatedField, FileField)
+                                      FileField,
+                                      DetailNestedHyperlinkedRelatedField,
+                                      DetailNestedHyperlinkedIdentityField)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -36,8 +39,14 @@ class RepositorySerializer(ModelSerializer):
     )
     notes = NotesKeyValueRelatedField()
     scratchpad = ScratchpadKeyValueRelatedField()
-    importers = ImporterRelatedField(many=True)
-    publishers = PublisherRelatedField(many=True)
+    importers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
+                                                    parent_lookup_kwargs={'repository_name':
+                                                                          'repository__name'},
+                                                    lookup_field='name')
+    publishers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
+                                                     parent_lookup_kwargs={'repository_name':
+                                                                           'repository__name'},
+                                                     lookup_field='name')
     content = serializers.HyperlinkedIdentityField(
         view_name='repositories-content',
         lookup_field='name'
@@ -50,14 +59,14 @@ class RepositorySerializer(ModelSerializer):
                                                 'importers', 'publishers', 'content')
 
 
-class ImporterSerializer(MasterModelSerializer):
+class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
     """
     Every importer defined by a plugin should have an Importer serializer that inherits from this
     class. Please import from `pulpcore.app.serializers` rather than from this module directly.
     """
-    # _href is normally provided by the base class, but Importers's
-    # "name" lookup field means _href must be explicitly declared.
-    _href = DetailIdentityField()
+    _href = DetailNestedHyperlinkedIdentityField(
+        lookup_field='name', parent_lookup_kwargs={'repository_name': 'repository__name'},
+    )
 
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
@@ -133,14 +142,14 @@ class ImporterSerializer(MasterModelSerializer):
         )
 
 
-class PublisherSerializer(MasterModelSerializer):
+class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
     """
     Every publisher defined by a plugin should have an Publisher serializer that inherits from this
     class. Please import from `pulpcore.app.serializers` rather than from this module directly.
     """
-    # Every subclass must override the `_href` field with a `RepositoryNestedIdentityField` that
-    # defines the view_name.
-    _href = DetailIdentityField()
+    _href = DetailNestedHyperlinkedIdentityField(
+        lookup_field='name', parent_lookup_kwargs={'repository_name': 'repository__name'},
+    )
     name = serializers.CharField(
         help_text=_('A name for this publisher, unique within the associated repository.')
     )
