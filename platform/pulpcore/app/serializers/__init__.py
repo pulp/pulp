@@ -3,9 +3,9 @@
 # - all can import directly from base and fields if needed
 from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # noqa
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
-    viewset_for_model)
-from pulpcore.app.serializers.fields import (FileField, ContentRelatedField,  # noqa
-    RepositoryRelatedField, ImporterRelatedField, PublisherRelatedField)  # noqa
+    DetailNestedHyperlinkedRelatedField, DetailNestedHyperlinkedIdentityField, viewset_for_model)
+from pulpcore.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField,  # noqa
+    FileField)
 from pulpcore.app.serializers.generic import (ConfigKeyValueRelatedField,  # noqa
     NotesKeyValueRelatedField, ScratchpadKeyValueRelatedField)  # noqa
 from pulpcore.app.serializers.catalog import DownloadCatalogSerializer  # noqa

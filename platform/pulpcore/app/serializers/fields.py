@@ -20,20 +20,6 @@ class RepositoryRelatedField(serializers.HyperlinkedRelatedField):
     queryset = models.Repository.objects.all()
 
 
-class ImporterRelatedField(DetailRelatedField):
-    """
-    Serializer Field for use when relating to Importer Detail Models
-    """
-    queryset = models.Importer.objects.all()
-
-
-class PublisherRelatedField(DetailRelatedField):
-    """
-    Serializer Field for use when relating to Publisher Detail Models
-    """
-    queryset = models.Publisher.objects.all()
-
-
 class FileField(serializers.CharField):
     """
     Serializer Field for model.FileField and REST API passing file content.

@@ -5,6 +5,8 @@ from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
 
 from pulpcore.app.apps import pulp_plugin_configs
+from rest_framework_nested.relations import NestedHyperlinkedRelatedField,\
+    NestedHyperlinkedIdentityField
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
 _model_viewset_cache = {}
@@ -47,17 +49,30 @@ def view_name_for_model(model_obj, view_action):
     Given a Model instance or class, return the correct view name for that ViewSet view.
 
     This is the "glue" that generates view names dynamically based on a model object.
+
+    Args:
+        model_obj (pulpcore.app.models.Model): a Model that should have a ViewSet
+        view_action (str): name of the view action as expected by DRF. See their docs for details.
+
+    Returns:
+        str: view name for the correct ViewSet
+
+    Raises:
+        LookupError: if no ViewSet is found for the Model
     """
     # Import this here to prevent out-of-order plugin discovery
-    from urls import router
+    from urls import root_router, nested_routers
 
     viewset = viewset_for_model(model_obj)
 
     # return the complete view name, joining the registered viewset base name with
     # the requested view method.
-    for pattern, registered_viewset, base_name in router.registry:
-        if registered_viewset is viewset:
-            return '-'.join((base_name, view_action))
+    all_routers = nested_routers + (root_router,)
+    for router in all_routers:
+        for pattern, registered_viewset, base_name in router.registry:
+            if registered_viewset is viewset:
+                return '-'.join((base_name, view_action))
+    raise LookupError('view not found')
 
 
 # Defined here instead of generic.py to avoid potential circular imports issues,
@@ -268,3 +283,16 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         """
         return False
 
+
+class DetailNestedHyperlinkedRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
+    """
+    For use with nested viewsets of master/detail models
+    """
+    pass
+
+
+class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedIdentityField):
+    """
+    For use with nested viewsets of master/detail models
+    """
+    pass

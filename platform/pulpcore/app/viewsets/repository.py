@@ -23,7 +23,6 @@ class RepositoryFilter(filterset.FilterSet):
 
 
 class RepositoryViewSet(NamedModelViewSet):
-    lookup_field = 'name'
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
@@ -36,19 +35,6 @@ class RepositoryViewSet(NamedModelViewSet):
         paginator = UUIDPagination()
         page = paginator.paginate_queryset(repo.content, request)
         serializer = ContentSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
-
-    @decorators.detail_route()
-    def importers(self, request, name):
-        """
-        Creates a nested `importers/` endpoint that returns each importer associated with this
-        repository.
-        """
-        repo = self.get_object()
-        importers = Importer.objects.filter(repository__name=repo.name)
-        paginator = UUIDPagination()
-        page = paginator.paginate_queryset(importers, request)
-        serializer = ImporterSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
     def update(self, request, name, partial=False):
@@ -127,38 +113,40 @@ class PublisherFilter(ContentAdaptorFilter):
 
 
 class ImporterViewSet(NamedModelViewSet):
-    queryset = Importer.objects.all()
-    serializer_class = ImporterSerializer
     endpoint_name = 'importers'
+    nest_prefix = 'repositories'
+    parent_lookup_kwargs = {'repository_name': 'repository__name'}
+    serializer_class = ImporterSerializer
+    queryset = Importer.objects.all()
     filter_class = ImporterFilter
 
-    def update(self, request, pk, partial=False):
+    def update(self, request, repository_name, name, partial=False):
         importer = self.get_object()
         serializer = self.get_serializer(importer, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         app_label = importer._meta.app_label
         async_result = tasks.importer.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
             args=(importer.id, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result])
 
-    def destroy(self, request, pk):
+    def destroy(self, request, repository_name, name):
         importer = self.get_object()
         async_result = tasks.importer.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
-            kwargs={'repo_name': importer.repository.name,
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
+            kwargs={'repo_name': repository_name,
                     'importer_name': importer.name}
         )
         return OperationPostponedResponse([async_result])
 
     @decorators.detail_route()
-    def sync(self, request, pk):
+    def sync(self, request, repository_name, name):
         importer = self.get_object()
         async_result = tasks.importer.sync.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, importer.repository.name,
-            kwargs={'repo_name': importer.repository.name,
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
+            kwargs={'repo_name': repository_name,
                     'importer_name': importer.name}
         )
         return OperationPostponedResponse([async_result])
@@ -166,38 +154,39 @@ class ImporterViewSet(NamedModelViewSet):
 
 class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
+    nest_prefix = 'repositories'
+    parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
 
-    def update(self, request, pk, partial=False):
+    def update(self, request, repository_name, name, partial=False):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         app_label = instance._meta.app_label
         async_result = tasks.publisher.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, instance.repository.name,
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
             args=(instance.id, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result])
 
-    def destroy(self, request, pk):
+    def destroy(self, request, repository_name, name):
         publisher = self.get_object()
-        repo_name = publisher.repository.name
-        task_params = {'repo_name': repo_name,
+        task_params = {'repo_name': repository_name,
                        'publisher_name': publisher.name}
         async_result = tasks.publisher.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_name, **task_params)
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name, **task_params)
 
         return OperationPostponedResponse([async_result])
 
     @decorators.detail_route()
-    def publish(self, request, pk):
+    def publish(self, request, repository_name, name):
         publisher = self.get_object()
         async_result = tasks.publisher.publish.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, publisher.repository.name,
-            kwargs={'repo_name': publisher.repository.name,
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
+            kwargs={'repo_name': repository_name,
                     'publisher_name': publisher.name}
         )
         return OperationPostponedResponse([async_result])
