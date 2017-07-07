@@ -64,7 +64,7 @@ class RepositoryViewSet(NamedModelViewSet):
             kwargs={'data': request.data,
                     'partial': partial}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
     def destroy(self, request, name):
         """
@@ -73,7 +73,7 @@ class RepositoryViewSet(NamedModelViewSet):
         repo = self.get_object()
         async_result = tasks.repository.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(repo.id), kwargs={'repo_id': repo.id})
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
 
 class ContentAdaptorFilter(filterset.FilterSet):
@@ -142,7 +142,7 @@ class ImporterViewSet(NamedModelViewSet):
             args=(importer.id, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
     def destroy(self, request, pk):
         importer = self.get_object()
@@ -151,7 +151,7 @@ class ImporterViewSet(NamedModelViewSet):
             kwargs={'repo_name': importer.repository.name,
                     'importer_name': importer.name}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
     @decorators.detail_route()
     def sync(self, request, pk):
@@ -161,7 +161,7 @@ class ImporterViewSet(NamedModelViewSet):
             kwargs={'repo_name': importer.repository.name,
                     'importer_name': importer.name}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
 
 class PublisherViewSet(NamedModelViewSet):
@@ -180,7 +180,7 @@ class PublisherViewSet(NamedModelViewSet):
             args=(instance.id, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
     def destroy(self, request, pk):
         publisher = self.get_object()
@@ -190,7 +190,7 @@ class PublisherViewSet(NamedModelViewSet):
         async_result = tasks.publisher.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_name, **task_params)
 
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
     @decorators.detail_route()
     def publish(self, request, pk):
@@ -200,7 +200,7 @@ class PublisherViewSet(NamedModelViewSet):
             kwargs={'repo_name': publisher.repository.name,
                     'publisher_name': publisher.name}
         )
-        return OperationPostponedResponse([async_result])
+        return OperationPostponedResponse([async_result], request)
 
 
 class RepositoryContentViewSet(NamedModelViewSet):

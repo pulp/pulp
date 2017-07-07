@@ -12,25 +12,26 @@ class OperationPostponedResponse(Response):
 
         [
             {
-                "_href": "/api/v3/tasks/adlfk-bala-23k5l7-lslser",
+                "_href": "https://example.com/api/v3/tasks/adlfk-bala-23k5l7-lslser",
                 "task_id": "adlfk-bala-23k5l7-lslser"
             },
             {
-                "_href": "/api/v3/tasks/fr63x-dlsd-4566g-dv64m",
+                "_href": "https://example.com/api/v3/tasks/fr63x-dlsd-4566g-dv64m",
                 "task_id": "fr63x-dlsd-4566g-dv64m"
             }
         ]
     """
 
-    def __init__(self, task_results):
+    def __init__(self, task_results, request):
         """
         Args:
             task_results (list): List of :class:`celery.result.AsyncResult` objects used to
                                  generate the response.
+            request (rest_framework.request.Request): Request used to generate the _href urls
         """
         tasks = []
         for result in task_results:
-            task = {"_href": reverse('tasks-detail', args=[result.task_id]),
+            task = {"_href": reverse('tasks-detail', args=[result.task_id], request=request),
                     "task_id": result.task_id}
             tasks.append(task)
         super(OperationPostponedResponse, self).__init__(data=tasks, status=202)
