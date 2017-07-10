@@ -27,6 +27,9 @@ sys.path.insert(0, os.path.abspath('../common'))
 # Set environment variable so Sphinx can bootstrap the Django app
 os.environ["DJANGO_SETTINGS_MODULE"] = "pulpcore.app.settings"
 
+import django
+django.setup()
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
