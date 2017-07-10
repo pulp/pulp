@@ -141,7 +141,7 @@ class ImporterViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
-    @decorators.detail_route()
+    @decorators.detail_route(methods=('post',))
     def sync(self, request, repository_name, name):
         importer = self.get_object()
         async_result = tasks.importer.sync.apply_async_with_reservation(
@@ -181,7 +181,7 @@ class PublisherViewSet(NamedModelViewSet):
 
         return OperationPostponedResponse([async_result], request)
 
-    @decorators.detail_route()
+    @decorators.detail_route(methods=('post',))
     def publish(self, request, repository_name, name):
         publisher = self.get_object()
         async_result = tasks.publisher.publish.apply_async_with_reservation(
