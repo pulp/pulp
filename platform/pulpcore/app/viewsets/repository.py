@@ -26,6 +26,7 @@ class RepositoryViewSet(NamedModelViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
+    lookup_field = 'name'
     pagination_class = NamePagination
     filter_class = RepositoryFilter
 
@@ -115,6 +116,7 @@ class PublisherFilter(ContentAdaptorFilter):
 class ImporterViewSet(NamedModelViewSet):
     endpoint_name = 'importers'
     nest_prefix = 'repositories'
+    lookup_field = 'name'
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
@@ -155,6 +157,7 @@ class ImporterViewSet(NamedModelViewSet):
 class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
     nest_prefix = 'repositories'
+    lookup_field = 'name'
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()

@@ -6,8 +6,9 @@ from rest_framework import viewsets
 
 class NamedModelViewSet(viewsets.ModelViewSet):
     """
-    A customized ModelViewSet that understands how to register itself with the Pulp API router.
+    A customized named ModelViewSet that knows how to register itself with the Pulp API router.
 
+    This viewset is discoverable by its name.
     "Normal" Django Models and Master/Detail models are supported by the ``register_with`` method.
 
     Attributes:
@@ -23,7 +24,6 @@ class NamedModelViewSet(viewsets.ModelViewSet):
             self.kwargs, used only by a nested ViewSet to filter based on the parent object's
             identity.
     """
-    lookup_field = 'name'
     endpoint_name = None
     nest_prefix = None
     parent_lookup_kwargs = {}
