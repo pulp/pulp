@@ -61,7 +61,7 @@ def view_name_for_model(model_obj, view_action):
         LookupError: if no ViewSet is found for the Model
     """
     # Import this here to prevent out-of-order plugin discovery
-    from urls import root_router, nested_routers
+    from pulpcore.app.urls import root_router, nested_routers
 
     viewset = viewset_for_model(model_obj)
 
