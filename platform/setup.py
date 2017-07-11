@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 requirements = [
     'celery',
     'coreapi',
-    'Django>=1.8,<1.9',
+    'Django>=1.8,<2',
     'django-filter',
     'djangorestframework',
     'drf-nested-routers',
