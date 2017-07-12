@@ -1,9 +1,14 @@
 from gettext import gettext as _
+import hashlib
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import base, fields, generic
+
+
+UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 
 
 class ContentSerializer(base.MasterModelSerializer):
@@ -23,70 +28,83 @@ class ContentSerializer(base.MasterModelSerializer):
 
 
 class ArtifactSerializer(base.ModelSerializer):
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='artifacts-detail',
+    )
+
     file = serializers.FileField(
         help_text=_("The stored file."),
-        read_only=True
-    )
-
-    downloaded = serializers.BooleanField(
-        help_text=_("An indication that the associated file has been downloaded."),
-        read_only=True
-    )
-
-    requested = serializers.BooleanField(
-        help_text=_("An indication that the associated file has been requested by a client."),
-        read_only=True
-    )
-
-    relative_path = serializers.CharField(
-        help_text=_("The relative path of the artifact which is incorporated into the storage and"
-                    " published paths."),
-        read_only=True
+        required=True
     )
 
     size = serializers.IntegerField(
         help_text=_("The size of the file in bytes."),
-        read_only=True
+        required=False
     )
 
     md5 = serializers.CharField(
         help_text=_("The MD5 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
     sha1 = serializers.CharField(
         help_text=_("The SHA-1 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
     sha224 = serializers.CharField(
         help_text=_("The SHA-224 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
     sha256 = serializers.CharField(
         help_text=_("The SHA-256 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
     sha384 = serializers.CharField(
         help_text=_("The SHA-384 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
     sha512 = serializers.CharField(
         help_text=_("The SHA-512 checksum of the file if available."),
-        read_only=True,
         required=False
     )
 
+    def validate(self, data):
+        """
+        Validate file by size and by all checksums provided.
+
+        Args:
+            data (dict): Dictionary mapping Artifact model fields to their values
+
+        Raises:
+            :class:`rest_framework.exceptions.ValidationError`: When the expected file size or any
+                of the checksums don't match their actual values.
+        """
+        if 'size' in data:
+            if data['file'].size != int(data['size']):
+                raise serializers.ValidationError(_("The size did not match actual size of file."))
+        else:
+            data['size'] = data['file'].size
+
+        for algorithm in hashlib.algorithms_guaranteed:
+            digest = data['file'].hashers[algorithm].hexdigest()
+            if algorithm in data and digest != data[algorithm]:
+                raise serializers.ValidationError(_("The %s checksum did not match.") % algorithm)
+            else:
+                data[algorithm] = digest
+            if algorithm in UNIQUE_ALGORITHMS:
+                validator = UniqueValidator(models.Artifact.objects.all(),
+                                            message=_("{0} checksum must be "
+                                                      "unique.").format(algorithm))
+                validator.field_name = algorithm
+                validator.instance = None
+                validator(digest)
+        return data
+
     class Meta:
         model = models.Artifact
-        fields = base.ModelSerializer.Meta.fields + ('file', 'downloaded', 'requested',
-                                                     'relative_path', 'size', 'md5', 'sha1',
-                                                     'sha224', 'sha256', 'sha384', 'sha512')
+        fields = base.ModelSerializer.Meta.fields + ('file', 'size', 'md5', 'sha1', 'sha224',
+                                                     'sha256', 'sha384', 'sha512')
