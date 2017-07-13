@@ -1,0 +1,18 @@
+pycodestyle:
+    max-line-length: 100  # Default is 79 in PEP8
+    ignore:  # Errors and warnings to ignore
+        - E401 # multiple imports on one line
+        - W391 # blank line at the end of file (complains on empty __init__.py files)
+    exclude:
+        - "./docs/*"
+        - "*/build/*"
+        - "*/migrations/*"
+        - "server/*"
+        - "rel-eng/*"
+        - "bindings/*"
+        - "client_admin/*"
+        - "client_consumer/*"
+        - "client_lib/*"
+        - "devel/*"
+        - "oid_validation/*"
+        - "repoauth/*"
