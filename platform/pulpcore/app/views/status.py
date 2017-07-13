@@ -39,7 +39,7 @@ class StatusView(APIView):
 
         try:
             workers = Worker.objects.all()
-        except:
+        except Exception:
             workers = None
 
         data = {
@@ -63,7 +63,7 @@ class StatusView(APIView):
         """
         try:
             Worker.objects.count()
-        except:
+        except Exception:
             _logger.exception(_('Cannot connect to database during status check.'))
             return False
         else:
@@ -81,7 +81,7 @@ class StatusView(APIView):
             conn = celery.connection()
             conn.connect()
             conn.release()
-        except:
+        except Exception:
             _logger.exception(_('Connection to broker failed during status check!'))
             return False
         else:
