@@ -12,8 +12,8 @@ class TestHTTPNotifierTests(unittest.TestCase):
 
     @mock.patch(MODULE_PATH + 'json')
     @mock.patch(MODULE_PATH + 'json_util')
-    @mock.patch(MODULE_PATH + 'threading.Thread')
-    def test_handle_event(self, mock_thread, mock_jutil, mock_json):
+    @mock.patch(MODULE_PATH + '_send_post')
+    def test_handle_event(self, mock_send_post, mock_jutil, mock_json):
         # Setup
         notifier_config = {'key': 'value'}
         mock_event = mock.Mock(spec=Event)
@@ -22,9 +22,9 @@ class TestHTTPNotifierTests(unittest.TestCase):
         # Test
         http.handle_event(notifier_config, mock_event)
         mock_json.dumps.assert_called_once_with(event_data, default=mock_jutil.default)
-        mock_thread.assert_called_once_with(
-            target=http._send_post,
-            args=[notifier_config, mock_json.dumps.return_value]
+        mock_send_post.assert_called_once_with(
+            notifier_config,
+            mock_json.dumps.return_value
         )
 
     @mock.patch(MODULE_PATH + 'post')
@@ -38,6 +38,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=None,
+            timeout=15
         )
 
     @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
@@ -56,6 +57,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=mock_basic_auth.return_value,
+            timeout=15
         )
         mock_basic_auth.assert_called_once_with('jcline', 'hunter2')
 
@@ -89,5 +91,6 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=mock_basic_auth.return_value,
+            timeout=15
         )
         mock_log.error.assert_called_once_with(expected_log)
