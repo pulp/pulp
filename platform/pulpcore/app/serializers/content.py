@@ -4,6 +4,7 @@ import hashlib
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+
 from pulpcore.app import models
 from pulpcore.app.serializers import base, fields, generic
 
@@ -13,18 +14,17 @@ UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 
 class ContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
-    repositories = fields.RepositoryRelatedField(many=True)
     notes = generic.NotesKeyValueRelatedField()
-    artifacts = serializers.HyperlinkedRelatedField(
-        help_text=_("The associated files."),
-        many=True,
-        read_only=True,
-        view_name='artifacts-detail'
+    artifacts = fields.ContentArtifactsField(
+        help_text=_("A dictionary mapping Artifact URLs to the corresponding relative path of the "
+                    "artifact inside the Content. E.g.: {'http://localhost/full_artifact_path': "
+                    "'relative/path'}"),
     )
 
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields + ('repositories', 'notes', 'artifacts')
+        fields = base.MasterModelSerializer.Meta.fields + ('notes', 'artifacts')
+
 
 
 class ArtifactSerializer(base.ModelSerializer):

@@ -1,9 +1,10 @@
+from django.db import transaction
 from django_filters.rest_framework import filterset
 from rest_framework import status
 from rest_framework.response import Response
 
 
-from pulpcore.app.models import Artifact, Content
+from pulpcore.app.models import Artifact, Content, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 
@@ -43,6 +44,28 @@ class ContentViewSet(NamedModelViewSet):
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
     filter_class = ContentFilter
+
+    @transaction.atomic
+    def create(self, request):
+        """
+        Create a new Content instance from
+        :param request:
+        :return:
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        artifacts = serializer.validated_data.pop('artifacts')
+        content = serializer.save()
+
+        for artifact, relative_path in artifacts.items():
+            ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
+            ca.save()
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, pk):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ArtifactViewSet(NamedModelViewSet):
