@@ -13,14 +13,13 @@ def artifact_pre_delete(sender, instance, **kwargs):
     """
     Delete artifact bits from a filesystem
 
-    :param sender: The model class
-    :type  sender: pulpcore.app.model.Artifact
-    :param instance: The actual instance being deleted
-    :type instance: pulpcore.app.model.Artifact instance
+    Args:
+        sender (class): The model class
+        instance (:class:`pulpcore.app.model.Artifact`): The actual instance being deleted.
+
     """
     artifact = instance
-    if artifact.downloaded:
-        units_root = os.path.join(settings.MEDIA_ROOT, 'units')
-        artifact_dir = os.path.dirname(artifact.file.path)
-        artifact.file.delete()
-        FileSystem.delete_empty_dirs(artifact_dir, units_root)
+    units_root = os.path.join(settings.MEDIA_ROOT, 'artifact')
+    artifact_dir = os.path.dirname(artifact.file.path)
+    artifact.file.delete()
+    FileSystem.delete_empty_dirs(artifact_dir, units_root)
