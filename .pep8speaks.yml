@@ -3,8 +3,4 @@ pycodestyle:
     ignore:  # Errors and warnings to ignore
         - E401 # multiple imports on one line
         - W391 # blank line at the end of file (complains on empty __init__.py files)
-    exclude:
-        - "./docs/*"
-        - "./playpen/*"
-        - "*/build/*"
-        - "*/backports/*"
+    exclude: "docs"
