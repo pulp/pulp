@@ -298,4 +298,10 @@ extlinks = {'redmine': ('https://pulp.plan.io/issues/%s', '#'),
                                       '_id%%5D=%%3D&v%%5Btracker_id%%5D%%5B%%5D=1&f%%5B%%5D=&c%%5B'
                                       '%%5D=tracker&c%%5B%%5D=status&c%%5B%%5D=priority&c%%5B%%5D='
                                       'cf_5&c%%5B%%5D=subject&c%%5B%%5D=author&c%%5B%%5D=assigned_'
-                                      'to&c%%5B%%5D=cf_3&group_by=', 'bugs fixed in '),}
+                                      'to&c%%5B%%5D=cf_3&group_by=', 'bugs fixed in '),
+            'fixedbugs_pulp_deb': ('https://pulp.plan.io/projects/pulp_deb/issues?utf8=%%E2%%9C%%93&set_'
+                                   'filter=1&f%%5B%%5D=cf_15&op%%5Bcf_15%%5D=%%3D&v%%5Bcf_15%%5D%%5B%%5D'
+                                   '=%s&f%%5B%%5D=tracker_id&op%%5Btracker_id%%5D=%%3D&v%%5Btracker_id%%'
+                                   '5D%%5B%%5D=1&f%%5B%%5D=&c%%5B%%5D=tracker&c%%5B%%5D=status&c%%5B%%5D'
+                                   '=priority&c%%5B%%5D=cf_5&c%%5B%%5D=subject&c%%5B%%5D=author&c%%5B%%5'
+                                   'D=assigned_to&c%%5B%%5D=cf_3&group_by=', 'bugs fixed in '),}
