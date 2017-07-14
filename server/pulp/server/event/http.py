@@ -10,11 +10,10 @@ Eventually this should be enhanced to support authentication credentials as well
 """
 from gettext import gettext as _
 import logging
-import threading
 
 from pulp.server.compat import json, json_util
 
-from requests import post
+from requests import post, RequestException
 from requests.auth import HTTPBasicAuth
 
 
@@ -28,9 +27,7 @@ def handle_event(notifier_config, event):
     # pulp from blocking or deadlocking due to the tasking subsystem
     json_body = json.dumps(event.data(), default=json_util.default)
     _logger.info(json_body)
-    thread = threading.Thread(target=_send_post, args=[notifier_config, json_body])
-    thread.setDaemon(True)
-    thread.start()
+    _send_post(notifier_config, json_body)
 
 
 def _send_post(notifier_config, json_body):
@@ -55,7 +52,13 @@ def _send_post(notifier_config, json_body):
     else:
         auth = None
 
-    response = post(url, data=json_body, auth=auth, headers={'Content-Type': 'application/json'})
+    try:
+        response = post(url, data=json_body, auth=auth,
+                        headers={'Content-Type': 'application/json'}, timeout=15)
+    except:
+        _logger.exception("HTTP Notification Failed")
+        return
+
     if response.status_code != 200:
         _logger.error(_('Received HTTP {code} from HTTP notifier to {url}.').format(
             code=response.status_code, url=url))
