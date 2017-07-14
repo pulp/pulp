@@ -143,6 +143,7 @@ def parse_bool(value):
 
     return value.upper() in ('YES', 'TRUE', '1')
 
+
 def parse_header(headers):
     """
        Parses the given header into its dictionary representation.

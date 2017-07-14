@@ -69,5 +69,6 @@ def configure_SSL():
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
 
+
 configure_SSL()
 configure_login_method()

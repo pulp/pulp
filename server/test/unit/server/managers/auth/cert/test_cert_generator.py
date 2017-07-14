@@ -84,6 +84,7 @@ class TestCertGeneration(unittest.TestCase):
         invalid_result = self.cert_gen_manager.verify_cert(INVALID_CERT)
         self.assertTrue(not invalid_result)
 
+
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)

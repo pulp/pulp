@@ -305,5 +305,6 @@ class PermissionManager(object):
             return None
         return authorization.OPERATION_NAMES[operation]
 
+
 grant = task(PermissionManager.grant, base=Task, ignore_result=True)
 revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)

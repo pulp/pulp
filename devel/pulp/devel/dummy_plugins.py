@@ -68,6 +68,7 @@ class DummyGroupDistributor(DummyPlugin):
     def validate_config(self, repo_group, config, related_repo_groups):
         return True, None
 
+
 # dummy instances --------------------------------------------------------------
 
 DUMMY_IMPORTER = DummyImporter()

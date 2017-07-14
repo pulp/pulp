@@ -58,6 +58,8 @@ def serialize_unit_with_serializer(content_unit):
 
     for original_field, remapped_field in field_map.items():
         content_unit[remapped_field] = content_unit.pop(original_field)
+
+
 # remap_fields_with_serializer was renamed to serialize_unit_with_serializer. Alias the old
 # name for backward compatibility in the unlikely event that the old name is still in use.
 remap_fields_with_serializer = serialize_unit_with_serializer

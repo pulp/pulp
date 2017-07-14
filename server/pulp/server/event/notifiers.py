@@ -56,5 +56,6 @@ def reset():
         amqp.TYPE_ID: amqp.handle_event,
     }
 
+
 # Perform the initial populating of the notifier functions on module load
 reset()

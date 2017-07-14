@@ -100,6 +100,7 @@ class RelativePathValidation(object):
         """
         return _("attribute cannot start with a /")
 
+
 REMOTE_MANDATORY_KEYS = {
     "ssh_identity_file": [TypeValidation([basestring]), NonEmptyValidation()],
     "ssh_user": [TypeValidation([basestring]), NonEmptyValidation()],

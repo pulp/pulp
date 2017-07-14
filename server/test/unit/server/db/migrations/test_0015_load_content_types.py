@@ -58,6 +58,7 @@ def mock_open(mock=None, read_data=None):
     mock.return_value = handle
     return mock
 
+
 migration = _import_all_the_way('pulp.server.db.migrations.0015_load_content_types')
 
 
