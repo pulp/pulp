@@ -919,7 +919,7 @@ class FileContentUnit(ContentUnit):
         """
         try:
             self.import_content(path, location)
-        except:
+        except:  # noqa
             self.clean_orphans()
             raise
 
@@ -1295,6 +1295,7 @@ class Distributor(AutoRetryDocument):
         :type document: Distributor
         """
         document.last_updated = dateutils.now_utc_datetime_with_tzinfo()
+
 
 signals.pre_save.connect(Distributor.pre_save_signal, sender=Distributor)
 

@@ -456,6 +456,8 @@ class RepoProfileApplicabilityManager(object):
         # Remove all RepoProfileApplicability objects that reference these profile hashes
         if missing_profile_hashes:
             rpa_collection.remove({'profile_hash': {'$in': missing_profile_hashes}})
+
+
 # Instantiate one of the managers on the object it manages for convenience
 RepoProfileApplicability.objects = RepoProfileApplicabilityManager()
 

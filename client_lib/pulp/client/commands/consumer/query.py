@@ -148,6 +148,7 @@ class ConsumerHistoryCommand(PulpCliCommand):
         for event in event_list:
             self.context.prompt.render_document(event, filters=filters, order=order)
 
+
 # options and flags ------------------------------------------------------------
 
 OPTION_FIELDS = PulpCliOption('--fields',

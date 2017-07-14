@@ -86,6 +86,7 @@ class TestPurgeTasks(unittest.TestCase):
         self.api.purge_tasks(states=states)
         self.server.DELETE.assert_called_once()
 
+
 TASKS = [
     {
         'exception': None,
