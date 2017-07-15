@@ -389,6 +389,11 @@ When releasing a new X or Y release, ensure the following:
   master/ci/docs-builder.py#L15>`_ is up to date. This ensures the latest GA docs will be published
   at the root of the docs.pulpproject.org site.
 
+* Update `supported releases <https://github.com/pulp/pulp_packaging/tree/master/ci/config/
+  supported-releases.json>`_ to include new X.Y version, and remove any versions no longer
+  officially supported.
+
+
 Once the above changes are merged and the docs building job for the release exists, run the docs
 building job for that release from the `Docs Builders page <https://pulp-jenkins.rhev-ci-vms.eng.
 rdu2.redhat.com/view/Docs%20Builders/>`_. This should be done for pre-releases (using the
