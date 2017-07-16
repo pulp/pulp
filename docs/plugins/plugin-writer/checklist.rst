@@ -1,0 +1,2 @@
+A Plugin Completeness Checklist
+===============================

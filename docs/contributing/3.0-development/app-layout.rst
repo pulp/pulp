@@ -2,7 +2,7 @@ Pulp Platform Application Layout
 ================================
 
 This documentation is for Pulp Platform developers. For Plugin development,
-see the :doc:`plugin-layout`
+see the :doc:`../../plugins/plugin-writer/index`.
 
 The Pulp Platform is built using two key frameworks, the Django Web Framework
 and the Django REST Framework. Where possible, conforming to the conventions
