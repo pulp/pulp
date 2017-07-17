@@ -1,9 +1,6 @@
-import ConfigParser
-import logging
 import os
 
 from pulp.server import logs as pulp_logs
-from pulp.server import config
 
 
 log_level = pulp_logs.get_log_level()

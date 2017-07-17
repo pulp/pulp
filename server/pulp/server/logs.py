@@ -33,7 +33,14 @@ def _blacklist_loggers():
         logger.disabled = True
         logger.propagate = False
 
+
 def get_log_type():
+    """
+    Returns the log type as configured by the deployer.
+
+    :returns: the value from VALID_LOGGERS to use as the log type. Defaults to "syslog".
+    :rtype:   str
+    """
     log_type = config.config.get('server', 'log_type')
     if log_type not in VALID_LOGGERS:
         print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
@@ -46,7 +53,14 @@ def get_log_type():
 
     return log_type
 
+
 def get_log_level():
+    """
+    Returns the log level as configured by the deployer.
+
+    :returns: the log level to use. Defaults to INFO.
+    :rtype:   str
+    """
     log_level = None
 
     try:
@@ -59,10 +73,11 @@ def get_log_level():
 
     return log_level
 
+
 @setup_logging.connect
 def start_logging(*args, **kwargs):
     """
-    Configure Pulp's syslog handler for the configured log level.
+    Stand up Pulp's configured log handler for the configured log level.
 
     :param args:   Unused
     :type  args:   list
@@ -76,7 +91,7 @@ def start_logging(*args, **kwargs):
     # Set up our handler and add it to the root logger
     if log_type == 'syslog':
         if not os.path.exists(LOG_PATH):
-            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            print >> sys.stderr, "Unable to access the log, {log_path}.".format(log_path=LOG_PATH)
             sys.exit(os.EX_UNAVAILABLE)
 
         handler = CompliantSysLogHandler(
