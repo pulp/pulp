@@ -46,7 +46,7 @@ openssl req \
 openssl x509 \
   -req \
   -days 7035 \
-  -sha1 \
+  -sha256 \
   -extensions ca  \
   -signkey ${CA_KEY} \
   -in ${TMP}/ca.req \
