@@ -34,17 +34,35 @@ def _blacklist_loggers():
         logger.propagate = False
 
 
-@setup_logging.connect
-def start_logging(*args, **kwargs):
+def get_log_type():
     """
-    Configure Pulp's syslog handler for the configured log level.
+    Returns the log type as configured by the deployer.
 
-    :param args:   Unused
-    :type  args:   list
-    :param kwargs: Unused
-    :type  kwargs: dict
+    :returns: the value from VALID_LOGGERS to use as the log type. Defaults to "syslog".
+    :rtype:   str
     """
-    # Get and set up the root logger with our configured log level
+    log_type = config.config.get('server', 'log_type')
+    if log_type not in VALID_LOGGERS:
+        print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
+        log_type = 'syslog'
+
+    if log_type == 'syslog':
+        if not os.path.exists(LOG_PATH):
+            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            sys.exit(os.EX_UNAVAILABLE)
+
+    return log_type
+
+
+def get_log_level():
+    """
+    Returns the log level as configured by the deployer.
+
+    :returns: the log level to use. Defaults to INFO.
+    :rtype:   str
+    """
+    log_level = None
+
     try:
         log_level = config.config.get('server', 'log_level')
         log_level = getattr(logging, log_level.upper())
@@ -52,18 +70,28 @@ def start_logging(*args, **kwargs):
         # If the user didn't provide a log level, or if they provided an invalid one, let's use the
         # default log level
         log_level = DEFAULT_LOG_LEVEL
+
+    return log_level
+
+
+@setup_logging.connect
+def start_logging(*args, **kwargs):
+    """
+    Stand up Pulp's configured log handler for the configured log level.
+
+    :param args:   Unused
+    :type  args:   list
+    :param kwargs: Unused
+    :type  kwargs: dict
+    """
     root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
+    root_logger.setLevel(get_log_level())
 
-    log_type = config.config.get('server', 'log_type')
-    if log_type not in VALID_LOGGERS:
-        print >> sys.stderr, "log_type not properly set. Defaulting to syslog."
-        log_type = 'syslog'
-
+    log_type = get_log_type()
     # Set up our handler and add it to the root logger
     if log_type == 'syslog':
         if not os.path.exists(LOG_PATH):
-            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            print >> sys.stderr, "Unable to access the log, {log_path}.".format(log_path=LOG_PATH)
             sys.exit(os.EX_UNAVAILABLE)
 
         handler = CompliantSysLogHandler(
