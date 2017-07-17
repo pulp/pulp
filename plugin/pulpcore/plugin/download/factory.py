@@ -111,9 +111,9 @@ class Factory:
         else:
             _path = path
         download = HttpDownload(url, FileWriter(_path))
-        download.ssl.ca_certificate = self.importer.ssl_validation,
-        download.ssl.client_certificate = self.importer.ssl_client_certificate,
-        download.ssl.client_key = self.importer.ssl_client_key,
+        download.ssl.ca_certificate = self.importer.ssl_ca_certificate.name
+        download.ssl.client_certificate = self.importer.ssl_client_certificate.name
+        download.ssl.client_key = self.importer.ssl_client_key.name
         download.ssl.validation = self.importer.ssl_validation
         download.user.name = self.importer.basic_auth_user
         download.user.password = self.importer.basic_auth_password
