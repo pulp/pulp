@@ -72,11 +72,6 @@ The valid fields that may be used in the association sections are as follows:
   associated with the repository.
 * ``updated`` - Timestamp in iso8601 format indicating when the unit was
   most recently confirmed to be in the repository.
-* ``owner_type`` - Indicates where the association between the unit and
-  the repository was created. Valid values are ``importer`` and ``user``.
-* ``owner_id`` - Indicates specifically who created the association. This will
-  be the importer ID if added by an importer or the user login if added by
-  a user.
 
 Example unit association criteria::
 
