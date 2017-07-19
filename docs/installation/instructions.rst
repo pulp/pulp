@@ -19,16 +19,16 @@ PyPI
 
 2. Create a pulp virtualenv::
 
-   $ virtualenv pulp -p python3
-   $ source pulp/bin/activate
+   $ virtualenv {virtualenv} -p python3
+   $ source {virtualenv}/bin/activate
 
 3. Install Pulp::
 
    $ pip3 install pulpcore
 
-4. Move the example server.yaml file from
-   ``{virtualenv}/lib/python3.5/site-packages/pulpcore/etc/pulp/server.yaml``
-   to ``/etc/pulp/server.yaml``.
+4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
+   PULP_SETTINGS environment variable to tell pulp where to find you server.yaml file.
+   ``export PULP_SETTINGS={virtualenv}/lib/python3.5/site-packages/pulpcore/etc/pulp/server.yaml``
 
 5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file
 
@@ -36,7 +36,7 @@ PyPI
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-7. Go through the  :ref:`database-install` and :ref:`broker-install` sections
+7. Go through the  :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
 
 8. Run Django Migrations::
 
@@ -127,4 +127,83 @@ After installing and configuring RabbitMQ, you should configure it to start at b
 
    $ sudo systemctl enable rabbitmq-server
    $ sudo systemctl start rabbitmq-server
+
+.. _systemd-setup:
+
+Systemd
+-------
+
+.. tip::
+
+    These are the manual steps to create the systemd files. There are Ansible roles that will do
+    the following for you.
+
+
+To run the Pulp services, three systemd files needs to be created in /etc/systemd/system/
+
+pulp_celerybeat::
+
+    [Unit]
+    Description=Pulp Celerybeat
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    # Set Environment if server.yaml is not in the default /etc/pulp/ directory
+    Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
+    User=pulp
+    WorkingDirectory=/var/run/pulp_celerybeat/
+    RuntimeDirectory=pulp_celerybeat
+    ExecStart=/path/to/python/bin/celery beat --app=pulpcore.tasking.celery_app:celery --scheduler=pulpcore.tasking.services.scheduler.Scheduler
+
+    [Install]
+    WantedBy=multi-user.target
+
+pulp_resource_manager::
+
+    [Unit]
+    Description=Pulp Resource Manager
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    # Set Environment if server.yaml is not in the default /etc/pulp/ directory
+    Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
+    User=pulp
+    WorkingDirectory=/var/run/pulp_resource_manager/
+    RuntimeDirectory=pulp_resource_manager
+    ExecStart=/path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%%h\
+              -Q resource_manager -c 1 --events --umask 18\
+              --pidfile=/var/run/pulp_resource_manager/resource_manager.pid
+
+    [Install]
+    WantedBy=multi-user.target
+
+
+pulp_worker@::
+
+    [Unit]
+    Description=Pulp Celery Worker
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    # Set Environment if server.yaml is not in the default /etc/pulp/ directory
+    Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
+    User=pulp
+    WorkingDirectory=/var/run/pulp_worker_%i/
+    RuntimeDirectory=pulp_worker_%i
+    ExecStart=/path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery\
+              -n reserved_resource_worker_%i@%%h -c 1 --events --umask 18\
+              --pidfile=/var/run/pulp_worker_%i/reserved_resource_worker_%i.pid
+
+    [Install]
+    WantedBy=multi-user.target
+
+These services can then be started by running::
+
+    sudo systemctl start pulp_celerybeat
+    sudo systemctl start pulp_resource_manager
+    sudo systemctl start pulp_worker@1
+    sudo systemctl start pulp_worker@2
 
