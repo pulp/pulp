@@ -498,6 +498,10 @@ On the Pulp server to be used as the child node:
  $ pulp-consumer node bind --repo-id pulp-goodness
 
 
+.. note:: The **pulp-consumer** command line client must be executed with enough permissions 
+    to write system-level configuration and credential files. If permission errors are 
+    encountered, you may need ``root`` privileges.
+
 Anywhere Using Admin Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

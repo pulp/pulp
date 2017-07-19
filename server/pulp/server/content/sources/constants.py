@@ -1,4 +1,4 @@
-from pulp.common.config import parse_bool
+from pulp.common.config import parse_bool, parse_header
 
 
 URL = 'url'
@@ -39,7 +39,7 @@ NECTAR_PROPERTIES = (
     (PROXY_PASSWORD, 'proxy_password', str),
     (BASIC_AUTH_USERID, 'basic_auth_username', str),
     (BASIC_AUTH_PASSWORD, 'basic_auth_password', str),
-    (HEADERS, 'headers', str),
+    (HEADERS, 'headers', parse_header),
 )
 
 SOURCE_ID = 'source_id'

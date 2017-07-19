@@ -14,7 +14,7 @@ class RepoConfigConduit(object):
     def __init__(self, distributor_type):
         self.distributor_type = distributor_type
 
-    def get_repo_distributors_by_relative_url(self, rel_url, repo_id=None):
+    def get_repo_distributors_by_relative_url(self, rel_url, repo_id=None, field='relative_url'):
         """
         Retrieve a dict containing the repo_id, distributor_id and config for all distributors that
         conflict with the given relative URL. This is agnostic to preceding slashes.
@@ -24,6 +24,11 @@ class RepoConfigConduit(object):
         :param repo_id: the id of a repo to skip, If not specified all repositories will be
                         included in the search
         :type  repo_id: basestring
+        :param field:   The configuration field name.  By default, this is relative_url but
+                        it needs to be configurable because some distributors use a different
+                        field name.  This is really just a hack.  This functionality will need
+                        to be re-implemented in pulp3.
+        :type  field:   basestring
         :return:        info about each distributor whose configuration conflicts with rel_url
         :rtype:         list of dicts
         """
@@ -43,9 +48,12 @@ class RepoConfigConduit(object):
         # Search for all the sub urls as well as any url that would fall within the specified url.
         # The regex here basically matches the a url if it starts with (optional preceding slash)
         # the working url. Anything can follow as long as it is separated by a slash.
-        rel_url_match = Q(config__relative_url={'$regex': '^/?' + working_url + '(/.*|/?\z)'})
-        rel_url_in_list = Q(config__relative_url__in=matching_url_list)
-        rel_url_is_repo_id = Q(config__relative_url__exists=False) & Q(repo_id=repo_id_url)
+        rel_url_match = Q(**{
+            'config__{field}'.format(field=field): {'$regex': '^/?' + working_url + '(/.*|/?\z)'}})
+        rel_url_in_list = Q(**{
+            'config__{field}__in'.format(field=field): matching_url_list})
+        rel_url_is_repo_id = Q(**{
+            'config__{field}__exists'.format(field=field): False}) & Q(repo_id=repo_id_url)
 
         spec = rel_url_is_repo_id | rel_url_in_list | rel_url_match
 

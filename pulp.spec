@@ -31,17 +31,22 @@
 # Required gofer version
 %global gofer_version 2.5
 
+# The release number
+%global release_number 0.1.alpha
+
+# Create tag for the Source0 and setup
+%global git_tag %{name}-%{version}-%{release_number}
 
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.13.2
-Release: 0.1.beta%{?dist}
+Version: 2.14.0
+Release: %{release_number}%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
-URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}.tar.gz
+URL: http://pulpproject.org/
+Source0: https://codeload.github.com/pulp/%{name}/tar.gz/%{git_tag}#/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
@@ -59,7 +64,7 @@ BuildRequires: rpm-python
 Pulp provides replication, access, and accounting for software repositories.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{git_tag}
 
 %build
 for directory in agent bindings client_consumer client_lib common devel
@@ -1024,12 +1029,6 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Wed May 24 2017 werwty <bihan.zh@gmail.com> 2.13.1-1
-- Pulp rebuild
-
-* Tue May 16 2017 werwty <bihan.zh@gmail.com> 2.13.1-0.1.beta
-- Pulp rebuild
-
 * Thu Feb 23 2017 werwty <bihan.zh@gmail.com> 2.12.1-1
 - Pulp rebuild
 

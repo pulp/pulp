@@ -1,0 +1,4 @@
+[buildconfig]
+tagger = tito.tagger.ReleaseTagger
+builder = tito.builder.NoTgzBuilder
+

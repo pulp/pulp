@@ -200,6 +200,9 @@ class Scheduler(beat.Scheduler):
         worker_watcher.handle_worker_heartbeat(CELERYBEAT_NAME)
 
         if celery_version.startswith('4') and self.schedule_changed:
+            # Setting _heap = None is a workaround for this bug in Celery4
+            # https://github.com/celery/celery/pull/3958
+            # Once 3958 is released and updated in Fedora this can be removed
             self._heap = None
 
         now = ensure_tz(datetime.utcnow())

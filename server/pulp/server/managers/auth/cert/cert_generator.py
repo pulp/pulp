@@ -204,5 +204,5 @@ def _make_cert_request(cn, rsa, uid=None):
     extensions = X509.X509_Extension_Stack()
     extensions.push(ext2)
     request.add_extensions(extensions)
-    request.sign(pub_key, 'sha1')
+    request.sign(pub_key, 'sha256')
     return request, pub_key
