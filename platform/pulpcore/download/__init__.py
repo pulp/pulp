@@ -60,8 +60,8 @@ Recipes:
 """
 
 from .batch import Batch  # noqa
-from .delegation import delegate  # noqa
 from .error import DownloadError, DownloadFailed, NotFound, NotAuthorized  # noqa
+from .event import Event  # noqa
 from .ftp import FtpDownload  # noqa
 from .file import FileDownload  # noqa
 from .http import HttpDownload  # noqa
