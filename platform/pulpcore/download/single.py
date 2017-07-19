@@ -3,8 +3,16 @@ from logging import getLogger
 from threading import RLock
 
 
-from .delegation import delegate
 from .error import DownloadFailed
+from .event import (
+    EventRouter,
+    Error,
+    Failed,
+    Fetched,
+    Prepared,
+    Replied,
+    Sent,
+    Succeeded)
 from .validation import ValidationError
 
 
@@ -23,15 +31,9 @@ class Download:
         validations (list): Collection of Validations to be applied.
         context (Context): The download context.
         retries (int): The total number of retries possible.
-        delegate (Delegate): A download delegate.
+        router (EventRouter): The event router.
         attachment: Arbitrary object attached to the download.
         reply: The remote server reply.
-
-    Any method decorated with `@delegate` may be forwarded to the `delegate` for
-    implementation.  The delegate must define a public method with the same name
-    (without the `_` prefix).  For example, for `_on_error()`, the delegate would
-    define a method named `on_error(self, download, error)`.  Note: The `download`
-    is injected (passed) as the first argument.
 
     Notes:
         The validations are applied in order listed.
@@ -49,7 +51,7 @@ class Download:
         'validations',
         'context',
         'retries',
-        'delegate',
+        'router',
         'attachment',
         'reply'
     )
@@ -66,9 +68,39 @@ class Download:
         self.validations = []
         self.context = Context()
         self.retries = Download.RETRIES
-        self.delegate = None
+        self.router = EventRouter()
         self.attachment = None
         self.reply = None
+
+    def register(self, event, handler):
+        """
+        Register an event handler.
+
+        The event sequence is:
+          - PREPARED
+          - SENT
+          - REPLIED
+          - BUFFER (each buffer read)
+          - ERROR  (on error only)
+          - SUCCEEDED
+              <or>
+          - FAILED
+
+        Args:
+            event (str): An event.
+            handler (callable): An event handler.
+
+        Examples:
+            >>>
+            >>> from pulpcore.download import Event
+            >>>
+            >>> def on_error(event):
+            >>>     ...
+            >>> download = ..
+            >>> download.register(Event.ERROR, on_error)
+            >>>
+        """
+        self.router.register(event, handler)
 
     def _prepare(self):
         """
@@ -125,16 +157,17 @@ class Download:
             self._on_failed()
             raise error
 
-    def _write(self, bfr):
+    def _write(self, buffer):
         """
         Write downloaded content.
 
         Args:
-            bfr (bytes): A buffer to append.
+            buffer (bytes): A buffer to append.
         """
-        self.writer.append(bfr)
+        self.writer.append(buffer)
         for validation in self.validations:
-            validation.update(bfr)
+            validation.update(buffer)
+        self.router.send(Fetched(self, buffer))
 
     def _attempt(self):
         """
@@ -147,6 +180,7 @@ class Download:
         log.debug(_('Attempt: %(d)s'), {'d': self})
         with self.writer:
             self._send()
+            self.router.send(Sent(self))
             self._on_reply()
         self._on_succeeded()
         self._validate()
@@ -173,41 +207,36 @@ class Download:
                 log.exception(unexpected)
                 raise unexpected
 
-    @delegate
     def _on_prepare(self):
         """
         Prepared to be executed.
         """
-        pass
+        self.router.send(Prepared(self))
 
-    @delegate
     def _on_reply(self):
         """
         A reply has been received.
         """
-        pass
+        self.router.send(Replied(self))
 
-    @delegate
     def _on_succeeded(self):
         """
         The download has succeeded.
         """
-        pass
+        self.router.send(Succeeded(self))
 
-    @delegate
     def _on_failed(self):
         """
         The download has failed.
         All efforts to repair and retry have failed.
         """
-        pass
+        self.router.send(Failed(self))
 
-    @delegate
     def _on_error(self, error):
         """
         The download has encountered an error.
-        This provides the (optional) delegate an opportunity to repair
-        and try the download.
+        This provides an opportunity for an event handler to repair
+        the download so it can be retried.
 
         Args:
             error (DownloadFailed): The raised exception.
@@ -215,7 +244,9 @@ class Download:
         Returns:
             (bool): True if repaired and may be retried.
         """
-        return False
+        event = Error(self, error)
+        self.router.send(event)
+        return event.repaired
 
     def __call__(self):
         """
