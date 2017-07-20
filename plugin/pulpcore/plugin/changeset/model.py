@@ -1,10 +1,14 @@
 from gettext import gettext as _
 from logging import getLogger
+import hashlib
 
 from django.db.utils import IntegrityError
 from django.db import transaction
 from django.core.files import File
+from django.http import QueryDict
 
+from pulpcore.app.apps import get_plugin_config
+from pulpcore.app.models import Artifact, ContentArtifact
 
 log = getLogger(__name__)
 
@@ -91,17 +95,17 @@ class RemoteContent(Remote):
             model (pulpcore.plugin.Content): A fetched content model object.
         """
         self.model = model
-        known = {a.model.relative_path: a for a in self.artifacts}
+        known = {a.content_artifact.relative_path: a for a in self.artifacts}
         self.artifacts.clear()
-        for artifact in model.artifacts.all():
+        for content_artifact in ContentArtifact.objects.filter(content=model):
             try:
-                found = known[artifact.relative_path]
-                found.model = artifact
+                found = known[content_artifact.relative_path]
+                found.content_artifact = content_artifact
                 self.artifacts.add(found)
             except KeyError:
                 log.error(_('Artifact not matched.'))
 
-    def settle(self):
+    def settle(self, deferred=False):
         """
         Ensures that all prerequisite matters pertaining to adding the content
         to a repository have been settled:
@@ -115,10 +119,10 @@ class RemoteContent(Remote):
         for artifact in self.artifacts:
             if not artifact.settled:
                 return
-        self.save()
+        self.save(deferred=deferred)
         self.settled = True
 
-    def save(self):
+    def save(self, deferred=False):
         """
         Save the content and related artifacts in a single DB transaction.
         Due to race conditions, the content may already exist raising an IntegrityError.
@@ -131,13 +135,42 @@ class RemoteContent(Remote):
             except IntegrityError:
                 is_duplicate = True
             else:
-                for artifact in self.artifacts:
-                    artifact.model.content = self.model
-                    artifact.save()
-        if is_duplicate:
-            model = type(self.model)
-            content = model.objects.get(**self.key)
-            self.update(content)
+
+                for remote_artifact in self.artifacts:
+                    if not remote_artifact.content_artifact.artifact_id:
+                        if not deferred:
+                            artifact = self.validate_and_create_artifact(remote_artifact.model,
+                                                                         remote_artifact.download)
+                            remote_artifact.content_artifact.artifact = artifact
+                        remote_artifact.model.save()
+                        remote_artifact.content_artifact.save()
+
+    def validate_and_create_artifact(self, remote_artifact, download):
+        """
+        Create an Artifact from a RemoteArtifact and a downloaded file
+
+        Args:
+            remote_artifact (pulpcore.plugin.RemoteArtifact): remote artifact
+            download (download object): download
+            :return:
+        """
+        file = File(open(download.writer.path, mode='rb'))
+        file.hashers = download.writer.hashers
+
+        # Build data from RemoteArtifact
+        data = QueryDict('', mutable=True)
+        data['file'] = file
+        if remote_artifact.size:
+            data['size'] = remote_artifact.size
+        for hasher in hashlib.algorithms_guaranteed:
+            if getattr(remote_artifact, hasher, None):
+                data[hasher] = getattr(remote_artifact, hasher, None)
+
+        serializer_class = get_plugin_config("pulp_app").named_serializers["ArtifactSerializer"]
+        serializer = serializer_class(data=data)
+        serializer.validate(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
 
 
 class RemoteArtifact(Remote):
@@ -147,41 +180,47 @@ class RemoteArtifact(Remote):
 
     Attributes:
         download (pulpcore.download.Download): An object used to download the content.
-        content (RemoteContent): The associated remote content.
+        content_artifact (ContentArtifact): The association between an Artifact and Content.
         path (str): Absolute path to the downloaded file.  May be (None) when
             downloading is deferred or the artifact has already been downloaded.
 
     Examples:
         >>>
-        >>> from pulpcore.plugin.models import Artifact
+        >>> from pulpcore.plugin.models import ContentArtifact, DeferredArtifact
         >>>
-        >>> model = Artifact(...)  # DB model instance.
+        >>> model = DeferredArtifact(...)
+        >>> content_artifact = ContentArtifact(...)
         >>> download = ...
         >>> ...
-        >>> artifact = RemoteArtifact(model, download)
+        >>> artifact = RemoteArtifact(model, content_artifact, download)
         >>>
     """
 
     __slots__ = (
         'content',
+        'content_artifact',
         'download',
         'path'
     )
 
-    def __init__(self, model, download):
+    def __init__(self, model, content_artifact, download):
         """
 
         Args:
-            model (pulpcore.plugin.models.Artifact): An artifact model instance.
-                This instance will be used to store a newly created or updated
-                artifact in the DB.
+            model (pulpcore.plugin.models.DeferredArtifact): A remote artifact model instance.
+                This object will be used to determine if an Artifact exists or one needs to
+                created.
             download (pulpcore.download.Download): A An object used to download the content.
         """
         super(RemoteArtifact, self).__init__(model)
+        self.content_artifact = content_artifact
         self.download = download
         self.download.attachment = self
-        self.path = download.writer.path
-        self.content = None
+        # NopDownload doesn't have a writer
+        if download.writer:
+            self.path = download.writer.path
+        else:
+            self.path = None
 
     def settle(self):
         """
@@ -198,9 +237,6 @@ class RemoteArtifact(Remote):
         Update the DB model to store the downloaded file.
         Then, save in the DB.
         """
-        if self.path:
-            self.model.file = File(open(self.path, mode='rb'))
-            self.model.downloaded = True
         super(RemoteArtifact, self).save()
 
     def __hash__(self):

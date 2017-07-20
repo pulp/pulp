@@ -1,5 +1,6 @@
 import os
 import errno
+import hashlib
 
 from io import BytesIO
 from logging import getLogger
@@ -83,7 +84,7 @@ class FileWriter(Writer):
         path (str): The absolute path to the file. May be None.
     """
 
-    __slots__ = ('path',)
+    __slots__ = ('path', 'hashers')
 
     def __init__(self, path):
         """
@@ -92,6 +93,9 @@ class FileWriter(Writer):
         """
         super(FileWriter, self).__init__()
         self.path = path
+        self.hashers = {}
+        for hasher in hashlib.algorithms_guaranteed:
+            self.hashers[hasher] = getattr(hashlib, hasher)()
 
     def open(self):
         """
@@ -102,6 +106,11 @@ class FileWriter(Writer):
             return
         self._mkdir()
         self.fp = open(self.path, 'wb')
+
+    def append(self, buffer):
+        super().append(buffer)
+        for hasher in hashlib.algorithms_guaranteed:
+            self.hashers[hasher].update(buffer)
 
     def close(self):
         """

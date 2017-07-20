@@ -6,7 +6,7 @@ from django.db.utils import IntegrityError
 from django.db import transaction
 
 from ..download import Batch
-from ..models import ProgressBar, DownloadCatalog, RepositoryContent
+from ..models import ProgressBar, DeferredArtifact, RepositoryContent
 from ..tasking import Task
 
 from .iterator import BatchIterator, DownloadIterator
@@ -87,7 +87,6 @@ class ChangeSet:
     def _add_content(self, content):
         """
         Add the specified content to the repository.
-        Download catalog entries are created foreach artifact.
 
         Args:
             content (RemoteContent): The content to be added.
@@ -100,24 +99,6 @@ class ChangeSet:
         except IntegrityError:
             # Duplicate
             pass
-        for artifact in content.artifacts:
-            log.info(
-                _('Cataloging artifact: %(a)s'),
-                {
-                    'a', artifact
-                })
-            try:
-                entry = DownloadCatalog()
-                entry.importer = self.importer
-                entry.url = artifact.download.url
-                entry.artifact = artifact.model
-                entry.save()
-            except IntegrityError:
-                entry = DownloadCatalog.objects.filter(
-                    importer=self.importer,
-                    artifact=artifact)
-                entry.url = artifact.download.url
-                entry.save()
 
     def _remove_content(self, content):
         """
@@ -127,7 +108,7 @@ class ChangeSet:
         Args:
             content (pulpcore.plugin.Content): A content model to be removed.
         """
-        q_set = DownloadCatalog.objects.filter(
+        q_set = DeferredArtifact.objects.filter(
             importer=self.importer,
             artifact__in=content.artifacts.all())
         q_set.delete()
@@ -165,7 +146,7 @@ class ChangeSet:
                         yield report
                         continue
                     artifact.settle()
-                    content.settle()
+                    content.settle(deferred=self.deferred)
                     if not content.settled:
                         continue
                     with transaction.atomic():

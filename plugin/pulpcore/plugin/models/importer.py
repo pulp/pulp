@@ -45,7 +45,7 @@ class Importer(PlatformImporter):
     class Meta:
         abstract = True
 
-    def get_download(self, url, destination, artifact=None):
+    def get_download(self, url, destination, remote_artifact=None):
         """
         Get an appropriate download object based on the URL that is fully configured using
         the importer attributes.  When an artifact is specified, the download is tailored
@@ -56,7 +56,7 @@ class Importer(PlatformImporter):
 
             url (str): The download URL.
             destination (str): The absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
+            remote_artifact (pulpcore.app.models.RemoteArtifact): An optional RemoteArtifact.
 
         Returns:
             pulpcore.download.Download: The appropriate download object.
@@ -65,4 +65,4 @@ class Importer(PlatformImporter):
             This method supports plugins downloading metadata and the
             `streamer` downloading artifacts.
         """
-        return Factory(self).build(url, destination, artifact)
+        return Factory(self).build(url, destination, remote_artifact)

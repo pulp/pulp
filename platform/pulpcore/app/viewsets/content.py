@@ -57,7 +57,7 @@ class ContentViewSet(NamedModelViewSet):
         artifacts = serializer.validated_data.pop('artifacts')
         content = serializer.save()
 
-        for artifact, relative_path in artifacts.items():
+        for relative_path, artifact in artifacts.items():
             ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
             ca.save()
 

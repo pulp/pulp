@@ -16,15 +16,14 @@ class ContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
     notes = generic.NotesKeyValueRelatedField()
     artifacts = fields.ContentArtifactsField(
-        help_text=_("A dictionary mapping Artifact URLs to the corresponding relative path of the "
-                    "artifact inside the Content. E.g.: {'http://localhost/full_artifact_path': "
-                    "'relative/path'}"),
+        help_text=_("A dict mapping relative paths inside the Content to the corresponding"
+                    "Artifact URLs. E.g.: {'relative/path': "
+                    "'http://localhost/full_artifact_path'}"),
     )
 
     class Meta:
         model = models.Content
         fields = base.MasterModelSerializer.Meta.fields + ('notes', 'artifacts')
-
 
 
 class ArtifactSerializer(base.ModelSerializer):
@@ -77,7 +76,8 @@ class ArtifactSerializer(base.ModelSerializer):
         Validate file by size and by all checksums provided.
 
         Args:
-            data (dict): Dictionary mapping Artifact model fields to their values
+            data (:class:`django.http.QueryDict`): QueryDict mapping Artifact model fields to their
+                values
 
         Raises:
             :class:`rest_framework.exceptions.ValidationError`: When the expected file size or any
@@ -91,6 +91,7 @@ class ArtifactSerializer(base.ModelSerializer):
 
         for algorithm in hashlib.algorithms_guaranteed:
             digest = data['file'].hashers[algorithm].hexdigest()
+
             if algorithm in data and digest != data[algorithm]:
                 raise serializers.ValidationError(_("The %s checksum did not match.") % algorithm)
             else:

@@ -1,8 +1,10 @@
 """
 Content related Django models.
 """
+from django.core import validators
 from django.core.files.storage import default_storage
 from django.db import models
+
 
 from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
 
@@ -90,6 +92,33 @@ class ContentArtifact(Model):
         """
         return default_storage.get_artifact_path(self.sha256)
 
-    artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE)
+    artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE, null=True)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
     relative_path = models.CharField(max_length=64)
+
+
+class DeferredArtifact(Model):
+    """
+    A URL for fetching a file associated with a piece of content.
+
+    Fields:
+
+        url (models.TextField): The URL where the artifact can be retrieved.
+        size (models.IntegerField): The expected size of the file in bytes.
+        md5 (models.CharField): The expected MD5 checksum of the file.
+        sha1 (models.CharField): The expected SHA-1 checksum of the file.
+        sha224 (models.CharField): The expected SHA-224 checksum of the file.
+        sha256 (models.CharField): The expected SHA-256 checksum of the file.
+        sha384 (models.CharField): The expected SHA-384 checksum of the file.
+        sha512 (models.CharField): The expected SHA-512 checksum of the file.
+    """
+    url = models.TextField(blank=True, validators=[validators.URLValidator])
+    size = models.IntegerField(blank=True, null=True)
+    md5 = models.CharField(max_length=32, blank=True, null=True)
+    sha1 = models.CharField(max_length=40, blank=True, null=True)
+    sha224 = models.CharField(max_length=56, blank=True, null=True)
+    sha256 = models.CharField(max_length=64, blank=True, null=True)
+    sha384 = models.CharField(max_length=96, blank=True, null=True)
+    sha512 = models.CharField(max_length=128, blank=True, null=True)
+    content_artifact = models.ForeignKey(ContentArtifact, on_delete=models.CASCADE)
+    importer = models.ForeignKey('Importer', on_delete=models.CASCADE)
