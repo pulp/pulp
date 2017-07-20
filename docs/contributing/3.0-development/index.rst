@@ -10,7 +10,6 @@ The goal of this section is to create a place for living documents related to th
    :maxdepth: 3
 
    app-layout
-   plugin-layout
    data-modeling
    db-translation-guide
    rest-api

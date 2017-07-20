@@ -8,6 +8,7 @@ Pulp Documentation
    cli_guide/index
    integration_guide/index
    contributing/index
+   plugins/index
    release_notes/index
    troubleshooting/index
    glossary
