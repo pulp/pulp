@@ -9,7 +9,7 @@ from pulp.devel.unit.util import SideEffect
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server import constants
 from pulp.streamer.server import (
-    Responder, Streamer, DownloadListener, DownloadFailed, HOP_BY_HOP_HEADERS
+    Responder, SessionCache, Streamer, DownloadListener, DownloadFailed, HOP_BY_HOP_HEADERS
 )
 
 
@@ -334,10 +334,11 @@ class TestStreamer(unittest.TestCase):
         container.return_value.download(downloader, [request.return_value], listener)
         downloader.config.finalize.assert_called_once_with()
 
+    @patch(MODULE_PREFIX + 'Session')
     @patch(MODULE_PREFIX + 'DownloadListener')
     @patch(MODULE_PREFIX + 'repo_controller')
-    def test_get_downloader(self, controller, listener):
-        request = Mock()
+    def test_get_downloader(self, controller, listener, session):
+        request = Mock(uri='http://pulp.org/content')
         entry = Mock(importer_id='123')
         importer = Mock()
         config = Mock()
@@ -347,7 +348,6 @@ class TestStreamer(unittest.TestCase):
 
         # test
         streamer = Streamer(Mock())
-        streamer.session = Mock()
         downloader = streamer._get_downloader(request, entry)
 
         # validation
@@ -358,7 +358,7 @@ class TestStreamer(unittest.TestCase):
         listener.assert_called_once_with(streamer, request)
         self.assertEqual(downloader, importer.get_downloader_for_db_importer.return_value)
         self.assertEqual(downloader.event_listener, listener.return_value)
-        self.assertEqual(downloader.session, streamer.session)
+        self.assertEqual(downloader.session, session.return_value)
 
     @patch(MODULE_PREFIX + 'AggregatingEventListener')
     @patch(MODULE_PREFIX + 'repo_controller')
@@ -487,3 +487,45 @@ class TestResponder(unittest.TestCase):
         mock_calls = mock_reactor.callFromThread.call_args_list
         self.assertEqual((mock_request.write, 'some data'), mock_calls[0][0])
         self.assertEqual((r.finish,), mock_calls[1][0])
+
+
+class TestSessionCache(unittest.TestCase):
+
+    def test_key(self):
+        host = 'pulp.org'
+        port = 80
+        url = 'http://{h}:{p}'.format(h=host, p=port)
+        config = Mock(
+            basic_auth_username='user',
+            basic_auth_password='password',
+            proxy_url='p-url',
+            proxy_port='p-port',
+            proxy_username='p-user',
+            proxy_password='p-password',
+            ssl_client_cert='ssl-certificate'
+        )
+        properties = (
+            host,
+            port,
+            config.basic_auth_username,
+            config.basic_auth_password,
+            config.proxy_url,
+            config.proxy_port,
+            config.proxy_username,
+            config.proxy_password,
+            config.ssl_client_cert
+        )
+        downloader = Mock(config=config)
+        key = SessionCache.key(url, downloader)
+        self.assertEqual(key, hash(properties))
+
+    @patch(MODULE_PREFIX + 'SessionCache.key')
+    @patch(MODULE_PREFIX + 'Session')
+    def test_get_or_create(self, session, key):
+        url = 'http://pulp.org/content'
+        key.return_value = 123
+        downloader = Mock()
+        cache = SessionCache()
+        ssn = cache.get_or_create(url, downloader)
+        self.assertEqual(ssn, session.return_value)
+        self.assertEqual(cache.get_or_create(url, downloader), session.return_value)

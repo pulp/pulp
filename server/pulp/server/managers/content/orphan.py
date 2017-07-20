@@ -224,10 +224,16 @@ class OrphanManager(object):
         """
 
         content_units_collection = content_types_db.type_units_collection(content_type_id)
+        content_model = plugin_api.get_unit_model_by_id(content_type_id)
 
+        try:
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
+        except ValueError:
+            raise MissingResource(content_type_id=content_type_id)
+
+        fields = ('_id', '_storage_path') + unit_key_fields
         count = 0
-        for content_unit in OrphanManager.generate_orphans_by_type(content_type_id,
-                                                                   fields=['_id', '_storage_path']):
+        for content_unit in OrphanManager.generate_orphans_by_type(content_type_id, fields=fields):
 
             if content_unit_ids is not None and content_unit['_id'] not in content_unit_ids:
                 continue
@@ -237,6 +243,9 @@ class OrphanManager(object):
                 unit_type_id=content_type_id
             ).delete()
             content_units_collection.remove(content_unit['_id'])
+
+            if hasattr(content_model, 'do_post_delete_actions'):
+                content_model.do_post_delete_actions(content_unit)
 
             storage_path = content_unit.get('_storage_path', None)
             if storage_path is not None:
@@ -261,14 +270,20 @@ class OrphanManager(object):
         """
         # get the model matching the type
         content_model = plugin_api.get_unit_model_by_id(type_id)
+        try:
+            unit_key_fields = units_controller.get_unit_key_fields_for_type(type_id)
+        except ValueError:
+            raise MissingResource(content_type_id=type_id)
+
+        fields = ('id', '_storage_path') + unit_key_fields
         if content_unit_ids:
             query_sets = []
             for page in plugin_misc.paginate(content_unit_ids):
-                qs = content_model.objects(id__in=page).only('id', '_storage_path')
+                qs = content_model.objects(id__in=page).only(*fields)
                 query_sets.append(qs)
             content_units = itertools.chain(*query_sets)
         else:
-            content_units = content_model.objects.only('id', '_storage_path')
+            content_units = content_model.objects.only(*fields)
 
         count = 0
 
@@ -294,6 +309,10 @@ class OrphanManager(object):
                     unit_type_id=str(type_id)
                 ).delete()
                 unit_to_delete.delete()
+
+                if hasattr(content_model, 'do_post_delete_actions'):
+                    content_model.do_post_delete_actions(unit_to_delete)
+
                 if unit_to_delete._storage_path:
                     OrphanManager.delete_orphaned_file(unit_to_delete._storage_path)
                 count += 1

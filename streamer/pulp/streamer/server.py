@@ -18,7 +18,7 @@ from pulp.server.content.sources.model import Request as ContainerRequest
 from pulp.server.db.model import DeferredDownload, LazyCatalogEntry
 from pulp.server.controllers import repository as repo_controller
 from pulp.plugins.loader.exceptions import PluginNotFound
-from pulp.streamer import adapters as pulp_adapters
+from pulp.streamer.cache import Cache, NotCached
 
 logger = logging.getLogger(__name__)
 
@@ -112,11 +112,7 @@ class Streamer(Resource):
         """
         Resource.__init__(self)
         self.config = config
-        # Used to pool TCP connections for upstream requests. Once requests #2863 is
-        # fixed and available, remove the PulpHTTPAdapter. This is a short-term work-around
-        # to avoid carrying the package.
-        self.session = Session()
-        self.session.mount('https://', pulp_adapters.PulpHTTPAdapter())
+        self.session_cache = SessionCache()
 
     def render_GET(self, request):
         """
@@ -233,8 +229,8 @@ class Streamer(Resource):
             try:
                 downloader.config.finalize()
             except Exception:
-                # ignored.
-                pass
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(_('finalize() failed.'))
 
     def _get_downloader(self, request, entry):
         """
@@ -257,7 +253,7 @@ class Streamer(Resource):
                 model, entry.url, working_dir='/tmp')
             listener = DownloadListener(self, request)
             downloader.event_listener = listener
-            downloader.session = self.session
+            downloader.session = self.session_cache.get_or_create(request.uri, downloader)
             return downloader
         except (PluginNotFound, DoesNotExist):
             msg = _('Plugin not-found: referenced by catalog entry for {path}')
@@ -378,3 +374,57 @@ class Responder(object):
         :type  data: str
         """
         reactor.callFromThread(self.request.write, data)
+
+
+class SessionCache(Cache):
+    """
+    Session cache.
+    Extends generic cache to derive the key using the URL and
+    downloader configuration.
+    """
+
+    @staticmethod
+    def key(url, downloader):
+        """
+        Get a cache key for the downloader.
+
+        :param url: The download URL.
+        :type url: basestring
+        :param downloader: A file downloader.
+        :type downloader: nectar.downloaders.base.Downloader
+        :return: A cache key based on downloader configuration.
+        """
+        parsed_url = urlparse(url)
+        properties = (
+            parsed_url.hostname,
+            parsed_url.port,
+            downloader.config.basic_auth_username,
+            downloader.config.basic_auth_password,
+            downloader.config.proxy_url,
+            downloader.config.proxy_port,
+            downloader.config.proxy_username,
+            downloader.config.proxy_password,
+            downloader.config.ssl_client_cert
+        )
+        return hash(properties)
+
+    def get_or_create(self, url, downloader):
+        """
+        Get (or create) a cached session for the url and downloader.
+        A session is created and configured when not already cached.
+
+        :param url: The download URL.
+        :type url: str
+        :param downloader: A nectar downloader.
+        :type downloader: nectar.downloaders.core.Downloader
+        :return: A cached session.
+        :rtype: Session
+        """
+        key = self.key(url, downloader)
+        try:
+            session = self.get(key)
+        except NotCached:
+            session = Session()
+            session.stream = True
+            self.add(key, session)
+        return session
