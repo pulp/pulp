@@ -13,7 +13,7 @@ import logging
 
 from pulp.server.compat import json, json_util
 
-from requests import post, RequestException
+from requests import post
 from requests.auth import HTTPBasicAuth
 
 
@@ -55,7 +55,7 @@ def _send_post(notifier_config, json_body):
     try:
         response = post(url, data=json_body, auth=auth,
                         headers={'Content-Type': 'application/json'}, timeout=15)
-    except:
+    except Exception:
         _logger.exception("HTTP Notification Failed")
         return
 
