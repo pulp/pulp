@@ -65,3 +65,41 @@ Encoding
 --------
 Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the 
 file.
+
+.. _error-handling:
+
+Error Handling
+--------------
+
+Errors in Tasks
+***************
+
+All uncaught exceptions in a task are treated as fatal exceptions. The task is then marked as
+failed. The error traceback, description, and code are returned to the user under the
+:attr:`~pulpcore.app.models.Task.error` attribute of the :class:`~pulpcore.app.models.Task`
+object.
+
+.. code-block:: python
+
+    # example returned task object
+
+    {
+        "_href": "localhost:3000/api/v3/tasks/73071a7f-bc03-4b43-9d24-8ab925b4b17a/",
+        "group": null,
+        "state": "failed",
+        "started_at": "2017-06-29T03:20:05.042536Z",
+        "finished_at": "2017-06-29T03:20:05.051660Z",
+        "non_fatal_errors": [],
+        "error": {
+            "traceback": "Traceback: raise Exception('') Exception: test",
+            "description": "test",
+            "code": null
+        },
+        "worker": "localhost/api/v3/workers/reserved_resource_worker_1@dev.example.com/",
+        "parent": null,
+        "tags": []
+    }
+
+
+When raising exceptions `built-in Python Exceptions <https://docs.python.org/3/library/exceptions.html>`_
+should be used if possible. :doc:`Coded Exceptions <./platform_api/exceptions>` should be used for known error situations.
