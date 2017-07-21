@@ -55,11 +55,9 @@ repository.
        "pulp_user_metadata": {}
      },
      "unit_type_id": "rpm",
-     "owner_type": "importer",
      "_id": {
        "$oid": "522777f5e19a002faebebf79"
      },
-     "id": "522777f5e19a002faebebf79",
-     "owner_id": "yum_importer"
+     "id": "522777f5e19a002faebebf79"
    }
  ]
