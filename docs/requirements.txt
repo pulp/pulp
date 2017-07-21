@@ -1,3 +1,10 @@
 sphinx
 sphinx-rtd-theme
 pyyaml
+django
+djangorestframework
+django-filter
+psycopg2
+celery
+coreapi
+drf-nested-routers
