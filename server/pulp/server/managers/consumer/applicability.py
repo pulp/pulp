@@ -7,6 +7,7 @@ from logging import getLogger
 from uuid import uuid4
 
 from celery import task
+from pymongo.errors import DuplicateKeyError
 
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -260,16 +261,20 @@ class ApplicabilityRegenerationManager(object):
                 _logger.debug(msg)
                 return
 
-            if existing_applicability:
-                # Update existing applicability object
-                existing_applicability.applicability = applicability
-                existing_applicability.save()
-            else:
+            try:
                 # Create a new RepoProfileApplicability object and save it in the db
                 RepoProfileApplicability.objects.create(profile_hash,
                                                         bound_repo_id,
-                                                        unit_profile['profile'],
+                                                        profile,
                                                         applicability)
+            except DuplicateKeyError:
+                # Update existing applicability
+                if not existing_applicability:
+                    applicability_dict = RepoProfileApplicability.get_collection().find_one(
+                        {'repo_id': bound_repo_id, 'profile_hash': profile_hash})
+                    existing_applicability = RepoProfileApplicability(**applicability_dict)
+                existing_applicability.applicability = applicability
+                existing_applicability.save()
 
     @staticmethod
     def _get_existing_repo_content_types(repo_id):
