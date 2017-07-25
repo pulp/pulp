@@ -13,7 +13,7 @@ class NamedModelViewSet(viewsets.ModelViewSet):
 
     Attributes:
         lookup_field (str): The name of the field by which an object should be looked up, in
-            addition to any parent lookups if this ViewSet is nested. Defaults to 'name'
+            addition to any parent lookups if this ViewSet is nested. Defaults to 'pk'
         endpoint_name (str): The name of the final path segment that should identify the ViewSet's
             collection endpoint.
         nest_prefix (str): Optional prefix under which this ViewSet should be nested. This must

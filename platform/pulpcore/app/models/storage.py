@@ -100,52 +100,6 @@ class TLSLocation:
             self.name)
 
 
-@deconstructible
-class ArtifactLocation:
-    """
-    Determine storage location (path) for file associated with content artifacts.
-    """
-
-    MEDIA_TYPE = 'content'
-
-    @staticmethod
-    def base_path(artifact):
-        """
-        Get the base path used to store a file associated with the specified artifact.
-        All artifact files *must* be stored relative to this location.
-
-        Args:
-            artifact (pulpcore.app.models.content.Artifact): Content artifact.
-
-        Returns:
-            str: An absolute (base) path
-        """
-        digest = artifact.content.natural_key_digest()
-        return os.path.join(
-            settings.MEDIA_ROOT,
-            ArtifactLocation.MEDIA_TYPE,
-            'units',
-            artifact.content.type,
-            digest[0:2],
-            digest[2:])
-
-    def __call__(self, artifact, name):
-        """
-        Get the absolute path used to store a file associated
-        with the specified artifact.
-
-        Stored at: MEDIA_ROOT/content/units/<type>/digest[0:2]/digest[2:]/<rel_path>
-
-        Args:
-            artifact (pulpcore.app.models.content.Artifact): Content artifact.
-            name (str): Unused, here to match Django's FileField API.
-
-        Returns:
-            str: Absolute path.
-        """
-        return os.path.join(self.base_path(artifact), artifact.relative_path)
-
-
 class FileSystem(Storage):
     """
     Provides simplified filesystem storage.
@@ -254,6 +208,20 @@ class FileSystem(Storage):
             st = os.stat(content.name)
             os.chmod(path, stat.S_IMODE(st.st_mode))
         return path
+
+    @staticmethod
+    def get_artifact_path(sha256digest):
+        """
+        Determine the absolute path where a file backing the Artifact should be stored.
+
+        Args:
+            sha256digest (str): sha256 digest of the file for the Artifact
+
+        Returns:
+            A string representing the absolute path where a file backing the Artifact should be
+            stored
+        """
+        return os.path.join(settings.MEDIA_ROOT, 'artifact', sha256digest[0:2], sha256digest[2:])
 
     def get_available_name(self, name, max_length=None):
         """

@@ -35,6 +35,13 @@ ALLOWED_HOSTS = ['*']
 MEDIA_ROOT = '/var/lib/pulp/'
 DEFAULT_FILE_STORAGE = 'pulpcore.app.models.storage.FileSystem'
 
+FILE_UPLOAD_TEMP_DIR = '/var/lib/pulp/tmp/'
+# List of upload handler classes to be applied in order.
+FILE_UPLOAD_HANDLERS = (
+    'pulpcore.app.upload.HashingFileUploadHandler',
+)
+
+
 # Application definition
 
 INSTALLED_APPS = [
