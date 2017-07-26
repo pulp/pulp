@@ -6,6 +6,8 @@ from django.core.exceptions import AppRegistryNotReady
 from django.conf.urls import url, include
 from rest_framework_nested import routers
 
+from rest_framework_jwt.views import obtain_jwt_token
+
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.views import ContentView, StatusView
 
@@ -66,6 +68,7 @@ urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
     url(r'^api/v3/', include(root_router.urls)),
     url(r'^api/v3/status/', StatusView.as_view()),
+    url(r'^api/v3/jwt/', obtain_jwt_token),
 ]
 
 
