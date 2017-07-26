@@ -64,7 +64,7 @@ BuildRequires: rpm-python
 Pulp provides replication, access, and accounting for software repositories.
 
 %prep
-%setup -q -n %{name}-%{git_tag}
+%setup -q
 
 %build
 for directory in agent bindings client_consumer client_lib common devel
