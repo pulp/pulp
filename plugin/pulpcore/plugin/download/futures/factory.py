@@ -84,8 +84,8 @@ class Factory:
             HttpDownload: An http download.
         """
         download = HttpDownload(url, FileWriter(path))
-        download.user.name = self.importer.basic_auth_user
-        download.user.password = self.importer.basic_auth_password
+        download.user.name = self.importer.username
+        download.user.password = self.importer.password
         self._add_validation(download, artifact)
         return download
 
@@ -106,8 +106,8 @@ class Factory:
         download.ssl.client_certificate = self.importer.ssl_client_certificate.name
         download.ssl.client_key = self.importer.ssl_client_key.name
         download.ssl.validation = self.importer.ssl_validation
-        download.user.name = self.importer.basic_auth_user
-        download.user.password = self.importer.basic_auth_password
+        download.user.name = self.importer.username
+        download.user.password = self.importer.password
         download.proxy_url = self.importer.proxy_url
         self._add_validation(download, artifact)
         return download

@@ -97,23 +97,24 @@ class Importer(ContentAdaptor):
     Fields:
 
         feed_url (models.TextField): The URL of an external content source.
-        validate (models.BooleanField): Validate the imported context.
+        validate (models.BooleanField): If True, the plugin will validate imported files.
         ssl_ca_certificate (models.TextField): A PEM encoded CA certificate used to validate the
             server certificate presented by the external source.
         ssl_client_certificate (models.TextField): A PEM encoded client certificate used
             for authentication.
         ssl_client_key (models.TextField): A PEM encoded private key used for authentication.
-        ssl_validation (models.BooleanField): Indicates whether SSL peer validation
-            must be performed.
+        ssl_validation (models.BooleanField): If True, SSL peer validation must be performed.
         proxy_url (models.TextField): The optional proxy URL.
             Format: scheme://user:password@host:port
-        basic_auth_user (models.TextField): The user used in HTTP basic authentication.
-        basic_auth_password (models.TextField): The password used in HTTP basic authentication.
+        username (models.TextField): The username to be used for authentication when syncing.
+        password (models.TextField): The password to be used for authentication when syncing.
         download_policy (models.TextField): The policy for downloading content.
-        last_sync (models.DatetimeField): When the last successful synchronization occurred.
+        last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
+        sync_mode (models.TextField) How the importer should sync from the upstream repository.
 
     Relations:
 
+        repository (models.ForeignKey): The repository that owns this Importer
     """
     TYPE = 'importer'
 
@@ -122,9 +123,16 @@ class Importer(ContentAdaptor):
     ON_DEMAND = 'on_demand'
     BACKGROUND = 'background'
     DOWNLOAD_POLICIES = (
-        (IMMEDIATE, 'Download Immediately'),
-        (ON_DEMAND, 'Download On Demand'),
-        (BACKGROUND, 'Download In Background'))
+        (IMMEDIATE, 'Update the repository content and download all artifacts immediately.'),
+        (ON_DEMAND, 'Update the repository content but no artifacts are downloaded.'),
+        (BACKGROUND, 'Update the repository content and download artifacts in the background.'))
+
+    # Sync Modes
+    ADDITIVE = 'additive'
+    MIRROR = 'mirror'
+    SYNC_MODES = (
+        (ADDITIVE, 'Add new content from the remote repository.'),
+        (MIRROR, 'Add new content and remove content is no longer in the remote repository.'))
 
     # Setting this with "unique=True" will trigger a model validation warning, telling us that we
     # should use a OneToOneField here instead. While it is correct, doing it this way makes it
@@ -146,16 +154,15 @@ class Importer(ContentAdaptor):
         blank=True, upload_to=TLSLocation('certificate.pem'), max_length=255)
     ssl_client_key = models.FileField(
         blank=True, upload_to=TLSLocation('key.pem'), max_length=255)
-
     ssl_validation = models.BooleanField(default=True)
 
     proxy_url = models.TextField(blank=True)
-
-    basic_auth_user = models.TextField(blank=True)
-    basic_auth_password = models.TextField(blank=True)
+    username = models.TextField(blank=True)
+    password = models.TextField(blank=True)
 
     download_policy = models.TextField(choices=DOWNLOAD_POLICIES)
-    last_sync = models.DateTimeField(blank=True, null=True)
+    sync_mode = models.TextField(choices=SYNC_MODES)
+    last_synced = models.DateTimeField(blank=True, null=True)
 
     class Meta(ContentAdaptor.Meta):
         default_related_name = 'importers'

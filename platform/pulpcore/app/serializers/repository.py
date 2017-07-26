@@ -74,28 +74,30 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
     _href = DetailNestedHyperlinkedIdentityField(
         lookup_field='name', parent_lookup_kwargs={'repository_name': 'repository__name'},
     )
-
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
     )
-    last_updated = serializers.DateTimeField(
-        help_text='Timestamp of the most recent update of this configuration.',
-        read_only=True
-    )
-
     feed_url = serializers.CharField(
         help_text='The URL of an external content source.',
         required=False,
     )
-
+    download_policy = serializers.ChoiceField(
+        help_text='The policy for downloading content.',
+        allow_blank=False,
+        choices=models.Importer.DOWNLOAD_POLICIES,
+    )
+    sync_mode = serializers.ChoiceField(
+        help_text='How the importer should sync from the upstream repository.',
+        allow_blank=False,
+        choices=models.Importer.SYNC_MODES,
+    )
     validate = serializers.BooleanField(
-        help_text='Whether to validate imported content.',
+        help_text='If True, the plugin will validate imported artifacts.',
         required=False,
     )
-
     ssl_ca_certificate = FileField(
         help_text='A PEM encoded CA certificate used to validate the server '
-                  'certificate presented by the external source.',
+                  'certificate presented by the remote server.',
         write_only=True,
         required=False,
     )
@@ -110,30 +112,29 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         required=False,
     )
     ssl_validation = serializers.BooleanField(
-        help_text='Indicates whether SSL peer validation must be performed.',
+        help_text='If True, SSL peer validation must be performed.',
         required=False,
     )
     proxy_url = serializers.CharField(
-        help_text='The optional proxy URL. Format: scheme://user:password@host:port',
+        help_text='The proxy URL. Format: scheme://user:password@host:port',
         required=False,
     )
-    basic_auth_user = serializers.CharField(
-        help_text='The username to be used in HTTP basic authentication when syncing.',
+    username = serializers.CharField(
+        help_text='The username to be used for authentication when syncing.',
         write_only=True,
         required=False,
     )
-    basic_auth_password = serializers.CharField(
-        help_text='The password to be used in HTTP basic authentication when syncing.',
+    password = serializers.CharField(
+        help_text='The password to be used for authentication when syncing.',
         write_only=True,
         required=False,
     )
-    download_policy = serializers.ChoiceField(
-        help_text='The policy for downloading content.',
-        allow_blank=False,
-        choices=models.Importer.DOWNLOAD_POLICIES,
-    )
-    last_sync = serializers.DateTimeField(
+    last_synced = serializers.DateTimeField(
         help_text='Timestamp of the most recent successful sync.',
+        read_only=True
+    )
+    last_updated = serializers.DateTimeField(
+        help_text='Timestamp of the most recent update of the importer.',
         read_only=True
     )
 
@@ -143,9 +144,9 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         abstract = True
         model = models.Importer
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'feed_url', 'validate', 'ssl_ca_certificate',
+            'name', 'feed_url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
-            'basic_auth_user', 'basic_auth_password', 'download_policy', 'last_sync', 'repository',
+            'username', 'password', 'last_synced', 'last_updated', 'repository',
         )
 
 
