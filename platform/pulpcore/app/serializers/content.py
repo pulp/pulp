@@ -4,6 +4,7 @@ import hashlib
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+
 from pulpcore.app import models
 from pulpcore.app.serializers import base, fields, generic
 
@@ -13,18 +14,16 @@ UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 
 class ContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
-    repositories = fields.RepositoryRelatedField(many=True)
     notes = generic.NotesKeyValueRelatedField()
-    artifacts = serializers.HyperlinkedRelatedField(
-        help_text=_("The associated files."),
-        many=True,
-        read_only=True,
-        view_name='artifacts-detail'
+    artifacts = fields.ContentArtifactsField(
+        help_text=_("A dict mapping relative paths inside the Content to the corresponding"
+                    "Artifact URLs. E.g.: {'relative/path': "
+                    "'http://localhost/full_artifact_path'}"),
     )
 
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields + ('repositories', 'notes', 'artifacts')
+        fields = base.MasterModelSerializer.Meta.fields + ('notes', 'artifacts')
 
 
 class ArtifactSerializer(base.ModelSerializer):
@@ -77,7 +76,8 @@ class ArtifactSerializer(base.ModelSerializer):
         Validate file by size and by all checksums provided.
 
         Args:
-            data (dict): Dictionary mapping Artifact model fields to their values
+            data (:class:`django.http.QueryDict`): QueryDict mapping Artifact model fields to their
+                values
 
         Raises:
             :class:`rest_framework.exceptions.ValidationError`: When the expected file size or any
@@ -91,6 +91,7 @@ class ArtifactSerializer(base.ModelSerializer):
 
         for algorithm in hashlib.algorithms_guaranteed:
             digest = data['file'].hashers[algorithm].hexdigest()
+
             if algorithm in data and digest != data[algorithm]:
                 raise serializers.ValidationError(_("The %s checksum did not match.") % algorithm)
             else:
