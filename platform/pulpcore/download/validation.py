@@ -209,7 +209,7 @@ class DigestValidation(Validation):
     )
 
     @staticmethod
-    def _find_algorithm(name):
+    def find_algorithm(name):
         """
         Find the hash algorithm by name in hashlib.
 
@@ -238,7 +238,7 @@ class DigestValidation(Validation):
             ValueError: When `algorithm` not supported by hashlib.
         """
         super(DigestValidation, self).__init__(enforced)
-        self.algorithm = self._find_algorithm(algorithm)
+        self.algorithm = self.find_algorithm(algorithm)
         self.expected = digest
         self.actual = None
 
