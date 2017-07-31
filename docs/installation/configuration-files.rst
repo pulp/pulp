@@ -24,3 +24,19 @@ SECRET_KEY
    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
    print(''.join(random.choice(chars) for i in range(50)))
 
+logging
+    By default Pulp logs at an INFO level to syslog. Pulp also comes with a `console` handler.
+    Additional handlers can be defined and used like so:
+
+.. code-block:: yaml
+   :linenos:
+
+   logging:
+     handlers:
+       myCustomHandler:
+         class: logging.FileHandler
+         filename: /path/to/debug.log
+     loggers:
+       '':
+         handlers: ["myCustomHandler"]
+         level: DEBUG
