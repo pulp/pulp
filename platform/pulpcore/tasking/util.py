@@ -22,7 +22,7 @@ def cancel(task_id):
     task's state to 'canceled'.
 
     :param task_id: The ID of the task you wish to cancel
-    :type  task_id: basestring
+    :type  task_id: str
 
     :raises MissingResource: if a task with given task_id does not exist
     """

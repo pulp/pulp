@@ -25,14 +25,14 @@ class ProgressReport(Model):
 
     Fields:
 
-        message (models.TextField): short message for the progress update, typically
+        message (~django.db.models.TextField): short message for the progress update, typically
             shown to the user. (required)
-        state (models.TextField): The state of the progress update. Defaults to `WAITING`. This
+        state (~django.db.models.TextField): The state of the progress update. Defaults to `WAITING`. This
             field uses a limited set of choices of field states. See `STATES` for possible states.
-        total: (models.IntegerField) The total count of items to be handled by the ProgressBar
+        total: (~django.db.models.IntegerField) The total count of items to be handled by the ProgressBar
             (required)
-        done (models.IntegerField): The count of items already processed. Defaults to 0.
-        suffix (models.TextField): Customizable suffix rendered with the progress report
+        done (~django.db.models.IntegerField): The count of items already processed. Defaults to 0.
+        suffix (~django.db.models.TextField): Customizable suffix rendered with the progress report
             See `the docs <https://github.com/verigak/progress>`_. for more info.
 
     Relations:

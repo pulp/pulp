@@ -35,7 +35,8 @@ def get_plugin_config(plugin_app_label):
         :class:`pulpcore.app.apps.PulpPluginAppConfig`: The app config of the Pulp plugin.
 
     Raises:
-        MissingPlugin: When plugin with the requested app label is not installed.
+        :class:`pulpcore.exceptions.plugin.MissingPlugin`:
+             When plugin with the requested app label is not installed.
     """
     for config in pulp_plugin_configs():
         if config.label == plugin_app_label:

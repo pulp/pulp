@@ -44,14 +44,14 @@ class Artifact(Model):
 
     Fields:
 
-        file (models.FileField): The stored file.
-        size (models.IntegerField): The size of the file in bytes.
-        md5 (models.CharField): The MD5 checksum of the file.
-        sha1 (models.CharField): The SHA-1 checksum of the file.
-        sha224 (models.CharField): The SHA-224 checksum of the file.
-        sha256 (models.CharField): The SHA-256 checksum of the file.
-        sha384 (models.CharField): The SHA-384 checksum of the file.
-        sha512 (models.CharField): The SHA-512 checksum of the file.
+        file (~django.db.models.FileField): The stored file.
+        size (~django.db.models.IntegerField): The size of the file in bytes.
+        md5 (~django.db.models.CharField): The MD5 checksum of the file.
+        sha1 (~django.db.models.CharField): The SHA-1 checksum of the file.
+        sha224 (~django.db.models.CharField): The SHA-224 checksum of the file.
+        sha256 (~django.db.models.CharField): The SHA-256 checksum of the file.
+        sha384 (~django.db.models.CharField): The SHA-384 checksum of the file.
+        sha512 (~django.db.models.CharField): The SHA-512 checksum of the file.
     """
     def storage_path(self, name):
         """

@@ -149,7 +149,7 @@ def initialize_worker(sender, instance, **kwargs):
     [0] http://celery.readthedocs.org/en/latest/userguide/signals.html#celeryd-after-setup
 
     :param sender:   The hostname of the worker
-    :type  sender:   basestring
+    :type  sender:   str
 
     :param instance: The Worker instance to be initialized (unused)
     :type  instance: celery.apps.worker.Worker
@@ -201,7 +201,7 @@ def get_resource_manager_lock(name):
     shutdown routine.
 
     :param name:   The hostname of the worker
-    :type  name:   basestring
+    :type  name:   str
     """
     from pulpcore.app.models.task import TaskLock, Worker
 

@@ -28,13 +28,13 @@ subclass.
 pulpcore.plugin Entry Point
 ---------------------------
 
-The Pulp Platform discovers available plugins by inspecting the pulp.plugin entry point.
+The Pulp Platform discovers available plugins by inspecting the pulpcore.plugin entry point.
 
 Once a plugin has defined its ``PulpPluginAppConfig`` subclass, it should add a pointer
 to that subclass using the Django ``default_app_config`` convention, e.g.
 ``default_app_config = pulp_myplugin.app.MyPulpPluginAppConfig`` somewhere in the module
 that contains your Django application. The Pulp Platform can then be told to use this value
-to discover your plugin, by pointing the pulp.plugin entry point at it. If, for example, we
+to discover your plugin, by pointing the pulpcore.plugin entry point at it. If, for example, we
 set ``default_app_config`` in ``pulp_myplugin/__init__.py``, the setup.py ``entry_points``
 would look like this::
 
@@ -54,8 +54,8 @@ Model, Serializer, Viewset Discovery
 
 The structure of plugins should, where possible, mimic the layout of the Pulp Plugin API.
 For example, model classes should be based on platform classes imported from
-:mod:`pulp.plugin.models` and be defined in the ``models`` module of a plugin app. ViewSets
-should be imported from :mod:`pulp.plugin.viewsets`, and be defined in the ``viewsets`` module
+:mod:`pulpcore.plugin.models` and be defined in the ``models`` module of a plugin app. ViewSets
+should be imported from :mod:`pulpcore.plugin.viewsets`, and be defined in the ``viewsets`` module
 of a plugin app, and so on.
 
 This matching of module names is required for the Pulp Platform to be able to auto-discover

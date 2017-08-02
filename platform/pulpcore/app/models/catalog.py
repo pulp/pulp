@@ -10,19 +10,19 @@ from pulpcore.app.models import Model, Artifact, Importer
 
 class DownloadCatalog(Model):
     """
-    Each :class:`DownloadCatalog` maps an :class:`pulpcore.app.models.content.Artifact` to a URL
-    where it is stored remotely and to the :class:`pulpcore.app.models.repository.Importer` which
+    Each :class:`DownloadCatalog` maps an :class:`pulpcore.app.models.Artifact` to a URL
+    where it is stored remotely and to the :class:`pulpcore.app.models.Importer` which
     contains the network configuration required to access that URL.
 
     Fields:
 
-        url (models.TextField): The URL used to download the related artifact.
+        url (~django.db.models.TextField): The URL used to download the related artifact.
 
     Relations:
 
-        artifact (pulpcore.app.models.Artifact): The artifact that is expected
+        artifact (~pulpcore.app.models.Artifact): The artifact that is expected
             to be present at ``url``.
-        importer (pulpcore.app.models.Importer): The importer that contains the
+        importer (~pulpcore.app.models.Importer): The importer that contains the
             configuration necessary to access ``url``.
 
     """

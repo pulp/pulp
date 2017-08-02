@@ -1,5 +1,5 @@
-pulp.app.models
-===============
+pulpcore.app.models
+===================
 
 .. automodule:: pulpcore.app.models
     :undoc-members:

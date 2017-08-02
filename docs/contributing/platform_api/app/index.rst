@@ -1,5 +1,5 @@
-pulp.app
-========
+pulpcore.app
+============
 
 .. toctree::
 

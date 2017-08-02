@@ -11,7 +11,7 @@ the Master/Detail relationship).
 
 Our API starts at a :term:`DRF` :term:`Router`. Each :term:`ViewSet` is attached to this
 router, and the router's routes are exposed in urls.py. Subclasses of
-:class:`pulp.app.viewsets.base.NamedModelViewSet` are automatically registered with the API router,
+:class:`pulpcore.app.viewsets.base.NamedModelViewSet` are automatically registered with the API router,
 and most (possibly all) ViewSets created by plugins should be subclasses of this base class.
 NamedModelViewSets are associated with a Django queryset, a :term:`Serializer` that is able to
 represent members of the Django queryset in the API, and an endpoint name used when registering
@@ -40,8 +40,8 @@ When creating API components, consider these guidelines:
 
 * Where possible, API components representing models will be defined in files whose names match
   the corresponding file names of the models represented. For example, if you're defining the
-  serializer for a model found in pulp.app.models.consumer, the serializer should be defined in
-  pulp.app.serializers.consumer, and imported by name into pulp.app.serializers.
+  serializer for a model found in pulpcore.app.models.consumer, the serializer should be defined in
+  pulpcore.app.serializers.consumer, and imported by name into pulpcore.app.serializers.
 
 * All objects represented in the REST API will be referred to by a single complete URL to that
   object, using a DRF HyperlinkedRelatedField or subclass. Non-hyperlinked relations (e.g.
@@ -49,7 +49,7 @@ When creating API components, consider these guidelines:
   Relationships" section below for more details. In the database an object is identified by its
   Primary Key. In the API an object is identified by its URL.
 
-* :class:`pulp.app.viewsets.base.NamedModelViewSet` subclasses defined in a plugin's "viewsets" module
+* :class:`pulpcore.app.viewsets.base.NamedModelViewSet` subclasses defined in a plugin's "viewsets" module
   are automatically registered with the API router. Endpoint names (the ``endpoint_name`` attribute)
   should plural, not singular (e.g. /api/v3/repositories/, not /api/v3/repository/).
 
@@ -71,7 +71,7 @@ Serializer Notes
   them is recommended for writers of serializers.
 
 * All Serializers representing Pulp Models should subclass
-  :class:`pulp.app.serializers.base.ModelSerializer`, as it provides useful behaviors to handle some
+  :class:`pulpcore.app.serializers.base.ModelSerializer`, as it provides useful behaviors to handle some
   of the conventions used when building Pulp Models, such as GenericKeyValueMapping fields.
 
 * Whether serializer fields are explicitly declared on the serializer class or not, the field names
@@ -161,14 +161,14 @@ Generic Key/Value Relationships
 
 The Generic Key/Value mapping interface can be used to easily nest the key/value pairs of this
 relationship in its containing serializer by using a
-:class:``pulp.app.serializers.generic.GenericKeyValueRelatedField`` in the serializer to represent this
+:class:``pulpcore.app.serializers.generic.GenericKeyValueRelatedField`` in the serializer to represent this
 field. Special field classes have been made for each of the three existing Generic Key/Value Model
-types, all importable from ``pulp.app.serializers``:
+types, all importable from ``pulpcore.app.serializers``:
 
 * ``ConfigKeyValueRelatedField``
 * ``NotesKeyValueRelatedField``
 
-This field type is supported by :class:`pulp.app.serializers.base.ModelSerializer`, and exposes the
+This field type is supported by :class:`pulpcore.app.serializers.base.ModelSerializer`, and exposes the
 mapping form in the representation of the object being serialized with read and write capabilities.
 
 For example:
@@ -269,7 +269,7 @@ ViewSets
 
 As with most things related to the API, the place to start working with Master/Detail models
 is in their ViewSet. The default ViewSet base class provided by the Pulp platform,
-:class:`pulp.app.viewsets.base.NamedModelViewSet` is aware of Master/Detail relationships, and
+:class:`pulpcore.app.viewsets.base.NamedModelViewSet` is aware of Master/Detail relationships, and
 will do the right thing when registered with our API router. In order to benefit from this
 behavior, a ViewSet must be declared that represents the Master model of a Master/Detail
 relationship, and that ViewSet must, at a minimum, have its ``endpoint_name`` set to something
@@ -312,9 +312,9 @@ representing the Master Model in a Master/Detail relationship, and every Seriali
 Detail Models must subclass their respective Master Serializer.
 
 Furthermore, every Serializer representing a Master Model should subclass a special Serializer
-created for Master/Detail models, :class:`pulp.app.serializers.base.MasterModelSerializer`. This
-Serializer includes a definition for the `type` field present on all models inheriting from
-:class:`pulp.app.models.base.MasterModel`, and also identifies the `type` field as filterable,
+created for Master/Detail models, :class:`pulpcore.app.serializers.base.MasterModelSerializer`. This
+Serializer includes a definition for the `type` field present on all models inheriting from 
+:class:`pulpcore.app.models.MasterModel`, and also identifies the `type` field as filterable,
 centralizing common behavior that we're likely to want in all Serializers representing Models
 in a Master/Detail Relationship.
 
@@ -326,7 +326,7 @@ field must be used that is Master/Detail aware so that URLs identifying the Deta
 API representations are generated correctly.
 
 In this case, instead of using a normal ``HyperlinkedRelatedField``,
-:class:`pulp.app.serializers.base.DetailRelatedField` should be used. This field knows how to
+:class:`pulpcore.app.serializers.base.DetailRelatedField` should be used. This field knows how to
 correctly generate URLs to Detail types in the API by casting them down to their Detail Model
 type, but should be used with care due to the inherent cost in calling ``cast()`` on an arbitrary
 number of instances.
@@ -335,7 +335,7 @@ Identifying Detail Serializers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Similar to using ``DetailRelatedField``, Detail Model Serializers should use
-:class:`pulp.app.serializers.base.DetailIdentityField` when declaring their ``_href`` attribute,
+:class:`pulpcore.app.serializers.base.DetailIdentityField` when declaring their ``_href`` attribute,
 so that the URLs generated by Detail Serializers return the proper URL to the cast Detail
 object.
 

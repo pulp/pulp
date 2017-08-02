@@ -17,8 +17,4 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
 .. automodule:: pulpcore.plugin
     :imported-members:
 
-.. automodule:: pulpcore.plugin.cataloger
-
-.. automodule:: pulpcore.plugin.profiler
-
 .. automodule:: pulpcore.plugin.tasking

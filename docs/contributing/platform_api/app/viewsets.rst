@@ -1,5 +1,5 @@
-pulp.app.viewsets
-=================
+pulpcore.app.viewsets
+=====================
 
 All viewsets documented here should be imported directly from the ``pulpcore.app.viewsets`` namespace.
 
@@ -8,17 +8,17 @@ should return an :class:`~pulpcore.app.response.OperationPostponedResponse`.
 
 .. automodule:: pulpcore.app.viewsets
 
-pulp.app.viewsets.base
-----------------------
+pulpcore.app.viewsets.base
+--------------------------
 
 .. automodule:: pulpcore.app.viewsets.base
 
-pulp.app.viewsets.content
--------------------------
+pulpcore.app.viewsets.content
+-----------------------------
 
 .. automodule:: pulpcore.app.viewsets.content
 
-pulp.app.viewsets.repository
-----------------------------
+pulpcore.app.viewsets.repository
+--------------------------------
 
 .. automodule:: pulpcore.app.viewsets.repository

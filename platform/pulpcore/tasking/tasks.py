@@ -55,11 +55,11 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
     find_worker function.
 
     Args:
-        name (basestring): The name of the task to be called
-        inner_task_id (basestring): The UUID to be set on the task being called. By providing
+        name (str): The name of the task to be called
+        inner_task_id (str): The UUID to be set on the task being called. By providing
             the UUID, the caller can have an asynchronous reference to the inner task
             that will be dispatched.
-        resource_id (basestring): The name of the resource you wish to reserve for your task.
+        resource_id (str): The name of the resource you wish to reserve for your task.
             The system will ensure that no other tasks that want that same reservation will run
             concurrently with yours.
         inner_args (tuple): The positional arguments to pass on to the task.
@@ -112,7 +112,7 @@ def _release_resource(task_id):
     ReservedResource object by UUID.
 
     Args:
-        task_id (basestring): The UUID of the task that requested the reservation
+        task_id (str): The UUID of the task that requested the reservation
 
     """
     try:
@@ -168,8 +168,8 @@ class UserFacingTask(PulpTask):
         before it returns.
 
         Args:
-            resource_type (basestring): A string that identifies type of a resource
-            resource_id (basestring): A string that identifies some named resource, guaranteeing
+            resource_type (str): A string that identifies type of a resource
+            resource_id (str): A string that identifies some named resource, guaranteeing
                 that only one task reserving this same string can happen at a time.
             tags (list): A list of tags (strings) to place onto the task, used for searching
                 for tasks by tag. This is an optional argument which is pulled out of kwargs.
