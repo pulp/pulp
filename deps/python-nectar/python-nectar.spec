@@ -33,7 +33,7 @@ with multiple threads. Other experimental downloaders have used tools like
 pycurl and eventlets.
 
 %prep
-%setup -q -n nectar-%{git_tag}
+%setup -q
 
 %build
 %{__python} setup.py build
