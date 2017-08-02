@@ -71,8 +71,8 @@
     },
     {
         "name": "python-nectar",
-        "version": "1.5.4-1",
-        "platform": [ "el6", "el7", "fc24"]
+        "version": "1.5.5-1",
+        "platform": [ "el7", "fc24", "fc25"]
     },
     {
         "name": "python-rhsm",
