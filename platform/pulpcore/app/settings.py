@@ -267,4 +267,7 @@ def load_settings(paths=None):
     return settings
 
 
-load_settings(['/etc/pulp/server.yaml'])
+# Read PULP_SETTINGS environment variable to find the location of server.yaml,
+# defaults to /etc/pulp/server.yaml
+PULP_SETTINGS = os.getenv('PULP_SETTINGS', '/etc/pulp/server.yaml')
+load_settings([PULP_SETTINGS])
