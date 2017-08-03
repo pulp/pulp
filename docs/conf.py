@@ -38,7 +38,7 @@ django.setup()
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.extlinks', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
-              'napoleon_django', 'sphinx.ext.napoleon']
+              'napoleon_django', 'sphinx.ext.napoleon', 'sphinx.ext.intersphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -314,3 +314,8 @@ napoleon_use_ivar = True
 
 # set primary domain to python so we don't have to include :py: in xref links
 default_domain = 'py'
+
+# to refer to other projects in the docs
+intersphinx_mapping = {'python': ('https://docs.python.org/3.5', None),
+                       'django': ('https://docs.djangoproject.com/en/1.11/', 'https://docs.djangoproject.com/en/1.11/_objects/')}
+

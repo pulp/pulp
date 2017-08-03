@@ -60,8 +60,8 @@ def sync(repo_name, importer_name):
     is prepared, the plugin's sync is called, and then working directory is removed.
 
     Args:
-        repo_name (basestring): unique name to specify the repository.
-        importer_name (basestring): name to specify the Importer.
+        repo_name (str): unique name to specify the repository.
+        importer_name (str): name to specify the Importer.
 
     Raises:
         ValueError: When feed_url is empty.

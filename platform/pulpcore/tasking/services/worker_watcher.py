@@ -33,7 +33,7 @@ def handle_worker_heartbeat(worker_name):
     updated. Otherwise a new Worker entry is created. Logging at the info level is also done.
 
     :param worker_name: The hostname of the worker
-    :type  worker_name: basestring
+    :type  worker_name: str
     """
     existing_worker, created = Worker.objects.get_or_create(name=worker_name)
     if created:
@@ -63,7 +63,7 @@ def handle_worker_offline(worker_name):
     offline. Logging at the info level is also done.
 
     :param worker_name: The hostname of the worker
-    :type  worker_name: basestring
+    :type  worker_name: str
     """
     msg = _("Worker '%s' shutdown") % worker_name
     _logger.info(msg)
@@ -82,7 +82,7 @@ def mark_worker_offline(name, normal_shutdown=False):
     Any tasks associated with this worker are explicitly canceled.
 
     :param name:            The name of the worker you wish to be marked as offline.
-    :type  name:            basestring
+    :type  name:            str
     :param normal_shutdown: True if the worker shutdown normally, False otherwise. Defaults to
                             False.
     :type normal_shutdown:  bool

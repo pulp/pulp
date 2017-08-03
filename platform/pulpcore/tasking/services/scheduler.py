@@ -164,7 +164,7 @@ class Scheduler(beat.Scheduler):
         Call the superclass tick method and log a debug message.
 
         :param celerybeat_name: hostname of the celerybeat instance
-        :type  celerybeat_name: basestring
+        :type  celerybeat_name: str
 
         :return:                seconds until the next tick
         :rtype:                 integer

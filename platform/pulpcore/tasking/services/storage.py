@@ -12,7 +12,7 @@ def _working_dir_root(worker_name):
     """Return the path to the working directory of a worker.
 
     :param worker_name:     Name of worker for which path is requested
-    :type  worker_name:     basestring
+    :type  worker_name:     str
 
     :returns: working_directory setting from server config
     :rtype:   str
@@ -26,7 +26,7 @@ def create_worker_working_directory(worker_name):
     Create a working directory inside the worker working_directory as specified in the setting file.
 
     :param worker_name:     Name of worker that uses the working directory created
-    :type  worker_name:     basestring
+    :type  worker_name:     str
 
     :returns: Path to the working directory for a worker
     :rtype:   str
@@ -42,7 +42,7 @@ def delete_worker_working_directory(worker_name):
     Delete a working directory inside the working_directory as specified in the setting file.
 
     :param worker_name:     Name of worker that uses the working directory being deleted
-    :type  worker_name:     basestring
+    :type  worker_name:     str
     """
     _rmtree(_working_dir_root(worker_name))
 
@@ -53,7 +53,7 @@ def _working_directory_path():
     Get the path for a task working directory inside a workers working directory.
 
     :returns: full path on disk to the working directory for current task
-    :rtype:   basestring
+    :rtype:   str
     """
     current_task = task.current
     with suppress(AttributeError):

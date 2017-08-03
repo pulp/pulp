@@ -14,16 +14,16 @@ class Repository(Model):
 
     Fields:
 
-        name (models.TextField): The repository name.
-        description (models.TextField): An optional description.
-        last_content_added (models.DateTimeField): When content was last added.
-        last_content_removed (models.DatetimeField): When content was last removed.
+        name (~django.db.models.TextField): The repository name.
+        description (~django.db.models.TextField): An optional description.
+        last_content_added (~django.db.models.DateTimeField): When content was last added.
+        last_content_removed (~django.db.models.DatetimeField): When content was last removed.
 
     Relations:
 
         scratchpad (GenericKeyValueRelation): Arbitrary information stashed on the repository.
         notes (GenericKeyValueRelation): Arbitrary repository properties.
-        content (models.ManyToManyField): Associated content.
+        content (~django.db.models.ManyToManyField): Associated content.
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
@@ -67,12 +67,12 @@ class ContentAdaptor(MasterModel):
 
     Fields:
 
-        name (models.TextField): The ContentAdaptor name.
-        last_updated (models.DatetimeField): When the adaptor was last updated.
+        name (~django.db.models.TextField): The ContentAdaptor name.
+        last_updated (~django.db.models.DatetimeField): When the adaptor was last updated.
 
     Relations:
 
-        repository (models.ForeignKey): The associated repository.
+        repository (~django.db.models.ForeignKey): The associated repository.
     """
     name = models.TextField(db_index=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
@@ -98,21 +98,21 @@ class Importer(ContentAdaptor):
 
     Fields:
 
-        feed_url (models.TextField): The URL of an external content source.
-        validate (models.BooleanField): Validate the imported context.
-        ssl_ca_certificate (models.TextField): A PEM encoded CA certificate used to validate the
+        feed_url (~django.db.models.TextField): The URL of an external content source.
+        validate (~django.db.models.BooleanField): Validate the imported context.
+        ssl_ca_certificate (~django.db.models.TextField): A PEM encoded CA certificate used to validate the
             server certificate presented by the external source.
-        ssl_client_certificate (models.TextField): A PEM encoded client certificate used
+        ssl_client_certificate (~django.db.models.TextField): A PEM encoded client certificate used
             for authentication.
-        ssl_client_key (models.TextField): A PEM encoded private key used for authentication.
-        ssl_validation (models.BooleanField): Indicates whether SSL peer validation
+        ssl_client_key (~django.db.models.TextField): A PEM encoded private key used for authentication.
+        ssl_validation (~django.db.models.BooleanField): Indicates whether SSL peer validation
             must be performed.
-        proxy_url (models.TextField): The optional proxy URL.
+        proxy_url (~django.db.models.TextField): The optional proxy URL.
             Format: scheme://user:password@host:port
-        basic_auth_user (models.TextField): The user used in HTTP basic authentication.
-        basic_auth_password (models.TextField): The password used in HTTP basic authentication.
-        download_policy (models.TextField): The policy for downloading content.
-        last_sync (models.DatetimeField): When the last successful synchronization occurred.
+        basic_auth_user (~django.db.models.TextField): The user used in HTTP basic authentication.
+        basic_auth_password (~django.db.models.TextField): The password used in HTTP basic authentication.
+        download_policy (~django.db.models.TextField): The policy for downloading content.
+        last_sync (~django.db.models.DatetimeField): When the last successful synchronization occurred.
 
     Relations:
 
@@ -172,10 +172,10 @@ class Publisher(ContentAdaptor):
 
     Fields:
 
-        auto_publish (models.BooleanField): Indicates that the adaptor may publish automatically
+        auto_publish (~django.db.models.BooleanField): Indicates that the adaptor may publish automatically
             when the associated repository's content has changed.
-        relative_path (models.TextField): The (relative) path component of the published url.
-        last_published (models.DatetimeField): When the last successful publish occurred.
+        relative_path (~django.db.models.TextField): The (relative) path component of the published url.
+        last_published (~django.db.models.DatetimeField): When the last successful publish occurred.
 
     Relations:
 
@@ -198,12 +198,12 @@ class RepositoryContent(Model):
 
     Fields:
 
-        created (models.DatetimeField): When the association was created.
+        created (~django.db.models.DatetimeField): When the association was created.
 
     Relations:
 
-        content (models.ForeignKey): The associated content.
-        repository (models.ForeignKey): The associated repository.
+        content (~django.db.models.ForeignKey): The associated content.
+        repository (~django.db.models.ForeignKey): The associated repository.
     """
     content = models.ForeignKey('Content', on_delete=models.CASCADE)
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)

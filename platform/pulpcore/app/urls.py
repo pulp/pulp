@@ -31,7 +31,7 @@ def router_for_nested_viewset(viewset):
     Find the router for a nested viewset.
 
     Args:
-        viewset (pulpcore.app.viewsets.NamedModelViewSet): a viewset for which a nested router
+        viewset (~pulpcore.app.viewsets.base.NamedModelViewSet): a viewset for which a nested router
             should exist
 
     Returns:

@@ -1,4 +1,4 @@
-pulp.app.apps
-=============
+pulpcore.app.apps
+=================
 
 .. automodule:: pulpcore.app.apps

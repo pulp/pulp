@@ -53,7 +53,7 @@ def _get_max_tasks():
     disabled return an empty string.
 
     :return: The argument string setting maxtasksperchild or empty string
-    :rtype:  basestring
+    :rtype:  str
     """
     pipe = subprocess.Popen(". %s; echo $PULP_MAX_TASKS_PER_CHILD" % _ENVIRONMENT_FILE,
                             stdout=subprocess.PIPE, shell=True)
@@ -69,7 +69,7 @@ def _get_file_contents(path):
     Open the file at path, read() it, close the file, and return a string of its contents.
 
     :param path: The path to the file
-    :type  path: basestring
+    :type  path: str
     :return:     The file's contents
     :rtype:      str
     """
