@@ -3,10 +3,15 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer, DetailRelatedField
+from pulpcore.app.serializers import ModelSerializer, DetailNestedHyperlinkedRelatedField
 
 
 class DownloadCatalogSerializer(ModelSerializer):
+
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='downloadcatalogs-detail',
+    )
+
     url = serializers.CharField(
         help_text=_("The URL used to download the related artifact."),
         allow_blank=True, read_only=True,
@@ -15,13 +20,14 @@ class DownloadCatalogSerializer(ModelSerializer):
     artifact = serializers.HyperlinkedRelatedField(
         help_text=_("The artifact that is expected to be present at url"),
         queryset=models.Artifact.objects.all(),
-        view_name="artifact-details"
+        view_name="artifacts-detail"
     )
 
-    importer = DetailRelatedField(
-        help_text=_("The importer that contains the configuration necessary to access url."),
+    importer = DetailNestedHyperlinkedRelatedField(
+        parent_lookup_kwargs={'repository_name': 'repository__name'},
         queryset=models.Importer.objects.all(),
-        view_name="importer-details"
+        help_text=_("The importer that contains the configuration necessary to access url."),
+        lookup_field='name'
     )
 
     class Meta:
