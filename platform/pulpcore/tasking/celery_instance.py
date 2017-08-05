@@ -22,6 +22,7 @@ celery.conf.update(CELERYBEAT_SCHEDULER='pulpcore.server.async.scheduler.Schedul
 celery.conf.update(CELERY_WORKER_DIRECT=True)
 celery.conf.update(CELERY_TASK_SERIALIZER='json')
 celery.conf.update(CELERY_ACCEPT_CONTENT=['json'])
+celery.conf.update(CELERY_REJECT_ON_WORKER_LOST=True)
 
 
 def configure_login_method():
