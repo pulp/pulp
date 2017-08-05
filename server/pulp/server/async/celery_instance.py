@@ -6,6 +6,7 @@ the factory ends up importing tasks.py when it imports all the managers.
 Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
 from datetime import timedelta
+from distutils.version import StrictVersion
 import os
 import ssl
 
@@ -46,6 +47,10 @@ celery.conf.update(CELERY_WORKER_DIRECT=True)
 celery.conf.update(CELERY_TASK_SERIALIZER='json')
 celery.conf.update(CELERY_ACCEPT_CONTENT=['json'])
 
+if StrictVersion(celery_version) >= StrictVersion("4.0"):
+    # reject and requeue tasks on worker lost
+    celery.conf.update(CELERY_REJECT_ON_WORKER_LOST=True)
+
 
 def configure_login_method():
     """
@@ -68,6 +73,7 @@ def configure_SSL():
             'cert_reqs': ssl.CERT_REQUIRED,
         }
         celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
+
 
 configure_SSL()
 configure_login_method()
