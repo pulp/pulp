@@ -1,10 +1,10 @@
 import warnings
 
 from pulpcore.app.models import MasterModel
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 
 
-class NamedModelViewSet(viewsets.ModelViewSet):
+class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
     A customized named ModelViewSet that knows how to register itself with the Pulp API router.
 
@@ -131,3 +131,30 @@ class NamedModelViewSet(viewsets.ModelViewSet):
                 filters[lookup] = self.kwargs[key]
             qs = qs.filter(**filters)
         return qs
+
+
+class NamedModelViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.ListModelMixin,
+                        GenericNamedModelViewSet):
+    """
+    A viewset that provides default `create()`, `retrieve()`, `update()`, `partial_update()`,
+    `destroy()` and `list()` actions.
+    """
+    pass
+
+
+class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,
+                                         mixins.RetrieveModelMixin,
+                                         mixins.DestroyModelMixin,
+                                         mixins.ListModelMixin,
+                                         GenericNamedModelViewSet):
+    """
+    A customized NamedModelViewSet for models that don't support updates.
+
+    A viewset that provides default `create()`, `retrieve()`, `destroy()` and `list()` actions.
+
+    """
+    pass

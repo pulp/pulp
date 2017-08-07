@@ -2,8 +2,8 @@
 # Any models defined in the pulpcore.plugin namespace should probably be proxy models.
 
 from pulpcore.app.models import (  # NOQA
-    Artifact, Content, DownloadCatalog, ProgressBar, ProgressSpinner, Repository,
-    RepositoryContent)
+    Artifact, Content, ContentArtifact, DeferredArtifact, DownloadCatalog, ProgressBar,
+    ProgressSpinner, Repository, RepositoryContent)
 
 
 from .publisher import Publisher  # noqa
