@@ -11,7 +11,7 @@ else:
 
 setup(
     name='pulp-streamer',
-    version='2.14c3',
+    version='2.14',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
