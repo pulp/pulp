@@ -179,15 +179,21 @@ _DEFAULT_PULP_SETTINGS = {
             'simple': {'format': 'pulp: %(name)s:%(levelname)s: %(message)s'},
         },
         'handlers': {
-            'stream': {
+            'console': {
                 'class': 'logging.StreamHandler',
-                'formatter': 'simple',
+                'formatter': 'simple'
             },
+            'syslog': {
+                'address': '/dev/log',
+                'class': 'logging.handlers.SysLogHandler',
+                'formatter': 'simple'
+            }
         },
         'loggers': {
             '': {
                 # The root logger
-                'handlers': ["stream"],
+                'handlers': ["syslog"],
+                'level': 'INFO'
             },
         }
     },
