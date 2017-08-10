@@ -15,11 +15,6 @@ from pulpcore.tasking.constants import TASKING_CONSTANTS as constants
 from pulpcore.tasking.services import worker_watcher
 
 
-# The import below is not used in this module, but it needs to be kept here. This module is the
-# first and only Pulp module to be imported by celerybeat, and by importing pulpcore.app.logs, it
-# configures the celerybeat logging to log as Pulp does.
-import pulpcore.app.logs  # noqa
-
 _logger = logging.getLogger(__name__)
 
 # setting the celerybeat name
