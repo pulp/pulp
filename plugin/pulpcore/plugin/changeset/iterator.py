@@ -5,9 +5,10 @@ from logging import getLogger
 
 from django.db.models import Q
 
+from pulpcore.app.models import Artifact
 from pulpcore.download import Download
 
-from .model import RemoteArtifact
+from .model import PendingArtifact
 
 
 log = getLogger(__name__)
@@ -54,12 +55,12 @@ class BatchIterator(Iterable):
 
 class ContentIterator(Iterable):
     """
-    Iterate `RemoteContent` and replace associated content models
-    With models fetched from the DB (when found).
-    """
+    Iterate `PendingContent` and foreach, replace the DB model instance
+    with an instance fetched from the DB (when found).
 
-    # Number of keys in each batched query.
-    BATCH = 1024
+    Attributes:
+        content (iterable): An iterable of PendingContent.
+    """
 
     @staticmethod
     def _batch_q(content):
@@ -67,7 +68,7 @@ class ContentIterator(Iterable):
         Build a query for the specified batch of content.
 
         Args:
-            content (tuple): A batch of content.  Each is: RemoteContent.
+            content (tuple): A batch of content.  Each is: PendingContent.
 
         Returns:
             Q: The built query.
@@ -80,7 +81,7 @@ class ContentIterator(Iterable):
     def __init__(self, content):
         """
         Args:
-            content (Iterable): An Iterable of RemoteContent.
+            content (iterable): An iterable of PendingContent.
         """
         self.content = content
 
@@ -90,9 +91,9 @@ class ContentIterator(Iterable):
 
         Yields:
             dict: A dictionary of {model_class: [content,]}
-                Each content is: RemoteContent.
+                Each content is: PendingContent.
         """
-        for batch in BatchIterator(self.content, self.BATCH):
+        for batch in BatchIterator(self.content, 1024):
             collated = {}
             for content in batch:
                 _list = collated.setdefault(type(content.model), list())
@@ -105,7 +106,7 @@ class ContentIterator(Iterable):
 
         Yields:
             tuple: (content, fetched).
-                The content is a list of RemoteContent.
+                The content is a list of PendingContent.
                 The fetched is a dictionary of fetched content models keyed by natural key.
         """
         for collated in self._collated_content():
@@ -119,12 +120,12 @@ class ContentIterator(Iterable):
 
     def _iter(self):
         """
-        The remote content is iterated and its model is replaced with a model
+        The pending content is iterated and its model is replaced with a model
         fetched from the DB (when found). This is batched to limit the memory
         footprint.
 
         Yields:
-            RemoteContent: The transformed content.
+            PendingContent: The transformed content.
         """
         for batch, fetched in self._fetch():
             for content in batch:
@@ -146,15 +147,19 @@ class DownloadIterator(Iterable):
     Iterate the content artifacts and yield the appropriate download object.
     When downloading is deferred or the artifact is already downloaded,
     A NopDownload is yielded.
+
+    Attributes:
+        artifacts (iterable): An iterable of PendingArtifact.
+        deferred (bool): Downloading is deferred.
     """
 
-    def __init__(self, content, deferred=False):
+    def __init__(self, artifacts, deferred):
         """
         Args:
-            content (Iterable): An Iterable of RemoteContent.
-            deferred (bool): When true, downloading is deferred.
+            artifacts (iterable): An iterable of PendingArtifact.
+            deferred (bool): Downloading is deferred.
         """
-        self.content = content
+        self.artifacts = artifacts
         self.deferred = deferred
 
     def _iter(self):
@@ -166,13 +171,11 @@ class DownloadIterator(Iterable):
         Yields:
             Download: The appropriate download object.
         """
-        for artifact in ArtifactIterator(self.content):
-            if self.deferred or artifact.model.downloaded:
-                download = NopDownload()
-                download.attachment = artifact
-                artifact.path = None
+        for artifact in self.artifacts:
+            if self.deferred or artifact.fetched:
+                download = NopDownload(artifact)
             else:
-                download = artifact.download
+                download = artifact.downloader()
             yield download
 
     def __iter__(self):
@@ -181,34 +184,102 @@ class DownloadIterator(Iterable):
 
 class ArtifactIterator(Iterable):
     """
-    Iterate the content and flatten the artifacts.
-    Ensure that at least (1) artifact is yielded for each content.
+    Iterate `PendingContent` and foreach artifact, replace the DB model instance
+    with an instance fetched from the DB (when found).  Ensure that at
+    least (1) artifact is yielded for each content.
+
+    Attributes:
+        content (iterable): An iterable of PendingContent.
     """
 
     def __init__(self, content):
         """
         Args:
-            content (Iterable): An Iterable of RemoteContent.
+            content (iterable): An iterable of PendingContent.
         """
         self.content = content
+
+    @staticmethod
+    def _batch_q(artifacts):
+        """
+        Build a query for the specified batch of artifacts.
+
+        Args:
+            artifacts (tuple): A batch of artifacts.  Each is: PendingArtifact.
+
+        Returns:
+            Q: The built query.
+        """
+        q = Q()
+        for artifact in (a for a in artifacts if not isinstance(a, NopPendingArtifact)):
+            q |= artifact.artifact_q()
+        return q
+
+    def _batch_artifacts(self):
+        """
+        Build a flattened collection of pending artifacts.
+        A NopPendingArtifact is yielded when the content has no artifacts.
+
+        Returns:
+            BatchIterator: Flattened iterable of PendingArtifact.
+        """
+        def build():
+            for content in self.content:
+                if content.artifacts:
+                    for artifact in content.artifacts:
+                        artifact.content = content
+                        yield artifact
+                else:
+                    yield NopPendingArtifact(content)
+        return BatchIterator(build(), 1024)
+
+    @staticmethod
+    def _update_model(fetched, artifact):
+        """
+        Update with a model instance fetched from the DB and contained in the cache.
+        The artifact is matched by digest by order of algorithm strength.
+
+        The cache key is (tuple): (field, digest).
+
+        Args:
+            fetched (dict): Artifacts fetched from the DB.
+                Keyed with (field, digest)
+            artifact (PendingArtifact): A pending artifact.
+
+        """
+        if isinstance(artifact, NopPendingArtifact):
+            return
+        for field in Artifact.RELIABLE_DIGEST_FIELDS:
+            digest = getattr(artifact.model, field)
+            if not digest:
+                continue
+            key = (field, digest)
+            model = fetched.get(key)
+            if model:
+                artifact.update(model)
+                break
 
     def _iter(self):
         """
         Iterate the content and flatten the artifacts.
         Ensure that at least (1) artifact is yielded for each content. When content
-        does not have any un-downloaded artifacts, A NopArtifact is yielded.
+        does not have any un-downloaded artifacts, A NopPendingArtifact is yielded.
+        The PendingArtifact.artifact set with an Artifact fetched from DB.  This is
+        batched to limit the memory footprint.
 
         Yields:
-            RemoteArtifact: The flattened artifacts.
+            PendingArtifact: The flattened pending artifacts.
         """
-        for content in ContentIterator(self.content):
-            if content.artifacts:
-                for artifact in content.artifacts:
-                    artifact.content = content
-                    yield artifact
-            else:
-                artifact = RemoteArtifact(NopArtifact(), NopDownload())
-                artifact.content = content
+        for batch in self._batch_artifacts():
+            q = self._batch_q(batch)
+            fetched = {}
+            for model in Artifact.objects.filter(q):
+                for field in Artifact.RELIABLE_DIGEST_FIELDS:
+                    digest = getattr(model, field)
+                    key = (field, digest)
+                    fetched[key] = model
+            for artifact in batch:
+                self._update_model(fetched, artifact)
                 yield artifact
 
     def __iter__(self):
@@ -220,8 +291,13 @@ class NopDownload(Download):
     A no-operation (NOP) download.
     """
 
-    def __init__(self):
-        super(NopDownload, self).__init__('', None)
+    def __init__(self, artifact):
+        """
+        Args:
+            artifact (PendingArtifact): The pending artifact.
+        """
+        super().__init__('', None)
+        self.attachment = artifact
 
     def _send(self):
         pass
@@ -230,10 +306,24 @@ class NopDownload(Download):
         pass
 
 
-class NopArtifact:
+class NopPendingArtifact(PendingArtifact):
     """
-    No operation (NOP) artifact model.
+    No operation (NOP) pending artifact.
     """
 
-    def __init__(self):
-        self.downloaded = True
+    def __init__(self, content):
+        """
+        Args:
+            content (PendingContent): The associated pending content.
+        """
+        super().__init__(None, '', '')
+        self.content = content
+
+    def downloader(self):
+        return NopDownload(self)
+
+    def settle(self):
+        pass
+
+    def save(self):
+        pass

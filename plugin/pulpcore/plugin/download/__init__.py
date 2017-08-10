@@ -57,3 +57,5 @@ from pulpcore.download import (  # noqa: F401
     ValidationError)
 
 from .factory import Factory  # noqa: F401
+
+from .monitor import DownloadMonitor  # noqa: F401

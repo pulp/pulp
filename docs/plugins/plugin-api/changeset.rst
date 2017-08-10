@@ -16,10 +16,10 @@ New Content & Artifacts
 Classes used to define *new* content to be added to a repository.
 
 
-.. autoclass:: pulpcore.plugin.changeset.RemoteContent
+.. autoclass:: pulpcore.plugin.changeset.PendingContent
     :members: artifacts
 
-.. autoclass:: pulpcore.plugin.changeset.RemoteArtifact
+.. autoclass:: pulpcore.plugin.changeset.PendingArtifact
     :members: content
 
 

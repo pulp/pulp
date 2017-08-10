@@ -36,21 +36,22 @@ class Factory:
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
+            artifact (pulpcore.app.models.DeferredArtifact): An optional artifact.
 
         Returns:
             pulpcore.download.Download: A download object configured using the
                 attributes of the importer.
         """
-        if (not path) and (not artifact):
-            raise ValueError(_('Either "path" or "artifact" is required.'))
-
+        if path:
+            _path = path
+        else:
+            _path = urlparse(url).path
         try:
             builder = Factory.BUILDER[urlparse(url).scheme.lower()]
         except KeyError:
             raise ValueError(_('URL: {u} not supported.'.format(u=url)))
         else:
-            return builder(self, url, path, artifact)
+            return builder(self, url, _path, artifact)
 
     def _file(self, url, path=None, artifact=None):
         """
@@ -64,11 +65,7 @@ class Factory:
         Returns:
             FileDownload:
         """
-        if artifact:
-            _path = artifact.relative_path
-        else:
-            _path = path
-        download = FileDownload(url, FileWriter(_path))
+        download = FileDownload(url, FileWriter(path))
         self._add_validation(download, artifact)
         return download
 
@@ -84,11 +81,7 @@ class Factory:
         Returns:
             HttpDownload: An http download.
         """
-        if artifact:
-            _path = artifact.relative_path
-        else:
-            _path = path
-        download = HttpDownload(url, FileWriter(_path))
+        download = HttpDownload(url, FileWriter(path))
         download.user.name = self.importer.basic_auth_user
         download.user.password = self.importer.basic_auth_password
         self._add_validation(download, artifact)
@@ -106,11 +99,7 @@ class Factory:
         Returns:
             HttpDownload: An https download.
         """
-        if artifact:
-            _path = artifact.relative_path
-        else:
-            _path = path
-        download = HttpDownload(url, FileWriter(_path))
+        download = HttpDownload(url, FileWriter(path))
         download.ssl.ca_certificate = self.importer.ssl_ca_certificate.name
         download.ssl.client_certificate = self.importer.ssl_client_certificate.name
         download.ssl.client_key = self.importer.ssl_client_key.name

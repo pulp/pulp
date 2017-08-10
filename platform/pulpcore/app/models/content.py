@@ -43,6 +43,37 @@ class Artifact(Model):
     sha384 = models.CharField(max_length=96, blank=False, null=False, unique=True, db_index=True)
     sha512 = models.CharField(max_length=128, blank=False, null=False, unique=True, db_index=True)
 
+    # All digest fields ordered by algorithm strength.
+    DIGEST_FIELDS = (
+        'sha512',
+        'sha384',
+        'sha256',
+        'sha224',
+        'sha1',
+        'md5',
+    )
+
+    # Reliable digest fields ordered by algorithm strength.
+    RELIABLE_DIGEST_FIELDS = DIGEST_FIELDS[:-3]
+
+    def is_equal(self, other):
+        """
+        Is equal by matching digest.
+
+        Args:
+            other (Artifact): A artifact to match.
+
+        Returns:
+            bool: True when equal.
+        """
+        for field in Artifact.RELIABLE_DIGEST_FIELDS[:-1]:
+            digest = getattr(self, field)
+            if not digest:
+                continue
+            if digest == getattr(other, field):
+                return True
+        return False
+
 
 class Content(MasterModel):
     """
@@ -126,5 +157,9 @@ class DeferredArtifact(Model):
     sha256 = models.CharField(max_length=64, blank=True, null=True)
     sha384 = models.CharField(max_length=96, blank=True, null=True)
     sha512 = models.CharField(max_length=128, blank=True, null=True)
+
     content_artifact = models.ForeignKey(ContentArtifact, on_delete=models.CASCADE)
     importer = models.ForeignKey('Importer', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('content_artifact', 'importer')
