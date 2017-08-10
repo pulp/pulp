@@ -6,10 +6,10 @@ from django.db.utils import IntegrityError
 from django.db import transaction
 
 from ..download import Batch
-from ..models import ProgressBar, DownloadCatalog, RepositoryContent
+from ..models import ContentArtifact, DeferredArtifact, ProgressBar, RepositoryContent
 from ..tasking import Task
 
-from .iterator import BatchIterator, DownloadIterator
+from .iterator import ArtifactIterator, BatchIterator, ContentIterator, DownloadIterator
 from .report import ChangeReport
 
 
@@ -84,13 +84,28 @@ class ChangeSet:
         """
         return self.importer.repository
 
+    def _downloads(self):
+        """
+        Get an iterable (flattened) of download objects for all pending artifacts.
+        Builds an iterator chain which provides streams-processing of the pending content
+        and related artifacts.  Each iterator in the chain has logic for transforming
+        the objects being iterated.  See each iterator for details.
+
+        Returns:
+            DownloadIterator: An iterable of download objects.
+        """
+        content = ContentIterator((c.bind(self) for c in self.additions))
+        artifacts = ArtifactIterator(content)
+        downloads = DownloadIterator(artifacts, self.deferred)
+        return downloads
+
     def _add_content(self, content):
         """
         Add the specified content to the repository.
         Download catalog entries are created foreach artifact.
 
         Args:
-            content (RemoteContent): The content to be added.
+            content (PendingContent): The content to be added.
         """
         try:
             association = RepositoryContent(
@@ -100,24 +115,6 @@ class ChangeSet:
         except IntegrityError:
             # Duplicate
             pass
-        for artifact in content.artifacts:
-            log.info(
-                _('Cataloging artifact: %(a)s'),
-                {
-                    'a', artifact
-                })
-            try:
-                entry = DownloadCatalog()
-                entry.importer = self.importer
-                entry.url = artifact.download.url
-                entry.artifact = artifact.model
-                entry.save()
-            except IntegrityError:
-                entry = DownloadCatalog.objects.filter(
-                    importer=self.importer,
-                    artifact=artifact)
-                entry.url = artifact.download.url
-                entry.save()
 
     def _remove_content(self, content):
         """
@@ -127,9 +124,9 @@ class ChangeSet:
         Args:
             content (pulpcore.plugin.Content): A content model to be removed.
         """
-        q_set = DownloadCatalog.objects.filter(
+        q_set = DeferredArtifact.objects.filter(
             importer=self.importer,
-            artifact__in=content.artifacts.all())
+            content_artifact__in=ContentArtifact.objects.filter(content=content))
         q_set.delete()
         q_set = RepositoryContent.objects.filter(
             repository=self.repository,
@@ -149,7 +146,7 @@ class ChangeSet:
             {
                 'r': self.repository.name
             })
-        with Batch(DownloadIterator(self.additions, self.deferred)) as batch:
+        with Batch(self._downloads()) as batch:
             with ProgressBar(message=_('Add Content'), total=len(self.additions)) as bar:
                 for plan in batch():
                     artifact = plan.download.attachment
@@ -188,7 +185,7 @@ class ChangeSet:
                 'r': self.repository.name
             })
         with ProgressBar(message=_('Remove Content'), total=len(self.removals)) as bar:
-            for batch in BatchIterator(self.removals, 100):
+            for batch in BatchIterator(self.removals, 1000):
                 with transaction.atomic():
                     for content in batch:
                         self._remove_content(content)

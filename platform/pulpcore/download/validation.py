@@ -208,25 +208,6 @@ class DigestValidation(Validation):
         'md5',
     )
 
-    @staticmethod
-    def _find_algorithm(name):
-        """
-        Find the hash algorithm by name in hashlib.
-
-        Args:
-            name: The algorithm name.
-
-        Returns:
-            hashlib.Algorithm: The algorithm object.
-
-        Raises:
-            ValueError: When not found.
-        """
-        try:
-            return getattr(hashlib, name.lower())()
-        except AttributeError:
-            raise ValueError(_('Algorithm {n} not supported').format(n=name))
-
     def __init__(self, algorithm, digest, enforced=True):
         """
         Args:
@@ -238,7 +219,7 @@ class DigestValidation(Validation):
             ValueError: When `algorithm` not supported by hashlib.
         """
         super(DigestValidation, self).__init__(enforced)
-        self.algorithm = self._find_algorithm(algorithm)
+        self.algorithm = hashlib.new(algorithm)
         self.expected = digest
         self.actual = None
 
@@ -268,7 +249,8 @@ class DigestValidation(Validation):
             log.warn(str(error))
 
     def __str__(self):
-        return _(
-            'DigestValidation: alg={al} expected={e} actual={a}').format(al=self.algorithm,
-                                                                         e=self.expected,
-                                                                         a=self.actual)
+        description = _('DigestValidation: alg={al} expected={e} actual={a}')
+        return description.format(
+            al=self.algorithm,
+            e=self.expected,
+            a=self.actual)

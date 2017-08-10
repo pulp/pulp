@@ -3,12 +3,11 @@
 The ``ChangeSet`` is the primary object used by plugin writers to support the Importer.
 It represents a set of changes to be made to the repository in terms of content
 that needs to be added (additions) and content that needs to be removed (removals).
-The term `Remote` is used to describe the repository that the importer is synchronizing
-with.  The term ``RemoteContent`` is content contained in the remote repository.  The
-term ``RemoteArtifact`` is an artifact associated with a `RemoteContent` unit.
+The term `remote` is used to describe the repository that the importer is synchronizing
+with.  The term ``PendingContent`` is content contained in the remote repository.
 
 Plugin writers need to pass `additions` to the `ChangeSet` as a collection of
-`RemoteContent`.  In other words, `additions` are a collection of content in the remote
+`PendingContent`.  In other words, `additions` are a collection of content in the remote
 repository that is not in the (local) Pulp repository and it needs to be added.
 
 Plugin writers need to pass `removals` to the `ChangeSet` as a collection of `Content`
@@ -37,7 +36,7 @@ Examples:
     >>> from django.db.models import Q
     >>> from collections import namedtuple
     >>> from pulpcore.plugin.changeset import (
-    >>>     ChangeSet, RemoteContent, RemoteArtifact, SizedIterable)
+    >>>     ChangeSet, PendingArtifact, PendingContent, SizedIterable)
     >>> from pulpcore.plugin.models import Artifact, Content, Importer, Repository
     >>>
     >>>
@@ -54,25 +53,23 @@ Examples:
     >>>         # Using the set of additions defined by the delta and the metadata,
     >>>         # build and yield the content that needs to be added.
     >>>
-    >>>         for thing in metadata:
+    >>>         for item in metadata:
     >>>             # Needed?
-    >>>             if not thing.natural_key in delta.additions:
+    >>>             if not item.natural_key in delta.additions:
     >>>                 continue
     >>>             # Create a concrete model instance for Thing content
     >>>             # using the (thing) metadata.
-    >>>             model = Thing(...)
-    >>>             # Create a remote content instance using the model.
-    >>>             content = RemoteContent(model)
-    >>>             # Create a remote artifact for each file associated with the remote content.
-    >>>             for file in thing:
-    >>>                 # create the artifact model instance.
-    >>>                 model = Artifact(...)
-    >>>                 # Create an object that may be used to download the file.
-    >>>                 download = self.get_download(...)
-    >>>                 # Create the remote artifact with the model instance and the download.
-    >>>                 artifact = RemoteArtifact(model, download)
-    >>>                 # Add the remote artifact to the remote content.
-    >>>                 content.artifacts.add(artifact)
+    >>>             thing = Thing(...)
+    >>>             # Create a pending content instance using the model along with a
+    >>>             # pending artifact for each file associated with the content.
+    >>>             content = PendingContent(
+    >>>                 thing,
+    >>>                 artifacts={
+    >>>                     PendingArtifact(
+    >>>                         Artifact(size=1024, sha256='...'), 'http://..', 'one.img'),
+    >>>                     PendingArtifact(
+    >>>                         Artifact(size=4888, sha256='...'), 'http://..', 'two.img'),
+    >>>                 })
     >>>             yield content
     >>>
     >>>     def _fetch_removals(self, delta):
@@ -136,5 +133,5 @@ Examples:
 
 from .iterator import BatchIterator  # noqa
 from .main import ChangeSet, SizedIterable  # noqa
-from .model import RemoteContent, RemoteArtifact  # noqa
+from .model import PendingArtifact, PendingContent  # noqa
 from .report import ChangeReport, ChangeFailed  # noqa
