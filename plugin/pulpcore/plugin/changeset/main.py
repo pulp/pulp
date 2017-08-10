@@ -1,3 +1,4 @@
+import itertools
 from collections.abc import Sized, Iterable
 from gettext import gettext as _
 from logging import getLogger
@@ -41,6 +42,9 @@ class ChangeSet:
         removals (SizedIterable): The content IDs to be removed.
         deferred (bool): Downloading is deferred.  When true, downloads are not performed
             but content is still created and added to the repository.
+        added (int): The number of content units successfully added.
+        removed (int): The number of content units successfully removed.
+        failed (int): The number of changes that failed.
 
     Examples:
         >>>
@@ -72,7 +76,9 @@ class ChangeSet:
         self.importer = importer
         self.additions = additions
         self.removals = removals
-        self.deferred = False
+        self.added = 0
+        self.removed = 0
+        self.failed = 0
 
     @property
     def repository(self):
@@ -96,7 +102,7 @@ class ChangeSet:
         """
         content = ContentIterator((c.bind(self) for c in self.additions))
         artifacts = ArtifactIterator(content)
-        downloads = DownloadIterator(artifacts, self.deferred)
+        downloads = DownloadIterator(artifacts, self.importer.is_deferred)
         return downloads
 
     def _add_content(self, content):
@@ -206,10 +212,31 @@ class ChangeSet:
             {
                 'r': self.repository.name
             })
-        for report in self._apply_additions():
+
+        for report in itertools.chain(self._apply_additions(), self._apply_removals()):
+            if report.error:
+                self.failed += 1
+            elif report.action == ChangeReport.ADDED:
+                self.added += 1
+            else:
+                self.removed += 1
             yield report
-        for report in self._apply_removals():
-            yield report
+
+        log.info(
+            _('ChangeSet complete: added:%(a)d, removed:%(r)d, failed:%(f)d'),
+            {
+                'a': self.added,
+                'r': self.removed,
+                'f': self.failed
+            })
+
+    def apply_and_drain(self):
+        """
+        Call apply() then iterate and discard the change reports. This is useful when the caller is
+        only interested in the added, removed and failed statistics.
+        """
+        for x in self.apply():
+            pass
 
 
 class SizedIterable(Sized, Iterable):
