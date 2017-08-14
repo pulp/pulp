@@ -60,7 +60,7 @@ class ProgressReport(Model):
     total = models.IntegerField(null=True)
     done = models.IntegerField(default=0)
 
-    task = models.ForeignKey("Task", on_delete=models.CASCADE)
+    task = models.ForeignKey("Task", related_name='progress_reports', on_delete=models.CASCADE)
     suffix = models.TextField(default='')
 
     _using_context_manager = False
