@@ -180,8 +180,8 @@ class FileSystem(Storage):
     @staticmethod
     def _save(path, content):
         """
-        Copy the content of a file to the specified path.
-        The directory tree is created as needed.
+        Save the content of a file to the specified path.
+        The directory tree is created as needed.  The file is linked when possible.
         Required by the Storage API.
 
         Args:
@@ -191,18 +191,26 @@ class FileSystem(Storage):
         Returns:
             str: Final storage page.
         """
+        def copy():
+            content.open(mode='rb')
+            with content:
+                with open(path, 'wb+') as fp:
+                    while True:
+                        bfr = content.read(1024000)
+                        if bfr:
+                            fp.write(bfr)
+                        else:
+                            break
         # Create dir
         FileSystem.mkdir(os.path.dirname(path))
         # Transfer content
-        content.open(mode='rb')
-        with content:
-            with open(path, 'wb+') as fp:
-                while True:
-                    bfr = content.read(1024000)
-                    if bfr:
-                        fp.write(bfr)
-                    else:
-                        break
+        try:
+            os.link(content.name, path)
+        except OSError as e:
+            if e.errno in (errno.EXDEV, errno.ENOENT):
+                copy()
+            else:
+                raise
         # Propagate permissions
         if os.path.exists(content.name):
             st = os.stat(content.name)
