@@ -37,7 +37,7 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('Timestamp of the most recent removal of content to this repository.'),
         read_only=True
     )
-    notes = NotesKeyValueRelatedField()
+    notes = NotesKeyValueRelatedField(default={})
     scratchpad = ScratchpadKeyValueRelatedField()
     importers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
                                                     parent_lookup_kwargs={'repository_name':
