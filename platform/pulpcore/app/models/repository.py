@@ -165,6 +165,16 @@ class Importer(ContentAdaptor):
     class Meta(ContentAdaptor.Meta):
         default_related_name = 'importers'
 
+    @property
+    def is_deferred(self):
+        """
+        Get whether downloading is deferred.
+
+        Returns:
+            bool: True when deferred.
+        """
+        return self.download_policy != self.IMMEDIATE
+
 
 class Publisher(ContentAdaptor):
     """

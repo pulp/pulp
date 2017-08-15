@@ -1,4 +1,5 @@
 from gettext import gettext as _
+import logging
 
 from celery import shared_task
 from django.http import QueryDict
@@ -7,6 +8,9 @@ from pulpcore.app import models
 from pulpcore.app.apps import get_plugin_config
 from pulpcore.tasking.services import storage
 from pulpcore.tasking.tasks import UserFacingTask
+
+
+log = logging.getLogger(__name__)
 
 
 @shared_task(base=UserFacingTask)
@@ -72,4 +76,6 @@ def sync(repo_name, importer_name):
 
     with storage.working_dir_context() as working_dir:
         importer.working_dir = working_dir
+        log.info(_('Starting sync: repository=%(repo)s importer=%(imp)s'),
+                 {'repo': repo_name, 'imp': importer_name})
         importer.sync()
