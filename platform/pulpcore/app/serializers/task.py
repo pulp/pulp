@@ -3,7 +3,7 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer
+from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
 
 
 class TaskTagSerializer(serializers.ModelSerializer):
@@ -73,11 +73,17 @@ class TaskSerializer(ModelSerializer):
         read_only=True
     )
 
+    progress_reports = ProgressReportSerializer(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = models.Task
         fields = ModelSerializer.Meta.fields + ('group', 'state', 'started_at',
                                                 'finished_at', 'non_fatal_errors',
-                                                'error', 'worker', 'parent', 'tags')
+                                                'error', 'worker', 'parent', 'tags',
+                                                'progress_reports')
 
 
 class WorkerSerializer(ModelSerializer):
