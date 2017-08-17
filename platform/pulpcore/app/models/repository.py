@@ -4,7 +4,7 @@ Repository related Django models.
 from django.db import models
 from django.utils import timezone
 
-from pulpcore.app.models import Model, Notes, Scratchpad, MasterModel, GenericKeyValueRelation
+from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
 from pulpcore.app.models.storage import TLSLocation
 
 
@@ -21,7 +21,6 @@ class Repository(Model):
 
     Relations:
 
-        scratchpad (GenericKeyValueRelation): Arbitrary information stashed on the repository.
         notes (GenericKeyValueRelation): Arbitrary repository properties.
         content (models.ManyToManyField): Associated content.
     """
@@ -31,7 +30,6 @@ class Repository(Model):
     last_content_added = models.DateTimeField(blank=True, null=True)
     last_content_removed = models.DateTimeField(blank=True, null=True)
 
-    scratchpad = GenericKeyValueRelation(Scratchpad)
     notes = GenericKeyValueRelation(Notes)
 
     content = models.ManyToManyField('Content', through='RepositoryContent',
@@ -116,7 +114,6 @@ class Importer(ContentAdaptor):
 
     Relations:
 
-        scratchpad (GenericKeyValueRelation): Arbitrary information stashed by the importer.
     """
     TYPE = 'importer'
 
@@ -159,8 +156,6 @@ class Importer(ContentAdaptor):
 
     download_policy = models.TextField(choices=DOWNLOAD_POLICIES)
     last_sync = models.DateTimeField(blank=True, null=True)
-
-    scratchpad = GenericKeyValueRelation(Scratchpad)
 
     class Meta(ContentAdaptor.Meta):
         default_related_name = 'importers'

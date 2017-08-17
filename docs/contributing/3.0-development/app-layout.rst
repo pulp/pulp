@@ -195,8 +195,8 @@ Generic Key/Value Stores
 In Pulp 2, we regularly stored arbitrary data in various fields on our models.
 This data was schemaless, which creates an interesting situation for Pulp 3,
 which has a well-defined schema and enforced relational constraints. The three
-Generic K/V Fields, importable from ``pulp.app.models`` are :class:`pulp.app.models.Config`,
-:class:`pulp.app.models.Notes`, and :class:`pulp.app.models.Scratchpad`. They all share the
+Generic K/V Fields, importable from ``pulp.app.models`` are :class:`pulp.app.models.Config` and
+:class:`pulp.app.models.Notes`. They all share the
 same API, and all store pairs of keys and values, where the keys and values are always strings.
 
 These fields serve different purposes:
@@ -205,8 +205,6 @@ Config
     Used by both Pulp and Users to configure a given object.
 Notes
     Used by Users to store arbitrary notes on a given object.
-Scratchpad
-    Used by Pulp to store arbitrary data on a given object.
 
 Keys and values associated with a model instance using these fields can be accessed using
 the normal Django model querying API, but also expose the keys and values in a

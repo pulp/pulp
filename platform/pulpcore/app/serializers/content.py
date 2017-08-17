@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
-from pulpcore.app.serializers import base, fields, generic
+from pulpcore.app.serializers import base, fields
 
 
 UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
@@ -13,7 +13,12 @@ UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 
 class ContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
-    notes = generic.NotesKeyValueRelatedField()
+
+    notes = base.GenericKeyValueRelatedField(
+        help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
+        required=False
+    )
+
     artifacts = fields.ContentArtifactsField(
         help_text=_("A dict mapping relative paths inside the Content to the corresponding"
                     "Artifact URLs. E.g.: {'relative/path': "

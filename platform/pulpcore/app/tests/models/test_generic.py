@@ -14,7 +14,7 @@ class GenericMutableMappingTestCase(TestCase):
         return instance.notes
 
     def setUp(self):
-        # can use any model with a GenericKeyValueMapping relation (e.g. notes/config/scratchpad)
+        # can use any model with a GenericKeyValueMapping relation (e.g. notes/config)
         self.notes = self._gen_notes('test instance')
 
     def test_mapping_types(self):

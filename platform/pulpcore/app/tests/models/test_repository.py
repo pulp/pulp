@@ -17,12 +17,11 @@ class RepositoryExample(TestCase):
 
     def create_repository(self):
         """
-        Create a repository with sample notes and scratchpad.
+        Create a repository with sample notes.
         """
         repository = Repository(name=RepositoryExample.NAME)
         repository.notes.mapping['organization'] = 'Engineering'
         repository.notes.mapping.update({'age': 10})
-        repository.scratchpad.mapping['hello'] = 'world'
         repository.save()
 
     def delete_repository(self):
@@ -81,10 +80,8 @@ class RepositoryExample(TestCase):
         """
         repository = Repository.objects.get(name=RepositoryExample.NAME)
 
-        # Read notes and scratchpad
+        # Read notes
         self.assertEqual(repository.notes.mapping['organization'], 'Engineering')
-        self.assertEqual(repository.scratchpad.mapping['hello'], 'world')
-        self.assertEqual(repository.scratchpad.mapping.get('xx', 'good'), 'good')
 
         # This is what happens when a key is not in the notes and [] is used.
         with self.assertRaises(KeyError):
