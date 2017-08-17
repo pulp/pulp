@@ -20,16 +20,24 @@ class Pending:
 
     Attributes:
         model (Model): A pending (wanted) model instance.
-        settled (bool): All matters are settled and the object is ready
-            to be (optionally created) and added to the repository.
         fetched (bool): model has been fetched from the DB.
+        _settled (bool): All matters are settled and the object is ready
+            to be (optionally created) and added to the repository.
     """
 
     __slots__ = (
         'model',
-        'settled',
         'fetched',
+        '_settled'
     )
+
+    @property
+    def settled(self):
+        """
+        Returns:
+            bool: All matters are settled.  See: _settled.
+        """
+        return self.settled
 
     def __init__(self, model):
         """
@@ -37,8 +45,8 @@ class Pending:
             model (Model): A pending (wanted) model instance.
         """
         self.model = model
-        self.settled = False
         self.fetched = False
+        self._settled = False
 
     def settle(self):
         """
@@ -163,7 +171,7 @@ class PendingContent(Pending):
             if not artifact.settled:
                 return
         self.save()
-        self.settled = True
+        self._settled = True
 
     def save(self):
         """
@@ -216,7 +224,7 @@ class PendingArtifact(Pending):
         '_path',
     )
 
-    def __init__(self, model, url, relative_path):
+    def __init__(self, model, url, relative_path, content=None):
         """
         Args:
             model (pulpcore.plugin.models.Artifact): A pending artifact model instance.
@@ -224,13 +232,17 @@ class PendingArtifact(Pending):
                 pending artifact in the DB.
             url (str): The URL used to download the artifact.
             relative_path (str): The relative path within the content.
+            content (PendingContent): The associated pending content.
+                This is the reverse relationship.
         """
         super().__init__(model)
         self.url = url
         self.relative_path = relative_path
+        self.content = content
         self.monitor = None
-        self.content = None
         self._path = ''
+        if content:
+            content.artifacts.add(self)
 
     @property
     def changeset(self):
@@ -288,7 +300,7 @@ class PendingArtifact(Pending):
         Notes:
             Called whenever an artifact has been processed.
         """
-        self.settled = True
+        self._settled = True
 
     def save(self):
         """

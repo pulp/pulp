@@ -26,7 +26,7 @@ class Batch:
         iterator (PlanIterator): Used to iterate downloads as they complete.
         context (SharedContext): A shared download context.
         feeder (DownloadFeeder): Used to feed submit downloads to the executor.
-        is_shutdown (bool): Batch has been shutdown.
+        _is_shutdown (bool): Batch has been shutdown.
 
     Notes:
         * The batch should be used as a context manager.
@@ -52,12 +52,13 @@ class Batch:
         >>>
     """
 
-    def __init__(self, downloads, concurrent=CONCURRENT, backlog=BACKLOG):
+    def __init__(self, downloads, concurrent=CONCURRENT, backlog=BACKLOG, context=None):
         """
         Args:
             downloads (collections.abc.Iterable): An Iterable of downloads.
             concurrent (int): The number of downloads to execute in concurrently.
             backlog (int): The number of downloads kept in memory.
+            context (SharedContext): An (optional) shared download context.
 
         Raises:
             ValueError: concurrent less than 2 or backlog is less than concurrent.
@@ -67,9 +68,17 @@ class Batch:
         self.concurrent = concurrent
         self.iterator = PlanIterator(backlog)
         self.executor = BatchExecutor(concurrent=concurrent, backlog=backlog)
-        self.context = Context()
+        self.context = context or Context()
         self.feeder = DownloadFeeder(self)
-        self.is_shutdown = False
+        self._is_shutdown = False
+
+    @property
+    def is_shutdown(self):
+        """
+        Returns:
+            bool: Batch has been shutdown.
+        """
+        return self._is_shutdown
 
     def download(self):
         """
@@ -96,9 +105,9 @@ class Batch:
             >>> with Batch(..) as batch:
             >>>    # ...
         """
-        if self.is_shutdown:
+        if self._is_shutdown:
             return
-        self.is_shutdown = True
+        self._is_shutdown = True
         log.debug(_('%(batch)s - shutdown'), {'batch': self})
         self.feeder.shutdown()
         self.executor.shutdown()
