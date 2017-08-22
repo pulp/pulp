@@ -218,6 +218,9 @@ class RepositoryContent(Model):
     content = models.ForeignKey('Content', on_delete=models.CASCADE)
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('repository', 'content')
+
     def save(self, *args, **kwargs):
         """
         Save the association.
