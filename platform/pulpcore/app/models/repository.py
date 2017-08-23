@@ -179,7 +179,6 @@ class Publisher(ContentAdaptor):
 
         auto_publish (models.BooleanField): Indicates that the adaptor may publish automatically
             when the associated repository's content has changed.
-        relative_path (models.TextField): The (relative) path component of the published url.
         last_published (models.DatetimeField): When the last successful publish occurred.
 
     Relations:
@@ -190,7 +189,6 @@ class Publisher(ContentAdaptor):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
 
     auto_publish = models.BooleanField(default=True)
-    relative_path = models.TextField(blank=True)
     last_published = models.DateTimeField(blank=True, null=True)
 
     class Meta(ContentAdaptor.Meta):

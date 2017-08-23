@@ -165,11 +165,6 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
                     ' the repository content has changed.'),
         required=False
     )
-    relative_path = serializers.CharField(
-        help_text=_('The (relative) path component of the published url'),
-        required=False,
-        allow_blank=True
-    )
     last_published = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent successful publish.'),
         read_only=True
@@ -179,7 +174,7 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'repository', 'auto_publish', 'relative_path', 'last_published'
+            'name', 'last_updated', 'repository', 'auto_publish', 'last_published'
         )
 
 

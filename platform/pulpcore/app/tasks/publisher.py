@@ -1,10 +1,18 @@
+from datetime import datetime
+from gettext import gettext as _
+from logging import getLogger
+
 from celery import shared_task
+from django.db import transaction
 from django.http import QueryDict
 
 from pulpcore.app import models
 from pulpcore.app.apps import get_plugin_config
 from pulpcore.tasking.services import storage
 from pulpcore.tasking.tasks import UserFacingTask
+
+
+log = getLogger(__name__)
 
 
 @shared_task(base=UserFacingTask)
@@ -59,9 +67,32 @@ def publish(repo_name, publisher_name):
         repo_name (str): unique name to specify the repository.
         publisher_name (str): name to specify the Publisher.
     """
-    publisher = models.Publisher.objects.get(name=publisher_name,
-                                             repository__name=repo_name).cast()
+    publisher = models.Publisher.objects.get(
+        name=publisher_name,
+        repository__name=repo_name).cast()
+    log.warn(
+        _('Publishing: repository=%(r)s, publisher=%(p)s'),
+        {
+            'r': repo_name,
+            'p': publisher_name
+        })
+    with transaction.atomic():
+        publication = models.Publication(publisher=publisher)
+        publisher.publication = publication
+        publication.save()
+        with storage.working_dir_context() as working_dir:
+                publisher.working_dir = working_dir
+                publisher.publish()
+                publisher.last_published = datetime.utcnow()
+                publisher.save()
+                distributions = models.Distribution.objects.filter(
+                    publisher=publisher,
+                    auto_updated=True)
+                distributions.update(publication=publication)
+    log.warn(
+        _('Publication: %(p)s created'),
+        {
+            'p': publication.pk
+        })
 
-    with storage.working_dir_context() as working_dir:
-        publisher.working_dir = working_dir
-        publisher.publish()
+    # TODO: Replace WARN w/ INFO or DEBUG.

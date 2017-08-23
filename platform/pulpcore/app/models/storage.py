@@ -223,6 +223,25 @@ class FileSystem(Storage):
         """
         return os.path.join(settings.MEDIA_ROOT, 'artifact', sha256digest[0:2], sha256digest[2:])
 
+    @staticmethod
+    def published_metadata_path(model, name):
+        """
+        Get the storage path for published metadata.
+
+        Args:
+            model (pulpcore.app.models.PublishedMetadata): A model instance.
+            name (str): The file name.
+
+        Returns:
+            str: The absolute storage path.
+        """
+        return os.path.join(
+            settings.MEDIA_ROOT,
+            'published',
+            'metadata',
+            str(model.pk),
+            name)
+
     def get_available_name(self, name, max_length=None):
         """
         Get the available absolute path based on the name requested.
