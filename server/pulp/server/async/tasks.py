@@ -425,7 +425,7 @@ class ReservedTaskMixin(object):
                 args=[task_name, inner_task_id, resource_id, args, kwargs],
                 queue=RESOURCE_MANAGER_QUEUE
             )
-        except:
+        except Exception:
             TaskStatus.objects(task_id=task_status.task_id).update(state=constants.CALL_ERROR_STATE)
             raise
 
@@ -469,7 +469,7 @@ class Task(PulpTask, ReservedTaskMixin):
 
         try:
             async_result = super(Task, self).apply_async(*args, **kwargs)
-        except:
+        except Exception:
             if 'task_id' in kwargs:
                 TaskStatus.objects(task_id=kwargs['task_id']).update(
                     state=constants.CALL_ERROR_STATE
@@ -503,15 +503,20 @@ class Task(PulpTask, ReservedTaskMixin):
             _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
-        # Skip updating status for eagerly executed tasks, since we don't want to track
-        # synchronous tasks in our database.
+        # Also update the worker_name to cover cases where apply_async was called without
+        # providing the worker name up-front. Skip updating status for eagerly executed tasks,
+        # since we don't want to track synchronous tasks in our database.
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             start_time = dateutils.format_iso8601_datetime(now)
+            worker_name = self.request.hostname
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
             TaskStatus.objects(task_id=self.request.id).update_one(
-                set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
+                set__state=constants.CALL_RUNNING_STATE,
+                set__start_time=start_time,
+                set__worker_name=worker_name,
+                upsert=True)
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
 
