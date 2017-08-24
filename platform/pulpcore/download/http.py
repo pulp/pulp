@@ -3,6 +3,7 @@ from logging import getLogger
 from http import HTTPStatus
 from requests import Session
 from requests.exceptions import SSLError
+from urllib.parse import urlparse
 
 from .error import DownloadFailed, NotAuthorized, NotFound
 from .single import Download
@@ -118,13 +119,25 @@ class HttpDownload(Download):
             The session can be shared between download but this needs to be
             facilitated by a 3rd object by setting the `context` to be the same.
         """
+        parsed_url = urlparse(self.url)
+        properties = (
+            Session,
+            parsed_url.hostname,
+            parsed_url.port,
+            self.user.name,
+            self.user.password,
+            self.proxy_url,
+            self.ssl.client_certificate
+        )
+        key = hash(properties)
         with self.context as context:
             try:
-                return context.session
-            except AttributeError:
+                session = context.cache.get(key)
+            except LookupError:
                 session = Session()
-                context.session = session
-                return session
+                session.stream = True
+                context.cache.put(key, session)
+            return session
 
     def _find_method(self, name):
         """

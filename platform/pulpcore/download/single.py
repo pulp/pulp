@@ -1,8 +1,7 @@
 from gettext import gettext as _
 from logging import getLogger
-from threading import RLock
 
-
+from .context import Context
 from .error import DownloadFailed
 from .event import (
     EventRouter,
@@ -273,50 +272,3 @@ class Download:
             u=self.url,
             w=self.writer,
             r=self.retries)
-
-
-class Context:
-    """
-    A download context.
-    Each download has a reference to a context used to safely share resources
-    such as HTTP sessions and authentication tokens.
-
-    Attributes:
-        properties (dict): Arbitrary properties.
-        _mutex (RLock): The object mutex.
-
-    Examples:
-        >>>
-        >>> def get_token(self):
-        >>>     with self.context as context:
-        >>>         try:
-        >>>             return context.token
-        >>>         except KeyError:
-        >>>             token = self.generate_token()
-        >>>             context.token = token
-        >>>             return token
-        >>>
-    """
-
-    def __init__(self, **properties):
-        """
-        Args:
-            properties (dict): Initial properties.
-        """
-        self.__dict__.update(properties)
-        self.__dict__['MUTEX'] = RLock()
-
-    @property
-    def _mutex(self):
-        return self.__dict__['MUTEX']
-
-    def __setattr__(self, key, value):
-        with self._mutex:
-            super(Context, self).__setattr__(key, value)
-
-    def __enter__(self):
-        self._mutex.acquire()
-        return self
-
-    def __exit__(self, *unused):
-        self._mutex.release()
