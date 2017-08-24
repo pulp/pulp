@@ -3,7 +3,7 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import NotesKeyValueRelatedField, ModelSerializer
+from pulpcore.app.serializers import GenericKeyValueRelatedField, ModelSerializer
 
 
 class ConsumerSerializer(ModelSerializer):
@@ -21,7 +21,10 @@ class ConsumerSerializer(ModelSerializer):
         required=False
     )
 
-    notes = NotesKeyValueRelatedField()
+    notes = GenericKeyValueRelatedField(
+        help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
+        required=False
+    )
 
     publishers = serializers.HyperlinkedRelatedField(
         many=True,

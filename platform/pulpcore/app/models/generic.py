@@ -155,11 +155,6 @@ class Notes(GenericKeyValueModel):
     pass
 
 
-class Scratchpad(GenericKeyValueModel):
-    """Used by pulpcore to store arbitrary k/v data on a model."""
-    pass
-
-
 class GenericKeyValueRelation(GenericRelation):
     """
     A version of GenericReleation used when relating to GenericKeyValueModels.

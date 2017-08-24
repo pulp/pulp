@@ -5,9 +5,8 @@ from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
-                                      NotesKeyValueRelatedField, RepositoryRelatedField,
-                                      ScratchpadKeyValueRelatedField, ContentRelatedField,
-                                      FileField,
+                                      RepositoryRelatedField, GenericKeyValueRelatedField,
+                                      ContentRelatedField, FileField,
                                       DetailNestedHyperlinkedRelatedField,
                                       DetailNestedHyperlinkedIdentityField)
 
@@ -37,8 +36,10 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('Timestamp of the most recent removal of content to this repository.'),
         read_only=True
     )
-    notes = NotesKeyValueRelatedField()
-    scratchpad = ScratchpadKeyValueRelatedField()
+    notes = GenericKeyValueRelatedField(
+        help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
+        required=False
+    )
     importers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
                                                     parent_lookup_kwargs={'repository_name':
                                                                           'repository__name'},
@@ -54,7 +55,7 @@ class RepositorySerializer(ModelSerializer):
 
     class Meta:
         model = models.Repository
-        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes', 'scratchpad',
+        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
                                                 'last_content_added', 'last_content_removed',
                                                 'importers', 'publishers', 'content')
 

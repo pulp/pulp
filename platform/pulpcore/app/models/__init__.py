@@ -3,7 +3,7 @@
 from .auth import User  # noqa
 from .base import Model, MasterModel  # noqa
 from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyValueRelation,  # noqa
-                      GenericKeyValueModel, Config, Notes, Scratchpad)  # noqa
+                      GenericKeyValueModel, Config, Notes)  # noqa
 
 from .consumer import Consumer, ConsumerContent  # noqa
 from .content import Content, Artifact, ContentArtifact, DeferredArtifact  # noqa

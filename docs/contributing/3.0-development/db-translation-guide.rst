@@ -105,7 +105,7 @@ associate a generic Django Model with any number of other models that can benefi
 information captured by the generic model.
 
 A good example of this are the various Generic Key/Value stores that can be associated with any other
-Model, "Notes", "Config", and "Scratchpad".
+Model, "Notes" and "Config".
 
 
 MongoEngine to Django Field Conversions
