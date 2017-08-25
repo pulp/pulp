@@ -1,73 +1,117 @@
 """pulp URL Configuration"""
-
-import warnings
-
-from django.core.exceptions import AppRegistryNotReady
 from django.conf.urls import url, include
 from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.views import ContentView, StatusView
 
+import logging
+log = logging.getLogger(__name__)
+
+
+class ViewSetNode:
+    """
+    Each node is a tree that can register nested ViewSets with DRF nested routers.
+
+    The structure of the tree becomes the url heirarchy when the ViewSets are registered.
+
+    Example Structure:
+        RootNode
+          ├─ some-non-nested viewset
+          └─ RepositoryViewSet (non-nested)
+                ├─ PluginPublisherViewSet
+                │   └─ DistributionViewSet
+                ├─ AnotherPluginPublisherViewSet
+                │   └─ DistributionViewSet (This node is attached to all Publisher Detail parents)
+                └─ FileImporterViewSet
+    """
+    def __init__(self, viewset=None):
+        """
+        Create a new node.
+
+        Args:
+            viewset (NamedModelViewSet): If provided, represent this viewset. If not provided, this
+                                         is the root node.
+        """
+        self.viewset = viewset
+        self.children = []
+
+    def add_decendent(self, node):
+        """
+        Add a VSNode to the tree. If node is not a direct child, attempt to add the to each child.
+
+        Some nodes must be added more than once if they have a Master/Detail parent. Using
+        Distributions as an example, DistributionViewset.parent_viewset is PublisherViewSet, which
+        is a MasterViewset. Each of the publisher detail viewsets like FilePublisherViewSEt will
+        have its own router, and the DistributionViewSet must be registered with each.
+
+        Args:
+            node (ViewSetNode): A node that represents a viewset and its decendents.
+        """
+        # Master viewsets do not have endpoints, so they do not need to be registered
+        if node.viewset.is_master_viewset():
+            return
+        # Non-nested viewsets are attached to the root node
+        if not node.viewset.parent_viewset:
+            self.children.append(node)
+        # The node is a direct child if the child.parent_viewset == self.viewset and also
+        # if child.viewset is a master viewset and self.viewset is one of its detail viewsets.
+        elif self.viewset and issubclass(self.viewset, node.viewset.parent_viewset):
+            self.children.append(node)
+        else:
+            for child in self.children:
+                child.add_decendent(node)
+
+    def register_with(self, router):
+        """
+        Register this tree with the specified router and create new routers as necessary.
+
+        Args:
+            router (routers.DefaultRouter): router to register the viewset with.
+            created_routers (list): A running list of all routers.
+        Returns:
+            list: List of new routers, including those created recursively.
+        """
+        created_routers = []
+        # Root node does not need to be registered, and it doesn't need a router either.
+        if self.viewset:
+            router.register(self.viewset.urlpattern(), self.viewset, self.viewset.view_name())
+            if self.children:
+                router = routers.NestedDefaultRouter(router, self.viewset.urlpattern(),
+                                                     lookup=self.viewset.router_lookup)
+                created_routers.append(router)
+        # If we created a new router for the parent, recursively register the children with it
+        for child in self.children:
+            created_routers = created_routers + child.register_with(router)
+        return created_routers
+
+    def __repr__(self):
+        if not self.viewset:
+            return "Root"
+        else:
+            return str(self.viewset)
+
+
+all_viewsets = []
+for app_config in pulp_plugin_configs():
+    for viewset in app_config.named_viewsets.values():
+        all_viewsets.append(viewset)
+
+sorted_by_depth = sorted(all_viewsets, key=lambda vs: vs._get_nest_depth())
+vs_tree = ViewSetNode()
+for viewset in sorted_by_depth:
+    vs_tree.add_decendent(ViewSetNode(viewset))
+
 root_router = routers.DefaultRouter(
     schema_title='Pulp API',
     schema_url='/api/v3'
 )  #: The Pulp Platform v3 API router, which can be used to manually register ViewSets with the API.
 
-# Load non-nested viewsets first, so we can make nested routers with them.
-for app_config in pulp_plugin_configs():
-    for viewset in app_config.named_viewsets.values():
-        if not viewset.nest_prefix:
-            viewset.register_with(root_router)
-
-
-nested_routers = (
-    routers.NestedDefaultRouter(root_router, 'repositories', lookup='repository'),
-)
-
-
-def router_for_nested_viewset(viewset):
-    """
-    Find the router for a nested viewset.
-
-    Args:
-        viewset (pulpcore.app.viewsets.NamedModelViewSet): a viewset for which a nested router
-            should exist
-
-    Returns:
-        routers.NestedDefaultRouter: the nested router whose parent_prefix corresponds to the
-            viewset's nest_prefix attribute.
-
-    Raises:
-        LookupError: if no nested router is found for the viewset.
-
-    """
-    for nrouter in nested_routers:
-        if nrouter.parent_prefix == viewset.nest_prefix:
-            return nrouter
-    raise LookupError('No nested router has prefix {}'.format(viewset.nest_prefix))
-
-
-# go through nested viewsets and register them
-try:
-    for app_config in pulp_plugin_configs():
-        for viewset in app_config.named_viewsets.values():
-            if viewset.nest_prefix:
-                router = router_for_nested_viewset(viewset)
-                viewset.register_with(router)
-except AppRegistryNotReady as ex:
-    # urls is being imported outside of an initialized django project, probably by a docs builder
-    # or something else trying to inspect this module. Instead of exploding here and preventing the
-    # import from succeeding, throw a warning explaining what's happening.
-    warnings.warn("Unable to register plugin viewsets with API router, {}".format(ex.args[0]))
-
-
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
-    url(r'^api/v3/', include(root_router.urls)),
     url(r'^api/v3/status/', StatusView.as_view()),
 ]
 
-
-for nrouter in nested_routers:
-    urlpatterns.append(url(r'^api/v3/', include(nrouter.urls)))
+all_routers = [root_router] + vs_tree.register_with(root_router)
+for router in all_routers:
+    urlpatterns.append(url(r'^api/v3/', include(router.urls)))

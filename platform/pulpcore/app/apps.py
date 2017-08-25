@@ -98,11 +98,12 @@ class PulpPluginAppConfig(apps.AppConfig):
     def import_viewsets(self):
         # circular import avoidance
         from pulpcore.app.viewsets import (GenericNamedModelViewSet, NamedModelViewSet,
-                                           CreateDestroyReadNamedModelViewSet)
+                                           CreateDestroyReadNamedModelViewSet,
+                                           NestedNamedModelViewSet)
         # These viewsets are used as base classes for actual model viewsets and
         # should not be registered
         base_viewsets = [GenericNamedModelViewSet, NamedModelViewSet,
-                         CreateDestroyReadNamedModelViewSet]
+                         CreateDestroyReadNamedModelViewSet, NestedNamedModelViewSet]
         self.named_viewsets = {}
         if module_has_submodule(self.module, VIEWSETS_MODULE_NAME):
             # import the viewsets module and track any interesting viewsets
