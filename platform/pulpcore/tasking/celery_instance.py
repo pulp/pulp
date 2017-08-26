@@ -17,26 +17,26 @@ CELERYBEAT_SCHEDULE = {
 }
 
 
-celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
-celery.conf.update(CELERYBEAT_SCHEDULER='pulpcore.server.async.scheduler.Scheduler')
-celery.conf.update(CELERY_WORKER_DIRECT=True)
-celery.conf.update(CELERY_TASK_SERIALIZER='json')
-celery.conf.update(CELERY_ACCEPT_CONTENT=['json'])
-celery.conf.update(CELERY_REJECT_ON_WORKER_LOST=True)
+celery.conf.update(beat_schedule=CELERYBEAT_SCHEDULE)
+celery.conf.update(beat_scheduler='pulpcore.server.async.scheduler.Scheduler')
+celery.conf.update(worker_direct=True)
+celery.conf.update(task_serializer='json')
+celery.conf.update(accept_content=['json'])
+celery.conf.update(task_reject_on_worker_lost=True)
 
 
 def configure_login_method():
     """
-    Configures the celery object with BROKER_LOGIN_METHOD if not default.
+    Configures the celery object with broker_login_method if not default.
     """
     login_method = settings.BROKER['login_method']
     if login_method is not None:
-        celery.conf.update(BROKER_LOGIN_METHOD=login_method)
+        celery.conf.update(broker_login_method=login_method)
 
 
 def configure_SSL():
     """
-    Configures the celery object with BROKER_USE_SSL options
+    Configures the celery object with broker_use_ssl options
     """
     if settings.BROKER['celery_require_ssl']:
         BROKER_USE_SSL = {
@@ -45,7 +45,7 @@ def configure_SSL():
             'certfile': settings.BROKER['ssl_client_certificate'],
             'cert_reqs': ssl.CERT_REQUIRED,
         }
-        celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
+        celery.conf.update(broker_use_ssl=BROKER_USE_SSL)
 
 
 configure_SSL()
