@@ -122,9 +122,9 @@ class ContentArtifact(Model):
         unique_together = ('content', 'relative_path')
 
 
-class DeferredArtifact(Model):
+class RemoteArtifact(Model):
     """
-    Stores information about an artifact that has not been retrieved yet.
+    Represents a content artifact that is provided by a remote (external) repository.
 
     Importers that want to support deferred download policies should use this model to store
     information required for downloading an Artifact at some point in the future. At a minimum this
@@ -147,7 +147,7 @@ class DeferredArtifact(Model):
         content_artifact (:class:`pulpcore.app.models.GenericKeyValueRelation`): Arbitrary
             information stored with the content.
         importer (:class:`django.db.models.ForeignKey`): Importer that created the
-            DeferredArtifact.
+            RemoteArtifact.
     """
     url = models.TextField(blank=True, validators=[validators.URLValidator])
     size = models.IntegerField(blank=True, null=True)

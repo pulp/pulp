@@ -17,7 +17,7 @@ class Factory:
         >>> importer = ..
         >>> url = ..
         >>> artifact = ..
-        >>> download = Factory(importer).build(url, artifact=artifact)
+        >>> download = Factory(importer).build(url, remote_artifact=artifact)
         >>>
     """
 
@@ -29,14 +29,14 @@ class Factory:
         """
         self.importer = importer
 
-    def build(self, url, path=None, artifact=None):
+    def build(self, url, path=None, remote_artifact=None):
         """
         Build a downloader.
 
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.DeferredArtifact): An optional artifact.
+            remote_artifact (pulpcore.app.models.RemoteArtifact): An optional remote artifact.
 
         Returns:
             pulpcore.download.Download: A download object configured using the
@@ -51,7 +51,7 @@ class Factory:
         except KeyError:
             raise ValueError(_('URL: {u} not supported.'.format(u=url)))
         else:
-            return builder(self, url, _path, artifact)
+            return builder(self, url, _path, remote_artifact)
 
     def _file(self, url, path=None, artifact=None):
         """
