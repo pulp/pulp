@@ -6,7 +6,7 @@ from django.db.utils import IntegrityError
 from django.db import transaction
 from django.core.files import File
 
-from pulpcore.app.models import Artifact, ContentArtifact, DeferredArtifact
+from pulpcore.app.models import Artifact, ContentArtifact, RemoteArtifact
 from pulpcore.download import Event
 from pulpcore.plugin.download.monitor import DownloadMonitor
 
@@ -332,7 +332,7 @@ class PendingArtifact(Pending):
 
         try:
             with transaction.atomic():
-                deferred_artifact = DeferredArtifact(
+                deferred_artifact = RemoteArtifact(
                     url=self.url,
                     importer=self.importer,
                     content_artifact=content_artifact,
@@ -340,7 +340,7 @@ class PendingArtifact(Pending):
                     **digests)
                 deferred_artifact.save()
         except IntegrityError:
-            q_set = DeferredArtifact.objects.filter(
+            q_set = RemoteArtifact.objects.filter(
                 importer=self.importer,
                 content_artifact=content_artifact)
             q_set.update(

@@ -7,7 +7,7 @@ from django.db.utils import IntegrityError
 from django.db import transaction
 
 from ..download import Batch
-from ..models import ContentArtifact, DeferredArtifact, ProgressBar, RepositoryContent
+from ..models import ContentArtifact, RemoteArtifact, ProgressBar, RepositoryContent
 from ..tasking import Task
 
 from .iterator import ArtifactIterator, BatchIterator, ContentIterator, DownloadIterator
@@ -130,7 +130,7 @@ class ChangeSet:
         Args:
             content (pulpcore.plugin.Content): A content model to be removed.
         """
-        q_set = DeferredArtifact.objects.filter(
+        q_set = RemoteArtifact.objects.filter(
             importer=self.importer,
             content_artifact__in=ContentArtifact.objects.filter(content=content))
         q_set.delete()

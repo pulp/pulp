@@ -6,13 +6,10 @@ from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyVa
                       GenericKeyValueModel, Config, Notes)  # noqa
 
 from .consumer import Consumer, ConsumerContent  # noqa
-from .content import Content, Artifact, ContentArtifact, DeferredArtifact  # noqa
+from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
 from .repository import Repository, Importer, Publisher, RepositoryContent  # noqa
 from .storage import FileContent  # noqa
 from .task import ReservedResource, Worker, Task, TaskTag, TaskLock  # noqa
-
-# Moved here: imports Artifact.
-from .catalog import DownloadCatalog  # noqa
 
 # Moved here to avoid a circular import with Task
 from .progress import ProgressBar, ProgressReport, ProgressSpinner  # noqa
