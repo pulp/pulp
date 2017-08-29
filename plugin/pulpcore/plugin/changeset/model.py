@@ -303,7 +303,7 @@ class PendingArtifact(Pending):
                     with transaction.atomic():
                         self.model = Artifact(
                             file=File(open(self._path, mode='rb')),
-                            **self.monitor.dict())
+                            **self.monitor.facts())
                         self.model.save()
                 except IntegrityError:
                     q = self.artifact_q()

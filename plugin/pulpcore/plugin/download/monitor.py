@@ -21,7 +21,7 @@ class DownloadMonitor:
         >>> download = ...
         >>> monitor = DownloadMonitor(download)
         >>> download()
-        >>> monitor.dict()
+        >>> monitor.facts()
             {'size': 1109, 'sha1': 'aFc12', 'sha256': '837e9ab1', ...}
     """
 
@@ -49,12 +49,14 @@ class DownloadMonitor:
         """
         download.register(Event.FETCHED, self.fetched)
 
-    def dict(self):
+    def facts(self):
         """
         Get a dictionary representation of the collected information.
+        The facts include the `size` and calculated digests as defined
+        by Artifact.DIGEST_FIELDS.
 
         Returns:
-            dict: Collected metrics.
+            dict: Collected facts.
         """
         metrics = {n: a.hexdigest() for n, a in self.algorithms.items()}
         metrics['size'] = self.size
@@ -81,4 +83,4 @@ class DownloadMonitor:
         self.update(event.buffer)
 
     def __str__(self):
-        return str(self.dict())
+        return str(self.facts())
