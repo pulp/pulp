@@ -1,1 +1,2 @@
-from pulpcore.app.views.status import StatusView  # noqa
+from .content import ContentView  # noqa
+from .status import StatusView  # noqa
