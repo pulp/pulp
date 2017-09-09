@@ -55,8 +55,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         consumer instance as the first argument and all keyword arguments from the original
         consumer.__init__ call.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = None
 
@@ -68,8 +68,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         reset (which triggers an internal restart). The timer is reset when the connection is lost,
         so we have to install the timer again for every call to self.start.
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = consumer.timer.call_repeatedly(
             constants.PULP_PROCESS_HEARTBEAT_INTERVAL,
@@ -86,19 +86,33 @@ class HeartbeatStep(bootsteps.StartStopStep):
         This method is called every time the worker is restarted (i.e. connection is lost)
         and also at shutdown.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         if self.timer_ref:
             self.timer_ref.cancel()
             self.timer_ref = None
 
+    def shutdown(self, consumer):
+        """
+        Called when the consumer is shut down.
+
+        So far, this just cleans up the database by removing the worker's record in
+        the workers collection.
+
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
+        :param kwargs:   Other params (unused)
+        :type  kwargs:   dict
+        """
+        tasks._delete_worker(consumer.hostname, normal_shutdown=True)
+
     def _record_heartbeat(self, consumer):
         """
         This method creates or updates the worker record
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         name = consumer.hostname
         # Update the worker record timestamp and handle logging new workers
@@ -165,22 +179,6 @@ def initialize_worker(sender, instance, **kwargs):
     # can be acquired
     if sender.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
         get_resource_manager_lock(sender)
-
-
-@worker_shutdown.connect
-def shutdown_worker(signal, sender, **kwargs):
-    """
-    Called when a worker is shutdown.
-    So far, this just cleans up the database by removing the worker's record in
-    the workers collection.
-    :param signal:   The signal being sent to the worker
-    :type  signal:   int
-    :param instance: The hostname of the worker
-    :type  instance: celery.apps.worker.Worker
-    :param kwargs:   Other params (unused)
-    :type  kwargs:   dict
-    """
-    tasks._delete_worker(sender.hostname, normal_shutdown=True)
 
 
 def get_resource_manager_lock(name):

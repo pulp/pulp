@@ -655,7 +655,7 @@ def cancel(task_id):
         consumer_id = tag_dict.get(tags.RESOURCE_CONSUMER_TYPE)
         agent_manager.cancel_request(consumer_id, task_id)
     else:
-        controller.revoke(task_id, terminate=True)
+        controller.revoke(task_id)
 
     qs = TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES)
     qs.update_one(set__state=constants.CALL_CANCELED_STATE)
