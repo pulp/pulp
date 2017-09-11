@@ -1,0 +1,69 @@
+From f6221724be33a429d7c90338f35f52938a21aa35 Mon Sep 17 00:00:00 2001
+From: David Davis <daviddavis@redhat.com>
+Date: Wed, 23 Aug 2017 11:07:02 -0400
+Subject: [PATCH] Make messages durable by default in qpid
+
+We were seeing messages disappear in durable queues when restarting
+qpid. This coincides with the rabbitmq code (e.g. https://git.io/v7jNV).
+---
+ kombu/tests/transport/test_qpid.py | 4 ++--
+ kombu/transport/qpid.py            | 7 ++++++-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index 4131193..2eace3a 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -542,7 +542,7 @@ class TestChannelPut(ChannelTestBase):
+         )
+         self.transport.session.sender.assert_called_with(address_str)
+         mock_Message_cls.assert_called_with(
+-            content=mock_message, subject=None,
++            content=mock_message, subject=None, durable=True
+         )
+         mock_sender = self.transport.session.sender.return_value
+         mock_sender.send.assert_called_with(
+@@ -564,7 +564,7 @@ class TestChannelPut(ChannelTestBase):
+         )
+         self.transport.session.sender.assert_called_with(addrstr)
+         mock_Message_cls.assert_called_with(
+-            content=mock_message, subject=mock_routing_key,
++            content=mock_message, subject=mock_routing_key, durable=True
+         )
+         mock_sender = self.transport.session.sender.return_value
+         mock_sender.send.assert_called_with(
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index 639d837..ddfb184 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -420,7 +420,8 @@ class Channel(base.StdChannel):
+             rx.close()
+         return message
+ 
+-    def _put(self, routing_key, message, exchange=None, **kwargs):
++    def _put(self, routing_key, message, exchange=None, durable=True,
++             **kwargs):
+         """Synchronous send of a single message onto a queue or exchange.
+ 
+         An internal method which synchronously sends a single message onto
+@@ -453,6 +454,9 @@ class Channel(base.StdChannel):
+             should be sent on. If no exchange is specified, the message is
+             sent directly to a queue specified by routing_key.
+         :type exchange: str
++        :keyword durable: whether or not the message should persist or be
++            durable.
++        :type durable: bool
+         """
+         if not exchange:
+             address = '%s; {assert: always, node: {type: queue}}' % \
+@@ -464,6 +468,7 @@ class Channel(base.StdChannel):
+             msg_subject = str(routing_key)
+         sender = self.transport.session.sender(address)
+         qpid_message = qpid.messaging.Message(content=message,
++                                              durable=durable,
+                                               subject=msg_subject)
+         try:
+             sender.send(qpid_message, sync=True)
+-- 
+1.8.3.1
+
