@@ -184,6 +184,11 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Sep 11 2017 Patrick Creech <pcreech@redhat.com> 3.0.33-7.pulp
+- Adding patch to kombu to make messages durable (daviddavis@redhat.com)
+- Removing fc22 from the list of supported platforms. (ipanova@redhat.com)
+- Carry over fc23 external deps into fc24 (sean.myers@redhat.com)
+
 * Fri Aug 05 2016 Brian Bouterse <bbouters@redhat.com> 3.0.33-6.pulp
 - Fixes Qpid file descriptor leak (bbouters@redhat.com)
 
