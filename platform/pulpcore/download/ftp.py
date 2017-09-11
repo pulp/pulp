@@ -12,19 +12,20 @@ class FtpDownload(Download):
     Handles the ftp:// protocol.
 
     Attributes:
-        user (pulpcore.download.User): User settings for basic authentication.
+        user (pulpcore.download.User): User settings for authentication.
     """
 
     __slots__ = ('user',)
 
-    def __init__(self, url, writer):
+    def __init__(self, url, writer, user=None):
         """
         Args:
             url (str): A file download URL.
             writer (Writer): An object used to store downloaded file.
+            user (pulpcore.download.User): User settings for authentication.
         """
         super(FtpDownload, self).__init__(url, writer)
-        self.user = User('anonymous', 'anonymous')
+        self.user = user or User('anonymous', 'anonymous')
 
     def _send(self):
         """

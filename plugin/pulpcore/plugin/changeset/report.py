@@ -21,15 +21,16 @@ class ChangeReport:
         'error'
     )
 
-    def __init__(self, action, content):
+    def __init__(self, action, content, error=None):
         """
         Args:
             action (str): The requested action (ADD|REMOVE).
             content (pulpcore.plugin.Content): The affected content model.
+            error (Exception): An exception raised during plan execution.
         """
         self.action = action
         self.content = content
-        self.error = None
+        self.error = error
 
     def result(self):
         """

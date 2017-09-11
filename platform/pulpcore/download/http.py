@@ -38,6 +38,7 @@ class HttpDownload(Download):
         >>>
         >>> url = 'http://..'
         >>> path = ...
+        >>>
         >>> download = HttpDownload(url, FileWriter(path))
         >>>
         >>> try:
@@ -47,10 +48,35 @@ class HttpDownload(Download):
         >>> else:
         >>>     # Go read the downloaded file \o/
         >>>
-        >>> url = 'https://..'
-        >>> path = ..
+        >>> # OR
+        >>>
+        >>> download = HttpDownload(
+        >>>     url=url,
+        >>>     writer=FileWriter(path),
+        >>>     timeout=Timeout(connect=10, read=15),
+        >>>     user=User(name='elmer', password='...'),
+        >>>     ssl=SSL(
+        >>>         ca_certificate='path-to-certificate',
+        >>>         client_certificate='path-to-certificate',
+        >>>         client_key='path-to-key',
+        >>>         validation=True),
+        >>>     proxy_url='http://user:password@gateway.org')
+        >>>
+        >>> try:
+        >>>     download()
+        >>> except DownloadError:
+        >>>     # An error occurred.
+        >>> else:
+        >>>     # Go read the downloaded file \o/
+        >>>
+        >>> # OR
+        >>>
         >>> download = HttpDownload(url, FileWriter(path))
         >>> # optional settings
+        >>> download.timeout.connect = 10
+        >>> download.timeout.read = 30
+        >>> download.user.name = 'elmer'
+        >>> download.user.password = '...'
         >>> download.ssl.ca_certificate='path-to-certificate',
         >>> download.ssl.client_certificate='path-to-certificate',
         >>> download.ssl.client_key='path-to-key',
@@ -78,19 +104,32 @@ class HttpDownload(Download):
         'method'
     )
 
-    def __init__(self, url, writer, method='GET'):
+    def __init__(self,
+                 url,
+                 writer,
+                 method='GET',
+                 timeout=None,
+                 user=None,
+                 ssl=None,
+                 proxy_url=None,
+                 headers=None):
         """
         Args:
             url (str): A file download URL.
             writer (Writer): An object used to store downloaded file.
             method (str): The HTTP method (GET|HEAD).
+            timeout (pulpcore.download.Timeout): Timeout settings.
+            user (pulpcore.download.User): User settings for basic-authentication.
+            ssl (pulpcore.download.SSL): SSL/TLS settings.
+            proxy_url (str): An optional proxy URL.
+            headers (dict): The optional HTTP headers.
         """
         super(HttpDownload, self).__init__(url, writer)
-        self.timeout = Timeout()
-        self.user = User()
-        self.ssl = SSL()
-        self.proxy_url = None
-        self.headers = {}
+        self.timeout = timeout or Timeout()
+        self.user = user or User()
+        self.ssl = ssl or SSL()
+        self.proxy_url = proxy_url
+        self.headers = headers or {}
         self.method = self._find_method(method)
 
     @property
