@@ -2,6 +2,7 @@ import warnings
 
 from pulpcore.app.models import MasterModel
 from rest_framework import viewsets, mixins
+from rest_framework.generics import get_object_or_404
 
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
@@ -26,6 +27,7 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
     endpoint_name = None
     nest_prefix = None
+    parent_viewset = None
     parent_lookup_kwargs = {}
 
     @classmethod
@@ -43,44 +45,21 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
         return False
 
     @classmethod
-    def register_with(cls, router):
-        """
-        Register this viewset with the API router using derived names and URL paths.
+    def view_name(cls):
+        return '-'.join(cls.endpoint_pieces())
 
-        When called, "normal" models will be registered with the API router using
-        the defined endpoint_name as that view's URL pattern, and also as the base
-        name for all views defined by this ViewSet (e.g. <endpoint_name>-list,
-        <endpoint_name>-detail, etc...)
+    @classmethod
+    def urlpattern(cls):
+        return '/'.join(cls.endpoint_pieces())
 
-        Master/Detail models are also handled by this method. Detail ViewSets must
-        subclass Master ViewSets, and both endpoints must have endpoint_name set.
-        The URL pattern created for detail ViewSets will be a combination of the two
-        endpoint_names::
-
-            <master_viewset.endpoint_name>/<detail_viewset.endpoint_name>
-
-        The base name for views generated will be similarly constructed::
-
-            <master_viewset.endpoint_name>-<detail_viewset.endpoint_name>
-
-        """
-        # if we have a master model, include its endpoint name in endpoint pieces
-        # by looking at its ancestry and finding the "master" endpoint name
-        if cls.queryset is None:
-            # If this viewset has no queryset, we can't begin to introspect its
-            # endpoint. It is most likely a superclass to be used by Detail
-            # Model ViewSet subclasses.
-            return
-
-        if cls.is_master_viewset():
-            # If this is a master viewset, it doesn't need to be registered with the API
-            # router (its detail subclasses will be registered instead).
-            return
-
-        if cls.queryset.model._meta.master_model is not None:
+    @classmethod
+    def endpoint_pieces(cls):
+        # This is a core ViewSet, not Master/Detail. We can use the endpoint as is.
+        if cls.queryset.model._meta.master_model is None:
+            return (cls.endpoint_name,)
+        else:
             # Model is a Detail model. Go through its ancestry (via MRO) to find its
             # eldest superclass with a declared name, representing the Master ViewSet
-
             master_endpoint_name = None
             # first item in method resolution is the viewset we're starting with,
             # so start finding parents at the second item, index 1.
@@ -103,14 +82,8 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                        'correctly subclass the Master ViewSet, and do both have endpoint_name '
                        'set to different values?').format(cls.__name__)
                 warnings.warn(msg, RuntimeWarning)
-                return
-        else:
-            # "Normal" model, can just use endpoint_name directly.
-            pieces = (cls.endpoint_name,)
-
-        urlpattern = '/'.join(pieces)
-        view_name = '-'.join(pieces)
-        router.register(urlpattern, cls, view_name)
+                return []
+            return pieces
 
     def get_queryset(self):
         """
@@ -132,6 +105,14 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
             qs = qs.filter(**filters)
         return qs
 
+    @classmethod
+    def _get_nest_depth(cls):
+        """Return the depth that this ViewSet is nested."""
+        if not cls.parent_lookup_kwargs:
+            return 1
+        else:
+            return max([len(v.split("__")) for k, v in cls.parent_lookup_kwargs.items()])
+
 
 class NamedModelViewSet(mixins.CreateModelMixin,
                         mixins.RetrieveModelMixin,
@@ -144,6 +125,33 @@ class NamedModelViewSet(mixins.CreateModelMixin,
     `destroy()` and `list()` actions.
     """
     pass
+
+
+class NestedNamedModelViewSet(NamedModelViewSet):
+    """
+    A ViewSet that has implied parents in its nested url.
+
+    Nested ViewSets are intended to be used with a NestedModelSerializer, which is able to write
+    the implied parent to the WritableNestedUrlRelatedField.
+    """
+
+    def get_parent_field_and_object(self):
+        """
+        Use internal attributes to retrieve the parent implied by the request url.
+
+        Returns:
+            tuple: (parent field name, parent)
+        Raises:
+            django.http.Http404 when the parent specified by the url does not exist.
+        """
+        parent_field = None
+        filters = {}
+        if self.parent_lookup_kwargs:
+            # Use the parent_lookup_kwargs and the url kwargs (self.kwargs) to retrieve the object
+            for key, lookup in self.parent_lookup_kwargs.items():
+                parent_field, unused, parent_lookup = lookup.partition('__')
+                filters[parent_lookup] = self.kwargs[key]
+        return parent_field, get_object_or_404(self.parent_viewset.queryset, **filters)
 
 
 class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,

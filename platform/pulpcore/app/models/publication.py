@@ -100,3 +100,4 @@ class Distribution(Model):
 
     class Meta:
         unique_together = ('publisher', 'name')
+        default_related_name = 'distributions'

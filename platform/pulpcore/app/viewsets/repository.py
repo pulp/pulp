@@ -3,12 +3,13 @@ from django_filters import CharFilter
 from rest_framework import decorators
 
 from pulpcore.app import tasks
-from pulpcore.app.models import Importer, Publisher, Repository, RepositoryContent
+from pulpcore.app.models import Distribution, Importer, Publisher, Repository, RepositoryContent
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
-                                      RepositorySerializer, RepositoryContentSerializer)
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.serializers import (ContentSerializer, DistributionSerializer, ImporterSerializer,
+                                      PublisherSerializer, RepositorySerializer,
+                                      RepositoryContentSerializer)
+from pulpcore.app.viewsets import NamedModelViewSet, NestedNamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -27,6 +28,7 @@ class RepositoryViewSet(NamedModelViewSet):
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
     lookup_field = 'name'
+    router_lookup = 'repository'
     pagination_class = NamePagination
     filter_class = RepositoryFilter
 
@@ -116,7 +118,9 @@ class PublisherFilter(ContentAdaptorFilter):
 class ImporterViewSet(NamedModelViewSet):
     endpoint_name = 'importers'
     nest_prefix = 'repositories'
+    router_lookup = 'importer'
     lookup_field = 'name'
+    parent_viewset = RepositoryViewSet
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
@@ -158,6 +162,8 @@ class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
     nest_prefix = 'repositories'
     lookup_field = 'name'
+    parent_viewset = RepositoryViewSet
+    router_lookup = 'publisher'
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
@@ -193,6 +199,17 @@ class PublisherViewSet(NamedModelViewSet):
                     'publisher_name': publisher.name}
         )
         return OperationPostponedResponse([async_result], request)
+
+
+class DistributionViewSet(NestedNamedModelViewSet):
+    endpoint_name = 'distributions'
+    queryset = Distribution.objects.all()
+    serializer_class = DistributionSerializer
+    lookup_field = 'name'
+    nest_prefix = 'publishers'
+    parent_viewset = PublisherViewSet
+    parent_lookup_kwargs = {'publisher_name': 'publisher__name',
+                            'repository_name': 'publisher__repository__name'}
 
 
 class RepositoryContentViewSet(NamedModelViewSet):

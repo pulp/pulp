@@ -61,13 +61,12 @@ def view_name_for_model(model_obj, view_action):
         LookupError: if no ViewSet is found for the Model
     """
     # Import this here to prevent out-of-order plugin discovery
-    from pulpcore.app.urls import root_router, nested_routers
+    from pulpcore.app.urls import all_routers
 
     viewset = viewset_for_model(model_obj)
 
     # return the complete view name, joining the registered viewset base name with
     # the requested view method.
-    all_routers = nested_routers + (root_router,)
     for router in all_routers:
         for pattern, registered_viewset, base_name in router.registry:
             if registered_viewset is viewset:
@@ -142,6 +141,39 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         for field_name, mapping in field_mappings.items():
             field = getattr(instance, field_name)
             field.mapping.replace(mapping)
+
+
+class NestedModelSerializer(ModelSerializer):
+    """
+    This class supports WritableNestedUrlRelated fields, which represents nested parent objects
+    that are implied by the url of a request.
+
+    Note:
+        For asynchronous writes, during the initial validation before creating a task,
+        allow a possible Http404 bubble up. When running validation from a task,
+        catch the Http404.
+    """
+
+    def to_internal_value(self, data):
+        """
+        After letting DRF populate and validate all writable fields, populate and validate
+        `href_writable` fields.
+
+        Args:
+            data (dict): Data to be converted from primitive values to native objects.
+        Returns:
+            OrderedDict: Data that is ready to be written to the db.
+        Raises:
+            django.http.Http404: When the parent specified in the url does not exist.
+        """
+        # super().to_internal_value validates all writable fields
+        validated_data = super().to_internal_value(data)
+        for field in self.fields.values():
+            # href_writable is a special attribute of WritableNestedUrlRelatedFields
+            if (getattr(field, 'href_writable', False)):
+                parent_field, parent = self.context['view'].get_parent_field_and_object()
+                validated_data[parent_field] = parent
+        return validated_data
 
 
 class MasterModelSerializer(ModelSerializer):
@@ -295,4 +327,23 @@ class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedI
     """
     For use with nested viewsets of master/detail models
     """
+    pass
+
+
+class WritableNestedUrlRelatedField(NestedHyperlinkedRelatedField):
+    """
+    For use with a NestedModelSerializer.
+
+    This field supports a special attribute, `href_writable`. Fields that carry this flag represent
+    a nested parent, which is the model determined by the url parameters instead of request body
+    parameters.
+    """
+    def __init__(self, *args, **kwargs):
+        # rest_framework.fields.Field.__init__ sets self.read_only, so we have to inject this kwarg.
+        kwargs['read_only'] = True
+        self.href_writable = True
+        super().__init__(*args, **kwargs)
+
+
+class DetailWritableNestedUrlRelatedField(_DetailFieldMixin, WritableNestedUrlRelatedField):
     pass
