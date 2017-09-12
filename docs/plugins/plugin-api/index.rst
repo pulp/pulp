@@ -12,7 +12,7 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
     serializers
     viewsets
     changeset
-    download
+    futures
 
 .. automodule:: pulpcore.plugin
     :imported-members:

@@ -22,7 +22,7 @@ class FileDownload(Download):
 
     Examples:
         >>>
-        >>> from pulpcore.download import DownloadError, FileDownload, FileWriter
+        >>> from pulpcore.plugin.download.futures import DownloadError, FileDownload, FileWriter
         >>>
         >>> url = ...
         >>> path = ...

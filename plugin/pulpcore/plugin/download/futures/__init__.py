@@ -62,10 +62,12 @@ Recipes:
 from .batch import Batch  # noqa
 from .error import DownloadError, DownloadFailed, NotFound, NotAuthorized  # noqa
 from .event import Event  # noqa
+from .factory import Factory  # noqa
 from .ftp import FtpDownload  # noqa
 from .file import FileDownload  # noqa
 from .http import HttpDownload  # noqa
 from .settings import Settings, SSL, Timeout, User  # noqa
+from .tools import DownloadMonitor  # noqa
 from .single import Download  # noqa
 from .validation import ValidationError, SizeValidation, DigestValidation  # noqa
 from .writer import Writer, FileWriter, BufferWriter  # noqa

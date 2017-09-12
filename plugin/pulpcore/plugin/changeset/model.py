@@ -1,15 +1,14 @@
 from gettext import gettext as _
 from logging import getLogger
 
+from django.db import transaction
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from django.db import transaction
 from django.core.files import File
 
 from pulpcore.app.models import Artifact, ContentArtifact, RemoteArtifact
-from pulpcore.download import Event
-from pulpcore.plugin.download.monitor import DownloadMonitor
 
+from ..download.futures import Event, DownloadMonitor
 
 log = getLogger(__name__)
 

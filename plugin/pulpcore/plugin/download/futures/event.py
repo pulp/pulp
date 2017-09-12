@@ -10,7 +10,7 @@ class Event:
 
     Attributes:
 
-        download (pulpcore.download.Download): A download object on which the
+        download (pulpcore.plugin.download.futures.Download): A download object on which the
             event occurred.
     """
 
@@ -28,7 +28,7 @@ class Event:
     def __init__(self, download):
         """
         Args:
-            download (pulpcore.download.Download): A download object on which the
+            download (pulpcore.plugin.download.futures.Download): A download object on which the
                 event occurred.
         """
         self.download = download
@@ -84,7 +84,7 @@ class Error(Event):
     it can be retried.
 
     Attributes:
-        download (pulpcore.download.Download): A download object on which the
+        download (pulpcore.plugin.download.futures.Download): A download object on which the
             event occurred.
         repaired (bool): Indicates whether the handler has repaired
             the download and it should be retried.
@@ -95,7 +95,7 @@ class Error(Event):
     def __init__(self, download, error):
         """
         Args:
-            download (pulpcore.download.Download): A download object on which the
+            download (pulpcore.plugin.download.futures.Download): A download object on which the
                 event occurred.
             error (Exception): The error that occurred.
         """
@@ -109,7 +109,7 @@ class Fetched(Event):
     A buffer has been fetched.
 
     Attributes:
-        download (pulpcore.download.Download): A download object on which the
+        download (pulpcore.plugin.download.futures.Download): A download object on which the
             event occurred.
         buffer (bytes): A fetched buffer.
     """
@@ -119,7 +119,7 @@ class Fetched(Event):
     def __init__(self, download, buffer):
         """
         Args:
-            download (pulpcore.download.Download): A download object on which the
+            download (pulpcore.plugin.download.futures.Download): A download object on which the
                 event occurred.
             buffer (bytes): A fetched buffer.
         """

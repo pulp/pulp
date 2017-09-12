@@ -1,8 +1,10 @@
 from gettext import gettext as _
 from urllib.parse import urlparse
 
-from pulpcore.download import (DigestValidation, HttpDownload, FileDownload, FileWriter,
-                               SizeValidation)
+from .file import FileDownload
+from .http import HttpDownload
+from .writer import FileWriter
+from .validation import DigestValidation, SizeValidation
 
 
 class Factory:
@@ -17,7 +19,7 @@ class Factory:
         >>> importer = ..
         >>> url = ..
         >>> artifact = ..
-        >>> download = Factory(importer).build(url, remote_artifact=artifact)
+        >>> download = Factory(importer).build(url, artifact=artifact)
         >>>
     """
 
@@ -29,17 +31,17 @@ class Factory:
         """
         self.importer = importer
 
-    def build(self, url, path=None, remote_artifact=None):
+    def build(self, url, path=None, artifact=None):
         """
         Build a downloader.
 
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            remote_artifact (pulpcore.app.models.RemoteArtifact): An optional remote artifact.
+            artifact (pulpcore.app.models.RemoteArtifact): An optional remote artifact.
 
         Returns:
-            pulpcore.download.Download: A download object configured using the
+            pulpcore.plugin.download.futures.Download: A download object configured using the
                 attributes of the importer.
         """
         if path:
@@ -51,7 +53,7 @@ class Factory:
         except KeyError:
             raise ValueError(_('URL: {u} not supported.'.format(u=url)))
         else:
-            return builder(self, url, _path, remote_artifact)
+            return builder(self, url, _path, artifact)
 
     def _file(self, url, path=None, artifact=None):
         """
@@ -60,7 +62,7 @@ class Factory:
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
+            artifact (pulpcore.app.models.RemoteArtifact): An optional artifact.
 
         Returns:
             FileDownload:
@@ -76,7 +78,7 @@ class Factory:
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
+            artifact (pulpcore.app.models.RemoteArtifact): An optional artifact.
 
         Returns:
             HttpDownload: An http download.
@@ -94,7 +96,7 @@ class Factory:
         Args:
             url (str): The download URL.
             path (str): The optional absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
+            artifact (pulpcore.app.models.RemoteArtifact): An optional artifact.
 
         Returns:
             HttpDownload: An https download.
@@ -115,8 +117,8 @@ class Factory:
         Add validations based on the artifact.
 
         Args:
-            download (pulpcore.download.Download): A download object.
-            artifact (pulpcore.app.models.Artifact): A content artifact.
+            download (pulpcore.plugin.download.futures.Download): A download object.
+            artifact (pulpcore.app.models.RemoteArtifact): A content artifact.
         """
         if not artifact:
             return

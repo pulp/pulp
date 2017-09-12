@@ -6,7 +6,8 @@ from logging import getLogger
 from django.db.models import Q
 
 from pulpcore.app.models import Artifact
-from pulpcore.download import Download
+
+from pulpcore.plugin.download.futures import Download
 
 from .model import PendingArtifact
 
