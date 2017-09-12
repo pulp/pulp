@@ -91,7 +91,7 @@ class Download:
 
         Examples:
             >>>
-            >>> from pulpcore.download import Event
+            >>> from pulpcore.plugin.download.futures import Event
             >>>
             >>> def on_error(event):
             >>>     ...

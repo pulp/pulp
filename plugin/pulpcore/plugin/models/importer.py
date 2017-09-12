@@ -1,6 +1,6 @@
 from pulpcore.app.models import Importer as PlatformImporter
 
-from pulpcore.plugin.download import Factory
+from pulpcore.plugin.download.futures import Factory
 
 
 class Importer(PlatformImporter):

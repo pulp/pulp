@@ -154,7 +154,7 @@ class BufferWriter(Writer):
         """
         self.fp = BytesIO()
 
-    def read(self):
+    def content(self):
         """
         Get the buffered content.
 

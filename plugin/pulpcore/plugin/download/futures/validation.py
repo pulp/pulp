@@ -111,7 +111,7 @@ class SizeValidation(Validation):
 
     Examples:
         >>>
-        >>> from pulpcore.download import HttpDownload
+        >>> from pulpcore.plugin.download.futures import HttpDownload
         >>>
         >>> download = HttpDownload(...)
         >>> download.validations.append(SizeValidation(100))  # Expected file size in bytes.
@@ -178,7 +178,7 @@ class DigestValidation(Validation):
 
     Examples:
         >>>
-        >>> from pulpcore.download import HttpDownload, ValidationError
+        >>> from pulpcore.plugin.download.futures import HttpDownload, ValidationError
         >>>
         >>> download = HttpDownload(...)
         >>> download.validations.append(DigestValidation('sha256', '..f17a599e4bf624a7c..'))

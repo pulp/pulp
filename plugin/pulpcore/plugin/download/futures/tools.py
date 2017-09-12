@@ -1,7 +1,12 @@
+"""
+Download Tools.
+"""
+
 import hashlib
 
 from pulpcore.app.models import Artifact
-from pulpcore.download import Event
+
+from .event import Event
 
 
 class DownloadMonitor:
@@ -18,6 +23,8 @@ class DownloadMonitor:
             file in bytes.
 
     Examples:
+        >>> from pulpcore.plugin.download.futures import DownloadMonitor
+        >>>
         >>> download = ...
         >>> monitor = DownloadMonitor(download)
         >>> download()
@@ -33,7 +40,7 @@ class DownloadMonitor:
     def __init__(self, download=None):
         """
         Args:
-            download (pulpcore.download.Download): An (optional) download object
+            download (pulpcore.plugin.futures.Download): An (optional) download object
                 for which metrics are collected.
         """
         self.algorithms = {n: hashlib.new(n) for n in Artifact.DIGEST_FIELDS}
@@ -44,7 +51,7 @@ class DownloadMonitor:
     def attach(self, download):
         """
         Args:
-            download (pulpcore.download.Download): A download object
+            download (pulpcore.plugin.futures.Download): A download object
                 for which metrics are collected.
         """
         download.register(Event.FETCHED, self.fetched)

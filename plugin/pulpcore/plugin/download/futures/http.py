@@ -34,7 +34,7 @@ class HttpDownload(Download):
 
     Examples:
         >>>
-        >>> from pulpcore.download import DownloadError, HttpDownload, FileWriter
+        >>> from pulpcore.plugin.download.futures import DownloadError, HttpDownload, FileWriter
         >>>
         >>> url = 'http://..'
         >>> path = ...

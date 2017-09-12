@@ -6,7 +6,7 @@ from logging import getLogger
 from django.db.utils import IntegrityError
 from django.db import transaction
 
-from ..download import Batch
+from ..download.futures import Batch
 from ..models import ContentArtifact, RemoteArtifact, ProgressBar, RepositoryContent
 from ..tasking import Task
 

@@ -35,7 +35,7 @@ class Batch:
     Examples:
 
         >>>
-        >>> from pulpcore.download import Batch, HttpDownload, DownloadError
+        >>> from pulpcore.plugin.download.futures import Batch, HttpDownload, DownloadError
         >>>
         >>> url = 'http://content.org/dog.rpm'
         >>> path = '/tmp/working/dog.rpm'
@@ -439,8 +439,8 @@ class Plan:
         only fatal batch framework exceptions are raised during iteration.
 
     Attributes:
-        batch (pulpcore.download.Batch): The batch.
-        download (pulpcore.download.Download): The wrapped download.
+        batch (Batch): The batch.
+        download (pulpcore.plugin.futures.Download): The planned download.
         executed (bool): Indicates the plan has been executed.
         error (Exception): An exception raised by the download.
     """
@@ -449,8 +449,8 @@ class Plan:
         """
 
         Args:
-            batch (pulpcore.download.Batch): The batch.
-            download (pulpcore.download.Download): The wrapped download.
+            batch (Batch): The batch.
+            download (pulpcore.plugin.futures.Download): The planned download.
         """
         self.batch = batch
         self.download = download
@@ -463,7 +463,7 @@ class Plan:
         This **should** be called to ensure that error cases are properly handled.
 
         Returns:
-            pulpcore.download.Download: The planned download.
+            pulpcore.plugin.futures.Download: The planned download.
 
         Raises:
             Exception: Any exception raised during the download.
