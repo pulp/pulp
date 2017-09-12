@@ -6,11 +6,9 @@ from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.core.files import File
 
-
 from pulpcore.app.models import Artifact, ContentArtifact, RemoteArtifact
 
-from ..download.futures import Event
-from ..download.futures.tools import DownloadMonitor
+from ..download.futures import Event, DownloadMonitor
 
 log = getLogger(__name__)
 
