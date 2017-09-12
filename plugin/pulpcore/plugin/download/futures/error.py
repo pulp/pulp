@@ -13,14 +13,14 @@ class DownloadFailed(DownloadError):
     Download failed.
 
     Attributes:
-        download (pulpcore.plugin.futures.Download): The failed download.
+        download (pulpcore.plugin.download.futures.Download): The failed download.
         reason (str): The reason it failed.
     """
 
     def __init__(self, download, reason=''):
         """
         Args:
-            download (pulpcore.plugin.futures.Download): The failed download.
+            download (pulpcore.plugin.download.futures.Download): The failed download.
             reason (str): The reason it failed.
         """
         self.download = download

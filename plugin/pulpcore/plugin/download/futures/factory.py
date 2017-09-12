@@ -41,7 +41,7 @@ class Factory:
             artifact (pulpcore.app.models.RemoteArtifact): An optional remote artifact.
 
         Returns:
-            pulpcore.plugin.futures.Download: A download object configured using the
+            pulpcore.plugin.download.futures.Download: A download object configured using the
                 attributes of the importer.
         """
         if path:
@@ -117,7 +117,7 @@ class Factory:
         Add validations based on the artifact.
 
         Args:
-            download (pulpcore.plugin.futures.Download): A download object.
+            download (pulpcore.plugin.download.futures.Download): A download object.
             artifact (pulpcore.app.models.RemoteArtifact): A content artifact.
         """
         if not artifact:

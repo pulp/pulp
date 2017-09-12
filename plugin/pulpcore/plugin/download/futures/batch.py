@@ -440,7 +440,7 @@ class Plan:
 
     Attributes:
         batch (Batch): The batch.
-        download (pulpcore.plugin.futures.Download): The planned download.
+        download (pulpcore.plugin.download.futures.Download): The planned download.
         executed (bool): Indicates the plan has been executed.
         error (Exception): An exception raised by the download.
     """
@@ -450,7 +450,7 @@ class Plan:
 
         Args:
             batch (Batch): The batch.
-            download (pulpcore.plugin.futures.Download): The planned download.
+            download (pulpcore.plugin.download.futures.Download): The planned download.
         """
         self.batch = batch
         self.download = download
@@ -463,7 +463,7 @@ class Plan:
         This **should** be called to ensure that error cases are properly handled.
 
         Returns:
-            pulpcore.plugin.futures.Download: The planned download.
+            pulpcore.plugin.download.futures.Download: The planned download.
 
         Raises:
             Exception: Any exception raised during the download.

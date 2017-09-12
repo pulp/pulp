@@ -40,7 +40,7 @@ class DownloadMonitor:
     def __init__(self, download=None):
         """
         Args:
-            download (pulpcore.plugin.futures.Download): An (optional) download object
+            download (pulpcore.plugin.download.futures.Download): An (optional) download object
                 for which metrics are collected.
         """
         self.algorithms = {n: hashlib.new(n) for n in Artifact.DIGEST_FIELDS}
@@ -51,7 +51,7 @@ class DownloadMonitor:
     def attach(self, download):
         """
         Args:
-            download (pulpcore.plugin.futures.Download): A download object
+            download (pulpcore.plugin.download.futures.Download): A download object
                 for which metrics are collected.
         """
         download.register(Event.FETCHED, self.fetched)
