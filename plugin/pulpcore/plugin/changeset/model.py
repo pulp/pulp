@@ -37,7 +37,7 @@ class Pending:
         Returns:
             bool: All matters are settled.  See: _settled.
         """
-        return self.settled
+        return self._settled
 
     def __init__(self, model):
         """
