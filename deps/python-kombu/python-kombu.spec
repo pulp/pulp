@@ -184,6 +184,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed Sep 13 2017 Patrick Creech <pcreech@redhat.com> 3.0.33-8.pulp
+- Disabling %%check for python-kombu (pcreech@redhat.com)
+
 * Mon Sep 11 2017 Patrick Creech <pcreech@redhat.com> 3.0.33-7.pulp
 - Adding patch to kombu to make messages durable (daviddavis@redhat.com)
 - Removing fc22 from the list of supported platforms. (ipanova@redhat.com)
