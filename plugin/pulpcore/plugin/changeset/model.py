@@ -268,7 +268,7 @@ class PendingArtifact(Pending):
         """
         def succeeded(event):
             self._path = event.download.writer.path
-        download = self.importer.get_download(
+        download = self.importer.get_futures_downloader(
             self.url,
             self.relative_path,
             self.model)
