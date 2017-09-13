@@ -4,7 +4,7 @@
 from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # noqa
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
     DetailNestedHyperlinkedRelatedField, DetailNestedHyperlinkedIdentityField, viewset_for_model,
-    DetailWritableNestedUrlRelatedField, NestedModelSerializer)
+    DetailWritableNestedUrlRelatedField)
 from pulpcore.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField,  # noqa
     FileField)
 from pulpcore.app.serializers.consumer import ConsumerSerializer  # noqa

@@ -9,7 +9,7 @@ from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (ContentSerializer, DistributionSerializer, ImporterSerializer,
                                       PublisherSerializer, RepositorySerializer,
                                       RepositoryContentSerializer)
-from pulpcore.app.viewsets import NamedModelViewSet, NestedNamedModelViewSet
+from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -201,7 +201,7 @@ class PublisherViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
 
-class DistributionViewSet(NestedNamedModelViewSet):
+class DistributionViewSet(NamedModelViewSet):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer

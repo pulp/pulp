@@ -6,7 +6,6 @@ from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
                                       RepositoryRelatedField, GenericKeyValueRelatedField,
-                                      NestedModelSerializer,
                                       DetailWritableNestedUrlRelatedField,
                                       ContentRelatedField,
                                       FileField,
@@ -192,7 +191,7 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         )
 
 
-class DistributionSerializer(NestedModelSerializer):
+class DistributionSerializer(ModelSerializer):
     _href = NestedHyperlinkedIdentityField(
         lookup_field='name',
         parent_lookup_kwargs={'repository_name': 'publisher__repository__name',
