@@ -388,7 +388,8 @@ class Publisher(PublishStep):
         delete = self.get_config().get("delete", False)
 
         return not force_full and not delete and self.last_predist_last_published and \
-            ((last_deleted and last_published and last_published > last_deleted) or not last_deleted)
+            ((last_deleted and last_published and last_published > last_deleted) or
+                not last_deleted)
 
     def create_date_range_filter(self, start_date=None, end_date=None):
         """

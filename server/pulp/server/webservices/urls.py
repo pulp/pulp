@@ -64,7 +64,7 @@ from pulp.server.webservices.views.repo_groups import (
     RepoGroupPublishView, RepoGroupResourceView, RepoGroupSearch, RepoGroupsView,
     RepoGroupUnassociateView
 )
-from pulp.server.webservices.views.repositories import(
+from pulp.server.webservices.views.repositories import (
     ContentApplicabilityRegenerationView, RepoDistributorResourceView, RepoDistributorsSearchView,
     RepoDistributorsView, RepoAssociate, RepoImporterResourceView, RepoImportersView,
     RepoImportUpload, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,
