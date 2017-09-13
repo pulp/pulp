@@ -1,3 +1,4 @@
+from copy import deepcopy
 from gettext import gettext as _
 from logging import getLogger
 
@@ -100,6 +101,31 @@ class Download:
             >>>
         """
         self.router.register(event, handler)
+
+    def clone(self):
+        """
+        Clone the download.
+        The clone has a shallow copy of the context.
+        The clone has cleared:
+        - event handlers
+        - validations
+        - reply
+
+        Returns:
+            Download: A cloned download.
+        """
+        context = self.context
+
+        try:
+            self.context = None
+            clone = deepcopy(self)
+            clone.router.clear()
+            clone.validations.clear()
+            clone.context = context
+            clone.reply = None
+            return clone
+        finally:
+            self.context = context
 
     def _prepare(self):
         """

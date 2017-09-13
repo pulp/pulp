@@ -162,6 +162,20 @@ class EventRouter:
         """
         self.handler.setdefault(event, []).append(handler)
 
+    def unregister(self, event, handler):
+        """
+        Unregister an event handler.
+
+        Args:
+            event (str): The event name.
+            handler (callable): A callable registered to receive the event.
+
+        Raises:
+            ValueError: when handler not registered for the
+                specified event.
+        """
+        self.handler.get(event, []).remove(handler)
+
     def send(self, event):
         """
         Send an event to all registered handlers.
@@ -179,3 +193,9 @@ class EventRouter:
             except Exception:
                 log.exception(str(event))
         return event
+
+    def clear(self):
+        """
+        Clear all registered handlers.
+        """
+        self.handler.clear()
