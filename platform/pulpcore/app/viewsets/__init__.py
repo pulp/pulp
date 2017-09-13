@@ -1,5 +1,5 @@
 from pulpcore.app.viewsets.base import (GenericNamedModelViewSet, NamedModelViewSet,  # noqa
-                                        NestedNamedModelViewSet, CreateDestroyReadNamedModelViewSet)  # noqa
+                                        CreateDestroyReadNamedModelViewSet)  # noqa
 from pulpcore.app.viewsets.content import ArtifactViewSet, ContentViewSet  # noqa
 from pulpcore.app.viewsets.repository import (DistributionViewSet, ImporterViewSet, PublisherViewSet,  # noqa
     RepositoryViewSet, RepositoryContentViewSet)  # noqa

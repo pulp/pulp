@@ -113,6 +113,25 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
         else:
             return max([len(v.split("__")) for k, v in cls.parent_lookup_kwargs.items()])
 
+    def get_parent_field_and_object(self):
+        """
+        For nested ViewSets, retrieve the nested parent implied by the url.
+
+        Returns:
+            tuple: (parent field name, parent)
+        Raises:
+            django.http.Http404: When the parent implied by the url does not exist. Synchronous
+                                 use should allow this to bubble up and return a 404.
+        """
+        parent_field = None
+        filters = {}
+        if self.parent_lookup_kwargs:
+            # Use the parent_lookup_kwargs and the url kwargs (self.kwargs) to retrieve the object
+            for key, lookup in self.parent_lookup_kwargs.items():
+                parent_field, unused, parent_lookup = lookup.partition('__')
+                filters[parent_lookup] = self.kwargs[key]
+            return parent_field, get_object_or_404(self.parent_viewset.queryset, **filters)
+
 
 class NamedModelViewSet(mixins.CreateModelMixin,
                         mixins.RetrieveModelMixin,
@@ -125,33 +144,6 @@ class NamedModelViewSet(mixins.CreateModelMixin,
     `destroy()` and `list()` actions.
     """
     pass
-
-
-class NestedNamedModelViewSet(NamedModelViewSet):
-    """
-    A ViewSet that has implied parents in its nested url.
-
-    Nested ViewSets are intended to be used with a NestedModelSerializer, which is able to write
-    the implied parent to the WritableNestedUrlRelatedField.
-    """
-
-    def get_parent_field_and_object(self):
-        """
-        Use internal attributes to retrieve the parent implied by the request url.
-
-        Returns:
-            tuple: (parent field name, parent)
-        Raises:
-            django.http.Http404 when the parent specified by the url does not exist.
-        """
-        parent_field = None
-        filters = {}
-        if self.parent_lookup_kwargs:
-            # Use the parent_lookup_kwargs and the url kwargs (self.kwargs) to retrieve the object
-            for key, lookup in self.parent_lookup_kwargs.items():
-                parent_field, unused, parent_lookup = lookup.partition('__')
-                filters[parent_lookup] = self.kwargs[key]
-        return parent_field, get_object_or_404(self.parent_viewset.queryset, **filters)
 
 
 class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,

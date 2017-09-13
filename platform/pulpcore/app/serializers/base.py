@@ -142,29 +142,19 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
             field = getattr(instance, field_name)
             field.mapping.replace(mapping)
 
-
-class NestedModelSerializer(ModelSerializer):
-    """
-    This class supports WritableNestedUrlRelated fields, which represents nested parent objects
-    that are implied by the url of a request.
-
-    Note:
-        For asynchronous writes, during the initial validation before creating a task,
-        allow a possible Http404 bubble up. When running validation from a task,
-        catch the Http404.
-    """
-
     def to_internal_value(self, data):
         """
         After letting DRF populate and validate all writable fields, populate and validate
-        `href_writable` fields.
+        fields with the custom flag `href_writable`. This flag is added by the
+        WritableNestedUrlRelatedField.
 
         Args:
             data (dict): Data to be converted from primitive values to native objects.
         Returns:
             OrderedDict: Data that is ready to be written to the db.
         Raises:
-            django.http.Http404: When the parent specified in the url does not exist.
+            django.http.Http404: When the parent specified in the url does not exist. Tasks that
+                                 asynchronously validate should catch this exception.
         """
         # super().to_internal_value validates all writable fields
         validated_data = super().to_internal_value(data)
@@ -332,8 +322,6 @@ class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedI
 
 class WritableNestedUrlRelatedField(NestedHyperlinkedRelatedField):
     """
-    For use with a NestedModelSerializer.
-
     This field supports a special attribute, `href_writable`. Fields that carry this flag represent
     a nested parent, which is the model determined by the url parameters instead of request body
     parameters.
