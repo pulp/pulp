@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from gettext import gettext as _
 
 from celery import bootsteps
-from celery.signals import celeryd_after_setup, worker_shutdown
+from celery.signals import celeryd_after_setup
 import mongoengine
 
 from pulp.common import constants, dateutils
@@ -93,6 +93,18 @@ class HeartbeatStep(bootsteps.StartStopStep):
             self.timer_ref.cancel()
             self.timer_ref = None
 
+    def shutdown(self, consumer):
+        """
+        Called when the consumer is shut down.
+
+        So far, this just cleans up the database by removing the worker's record in
+        the workers collection.
+
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
+        """
+        tasks._delete_worker(consumer.hostname, normal_shutdown=True)
+
     def _record_heartbeat(self, consumer):
         """
         This method creates or updates the worker record
@@ -165,22 +177,6 @@ def initialize_worker(sender, instance, **kwargs):
     # can be acquired
     if sender.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
         get_resource_manager_lock(sender)
-
-
-@worker_shutdown.connect
-def shutdown_worker(signal, sender, **kwargs):
-    """
-    Called when a worker is shutdown.
-    So far, this just cleans up the database by removing the worker's record in
-    the workers collection.
-    :param signal:   The signal being sent to the worker
-    :type  signal:   int
-    :param instance: The hostname of the worker
-    :type  instance: celery.apps.worker.Worker
-    :param kwargs:   Other params (unused)
-    :type  kwargs:   dict
-    """
-    tasks._delete_worker(sender.hostname, normal_shutdown=True)
 
 
 def get_resource_manager_lock(name):
