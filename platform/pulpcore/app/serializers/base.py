@@ -320,18 +320,11 @@ class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedI
     pass
 
 
-class WritableNestedUrlRelatedField(NestedHyperlinkedRelatedField):
+class DetailWritableNestedUrlRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
     """
     This field supports a special attribute, `href_writable`. Fields that carry this flag represent
     a nested parent, which is the model determined by the url parameters instead of request body
     parameters.
+    read_only should be passed as a kwarg to this field.
     """
-    def __init__(self, *args, **kwargs):
-        # rest_framework.fields.Field.__init__ sets self.read_only, so we have to inject this kwarg.
-        kwargs['read_only'] = True
-        self.href_writable = True
-        super().__init__(*args, **kwargs)
-
-
-class DetailWritableNestedUrlRelatedField(_DetailFieldMixin, WritableNestedUrlRelatedField):
-    pass
+    href_writable = True
