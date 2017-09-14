@@ -4,6 +4,7 @@ import io
 import stat
 
 from datetime import datetime
+from uuid import uuid4
 
 from django.conf import settings
 from django.core.files import File
@@ -108,24 +109,6 @@ class FileSystem(Storage):
     """
 
     @staticmethod
-    def mkdir(path):
-        """
-        Make the directory (and parent directories) at the specified path.
-        No exception is raised if the directory already exists.
-
-        Args:
-            path (str): Absolute directory path.
-        """
-        try:
-            os.makedirs(path)
-        except OSError as e:
-            if e.errno == errno.EEXIST and os.path.isdir(path):
-                # ignored.
-                pass
-            else:
-                raise
-
-    @staticmethod
     def unlink(path):
         """
         Delete the link at the specified path.
@@ -133,12 +116,42 @@ class FileSystem(Storage):
 
         Args:
             path (str): Path to unlink.
+
+        Raises:
+            OSError: On error.
         """
         try:
             os.unlink(path)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
+
+    @staticmethod
+    def copy(path, content):
+        """
+        Atomic copy of the content into storage.
+        The content copied into a temporary file, then renamed.
+        This prevents creating partial files.
+
+        Args:
+            path(str): The storage path.
+            content (File): Source file object.
+
+        Raises:
+            FileExistsError: File already stored.
+            OSError: On error.
+        """
+        tmp_path = '.'.join((path, str(uuid4()), 'tmp'))
+        try:
+            with open(tmp_path, 'wb+') as fp:
+                while True:
+                    bfr = content.read(1024000)
+                    if bfr:
+                        fp.write(bfr)
+                    else:
+                        break
+            os.link(tmp_path, path)
+        finally:
+            FileSystem.unlink(tmp_path)
 
     @staticmethod
     def delete_empty_dirs(path, root):
@@ -182,39 +195,34 @@ class FileSystem(Storage):
         """
         Save the content of a file to the specified path.
         The directory tree is created as needed.  The file is linked when possible.
-        Required by the Storage API.
+        Required by the Storage API.  An existing file will not be overwritten.
 
         Args:
             path (str): Target path to which the file is copied.
             content (File): Source file object.
 
         Returns:
-            str: Final storage page.
+            str: Final storage path.
         """
-        def copy():
-            content.open(mode='rb')
-            with content:
-                with open(path, 'wb+') as fp:
-                    while True:
-                        bfr = content.read(1024000)
-                        if bfr:
-                            fp.write(bfr)
-                        else:
-                            break
-        # Create dir
-        FileSystem.mkdir(os.path.dirname(path))
-        # Transfer content
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
         try:
-            os.link(content.name, path)
-        except OSError as e:
-            if e.errno in (errno.EXDEV, errno.ENOENT):
-                copy()
-            else:
-                raise
-        # Propagate permissions
-        if os.path.exists(content.name):
-            st = os.stat(content.name)
-            os.chmod(path, stat.S_IMODE(st.st_mode))
+            try:
+                os.link(content.name, path)
+            except OSError as e:
+                if e.errno in (errno.EXDEV, errno.ENOENT):
+                    FileSystem.copy(path, content)
+                else:
+                    raise
+        except FileExistsError:
+            pass
+        else:
+            try:
+                st = os.stat(content.name)
+                os.chmod(path, stat.S_IMODE(st.st_mode))
+            except FileNotFoundError:
+                pass
+
         return path
 
     @staticmethod
