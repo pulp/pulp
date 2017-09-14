@@ -5,12 +5,14 @@ from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRe
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
     DetailNestedHyperlinkedRelatedField, DetailNestedHyperlinkedIdentityField, viewset_for_model,
     DetailWritableNestedUrlRelatedField)
-from pulpcore.app.serializers.fields import (ContentRelatedField, RepositoryRelatedField,  # noqa
-    FileField)
+from pulpcore.app.serializers.fields import (ContentRelatedField, FileField,  # noqa
+                                             HrefWritableRepositoryRelatedField)
 from pulpcore.app.serializers.consumer import ConsumerSerializer  # noqa
 from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa
 from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa
-from pulpcore.app.serializers.repository import (DistributionSerializer, ImporterSerializer, PublisherSerializer,  # noqa
-    RepositorySerializer, RepositoryContentSerializer)  # noqa
+from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
+                                                 ImporterSerializer,
+                                                 PublisherSerializer, RepositorySerializer,
+                                                 RepositoryContentSerializer)
 from pulpcore.app.serializers.task import TaskSerializer, WorkerSerializer  # noqa
 from pulpcore.app.serializers.user import UserSerializer  # noqa

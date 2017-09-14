@@ -5,7 +5,8 @@ from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
-                                      RepositoryRelatedField, GenericKeyValueRelatedField,
+                                      HrefWritableRepositoryRelatedField,
+                                      GenericKeyValueRelatedField,
                                       DetailWritableNestedUrlRelatedField,
                                       ContentRelatedField,
                                       FileField,
@@ -136,7 +137,7 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         read_only=True
     )
 
-    repository = RepositoryRelatedField()
+    repository = HrefWritableRepositoryRelatedField(read_only=True)
 
     class Meta:
         abstract = True
@@ -163,7 +164,7 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
-    repository = RepositoryRelatedField()
+    repository = HrefWritableRepositoryRelatedField(read_only=True)
 
     auto_publish = serializers.BooleanField(
         help_text=_('An indicaton that the automatic publish may happen when'
@@ -217,6 +218,7 @@ class DistributionSerializer(ModelSerializer):
     publisher = DetailWritableNestedUrlRelatedField(
         parent_lookup_kwargs={'repository_name': 'repository__name'},
         lookup_field='name',
+        read_only=True
     )
 
     class Meta:
@@ -230,7 +232,11 @@ class RepositoryContentSerializer(serializers.ModelSerializer):
     # RepositoryContentSerizlizer should not have it's own _href, so it subclasses
     # rest_framework.serializers.ModelSerializer instead of pulpcore.app.serializers.ModelSerializer
     content = ContentRelatedField()
-    repository = RepositoryRelatedField()
+    repository = serializers.HyperlinkedRelatedField(
+        view_name='repositories-detail',
+        lookup_field='name',
+        queryset=models.Repository.objects.all()
+    )
 
     class Meta:
         model = models.RepositoryContent

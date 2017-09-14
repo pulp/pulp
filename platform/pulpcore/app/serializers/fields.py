@@ -16,13 +16,15 @@ class ContentRelatedField(DetailRelatedField):
     queryset = models.Content.objects.all()
 
 
-class RepositoryRelatedField(serializers.HyperlinkedRelatedField):
+class HrefWritableRepositoryRelatedField(serializers.HyperlinkedRelatedField):
     """
-    A serializer field with the correct view_name and lookup_field to link to a repository.
+    A serializer field for a repository that is the parent in a nested relationship.
+    It has the href_writable field set so the repository is determined by url parameters.
+    read_only should passed as a kwarg to this field.
     """
     view_name = 'repositories-detail'
     lookup_field = 'name'
-    queryset = models.Repository.objects.all()
+    href_writable = True
 
 
 class FileField(serializers.CharField):
