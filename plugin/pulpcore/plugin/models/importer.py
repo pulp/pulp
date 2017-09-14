@@ -1,6 +1,7 @@
 from pulpcore.app.models import Importer as PlatformImporter
 
-from pulpcore.plugin.download.futures import Factory
+from pulpcore.plugin.download.asyncio import DownloaderFactory
+from pulpcore.plugin.download.futures import Factory as FuturesFactory
 
 
 class Importer(PlatformImporter):
@@ -65,4 +66,41 @@ class Importer(PlatformImporter):
             This method supports plugins downloading metadata and the
             `streamer` downloading artifacts.
         """
-        return Factory(self).build(url, destination, artifact)
+        return FuturesFactory(self).build(url, destination, artifact)
+
+    @property
+    def asyncio_download_factory(self):
+        """
+        Return the DownloaderFactory which can be used to generate asyncio capable downloaders.
+
+        Upon first access, the DownloaderFactory is instantiated and saved internally.
+
+        Plugin writers are expected to override when additional configuration of the
+        DownloaderFactory is needed.
+
+        Returns:
+            DownloadFactory: The instantiated DownloaderFactory to be used by
+                get_asyncio_downloader()
+        """
+        try:
+            return self._download_factory
+        except AttributeError:
+            self._download_factory = DownloaderFactory(self)
+            return self._download_factory
+
+    def get_asyncio_downloader(self, url, **kwargs):
+        """
+        Get an asyncio capable downloader that is configured with the importer settings.
+
+        Plugin writers are expected to override when additional configuration is needed or when
+        another class of download is required.
+
+        Args:
+            url (str): The download URL.
+            kwargs (dict): This accepts the parameters of
+                :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
+
+        Returns:
+            coroutine: An asyncio-aware downloader that is configured with the importer settings.
+        """
+        return self.asyncio_download_factory.build(url, **kwargs)
