@@ -27,6 +27,8 @@ python manage.py reset_db --noinput
 # in for the platform app, at which point we can declare this dependency in the
 # migration itself:
 # https://docs.djangoproject.com/en/1.8/topics/migrations/#dependencies
+python manage.py makemigrations pulp_file
+python manage.py makemigrations pulp_app
 python manage.py migrate --noinput auth
 python manage.py migrate --noinput
 python manage.py reset-admin-password --password admin
