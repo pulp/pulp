@@ -1,8 +1,28 @@
 Installation Instructions
 =========================
 
-Ansible
--------
+Pulp 3 Ansible Galaxy Installation
+----------------------------------
+
+1. In order to be able to run playbook, ensure python3 and ansible( >2.2) are installed::
+
+   $ sudo dnf install python3 ansible
+
+2. Target machine should have SELinux set to permissive mode.
+
+3. Target machine should have virtualenv installed::
+
+   $ sudo pip3 install virtualenv
+
+4. Download ``requirements.yml`` and install Galaxy roles specified in the file::
+
+   $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/requirements.yml
+   $ ansible-galaxy install -r requirements.yml -p ./roles
+
+5. Download ``deploy-pulp3.yml`` playbook and run it by specifying which broker is desired rabbitmq|qpidd to be installed::
+
+   $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/deploy-pulp3.yml
+   $ ansible-playbook deploy-pulp3.yml --extra-vars "pulp3_broker=rabbitmq"
 
 PyPI
 ----
