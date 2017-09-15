@@ -43,4 +43,3 @@ class HashingFileUploadHandler(TemporaryFileUploadHandler):
         self.file.write(raw_data)
         for hasher in hashlib.algorithms_guaranteed:
             self.file.hashers[hasher].update(raw_data)
-
