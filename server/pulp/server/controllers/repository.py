@@ -302,11 +302,11 @@ def rebuild_content_unit_counts(repository):
     pipeline = [
         {'$match': {'repo_id': repository.repo_id}},
         {'$group': {'_id': '$unit_type_id', 'sum': {'$sum': 1}}}]
-    q = db.command('aggregate', 'repo_content_units', pipeline=pipeline)
+    q = db.repo_content_units.aggregate(pipeline=pipeline)
 
     # Flip this into the form that we need
     counts = {}
-    for result in q['result']:
+    for result in q:
         counts[result['_id']] = result['sum']
 
     repository.content_unit_counts = counts
