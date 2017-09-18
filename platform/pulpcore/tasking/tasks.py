@@ -305,6 +305,8 @@ class UserFacingTask(PulpTask):
             einfo: celery's ExceptionInfo instance, containing serialized traceback.
         """
         _logger.error(_('Task failed : [%s]') % task_id)
+        if isinstance(exc, PulpException):
+            _logger.exception(exc)
 
         if not self.request.called_directly:
             task_status = TaskStatus.objects.get(pk=task_id)
