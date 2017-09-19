@@ -69,5 +69,5 @@ from .http import HttpDownload  # noqa
 from .settings import Settings, SSL, Timeout, User  # noqa
 from .tools import DownloadMonitor  # noqa
 from .single import Download  # noqa
-from .validation import ValidationError, SizeValidation, DigestValidation  # noqa
+from .validation import Validation, ValidationError, SizeValidation, DigestValidation  # noqa
 from .writer import Writer, FileWriter, BufferWriter  # noqa
