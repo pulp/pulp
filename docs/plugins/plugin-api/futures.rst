@@ -1,3 +1,5 @@
+.. _futures-docs:
+
 pulpcore.plugin.download.futures
 ================================
 

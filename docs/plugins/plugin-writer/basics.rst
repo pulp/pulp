@@ -1,11 +1,7 @@
 Pulp Plugin Basics
 ==================
 
-.. warning::
-
-    All the content below is here due to refactor of initial 3.0 docs
-    and should be revisited for correctness.    
-
+.. _plugin-django-application:
 
 Plugin Django Application
 -------------------------
@@ -23,7 +19,12 @@ The ``PulpPluginAppConfig`` subclass for any plugin must set its ``name`` attrib
 the importable dotted Python location of the plugin application (the Python namespace
 that contains at least models and viewsets). Additionally, it should also set its ``label``
 attribute to something that unambiguously labels which plugin is represented by that
-subclass.
+subclass. See `how it is done
+<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/__init__.py>`_ in
+``pulp_example`` plugin.
+
+
+.. _plugin-entry-point:
 
 pulpcore.plugin Entry Point
 ---------------------------
@@ -49,10 +50,17 @@ the ``pulpcore.plugin`` entry point must be an importable identifier with a stri
 containing the importable dotted path to your plugin's application config class, just
 as ``default_app_config`` does.
 
+Check out ``pulp_example`` plugin: `default_app_config
+<https://github.com/pulp/pulp_example/blob/master/pulp_example/__init__.py>`_ and `setup.py example
+<https://github.com/pulp/pulp_example/blob/master/setup.py>`_.
+
+
+.. _model-serializer-viewset-discovery:
+
 Model, Serializer, Viewset Discovery
 ------------------------------------
 
-The structure of plugins should, where possible, mimic the layout of the Pulp Plugin API.
+The structure of plugins should, where possible, mimic the layout of the Pulp Core Plugin API.
 For example, model classes should be based on platform classes imported from
 :mod:`pulpcore.plugin.models` and be defined in the ``models`` module of a plugin app. ViewSets
 should be imported from :mod:`pulpcore.plugin.viewsets`, and be defined in the ``viewsets`` module
@@ -61,8 +69,35 @@ of a plugin app, and so on.
 This matching of module names is required for the Pulp Core to be able to auto-discover
 plugin components, particularly for both models and viewsets.
 
-Subclassing Importer, Publisher
--------------------------------
+Take a look at `the structure <https://github.com/pulp/pulp_example/tree/master/pulp_example/app>`_
+of the ``pulp_example`` plugin.
+
+
+.. _subclassing-platform-models:
+
+Subclassing Content, Importer, Publisher
+----------------------------------------
+
+The following classes are expected to be defined by plugin.
+For more details and examples see :ref:`define-content-type`, :ref:`define-importer`, :ref:`define-publisher` sections of the guide.
+
+Models:
+ * model(s) for the specific content type(s) used in plugin, should be subclassed from Content model
+ * model(s) for the plugin specific importer(s), should be subclassed from Importer model
+ * model(s) for the plugin specific publisher(s), should be subclassed from Publisher model
+
+Serializers:
+ * serializer(s) for plugin specific content type(s), should be subclassed from ContentSerializer
+ * serializer(s) for plugin specific importer(s), should be subclassed from ImporterSerializer
+ * serializer(s) for plugin specific publisher(s), should be subclassed from PublisherSerializer
+
+Viewsets:
+ * viewset(s) for plugin specific content type(s), should be subclassed from ContentViewset
+ * viewset(s) for plugin specific importer(s), should be subclassed from ImporterViewset
+ * viewset(s) for plugin specific publisher(s), should be subclassed from PublisherViewset
+
+
+.. _error-handling-basics:
 
 Error Handling
 --------------

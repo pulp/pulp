@@ -69,7 +69,7 @@ class RepositorySerializer(ModelSerializer):
 class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
     """
     Every importer defined by a plugin should have an Importer serializer that inherits from this
-    class. Please import from `pulpcore.app.serializers` rather than from this module directly.
+    class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
     _href = DetailNestedHyperlinkedIdentityField(
         lookup_field='name', parent_lookup_kwargs={'repository_name': 'repository__name'},
@@ -153,7 +153,7 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
 class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
     """
     Every publisher defined by a plugin should have an Publisher serializer that inherits from this
-    class. Please import from `pulpcore.app.serializers` rather than from this module directly.
+    class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
     _href = DetailNestedHyperlinkedIdentityField(
         lookup_field='name', parent_lookup_kwargs={'repository_name': 'repository__name'},

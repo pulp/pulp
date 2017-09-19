@@ -1,11 +1,6 @@
 Releasing Your Plugin
 =====================
 
-.. warning::
-
-    All the content below is here due to refactor of initial 3.0 docs
-    and should be revisited for correctness. 
-
 Packaging
 ---------
 

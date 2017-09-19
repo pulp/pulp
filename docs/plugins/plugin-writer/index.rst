@@ -1,11 +1,6 @@
 Plugin Writer's Guide
 =====================
 
-.. warning::
-
-    All the content below is here due to refactor of initial 3.0 docs
-    and should be revisited for correctness.  
-
 This documentation is for Pulp Plugin developers. For Core development,
 see the :doc:`../../contributing/3.0-development/app-layout`.
 
@@ -16,14 +11,15 @@ Web Framework and the Django REST Framework to provide a set of base classes tha
 implemented in plugins to manage content in a way that is consistent across plugins, while
 still allowing plugin writers the freedom to define their workflows as they deem necessary.
 
+Along with this guide `an example of plugin implementation
+<https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
+
 .. toctree::
    :maxdepth: 2
    
    checklist
    first-plugin
    basics
-   documentation
-   cli
    releasing
 
 The Pulp :doc:`../plugin-api/index` is versioned separately from the Pulp Core and consists

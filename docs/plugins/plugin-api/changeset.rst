@@ -1,3 +1,5 @@
+.. _changeset-docs:
+
 pulpcore.plugin.changeset
 =========================
 
