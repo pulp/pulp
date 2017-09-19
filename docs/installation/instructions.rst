@@ -19,10 +19,24 @@ Pulp 3 Ansible Galaxy Installation
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/requirements.yml
    $ ansible-galaxy install -r requirements.yml -p ./roles
 
-5. Download ``deploy-pulp3.yml`` playbook and run it by specifying which broker is desired rabbitmq|qpidd to be installed::
+5. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
 
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/deploy-pulp3.yml
-   $ ansible-playbook deploy-pulp3.yml --extra-vars "pulp3_broker=rabbitmq"
+   $ ansible-playbook deploy-pulp3.yml -i localhost, -c local -K
+
+.. note::
+
+    To do a non-local install of Pulp, configure your Ansible
+    `inventory <http://docs.ansible.com/ansible/latest/intro_inventory.html>`_
+    and run::
+
+    $  ansible-playbook deploy-pulp3.yml
+
+6. Pulp can now be started by going to the target machine and running::
+
+   $ sudo -u pulp -i
+   $ source ~/pulpvenv/bin/activate
+   $ django-admin runserver
 
 PyPI
 ----
