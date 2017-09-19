@@ -23,7 +23,7 @@ For basic synchronous or parallel downloading of files, the easiest usage is usi
 :ref:`DownloaderFactory <downloader-factory>` and scheduling those downloads with asyncio.
 
 For parallel downloading where multiple files need to be downloaded before a content unit can be
-saved, use the :ref:`GroupDownloader <group-downloader>`. The GroupDownloader manages the asyncio
+saved, use the :ref:`GroupDownloader <group-downloader>`. The `GroupDownloader` manages the asyncio
 loop for you, which some users may prefer even for basic usage.
 
 .. _downloader-factory:
@@ -68,12 +68,12 @@ Motivation
 ##########
 
 A content unit that requires multiple files to be all downloaded before the content unit can be
-saved is a common problem. Consider a content unit foo, that requires three files, A, B, and C. One
-option is to use the :ref:`DownloaderFactory <downloader-factory>` to generate a downloader for each URL
-(A, B, C) and wait for those downloads to complete and then save the content unit foo and its
-associated Artifacts. The issue with this approach is that you also want to download other content
-units, e.g. a unit named bar with files (D, E, and F) and while waiting on A, B, and C you are not
-also downloading D, E, and F in parallel.
+saved is a common problem. Consider a content unit `foo`, that requires three files, A, B, and C.
+One option is to use the :ref:`DownloaderFactory <downloader-factory>` to generate a downloader for
+each URL (A, B, C) and wait for those downloads to complete before saving the content unit `foo` and
+its associated :class:`~pulpcore.plugin.models.Artifact` objects. The issue with this approach is
+that you also want to download other content units, e.g. a unit named `bar` with files (D, E, and F)
+and while waiting on A, B, and C you are not also downloading D, E, and F in parallel.
 
 GroupDownloader Overview
 ########################
