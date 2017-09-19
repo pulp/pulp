@@ -91,8 +91,7 @@ class HttpDownloader(BaseDownloader):
         while True:
             chunk = await response.content.read(1024)
             if not chunk:
-                self.validate_size()
-                self.validate_digests()
+                self.finalize()
                 break  # the download is done
             self.handle_data(chunk)
         return DownloadResult(path=self.path, artifact_attributes=self.artifact_attributes,
