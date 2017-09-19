@@ -4,9 +4,10 @@ from contextlib import suppress
 from gettext import gettext as _
 from itertools import chain
 
-from pulpcore.plugin.download.asyncio import DownloadResult
+from pulpcore.app.models import Artifact
 from pulpcore.plugin.tasking import Task
 
+from .base import DownloadResult
 from .factory import DownloaderFactory
 
 
@@ -14,8 +15,20 @@ class GroupDownloader:
     """
     Download groups of files, with all downloads from all groups occurring in parallel.
 
-    This supports groups to be downloaded by adding them explicitly or via an iterator such as a
-    generator. The generator case is useful for limiting the number of in-memory objects.
+    This downloads any number of :class:`~pulpcore.plugin.download.asyncio.Group` objects by adding
+    them explicitly using :meth:`~pulpcore.plugin.download.asyncio.GroupDownloader.schedule_group`
+    or via an iterator, such as a generator, with
+    :meth:`~pulpcore.plugin.download.asyncio.GroupDownloader.schedule_from_iterator`. The generator
+    case is useful for limiting the number of in-memory objects.
+
+    This downloader does not raise Exceptions. Instead any exception emitted by the downloader is
+    recorded as a non-fatal exception using :meth:`~pulpcore.plugin.Task.append_non_fatal_error`.
+    This exception is also recorded on the ``exception`` attribute of the
+    :class:`~pulpcore.plugin.download.asyncio.DownloadResult`.
+
+    The Group configures downloaders with the expected size and expected digest values of the
+    :class:`~pulpcore.plugin.models.RemoteArtifact`. This ensures that validation errors are
+    recorded when the size or digests don't validate.
 
     Basic Usage:
         >>> downloader = GroupDownloader(importer)
@@ -43,9 +56,6 @@ class GroupDownloader:
         >>> for id, group in downloader:
         >>>     print(id)  # id is set to 'id_1'
         >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.asyncio.Group`
-
-    This downloader does not raise Exceptions. Instead any exceptions emitted by the Task are
-    recorded as non-fatal exceptions using :meth:`~pulpcore.plugin.Task.append_non_fatal_error`.
     """
 
     def __init__(self, importer, downloader_overrides=None):
@@ -109,9 +119,23 @@ class GroupDownloader:
         for url in group.urls:
             if len(self.urls[url]) == 0:
                 # This is the first time we've seen this url so make a downloader
-                downloader_for_url = self.downloader_factory.build(url)
+                size_digest_kwargs = self._get_size_digest_kwargs(group.remote_artifacts[url])
+                downloader_for_url = self.downloader_factory.build(url, **size_digest_kwargs)
                 self.downloads_not_done.add(downloader_for_url)
             self.urls[url].append(group)
+
+    def _get_size_digest_kwargs(self, remote_artifact):
+        size_digest_kwargs = {}
+        digest_kwargs_only = {}
+        if remote_artifact.size:
+            size_digest_kwargs['expected_size'] = remote_artifact.size
+        for algorithm in Artifact.DIGEST_FIELDS:
+            digest_value = getattr(remote_artifact, algorithm)
+            if digest_value:
+                digest_kwargs_only[algorithm] = digest_value
+        if digest_kwargs_only:
+            size_digest_kwargs['expected_digests'] = digest_kwargs_only
+        return size_digest_kwargs
 
     def _find_and_remove_done_group(self):
         for index, group in enumerate(self.groups_not_done):
