@@ -153,14 +153,15 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         Returns:
             OrderedDict: Data that is ready to be written to the db.
         Raises:
-            django.http.Http404: When the parent specified in the url does not exist. Tasks that
-                                 asynchronously validate should catch this exception.
+            django.http.Http404: When the parent specified in the url does not exist.
         """
         # super().to_internal_value validates all writable fields
         validated_data = super().to_internal_value(data)
         for field in self.fields.values():
-            # href_writable is a special attribute of WritableNestedUrlRelatedFields
-            if (getattr(field, 'href_writable', False)):
+            # href_writable is a special attribute of WritableNestedUrlRelatedFields,
+            # the href_writable field should only be obtained from the view if being called
+            # from a viewset
+            if (getattr(field, 'href_writable', False) and 'view' in self.context):
                 parent_field, parent = self.context['view'].get_parent_field_and_object()
                 validated_data[parent_field] = parent
         return validated_data
