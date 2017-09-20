@@ -141,9 +141,10 @@ class User(Settings):
 
     def __str__(self):
         description = _('User: name={n} password={p}')
+        password = '*' * len(self.password or '')
         return description.format(
             n=self.name,
-            p=self.password)
+            p=password)
 
 
 class Timeout(Settings):
