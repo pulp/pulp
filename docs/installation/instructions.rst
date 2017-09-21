@@ -1,25 +1,30 @@
 Installation Instructions
 =========================
 
-Pulp 3 Ansible Galaxy Installation
-----------------------------------
+.. note::
+
+    As Pulp 3 currently does not have an SELinux Policy, it currently requires the target
+    machine to have SELinux set to permissive mode::
+
+    $ sudo setenforce 0
+
+Ansible Galaxy Installation
+---------------------------
 
 1. In order to be able to run playbook, ensure python3 and ansible( >2.2) are installed::
 
    $ sudo dnf install python3 ansible
 
-2. Target machine should have SELinux set to permissive mode.
-
-3. Target machine should have virtualenv installed::
+2. Target machine should have virtualenv installed::
 
    $ sudo pip3 install virtualenv
 
-4. Download ``requirements.yml`` and install Galaxy roles specified in the file::
+3. Download ``requirements.yml`` and install Galaxy roles specified in the file::
 
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/requirements.yml
    $ ansible-galaxy install -r requirements.yml -p ./roles
 
-5. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
+4. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
 
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/deploy-pulp3.yml
    $ ansible-playbook deploy-pulp3.yml -i localhost, -c local -K
@@ -38,15 +43,15 @@ Pulp 3 Ansible Galaxy Installation
    $ source ~/pulpvenv/bin/activate
    $ django-admin runserver
 
-PyPI
-----
+PyPI Installation
+-----------------
 
 .. tip::
 
     These are the manual steps to install Pulp. There are Ansible roles that will do all
     of the following for you.
 
-1. Install python3.5 and virtualenv::
+1. Install python3.5(+) and virtualenv::
 
    $ sudo dnf install python3
    $ sudo pip3 install virtualenv
@@ -61,8 +66,15 @@ PyPI
    $ pip3 install pulpcore
 
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
-   PULP_SETTINGS environment variable to tell pulp where to find you server.yaml file.
-   ``export PULP_SETTINGS={virtualenv}/lib/python3.5/site-packages/pulpcore/etc/pulp/server.yaml``
+   PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
+
+   $ export PULP_SETTINGS={virtualenv}/lib/{python_version}/site-packages/pulpcore/etc/pulp/server.yaml
+
+   .. note::
+
+       The exact path will depend on the major *and* minor Python version found by virtualenv e.g.
+       /lib/python3.5/, /lib/python3.6/
+
 
 5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file
 
@@ -82,16 +94,16 @@ PyPI
 
    $ django-admin runserver
 
-CentOS, RHEL, Fedora
---------------------
+CentOS, RHEL, Fedora Installation
+---------------------------------
 
-Source
-------
+Source Installation
+-------------------
 
 .. _database-install:
 
-Database
---------
+Database Setup
+--------------
 
 .. tip::
 
@@ -114,8 +126,9 @@ Initialize the pulp database::
    $ sudo -u postgres -i bash
    $ createuser --username=postgres -d -l pulp
    $ createdb --owner=pulp --username=postgres pulp
+   $ exit
 
-Don't forget to update your `/var/lib/pgsql/data/pg_hba.conf
+Make sure to update your `/var/lib/pgsql/data/pg_hba.conf
 <https://www.postgresql.org/docs/9.1/static/auth-pg-hba-conf.html>`_ file, to grant an appropriate
 level of database access.
 
@@ -173,7 +186,9 @@ Systemd
     the following for you.
 
 
-To run the Pulp services, three systemd files needs to be created in /etc/systemd/system/
+To run the Pulp services, three systemd files needs to be created in /etc/systemd/system/. Make
+sure to substitute ```Environment=PULP_SETTINGS=/path/to/pulp/server.yaml``` with the real location
+of server.yaml.
 
 pulp_celerybeat::
 
