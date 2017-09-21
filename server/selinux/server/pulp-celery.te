@@ -23,11 +23,14 @@ require {
         type pulp_cert_t;
         type puppet_etc_t;
         type tmp_t;
+        type tmpfs_t;
+        type sysfs_t;
         class sock_file { create link unlink write };
         class unix_stream_socket connectto;
-        class dir { getattr search write remove_name create add_name rmdir relabelto relabelfrom };
-        class file { lock rename write setattr getattr read create unlink open relabelto relabelfrom };
-        class process { setsched signal signull };
+        class dir { getattr search read write remove_name create add_name rmdir relabelto relabelfrom };
+        class file { lock rename write setattr getattr read create link unlink open relabelto relabelfrom };
+        class filesystem getattr;
+        class process { setsched signal signull execmem };
         class tcp_socket { connect create getattr getopt read setopt shutdown write };
         class lnk_file { create read getattr unlink relabelto relabelfrom };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
@@ -41,9 +44,13 @@ require {
 #
 
 allow celery_t self:netlink_route_socket r_netlink_socket_perms;
-allow celery_t self:process { signal signull };
+allow celery_t self:process { signal signull execmem };
 allow celery_t self:udp_socket { ioctl getattr create connect write read };
 allow celery_t self:unix_dgram_socket { create connect };
+allow celery_t sysfs_t:dir read;
+allow celery_t tmpfs_t:filesystem getattr;
+allow celery_t tmpfs_t:dir { write add_name remove_name };
+allow celery_t tmpfs_t:file { create open read write link getattr unlink };
 
 ######################################
 #
