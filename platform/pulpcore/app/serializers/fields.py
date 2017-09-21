@@ -72,7 +72,6 @@ class ContentArtifactsField(serializers.DictField):
                 serializers.HyperlinkedRelatedField(view_name='artifacts-detail',
                                                     queryset=models.Artifact.objects.all(),
                                                     source='*', initial=url)
-            artifactfield.context = self.context
             try:
                 artifact = artifactfield.run_validation(data=url)
                 ret[relative_path] = artifact
