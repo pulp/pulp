@@ -190,7 +190,7 @@ To run the Pulp services, three systemd files needs to be created in /etc/system
 sure to substitute ```Environment=PULP_SETTINGS=/path/to/pulp/server.yaml``` with the real location
 of server.yaml.
 
-pulp_celerybeat::
+```pulp_celerybeat.service```::
 
     [Unit]
     Description=Pulp Celerybeat
@@ -208,7 +208,7 @@ pulp_celerybeat::
     [Install]
     WantedBy=multi-user.target
 
-pulp_resource_manager::
+```pulp_resource_manager.service```::
 
     [Unit]
     Description=Pulp Resource Manager
@@ -229,7 +229,7 @@ pulp_resource_manager::
     WantedBy=multi-user.target
 
 
-pulp_worker@::
+```pulp_worker@.service```::
 
     [Unit]
     Description=Pulp Celery Worker
