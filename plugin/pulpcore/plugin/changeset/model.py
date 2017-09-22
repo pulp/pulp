@@ -18,15 +18,15 @@ class Pending:
     Represents content related things contained within the remote repository.
 
     Attributes:
-        model (Model): A pending (wanted) model instance.
-        fetched (bool): model has been fetched from the DB.
+        _model (django.db.models.Model): A pending (wanted) model instance.
+        _stored_model (django.db.models.Model): The model stored in the database.
         _settled (bool): All matters are settled and the object is ready
             to be (optionally created) and added to the repository.
     """
 
     __slots__ = (
-        'model',
-        'fetched',
+        '_model',
+        '_stored_model',
         '_settled'
     )
 
@@ -43,8 +43,8 @@ class Pending:
         Args:
             model (Model): A pending (wanted) model instance.
         """
-        self.model = model
-        self.fetched = False
+        self._model = model
+        self._stored_model = None
         self._settled = False
 
     def settle(self):
@@ -53,15 +53,6 @@ class Pending:
         pending object can be created in Pulp.
         """
         raise NotImplementedError()
-
-    def update(self, model):
-        """
-        Update with a fetched model instance.
-        Args:
-            model (pulpcore.app.models.Model): The fetched model.
-        """
-        self.model = model
-        self.fetched = True
 
     def save(self):
         """
@@ -117,7 +108,7 @@ class PendingContent(Pending):
         Returns:
             dict: The natural key.
         """
-        return {f.name: getattr(self.model, f.name) for f in self.model.natural_key_fields}
+        return {f.name: getattr(self._model, f.name) for f in self._model.natural_key_fields}
 
     def bind(self, changeset):
         """
@@ -133,25 +124,42 @@ class PendingContent(Pending):
         self.changeset = changeset
         return self
 
-    def update(self, model):
+    @property
+    def model(self):
         """
-        Update this `model` stored with the specified model that has been
-        fetched from the database. The artifacts are matched by `relative_path`
-        and their model object is replaced by the fetched model.
+        Returns:
+            pulpcore.plugin.models.Content: The pending model.
+        """
+        return self._model
+
+    @property
+    def stored_model(self):
+        """
+        Returns:
+            pulpcore.plugin.models.Content: The stored model.
+        """
+        return self._stored_model
+
+    @stored_model.setter
+    def stored_model(self, model):
+        """
+        Notes:
+          - The artifacts are matched by `relative_path` and their
+            their stored_model set.
 
         Args:
-            model (pulpcore.plugin.Content): A fetched content model object.
+            model (pulpcore.plugin.models.Content): The stored model.
         """
-        super().update(model)
+        self._stored_model = model
         artifacts = {a.relative_path: a for a in self.artifacts}
         self.artifacts.clear()
         for content_artifact in model.contentartifact_set.all():
             try:
-                matched = artifacts[content_artifact.relative_path]
-                if not matched.model.is_equal(content_artifact.artifact):
+                artifact = artifacts[content_artifact.relative_path]
+                if not artifact.model.is_equal(content_artifact.artifact):
                     continue
-                matched.update(content_artifact.artifact)
-                self.artifacts.add(matched)
+                artifact.stored_model = content_artifact.artifact
+                self.artifacts.add(artifact)
             except KeyError:
                 log.error(_('Artifact not matched.'))
 
@@ -176,15 +184,18 @@ class PendingContent(Pending):
         """
         Save the content and related artifacts in a single DB transaction.
         Due to race conditions, the content may already exist raising an IntegrityError.
-        When this happens, the model is fetched and replaced.
+        When this happens, the model is fetched and _stored_model is updated.
         """
         with transaction.atomic():
-            try:
-                with transaction.atomic():
-                    self.model.save()
-            except IntegrityError:
-                content = type(self.model).objects.get(**self.key)
-                self.update(content)
+            if not self._stored_model:
+                try:
+                    with transaction.atomic():
+                        self._model.save()
+                except IntegrityError:
+                    model = type(self._model).objects.get(**self.key)
+                    self._stored_model = model
+                else:
+                    self._stored_model = self._model
 
             for artifact in self.artifacts:
                 artifact.save()
@@ -200,7 +211,7 @@ class PendingArtifact(Pending):
         relative_path (str): The relative path within the content.
         content (PendingContent): The associated pending content.
             This is the reverse relationship.
-        monitor (pulpcore.plugin.DownloadMonitor): Used to collect information about
+        _monitor (pulpcore.plugin.DownloadMonitor): Used to collect facts about
             downloaded artifacts.
         _path (str): An absolute path to a downloaded artifact.
 
@@ -218,17 +229,15 @@ class PendingArtifact(Pending):
     __slots__ = (
         'url',
         'relative_path',
-        'monitor',
         'content',
+        '_monitor',
         '_path',
     )
 
     def __init__(self, model, url, relative_path, content=None):
         """
         Args:
-            model (pulpcore.plugin.models.Artifact): A pending artifact model instance.
-                This instance will be used to store a newly created or updated
-                pending artifact in the DB.
+            model (pulpcore.plugin.models.Artifact): A pending artifact model.
             url (str): The URL used to download the artifact.
             relative_path (str): The relative path within the content.
             content (PendingContent): The associated pending content.
@@ -238,10 +247,34 @@ class PendingArtifact(Pending):
         self.url = url
         self.relative_path = relative_path
         self.content = content
-        self.monitor = None
+        self._monitor = None
         self._path = ''
         if content:
             content.artifacts.add(self)
+
+    @property
+    def model(self):
+        """
+        Returns:
+            pulpcore.plugin.models.Artifact: The pending model.
+        """
+        return self._model
+
+    @property
+    def stored_model(self):
+        """
+        Returns:
+            pulpcore.plugin.models.Artifact: The stored model.
+        """
+        return self._stored_model
+
+    @stored_model.setter
+    def stored_model(self, model):
+        """
+        Args:
+            model (pulpcore.plugin.Artifact): The stored model.
+        """
+        self._stored_model = model
 
     @property
     def changeset(self):
@@ -271,10 +304,10 @@ class PendingArtifact(Pending):
         download = self.importer.get_futures_downloader(
             self.url,
             self.relative_path,
-            self.model)
+            self._model)
         download.attachment = self
         download.register(Event.SUCCEEDED, succeeded)
-        self.monitor = DownloadMonitor(download)
+        self._monitor = DownloadMonitor(download)
         return download
 
     def artifact_q(self):
@@ -286,7 +319,7 @@ class PendingArtifact(Pending):
         """
         q = Q()
         for field in Artifact.RELIABLE_DIGEST_FIELDS:
-            digest = getattr(self.model, field)
+            digest = getattr(self._model, field)
             if digest:
                 q |= Q(**{field: digest})
         return q
@@ -306,57 +339,50 @@ class PendingArtifact(Pending):
         Update the DB model to store the downloaded file.
         Then, save in the DB.
         """
-        artifact = None
-
-        if not self.fetched:
-            if self._path:  # downloaded
-                try:
-                    with transaction.atomic():
-                        self.model = Artifact(
-                            file=File(open(self._path, mode='rb')),
-                            **self.monitor.facts())
-                        self.model.save()
-                except IntegrityError:
-                    q = self.artifact_q()
-                    self.model = Artifact.objects.get(q)
-                finally:
-                    artifact = self.model
-        else:
-            artifact = self.model
+        if self._path and (not self._stored_model):  # downloaded
+            try:
+                with transaction.atomic():
+                    self._stored_model = Artifact(
+                        file=File(open(self._path, mode='rb')),
+                        **self._monitor.facts())
+                    self._stored_model.save()
+            except IntegrityError:
+                q = self.artifact_q()
+                self._stored_model = Artifact.objects.get(q)
 
         try:
             with transaction.atomic():
                 content_artifact = ContentArtifact(
                     relative_path=self.relative_path,
-                    content=self.content.model,
-                    artifact=artifact)
+                    content=self.content.stored_model,
+                    artifact=self._stored_model)
                 content_artifact.save()
         except IntegrityError:
             content_artifact = ContentArtifact.objects.get(
                 relative_path=self.relative_path,
-                content=self.content.model)
-            if self.fetched:
-                content_artifact.artifact = artifact
+                content=self.content.stored_model)
+            if self._stored_model:
+                content_artifact.artifact = self._stored_model
                 content_artifact.save()
 
-        digests = {f: getattr(self.model, f) for f in Artifact.DIGEST_FIELDS}
+        digests = {f: getattr(self._model, f) for f in Artifact.DIGEST_FIELDS}
 
         try:
             with transaction.atomic():
-                deferred_artifact = RemoteArtifact(
+                remote_artifact = RemoteArtifact(
                     url=self.url,
                     importer=self.importer,
                     content_artifact=content_artifact,
-                    size=self.model.size,
+                    size=self._model.size,
                     **digests)
-                deferred_artifact.save()
+                remote_artifact.save()
         except IntegrityError:
             q_set = RemoteArtifact.objects.filter(
                 importer=self.importer,
                 content_artifact=content_artifact)
             q_set.update(
                 url=self.url,
-                size=self.model.size,
+                size=self._model.size,
                 **digests)
 
     def __hash__(self):
