@@ -1,22 +1,26 @@
+import aiohttp
+
 from .base import attach_url_to_exception, BaseDownloader, DownloadResult
 
 
 class HttpDownloader(BaseDownloader):
     """
-    An asyncio aware HTTP/HTTPS Downloader built on aiohttp.
+    An HTTP/HTTPS Downloader built on `aiohttp`.
 
-    This is the default downloader used by the DownloaderFactory and GroupDownloader. It is designed
-    to be easily subclassed for customizable download behaviors. If a user subclasses this, they can
-    specify the subclass to be used with either the DownloaderFactory or GroupDownloader.
+    This downloader downloads data from one `url` and is not reused.
 
-    Each downloader downloads data from one `url` and are not reused. Each downloader requires an
-    `aiohttp.ClientSession` for it to use. The aiohttp.ClientSession provides connection pooling,
-    connection reusage, and keep-alives. Don't create one session per Downloader, use one session
-    shared by all of your downloaders.
+    The downloader optionally takes a session argument, which is an `aiohttp.ClientSession`. This
+    allows many downloaders to share one `aiohttp.ClientSession` which provides a connection pool,
+    connection reuse, and keep-alives across multiple downloaders. When creating many downloaders,
+    have one session shared by all of your `HttpDownloader` objects.
 
-    `aiohttp.ClientSession` objects also accept options which will then apply to all downloads which
-    use them. These things include auth, timeouts, headers, etc. For more info on these options see
-    the `aiohttp.ClientSession` docs for more information:
+    A session is optional; if omitted, one session will be created, used for this downloader, and
+    then closed when the download is complete. A session that is passed in will not be closed when
+    the download is complete.
+
+    `aiohttp.ClientSession` objects allows you to configure options that will apply to all
+    downloaders using that session such as auth, timeouts, headers, etc. For more info on these
+    options see the `aiohttp.ClientSession` docs for more information:
     http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession
 
     The `aiohttp.ClientSession` can additionally be configured for SSL configuration by passing in a
@@ -27,36 +31,47 @@ class HttpDownloader(BaseDownloader):
     For more information on `aiohttp.BasicAuth` objects, see their docs:
     http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.BasicAuth
 
-    Usage:
-        >>> session = aiohttp.ClientSession()
-        >>> downloader_obj = HttpDownloader(session, url)
-        >>> downloader_coroutine = downloader_obj.run()
-        >>> loop = asyncio._get_running_loop()
-        >>> done, not_done = loop.run_until_complete(asyncio.wait([downloader_coroutine]))
+    Synchronous Download:
+       >>> downloader = HttpDownloader('http://example.com/')
+       >>> result = downloader.fetch()
+
+    Parallel Download:
+        >>> download_coroutines = [
+        >>>     HttpDownload('http://example.com/').run(),
+        >>>     HttpDownload('http://pulpproject.org/').run(),
+        >>> ]
+        >>>
+        >>> loop = asyncio.get_event_loop()
+        >>> done, not_done = loop.run_until_complete(asyncio.wait([download_coroutines]))
+        >>>
         >>> for task in done:
-        >>>     result = task.result()  # This is a DownloadResult
+        >>>     try:
+        >>>         task.result()  # This is a DownloadResult
+        >>>     except Exception as error:
+        >>>         pass  # fatal exceptions are raised by result()
 
     Attributes:
         session (aiohttp.ClientSession): The session to be used by the downloader.
-        auth (aiohttp.BasicAuth): An object that represents HTTP Basic Authorization (optional)
-        proxy (str): An optional proxy URL.
+        auth (aiohttp.BasicAuth): An object that represents HTTP Basic Authorization or None
+        proxy (str): An optional proxy URL or None
         proxy_auth (aiohttp.BasicAuth): An optional object that represents proxy HTTP Basic
-            Authorization.
+            Authorization or None
         headers_ready_callback (callable): An optional callback that accepts a single dictionary
             as its argument. The callback will be called when the response headers are
             available. The dictionary passed has the header names as the keys and header values
-            as its values. e.g. `{'Transfer-Encoding': 'chunked'}`
+            as its values. e.g. `{'Transfer-Encoding': 'chunked'}`. This can also be None.
 
     This downloader also has all of the attributes of
     :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`
     """
 
-    def __init__(self, session, url, auth=None, proxy=None, proxy_auth=None,
+    def __init__(self, url, session=None, auth=None, proxy=None, proxy_auth=None,
                  headers_ready_callback=None, **kwargs):
         """
         Args:
             url (str): The url to download.
-            session (aiohttp.ClientSession): The session to be used by the downloader.
+            session (aiohttp.ClientSession): The session to be used by the downloader. (optional) If
+                not specified it will open the session and close it
             auth (aiohttp.BasicAuth): An object that represents HTTP Basic Authorization (optional)
             proxy (str): An optional proxy URL.
             proxy_auth (aiohttp.BasicAuth): An optional object that represents proxy HTTP Basic
@@ -68,7 +83,12 @@ class HttpDownloader(BaseDownloader):
             kwargs (dict): This accepts the parameters of
                 :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
         """
-        self.session = session
+        if session:
+            self.session = session
+            self._close_session_on_finalize = False
+        else:
+            self.session = aiohttp.ClientSession()
+            self._close_session_on_finalize = True
         self.auth = auth
         self.proxy = proxy
         self.proxy_auth = proxy_auth
@@ -109,4 +129,6 @@ class HttpDownloader(BaseDownloader):
             response.raise_for_status()
             to_return = await self._handle_response(response)
             await response.release()
+        if self._close_session_on_finalize:
+            self.session.close()
         return to_return

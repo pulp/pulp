@@ -36,9 +36,8 @@ class GroupDownloader:
         >>> artifact_b = RemoteArtifact(url=url_b, size=4172)
         >>> my_group = Group('my_id', [artifact_a, artifact_b])
         >>> downloader.schedule_group(my_group)
-        >>> for id, group_results in downloader:
-        >>>     print(id)  # id is set to 'my_id'
-        >>>     # group_results is a dict of DownloadResult objects keyed by RemoteArtifact
+        >>> for group in downloader:
+        >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.asyncio.Group`
 
     If you register a large number of groups, you could use a lot of memory holding those objects,
     their associated downloaders, and other related objects. To resolve this, the GroupDownloader
@@ -53,8 +52,7 @@ class GroupDownloader:
         >>>
         >>> downloader = GroupDownloader(importer)
         >>> downloader.schedule_from_iterator(group_generator)
-        >>> for id, group in downloader:
-        >>>     print(id)  # id is set to 'id_1'
+        >>> for group in downloader:
         >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.asyncio.Group`
     """
 
@@ -120,7 +118,7 @@ class GroupDownloader:
             if len(self.urls[url]) == 0:
                 # This is the first time we've seen this url so make a downloader
                 size_digest_kwargs = self._get_size_digest_kwargs(group.remote_artifacts[url])
-                downloader_for_url = self.downloader_factory.build(url, **size_digest_kwargs)
+                downloader_for_url = self.downloader_factory.build(url, **size_digest_kwargs).run()
                 self.downloads_not_done.add(downloader_for_url)
             self.urls[url].append(group)
 
@@ -181,7 +179,7 @@ class GroupDownloader:
 
 class Group:
     """
-    A group of remote_artifacts to download.
+    A group of :class:`~pulpcore.plugin.models.RemoteArtifact` objects to download.
 
     Each group is downloaded with the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader`.
 
@@ -200,7 +198,7 @@ class Group:
         Args:
             id (hashable): This id is used to uniquely identify the group
             remote_artifacts (list): A list of :class:`~pulpcore.plugin.models.RemoteArtifact`
-                instances that have not been saved to the database.
+                instances to be downloaded.
         """
         self.id = id
         self.remote_artifacts = {}
@@ -217,7 +215,7 @@ class Group:
         Update the Group with download result calculated during the download from the URL
 
         Args:
-            download_result (:class:`pulpcore.plugin.download.asyncio.DownloadResult`): The return
+            download_result (:class:`~pulpcore.plugin.download.asyncio.DownloadResult`): The return
                 argument from an HttpDownloader
         """
         self.finished_urls.append(download_result.url)

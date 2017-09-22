@@ -1,3 +1,4 @@
+import asyncio
 from collections import namedtuple
 import hashlib
 import os
@@ -148,6 +149,19 @@ class BaseDownloader:
         self._writer.close()
         self.validate_digests()
         self.validate_size()
+
+    def fetch(self):
+        """
+        Run the download synchronously and return the `DownloadResult`.
+
+        Returns:
+            :class:`~pulpcore.plugin.download.asyncio.DownloadResult`
+
+        Raises:
+            Exception: Any fatal exception emitted during downloading
+        """
+        done, _ = asyncio.get_event_loop().run_until_complete(asyncio.wait([self.run()]))
+        return done.pop().result()
 
     def _record_size_and_digests_for_data(self, data):
         """

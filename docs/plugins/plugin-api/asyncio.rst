@@ -7,7 +7,7 @@ The module implements downloaders that solve many of the common problems plugin 
 downloading remote data. A high level list of features provided by these downloaders include:
 
 * auto-configuration from importer settings (auth, ssl, proxy)
-* efficient parallel downloading
+* synchronous or parallel downloading
 * digest and size validation computed during download
 * grouping downloads together to return to the user when all files are downloaded
 * customizable download behaviors via subclassing
@@ -15,38 +15,40 @@ downloading remote data. A high level list of features provided by these downloa
 All classes documented here should be imported directly from the
 ``pulpcore.plugin.download.asyncio`` namespace.
 
-
-Overview
---------
-
-For basic synchronous or parallel downloading of files, the easiest usage is using the
-:ref:`DownloaderFactory <downloader-factory>` and scheduling those downloads with asyncio.
-
-For parallel downloading where multiple files need to be downloaded before a content unit can be
-saved, use the :ref:`GroupDownloader <group-downloader>`. The `GroupDownloader` manages the asyncio
-loop for you, which some users may prefer even for basic usage.
-
-.. _downloader-factory:
-
 Basic Downloading
 -----------------
 
-The DownloaderFactory constructs a downloader for any given url. It contains built-in support for
-`http://`, `https://` and `file://`. It creates :ref:`HttpDownloader <http-downloader>` objects for
-`http` and `https` and :ref:`FileDownloader <file-downloader>` objects for `file`. All downloaders
-are auto-configured from the core settings saved on an importer.
+The most basic downloading from a url can be done like this:
 
-All downloaders can be run in parallel using asyncio. Each downloader has a `run()` method which
-returns a coroutine object that asyncio can run.
+>>> downloader = HttpDownload('http://example.com/')
+>>> result = downloader.fetch()
 
-:ref:`HttpDownloader <http-downloader>` objects produced by an instantiated DownloaderFactory share
-a session, which contains a connection pool inside, connection reusage and keep-alives.
+The example above downloads the data synchronously. The
+:meth:`~pulpcore.plugin.download.asyncio.HttpDownloader.fetch` call blocks until the data is
+downloaded and the :class:`~pulpcore.plugin.download.asyncio.DownloadResult` is returned or a fatal
+exception is raised.
 
-Size and/or digest based validation can be configured using arguments provided to the
-:func:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build`. method.
+Parallel Downloading
+--------------------
 
-.. autoclass:: pulpcore.plugin.download.asyncio.DownloaderFactory
-    :members:
+Any downloader in the ``pulpcore.plugin.download.asyncio`` package can be run in parallel with the
+``asyncio`` event loop. Each downloader has a
+:meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.run` method which returns a coroutine object
+that ``asyncio`` can schedule in parallel. Consider this example:
+
+>>> download_coroutines = [
+>>>     HttpDownload('http://example.com/').run(),
+>>>     HttpDownload('http://pulpproject.org/').run(),
+>>> ]
+>>>
+>>> loop = asyncio.get_event_loop()
+>>> done, not_done = loop.run_until_complete(asyncio.wait([download_coroutines]))
+>>>
+>>> for task in done:
+>>>     try:
+>>>         task.result()  # This is a DownloadResult
+>>>     except Exception as error:
+>>>         pass  # fatal exceptions are raised by result()
 
 .. _download-result:
 
@@ -58,6 +60,93 @@ the downloader's `run()` method when the download is complete.
 
 .. autoclass:: pulpcore.plugin.download.asyncio.DownloadResult
     :no-members:
+
+.. _configuring-from-an-importer:
+
+Configuring from an Importer
+----------------------------
+
+When fetching content during a sync, the importer has settings like SSL certs, SSL validation, basic
+auth credentials, and proxy settings. Downloaders commonly want to use these settings while
+downloading. The importer can automatically configure a downloader with these settings using
+the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` call. Here is an example:
+
+>>> downloader = my_importer.get_asyncio_downloader('http://example.com')
+>>> downloader.fetch()  # This downloader is fully configured
+
+The :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` internally calls the
+`DownloaderFactory`, so it expects a `url` that the `DownloaderFactory` can build a downloader for.
+See the :class:`~pulpcore.plugin.download.asyncio.DownloaderFactory` for more information on
+supported urls.
+
+.. tip::
+    The :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` accepts kwargs that can
+    enable size or digest based validation, and specifying a file-like object for the data to be
+    written into. See :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` for more
+    information.
+
+.. note::
+    All :class:`~pulpcore.plugin.download.asyncio.HttpDownload` downloaders produced by the same
+    importer instance share an `aiohttp` session, which provides a connection pool, connection
+    reusage and keep-alives shared across all downloaders produced by a single importer.
+
+.. _exception-handling:
+
+Exception Handling
+------------------
+
+All downloaders are expected to handle recoverable errors automatically. For example, the
+:class:`~pulpcore.plugin.download.asyncio.HttpDownloader` is expected to retry if a server is too
+busy or if a redirect occurs.
+
+Unrecoverable errors of several types can be raised during downloading. One example is a
+:ref:`validation exception <validation-exceptions>` that are raised if the content downloaded fails
+size or digest validation. There can also be protocol specific errors such as an
+``aiohttp.ClientResponse`` being raised when a server responds with a 400+ response such as an HTTP
+403.
+
+If downloading synchronously, exceptions are raised from
+:meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.fetch`. If downloading in parallel,
+exceptions are raised when checking the `result()` method of a downloader. Exceptions encountered
+while downloading is done by the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` are
+handled differently. See the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` docs for
+more information.
+
+Any exception raised is a fatal exception and should likely be recorded with the
+:meth:`~pulpcore.plugin.tasking.Task.append_non_fatal_error` interface. A fatal exception on a
+single download likely does not cause an entire sync to fail, so a downloader's fatal exception is
+recorded as a non-fatal exception on the task. Plugin writers can also choose to halt the entire
+task by allowing the exception be uncaught which would mark the entire task as failed.
+
+.. note::
+    The :class:`~pulpcore.plugin.download.asyncio.HttpDownloader` will raise an exception for any
+    response code that is 400 or greater.
+
+.. _custom-download-behavior:
+
+Custom Download Behavior
+------------------------
+
+Custom download behavior is provided by subclassing a downloader and providing a new `run()` method.
+For example you could catch a specific error code like a 404 and try another mirror if your
+downloader knew of several mirrors. Here is an `example of that
+<https://gist.github.com/bmbouter/bbacae99d3edfb145db1498e34fa6187#file-mirrorlist-py-L24-L75>`_ in
+code.
+
+A custom downloader can be given as the downloader to use for a given protocol using the
+``downloader_overrides`` on the :class:`~pulpcore.plugin.download.asyncio.DownloaderFactory`.
+Additionally, you can implement the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader`
+method to specify the ``downloader_overrides`` to the
+:class:`~pulpcore.plugin.download.asyncio.DownloaderFactory`.
+
+.. _adding-new-protocol-support:
+
+Adding New Protocol Support
+---------------------------
+
+To create a new protocol downloader implement a subclass of the
+:class:`~pulpcore.plugin.download.asyncio.BaseDownloader`. See the docs on
+:class:`~pulpcore.plugin.download.asyncio.BaseDownloader` for more information on the requirements.
 
 .. _group-downloader:
 
@@ -89,23 +178,34 @@ in parallel. See the examples below.
 .. autoclass:: pulpcore.plugin.download.asyncio.Group
     :members:
 
-.. _exception-handling:
+.. _downloader-factory:
 
-Exception Handling
-------------------
+Download Factory
+----------------
 
-All downloaders are expected to handle recoverable errors automatically. When an unrecoverable error
-occurs it can be one of two types of errors, i.e. one of the
-:ref:`validation exceptions <validation-exceptions>`, or a protocol specific error. A validation
-error example would be if a download size is expected to be 1945 bytes but it is actually 1990
-bytes, a :class:`~pulpcore.plugin.download.asyncio.SizeValidationError` would be raised. An example
-of a protocol specific error would be an HTTP 403 response.
+The DownloaderFactory constructs and configures a downloader for any given url. Specifically:
 
-In both cases these are fatal exceptions and should likely be recorded with the
-:meth:`~pulpcore.plugin.tasking.Task.append_non_fatal_error` interface. A fatal exception on a single
-download likely does not cause an entire sync to fail, so a downloader's fatal exception is recorded
-as a non-fatal exception on the task. Plugin writers can also opt to halt the entire task by
-allowing the exception be uncaught and propogate up.
+1. Select the appropriate downloader based from these supported schemes: `http`, `https` or `file`.
+
+2. Auto-configure the selected downloader with settings from an importer including (auth, ssl,
+   proxy).
+
+The :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` method constructs one
+downloader for any given url.
+
+.. note::
+   Any :ref:`HttpDownloader <http-downloader>` objects produced by an instantiated
+   `DownloaderFactory` share an `aiohttp` session, which provides a connection pool, connection
+   reusage and keep-alives shared across all downloaders produced by a single factory.
+
+.. tip::
+    The :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` method accepts kwargs that
+    enable size or digest based validation or the specification of a file-like object for the data
+    to be written into. See :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` for
+    more information.
+
+.. autoclass:: pulpcore.plugin.download.asyncio.DownloaderFactory
+    :members:
 
 .. _http-downloader:
 
@@ -113,11 +213,12 @@ HttpDownloader
 --------------
 
 This downloader is an asyncio-aware parallel downloader which is the default downloader produced by
-the :ref:`downloader-factory` and the :ref:`group-downloader` For urls starting with `http://` or
-`https://`.
+the :ref:`downloader-factory` for urls starting with `http://` or `https://`. It also supports
+synchronous downloading using :meth:`~pulpcore.plugin.download.asyncio.HttpDownloader.fetch`.
 
 .. autoclass:: pulpcore.plugin.download.asyncio.HttpDownloader
     :members:
+    :inherited-members: fetch
 
 .. _file-downloader:
 
@@ -125,10 +226,11 @@ FileDownloader
 --------------
 
 This downloader is an asyncio-aware parallel file reader which is the default downloader produced by
-the :ref:`downloader-factory` and the :ref:`group-downloader` for urls starting with file://
+the :ref:`downloader-factory` for urls starting with `file://`.
 
 .. autoclass:: pulpcore.plugin.download.asyncio.FileDownloader
     :members:
+    :inherited-members: fetch
 
 .. _base-downloader:
 
