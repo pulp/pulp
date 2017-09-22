@@ -25,7 +25,7 @@ before_script:
 script:
     # flake8
     - "flake8 --config flake8.cfg"
-    # tests can't run without migrations being made
-    - "python manage.py makemigrations pulp_app"
     # chain these so we don't try to run tests if the db reset fails
-    - "platform/pulpcore/app/db-reset.sh && python manage.py test"
+    - "pulp-manager makemigrations pulp_app --noinput"
+    - "pulp-manager migrate auth --noinput"
+    - "pulp-manager migrate --noinput && pulp-manager test"
