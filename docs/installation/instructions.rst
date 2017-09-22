@@ -146,22 +146,8 @@ Message Broker
     These are the manual steps to install the broker. There are Ansible roles that will install all
     of the following for you.
 
-You must also provide a message broker for Pulp to use. Pulp will work with Qpid or RabbitMQ.
-This can be on a different host or the same host that Pulp is running on.
-
-
-qpidd
-^^^^^
-
-To install qpidd, run this command on the host you wish to be the message broker::
-
-   $ sudo dnf install qpid-cpp-server qpid-cpp-server-linearstore
-
-After installing and configuring Qpid, you should configure it to start at boot and start it::
-
-   $ sudo systemctl enable qpidd
-   $ sudo systemctl start qpidd
-
+You must also provide a message broker for Pulp to use. At this time Pulp 3.0 will only work with
+RabbitMQ. This can be on a different host or the same host that Pulp is running on.
 
 RabbitMQ
 ^^^^^^^^
