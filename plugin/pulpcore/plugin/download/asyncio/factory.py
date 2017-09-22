@@ -25,15 +25,9 @@ class DownloaderFactory:
     to specify custom, subclassed downloaders to be built by the factory.
 
     Usage:
-        >>> import asyncio
-        >>> loop = asyncio.get_event_loop()
         >>> the_factory = DownloaderFactory(importer)
-        >>> downloader_a = the_factory.build(url_a)
-        >>> downloader_b = the_factory.build(url_b)
-        >>> downloads_list = [downloader_a, downloader_b]
-        >>> done, not_done = loop.run_until_complete(asyncio.wait(downloads_list))
-        >>> for task in done:
-        >>>     result = task.result()  # 'result' is a DownloadResult
+        >>> downloader = the_factory.build(url_a)
+        >>> result = downloader.fetch()  # 'result' is a DownloadResult
     """
 
     def __init__(self, importer, downloader_overrides=None):
@@ -107,8 +101,8 @@ class DownloaderFactory:
                 include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
 
         Returns:
-            coroutine: An asyncio-aware based downloader that is configured using the attributes of
-                       the importer. It is a coroutine and schedulable with `asyncio`.
+            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            is configured with the importer settings.
         """
         scheme = urlparse(url).scheme.lower()
         try:
@@ -131,14 +125,14 @@ class DownloaderFactory:
                 include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
 
         Returns:
-            coroutine: A coroutine for the
-                :class:`~pulpcore.plugin.download.asyncio.HttpDownloader`.
+            :class:`~pulpcore.plugin.download.asyncio.HttpDownloader`: A downloader that
+            is configured with the importer settings.
         """
-        options = {}
+        options = {'session': self._session}
         if self._importer.proxy_url:
             options['proxy'] = self._importer.proxy_url
 
-        return download_class(self._session, url, **options, **kwargs).run()
+        return download_class(url, **options, **kwargs)
 
     def _generic(self, download_class, url, **kwargs):
         """
@@ -152,6 +146,7 @@ class DownloaderFactory:
                 include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
 
         Returns:
-            coroutine: A coroutine produced by the `download_class.run()` method.
+            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            is configured with the importer settings.
         """
-        return download_class(url, **kwargs).run()
+        return download_class(url, **kwargs)

@@ -101,6 +101,7 @@ class Importer(PlatformImporter):
                 :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
 
         Returns:
-            coroutine: An asyncio-aware downloader that is configured with the importer settings.
+            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            is configured with the importer settings.
         """
         return self.asyncio_download_factory.build(url, **kwargs)
