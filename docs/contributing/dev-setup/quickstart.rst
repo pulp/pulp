@@ -34,9 +34,9 @@ Create a Vagrantfile in the root of the ``devel`` repository by copying ``Vagran
 
 Have a look at your new Vagrantfile, notice that you can execute one or more ansible playbooks::
 
-    ansible.playbook = "ansible/example-playbook.yml"
+    ansible.playbook = "ansible/pulp-from-source.yml"
 
-If you want to configure your environment differently, you can edit your Vagrantfile and any playbooks that it calls. 
+If you want to configure your environment differently, you can edit your Vagrantfile and any playbooks that it calls.
 
 With a ``Vagrantfile`` in place, use the basic Vagrant commands to get started.
 
@@ -56,6 +56,4 @@ vagrant ssh
     Connect to your Vagrant machine with ssh.
 
 
-.. note::
-
-    If you are using ``example-playbook.yml``, connecting to Vagrant will greet you with a message of the day and some helpful tips to get started.
+    If you are using ``pulp-from_source.yml``, connecting to Vagrant will greet you with a message of the day and some helpful tips to get started.
