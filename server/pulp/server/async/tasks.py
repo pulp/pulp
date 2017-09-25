@@ -483,10 +483,12 @@ class Task(PulpTask, ReservedTaskMixin):
             task_id=async_result.id, task_type=self.name,
             state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tag_list,
             group_id=group_id)
-        # To avoid the race condition where __call__ method below is called before
-        # this change is propagated to all db nodes, using an 'upsert' here and setting
-        # the task state to 'waiting' only on an insert.
-        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
+        # We're now racing with __call__, on_failure and on_success, any of which may
+        # have completed by now. To avoid overwriting TaskStatus updates from those callbacks,
+        # we'll do an upsert and only touch the fields listed below if we've inserted the object.
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=[
+            'state', 'start_time', 'finish_time', 'result', 'error',
+            'spawned_tasks', 'traceback'])
         return async_result
 
     def __call__(self, *args, **kwargs):

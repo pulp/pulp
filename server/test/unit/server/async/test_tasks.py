@@ -699,15 +699,31 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatus(task_id, 'test-worker', state=CALL_CANCELED_STATE).save()
+
+        # This simulates the case where a task had already completed
+        # prior to apply_sync attempting to create a TaskStatus.
+        # https://pulp.plan.io/issues/2959
+        TaskStatus(task_id, 'test-worker',
+                   state=CALL_FINISHED_STATE,
+                   result='any_result',
+                   start_time='2017-09-20T10:00:00Z',
+                   finish_time='2017-09-20T11:00:00Z').save()
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
         task = tasks.Task()
         task.apply_async(*args, **kwargs)
 
         task_status = TaskStatus.objects(task_id=task_id).first()
-        self.assertEqual(task_status['state'], 'canceled')
-        self.assertEqual(task_status['start_time'], None)
+
+        # Fields which were missing on the object have been added
+        self.assertEqual(task_status['task_type'], 'pulp.server.async.tasks.Task')
+        self.assertEqual(task_status['tags'], ['test_tags'])
+
+        # Fields which already existed on the object are retained
+        self.assertEqual(task_status['state'], 'finished')
+        self.assertEqual(task_status['start_time'], '2017-09-20T10:00:00Z')
+        self.assertEqual(task_status['finish_time'], '2017-09-20T11:00:00Z')
+        self.assertEqual(task_status['result'], 'any_result')
 
     @mock.patch('celery.Task.apply_async')
     def test_returns_apply_async_result(self, apply_async):
