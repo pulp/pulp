@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 requirements = [
     'celery',
     'coreapi',
@@ -16,7 +19,8 @@ requirements = [
 setup(
     name='pulpcore',
     description='Pulp Django Application and Related Modules',
-    version='3.0.0a1.dev3',
+    long_description=long_description,
+    version='3.0.0a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',

@@ -1,8 +1,12 @@
 from setuptools import setup, find_packages
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 setup(
     name='pulpcore-common',
-    version='3.0a0.dev2',
+    version='3.0.0a1',
+    long_description=long_description,
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
