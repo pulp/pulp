@@ -11,20 +11,24 @@ Installation Instructions
 Ansible Galaxy Installation
 ---------------------------
 
-1. In order to be able to run playbook, ensure python3 and ansible( >2.2) are installed::
+1. In order to be able to run playbook, ensure python3 and ansible (2.3.2+) are
+   installed on the control node::
 
-   $ sudo dnf install python3 ansible
+     $ sudo dnf install python3 ansible
 
-2. Target machine should have virtualenv installed::
+   If your package manager ships an older version of Ansible, consider creating
+   a virtualenv and installing Ansible directly from PyPI::
 
-   $ sudo pip3 install virtualenv
+     $ python3 -m venv env
+     $ source env/bin/activate
+     $ pip install ansible
 
-3. Download ``requirements.yml`` and install Galaxy roles specified in the file::
+2. Download ``requirements.yml`` and install Galaxy roles specified in the file::
 
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/requirements.yml
    $ ansible-galaxy install -r requirements.yml -p ./roles
 
-4. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
+3. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
 
    $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/deploy-pulp3.yml
    $ ansible-playbook deploy-pulp3.yml -i localhost, -c local -K
@@ -37,7 +41,7 @@ Ansible Galaxy Installation
 
     $  ansible-playbook deploy-pulp3.yml
 
-6. Pulp can now be started by going to the target machine and running::
+4. Pulp can now be started by going to the target machine and running::
 
    $ sudo -u pulp -i
    $ source ~/pulpvenv/bin/activate
