@@ -183,10 +183,11 @@ class PublisherViewSet(NamedModelViewSet):
 
     def destroy(self, request, repository_name, name):
         publisher = self.get_object()
-        task_params = {'repo_name': repository_name,
-                       'publisher_name': publisher.name}
         async_result = tasks.publisher.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repository_name, **task_params)
+            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
+            kwargs={'repo_name': repository_name,
+                    'publisher_name': publisher.name}
+        )
 
         return OperationPostponedResponse([async_result], request)
 
