@@ -84,10 +84,10 @@ class ProgressReport(Model):
         if self._using_context_manager and self._last_save_time:
             if now - self._last_save_time >= datetime.timedelta(milliseconds=BATCH_INTERVAL):
                 super(ProgressReport, self).save(*args, **kwargs)
+                self._last_save_time = now
         else:
             super(ProgressReport, self).save(*args, **kwargs)
-
-        self._last_save_time = now
+            self._last_save_time = now
 
     def __enter__(self):
         """
