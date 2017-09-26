@@ -13,6 +13,8 @@ still allowing plugin writers the freedom to define their workflows as they deem
 
 Along with this guide `an example of plugin implementation
 <https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
+`The Plugin Template <https://github.com/pulp/plugin_template>`_ can be used to start
+the plugin writing process.
 
 .. toctree::
    :maxdepth: 2
