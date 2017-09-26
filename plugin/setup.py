@@ -5,10 +5,14 @@ requirements = [
     'aiohttp',
 ]
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 setup(
     name='pulpcore-plugin',
     description='Pulp Plugin API',
-    version='0.0.1a1.dev2',
+    long_description=long_description,
+    version='0.0.1a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
