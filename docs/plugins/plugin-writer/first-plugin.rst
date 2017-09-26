@@ -5,6 +5,9 @@ For a complete list of what should be done to have a working plugin, check :doc:
 In this section key parts of plugin implementation are covered in more detail to help you as
 a plugin writer to get started.
 
+In addition, `the Plugin template <https://github.com/pulp/plugin_template>`_ can be used to help
+with plugin layout and stubs for necessary classes.
+
 .. _understanding-models:
 
 Understanding models
