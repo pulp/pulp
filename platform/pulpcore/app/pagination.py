@@ -24,3 +24,13 @@ class NamePagination(pagination.CursorPagination):
 
     """
     ordering = 'name'
+
+
+class ImporterPagination(pagination.CursorPagination):
+    """
+    Paginate an API view based on the value of the 'importer' field of objects being iterated over.
+
+    This paginator is intended for DownloadCatalog.
+
+    """
+    ordering = 'importer'
