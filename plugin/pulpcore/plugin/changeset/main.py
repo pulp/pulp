@@ -116,7 +116,7 @@ class ChangeSet:
         try:
             association = RepositoryContent(
                 repository=self.importer.repository,
-                content=content.model)
+                content=content.stored_model)
             association.save()
         except IntegrityError:
             # Duplicate

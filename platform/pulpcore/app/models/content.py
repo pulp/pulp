@@ -66,7 +66,7 @@ class Artifact(Model):
         Returns:
             bool: True when equal.
         """
-        for field in Artifact.RELIABLE_DIGEST_FIELDS[:-1]:
+        for field in Artifact.RELIABLE_DIGEST_FIELDS:
             digest = getattr(self, field)
             if not digest:
                 continue

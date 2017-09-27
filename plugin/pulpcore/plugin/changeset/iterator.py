@@ -136,7 +136,7 @@ class ContentIterator(Iterable):
                 except KeyError:
                     pass
                 else:
-                    content.update(model)
+                    content.stored_model = model
                 yield content
 
     def __iter__(self):
@@ -173,7 +173,7 @@ class DownloadIterator(Iterable):
             Download: The appropriate download object.
         """
         for artifact in self.artifacts:
-            if self.deferred or artifact.fetched:
+            if self.deferred or artifact.stored_model:
                 download = NopDownload(artifact)
             else:
                 download = artifact.downloader()
@@ -235,9 +235,9 @@ class ArtifactIterator(Iterable):
         return BatchIterator(build(), 1024)
 
     @staticmethod
-    def _update_model(fetched, artifact):
+    def _set_stored_model(fetched, artifact):
         """
-        Update with a model instance fetched from the DB and contained in the cache.
+        Set the stored_model on the artifact with the model matched in the cache.
         The artifact is matched by digest by order of algorithm strength.
 
         The cache key is (tuple): (field, digest).
@@ -257,7 +257,7 @@ class ArtifactIterator(Iterable):
             key = (field, digest)
             model = fetched.get(key)
             if model:
-                artifact.update(model)
+                artifact.stored_model = model
                 break
 
     def _iter(self):
@@ -280,7 +280,7 @@ class ArtifactIterator(Iterable):
                     key = (field, digest)
                     fetched[key] = model
             for artifact in batch:
-                self._update_model(fetched, artifact)
+                self._set_stored_model(fetched, artifact)
                 yield artifact
 
     def __iter__(self):
