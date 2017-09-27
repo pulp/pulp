@@ -8,6 +8,7 @@ import time
 from gettext import gettext as _
 
 import mongoengine
+from mongoengine.connection import disconnect
 
 # in mongoengine 0.11 ConnectionError was renamed to MongoEngineConnectionError
 try:
@@ -335,3 +336,16 @@ def get_connection():
     :rtype:  pymongo.connection.Connection
     """
     return _CONNECTION
+
+
+def reconnect():
+    """
+    Re-establish a connection to the mongo database
+    """
+    global _CONNECTION, _DATABASE
+
+    disconnect()
+    _CONNECTION = None
+    _DATABASE = None
+
+    initialize()
