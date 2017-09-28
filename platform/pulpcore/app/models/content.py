@@ -2,21 +2,22 @@
 Content related Django models.
 """
 from django.core import validators
-from django.core.files.storage import default_storage
 from django.db import models
 from itertools import chain
 
-
-from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
+from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation, storage, fields
 
 
 class Artifact(Model):
     """
     A file associated with a piece of content.
 
+    When creating an Artifact, the file provided is moved into place by Pulp.
+
     Fields:
 
-        file (models.FileField): The stored file.
+        file (models.FileField): The stored file. This field should be set using an absolute path to
+            a temporary file. It also accepts `class:django.core.files.File`.
         size (models.IntegerField): The size of the file in bytes.
         md5 (models.CharField): The MD5 checksum of the file.
         sha1 (models.CharField): The SHA-1 checksum of the file.
@@ -33,9 +34,9 @@ class Artifact(Model):
             name (str): Original name of uploaded file. It is ignored by this method because the
                 sha256 checksum is used to determine a file path instead.
         """
-        return default_storage.get_artifact_path(self.sha256)
+        return storage.get_artifact_path(self.sha256)
 
-    file = models.FileField(blank=False, null=False, upload_to=storage_path, max_length=255)
+    file = fields.ArtifactFileField(blank=False, null=False, upload_to=storage_path, max_length=255)
     size = models.IntegerField(blank=False, null=False)
     md5 = models.CharField(max_length=32, blank=False, null=False, unique=False, db_index=True)
     sha1 = models.CharField(max_length=40, blank=False, null=False, unique=False, db_index=True)
@@ -74,6 +75,21 @@ class Artifact(Model):
             if digest == getattr(other, field):
                 return True
         return False
+
+    def save(self, *args, **kwargs):
+        """
+        Saves Artifact model and closes the file associated with the Artifact
+
+        Args:
+            args (list): list of positional arguments for Model.save()
+            kwargs (dict): dictionary of keyword arguments to pass to Model.save()
+        """
+        try:
+            super().save(*args, **kwargs)
+            self.file.close()
+        except Exception:
+            self.file.close()
+            raise
 
 
 class Content(MasterModel):

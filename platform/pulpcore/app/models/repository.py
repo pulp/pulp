@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
-from pulpcore.app.models.storage import TLSLocation
+from pulpcore.app.models.storage import get_tls_path
 
 
 class Repository(Model):
@@ -134,6 +134,15 @@ class Importer(ContentAdaptor):
         (ADDITIVE, 'Add new content from the remote repository.'),
         (MIRROR, 'Add new content and remove content is no longer in the remote repository.'))
 
+    def tls_storage_path(self, name):
+        """
+        Returns storage path for TLS file
+
+        Args:
+            name (str): Original name of the uploaded file.
+        """
+        return get_tls_path(self, name)
+
     # Setting this with "unique=True" will trigger a model validation warning, telling us that we
     # should use a OneToOneField here instead. While it is correct, doing it this way makes it
     # easy to allow multiple importers later: Move the 'repository' field from Importer and
@@ -148,12 +157,10 @@ class Importer(ContentAdaptor):
     feed_url = models.TextField()
     validate = models.BooleanField(default=True)
 
-    ssl_ca_certificate = models.FileField(
-        blank=True, upload_to=TLSLocation('ca.pem'), max_length=255)
-    ssl_client_certificate = models.FileField(
-        blank=True, upload_to=TLSLocation('certificate.pem'), max_length=255)
-    ssl_client_key = models.FileField(
-        blank=True, upload_to=TLSLocation('key.pem'), max_length=255)
+    ssl_ca_certificate = models.FileField(blank=True, upload_to=tls_storage_path, max_length=255)
+    ssl_client_certificate = models.FileField(blank=True, upload_to=tls_storage_path,
+                                              max_length=255)
+    ssl_client_key = models.FileField(blank=True, upload_to=tls_storage_path, max_length=255)
     ssl_validation = models.BooleanField(default=True)
 
     proxy_url = models.TextField(blank=True)

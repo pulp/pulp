@@ -1,7 +1,6 @@
 from django.db import models
-from django.core.files.storage import DefaultStorage
 
-from pulpcore.app.models import Model
+from pulpcore.app.models import Model, storage
 
 
 class Publication(Model):
@@ -60,7 +59,7 @@ class PublishedMetadata(PublishedFile):
     """
 
     def _storage_path(self, name):
-        return DefaultStorage().published_metadata_path(self, name)
+        return storage.published_metadata_path(self, name)
 
     file = models.FileField(upload_to=_storage_path, max_length=255)
 
