@@ -46,6 +46,8 @@ necessary, the bug may be commented on requesting more information or
 clarification from the reporter. When a bug has enough information, its
 *Priority* rating set and is marked as triaged using the *Triaged* boolean.
 
+.. _blocking bugs:
+
 Blocking Bugs
 -------------
 
@@ -145,28 +147,33 @@ Triage Process
 Pulp holds bug triage as an IRC meeting on Tuesdays and Fridays at 10:30 ET (either EST or EDT) in
 #pulp-dev on Freenode. We encourage bug filers and interested parties to join and give input.
 
-A quorum of at least 2 core developers is required to hold triage. Quorum must be established at
-the beginning of the meeting. Developers forming the quorum must stay for the entire duration of
-triage or the meeting must be suspended. Triage will be led by the "triage lead" which is a role
-that rotates on the 1st of each month. The "triage lead" is responsible for reaching out to other
-developers to ensure a quorum can be established.
+A quorum of at least 2 core developers (including the triage lead) is required to hold triage.
+Quorum must be established at the beginning of the meeting. Developers forming the quorum must
+stay for the entire duration of triage or the meeting must be suspended. Triage will be led by
+the "triage lead" which is a role that can be rotated each month. The triage lead is responsible
+for reaching out to other developers to ensure a quorum can be established.
+
+The triage lead uses IRC bot to facilite the meeting. The available set of commands with description
+is provided (e.g. !start, !next, !propose, !accept, !end, etc).
 
 The triage lead will do the following:
 
-#. Announce the meeting in #pulp and #pulp-dev 5 minutes prior to beginning
-#. Start the meeting by confirming there is a quorum (of which they are 1 person of).
-#. Post the link to all `Un-Triaged Bugs`_.
-#. For each issue to be triaged, put the URL of the issue being discussed in the chat and
-   facilitate an agreement on the priority and severity from anyone in the chat. In cases where
-   there is not much feedback, at a minimum the triage lead needs an ack from the other quorum
-   member before moving on. If agreement cannot be reached within 1-2 minutes, skip the bug and let
-   interested parties post their thoughts on the bug.
+#. Announce the meeting in #pulp-dev 10 minutes prior to beginning.
+#. Post the link to all `Un-Triaged Bugs`_ along with the announce of the meeting.
+#. Start the meeting when there is a quorum.
+#. For each issue to be triaged, facilitate an agreement on the priority and severity from
+   anyone in the chat. In cases where there is not much feedback, at a minimum the triage lead 
+   needs an ack from the other quorum member before moving on. If agreement cannot be reached
+   within several minutes, skip the bug and let interested parties post their thoughts on the bug.
 #. Update the issue as being triaged. Add any severity and priority changes, component/tag changes,
    and add any comments that come in from the chat. It's preferred for comments to be left directly
    versus having the triage lead leave comments made by others.
 
-If a bug needs to block a release, the priority should be changed to URGENT. The "Target Platform
+If a bug needs to block a release, follow the `blocking bugs`_ process. The "Target Platform
 Release" field should never be set before the issue is in MODIFIED state.
+
+If a bug is not publicly available (e.g. security issue), it should be skipped and revisited after
+triage by the core developers.
 
 Bugs that need additional information will have notes put onto the issue asking for input. Unless a
 Redmine user specifically disabled e-mail support, adding a note will e-mail the reporter. Bugs
