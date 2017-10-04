@@ -167,9 +167,9 @@ class GroupDownloader:
                                                      exception=error)
                 for group in self.urls[download_result.url]:
                     group.handle_download_result(download_result)
-                group = self._find_and_remove_done_group()
-                if group:
-                    return group
+            group = self._find_and_remove_done_group()
+            if group:
+                return group
         finished_group = self._find_and_remove_done_group()
         if finished_group:
             return finished_group
