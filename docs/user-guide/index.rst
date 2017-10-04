@@ -23,3 +23,4 @@ Contents:
    general-reference
    glossary
    troubleshooting
+   content-storage-faq

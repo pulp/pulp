@@ -32,7 +32,7 @@
 %global gofer_version 2.5
 
 # The release number
-%global release_number 1
+%global release_number 0.1.beta
 
 # Create tag for the Source0 and setup
 %global git_tag %{name}-%{version}-%{release_number}
@@ -40,7 +40,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.14.0
+Version: 2.14.1
 Release: %{release_number}%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
