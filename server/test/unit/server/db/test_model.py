@@ -993,11 +993,11 @@ class TestImporter(unittest.TestCase):
                 importer.save()
 
                 with open(importer.tls_ca_cert_path) as ca_file:
-                    self.assertEqual(ca_file.read(), 'CA Cert')
+                    self.assertEqual(ca_file.read().decode('utf-8'), 'CA Cert')
                 with open(importer.tls_client_cert_path) as client_file:
-                    self.assertEqual(client_file.read(), 'Client Cert')
+                    self.assertEqual(client_file.read().decode('utf-8'), 'Client Cert')
                 with open(importer.tls_client_key_path) as key_file:
-                    self.assertEqual(key_file.read(), 'Client Key')
+                    self.assertEqual(key_file.read().decode('utf-8'), 'Client Key')
         finally:
             shutil.rmtree(temp_path)
         written_importer = model.Importer.objects.get(repo_id='coolcars')
@@ -1132,7 +1132,7 @@ class TestImporter(unittest.TestCase):
                 self.assertEqual(os.stat(importer.tls_ca_cert_path)[stat.ST_MODE],
                                  stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
                 with open(importer.tls_ca_cert_path) as ca_file:
-                    self.assertEqual(ca_file.read(), 'CA Cert')
+                    self.assertEqual(ca_file.read().decode('utf-8'), 'CA Cert')
         finally:
             shutil.rmtree(temp_path)
 
@@ -1159,7 +1159,7 @@ class TestImporter(unittest.TestCase):
                 self.assertEqual(os.stat(importer.tls_ca_cert_path)[stat.ST_MODE],
                                  stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR)
                 with open(importer.tls_ca_cert_path) as ca_file:
-                    self.assertEqual(ca_file.read(), 'CA Cert')
+                    self.assertEqual(ca_file.read().decode('utf-8'), 'CA Cert')
         finally:
             shutil.rmtree(temp_path)
 

@@ -359,7 +359,7 @@ class Importer(AutoRetryDocument):
                 misc.mkdir(os.path.dirname(self._pki_path))
                 os.mkdir(self._pki_path, 0700)
             with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT, 0600), 'w') as pem_file:
-                pem_file.write(self.config[config_key])
+                pem_file.write(self.config[config_key].encode('utf-8'))
 
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
@@ -919,7 +919,7 @@ class FileContentUnit(ContentUnit):
         """
         try:
             self.import_content(path, location)
-        except:
+        except (ImportError, exceptions.PulpCodedException):
             self.clean_orphans()
             raise
 
@@ -1295,6 +1295,7 @@ class Distributor(AutoRetryDocument):
         :type document: Distributor
         """
         document.last_updated = dateutils.now_utc_datetime_with_tzinfo()
+
 
 signals.pre_save.connect(Distributor.pre_save_signal, sender=Distributor)
 
