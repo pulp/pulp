@@ -108,7 +108,7 @@ class PendingContent(Pending):
         Returns:
             dict: The natural key.
         """
-        return {f.name: getattr(self._model, f.name) for f in self._model.natural_key_fields}
+        return {f: getattr(self._model, f) for f in self._model.natural_key_fields()}
 
     def bind(self, changeset):
         """

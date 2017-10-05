@@ -112,10 +112,9 @@ class ContentIterator(Iterable):
         """
         for collated in self._collated_content():
             for model, content in collated.items():
-                fields = {f.name for f in model.natural_key_fields}
                 q = self._batch_q(content)
                 q_set = model.objects.filter(q)
-                q_set = q_set.only(*fields)
+                q_set = q_set.only(*model.natural_key_fields())
                 fetched = {c.natural_key(): c for c in q_set}
                 yield (content, fetched)
 
