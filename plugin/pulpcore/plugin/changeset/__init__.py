@@ -101,7 +101,7 @@ Examples:
     >>>         # key for each content.
     >>>         inventory = set()
     >>>         q_set = Thing.objects.filter(repositories=self.repository)
-    >>>         q_set = q_set.only(*[f.name for f in Thing.natural_key_fields])
+    >>>         q_set = q_set.only(*Thing.natural_key_fields())
     >>>         for content in (c.cast() for c in q_set):
     >>>             inventory.add(content.natural_key())
     >>>         return inventory

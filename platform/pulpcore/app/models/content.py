@@ -4,6 +4,7 @@ Content related Django models.
 from django.core import validators
 from django.core.files.storage import default_storage
 from django.db import models
+from itertools import chain
 
 
 from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation
@@ -79,10 +80,6 @@ class Content(MasterModel):
     """
     A piece of managed content.
 
-    Attributes:
-
-        natural_key_fields (tuple): Natural key fields.  Must be models.Field subclasses.
-
     Relations:
 
         notes (GenericKeyValueRelation): Arbitrary information stored with the content.
@@ -90,13 +87,19 @@ class Content(MasterModel):
     """
     TYPE = 'content'
 
-    natural_key_fields = ()
-
     notes = GenericKeyValueRelation(Notes)
     artifacts = models.ManyToManyField(Artifact, through='ContentArtifact')
 
     class Meta:
         verbose_name_plural = 'content'
+        unique_together = ()
+
+    @classmethod
+    def natural_key_fields(cls):
+        """
+        Returns a tuple of the natural key fields which usually equates to unique_together fields
+        """
+        return tuple(chain.from_iterable(cls._meta.unique_together))
 
     def natural_key(self):
         """
@@ -105,7 +108,7 @@ class Content(MasterModel):
         :return: The natural key.
         :rtype: tuple
         """
-        return tuple(getattr(self, f.name) for f in self.natural_key_fields)
+        return tuple(getattr(self, f) for f in self.natural_key_fields())
 
 
 class ContentArtifact(Model):

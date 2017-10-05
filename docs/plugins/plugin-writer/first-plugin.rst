@@ -75,7 +75,7 @@ To define a new content type(s), e.g. ``ExampleContent``:
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
 * uniqueness should be specified in ``Meta`` class of newly defined ``ExampleContent`` model,
-* ``natural_key_fields`` should be specified for ``ExampleContent`` model,
+* ``unique_together`` should be specified for the ``Meta`` class of ``ExampleContent`` model,
 * create a serializer for your new Content type as a subclass of
   :class:`pulpcore.plugin.serializers.ContentSerializer`,
 * create a viewset for your new Content type as a subclass of
