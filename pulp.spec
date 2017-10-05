@@ -1029,6 +1029,9 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
+* Thu Oct 05 2017 Patrick Creech <pcreech@redhat.com> 2.14.1-1
+- Pulp rebuild
+
 * Thu Feb 23 2017 werwty <bihan.zh@gmail.com> 2.12.1-1
 - Pulp rebuild
 
