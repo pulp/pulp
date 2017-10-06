@@ -1,5 +1,6 @@
 """pulp URL Configuration"""
 from django.conf.urls import url, include
+from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
@@ -102,10 +103,8 @@ vs_tree = ViewSetNode()
 for viewset in sorted_by_depth:
     vs_tree.add_decendent(ViewSetNode(viewset))
 
-root_router = routers.DefaultRouter(
-    schema_title='Pulp API',
-    schema_url='/api/v3'
-)  #: The Pulp Platform v3 API router, which can be used to manually register ViewSets with the API.
+#: The Pulp Platform v3 API router, which can be used to manually register ViewSets with the API.
+root_router = routers.DefaultRouter()
 
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
@@ -115,3 +114,7 @@ urlpatterns = [
 all_routers = [root_router] + vs_tree.register_with(root_router)
 for router in all_routers:
     urlpatterns.append(url(r'^api/v3/', include(router.urls)))
+
+schema_view = get_schema_view(title='Pulp API')
+
+urlpatterns.append(url(r'^api/v3/', schema_view))
