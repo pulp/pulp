@@ -317,6 +317,10 @@ def associate_single_unit(repository, unit):
     """
     Associate a single unit to a repository.
 
+    Association can happen for various reasons, including the case when unit has been updated.
+    Updating timestamp for every repo when unit is associated ensures that the next publish
+    of all the repositories containing this unit will be operational.
+
     :param repository: The repository to update.
     :type repository: pulp.server.db.model.Repository
     :param unit: The unit to associate to the repository.
@@ -324,14 +328,19 @@ def associate_single_unit(repository, unit):
     """
     current_timestamp = dateutils.now_utc_timestamp()
     formatted_datetime = dateutils.format_iso8601_utc_timestamp(current_timestamp)
+    try:
+        association = model.RepositoryContentUnit(
+            repo_id=repository.repo_id,
+            unit_id=unit.id,
+            unit_type_id=unit._content_type_id)
+        association.save()
+    except NotUniqueError:
+        pass
+
     qs = model.RepositoryContentUnit.objects(
-        repo_id=repository.repo_id,
         unit_id=unit.id,
         unit_type_id=unit._content_type_id)
-    qs.update_one(
-        set_on_insert__created=formatted_datetime,
-        set__updated=formatted_datetime,
-        upsert=True)
+    qs.update(multi=True, set__updated=formatted_datetime)
 
 
 def disassociate_units(repository, unit_iterable):
