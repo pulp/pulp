@@ -8,7 +8,7 @@ requirements = [
     'coreapi',
     'Django>=1.8,<2',
     'django-filter',
-    'djangorestframework',
+    'djangorestframework==3.6.4',
     'drf-nested-routers',
     'psycopg2',
     'PyYAML',
