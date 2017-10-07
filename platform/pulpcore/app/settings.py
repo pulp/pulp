@@ -111,7 +111,7 @@ WSGI_APPLICATION = 'pulpcore.app.wsgi.application'
 
 REST_FRAMEWORK = {
     'URL_FIELD_NAME': '_href',
-    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulpcore.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',)
