@@ -13,10 +13,17 @@ require {
         type proc_t;
         type celery_exec_t;
         type squid_t;
+        type sysfs_t;
         type rpm_exec_t;
         type pulp_var_run_t;
         type pulp_streamer_tmp_t;
 }
+
+
+#============= streamer_t ==============
+# Required permissions on Fedora 26+
+allow streamer_t self:process { execmem };
+allow streamer_t sysfs_t:dir read;
 
 
 ##### getattr Files #####
