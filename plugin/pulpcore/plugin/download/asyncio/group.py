@@ -74,7 +74,7 @@ class GroupDownloader:
         self.urls = defaultdict(list)  # dict with url as the key and a lists of Groups as the value
         self.loop = asyncio.get_event_loop()
 
-    def schedule_from_iterator(self, group_iterator, parallel_group_limit=50):
+    def schedule_from_iterator(self, group_iterator, parallel_group_limit=100):
         """
         Schedule groups to be downloaded using an iterator provided by the user.
 
