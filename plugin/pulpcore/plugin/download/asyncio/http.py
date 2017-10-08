@@ -109,7 +109,7 @@ class HttpDownloader(BaseDownloader):
         if self.headers_ready_callback:
             self.headers_ready_callback(response.headers)
         while True:
-            chunk = await response.content.read(1024)
+            chunk = await response.content.read(1024 * 1024)
             if not chunk:
                 self.finalize()
                 break  # the download is done

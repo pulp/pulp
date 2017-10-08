@@ -39,7 +39,7 @@ class FileDownloader(BaseDownloader):
         """
         with open(self._path, 'r') as f_handle:
             while True:
-                chunk = await f_handle.read(1024)
+                chunk = await f_handle.read(1024 * 1024)
                 if not chunk:
                     self.finalize()
                     break  # the reading is done
