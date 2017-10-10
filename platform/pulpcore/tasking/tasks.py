@@ -72,8 +72,8 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
     while True:
         # Find a worker who already has this reservation, it is safe to send this work to them
         try:
-            worker = ReservedResource.objects.get(resource=resource_id).worker
-        except ReservedResource.DoesNotExist:
+            worker = ReservedResource.objects.filter(resource=resource_id)[0].worker
+        except IndexError:
             pass
         else:
             break
