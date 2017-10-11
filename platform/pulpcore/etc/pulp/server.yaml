@@ -84,3 +84,16 @@
 #
 # server:
 #   working_directory: /var/cache/pulp
+
+# JWT Authentication configuration
+#
+# `JWT_AUTH`:
+#   `JWT_VERIFY_EXPIRATION`: Verify token expiration time
+#   `JWT_EXPIRATION_DELTA`: Token expiration time default 14 days
+#   `JWT_LEEWAY`: Add margin to expiration time
+#   `JWT_ALLOW_USER_TOKEN_SECRET_OBTAIMENT`: Allow obtaining and setting user secret
+#
+# JWT_AUTH:
+#   JWT_VERIFY_EXPIRATION: True
+#   JWT_EXPIRATION_DELTA: 1209600
+#   JWT_ALLOW_SETTING_USER_SECRET: False

@@ -114,10 +114,13 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulpcore.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',)
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'pulpcore.app.auth.jwt_auth.PulpJSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
 }
-
-
 AUTH_USER_MODEL = 'pulp_app.User'
 
 # Password validation
@@ -212,6 +215,16 @@ _DEFAULT_PULP_SETTINGS = {
         'enabled': False,
         'directory': '/var/lib/pulp/c_profiles'
     },
+    'JWT_AUTH': {
+        'JWT_VERIFY_EXPIRATION': True,
+        'JWT_EXPIRATION_DELTA': 1209600,  # 60×60×24×7×2
+        'JWT_ALLOW_SETTING_USER_SECRET': False,
+        # lines below should not be changable by config
+        'JWT_ENCODE_HANDLER': 'pulpcore.app.auth.jwt_utils.encode_handler',
+        'JWT_DECODE_HANDLER': 'pulpcore.app.auth.jwt_utils.decode_handler',
+        'JWT_PAYLOAD_HANDLER': 'pulpcore.app.auth.jwt_utils.payload_handler',
+        'JWT_GET_USER_SECRET_KEY': 'pulpcore.app.auth.jwt_utils.get_user_key',
+    }
 }
 
 

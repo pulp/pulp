@@ -13,7 +13,8 @@ requirements = [
     'psycopg2',
     'PyYAML',
     'setuptools',
-    'pulpcore-common'
+    'pulpcore-common',
+    'djangorestframework-jwt'
 ]
 
 setup(

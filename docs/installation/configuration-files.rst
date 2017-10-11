@@ -40,3 +40,29 @@ logging
        '':
          handlers: ["myCustomHandler"]
          level: DEBUG
+
+JWT_AUTH
+^^^^^^^^
+
+The configuration section for `JSON Web Tokens <https://jwt.io/>`_ authentication.
+
+JWT_VERIFY_EXPIRATION
+  You can turn off JWT token expiration time verification by setting
+  `JWT_VERIFY_EXPIRATION` to `False`. Without expiration verification, tokens will last forever
+  meaning a leaked token could be used by an attacker indefinitely (token can be
+  invalidated by changing user's secret, which will lead to invalidation of all user's tokens).
+
+  Default is `True`.
+
+JWT_EXPIRATION_DELTA
+  This is number of seconds for which is token valid if `JWT_VERIFY_EXPIRATION` enabled.
+
+  Default is `1209600`. (14 days)
+
+  .. warning::
+    Change of this value will affect only newly generated tokens.
+
+JWT_ALLOW_SETTING_USER_SECRET
+  Allow setting user's secret via REST API. This is needed for offline token generation.
+
+  Default is `False`.
