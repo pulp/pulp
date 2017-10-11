@@ -1,2 +1,0 @@
-def migrate():
-    pass
