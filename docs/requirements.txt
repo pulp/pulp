@@ -8,3 +8,4 @@ psycopg2
 celery
 coreapi
 drf-nested-routers
+sphinxcontrib-swaggerdoc

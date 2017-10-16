@@ -1,8 +1,11 @@
 """pulp URL Configuration"""
+from contextlib import suppress
+from importlib import import_module
+
 from django.conf.urls import url, include
+
 from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
-
 from rest_framework_jwt.views import obtain_jwt_token
 
 from pulpcore.app.apps import pulp_plugin_configs
@@ -113,6 +116,13 @@ urlpatterns = [
     url(r'^api/v3/status/', StatusView.as_view()),
     url(r'^api/v3/jwt/', obtain_jwt_token),
 ]
+
+# if drf_openapi is installed add live docs route
+with suppress(ImportError):
+    import_module('drf_openapi')
+    from pulpcore.apidocs.views import DocView
+    urlpatterns.append(url(r'^api/(?P<version>(v3))/docs/',
+                           DocView.as_view(title='Pulp API Docs'), name='api_schema'))
 
 schema_view = get_schema_view(title='Pulp API')
 
