@@ -229,9 +229,11 @@ class DistributionSerializer(ModelSerializer):
         )
 
 
-class RepositoryContentSerializer(serializers.ModelSerializer):
-    # RepositoryContentSerizlizer should not have it's own _href, so it subclasses
-    # rest_framework.serializers.ModelSerializer instead of pulpcore.app.serializers.ModelSerializer
+class RepositoryContentSerializer(ModelSerializer):
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='repositorycontents-detail'
+    )
+
     content = ContentRelatedField()
     repository = serializers.HyperlinkedRelatedField(
         view_name='repositories-detail',
@@ -241,4 +243,4 @@ class RepositoryContentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.RepositoryContent
-        fields = ('repository', 'content')
+        fields = ('_href', 'repository', 'content')
