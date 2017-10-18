@@ -114,10 +114,10 @@ urlpatterns = [
     url(r'^api/v3/jwt/', obtain_jwt_token),
 ]
 
+schema_view = get_schema_view(title='Pulp API')
+
+urlpatterns.append(url(r'^api/v3/$', schema_view))
+
 all_routers = [root_router] + vs_tree.register_with(root_router)
 for router in all_routers:
     urlpatterns.append(url(r'^api/v3/', include(router.urls)))
-
-schema_view = get_schema_view(title='Pulp API')
-
-urlpatterns.append(url(r'^api/v3/', schema_view))
