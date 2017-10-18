@@ -1,6 +1,7 @@
 from gettext import gettext as _
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import GenericKeyValueRelatedField, ModelSerializer
@@ -13,7 +14,8 @@ class ConsumerSerializer(ModelSerializer):
     )
 
     name = serializers.CharField(
-        help_text=_("The consumer common name.")
+        help_text=_("The consumer common name."),
+        validators=[UniqueValidator(queryset=models.Consumer.objects.all())]
     )
 
     description = serializers.CharField(

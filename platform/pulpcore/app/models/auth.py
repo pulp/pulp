@@ -9,7 +9,6 @@ import random
 from gettext import gettext as _
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.core import validators
 from django.db import models
 
 
@@ -56,13 +55,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name=_('username'),
         max_length=150,
         unique=True,
-        validators=[
-            validators.RegexValidator(
-                r'^[\w.@+-]+$',
-                _('Enter a valid username. This value may contain only letters, numbers '
-                  'and @/./+/-/_ characters.'),
-                'invalid'),
-        ],
         error_messages={
             'unique': _("A user with that username already exists.")
         }

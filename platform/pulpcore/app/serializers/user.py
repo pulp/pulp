@@ -1,5 +1,6 @@
 from gettext import gettext as _
 
+from django.core import validators
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import six
@@ -31,8 +32,20 @@ class UserSerializer(ModelSerializer):
                                                  lookup_field='username')
 
     username = serializers.CharField(
-        help_text=_("Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        validators=[UniqueValidator(queryset=User.objects.all())],
+        help_text=_("Required. {} characters or fewer. Letters, digits and @/./+/-/_ only.").format(
+            User._meta.get_field('username').max_length),
+        validators=[UniqueValidator(queryset=User.objects.all()),
+                    validators.RegexValidator(
+                        regex=r'^[\w.@+-]+$',
+                        message=_(
+                            'Enter a valid username. This value may contain only letters, numbers'
+                            ' and @/./+/-/_ characters.'),
+                        code='invalid'),
+                    validators.MaxLengthValidator(
+                        User._meta.get_field('username').max_length,
+                        message=_('The length of username must be less than {} characters').format(
+                            User._meta.get_field('username').max_length)),
+                    ],
     )
 
     is_superuser = serializers.BooleanField(
@@ -49,11 +62,16 @@ class UserSerializer(ModelSerializer):
     jwt_secret = serializers.CharField(
         help_text=_("User JWT authentication secret"),
         required=False,
-        write_only=not settings.DEBUG  # If pulp in DEBUG mode secret is visible
+        write_only=not settings.DEBUG,  # If pulp in DEBUG mode secret is visible
+        validators=[validators.MaxLengthValidator(
+            User._meta.get_field('jwt_secret').max_length,
+            message=_('The length of jwt_secret must be less than {} characters').format(
+                User._meta.get_field('jwt_secret').max_length))
+        ],
     )
 
     reset_jwt_secret = serializers.BooleanField(
-        help_text=_("Rest user JWT secret."),
+        help_text=_("Reset user JWT secret."),
         required=False,
         write_only=True,
     )

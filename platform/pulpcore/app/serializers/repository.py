@@ -1,6 +1,9 @@
 from gettext import gettext as _
 
+from django.core import validators
+
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
@@ -25,7 +28,8 @@ class RepositorySerializer(ModelSerializer):
         lookup_field='name',
     )
     name = serializers.CharField(
-        help_text=_('A unique name for this repository.')
+        help_text=_('A unique name for this repository.'),
+        validators=[UniqueValidator(queryset=models.Repository.objects.all())]
     )
 
     description = serializers.CharField(
@@ -148,6 +152,12 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
             'username', 'password', 'last_synced', 'last_updated', 'repository',
         )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=models.Importer.objects.all(),
+                fields=('name', 'repository')
+            )
+        ]
 
 
 class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
@@ -168,7 +178,7 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
     repository = HrefWritableRepositoryRelatedField(read_only=True)
 
     auto_publish = serializers.BooleanField(
-        help_text=_('An indicaton that the automatic publish may happen when'
+        help_text=_('An indication that the automatic publish may happen when'
                     ' the repository content has changed.'),
         required=False
     )
@@ -191,6 +201,12 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'last_updated', 'repository', 'auto_publish', 'last_published', 'distributions',
         )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=models.Publisher.objects.all(),
+                fields=('name', 'repository')
+            )
+        ]
 
 
 class DistributionSerializer(ModelSerializer):
@@ -202,9 +218,21 @@ class DistributionSerializer(ModelSerializer):
     )
     name = serializers.CharField(
         help_text=_('The name of the distribution. Ex, `rawhide` and `stable`.'),
+        validators=[validators.MaxLengthValidator(
+            models.Distribution._meta.get_field('name').max_length,
+            message=_('Distribution name length must be less than {} characters').format(
+                models.Distribution._meta.get_field('name').max_length
+            ))]
     )
     base_path = serializers.CharField(
         help_text=('The base (relative) path component of the published url.'),
+        validators=[validators.MaxLengthValidator(
+            models.Distribution._meta.get_field('base_path').max_length,
+            message=_('Distribution base_path length must be less than {} characters').format(
+                models.Distribution._meta.get_field('base_path').max_length
+            )),
+            UniqueValidator(queryset=models.Distribution.objects.all()),
+        ],
     )
     auto_updated = serializers.BooleanField(
         help_text=_('The publication is updated automatically when the publisher has created a '
