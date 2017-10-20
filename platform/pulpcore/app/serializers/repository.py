@@ -193,6 +193,34 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         )
 
 
+class PublicationSerializer(ModelSerializer):
+    _href = NestedHyperlinkedIdentityField(
+        parent_lookup_kwargs={
+            'repository_name': 'publisher__repository__name',
+            'publisher_name': 'publisher__name'
+        },
+        view_name='publications-detail'
+    )
+    created = serializers.DateTimeField(
+        help_text=_('Timestamp of when the publication was created.'),
+        read_only=True
+    )
+    publisher = DetailWritableNestedUrlRelatedField(
+        parent_lookup_kwargs={
+            'repository_name': 'repository__name'
+        },
+        lookup_field='name',
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Publication
+        fields = ModelSerializer.Meta.fields + (
+            'created',
+            'publisher',
+        )
+
+
 class DistributionSerializer(ModelSerializer):
     _href = NestedHyperlinkedIdentityField(
         lookup_field='name',

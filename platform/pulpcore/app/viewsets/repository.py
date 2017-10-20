@@ -1,15 +1,29 @@
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
 from rest_framework import decorators
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,)
 
 from pulpcore.app import tasks
-from pulpcore.app.models import Distribution, Importer, Publisher, Repository, RepositoryContent
+from pulpcore.app.models import (Distribution,
+                                 Importer,
+                                 Publication,
+                                 Publisher,
+                                 Repository,
+                                 RepositoryContent)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import (ContentSerializer, DistributionSerializer, ImporterSerializer,
-                                      PublisherSerializer, RepositorySerializer,
+from pulpcore.app.serializers import (ContentSerializer,
+                                      DistributionSerializer,
+                                      ImporterSerializer,
+                                      PublisherSerializer,
+                                      PublicationSerializer,
+                                      RepositorySerializer,
                                       RepositoryContentSerializer)
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets import GenericNamedModelViewSet, NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -200,6 +214,21 @@ class PublisherViewSet(NamedModelViewSet):
                     'publisher_name': publisher.name}
         )
         return OperationPostponedResponse([async_result], request)
+
+
+class PublicationViewSet(GenericNamedModelViewSet,
+                         ListModelMixin,
+                         DestroyModelMixin,
+                         RetrieveModelMixin):
+    endpoint_name = 'publications'
+    queryset = Publication.objects.all()
+    serializer_class = PublicationSerializer
+    nest_prefix = 'publishers'
+    parent_viewset = PublisherViewSet
+    parent_lookup_kwargs = {
+        'publisher_name': 'publisher__name',
+        'repository_name': 'publisher__repository__name'
+    }
 
 
 class DistributionViewSet(NamedModelViewSet):
