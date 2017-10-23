@@ -122,7 +122,12 @@ class Consumer(object):
                 authenticator=context.authenticator,
                 wait=0)
             consumer = agent.Consumer()
-            consumer.unregister()
+            try:
+                consumer.unregister()
+            except NotFound:
+                # cover the case where cleanup may find that the queue
+                # has already been deleted
+                pass
 
     @staticmethod
     def bind(context, bindings, options):
