@@ -1,7 +1,7 @@
 
 from django.test import TestCase
 
-from pulpcore.app.models import Repository, Importer, Publisher, FileContent
+from pulpcore.app.models import Repository, Importer, Publisher
 
 
 class TestRepository(TestCase):
@@ -43,9 +43,9 @@ class RepositoryExample(TestCase):
         importer.name = 'Upstream'
         importer.feed_url = 'http://content-world/everyting/'
         importer.ssl_validation = True
-        importer.ssl_ca_certificate = FileContent(ca)
-        importer.ssl_client_certificate = FileContent(certificate)
-        importer.ssl_client_key = FileContent(key)
+        importer.ssl_ca_certificate = ca
+        importer.ssl_client_certificate = certificate
+        importer.ssl_client_key = key
         importer.proxy_url = 'http://elmer:fudd@warnerbrothers.com'
         importer.basic_auth_user = 'Elmer'
         importer.basic_auth_password = 'Fudd'

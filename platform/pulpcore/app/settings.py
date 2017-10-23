@@ -120,6 +120,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+    'UPLOADED_FILES_USE_URL': False
 }
 AUTH_USER_MODEL = 'pulp_app.User'
 

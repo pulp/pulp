@@ -67,10 +67,6 @@ class PulpPluginAppConfig(apps.AppConfig):
         self.named_serializers = None
 
     def ready(self):
-        # register signals here as suggested in Django docs
-        # https://docs.djangoproject.com/en/1.8/topics/signals/#connecting-receiver-functions
-        import pulpcore.app.signals  # noqa
-
         self.import_viewsets()
         self.import_serializers()
 

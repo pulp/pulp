@@ -43,3 +43,28 @@ class HashingFileUploadHandler(TemporaryFileUploadHandler):
         self.file.write(raw_data)
         for hasher in hashlib.algorithms_guaranteed:
             self.file.hashers[hasher].update(raw_data)
+
+
+class TemporaryDownloadedFile(TemporaryUploadedFile):
+    """
+    A temporary downloaded file.
+
+    The FileSystemStorage backend treats this object the same as a TemporaryUploadedFile. The
+    storage backend attempts to link the file to its final location. If the final location is on a
+    different physical drive, the file is copied to its final destination.
+    """
+    def __init__(self, file, name=None):
+        """
+        A constructor that does not create a blank temporary file.
+
+        The __init__ for TemporaryUploadedFile creates an empty temporary file. This constructor
+        is designed to handle files that have already been written to disk.
+
+        Args:
+            file (file): An open file
+            name (str): Name of the file
+        """
+        self.file = file
+        if name is None:
+            name = getattr(file, 'name', None)
+        self.name = name
