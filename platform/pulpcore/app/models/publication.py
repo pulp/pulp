@@ -17,6 +17,9 @@ class Publication(Model):
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
 
+    class Meta:
+        default_related_name = 'publications'
+
 
 class PublishedFile(Model):
     """
