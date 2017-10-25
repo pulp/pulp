@@ -10,13 +10,14 @@ from datetime import datetime, timedelta
 from gettext import gettext as _
 
 from celery import bootsteps
-from celery.signals import celeryd_after_setup
+from celery.signals import celeryd_after_setup, worker_process_init
 import mongoengine
 
 from pulp.common import constants, dateutils
 from pulp.server import initialization
 from pulp.server.async import tasks, worker_watcher
 from pulp.server.db.model import Worker, ResourceManagerLock
+from pulp.server.db.connection import reconnect
 from pulp.server.managers.repo import _common as common_utils
 
 # This import will load our configs
@@ -177,6 +178,14 @@ def initialize_worker(sender, instance, **kwargs):
     # can be acquired
     if sender.startswith(constants.RESOURCE_MANAGER_WORKER_NAME):
         get_resource_manager_lock(sender)
+
+
+@worker_process_init.connect
+def reconnect_services(sender, **kwargs):
+    """
+    Reconnect any services that were established before a worker forks its child process
+    """
+    reconnect()
 
 
 def get_resource_manager_lock(name):

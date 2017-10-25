@@ -32,7 +32,7 @@
 %global gofer_version 2.5
 
 # The release number
-%global release_number 1
+%global release_number 0.1.beta
 
 # Create tag for the Source0 and setup
 %global git_tag %{name}-%{version}-%{release_number}
@@ -40,7 +40,7 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.14.1
+Version: 2.14.2
 Release: %{release_number}%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
@@ -1029,9 +1029,6 @@ Cert-based repo authentication for Pulp
 %endif # End pulp_server if block for repoauth
 
 %changelog
-* Thu Oct 05 2017 Patrick Creech <pcreech@redhat.com> 2.14.1-1
-- Pulp rebuild
-
 * Thu Feb 23 2017 werwty <bihan.zh@gmail.com> 2.12.1-1
 - Pulp rebuild
 
