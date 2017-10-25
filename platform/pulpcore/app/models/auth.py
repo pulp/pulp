@@ -88,3 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         :rtype: str
         """
         return self.get_full_name()
+
+    def jwt_reset(self):
+        self.jwt_secret = gen_random_jwt_secret()
+        self.save()

@@ -88,7 +88,14 @@ To achieve ability to invalidate all user's tokens each user have their own secr
 used to sign their tokens. The change of the secret will lead to invalidation of all user's
 tokens. The change is independent on password.
 
-You can reset user secret to random by setting ``reset_jwt_secret`` on user API endpoint to True.
+You can reset user secret to random by calling the jwt reset endpoint:
+
+
+ * **method:** ``post``
+ * **path:** ``api/v3/users/<username>/jwt_reset/``
+ * response list:
+    * **code:** ``200`` - jwt reset
+    * **code:** ``400`` - invalid credentials
 
 If you have enabled ``JWT_AUTH.JWT_ALLOW_SETTING_USER_SECRET`` you can set the user's secret
 via user API endpoint.
