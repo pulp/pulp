@@ -70,12 +70,6 @@ class UserSerializer(ModelSerializer):
         ],
     )
 
-    reset_jwt_secret = serializers.BooleanField(
-        help_text=_("Reset user JWT secret."),
-        required=False,
-        write_only=True,
-    )
-
     def __init__(self, *args, **kwargs):
         """
         Remove ability to read/set jwt_secret if disabled in settings.
@@ -85,15 +79,7 @@ class UserSerializer(ModelSerializer):
         if not settings.JWT_AUTH.get("JWT_ALLOW_SETTING_USER_SECRET"):
             self.fields.pop('jwt_secret')
 
-    def validate(self, data):
-        """
-        If reset_jwt_secret is True generate user random jwt secret.
-        """
-        if data["reset_jwt_secret"]:
-            data["jwt_secret"] = User.gen_random_jwt_secret()
-        return data
-
     class Meta:
         model = User
         fields = ModelSerializer.Meta.fields + (
-            'username', 'is_superuser', 'password', 'jwt_secret', 'reset_jwt_secret')
+            'username', 'is_superuser', 'password', 'jwt_secret')
