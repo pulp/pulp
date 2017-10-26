@@ -29,3 +29,4 @@ script:
     - "pulp-manager makemigrations pulp_app --noinput"
     - "pulp-manager migrate auth --noinput"
     - "pulp-manager migrate --noinput && pulp-manager test"
+    - "pulp-manager test platform/pulpcore/app/tests"
