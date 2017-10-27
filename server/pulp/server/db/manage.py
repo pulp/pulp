@@ -127,8 +127,9 @@ def migrate_database(options):
                     # package's current version when the --test flag is set
                     migration_package.apply_migration(migration,
                                                       update_current_version=not options.test)
-                    message = _('Migration to %(p)s version %(v)s complete.')
+                    message = _('Migration to %(p)s version %(v)s complete in %(t).3f seconds.')
                     message = message % {'p': migration_package.name,
+                                         't': migration_package.duration,
                                          'v': migration_package.current_version}
                 _logger.info(message)
         except models.MigrationRemovedError as e:
