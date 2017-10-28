@@ -68,6 +68,13 @@ class TaskSerializer(ModelSerializer):
         view_name='tasks-detail'
     )
 
+    spawned_tasks = serializers.HyperlinkedRelatedField(
+        help_text=_("Any tasks spawned by this task."),
+        many=True,
+        read_only=True,
+        view_name='tasks-detail'
+    )
+
     tags = TaskTagSerializer(
         many=True,
         read_only=True
@@ -82,8 +89,8 @@ class TaskSerializer(ModelSerializer):
         model = models.Task
         fields = ModelSerializer.Meta.fields + ('group', 'state', 'started_at',
                                                 'finished_at', 'non_fatal_errors',
-                                                'error', 'worker', 'parent', 'tags',
-                                                'progress_reports')
+                                                'error', 'worker', 'parent', 'spawned_tasks',
+                                                'tags', 'progress_reports')
 
 
 class WorkerSerializer(ModelSerializer):
