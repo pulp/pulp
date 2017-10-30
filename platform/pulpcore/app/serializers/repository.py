@@ -63,11 +63,17 @@ class RepositorySerializer(ModelSerializer):
         lookup_field='name'
     )
 
+    content_summary = serializers.DictField(
+        help_text=_('A list of counts of each type of content in this repository.'),
+        read_only=True
+    )
+
     class Meta:
         model = models.Repository
         fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
                                                 'last_content_added', 'last_content_removed',
-                                                'importers', 'publishers', 'content')
+                                                'importers', 'publishers', 'content',
+                                                'content_summary')
 
 
 class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
