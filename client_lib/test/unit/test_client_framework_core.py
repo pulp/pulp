@@ -30,7 +30,7 @@ class RenderTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(4, len(r.lines))
-        self.assertEqual(0, len([l for l in r.lines if l != '\n']))
+        self.assertEqual(0, len([line for line in r.lines if line != '\n']))
 
     def test_render_section(self):
         # Test

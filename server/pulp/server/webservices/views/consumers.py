@@ -918,7 +918,7 @@ class ConsumerContentApplicRegenerationView(View):
             raise MissingValue('consumer_criteria')
         try:
             consumer_criteria = Criteria.from_client_input(consumer_criteria)
-        except:
+        except Exception:
             raise InvalidValue('consumer_criteria')
 
         task_tags = [tags.action_tag('content_applicability_regeneration')]

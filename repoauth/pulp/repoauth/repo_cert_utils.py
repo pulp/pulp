@@ -64,15 +64,15 @@ class RepoCertUtils:
         self.max_num_certs_in_chain = 100
         try:
             self.log_failed_cert = self.config.getboolean('main', 'log_failed_cert')
-        except:
+        except Exception:
             pass
         try:
             self.log_failed_cert_verbose = self.config.getboolean('main', 'log_failed_cert_verbose')
-        except:
+        except Exception:
             pass
         try:
             self.max_num_certs_in_chain = self.config.getint('main', 'max_num_certs_in_chain')
-        except:
+        except Exception:
             pass
 
     def delete_for_repo(self, repo_id):
@@ -488,7 +488,7 @@ class RepoCertUtils:
                         f.write(value)
                         f.close()
                         cert_files[key] = str(filename)
-                except:
+                except Exception:
                     LOG.exception('Error storing certificate file [%s]' % filename)
                     raise Exception('Error storing certificate file [%s]' % filename)
 

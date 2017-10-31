@@ -41,7 +41,7 @@ def get_mongo_conn_status():
         db = connection.get_database()
         db.workers.count()
         return {'connected': True}
-    except:
+    except Exception:
         return {'connected': False}
 
 

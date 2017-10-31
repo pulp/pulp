@@ -452,7 +452,7 @@ def create_link(opts, src, dst):
         try:
             os.unlink(dst)
             return _create_link(opts, src, dst)
-        except:
+        except Exception:
             msg = "[%s] was a broken symlink, failed to delete " \
                   "and relink to [%s], please fix this manually" % (dst, src)
             return msg

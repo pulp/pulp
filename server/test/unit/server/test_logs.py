@@ -504,7 +504,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             try:
                 pid = 1234
                 raise Exception('This is terrible. %d killed' % pid)
-            except:
+            except Exception:
                 exc_info = sys.exc_info()
             task_id = 5678
             log_message = 'Uh oh.  task [%d] failed'
@@ -557,7 +557,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             handler.setFormatter(formatter)
             try:
                 raise Exception('This is terrible.')
-            except:
+            except Exception:
                 exc_info = sys.exc_info()
             # Sadly, all over our code we log non-string objects. This is bad, but we don't have
             # time to fix it right now, so we need to make sure our emitter handles this case.

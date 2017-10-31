@@ -262,7 +262,7 @@ def update_notes(notes, delta_notes):
             # try deleting a note if it exists
             try:
                 del notes[key]
-            except:
+            except Exception:
                 pass
         else:
             notes[key] = value

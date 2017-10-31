@@ -20,13 +20,13 @@ class RepoGroupManagerInstantiationTests(unittest.TestCase):
     def test_constructor(self):
         try:
             RepoGroup('contructor_group')
-        except:
+        except Exception:
             self.fail(traceback.format_exc())
 
     def test_factory(self):
         try:
             managers_factory.repo_group_manager()
-        except:
+        except Exception:
             self.fail(traceback.format_exc())
 
 

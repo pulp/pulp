@@ -138,7 +138,7 @@ class FileStorage(ContentStorage):
         except AttributeError:
             # verify_size method is not implemented for the unit
             pass
-        except:
+        except Exception:
             os.remove(temp_destination)
             raise
 

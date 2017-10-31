@@ -353,6 +353,6 @@ class HTTPSServerWrapper(object):
 
         try:
             response_body = json.loads(response_body)
-        except:
+        except Exception:
             pass
         return response.status, response_body

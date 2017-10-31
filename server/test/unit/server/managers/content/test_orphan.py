@@ -81,13 +81,13 @@ class OrphanManagerInstantiationTests(base.PulpServerTests):
     def test_constructor(self):
         try:
             OrphanManager()
-        except:
+        except Exception:
             self.fail(traceback.format_exc())
 
     def test_factory(self):
         try:
             manager_factory.content_orphan_manager()
-        except:
+        except Exception:
             self.fail(traceback.format_exc())
 
 

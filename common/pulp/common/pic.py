@@ -91,9 +91,9 @@ def _request(method, path, body=None):
         if LOG_BODIES:
             print('Response Body')
             print(json.dumps(response_body, indent=2))
-
-    except:
+    except Exception:
         pass
+
     if response.status > 299:
         raise RequestError('Server response: %d\n%s' %
                            (response.status, response_body))
