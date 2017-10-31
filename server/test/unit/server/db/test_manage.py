@@ -166,48 +166,6 @@ class TestManageDB(MigrationTest):
                                                     "not allowed because the platform handlesit "
                                                     "for you.")
 
-    @patch.object(manage, 'ensure_database_indexes')
-    @patch('logging.config.fileConfig')
-    @patch('pkg_resources.iter_entry_points', iter_entry_points)
-    @patch('pulp.server.db.manage.connection.initialize')
-    @patch('pulp.server.db.manage.factory')
-    @patch('pulp.server.db.manage.logging.getLogger')
-    @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
-    @patch('pulp.server.db.manage.managers.UserManager.ensure_admin')
-    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
-           migration_packages.platform)
-    @patch('sys.argv', ["pulp-manage-db"])
-    @patch.object(models.MigrationPackage, 'apply_migration')
-    def test_admin_is_ensured(self, apply_migration, ensure_admin, ensure_super_user_role,
-                              getLogger, factory, initialize, fileConfig, ensure_db_indexes):
-        """
-        pulp-manage-db is responsible for making sure the admin user and role are in place. This
-        test makes sure the manager methods that do that are called.
-        """
-        logger = MagicMock()
-        getLogger.return_value = logger
-
-        code = manage.main()
-
-        self.assertEqual(code, os.EX_OK)
-
-        # Make sure all the right logging happens
-        expected_messages = ('Ensuring the admin role and user are in place.',
-                             'Admin role and user are in place.')
-        info_messages = ''.join([mock_call[1][0] for mock_call in logger.info.mock_calls])
-        for msg in expected_messages:
-            self.assertTrue(msg in info_messages)
-
-        # Make sure the admin user and role creation methods were called. We'll leave it up to other
-        # tests to make sure they work.
-        ensure_admin.assert_called_once_with()
-        ensure_super_user_role.assert_called_once_with()
-
-        # Also, make sure the factory was initialized
-        factory.initialize.assert_called_once_with()
-
-        initialize.assert_called_once_with(max_timeout=1)
-
     @patch('logging.config.fileConfig')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pulp.server.db.manage._auto_manage_db')

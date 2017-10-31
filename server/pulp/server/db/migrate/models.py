@@ -2,6 +2,7 @@ from gettext import gettext as _
 import logging
 import os
 import re
+import time
 
 import pkg_resources
 
@@ -157,6 +158,7 @@ class MigrationPackage(object):
         """
         self._package = python_package
         self.allow_fast_forward = getattr(python_package, 'allow_fast_forward', False)
+        self.duration = None
 
         try:
             self._migration_tracker = MigrationTracker.objects().get(name=self.name)
@@ -183,10 +185,12 @@ class MigrationPackage(object):
                                        If False, don't update.
         :type  update_current_version: bool
         """
+        start = time.time()
         migration.migrate()
         if update_current_version:
             self._migration_tracker.version = migration.version
             self._migration_tracker.save()
+        self.duration = time.time() - start
 
     @property
     def available_versions(self):
