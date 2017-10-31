@@ -273,7 +273,7 @@ class DateRange:
     def __parse(self, asn1):
         try:
             d = dt.strptime(asn1, self.ASN1_FORMAT)
-        except:
+        except Exception:
             d = dt(year=2000, month=1, day=1)
         return d.replace(tzinfo=GMT())
 
@@ -514,7 +514,7 @@ class OID(object):
                     i += 1
                 else:
                     raise Exception()
-        except:
+        except Exception:
             return False
         return True
 
@@ -560,7 +560,7 @@ class RedhatCertificate(CertificateManager):
         """
         try:
             return self.__redhat
-        except:
+        except Exception:
             return self.extensions()
 
     def bogus(self):

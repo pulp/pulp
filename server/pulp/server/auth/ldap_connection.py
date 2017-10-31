@@ -113,7 +113,7 @@ class LDAPConnection:
             try:
                 self.lconn.simple_bind_s(userdn, password)
                 _log.info("Found user with id %s with matching credentials" % username)
-            except:
+            except Exception:
                 _log.info("Invalid credentials for %s" % username)
                 return None
 

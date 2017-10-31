@@ -66,7 +66,7 @@ class Descriptor:
                 if not descriptor.enabled():
                     continue
                 descriptors.append((name, descriptor))
-            except:
+            except Exception:
                 _logger.exception(path)
         return descriptors
 

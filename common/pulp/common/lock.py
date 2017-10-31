@@ -64,7 +64,7 @@ class LockFile:
                 return
             self.__fp.fileno()
             self.__fp.close()
-        except:
+        except Exception:
             pass
 
     def getpid(self):
@@ -119,7 +119,7 @@ class Lock:
         if self.__push() == 1:
             try:
                 self.__lockf.acquire(blocking)
-            except:
+            except Exception:
                 self.__pop()
                 raise
         return self

@@ -103,7 +103,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
             self.fail('An exception should have been raised, and it was not.')
         except exceptions.MissingCAPathException as e:
             self.assertEqual(e.args[0], ca_path)
-        except:
+        except Exception:
             self.fail('The wrong exception type was raised!')
 
     @mock.patch('os.path.isdir', return_value=True)
