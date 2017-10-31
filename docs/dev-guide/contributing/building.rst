@@ -17,7 +17,7 @@ You can see the full list of Pulp's Koji tags
 Pulp release and testing builds are collections of components that are versioned independently.
 For example, the core Pulp server may be at version 2.6 while pulp_docker may be at version 1.0.
 This assembly is accomplished using release definitions specified in the
-``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the details
+``pulp-ci/ci/config/releases/<build-name>.yaml`` files. Each file specifies the details
 of a build that the Pulp build scripts can later assemble. The components within that
 file specify the target koji tag as well as the individual git repositories and branches that
 will be assembled as part of a build. In addition it specifies the directories within
@@ -120,7 +120,7 @@ release build process in koji.  If a release build is performed with Jenkins you
 to sign the rpms and manually push them to the final location on fedorapeople.
 
 Pulp has some helper scripts in the
-`pulp_packaging/ci <https://github.com/pulp/pulp_packaging/tree/master/ci>`_ directory to assist
+`pulp-ci/ci <https://github.com/pulp/pulp-ci/tree/master/ci>`_ directory to assist
 with builds. These wrapper scripts call `tito <https://github.com/dgoodwin/tito>`_
 and `koji <https://fedoraproject.org/wiki/Koji>`_ to do the actual tagging and
 build work.
@@ -163,7 +163,7 @@ step is to make a clean checkout of the pulp_packging somewhere away from your o
 
     $ mkdir ~/pulp_build
     $ cd ~/pulp_build
-    $ git clone git@github.com:pulp/pulp_packaging.git
+    $ git clone git@github.com:pulp/pulp-ci.git
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder.
@@ -252,12 +252,12 @@ Test Building Pulp and the plugins
 ----------------------------------
 
 Are you ready to build something? The next step is to ensure that the build that you are going to do
-has an appropriate yaml file in ``pulp_packaging/ci/config/releases/<build-name>.yaml`` (explained
+has an appropriate yaml file in ``pulp-ci/ci/config/releases/<build-name>.yaml`` (explained
 in detail above). Double check for each repository that the ``git_branch`` field points to the
 branch or tag that you wish to build from and that the ``version`` field is correct. The
-``pulp_packaging/ci/build-all.py`` script which will perform the following actions:
+``pulp-ci/ci/build-all.py`` script which will perform the following actions:
 
-#. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
+#. Load the specified configuration from ``pulp-ci/ci/config/releases``.
 #. Clone all the required git repositories to the ``working/<repo_name>`` directory.
 #. Check out the appropriate branch or tag for each of git repos.
 #. If branch, check that the branch has been merged forward.
@@ -279,7 +279,7 @@ Run the build script with the following syntax::
     $ ./build-all.py <name of yaml file> [options]
 
 For example, to perform a test build of the 2.6-build release as specified in
-``pulp_packaging/ci/config/releases/2.6-build.py`` where the results are not pushed to
+``pulp-ci/ci/config/releases/2.6-build.py`` where the results are not pushed to
 fedorapeople::
 
     $ ./build-all.py 2.6-dev --disable-push
@@ -317,14 +317,14 @@ Submit to Koji
 
 We are now prepared to submit the build to Koji. This task is simple::
 
-    $ cd pulp_packaging/ci
+    $ cd pulp-ci/ci
     $ ./build-all.py 2.6-build --release
 
 This command will build SRPMs, upload them to Koji, and monitor the resulting builds. If any of them
 fail, you can view the
 `failed builds <http://koji.katello.org/koji/tasks?state=failed&view=tree&method=all&order=-id>`_ to
 see what went wrong. If the build was successful, it will automatically download the results into a
-new folder called mash that will be a peer to the ``pulp_packaging`` directory.
+new folder called mash that will be a peer to the ``pulp-ci`` directory.
 
 At the end it will automatically upload the resulting build to fedorapeople in the directory
 specified in the release config file. You can disable the push to fedorapeople by supplying
@@ -377,19 +377,19 @@ Updating Docs
 When releasing a new X or Y release, ensure the following:
 
 * The release config must exist and be up to date in `the packaging repo <https://github.com/pulp/
-  pulp_packaging/tree/master/ci/config/releases/>`_. For pre-releases this is expected to be named
+  pulp-ci/tree/master/ci/config/releases/>`_. For pre-releases this is expected to be named
   ``x.y-build``, and for GA releases it is expected to be named ``x.y-release`` config.
 
 * The Jenkins docs buiding job for the release config must also exist. If it doesn't, update `the
-  Jenkins job builder definitions <https://github.com/pulp/pulp_packaging/blob/master/ci/jobs/
+  Jenkins job builder definitions <https://github.com/pulp/pulp-ci/blob/master/ci/jobs/
   projects.yaml>`_ to include the release config. Use Jenkins Job Builder to push the job to
   Jenkins.
 
-* For GA releases, check that the `LATEST variable <https://github.com/pulp/pulp_packaging/blob/
+* For GA releases, check that the `LATEST variable <https://github.com/pulp/pulp-ci/blob/
   master/ci/docs-builder.py#L15>`_ is up to date. This ensures the latest GA docs will be published
   at the root of the docs.pulpproject.org site.
 
-* Update `supported releases <https://github.com/pulp/pulp_packaging/tree/master/ci/config/
+* Update `supported releases <https://github.com/pulp/pulp-ci/tree/master/ci/config/
   supported-releases.json>`_ to include new X.Y version, and remove any versions no longer
   officially supported.
 
@@ -482,7 +482,7 @@ tell koji to write out the signed RPMs (both commands are run from your mash dir
    $ for r in `find -name "*src.rpm"`; do basename $r; done | sort | uniq | sed s/\.src\.rpm//g > /tmp/builds
    $ for x in `cat /tmp/builds`; do koji write-signed-rpm <SIGNATURE-HASH> $x; done
 
-Sync down your mash one more time (run from the ``pulp_packaging/ci`` dir)::
+Sync down your mash one more time (run from the ``pulp-ci/ci`` dir)::
 
    $ ./build-all.py <release_config> --disable-push --rpmsig <SIGNATURE-HASH>
 
