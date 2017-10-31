@@ -77,7 +77,9 @@ Using a token
 
 For using JWT tokens you have to set ``Authorization`` header as follows:
 ::
-  Authorization: JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNTAyMzgzMDExfQ.3ZpcclxV6hN8ui2HUbwXLJsHl2lhesiCPeDVV2GIbJg
+  Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNTAyMzgzMDExfQ.3ZpcclxV6hN8ui2HUbwXLJsHl2lhesiCPeDVV2GIbJg
+
+The prefix by default is ``Bearer`` but can be changed by setting ``JWT_AUTH.JWT_AUTH_HEADER_PREFIX``.
 
 User secret
 ^^^^^^^^^^^

@@ -66,3 +66,8 @@ JWT_ALLOW_SETTING_USER_SECRET
   Allow setting user's secret via REST API. This is needed for offline token generation.
 
   Default is `False`.
+
+JWT_AUTH_HEADER_PREFIX
+  Change the prefix in the Authorization header of requests that use JWT authentication.
+
+  Default is `Bearer`.
