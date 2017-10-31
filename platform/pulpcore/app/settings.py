@@ -225,6 +225,7 @@ _DEFAULT_PULP_SETTINGS = {
         'JWT_DECODE_HANDLER': 'pulpcore.app.auth.jwt_utils.decode_handler',
         'JWT_PAYLOAD_HANDLER': 'pulpcore.app.auth.jwt_utils.payload_handler',
         'JWT_GET_USER_SECRET_KEY': 'pulpcore.app.auth.jwt_utils.get_user_key',
+        'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     }
 }
 
