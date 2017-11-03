@@ -95,11 +95,11 @@ URL and perform a GET request to retrieve the :ref:`task_group_summary`.
 
 :sample_request:`_` ::
 
- { 
+ {
   "repo_criteria": {
-   "filters": {"id": {"$in": ["test-repo", "test-errata"]}},
-   "parallel": true
-  }
+   "filters": {"id": {"$in": ["test-repo", "test-errata"]}}
+  },
+  "parallel": true
  }
 
 
