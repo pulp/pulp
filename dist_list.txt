@@ -1,1 +1,1 @@
-el5 el6 el7 fc24 fc25
+el5 el6 el7 fc24 fc25 fc26
