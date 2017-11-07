@@ -28,14 +28,14 @@ celery.autodiscover_tasks()
 _logger = logging.getLogger(__name__)
 
 
-class HeartbeatStep(bootsteps.StartStopStep):
+class PulpWorkerStep(bootsteps.StartStopStep):
     """
-    Adds pulp heartbeat updating to celery workers.
+    Adds pulp recurrent logic to celery workers.
 
     This class is a celery "Blueprint". It extends the functionality of the celery
-    worker by establishing a timer on consumer startup which calls the '_record_heartbeat()'
+    worker by establishing a timer on consumer startup which calls the '_on_tick()'
     method periodically. This allows each worker to write its own worker record to the
-    database, instead of relying on pulp_celerybeat to do so.
+    database.
 
     http://docs.celeryproject.org/en/master/userguide/extending.html
     https://groups.google.com/d/msg/celery-users/3fs0ocREYqw/C7U1lCAp56sJ
@@ -59,7 +59,7 @@ class HeartbeatStep(bootsteps.StartStopStep):
 
     def start(self, consumer):
         """
-        Create a timer which periodically runs the heartbeat routine.
+        Create a timer which periodically runs the on_tick routine.
 
         This method is called when the worker starts up and also whenever the AMQP connection is
         reset (which triggers an internal restart). The timer is reset when the connection is lost,
@@ -71,11 +71,11 @@ class HeartbeatStep(bootsteps.StartStopStep):
 
         self.timer_ref = consumer.timer.call_repeatedly(
             TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL,
-            self._record_heartbeat,
+            self._on_tick,
             (consumer, ),
             priority=10,
         )
-        self._record_heartbeat(consumer)
+        self._on_tick(consumer)
 
     def stop(self, consumer):
         """
@@ -91,18 +91,20 @@ class HeartbeatStep(bootsteps.StartStopStep):
             self.timer_ref.cancel()
             self.timer_ref = None
 
-    def _record_heartbeat(self, consumer):
+    def _on_tick(self, consumer):
         """
-        This method creates or updates the worker record
+        This method regularly checks for offline workers and records worker heartbeats
 
         :param worker: The consumer instance
         :type  worker: celery.worker.consumer.Consumer
         """
-        from pulpcore.tasking.services.worker_watcher import handle_worker_heartbeat
+        from pulpcore.tasking.services.worker_watcher import (check_celery_processes,
+                                                              handle_worker_heartbeat)
         from pulpcore.app.models.task import Worker
 
         name = consumer.hostname
-        # Update the worker record timestamp and handle logging new workers
+
+        check_celery_processes()
         handle_worker_heartbeat(name)
 
         # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
@@ -112,7 +114,7 @@ class HeartbeatStep(bootsteps.StartStopStep):
             worker_lock.save()
 
 
-celery.steps['consumer'].add(HeartbeatStep)
+celery.steps['consumer'].add(PulpWorkerStep)
 
 
 @celeryd_after_setup.connect
@@ -126,9 +128,8 @@ def initialize_worker(sender, instance, **kwargs):
     removed along with the setting of online=False on the worker record in the database itself.
     The working directory specified in /etc/pulp/server.conf (/var/cache/pulp/<worker_name>)
     by default is removed and recreated. This is called early in the worker start process,
-    and later when it's fully online, pulp_celerybeat will discover the worker as usual to allow
-    new work to arrive at this worker. If there is no previous work to cleanup, this method
-    still runs, but has no effect on the database.
+    and later when it's fully online. If there is no previous work to cleanup, this method still
+    runs, but has no effect on the database.
 
     After cleaning up old state, it ensures the existence of the worker's working directory.
 

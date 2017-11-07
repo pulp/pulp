@@ -217,24 +217,6 @@ To run the Pulp services, three systemd files needs to be created in /etc/system
 sure to substitute ``Environment=PULP_SETTINGS=/path/to/pulp/server.yaml`` with the real location
 of server.yaml.
 
-``pulp_celerybeat.service``::
-
-    [Unit]
-    Description=Pulp Celerybeat
-    After=network-online.target
-    Wants=network-online.target
-
-    [Service]
-    # Set Environment if server.yaml is not in the default /etc/pulp/ directory
-    Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
-    User=pulp
-    WorkingDirectory=/var/run/pulp_celerybeat/
-    RuntimeDirectory=pulp_celerybeat
-    ExecStart=/path/to/python/bin/celery beat --app=pulpcore.tasking.celery_app:celery --scheduler=pulpcore.tasking.services.scheduler.Scheduler
-
-    [Install]
-    WantedBy=multi-user.target
-
 ``pulp_resource_manager.service``::
 
     [Unit]
@@ -278,7 +260,6 @@ of server.yaml.
 
 These services can then be started by running::
 
-    sudo systemctl start pulp_celerybeat
     sudo systemctl start pulp_resource_manager
     sudo systemctl start pulp_worker@1
     sudo systemctl start pulp_worker@2
