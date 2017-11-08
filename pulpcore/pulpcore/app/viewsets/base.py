@@ -1,6 +1,9 @@
 import warnings
 
+from pulpcore.app import tasks
 from pulpcore.app.models import MasterModel
+from pulpcore.app.response import OperationPostponedResponse
+
 from rest_framework import viewsets, mixins
 from rest_framework.generics import get_object_or_404
 
@@ -156,5 +159,60 @@ class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,
 
     A viewset that provides default `create()`, `retrieve()`, `destroy()` and `list()` actions.
 
+    """
+    pass
+
+
+class AsyncUpdateMixin(object):
+    """
+    Provides an update method that dispatches a task with reservation for a repository
+    """
+    def update(self, request, pk, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        app_label = instance._meta.app_label
+        async_result = tasks.base.general_update.apply_async_with_reservation(
+            instance._meta.db_table, pk,
+            args=(pk, app_label, serializer.__class__.__name__),
+            kwargs={'data': request.data, 'partial': partial}
+        )
+        return OperationPostponedResponse([async_result], request)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+
+class AsyncRemoveMixin(object):
+    """
+    Provides a delete method that dispatches a task with reservation for a repository
+    """
+    def destroy(self, request, pk, **kwargs):
+        """
+        Delete a model instance
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        app_label = instance._meta.app_label
+        async_result = tasks.base.general_delete.apply_async_with_reservation(
+            instance._meta.db_table, pk,
+            args=(pk, app_label, serializer.__class__.__name__)
+        )
+        return OperationPostponedResponse([async_result], request)
+
+
+class CreateReadAsyncUpdateDestroyNamedModelViewset(mixins.CreateModelMixin,
+                                                    mixins.RetrieveModelMixin,
+                                                    mixins.ListModelMixin,
+                                                    AsyncUpdateMixin,
+                                                    AsyncRemoveMixin,
+                                                    GenericNamedModelViewSet):
+    """
+    A viewset that performs asynchronous update and remove operations
+
+    This viewset should be used with resources that require making a reservation for a repository
+    during an update or delete.
     """
     pass
