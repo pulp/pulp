@@ -115,13 +115,13 @@ Source Installation
 3. Install pulpcore-common, pulpcore and pulpcore-plugin::
 
    $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=common"
-   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=platform"
+   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"
    $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=plugin"
 
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
 
-   $ export PULP_SETTINGS={venv}/src/pulpcore/platform/pulpcore/etc/pulp/server.yaml
+   $ export PULP_SETTINGS={venv}/src/pulpcore/pulpcore/pulpcore/etc/pulp/server.yaml
 
 5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file
 

@@ -1,5 +1,5 @@
 """
-Custom Django fields provided by pulp platform
+Custom Django fields provided by pulpcore
 """
 import json
 
