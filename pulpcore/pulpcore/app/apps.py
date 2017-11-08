@@ -49,7 +49,7 @@ class PulpPluginAppConfig(apps.AppConfig):
     # Plugin behavior loading should happen in ready(), not in __init__().
     # ready() is called after all models are initialized, and at that point we should
     # be able to safely inspect the plugin modules to look for any components we need
-    # to "register" with platform. The viewset registration below is based on Django's
+    # to "register" with pulpcore. The viewset registration below is based on Django's
     # own model importing method.
 
     def __init__(self, app_name, app_module):
@@ -120,7 +120,7 @@ class PulpPluginAppConfig(apps.AppConfig):
 
 
 class PulpAppConfig(PulpPluginAppConfig):
-    # The pulpcore platform app is itself a pulpcore plugin so that it can benefit from
+    # The pulpcore app is itself a pulpcore plugin so that it can benefit from
     # the component discovery mechanisms provided by that superclass.
 
     # The app's importable name

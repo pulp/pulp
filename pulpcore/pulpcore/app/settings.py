@@ -55,11 +55,11 @@ INSTALLED_APPS = [
     # third-party
     'django_filters',
     'rest_framework',
-    # pulp platform app
+    # pulp core app
     'pulpcore.app',
 ]
 
-# add plugins to INSTALLED_APPS after platform
+# add plugins to INSTALLED_APPS after pulpcore
 for entry_point in iter_entry_points('pulpcore.plugin'):
     plugin_app_config = entry_point.load()
     INSTALLED_APPS.append(plugin_app_config)

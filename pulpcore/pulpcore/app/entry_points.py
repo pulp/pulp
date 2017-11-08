@@ -1,4 +1,4 @@
-"""This module provides system wide command to interface with the pulp platform."""
+"""This module provides system wide command to interface with pulpcore."""
 import os
 import sys
 
