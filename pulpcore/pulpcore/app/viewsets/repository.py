@@ -207,11 +207,7 @@ class DistributionViewSet(NamedModelViewSet):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
-    lookup_field = 'name'
-    nest_prefix = 'publishers'
-    parent_viewset = PublisherViewSet
-    parent_lookup_kwargs = {'publisher_name': 'publisher__name',
-                            'repository_pk': 'publisher__repository__pk'}
+    lookup_field = 'name'y
 
 
 class RepositoryContentViewSet(NamedModelViewSet):

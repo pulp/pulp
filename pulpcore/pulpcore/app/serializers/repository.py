@@ -10,7 +10,7 @@ from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
                                       HrefWritableRepositoryRelatedField,
                                       GenericKeyValueRelatedField,
-                                      DetailWritableNestedUrlRelatedField,
+                                      DetailRelatedField, DetailNestedHyperlinkedRelatedField,
                                       ContentRelatedField,
                                       FileField,
                                       DetailNestedHyperlinkedRelatedField,
@@ -188,13 +188,10 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         help_text=_('Timestamp of the most recent successful publish.'),
         read_only=True
     )
-    distributions = NestedHyperlinkedRelatedField(
+    distributions = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        parent_lookup_kwargs={'publisher_name': 'publisher__name',
-                              'repository_pk': 'publisher__repository__pk'},
-        view_name='distributions-detail',
-        lookup_field='name'
+        view_name='distribution-detail'
     )
 
     class Meta:
@@ -212,11 +209,9 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
 
 
 class DistributionSerializer(ModelSerializer):
-    _href = NestedHyperlinkedIdentityField(
-        lookup_field='name',
-        parent_lookup_kwargs={'repository_pk': 'publisher__repository__pk',
-                              'publisher_name': 'publisher__name'},
-        view_name='distributions-detail'
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='distributions-detail',
+        lookup_field='name'
     )
     name = serializers.CharField(
         help_text=_('The name of the distribution. Ex, `rawhide` and `stable`.'),
@@ -227,7 +222,7 @@ class DistributionSerializer(ModelSerializer):
             ))]
     )
     base_path = serializers.CharField(
-        help_text=('The base (relative) path component of the published url.'),
+        help_text=_('The base (relative) path component of the published url.'),
         validators=[validators.MaxLengthValidator(
             models.Distribution._meta.get_field('base_path').max_length,
             message=_('Distribution base_path length must be less than {} characters').format(
@@ -236,26 +231,26 @@ class DistributionSerializer(ModelSerializer):
             UniqueValidator(queryset=models.Distribution.objects.all()),
         ],
     )
-    auto_updated = serializers.BooleanField(
-        help_text=_('The publication is updated automatically when the publisher has created a '
-                    'new publication'),
-    )
     http = serializers.BooleanField(
-        help_text=('The publication is distributed using HTTP.'),
+        help_text=_('The publication is distributed using HTTP.'),
     )
     https = serializers.BooleanField(
         help_text=_('The publication is distributed using HTTPS.')
     )
-    publisher = DetailWritableNestedUrlRelatedField(
-        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    publisher = DetailNestedHyperlinkedRelatedField(
+        queryset=models.Publisher.objects.all(),
+        parent_lookup_kwargs={'repository_name': 'publisher__repository__name'},
         lookup_field='name',
-        read_only=True
     )
+    #publication = serializers.HyperlinkedRelatedField(
+    #    queryset=models.Publication.objects.all(),
+    #    view_name='publication-detail'
+    #)
 
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'auto_updated', 'http', 'https', 'publisher',
+            'name', 'base_path', 'http', 'https', 'publisher'
         )
 
 
