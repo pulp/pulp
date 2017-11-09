@@ -27,20 +27,19 @@ class RepositoryViewSet(NamedModelViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
-    lookup_field = 'name'
     router_lookup = 'repository'
     pagination_class = NamePagination
     filter_class = RepositoryFilter
 
     @decorators.detail_route()
-    def content(self, request, name):
+    def content(self, request, pk):
         repo = self.get_object()
         paginator = UUIDPagination()
         page = paginator.paginate_queryset(repo.content, request)
         serializer = ContentSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
-    def update(self, request, name, partial=False):
+    def update(self, request, pk, partial=False):
         """
         Generates a Task to update a :class:`~pulpcore.app.models.Repository`
         """
@@ -55,7 +54,7 @@ class RepositoryViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
-    def destroy(self, request, name):
+    def destroy(self, request, pk):
         """
         Generates a Task to delete a :class:`~pulpcore.app.models.Repository`
         """
@@ -121,7 +120,7 @@ class ImporterViewSet(NamedModelViewSet):
     router_lookup = 'importer'
     lookup_field = 'name'
     parent_viewset = RepositoryViewSet
-    parent_lookup_kwargs = {'repository_name': 'repository__name'}
+    parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
@@ -164,7 +163,7 @@ class PublisherViewSet(NamedModelViewSet):
     lookup_field = 'name'
     parent_viewset = RepositoryViewSet
     router_lookup = 'publisher'
-    parent_lookup_kwargs = {'repository_name': 'repository__name'}
+    parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
@@ -210,7 +209,7 @@ class DistributionViewSet(NamedModelViewSet):
     nest_prefix = 'publishers'
     parent_viewset = PublisherViewSet
     parent_lookup_kwargs = {'publisher_name': 'publisher__name',
-                            'repository_name': 'publisher__repository__name'}
+                            'repository_pk': 'publisher__repository__pk'}
 
 
 class RepositoryContentViewSet(NamedModelViewSet):

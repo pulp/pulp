@@ -23,7 +23,6 @@ class HrefWritableRepositoryRelatedField(serializers.HyperlinkedRelatedField):
     read_only should passed as a kwarg to this field.
     """
     view_name = 'repositories-detail'
-    lookup_field = 'name'
     href_writable = True
 
 
