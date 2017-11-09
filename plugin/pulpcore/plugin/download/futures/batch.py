@@ -1,15 +1,14 @@
+from collections import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from gettext import gettext as _
-from logging import getLogger, DEBUG
-from queue import Queue, Empty
-from threading import Thread, current_thread
+from logging import getLogger
+from queue import Queue
+from threading import RLock, current_thread
 
 from .single import Context
 
 
-# The default queuing backlog.
-BACKLOG = 1024
-# The default concurrency.
+# The default number of downloads to be executed concurrently.
 CONCURRENT = 4
 
 
@@ -22,15 +21,9 @@ class Batch:
 
     Attributes:
         downloads (collections.abc.Iterable): An Iterable of downloads.
-        concurrent (int): The number of downloads to execute in concurrently.
+        concurrent (int): The number of downloads to be executed concurrently.
         iterator (PlanIterator): Used to iterate downloads as they complete.
         context (SharedContext): A shared download context.
-        feeder (DownloadFeeder): Used to feed submit downloads to the executor.
-        _is_shutdown (bool): Batch has been shutdown.
-
-    Notes:
-        * The batch should be used as a context manager.
-        * Or, `shutdown()` must be called manually.
 
     Examples:
 
@@ -52,33 +45,47 @@ class Batch:
         >>>
     """
 
-    def __init__(self, downloads, concurrent=CONCURRENT, backlog=BACKLOG, context=None):
+    def __init__(self, downloads, concurrent=CONCURRENT, context=None):
         """
         Args:
             downloads (collections.abc.Iterable): An Iterable of downloads.
-            concurrent (int): The number of downloads to execute in concurrently.
-            backlog (int): The number of downloads kept in memory.
+            concurrent (int): The number of downloads to be executed concurrently.
             context (SharedContext): An (optional) shared download context.
-
-        Raises:
-            ValueError: concurrent less than 2 or backlog is less than concurrent.
         """
         super(Batch, self).__init__()
-        self.downloads = downloads
+        self.downloads = iter(downloads)
         self.concurrent = concurrent
-        self.iterator = PlanIterator(backlog)
-        self.executor = BatchExecutor(concurrent=concurrent, backlog=backlog)
+        self.iterator = PlanIterator()
+        self.executor = ThreadPoolExecutor(max_workers=concurrent)
         self.context = context or Context()
-        self.feeder = DownloadFeeder(self)
-        self._is_shutdown = False
+        self._lock = RLock()
 
-    @property
-    def is_shutdown(self):
+    def submit(self, plan):
         """
-        Returns:
-            bool: Batch has been shutdown.
+        Submit the plan for execution and increment `outstanding`.
+
+        Args:
+            plan (Plan): The plan to submit.
         """
-        return self._is_shutdown
+        download = plan.download
+        download.context = self.context
+        future = self.executor.submit(plan)
+        future.add_done_callback(self.completed)
+        future.add_done_callback(self.iterator.add)
+        self.iterator.outstanding += 1
+
+    def completed(self, plan):
+        """
+        A plan has completed.
+
+        Args:
+            plan (Plan): The completed plan.
+        """
+        with self._lock:
+            for download in self.downloads:
+                plan = Plan(download)
+                self.submit(plan)
+                break
 
     def download(self):
         """
@@ -89,28 +96,13 @@ class Batch:
                 The iterator will yield the download `Plan` in the order completed.
         """
         log.debug(_('%(batch)s - download started'), {'batch': self})
-        self.feeder.start()
+        with self._lock:
+            for i, download in enumerate(self.downloads):
+                plan = Plan(download)
+                self.submit(plan)
+                if i > (self.concurrent * 10):
+                    break
         return self.iterator
-
-    def shutdown(self):
-        """
-        End processing and shutdown the feeder and the thread pool.
-
-        Notes:
-            This must be called to prevent leaking resources unless the Batch
-            is used as a context manager.
-
-        Examples:
-            >>>
-            >>> with Batch(..) as batch:
-            >>>    # ...
-        """
-        if self._is_shutdown:
-            return
-        self._is_shutdown = True
-        log.debug(_('%(batch)s - shutdown'), {'batch': self})
-        self.feeder.shutdown()
-        self.executor.shutdown()
 
     def __call__(self):
         """
@@ -127,278 +119,65 @@ class Batch:
         return self
 
     def __exit__(self, *unused):
-        try:
-            self.shutdown()
-        except Exception:
-            if log.isEnabledFor(DEBUG):
-                log.exception(_('Batch shutdown failed.'))
+        pass
 
     def __str__(self):
         _id = str(id(self))[-4:]
-        return _('Batch: id={s} concurrent={c}').format(s=_id, c=self.concurrent)
+        return _(
+            'Batch: id={s} concurrent={c} outstanding={o}').format(
+                s=_id,
+                c=self.concurrent,
+                o=self.iterator.outstanding)
 
 
-class BatchExecutor(ThreadPoolExecutor):
+class PlanIterator(Iterator):
     """
-    Batch thread pool executor.
-    """
-
-    def __init__(self, concurrent=CONCURRENT, backlog=BACKLOG):
-        """
-        A thread pool executor tailored for the batch.
-        The worker queue size is restricted to limit memory footprint.
-
-        Args:
-            concurrent (int): The number of downloads to execute in concurrently.
-            backlog (int): The number of downloads kept in memory.
-
-        Raises:
-            ValueError: concurrent less than 2 or backlog is less than concurrent.
-        """
-        super(BatchExecutor, self).__init__(max_workers=concurrent)
-        self._work_queue = Queue(maxsize=backlog)
-        if concurrent < 2:
-            raise ValueError(_('concurrent may not be < 2'))
-        if backlog < concurrent:
-            raise ValueError(_('backlog may not be < concurrent'))
-
-
-class DownloadFeeder(Thread):
-    """
-    Download feeder.
-    A thread used to feed each batched download into the executor.
-    May be interrupted and terminated by calling shutdown().
-
-    Attributes:
-        batch (Batch): A batch to feed.
-        total (int): The total number of downloads queued.
-        is_shutdown (bool): Feeder has been shutdown.
-    """
-
-    def __init__(self, batch):
-        super(DownloadFeeder, self).__init__(name='feeder')
-        self.batch = batch
-        self.daemon = True
-        self.total = 0
-        self.is_shutdown = False
-
-    @property
-    def iterator(self):
-        return self.batch.iterator
-
-    @property
-    def executor(self):
-        return self.batch.executor
-
-    @property
-    def downloads(self):
-        return self.batch.downloads
-
-    @property
-    def context(self):
-        return self.batch.context
-
-    def shutdown(self, wait=True):
-        """
-        Shutdown.
-        Abort feeding and terminate.
-
-        Args:
-            wait (bool): Wait for thread to terminate.
-        """
-        if self.is_shutdown:
-            return
-        self.is_shutdown = True
-        if wait:
-            self.join()
-
-    def run(self):
-        """
-        Thread (main) loop.
-        Submit each download to the batch executor.
-        """
-        try:
-            for download in self.downloads:
-                if self.is_shutdown:
-                    return
-                log.debug(
-                    _('%(feeder)s - feed #%(total)d url=%(url)s'),
-                    {
-                        'feeder': self,
-                        'total': self.total,
-                        'url': download.url
-                    })
-                download.context = self.context
-                future = self.executor.submit(Plan(self.batch, download))
-                future.add_done_callback(self.iterator.add)
-                self.total += 1
-        except Exception as e:
-            log.exception(_('feeder failed.'))
-            self.iterator.raised(e)
-            self.total += 1
-        finally:
-            self.done()
-
-    def done(self):
-        """
-        Done feeding downloads and need to update the iterator appropriately.
-        """
-        if self.total:
-            self.iterator.total = self.total
-        else:
-            self.iterator.drain()
-
-    def __str__(self):
-        _id = str(id(self))[-4:]
-        return _('DownloadFeeder: id={s} shutdown={a}').format(s=_id, a=self.is_shutdown)
-
-
-class QueueIterator:
-    """
-    A Queue iterator.
-    Each item in the queue is a tuple of: (code, payload).
+    Batched download plan iterator.
 
     Attributes:
         queue (Queue): The input queue to be iterated.
-        iterated (int): The number of times `__next__()` was called.
-        total (int): The total number queued.  A value of `-1` indicates
-            the total is not yet known.
+        outstanding (int): Total number of downloads in the pipeline.
     """
 
-    NEXT = 'NEXT'
-    EXCEPTION = 'EXCEPTION'
-    END = 'END'
+    def __init__(self):
+        super().__init__()
+        self.queue = Queue()
+        self.outstanding = 0
 
-    def __init__(self, backlog=BACKLOG):
-        self.queue = Queue(maxsize=backlog)
-        self.iterated = 0
-        self.total = -1
-
-    def put(self, code, payload=None, block=True):
+    def add(self, future):
         """
-        Enqueue a message.
+        Add a future to be emitted by `__next__()`.
 
         Args:
-            code (str): The message code.
-            payload (object): The message payload.
-            block (bool): Block when queue is full (default:True).
+            future (concurrent.futures.Future): A completed future.
         """
         log.debug(
-            _('%(iterator)s put: code=%(code)s payload=%(payload)s'),
+            _('%(iterator)s put: future=%(future)s'),
             {
                 'iterator': self,
-                'code': code,
-                'payload': payload
+                'future': future
             })
-        message = (code, payload)
-        self.queue.put(message, block=block)
-
-    def add(self, payload):
-        """
-        Add the next object to the input queue to be rendered by `__next__()`.
-
-        Args:
-            payload: An object to be rendered by `__next__()`.
-        """
-        self.put(self.NEXT, payload)
-
-    def raised(self, exception):
-        """
-        Add a fatal exception to the input queue.  The exception has been raised by
-        the object providing the objects to be iterated.
-
-        Args:
-            exception: An exception to be raised by `__next__()`.
-        """
-        self.put(self.EXCEPTION, exception)
-
-    def drain(self):
-        """:
-        Drain the input queue.
-        Add an message to the input queue that signals that the input
-        queue will always be empty.  The object feeding the queue has nothing
-        to be iterated.
-        """
-        log.debug(_('%(iterator)s - input drained'), {'iterator': self})
-        while True:
-            try:
-                self.queue.get(block=False)
-            except Empty:
-                break
-        self.end()
-
-    def end(self):
-        """
-        Add an message to the input queue that marks the end of input.
-        """
-        self.put(self.END)
+        self.queue.put(future)
 
     def __next__(self):
         """
-        Get the next enqueued object.
+        Get the next completed plan.
 
         Returns:
-            The next enqueued object.
+            Plan: The next completed object.
 
         Raises:
             StopIteration: when finished iterating.
         """
+        if self.outstanding <= 0:
+            raise StopIteration()
+
         log.debug(_('%(iterator)s - next'), {'iterator': self})
 
-        if self.iterated == self.total:
-            raise StopIteration()
+        future = self.queue.get()
 
-        code, payload = self.queue.get()
-
-        log.debug(
-            _('%(iterator)s next: code=%(code)s payload=%(payload)s'),
-            {
-                'iterator': self,
-                'code': code,
-                'payload': payload
-            })
-
-        # next
-        if code == self.NEXT:
-            self.iterated += 1
-            return payload
-        # fatal
-        if code == self.EXCEPTION:
-            raise payload
-        # empty
-        if code == self.END:
-            raise StopIteration()
-
-    def __iter__(self):
-        return self
-
-    def __str__(self):
-        _id = str(id(self))[-4:]
-        description = _('Iterator: id={s} iterated={i}/{t}')
-        return description.format(
-            s=_id,
-            i=self.iterated,
-            t=self.total)
-
-
-class FutureIterator(QueueIterator):
-    """
-    A queue iterator that expects the payload to be a `concurrent.futures.Future`.
-    """
-
-    def __next__(self):
-        """
-        Get the next future and propagate any raised exceptions.
-
-        Returns:
-            The next `Future.result()`
-
-        Raises:
-            Anything raised by the object executed.
-        """
-        future = super(FutureIterator, self).__next__()
         try:
-            return future.result()
+            plan = future.result()
         except Exception as exception:
             log.debug(
                 _('%(iterator)s - raising: %(exception)s'),
@@ -407,27 +186,12 @@ class FutureIterator(QueueIterator):
                     'exception': exception
                 })
             raise
+        else:
+            self.outstanding -= 1
+            return plan
 
-
-class PlanIterator(FutureIterator):
-    """
-    Batched download plan iterator.
-    """
-
-    def __next__(self):
-        """
-        Get the next completed download plan and propagate any raised exceptions.
-
-        Returns:
-            Plan: The next completed download execution plan.
-
-        Raises:
-            Anything raised by the object executed.
-        """
-        while True:
-            download = super(PlanIterator, self).__next__()
-            if download:
-                return download
+    def __iter__(self):
+        return self
 
 
 class Plan:
@@ -439,20 +203,17 @@ class Plan:
         only fatal batch framework exceptions are raised during iteration.
 
     Attributes:
-        batch (Batch): The batch.
         download (pulpcore.plugin.download.futures.Download): The planned download.
         executed (bool): Indicates the plan has been executed.
         error (Exception): An exception raised by the download.
     """
 
-    def __init__(self, batch, download):
+    def __init__(self, download):
         """
 
         Args:
-            batch (Batch): The batch.
             download (pulpcore.plugin.download.futures.Download): The planned download.
         """
-        self.batch = batch
         self.download = download
         self.executed = False
         self.error = None
@@ -480,9 +241,6 @@ class Plan:
         Returns:
             Plan: self
         """
-        if self.batch.is_shutdown:
-            return
-
         with self as download:
             self.executed = True
             try:
