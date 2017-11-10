@@ -200,12 +200,54 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         view_name='distributions-detail',
         lookup_field='name'
     )
+    publications = NestedHyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        parent_lookup_kwargs={'publisher_name': 'publisher__name',
+                              'repository_name': 'publisher__repository__name'},
+        view_name='publications-detail',
+    )
 
     class Meta:
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'last_updated', 'repository', 'auto_publish', 'last_published', 'distributions',
+            'publications',
+        )
+
+
+class PublicationSerializer(ModelSerializer):
+    _href = NestedHyperlinkedIdentityField(
+        parent_lookup_kwargs={
+            'repository_name': 'publisher__repository__name',
+            'publisher_name': 'publisher__name'
+        },
+        view_name='publications-detail'
+    )
+    created = serializers.DateTimeField(
+        help_text=_('Timestamp of when the publication was created.'),
+        read_only=True
+    )
+    publisher = DetailWritableNestedUrlRelatedField(
+        parent_lookup_kwargs={'repository_name': 'repository__name'},
+        lookup_field='name',
+        read_only=True
+    )
+    distributions = NestedHyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        parent_lookup_kwargs={'publisher_name': 'publisher__name',
+                              'repository_name': 'publisher__repository__name'},
+        view_name='distributrions-detail',
+    )
+
+    class Meta:
+        model = models.Publication
+        fields = ModelSerializer.Meta.fields + (
+            'created',
+            'publisher',
+            'distributions',
         )
         validators = [
             UniqueTogetherValidator(
@@ -255,11 +297,17 @@ class DistributionSerializer(ModelSerializer):
         lookup_field='name',
         read_only=True
     )
+    publication = NestedHyperlinkedRelatedField(
+        read_only=True,
+        parent_lookup_kwargs={'publisher_name': 'publisher__name',
+                              'repository_name': 'publisher__repository__name'},
+        view_name='publications-detail',
+    )
 
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'auto_updated', 'http', 'https', 'publisher',
+            'name', 'base_path', 'auto_updated', 'http', 'https', 'publisher', 'publication'
         )
 
 
