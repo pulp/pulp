@@ -38,7 +38,7 @@ class StatusView(APIView):
         db_status = {'connected': self._get_db_conn_status()}
 
         try:
-            workers = Worker.objects.all()
+            workers = Worker.objects.online_workers()
         except Exception:
             workers = None
 
