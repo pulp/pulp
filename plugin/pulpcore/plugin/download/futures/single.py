@@ -161,8 +161,8 @@ class Download:
             DownloadFailed: The download failed and could not be repaired.
         """
         log.debug(_('Repair: %(d)s'), {'d': self})
+        retries = self.retries
         try:
-            retries = self.retries
             while retries:
                 retries -= 1
                 repaired = self._on_error(error)
@@ -174,13 +174,14 @@ class Download:
                     continue
                 else:
                     return
-            if not retries:
-                self._on_failed()
-                raise error
         except Exception:
             log.exception(_('Repair failed: {d}').format(d=self))
             self._on_failed()
             raise error
+        else:
+            if not retries:
+                self._on_failed()
+                raise error
 
     def _write(self, buffer):
         """
