@@ -1,6 +1,7 @@
 """
 Django models related to the Tasking system
 """
+from datetime import timedelta
 from gettext import gettext as _
 import logging
 
@@ -11,6 +12,7 @@ from pulpcore.app.models import Model
 from pulpcore.app.fields import JSONField
 from pulpcore.common import TASK_FINAL_STATES
 from pulpcore.exceptions import exception_to_dict
+from pulpcore.tasking.constants import TASKING_CONSTANTS
 
 
 _logger = logging.getLogger(__name__)
@@ -54,12 +56,30 @@ class WorkerManager(models.Manager):
         Raises:
             Worker.DoesNotExist: If all Workers have at least one ReservedResource entry.
         """
-        workers_only_qs = self.filter(name__startswith='reserved', online=True)
-        workers_only_qs_with_counts = workers_only_qs.annotate(models.Count('reservations'))
+        workers_qs = self.online_workers()
+        workers_qs_with_counts = workers_qs.annotate(models.Count('reservations'))
         try:
-            return workers_only_qs_with_counts.filter(reservations__count=0).order_by('?')[0]
+            return workers_qs_with_counts.filter(reservations__count=0).order_by('?')[0]
         except IndexError:
             raise self.model.DoesNotExist()
+
+    def online_workers(self):
+        """
+        Returns a queryset of workers meeting the criteria to be considered 'online'
+
+        To be considered 'online', a worker should both have its 'online' field set to True
+        and have a recent heartbeat. "Recent" is defined here as "within the pulp process timeout
+        interval".
+
+        Returns:
+            :class:`django.db.models.query.QuerySet`:  A query set of the Worker objects which
+                are considered by Pulp to be 'online'.
+        """
+        now = timezone.now()
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        return self.filter(name__startswith='reserved',
+                           last_heartbeat__gte=age_threshold,
+                           online=True)
 
 
 class Worker(Model):
