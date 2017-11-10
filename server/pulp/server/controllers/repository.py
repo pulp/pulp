@@ -948,6 +948,9 @@ def check_perform_full_sync(repo_id, conduit, call_config):
     config_changed = check_config_updated_since_last_sync(conduit, repo_id)
     override_config_changed = check_override_config_change(repo_id, call_config)
 
+    if force_full:
+        _logger.info(_("Fully resyncing due to use of force_full in config"))
+
     return force_full or first_sync or content_removed or config_changed or override_config_changed
 
 
@@ -1197,6 +1200,9 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         publish_result_coll.save(result)
 
     else:
+        if force_full:
+            _logger.info(_("Fully republishing due to use of force_full in config"))
+
         result = _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_config)
 
     return result
