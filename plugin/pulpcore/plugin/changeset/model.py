@@ -4,7 +4,6 @@ from logging import getLogger
 from django.db import transaction
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from django.core.files import File
 
 from pulpcore.app.models import Artifact, ContentArtifact, RemoteArtifact
 
@@ -343,7 +342,7 @@ class PendingArtifact(Pending):
             try:
                 with transaction.atomic():
                     self._stored_model = Artifact(
-                        file=File(open(self._path, mode='rb')),
+                        file=self._path,
                         **self._monitor.facts())
                     self._stored_model.save()
             except IntegrityError:
