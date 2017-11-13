@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.test import TestCase
 
 from pulpcore.app import models, viewsets
@@ -9,11 +11,12 @@ class TestGetQuerySet(TestCase):
         Using ImporterViewSet as an example, tests to make sure the correct lookup
         is being added to the queryset based on its "parent_lookup_kwargs" value.
         """
+        pk = uuid4()
         viewset = viewsets.ImporterViewSet()
-        viewset.kwargs = {'repository_name': 'foo'}
+        viewset.kwargs = {'repository_pk': pk}
         queryset = viewset.get_queryset()
 
-        expected = models.Importer.objects.filter(repository__name='foo')
+        expected = models.Importer.objects.filter(repository__pk=pk)
 
         self.assertQuerysetEqual(queryset, expected)
 
