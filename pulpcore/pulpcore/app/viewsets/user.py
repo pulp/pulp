@@ -1,4 +1,4 @@
-from rest_framework import decorators
+from rest_framework import decorators, status
 from rest_framework.response import Response
 
 from pulpcore.app.models import User
@@ -16,5 +16,4 @@ class UserViewSet(NamedModelViewSet):
     def jwt_reset(self, request, username):
         user = self.get_object()
         user.jwt_reset()
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
