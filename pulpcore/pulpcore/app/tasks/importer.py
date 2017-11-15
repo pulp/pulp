@@ -14,12 +14,12 @@ log = logging.getLogger(__name__)
 
 
 @shared_task(base=UserFacingTask)
-def update(importer_id, app_label, serializer_name, data=None, partial=False):
+def update(importer_pk, app_label, serializer_name, data=None, partial=False):
     """
     Update an :class:`~pulp.app.models.Importer`
 
     Args:
-        importer_id (str): the id of the importer
+        importer_pk (str): the PK of the importer
         app_label (str): the Django app label of the plugin that provides the importer
         serializer_name (str): name of the serializer class for the importer
         data (dict): dictionary whose keys represent the fields of the importer that need to be
@@ -33,30 +33,28 @@ def update(importer_id, app_label, serializer_name, data=None, partial=False):
             due to validation error. This theoretically should never occur since validation is
             performed before the task is dispatched.
     """
-    instance = models.Importer.objects.get(id=importer_id).cast()
+    importer = models.Importer.objects.get(pk=importer_pk).cast()
     data_querydict = QueryDict('', mutable=True)
-    data_querydict.update(data)
+    data_querydict.update(data or {})
     serializer_class = get_plugin_config(app_label).named_serializers[serializer_name]
-    serializer = serializer_class(instance, data=data_querydict, partial=partial)
+    serializer = serializer_class(importer, data=data_querydict, partial=partial)
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
 
 @shared_task(base=UserFacingTask)
-def delete(repo_name, importer_name):
+def delete(importer_pk):
     """
     Delete an :class:`~pulpcore.app.models.Importer`
 
-    :param repo_name:       the name of a repository
-    :type  repo_name:       str
-    :param importer_name:   the name of an importer
-    :type  importer_name:   str
+    Args:
+        importer_pk (str): the PK of the importer
     """
-    models.Importer.objects.filter(name=importer_name, repository__name=repo_name).delete()
+    models.Importer.objects.filter(pk=importer_pk).delete()
 
 
 @shared_task(base=UserFacingTask)
-def sync(repo_name, importer_name):
+def sync(importer_pk):
     """
     Call sync on the importer defined by a plugin.
 
@@ -64,18 +62,22 @@ def sync(repo_name, importer_name):
     is prepared, the plugin's sync is called, and then working directory is removed.
 
     Args:
-        repo_name (basestring): unique name to specify the repository.
-        importer_name (basestring): name to specify the Importer.
+        importer_pk (str): The importer PK.
 
     Raises:
         ValueError: When feed_url is empty.
     """
-    importer = models.Importer.objects.get(name=importer_name, repository__name=repo_name).cast()
+    importer = models.Importer.objects.get(pk=importer_pk).cast()
+
     if not importer.feed_url:
         raise ValueError(_("An importer must have a 'feed_url' attribute to sync."))
 
     with storage.working_dir_context() as working_dir:
         importer.working_dir = working_dir
-        log.info(_('Starting sync: repository=%(repo)s importer=%(imp)s'),
-                 {'repo': repo_name, 'imp': importer_name})
+        log.info(
+            _('Starting sync: repository=%(repository)s importer=%(importer)s'),
+            {
+                'repository': importer.repository.name,
+                'importer': importer.name
+            })
         importer.sync()
