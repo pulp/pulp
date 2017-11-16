@@ -10,7 +10,7 @@ from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
                                       HrefWritableRepositoryRelatedField,
                                       GenericKeyValueRelatedField,
-                                      DetailRelatedField, DetailNestedHyperlinkedRelatedField,
+                                      DetailRelatedField,
                                       ContentRelatedField,
                                       FileField,
                                       DetailNestedHyperlinkedRelatedField,
@@ -191,7 +191,8 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
     distributions = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        view_name='distribution-detail'
+        lookup_field='name',
+        view_name='distributions-detail'
     )
 
     class Meta:
@@ -239,13 +240,14 @@ class DistributionSerializer(ModelSerializer):
     )
     publisher = DetailNestedHyperlinkedRelatedField(
         queryset=models.Publisher.objects.all(),
-        parent_lookup_kwargs={'repository_name': 'publisher__repository__name'},
+        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
         lookup_field='name',
     )
-    #publication = serializers.HyperlinkedRelatedField(
-    #    queryset=models.Publication.objects.all(),
-    #    view_name='publication-detail'
-    #)
+
+    # publication = serializers.HyperlinkedRelatedField(
+    #     queryset=models.Publication.objects.all(),
+    #     view_name='publication-detail'
+    # )
 
     class Meta:
         model = models.Distribution

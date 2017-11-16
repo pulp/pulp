@@ -207,7 +207,7 @@ class DistributionViewSet(NamedModelViewSet):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
-    lookup_field = 'name'y
+    lookup_field = 'name'
 
 
 class RepositoryContentViewSet(NamedModelViewSet):
