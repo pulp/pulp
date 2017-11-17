@@ -481,11 +481,10 @@ custom filter based on the `BaseInFilter`.
 Documenting
 -----------
 
-By default, the docstring of a ViewSet is used to generate that view's "description" value,
-which is what DRF presents to API users as that endpoint's documentation. Individual fields
-are documented largely automatically based on the Serializer field type, but using the "help_text"
-kwarg when defining serializer fields lets us add a user-friendly string that is then included
-in the API endpoint.
+By default, the docstring of a CRUD method on a ViewSet is used to generate that endpoint's
+description. Individual parameters and responses are documented largely automatically based
+on the Serializer field type, but using the "help_text" kwarg when defining serializer fields
+lets us add a user-friendly string that is then included in the API endpoint.
 
 ViewSets can override the ``get_view_description`` method to customize the source and formatting
 of the description field, if desired. Serializer fields should set their ``help_text`` value for
@@ -501,18 +500,14 @@ a browsable site of API docs, listed here:
 
 http://www.django-rest-framework.org/topics/documenting-your-api/#endpoint-documentation
 
-Between "DRF Docs" and "Django REST Swagger", DRF Docs exists to continue the functionality
-of Django REST Swagger, called "Django REST Docs". Being based on
-`Swagger <http://swagger.io>`_, Django REST Swagger give us access to a lot of handy
-API-related tools, including dynamic and static API documentation, and rudimentary client
-autogeneration.
+Because "DRF Docs" and "Django REST Swagger" do not generate documentation for responses,
+Pulp is generating its REST API with `drf-openapi <https://github.com/limdauto/drf_openapi/>`_
+until either DRF supports OpenAPI, or until CoreAPI supports response documentation.
 
-Additionally, the "coreapi" project (which can be used to dynamically generate API clients)
-supports generating OpenAPI schemas, which can be consumed by tools like ``swagger-codegen``
-to generate static API documentation, potentially alleviating the need to include DRF Docs
-or Django REST Swagger as a dependency:
+You can access the live REST API docs at `http://pulpserver/api/v3/docs/` by installing the
+pulpcore's doc_requirements.txt file::
 
-http://www.django-rest-framework.org/topics/api-clients/#codecs
+  $ pip3 install pulpcore/doc_requirements.txt
 
 
 Glossary

@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 import os
 import sys
+from contextlib import suppress
 from importlib import import_module
 from pkg_resources import iter_entry_points
 
@@ -68,15 +69,14 @@ for entry_point in iter_entry_points('pulpcore.plugin'):
 OPTIONAL_APPS = [
     'crispy_forms',
     'django_extensions',
+    'drf_openapi'
 ]
 
 for app in OPTIONAL_APPS:
-    try:
+    # only import if app is installed
+    with suppress(ImportError):
         import_module(app)
         INSTALLED_APPS.append(app)
-    except ImportError:
-        # app module not installed
-        pass
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -120,7 +120,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
-    'UPLOADED_FILES_USE_URL': False
+    'UPLOADED_FILES_USE_URL': False,
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
 }
 AUTH_USER_MODEL = 'pulp_app.User'
 
@@ -273,14 +274,12 @@ def load_settings(paths=None):
     settings = _DEFAULT_PULP_SETTINGS
 
     for path in (paths or []):
-        try:
+        with suppress(OSError, IOError):
+            # Consider adding logging of some kind, potentially to /var/log/pulp
             with open(path) as config_file:
                 config = config_file.read()
                 override_settings = yaml.safe_load(config)
                 settings = merge_settings(settings, override_settings)
-        except (OSError, IOError):
-            # Consider adding logging of some kind, potentially to /var/log/pulp
-            pass
 
     for setting_name, setting_value in settings.items():
         setattr(sys.modules[__name__], setting_name.upper(), setting_value)
