@@ -1,14 +1,20 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
+# The release number
+%global release_number 1
+
+# Create tag for the Source0 and setup
+%global git_tag %{name}-%{version}-%{release_number}
+
 Name:           python-nectar
-Version:        1.5.4
+Version:        1.5.6
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
 Group:          Development/Tools
 License:        GPLv2
 URL:            https://github.com/pulp/nectar
-Source0:        %{name}-%{version}.tar.gz
+Source0:        https://codeload.github.com/pulp/nectar/tar.gz/%{git_tag}#/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
@@ -45,6 +51,18 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Wed Oct 18 2017 Ina Panova <ipanova@redhat.com> 1.5.6-1
+- UnicodeEncodeError in comments provided with SSL cert/key/CA
+  (ammaransari004@gmail.com)
+- Revert "UnicodeEncodeError in comments provided with SSL cert/key/CA"
+  (mhrivnak@hrivnak.org)
+- UnicodeEncodeError in comments provided with SSL cert/key/CA
+  (ammaransari004@gmail.com)
+
+* Wed Aug 02 2017 Ina Panova <ipanova@redhat.com> 1.5.5-1
+- Update spec files Source0 (zhunting@redhat.com)
+- Update nectar to also read headers from config (bihan.zh@gmail.com)
+
 * Fri Apr 21 2017 Ina Panova <ipanova@redhat.com> 1.5.4-1
 - Re-enable request streaming (alex@linfratech.co.uk)
 - Better logging at INFO level for downloads (daviddavis@redhat.com)

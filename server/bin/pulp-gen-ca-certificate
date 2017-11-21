@@ -34,6 +34,7 @@ umask 027
 # create CA key
 openssl genrsa -out ${CA_KEY} 4096 &> /dev/null
 chgrp apache ${CA_KEY}
+chmod 640 ${CA_KEY}
 
 # create signing request
 openssl req \

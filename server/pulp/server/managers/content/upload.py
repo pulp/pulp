@@ -226,7 +226,9 @@ class ContentUploadManager(object):
             repo_controller.rebuild_content_unit_counts(repo_obj)
             repo_controller.update_last_unit_added(repo_obj.repo_id)
             return result
-
+        except PulpCodedException:
+            # propagate coded exceptions.
+            raise
         except PulpException:
             msg = _('Error from the importer while importing uploaded unit to repository [%(r)s]')
             msg = msg % {'r': repo_id}

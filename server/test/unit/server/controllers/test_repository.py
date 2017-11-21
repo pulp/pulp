@@ -324,8 +324,8 @@ class UpdateRepoUnitCountsTests(unittest.TestCase):
         This is only a marginally useful test as 90% of the work is done by the
         mongo server
         """
-        mock_get_db.return_value.command.return_value = \
-            {'result': [{'_id': 'type_1', 'sum': 5}, {'_id': 'type_2', 'sum': 3}]}
+        mock_get_db.return_value.repo_content_units.aggregate.return_value = \
+            [{'_id': 'type_1', 'sum': 5}, {'_id': 'type_2', 'sum': 3}]
         repo = MagicMock(repo_id='foo')
         repo_controller.rebuild_content_unit_counts(repo)
 
@@ -333,8 +333,8 @@ class UpdateRepoUnitCountsTests(unittest.TestCase):
             {'$match': {'repo_id': 'foo'}},
             {'$group': {'_id': '$unit_type_id', 'sum': {'$sum': 1}}}]
 
-        mock_get_db.return_value.command.assert_called_once_with(
-            'aggregate', 'repo_content_units', pipeline=expected_pipeline
+        mock_get_db.return_value.repo_content_units.aggregate.assert_called_once_with(
+            pipeline=expected_pipeline
         )
         self.assertDictEqual(repo.content_unit_counts, {'type_1': 5, 'type_2': 3})
         repo.save.assert_called_once_with()

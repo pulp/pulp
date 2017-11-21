@@ -425,7 +425,7 @@ class ReservedTaskMixin(object):
                 args=[task_name, inner_task_id, resource_id, args, kwargs],
                 queue=RESOURCE_MANAGER_QUEUE
             )
-        except:
+        except Exception:
             TaskStatus.objects(task_id=task_status.task_id).update(state=constants.CALL_ERROR_STATE)
             raise
 
@@ -469,7 +469,7 @@ class Task(PulpTask, ReservedTaskMixin):
 
         try:
             async_result = super(Task, self).apply_async(*args, **kwargs)
-        except:
+        except Exception:
             if 'task_id' in kwargs:
                 TaskStatus.objects(task_id=kwargs['task_id']).update(
                     state=constants.CALL_ERROR_STATE
@@ -483,10 +483,12 @@ class Task(PulpTask, ReservedTaskMixin):
             task_id=async_result.id, task_type=self.name,
             state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tag_list,
             group_id=group_id)
-        # To avoid the race condition where __call__ method below is called before
-        # this change is propagated to all db nodes, using an 'upsert' here and setting
-        # the task state to 'waiting' only on an insert.
-        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
+        # We're now racing with __call__, on_failure and on_success, any of which may
+        # have completed by now. To avoid overwriting TaskStatus updates from those callbacks,
+        # we'll do an upsert and only touch the fields listed below if we've inserted the object.
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=[
+            'state', 'start_time', 'finish_time', 'result', 'error',
+            'spawned_tasks', 'traceback'])
         return async_result
 
     def __call__(self, *args, **kwargs):
@@ -503,15 +505,20 @@ class Task(PulpTask, ReservedTaskMixin):
             _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
-        # Skip updating status for eagerly executed tasks, since we don't want to track
-        # synchronous tasks in our database.
+        # Also update the worker_name to cover cases where apply_async was called without
+        # providing the worker name up-front. Skip updating status for eagerly executed tasks,
+        # since we don't want to track synchronous tasks in our database.
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             start_time = dateutils.format_iso8601_datetime(now)
+            worker_name = self.request.hostname
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
             TaskStatus.objects(task_id=self.request.id).update_one(
-                set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
+                set__state=constants.CALL_RUNNING_STATE,
+                set__start_time=start_time,
+                set__worker_name=worker_name,
+                upsert=True)
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
 
