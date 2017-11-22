@@ -342,22 +342,26 @@ class UpdateRepoUnitCountsTests(unittest.TestCase):
 
 class AssociateSingleUnitTests(unittest.TestCase):
 
-    @patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+    @patch('pulp.server.controllers.repository.model.RepositoryContentUnit')
     @patch('pulp.server.controllers.repository.dateutils.format_iso8601_utc_timestamp')
-    def test_unit_association(self, mock_get_timestamp, mock_rcu_objects):
+    def test_unit_association(self, mock_get_timestamp, mock_rcu):
         mock_get_timestamp.return_value = 'foo_tstamp'
         test_unit = DemoModel(id='bar', key_field='baz')
         repo = MagicMock(repo_id='foo')
         repo_controller.associate_single_unit(repo, test_unit)
-        mock_rcu_objects.assert_called_once_with(
+        mock_rcu.assert_called_once_with(
             repo_id='foo',
             unit_id='bar',
             unit_type_id=DemoModel._content_type_id.default
         )
-        mock_rcu_objects.return_value.update_one.assert_called_once_with(
-            set_on_insert__created='foo_tstamp',
+        mock_rcu.return_value.save.assert_called_once_with()
+        mock_rcu.objects.assert_called_once_with(
+            unit_id='bar',
+            unit_type_id=DemoModel._content_type_id.default
+        )
+        mock_rcu.objects.return_value.update.assert_called_once_with(
             set__updated='foo_tstamp',
-            upsert=True)
+            multi=True)
 
 
 class TestDisassociateUnits(unittest.TestCase):
