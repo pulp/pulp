@@ -4,6 +4,7 @@ import os
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
+from rest_framework_nested.relations import NestedHyperlinkedRelatedField
 
 from pulpcore.app import models
 from pulpcore.app.serializers import DetailRelatedField
@@ -111,3 +112,56 @@ class ContentArtifactsField(serializers.DictField):
                 url = None
             ret[content_artifact.relative_path] = url
         return ret
+
+
+class LatestVersionField(NestedHyperlinkedRelatedField):
+    parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
+    lookup_field = 'number'
+    view_name = 'versions-detail'
+
+    def __init__(self, *args, **kwargs):
+        """
+        Unfortunately you can't just set read_only=True on the class. It has
+        to be done explicitly in the kwargs to __init__, or else DRF complains.
+        """
+        kwargs['read_only'] = True
+        super().__init__(*args, **kwargs)
+
+    def get_url(self, obj, view_name, request, format):
+        """
+        Returns the URL for the appropriate object. Overrides the DRF method to change how the
+        object is found.
+
+        Args:
+            obj (list of :class:`pulpcore.app.models.RepositoryVersion`): The versions of the
+                current viewset's repository.
+            view_name (str): The name of the view that should be used.
+            request (rest_framework.request.Request): the current HTTP request being handled
+            format: undocumented by DRF. ???
+
+        Returns:
+            str: the URL corresponding to the latest version of the current repository. If there
+                are no versions, returns None
+        """
+        try:
+            version = obj.latest()
+        except obj.model.DoesNotExist:
+            return None
+
+        kwargs = {
+            'repository_pk': version.repository.pk,
+            'number': version.number,
+        }
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
+
+    def get_attribute(self, instance):
+        """
+        Args:
+            instance (pulpcore.app.models.Repository): a repository that has been matched by the
+                current ViewSet.
+
+        Returns:
+            list of :class:`pulpcore.app.models.RepositoryVersion`
+
+        """
+        return instance.versions

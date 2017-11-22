@@ -25,16 +25,18 @@ def publish(publisher_pk):
         publisher_pk (str): The publisher PK.
     """
     publisher = models.Publisher.objects.get(pk=publisher_pk).cast()
+    repo_version = publisher.repository.versions.latest()
 
     log.info(
-        _('Publishing: repository=%(repository)s, publisher=%(publisher)s'),
+        _('Publishing: repository=%(repository)s, version=%(version)d, publisher=%(publisher)s'),
         {
             'repository': publisher.repository.name,
-            'publisher': publisher.name
+            'publisher': publisher.name,
+            'version': repo_version.number,
         })
 
     with transaction.atomic():
-        publication = models.Publication(publisher=publisher)
+        publication = models.Publication(publisher=publisher, repo_version=repo_version)
         publisher.publication = publication
         publication.save()
         created = models.CreatedResource(content_object=publication)

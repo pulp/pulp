@@ -7,6 +7,6 @@ from pulpcore.app.viewsets.repository import (DistributionViewSet,  # noqa
                                               PublicationViewSet,
                                               PublisherViewSet,
                                               RepositoryViewSet,
-                                              RepositoryContentViewSet)
+                                              RepositoryVersionViewSet)
 from pulpcore.app.viewsets.task import TaskViewSet, WorkerViewSet  # noqa
 from pulpcore.app.viewsets.user import UserViewSet  # noqa
