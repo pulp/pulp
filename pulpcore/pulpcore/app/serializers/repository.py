@@ -7,20 +7,27 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
-    ContentRelatedField,
     DetailIdentityField,
     DetailRelatedField,
     FileField,
     GenericKeyValueRelatedField,
+    LatestVersionField,
     MasterModelSerializer,
     ModelSerializer,
 )
+from rest_framework_nested.relations import NestedHyperlinkedIdentityField
+from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 
 class RepositorySerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(
         view_name='repositories-detail'
     )
+    _versions_href = serializers.HyperlinkedIdentityField(
+        view_name='versions-list',
+        lookup_url_kwarg='repository_pk',
+    )
+    _latest_version_href = LatestVersionField()
     name = serializers.CharField(
         help_text=_('A unique name for this repository.'),
         validators=[UniqueValidator(queryset=models.Repository.objects.all())]
@@ -31,36 +38,17 @@ class RepositorySerializer(ModelSerializer):
         required=False
     )
 
-    last_content_added = serializers.DateTimeField(
-        help_text=_('Timestamp of the most recent addition of content to this repository.'),
-        read_only=True
-    )
-
-    last_content_removed = serializers.DateTimeField(
-        help_text=_('Timestamp of the most recent removal of content to this repository.'),
-        read_only=True
-    )
     notes = GenericKeyValueRelatedField(
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
         required=False
     )
     importers = DetailRelatedField(many=True, read_only=True)
     publishers = DetailRelatedField(many=True, read_only=True)
-    content = serializers.HyperlinkedIdentityField(
-        view_name='repositories-content',
-    )
-
-    content_summary = serializers.DictField(
-        help_text=_('A list of counts of each type of content in this repository.'),
-        read_only=True
-    )
 
     class Meta:
         model = models.Repository
-        fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
-                                                'last_content_added', 'last_content_removed',
-                                                'importers', 'publishers', 'content',
-                                                'content_summary')
+        fields = ModelSerializer.Meta.fields + ('_versions_href', '_latest_version_href', 'name',
+                                                'description', 'notes', 'importers', 'publishers')
 
 
 class ImporterSerializer(MasterModelSerializer):
@@ -234,6 +222,7 @@ class DistributionSerializer(ModelSerializer):
         queryset=models.Publisher.objects.all(),
     )
     publication = serializers.HyperlinkedRelatedField(
+        allow_null=True,
         help_text=_('The publication being served as defined by this distribution'),
         queryset=models.Publication.objects.all(),
         view_name='publications-detail'
@@ -275,17 +264,36 @@ class PublicationSerializer(ModelSerializer):
         )
 
 
-class RepositoryContentSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='repositorycontents-detail'
+class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSerializer):
+    _href = NestedHyperlinkedIdentityField(
+        view_name='versions-detail',
+        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-
-    content = ContentRelatedField()
-    repository = serializers.HyperlinkedRelatedField(
-        view_name='repositories-detail',
-        queryset=models.Repository.objects.all()
+    _content_href = NestedHyperlinkedIdentityField(
+        view_name='versions-content',
+        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    )
+    _added_href = NestedHyperlinkedIdentityField(
+        view_name='versions-added',
+        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    )
+    _removed_href = NestedHyperlinkedIdentityField(
+        view_name='versions-removed',
+        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    )
+    number = serializers.IntegerField(
+        read_only=True
+    )
+    created = serializers.DateTimeField(
+        help_text=_('Timestamp of creation.'),
+        read_only=True
+    )
+    content_summary = serializers.DictField(
+        help_text=_('A list of counts of each type of content in this version.'),
+        read_only=True
     )
 
     class Meta:
-        model = models.RepositoryContent
-        fields = ('_href', 'repository', 'content')
+        model = models.RepositoryVersion
+        fields = ('_href', '_content_href', '_added_href', '_removed_href', 'number', 'created',
+                  'content_summary')

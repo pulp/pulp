@@ -1,6 +1,6 @@
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
-from rest_framework import decorators
+from rest_framework import decorators, mixins
 
 from pulpcore.app import tasks
 from pulpcore.app.models import (Distribution,
@@ -8,7 +8,7 @@ from pulpcore.app.models import (Distribution,
                                  Publication,
                                  Publisher,
                                  Repository,
-                                 RepositoryContent)
+                                 RepositoryVersion)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (ContentSerializer,
@@ -17,8 +17,10 @@ from pulpcore.app.serializers import (ContentSerializer,
                                       PublicationSerializer,
                                       PublisherSerializer,
                                       RepositorySerializer,
-                                      RepositoryContentSerializer)
-from pulpcore.app.viewsets import (NamedModelViewSet, CreateReadAsyncUpdateDestroyNamedModelViewset)
+                                      RepositoryVersionSerializer)
+from pulpcore.app.viewsets import (NamedModelViewSet,
+                                   GenericNamedModelViewSet,
+                                   CreateReadAsyncUpdateDestroyNamedModelViewset)
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -36,16 +38,9 @@ class RepositoryViewSet(NamedModelViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
+    router_lookup = 'repository'
     pagination_class = NamePagination
     filter_class = RepositoryFilter
-
-    @decorators.detail_route()
-    def content(self, request, pk):
-        repo = self.get_object()
-        paginator = UUIDPagination()
-        page = paginator.paginate_queryset(repo.content, request)
-        serializer = ContentSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
 
     def update(self, request, pk, partial=False):
         """
@@ -122,6 +117,66 @@ class PublisherFilter(ContentAdaptorFilter):
         fields = ContentAdaptorFilter.Meta.fields
 
 
+class RepositoryVersionViewSet(GenericNamedModelViewSet,
+                               mixins.RetrieveModelMixin,
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin):
+    endpoint_name = 'versions'
+    nest_prefix = 'repositories'
+    router_lookup = 'version'
+    lookup_field = 'number'
+    parent_viewset = RepositoryViewSet
+    parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
+    serializer_class = RepositoryVersionSerializer
+    queryset = RepositoryVersion.objects.all()
+
+    @decorators.detail_route()
+    def content(self, request, repository_pk, number):
+        return self._paginated_response(self.get_object().content(), request)
+
+    @decorators.detail_route()
+    def added(self, request, repository_pk, number):
+        return self._paginated_response(self.get_object().added(), request)
+
+    @decorators.detail_route()
+    def removed(self, request, repository_pk, number):
+        return self._paginated_response(self.get_object().removed(), request)
+
+    def _paginated_response(self, content, request):
+        """
+        a helper method to make a paginated response for content list views.
+
+        Args:
+            content (django.db.models.QuerySet): the Content to render
+            request (rest_framework.request.Request): the current HTTP request being handled
+
+        Returns:
+            rest_framework.response.Response: a paginated response for the corresponding content
+        """
+        paginator = UUIDPagination()
+        page = paginator.paginate_queryset(content, request)
+        serializer = ContentSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+    def destroy(self, request, repository_pk, number):
+        """
+        Queues a task to handle deletion.
+        Args:
+            request (rest_framework.request.Request): the current HTTP request being handled
+            repository_pk (UUID): primary key for a Repository associated with the version
+            number (str): the "number" attribute for the version
+
+        Returns:
+            OperationPostponedResponse: a response with information about the queued task
+        """
+        version = self.get_object()
+        async_result = tasks.repository.delete_version.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, repository_pk,
+            kwargs={'pk': version.pk}
+        )
+        return OperationPostponedResponse([async_result], request)
+
+
 class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     endpoint_name = 'importers'
     serializer_class = ImporterSerializer
@@ -167,9 +222,3 @@ class DistributionViewSet(NamedModelViewSet):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
-
-
-class RepositoryContentViewSet(NamedModelViewSet):
-    endpoint_name = 'repositorycontents'
-    queryset = RepositoryContent.objects.all()
-    serializer_class = RepositoryContentSerializer

@@ -10,11 +10,15 @@ class Publication(Model):
 
     Relations:
         publisher (models.ForeignKey): The publisher that created the publication.
+        repo_version (models.ForeignKey): The RepositoryVersion whose content set was used to
+            create this Publication.
     """
 
     created = models.DateTimeField(auto_now_add=True)
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
+
+    repo_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
 
 
 class PublishedFile(Model):

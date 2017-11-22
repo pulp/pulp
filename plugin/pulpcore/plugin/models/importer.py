@@ -25,7 +25,7 @@ class Importer(PlatformImporter):
     :class: `pulpcore.plugin.serializers.repository.ImporterSerializer`.
     """
 
-    def sync(self):
+    def sync(self, new_version, old_version):
         """
         Perform a sync.
 
@@ -40,6 +40,12 @@ class Importer(PlatformImporter):
         :meth: `pulpcore.app.tasks.importer.sync`.
 
         Subclasses are designed to override this default implementation and should not call super().
+
+        Args:
+            new_version (pulpcore.plugin.models.RepositoryVersion): the new version to which content
+                should be added and removed.
+            old_version (pulpcore.plugin.models.RepositoryVersion): the latest pre-existing version
+                or None if one does not exist.
         """
         raise NotImplementedError()
 

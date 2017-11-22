@@ -1,3 +1,4 @@
+from contextlib import suppress
 from gettext import gettext as _
 import logging
 
@@ -30,6 +31,12 @@ def sync(importer_pk):
     if not importer.feed_url:
         raise ValueError(_("An importer must have a 'feed_url' attribute to sync."))
 
+    new_version = models.RepositoryVersion(repository=importer.repository)
+    new_version.save()
+    old_version = None
+    with suppress(models.RepositoryVersion.DoesNotExist):
+        old_version = importer.repository.versions.latest()
+
     with storage.working_dir_context() as working_dir:
         importer.working_dir = working_dir
         log.info(
@@ -38,4 +45,12 @@ def sync(importer_pk):
                 'repository': importer.repository.name,
                 'importer': importer.name
             })
-        importer.sync()
+        try:
+            importer.sync(new_version, old_version)
+        except Exception:
+            new_version.delete()
+            raise
+
+    if new_version.added().count() == 0 and new_version.removed().count() == 0:
+        log.debug('no changes; deleting repository version')
+        new_version.delete()

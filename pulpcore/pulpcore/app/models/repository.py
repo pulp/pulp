@@ -1,8 +1,10 @@
 """
 Repository related Django models.
 """
+from contextlib import suppress
+
 from django.db import models
-from django.utils import timezone
+from django.db.utils import IntegrityError
 
 from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
 from pulpcore.app.models.storage import get_tls_path
@@ -16,8 +18,6 @@ class Repository(Model):
 
         name (models.TextField): The repository name.
         description (models.TextField): An optional description.
-        last_content_added (models.DateTimeField): When content was last added.
-        last_content_removed (models.DatetimeField): When content was last removed.
 
     Relations:
 
@@ -27,9 +27,6 @@ class Repository(Model):
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
 
-    last_content_added = models.DateTimeField(blank=True, null=True)
-    last_content_removed = models.DateTimeField(blank=True, null=True)
-
     notes = GenericKeyValueRelation(Notes)
 
     content = models.ManyToManyField('Content', through='RepositoryContent',
@@ -37,17 +34,6 @@ class Repository(Model):
 
     class Meta:
         verbose_name_plural = 'repositories'
-
-    @property
-    def content_summary(self):
-        """
-        The contained content summary.
-
-        :return: A dict of {<type>: <count>}
-        :rtype:  dict
-        """
-        mapping = self.content.values('type').annotate(count=models.Count('type'))
-        return {m['type']: m['count'] for m in mapping}
 
     def natural_key(self):
         """
@@ -221,25 +207,136 @@ class RepositoryContent(Model):
 
         content (models.ForeignKey): The associated content.
         repository (models.ForeignKey): The associated repository.
+        version_added (models.ForeignKey): The RepositoryVersion which added the referenced
+            Content.
+        version_removed (models.ForeignKey): The RepositoryVersion which removed the referenced
+            Content.
     """
-    content = models.ForeignKey('Content', on_delete=models.CASCADE)
+    content = models.ForeignKey('Content', on_delete=models.CASCADE,
+                                related_name='version_memberships')
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
+    version_added = models.ForeignKey('RepositoryVersion', related_name='added_memberships')
+    version_removed = models.ForeignKey('RepositoryVersion', null=True,
+                                        related_name='removed_memberships')
 
     class Meta:
-        unique_together = ('repository', 'content')
+        unique_together = (('repository', 'content', 'version_added'),
+                           ('repository', 'content', 'version_removed'))
+
+
+class RepositoryVersion(Model):
+    """
+    A version of a repository's content set.
+    Fields:
+        number (models.PositiveIntegerField): A positive integer that uniquely identifies a version
+            of a specific repository. Each new version for a repo should have this field set to
+            1 + the most recent version.
+        created (models.DateTimeField): When the version was created.
+        action  (models.TextField): The action that produced the version.
+    Relations:
+        repository (models.ForeignKey): The associated repository.
+    """
+    repository = models.ForeignKey(Repository)
+    number = models.PositiveIntegerField(db_index=True, default=1)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_related_name = 'versions'
+        unique_together = ('repository', 'number')
+        get_latest_by = 'number'
+        ordering = ('number',)
+
+    def content(self):
+        """
+        Returns:
+            QuerySet: The Content objects that are related to this version.
+        """
+        relationships = RepositoryContent.objects.filter(
+            repository=self.repository, version_added__number__lte=self.number).exclude(
+            version_removed__number__lte=self.number
+        )
+        # Surely there is a better way to access the model. Maybe it should be in this module.
+        content_model = self.repository.content.model
+        # This causes a SQL subquery to happen.
+        return content_model.objects.filter(version_memberships__in=relationships)
+
+    @property
+    def content_summary(self):
+        """
+        The contained content summary.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        mapping = self.content().values('type').annotate(count=models.Count('type'))
+        return {m['type']: m['count'] for m in mapping}
+
+    def added(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were added by this version.
+        """
+        # Surely there is a better way to access the model. Maybe it should be in this module.
+        content_model = self.repository.content.model
+        return content_model.objects.filter(version_memberships__version_added=self)
+
+    def removed(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were removed by this version.
+        """
+        # Surely there is a better way to access the model. Maybe it should be in this module.
+        content_model = self.repository.content.model
+        return content_model.objects.filter(version_memberships__version_removed=self)
+
+    def add_content(self, content):
+        """
+        Add a content unit to this version.
+
+        Args:
+            content (pulpcore.plugin.models.Content): a content model to add
+        """
+        # duplicates are ok
+        with suppress(IntegrityError):
+            association = RepositoryContent(
+                repository=self.repository,
+                content=content,
+                version_added=self
+            )
+            association.save()
+
+    def remove_content(self, content):
+        """
+        Remove content from the repository.
+
+        Args:
+            content (pulpcore.plugin.models.Content): A content model to remove
+        """
+        q_set = RepositoryContent.objects.filter(
+            repository=self.repository,
+            content=content,
+            version_removed=None,
+        )
+        q_set.update(version_removed=self)
 
     def save(self, *args, **kwargs):
         """
-        Save the association.
+        Save the version while setting the number automatically.
         """
-        self.repository.last_content_added = timezone.now()
-        self.repository.save()
-        super(RepositoryContent, self).save(*args, **kwargs)
+        with suppress(self.DoesNotExist):
+            self.number = self.repository.versions.latest().number + 1
+        super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def next(self):
         """
-        Delete the association.
+        Returns:
+            RepositoryVersion: The next RepositoryVersion with the same repository.
+
+        Raises:
+            RepositoryVersion.DoesNotExist: if there is not a RepositoryVersion for the same
+                repository and with a higher "number".
         """
-        self.repository.last_content_removed = timezone.now()
-        self.repository.save()
-        super(RepositoryContent, self).delete(*args, **kwargs)
+        try:
+            return self.repository.versions.filter(number__gt=self.number).order_by('number')[0]
+        except IndexError:
+            raise self.DoesNotExist

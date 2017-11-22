@@ -3,11 +3,10 @@ from collections.abc import Sized, Iterable
 from gettext import gettext as _
 from logging import getLogger
 
-from django.db.utils import IntegrityError
 from django.db import transaction
 
 from ..download.futures import Batch
-from ..models import ContentArtifact, RemoteArtifact, ProgressBar, RepositoryContent
+from ..models import ContentArtifact, RemoteArtifact, ProgressBar
 from ..tasking import Task
 
 from .iterator import ArtifactIterator, BatchIterator, ContentIterator, DownloadIterator
@@ -45,6 +44,8 @@ class ChangeSet:
         added (int): The number of content units successfully added.
         removed (int): The number of content units successfully removed.
         failed (int): The number of changes that failed.
+        repo_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
+            content should be added and removed
 
     Examples:
         >>>
@@ -61,10 +62,12 @@ class ChangeSet:
         >>>
     """
 
-    def __init__(self, importer, additions=(), removals=()):
+    def __init__(self, importer, repo_version, additions=(), removals=()):
         """
         Args:
-            importer (pulpcore.plugin.Importer): An importer.
+            importer (pulpcore.plugin.models.Importer): An importer.
+            repo_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
+                content should be added and removed
             additions (SizedIterable): The content to be added to the repository.
             removals (SizedIterable): The content IDs to be removed.
 
@@ -79,6 +82,7 @@ class ChangeSet:
         self.added = 0
         self.removed = 0
         self.failed = 0
+        self.repo_version = repo_version
 
     @property
     def repository(self):
@@ -113,14 +117,7 @@ class ChangeSet:
         Args:
             content (PendingContent): The content to be added.
         """
-        try:
-            association = RepositoryContent(
-                repository=self.importer.repository,
-                content=content.stored_model)
-            association.save()
-        except IntegrityError:
-            # Duplicate
-            pass
+        self.repo_version.add_content(content.stored_model)
 
     def _remove_content(self, content):
         """
@@ -134,10 +131,7 @@ class ChangeSet:
             importer=self.importer,
             content_artifact__in=ContentArtifact.objects.filter(content=content))
         q_set.delete()
-        q_set = RepositoryContent.objects.filter(
-            repository=self.repository,
-            content=content)
-        q_set.delete()
+        self.repo_version.remove_content(content)
 
     def _apply_additions(self):
         """
