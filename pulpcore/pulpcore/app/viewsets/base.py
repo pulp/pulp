@@ -12,6 +12,33 @@ from django.core.exceptions import ValidationError
 
 from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
+from rest_framework.schemas import AutoSchema
+
+
+class DefaultSchema(AutoSchema):
+    """
+    Overrides _allows_filters method to include filter fields only for read actions.
+
+    Schema can be customised per view(set). Override this class and set it as a ``schema``
+    attribute of a view(set) of interest.
+    """
+    def _allows_filters(self, path, method):
+        """
+        Include filter fields only for read actions, or GET requests.
+
+        Args:
+            path: Route path for view from URLConf.
+            method: The HTTP request method.
+        Returns:
+            bool: True if filter fields should be included into the schema, False otherwise.
+        """
+        if getattr(self.view, 'filter_backends', None) is None:
+            return False
+
+        if hasattr(self.view, 'action'):
+            return self.view.action in ["list", "retrieve"]
+
+        return method.lower() in ["get"]
 
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
@@ -33,11 +60,13 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
             to django model filter expressions that can be used with the corresponding value from
             self.kwargs, used only by a nested ViewSet to filter based on the parent object's
             identity.
+        schema (DefaultSchema): The schema class to use by default in a viewset.
     """
     endpoint_name = None
     nest_prefix = None
     parent_viewset = None
     parent_lookup_kwargs = {}
+    schema = DefaultSchema()
 
     @staticmethod
     def get_resource(uri, model):
