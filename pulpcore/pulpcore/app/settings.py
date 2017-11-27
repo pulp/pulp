@@ -205,6 +205,9 @@ _DEFAULT_PULP_SETTINGS = {
     'server': {
         'working_directory': '/var/cache/pulp',
     },
+    'content': {
+        'web_server': 'django',
+    },
     'broker': {
         'url': 'amqp://guest@localhost//',
         'celery_require_ssl': False,

@@ -41,6 +41,19 @@ logging
          handlers: ["myCustomHandler"]
          level: DEBUG
 
+content
+^^^^^^^
+
+The configuration for the content serving application.
+
+web_server
+  Defines the type of web server that is running the content application.
+  When set to `django`, the content is streamed.
+  When set to `apache`, the `X-SENDFILE` header is injected which delegates
+  streaming the content to Apache.  Requires: `mod_xsendfile` to be installed.
+  When set to `nginx`, the `X-Accel-Redirect` header is injected which delegates
+  streaming the content to NGINX.
+
 JWT_AUTH
 ^^^^^^^^
 
