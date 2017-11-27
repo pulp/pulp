@@ -132,8 +132,9 @@ class ContentArtifact(Model):
     A relationship between a Content and an Artifact.
 
     Serves as a through model for the 'artifacts' ManyToManyField in Content.
+    Artifact is protected from deletion if it's present in a ContentArtifact relationship.
     """
-    artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE, null=True)
+    artifact = models.ForeignKey(Artifact, on_delete=models.PROTECT, null=True)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
     relative_path = models.CharField(max_length=64)
 
