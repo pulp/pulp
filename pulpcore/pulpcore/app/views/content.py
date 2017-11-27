@@ -3,8 +3,10 @@ import os
 from gettext import gettext as _
 from logging import getLogger, DEBUG
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponseNotFound, StreamingHttpResponse
+from django.http import (HttpResponse, HttpResponseForbidden, HttpResponseNotFound,
+                         StreamingHttpResponse)
 from django.views.generic import View
 
 from wsgiref.util import FileWrapper
@@ -117,8 +119,7 @@ class ContentView(View):
         else:
             raise ObjectDoesNotExist()
 
-    @staticmethod
-    def _stream(storage_path):
+    def _stream(self, storage_path):
         """
         Get streaming response.
 
@@ -126,23 +127,24 @@ class ContentView(View):
             storage_path (str): The storage path of the requested object.
 
         Returns:
-            HttpResponse: Always.
+            StreamingHttpResponse: Stream the requested content.
 
         """
         try:
             file = FileWrapper(open(storage_path, 'rb'))
         except FileNotFoundError:
             return HttpResponseNotFound()
+        except PermissionError:
+            return HttpResponseForbidden()
         response = StreamingHttpResponse(file)
         response['Content-Length'] = os.path.getsize(storage_path)
         response['Content-Disposition'] = \
             'attachment; filename={n}'.format(n=os.path.basename(storage_path))
         return response
 
-    @staticmethod
-    def _redirect(storage_path):
+    def _redirect(self, storage_path):
         """
-        Redirect to streamer.
+        Get redirect-to-streamer response.
 
         Args:
             storage_path (str): The storage path of the requested object.
@@ -152,18 +154,40 @@ class ContentView(View):
         """
         # :TODO:
 
-    @staticmethod
-    def _xsend(storage_path):
+    def _apache(self, storage_path):
         """
-        Stream using X-SEND.
+        The content web server is Apache.
 
         Args:
             storage_path (str): The storage path of the requested object.
 
         Returns:
-
+            HttpResponse: A response with X-SENDFILE header.
         """
-        # :TODO:
+        response = HttpResponse()
+        response['X-SENDFILE'] = storage_path
+        return response
+
+    def _nginx(self, storage_path):
+        """
+        The content web server is NGINX.
+
+        Args:
+            storage_path (str): The storage path of the requested object.
+
+        Returns:
+            HttpResponse: A response with X-Accel-Redirect header.
+        """
+        response = HttpResponse()
+        response['X-Accel-Redirect'] = storage_path
+        return response
+
+    # Mapping of responder method by web server.
+    RESPONDER = {
+        'django': _stream,
+        'apache': _apache,
+        'nginx': _nginx,
+    }
 
     def get(self, request):
         """
@@ -175,8 +199,11 @@ class ContentView(View):
         Returns:
             django.http.StreamingHttpResponse: on found.
             django.http.HttpResponseNotFound: on not-found.
+            django.http.HttpResponseForbidden: on forbidden.
 
         """
+        server = settings.CONTENT['web_server']
+
         try:
             path = request.path.strip('/')
             path = path[len(self.BASE_PATH):]
@@ -184,5 +211,9 @@ class ContentView(View):
         except ObjectDoesNotExist:
             return HttpResponseNotFound()
 
-        # TODO: Eventually, choose _redirect() and _xsend() as appropriate.
-        return self._stream(storage_path)
+        try:
+            responder = self.RESPONDER[server]
+        except KeyError:
+            raise ValueError(_('Web server "{t}" not supported.'.format(t=server)))
+        else:
+            return responder(self, storage_path)

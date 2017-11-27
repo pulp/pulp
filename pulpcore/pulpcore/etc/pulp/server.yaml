@@ -85,6 +85,17 @@
 # server:
 #   working_directory: /var/cache/pulp
 
+# Content Application
+#
+# `content`: The content serving application.
+#   `web_server`: The type of web server.  Must be: (django|apache|nginx).
+#                 When set to 'apache', the X-SENDFILE header is injected which delegates
+#                 streaming the content to Apache.  Requires: mod_xsendfile to be installed.
+#                 When set to 'nginx', the X-Accel-Redirect header is injected which delegates
+#                 streaming the content to NGINX.
+#
+# web_server: django
+
 # JWT Authentication configuration
 #
 # For more JWT settings, see
