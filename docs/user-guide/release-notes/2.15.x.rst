@@ -1,0 +1,29 @@
+=======================
+Pulp 2.15 Release Notes
+=======================
+
+Pulp 2.15.0
+===========
+
+New Features
+------------
+
+* Logging of `force_full` being enabled
+  `force_full` is usefull for debugging, but it has known performance issues long term.  
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.15.0`
+
+Upgrade instructions
+--------------------
+
+Upgrade using the normal process::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+
+``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.
