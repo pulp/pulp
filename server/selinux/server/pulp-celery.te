@@ -17,6 +17,7 @@ files_tmp_file(pulp_tmp_t)
 require {
         type celery_t;
         type httpd_sys_rw_content_t;
+        type pstore_t;
         type pulp_var_run_t;
         type pulp_tmp_t;
         type pulp_var_cache_t;
@@ -28,7 +29,7 @@ require {
         class sock_file { create link unlink write };
         class unix_stream_socket connectto;
         class dir { getattr search read write remove_name create add_name rmdir relabelto relabelfrom };
-        class file { lock rename write setattr getattr read create link unlink open relabelto relabelfrom };
+        class file { lock rename write setattr getattr read create link unlink open relabelto relabelfrom map };
         class filesystem getattr;
         class process { setsched signal signull execmem };
         class tcp_socket { connect create getattr getopt read setopt shutdown write };
@@ -43,6 +44,8 @@ require {
 # tcp_socket { shutdown } is needed for CentOS 6 `sudo service pulp_workers restart`
 #
 
+allow celery_t pstore_t:filesystem getattr;
+allow celery_t pulp_var_cache_t:file map;
 allow celery_t self:netlink_route_socket r_netlink_socket_perms;
 allow celery_t self:process { signal signull execmem };
 allow celery_t self:udp_socket { ioctl getattr create connect write read };
@@ -51,6 +54,7 @@ allow celery_t sysfs_t:dir read;
 allow celery_t tmpfs_t:filesystem getattr;
 allow celery_t tmpfs_t:dir { write add_name remove_name };
 allow celery_t tmpfs_t:file { create open read write link getattr unlink };
+
 
 ######################################
 #
@@ -119,14 +123,20 @@ apache_read_sys_content(celery_t)
 corecmd_exec_bin(celery_t)
 corecmd_exec_shell(celery_t)
 corecmd_read_bin_symlinks(celery_t)
+dev_getattr_fs(celery_t)
 dev_read_urand(celery_t)
 files_rw_pid_dirs(celery_t)
+fs_getattr_cgroup(celery_t)
+fs_getattr_hugetlbfs(celery_t)
+kernel_getattr_debugfs(celery_t)
 kernel_read_system_state(celery_t)
 libs_exec_ldconfig(celery_t)
 logging_send_syslog_msg(celery_t)
 miscfiles_read_localization(celery_t)
 miscfiles_manage_cert_dirs(celery_t)
+seutil_read_default_contexts(celery_t)
 sysnet_read_config(celery_t)
+term_getattr_pty_fs(celery_t)
 
 ######################################
 #
@@ -236,6 +246,18 @@ ifndef(`distro_rhel6', `
 
 ifndef(`distro_rhel6', `
     auth_read_passwd(celery_t)
+')
+
+######################################
+
+######################################
+#
+# Allow tmpfs exec on Fedoras only
+# (fedora distro is redhat, RHEL distro is set to rhel6 rhel7)
+#
+
+ifdef(`distro_redhat', `
+    fs_exec_tmpfs_files(celery_t)
 ')
 
 ######################################
