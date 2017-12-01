@@ -50,7 +50,10 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
 
     @classmethod
     def urlpattern(cls):
-        return '/'.join(cls.endpoint_pieces())
+        try:
+            return '/'.join(cls.endpoint_pieces())
+        except Exception as e:
+            import ipdb; ipdb.set_trace()
 
     @classmethod
     def endpoint_pieces(cls):
@@ -60,6 +63,7 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
         else:
             # Model is a Detail model. Go through its ancestry (via MRO) to find its
             # eldest superclass with a declared name, representing the Master ViewSet
+
             master_endpoint_name = None
             # first item in method resolution is the viewset we're starting with,
             # so start finding parents at the second item, index 1.

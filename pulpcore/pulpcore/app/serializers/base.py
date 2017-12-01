@@ -5,8 +5,6 @@ from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
 
 from pulpcore.app.apps import pulp_plugin_configs
-from rest_framework_nested.relations import NestedHyperlinkedRelatedField,\
-    NestedHyperlinkedIdentityField
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
 _model_viewset_cache = {}
@@ -305,27 +303,3 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         class to get the relevant `view_name`.
         """
         return False
-
-
-class DetailNestedHyperlinkedRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
-    """
-    For use with nested viewsets of master/detail models
-    """
-    pass
-
-
-class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedIdentityField):
-    """
-    For use with nested viewsets of master/detail models
-    """
-    pass
-
-
-class DetailWritableNestedUrlRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
-    """
-    This field supports a special attribute, `href_writable`. Fields that carry this flag represent
-    a nested parent, which is the model determined by the url parameters instead of request body
-    parameters.
-    read_only should be passed as a kwarg to this field.
-    """
-    href_writable = True
