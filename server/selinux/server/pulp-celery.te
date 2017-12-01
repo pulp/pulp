@@ -23,6 +23,8 @@ require {
         type pulp_var_cache_t;
         type pulp_cert_t;
         type puppet_etc_t;
+        type qpidd_t;
+        type qpidd_var_lib_t;
         type tmp_t;
         type tmpfs_t;
         type sysfs_t;
@@ -54,6 +56,14 @@ allow celery_t sysfs_t:dir read;
 allow celery_t tmpfs_t:filesystem getattr;
 allow celery_t tmpfs_t:dir { write add_name remove_name };
 allow celery_t tmpfs_t:file { create open read write link getattr unlink };
+
+
+#============= qpidd_t ==============
+#
+# Qpid should fix this internally, remove this block when https://bugzilla.redhat.com/show_bug.cgi?id=1519948 is resolved
+#
+
+allow qpidd_t qpidd_var_lib_t:file map;
 
 
 ######################################
