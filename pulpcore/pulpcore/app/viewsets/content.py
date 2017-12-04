@@ -1,4 +1,6 @@
-from django.db import transaction
+from gettext import gettext as _
+
+from django.db import models, transaction
 from django_filters.rest_framework import filterset
 from rest_framework import status
 from rest_framework.response import Response
@@ -79,3 +81,24 @@ class ArtifactViewSet(CreateDestroyReadNamedModelViewSet):
     queryset = Artifact.objects.all()
     serializer_class = ArtifactSerializer
     filter_class = ArtifactFilter
+
+    def destroy(self, request, pk):
+        """
+        Remove :class:`~pulpcore.app.models.Artifact` only if it is not associated with any
+        `~pulpcore.app.models.Content`
+
+        Args:
+            request (:class:`rest_framework.request.Request`): request containing JSON payload
+                with information about the artifact being deleted.
+            pk (:class:`uuid.UUID`): Unique id of the artifact being deleted.
+
+        Returns:
+            :class:`rest_framework.response.Response` with a 204 status code in case of
+                successful deletion, 409 status code if deletion is not allowed.
+        """
+        try:
+            return super(ArtifactViewSet, self).destroy(request, pk)
+        except models.ProtectedError:
+            msg = _('The Artifact cannot be deleted because it is associated with Content.')
+            data = {'detail': msg}
+            return Response(data, status=status.HTTP_409_CONFLICT)
