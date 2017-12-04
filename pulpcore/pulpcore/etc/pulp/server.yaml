@@ -94,7 +94,8 @@
 #                 When set to 'nginx', the X-Accel-Redirect header is injected which delegates
 #                 streaming the content to NGINX.
 #
-# web_server: django
+# content:
+#   web_server: django
 
 # JWT Authentication configuration
 #
