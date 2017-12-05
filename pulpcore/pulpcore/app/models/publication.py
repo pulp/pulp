@@ -83,20 +83,21 @@ class Distribution(Model):
 
     Relations:
         publisher (models.ForeignKey): The associated publisher.
+            The publication is automatically set to the latest publication created
+            by the specified publisher.
         publication (models.ForeignKey): The current publication associated with
             the distribution.  This is the publication being served by Pulp through
             this relative URL path and settings.
     """
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     base_path = models.CharField(max_length=255, unique=True)
     auto_updated = models.BooleanField(default=True)
     http = models.BooleanField(default=True)
     https = models.BooleanField(default=True)
 
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
-    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
+    publisher = models.ForeignKey('Publisher', null=True, on_delete=models.SET_NULL)
 
     class Meta:
-        unique_together = ('publisher', 'name')
         default_related_name = 'distributions'
