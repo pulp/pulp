@@ -5,8 +5,6 @@ from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
 
 from pulpcore.app.apps import pulp_plugin_configs
-from rest_framework_nested.relations import NestedHyperlinkedRelatedField,\
-    NestedHyperlinkedIdentityField
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
 _model_viewset_cache = {}
@@ -141,30 +139,6 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         for field_name, mapping in field_mappings.items():
             field = getattr(instance, field_name)
             field.mapping.replace(mapping)
-
-    def to_internal_value(self, data):
-        """
-        After letting DRF populate and validate all writable fields, populate and validate
-        fields with the custom flag `href_writable`. This flag is added by the
-        WritableNestedUrlRelatedField.
-
-        Args:
-            data (dict): Data to be converted from primitive values to native objects.
-        Returns:
-            OrderedDict: Data that is ready to be written to the db.
-        Raises:
-            django.http.Http404: When the parent specified in the url does not exist.
-        """
-        # super().to_internal_value validates all writable fields
-        validated_data = super().to_internal_value(data)
-        for field in self.fields.values():
-            # href_writable is a special attribute of WritableNestedUrlRelatedFields,
-            # the href_writable field should only be obtained from the view if being called
-            # from a viewset
-            if (getattr(field, 'href_writable', False) and 'view' in self.context):
-                parent_field, parent = self.context['view'].get_parent_field_and_object()
-                validated_data[parent_field] = parent
-        return validated_data
 
 
 class MasterModelSerializer(ModelSerializer):
@@ -305,27 +279,3 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         class to get the relevant `view_name`.
         """
         return False
-
-
-class DetailNestedHyperlinkedRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
-    """
-    For use with nested viewsets of master/detail models
-    """
-    pass
-
-
-class DetailNestedHyperlinkedIdentityField(_DetailFieldMixin, NestedHyperlinkedIdentityField):
-    """
-    For use with nested viewsets of master/detail models
-    """
-    pass
-
-
-class DetailWritableNestedUrlRelatedField(_DetailFieldMixin, NestedHyperlinkedRelatedField):
-    """
-    This field supports a special attribute, `href_writable`. Fields that carry this flag represent
-    a nested parent, which is the model determined by the url parameters instead of request body
-    parameters.
-    read_only should be passed as a kwarg to this field.
-    """
-    href_writable = True
