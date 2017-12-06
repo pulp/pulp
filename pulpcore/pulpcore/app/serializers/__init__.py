@@ -3,10 +3,8 @@
 # - all can import directly from base and fields if needed
 from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # noqa
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
-    DetailNestedHyperlinkedRelatedField, DetailNestedHyperlinkedIdentityField, viewset_for_model,
-    DetailWritableNestedUrlRelatedField)
-from pulpcore.app.serializers.fields import (ContentRelatedField, FileField,  # noqa
-                                             HrefWritableRepositoryRelatedField)
+    viewset_for_model)
+from pulpcore.app.serializers.fields import (ContentRelatedField, FileField)  # noqa
 from pulpcore.app.serializers.consumer import ConsumerSerializer  # noqa
 from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa
 from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa

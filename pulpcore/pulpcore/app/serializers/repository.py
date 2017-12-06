@@ -4,20 +4,17 @@ from django.core import validators
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
-from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
-                                      HrefWritableRepositoryRelatedField,
-                                      GenericKeyValueRelatedField,
-                                      DetailWritableNestedUrlRelatedField,
-                                      ContentRelatedField,
-                                      FileField,
-                                      DetailNestedHyperlinkedRelatedField,
-                                      DetailNestedHyperlinkedIdentityField)
-
-from rest_framework_nested.relations import (NestedHyperlinkedRelatedField,
-                                             NestedHyperlinkedIdentityField)
+from pulpcore.app.serializers import (
+    ContentRelatedField,
+    DetailIdentityField,
+    DetailRelatedField,
+    FileField,
+    GenericKeyValueRelatedField,
+    MasterModelSerializer,
+    ModelSerializer,
+)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -47,14 +44,8 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
         required=False
     )
-    importers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
-                                                    parent_lookup_kwargs={'repository_pk':
-                                                                          'repository__pk'},
-                                                    lookup_field='name')
-    publishers = DetailNestedHyperlinkedRelatedField(many=True, read_only=True,
-                                                     parent_lookup_kwargs={'repository_pk':
-                                                                           'repository__pk'},
-                                                     lookup_field='name')
+    importers = DetailRelatedField(many=True, read_only=True, lookup_field='name')
+    publishers = DetailRelatedField(many=True, read_only=True, lookup_field='name')
     content = serializers.HyperlinkedIdentityField(
         view_name='repositories-content',
     )
@@ -72,14 +63,12 @@ class RepositorySerializer(ModelSerializer):
                                                 'content_summary')
 
 
-class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
+class ImporterSerializer(MasterModelSerializer):
     """
     Every importer defined by a plugin should have an Importer serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
-    _href = DetailNestedHyperlinkedIdentityField(
-        lookup_field='name', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
-    )
+    _href = DetailIdentityField(lookup_field='name')
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
     )
@@ -144,7 +133,10 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         read_only=True
     )
 
-    repository = HrefWritableRepositoryRelatedField(read_only=True)
+    repository = serializers.HyperlinkedRelatedField(
+        view_name='repositories-detail',
+        queryset=models.Repository.objects.all(),
+    )
 
     class Meta:
         abstract = True
@@ -162,14 +154,12 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         ]
 
 
-class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
+class PublisherSerializer(MasterModelSerializer):
     """
     Every publisher defined by a plugin should have an Publisher serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
-    _href = DetailNestedHyperlinkedIdentityField(
-        lookup_field='name', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
-    )
+    _href = DetailIdentityField(lookup_field='name')
     name = serializers.CharField(
         help_text=_('A name for this publisher, unique within the associated repository.')
     )
@@ -177,8 +167,10 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
-    repository = HrefWritableRepositoryRelatedField(read_only=True)
-
+    repository = serializers.HyperlinkedRelatedField(
+        view_name='repositories-detail',
+        queryset=models.Repository.objects.all(),
+    )
     auto_publish = serializers.BooleanField(
         help_text=_('An indication that the automatic publish may happen when'
                     ' the repository content has changed.'),
@@ -188,13 +180,11 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
         help_text=_('Timestamp of the most recent successful publish.'),
         read_only=True
     )
-    distributions = NestedHyperlinkedRelatedField(
+    distributions = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        parent_lookup_kwargs={'publisher_name': 'publisher__name',
-                              'repository_pk': 'publisher__repository__pk'},
+        lookup_field='name',
         view_name='distributions-detail',
-        lookup_field='name'
     )
 
     class Meta:
@@ -212,10 +202,8 @@ class PublisherSerializer(MasterModelSerializer, NestedHyperlinkedModelSerialize
 
 
 class DistributionSerializer(ModelSerializer):
-    _href = NestedHyperlinkedIdentityField(
+    _href = serializers.HyperlinkedIdentityField(
         lookup_field='name',
-        parent_lookup_kwargs={'repository_pk': 'publisher__repository__pk',
-                              'publisher_name': 'publisher__name'},
         view_name='distributions-detail'
     )
     name = serializers.CharField(
@@ -246,10 +234,9 @@ class DistributionSerializer(ModelSerializer):
     https = serializers.BooleanField(
         help_text=_('The publication is distributed using HTTPS.')
     )
-    publisher = DetailWritableNestedUrlRelatedField(
-        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    publisher = DetailRelatedField(
+        queryset=models.Publisher.objects.all(),
         lookup_field='name',
-        read_only=True
     )
 
     class Meta:
