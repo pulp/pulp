@@ -10,7 +10,6 @@ class UserViewSet(NamedModelViewSet):
     endpoint_name = 'users'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'username'
 
     @decorators.detail_route(methods=('post',))
     def jwt_reset(self, request, username):

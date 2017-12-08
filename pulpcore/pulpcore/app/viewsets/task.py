@@ -39,6 +39,5 @@ class WorkerViewSet(NamedModelViewSet):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializer
     endpoint_name = 'workers'
-    lookup_field = 'name'
     http_method_names = ['get', 'options']
     lookup_value_regex = '[^/]+'

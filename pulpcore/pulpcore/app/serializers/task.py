@@ -58,8 +58,7 @@ class TaskSerializer(ModelSerializer):
         help_text=_("The worker associated with this task."
                     " This field is empty if a worker is not yet assigned."),
         read_only=True,
-        view_name='workers-detail',
-        lookup_field='name'
+        view_name='workers-detail'
     )
 
     parent = serializers.HyperlinkedRelatedField(
@@ -94,10 +93,7 @@ class TaskSerializer(ModelSerializer):
 
 
 class WorkerSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='workers-detail',
-        lookup_field='name'
-    )
+    _href = serializers.HyperlinkedIdentityField(view_name='workers-detail')
 
     name = serializers.CharField(
         help_text=_('The name of the worker.'),

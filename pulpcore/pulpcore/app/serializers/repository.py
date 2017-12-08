@@ -44,8 +44,8 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
         required=False
     )
-    importers = DetailRelatedField(many=True, read_only=True, lookup_field='name')
-    publishers = DetailRelatedField(many=True, read_only=True, lookup_field='name')
+    importers = DetailRelatedField(many=True, read_only=True)
+    publishers = DetailRelatedField(many=True, read_only=True)
     content = serializers.HyperlinkedIdentityField(
         view_name='repositories-content',
     )
@@ -68,7 +68,7 @@ class ImporterSerializer(MasterModelSerializer):
     Every importer defined by a plugin should have an Importer serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
-    _href = DetailIdentityField(lookup_field='name')
+    _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A name for this importer, unique within the associated repository.')
     )
@@ -159,7 +159,7 @@ class PublisherSerializer(MasterModelSerializer):
     Every publisher defined by a plugin should have an Publisher serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
-    _href = DetailIdentityField(lookup_field='name')
+    _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A name for this publisher, unique within the associated repository.')
     )
@@ -183,7 +183,6 @@ class PublisherSerializer(MasterModelSerializer):
     distributions = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        lookup_field='name',
         view_name='distributions-detail',
     )
 
@@ -203,7 +202,6 @@ class PublisherSerializer(MasterModelSerializer):
 
 class DistributionSerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(
-        lookup_field='name',
         view_name='distributions-detail'
     )
     name = serializers.CharField(
@@ -236,7 +234,6 @@ class DistributionSerializer(ModelSerializer):
     )
     publisher = DetailRelatedField(
         queryset=models.Publisher.objects.all(),
-        lookup_field='name',
     )
 
     class Meta:
