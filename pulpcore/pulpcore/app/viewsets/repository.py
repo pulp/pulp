@@ -115,12 +115,11 @@ class PublisherFilter(ContentAdaptorFilter):
 
 class ImporterViewSet(NamedModelViewSet):
     endpoint_name = 'importers'
-    lookup_field = 'name'
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
 
-    def update(self, request, name, partial=False):
+    def update(self, request, pk, partial=False):
         importer = self.get_object()
         serializer = self.get_serializer(importer, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -135,7 +134,7 @@ class ImporterViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
-    def destroy(self, request, name):
+    def destroy(self, request, pk):
         importer = self.get_object()
         async_result = tasks.importer.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(importer.repository.pk),
@@ -144,7 +143,7 @@ class ImporterViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
     @decorators.detail_route(methods=('post',))
-    def sync(self, request, name):
+    def sync(self, request, pk):
         importer = self.get_object()
         async_result = tasks.importer.sync.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(importer.repository.pk),
@@ -155,12 +154,11 @@ class ImporterViewSet(NamedModelViewSet):
 
 class PublisherViewSet(NamedModelViewSet):
     endpoint_name = 'publishers'
-    lookup_field = 'name'
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
 
-    def update(self, request, name, partial=False):
+    def update(self, request, pk, partial=False):
         publisher = self.get_object()
         serializer = self.get_serializer(publisher, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -175,7 +173,7 @@ class PublisherViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
-    def destroy(self, request, name):
+    def destroy(self, request, pk):
         publisher = self.get_object()
         async_result = tasks.publisher.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
@@ -185,7 +183,7 @@ class PublisherViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
     @decorators.detail_route(methods=('post',))
-    def publish(self, request, name):
+    def publish(self, request, pk):
         publisher = self.get_object()
         async_result = tasks.publisher.publish.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
@@ -198,7 +196,6 @@ class DistributionViewSet(NamedModelViewSet):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
-    lookup_field = 'name'
 
 
 class RepositoryContentViewSet(NamedModelViewSet):

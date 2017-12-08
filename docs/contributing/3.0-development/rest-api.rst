@@ -80,10 +80,9 @@ Serializer Notes
   be explicit.
 
 * Serialized objects will provide thier own URL as the value of the "_href" field on the serializer.
-  If your API endpoint does not use the primary key as its lookup field (such as repository being
-  looked up by name), you will need to use a ``rest_framework.serializers.HyperlinkedIdentifyField``
-  to generate the ``_href`` field value correctly, by specifying its ``lookup_field`` and
-  ``view_name``.
+  You will need to use a ``rest_framework.serializers.HyperlinkedIdentifyField`` to generate the
+  ``_href`` field value by specifying its ``view_name``. If this object is referenced in the url by
+  a field other than the pk, you will also need to specify a ``lookup_field``.
 
 * When subclassing serializers, you should also explicitly inherit properties that would normally
   be overridden in the parent Serializer's Meta class.
@@ -198,37 +197,6 @@ name of that model when using a related field.
 This is enough of a tricky problem that it has its own section in the docs a little bit below,
 called "Master/Detail Relationships Overview".
 
-lookup_field annoyances
-^^^^^^^^^^^^^^^^^^^^^^^
-
-When defining a ViewSet, the "lookup_field" setting can be used to specify a field other than
-the Primary Key of that objects to use. This can result in better usability for objects that
-have a single field other than their primary key that uniquely identifies them. For example,
-Repository objects have a "name" field that uniquely identify them, so we can use that field
-as our lookup_field.
-
-This can get a little annoying when developing new API endpoints that relate to Repository,
-because serializers relating to the object using "lookup_field" must also pass that keyword
-argument so the DRF knows how to build the correct URL for Repository's ViewSet.
-
-So, given this ViewSet::
-
-    class ExampleViewSet(viewsets.ViewSet):
-        lookup_field = 'name'
-        queryset = ExampleModel.objects.all()
-
-Any serializer declaring a relationship to the model represented at that ViewSet must
-also include lookup_field in the arguments to the related field in addition to the other
-required fields::
-
-    class RelatedSerializer(serializers.HyperlinkedModelSerializer):
-        examples = HyperlinkedRelatedField(
-            many=True,
-            read_only=True,
-            view_name='examplemodel-detail',
-            lookup_field='name'
-        )
-
 Building Explicit Serializers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -240,7 +208,7 @@ explicit Serializer class, DRF provides an excellent bit of functionality::
 	>>> from serializers import RepositorySerializer
 	>>> RepositorySerializer()
 	RepositorySerializer():
-		_href = HyperlinkedIdentityField(lookup_field='name', view_name='repository-detail')
+		_href = HyperlinkedIdentityField(view_name='repositories-detail')
 		name = CharField(style={'base_template': 'textarea.html'}, validators=[<UniqueValidator(queryset=Repository.objects.all())>])
 		description = CharField(allow_blank=True, required=False, style={'base_template': 'textarea.html'})
 		last_content_added = DateTimeField(allow_null=True, required=False)
@@ -389,7 +357,6 @@ This is what the ViewSet should look like:
 .. code-block:: python
 
     class RepositoryViewSet(viewsets.ModelViewSet):
-        lookup_field = 'name'
         queryset = models.Repository.objects.all()
         serializer_class = serializers.RepositorySerializer
         filter_fields = ('name',)
@@ -416,10 +383,9 @@ that allows the same request:
             fields = ['name']
 
     class RepositoryViewSet(viewsets.ModelViewSet):
-        lookup_field = 'name'
-		queryset = models.Repository.objects.all()
-		serializer_class = serializers.RepositorySerializer
-		filter_class = RepositoryFilter
+        queryset = models.Repository.objects.all()
+        serializer_class = serializers.RepositorySerializer
+        filter_class = RepositoryFilter
 
 
 Beyond Equality

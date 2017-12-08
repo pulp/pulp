@@ -28,8 +28,7 @@ class PasswordSerializer(serializers.CharField):
 
 
 class UserSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(view_name='users-detail',
-                                                 lookup_field='username')
+    _href = serializers.HyperlinkedIdentityField(view_name='users-detail')
 
     username = serializers.CharField(
         help_text=_("Required. {} characters or fewer. Letters, digits and @/./+/-/_ only.").format(
