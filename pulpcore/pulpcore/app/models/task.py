@@ -5,7 +5,7 @@ from datetime import timedelta
 from gettext import gettext as _
 import logging
 
-from celery import current_task
+import celery
 
 from django.db import models
 from django.utils import timezone
@@ -193,7 +193,7 @@ class Task(Model):
             pulpcore.app.models.Task: The current task.
         """
         try:
-            task_id = current_task.request.id
+            task_id = celery.current_task.request.id
         except AttributeError:
             task = None
         else:

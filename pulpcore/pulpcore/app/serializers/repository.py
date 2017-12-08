@@ -229,9 +229,12 @@ class DistributionSerializer(ModelSerializer):
         help_text=_('The publication is distributed using HTTPS.')
     )
     publisher = DetailRelatedField(
+        help_text=_('Publications created by this publisher are automatically'
+                    'served as defined by this distribution'),
         queryset=models.Publisher.objects.all(),
     )
     publication = serializers.HyperlinkedRelatedField(
+        help_text=_('The publication being served as defined by this distribution'),
         queryset=models.Publication.objects.all(),
         view_name='publications-detail'
     )
@@ -248,10 +251,13 @@ class PublicationSerializer(ModelSerializer):
         view_name='publications-detail'
     )
     publisher = DetailRelatedField(
+        help_text=_('The publisher that created this publication.'),
         queryset=models.Publisher.objects.all(),
         lookup_field='name'
     )
     distributions = serializers.HyperlinkedRelatedField(
+        help_text=_('This publication is currently being served as'
+                    'defined by these distributions.'),
         many=True,
         read_only=True,
         view_name='distributions-detail',

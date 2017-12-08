@@ -97,6 +97,7 @@ class TaskSerializer(ModelSerializer):
     )
 
     created_resources = CreatedResourceSerializer(
+        help_text=_('Resources created by this task.'),
         many=True,
         read_only=True
     )

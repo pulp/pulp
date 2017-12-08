@@ -5,8 +5,8 @@ from rest_framework import decorators
 from pulpcore.app import tasks
 from pulpcore.app.models import (Distribution,
                                  Importer,
-                                 Publisher,
                                  Publication,
+                                 Publisher,
                                  Repository,
                                  RepositoryContent)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
@@ -14,8 +14,8 @@ from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (ContentSerializer,
                                       DistributionSerializer,
                                       ImporterSerializer,
-                                      PublisherSerializer,
                                       PublicationSerializer,
+                                      PublisherSerializer,
                                       RepositorySerializer,
                                       RepositoryContentSerializer)
 from pulpcore.app.viewsets import NamedModelViewSet
