@@ -3,13 +3,13 @@ from random import randrange
 from django.db import IntegrityError
 from django.test import TestCase
 
-from pulpcore.app.models import Consumer, generic
+from pulpcore.app.models import generic, Repository
 
 
 class GenericMutableMappingTestCase(TestCase):
     def _gen_notes(self, name):
         # Generate an instance of a generic key/value store attached to a single test model
-        instance = Consumer(name=name)
+        instance = Repository(name=name)
         instance.save()
         return instance.notes
 
