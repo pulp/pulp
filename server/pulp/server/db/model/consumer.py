@@ -181,6 +181,9 @@ class RepoProfileApplicability(Model):
     unique_indices = (
         ('profile_hash', 'repo_id'),
     )
+    search_indices = (
+        ('repo_id',),
+    )
 
     def __init__(self, profile_hash, repo_id, profile, applicability, _id=None, **kwargs):
         """
