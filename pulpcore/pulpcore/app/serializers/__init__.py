@@ -6,7 +6,6 @@ from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRe
     viewset_for_model)
 from pulpcore.app.serializers.fields import (ContentRelatedField, FileField,  # noqa
                                              LatestVersionField)
-from pulpcore.app.serializers.consumer import ConsumerSerializer  # noqa
 from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa
 from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa
 from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
