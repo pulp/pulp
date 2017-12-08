@@ -10,7 +10,9 @@ from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializ
 from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa
 from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
                                                  ImporterSerializer,
-                                                 PublisherSerializer, RepositorySerializer,
+                                                 PublisherSerializer,
+                                                 PublicationSerializer,
+                                                 RepositorySerializer,
                                                  RepositoryContentSerializer)
 from pulpcore.app.serializers.task import TaskSerializer, WorkerSerializer  # noqa
 from pulpcore.app.serializers.user import UserSerializer  # noqa

@@ -76,13 +76,12 @@ class Distribution(Model):
         name (models.CharField): The name of the distribution.
             Examples: "rawhide" and "stable".
         base_path (models.CharField): The base (relative) path component of the published url.
-        auto_updated (models.BooleanField): The publication is updated automatically
-            whenever the publisher has created a new publication.
         http (models.BooleanField): The publication is distributed using HTTP.
         https (models.BooleanField): The publication is distributed using HTTPS.
 
     Relations:
         publisher (models.ForeignKey): The associated publisher.
+            All publications created by the specified publisher will be automatically associated.
         publication (models.ForeignKey): The current publication associated with
             the distribution.  This is the publication being served by Pulp through
             this relative URL path and settings.
@@ -90,12 +89,11 @@ class Distribution(Model):
 
     name = models.CharField(max_length=255)
     base_path = models.CharField(max_length=255, unique=True)
-    auto_updated = models.BooleanField(default=True)
-    http = models.BooleanField(default=True)
+    http = models.BooleanField(default=False)
     https = models.BooleanField(default=True)
 
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
-    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
+    publisher = models.ForeignKey('Publisher', null=True, on_delete=models.SET_NULL)
 
     class Meta:
         unique_together = ('publisher', 'name')

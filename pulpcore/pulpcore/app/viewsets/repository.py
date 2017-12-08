@@ -3,11 +3,20 @@ from django_filters import CharFilter
 from rest_framework import decorators
 
 from pulpcore.app import tasks
-from pulpcore.app.models import Distribution, Importer, Publisher, Repository, RepositoryContent
+from pulpcore.app.models import (Distribution,
+                                 Importer,
+                                 Publisher,
+                                 Publication,
+                                 Repository,
+                                 RepositoryContent)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import (ContentSerializer, DistributionSerializer, ImporterSerializer,
-                                      PublisherSerializer, RepositorySerializer,
+from pulpcore.app.serializers import (ContentSerializer,
+                                      DistributionSerializer,
+                                      ImporterSerializer,
+                                      PublisherSerializer,
+                                      PublicationSerializer,
+                                      RepositorySerializer,
                                       RepositoryContentSerializer)
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
@@ -182,14 +191,23 @@ class PublisherViewSet(NamedModelViewSet):
 
         return OperationPostponedResponse([async_result], request)
 
-    @decorators.detail_route(methods=('post',))
-    def publish(self, request, pk):
-        publisher = self.get_object()
-        async_result = tasks.publisher.publish.apply_async_with_reservation(
+
+class PublicationViewSet(NamedModelViewSet):
+    endpoint_name = 'publications'
+    queryset = Publication.objects.all()
+    serializer_class = PublicationSerializer
+
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        publisher = serializer.validated_data.pop('publisher')
+        result = tasks.publisher.publish.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
-            kwargs={'publisher_pk': publisher.pk}
+            kwargs={
+                'publisher_pk': publisher.pk,
+            }
         )
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse([result], request)
 
 
 class DistributionViewSet(NamedModelViewSet):

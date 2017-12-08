@@ -213,7 +213,7 @@ class DistributionSerializer(ModelSerializer):
             ))]
     )
     base_path = serializers.CharField(
-        help_text=('The base (relative) path component of the published url.'),
+        help_text=_('The base (relative) path component of the published url.'),
         validators=[validators.MaxLengthValidator(
             models.Distribution._meta.get_field('base_path').max_length,
             message=_('Distribution base_path length must be less than {} characters').format(
@@ -222,12 +222,8 @@ class DistributionSerializer(ModelSerializer):
             UniqueValidator(queryset=models.Distribution.objects.all()),
         ],
     )
-    auto_updated = serializers.BooleanField(
-        help_text=_('The publication is updated automatically when the publisher has created a '
-                    'new publication'),
-    )
     http = serializers.BooleanField(
-        help_text=('The publication is distributed using HTTP.'),
+        help_text=_('The publication is distributed using HTTP.'),
     )
     https = serializers.BooleanField(
         help_text=_('The publication is distributed using HTTPS.')
@@ -235,11 +231,42 @@ class DistributionSerializer(ModelSerializer):
     publisher = DetailRelatedField(
         queryset=models.Publisher.objects.all(),
     )
+    publication = serializers.HyperlinkedRelatedField(
+        queryset=models.Publication.objects.all(),
+        view_name='publications-detail'
+    )
 
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'auto_updated', 'http', 'https', 'publisher',
+            'name', 'base_path', 'http', 'https', 'publisher', 'publication',
+        )
+
+
+class PublicationSerializer(ModelSerializer):
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='publications-detail'
+    )
+    publisher = DetailRelatedField(
+        queryset=models.Publisher.objects.all(),
+        lookup_field='name'
+    )
+    distributions = serializers.HyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        view_name='distributions-detail',
+    )
+    created = serializers.DateTimeField(
+        help_text=_('Timestamp of when the publication was created.'),
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Publication
+        fields = ModelSerializer.Meta.fields + (
+            'publisher',
+            'created',
+            'distributions',
         )
 
 
