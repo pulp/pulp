@@ -7,6 +7,7 @@ https://docs.djangoproject.com/en/1.8/topics/auth/customizing/#specifying-a-cust
 """
 import random
 from gettext import gettext as _
+import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
@@ -51,6 +52,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     A custom Django User class for Pulp.
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     username = models.CharField(
         verbose_name=_('username'),
         max_length=150,
