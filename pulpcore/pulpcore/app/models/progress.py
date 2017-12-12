@@ -7,7 +7,6 @@ import datetime
 
 from django.db import models
 
-from pulpcore.tasking import util
 from pulpcore.app.models import Model, Task
 from django.utils import timezone
 
@@ -60,7 +59,13 @@ class ProgressReport(Model):
     total = models.IntegerField(null=True)
     done = models.IntegerField(default=0)
 
-    task = models.ForeignKey("Task", related_name='progress_reports', on_delete=models.CASCADE)
+    task = models.ForeignKey(
+        'Task',
+        related_name='progress_reports',
+        default=Task.current,
+        on_delete=models.CASCADE
+    )
+
     suffix = models.TextField(default='')
 
     _using_context_manager = False
@@ -76,9 +81,6 @@ class ProgressReport(Model):
         args (list): positional arguments to be passed on to the real save
         kwargs (dict): keyword arguments to be passed on to the real save
         """
-        if self.task_id is None:
-            self.task = Task.objects.get(id=util.get_current_task_id())
-
         now = timezone.now()
 
         if self._using_context_manager and self._last_save_time:

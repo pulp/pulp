@@ -78,14 +78,14 @@ def publish(publisher_pk):
         publication = models.Publication(publisher=publisher)
         publisher.publication = publication
         publication.save()
+        created = models.CreatedResource(content_object=publication)
+        created.save()
         with storage.working_dir_context() as working_dir:
                 publisher.working_dir = working_dir
                 publisher.publish()
                 publisher.last_published = datetime.utcnow()
                 publisher.save()
-                distributions = models.Distribution.objects.filter(
-                    publisher=publisher,
-                    auto_updated=True)
+                distributions = models.Distribution.objects.filter(publisher=publisher)
                 distributions.update(publication=publication)
 
     log.info(

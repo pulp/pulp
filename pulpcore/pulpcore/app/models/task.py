@@ -5,10 +5,12 @@ from datetime import timedelta
 from gettext import gettext as _
 import logging
 
+import celery
+
 from django.db import models
 from django.utils import timezone
 
-from pulpcore.app.models import Model
+from pulpcore.app.models import Model, GenericRelationModel
 from pulpcore.app.fields import JSONField
 from pulpcore.common import TASK_FINAL_STATES
 from pulpcore.exceptions import exception_to_dict
@@ -171,6 +173,7 @@ class Task(Model):
         (FAILED, 'Failed'),
         (CANCELED, 'Canceled')
     )
+
     group = models.UUIDField(null=True)
     state = models.TextField(choices=STATES)
 
@@ -182,6 +185,20 @@ class Task(Model):
 
     parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
     worker = models.ForeignKey("Worker", null=True, related_name="tasks")
+
+    @staticmethod
+    def current():
+        """
+        Returns:
+            pulpcore.app.models.Task: The current task.
+        """
+        try:
+            task_id = celery.current_task.request.id
+        except AttributeError:
+            task = None
+        else:
+            task = Task.objects.get(pk=task_id)
+        return task
 
     def set_running(self):
         """
@@ -251,3 +268,18 @@ class TaskTag(Model):
     name = models.TextField()
 
     task = models.ForeignKey("Task", related_name="tags", related_query_name="tag")
+
+
+class CreatedResource(GenericRelationModel):
+    """
+    Resources created by the task.
+
+    Relations:
+        task (models.ForeignKey): The task that created the resource.
+    """
+    task = models.ForeignKey(
+        Task,
+        related_name='created_resources',
+        default=Task.current,
+        on_delete=models.CASCADE
+    )
