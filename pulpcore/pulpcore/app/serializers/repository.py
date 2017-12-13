@@ -252,8 +252,7 @@ class PublicationSerializer(ModelSerializer):
     )
     publisher = DetailRelatedField(
         help_text=_('The publisher that created this publication.'),
-        queryset=models.Publisher.objects.all(),
-        lookup_field='name'
+        queryset=models.Publisher.objects.all()
     )
     distributions = serializers.HyperlinkedRelatedField(
         help_text=_('This publication is currently being served as'
