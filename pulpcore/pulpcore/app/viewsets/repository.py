@@ -18,7 +18,7 @@ from pulpcore.app.serializers import (ContentSerializer,
                                       PublisherSerializer,
                                       RepositorySerializer,
                                       RepositoryContentSerializer)
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets import (NamedModelViewSet, CreateReadAsyncUpdateDestroyNamedModelViewset)
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -122,34 +122,11 @@ class PublisherFilter(ContentAdaptorFilter):
         fields = ContentAdaptorFilter.Meta.fields
 
 
-class ImporterViewSet(NamedModelViewSet):
+class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     endpoint_name = 'importers'
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
-
-    def update(self, request, pk, partial=False):
-        importer = self.get_object()
-        serializer = self.get_serializer(importer, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        app_label = importer._meta.app_label
-        async_result = tasks.importer.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(importer.repository.pk),
-            kwargs={'importer_pk': importer.pk,
-                    'app_label': app_label,
-                    'serializer_name': serializer.__class__.__name__,
-                    'data': request.data,
-                    'partial': partial}
-        )
-        return OperationPostponedResponse([async_result], request)
-
-    def destroy(self, request, pk):
-        importer = self.get_object()
-        async_result = tasks.importer.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(importer.repository.pk),
-            kwargs={'importer_pk': importer.pk}
-        )
-        return OperationPostponedResponse([async_result], request)
 
     @decorators.detail_route(methods=('post',))
     def sync(self, request, pk):
@@ -161,35 +138,11 @@ class ImporterViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
 
-class PublisherViewSet(NamedModelViewSet):
+class PublisherViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     endpoint_name = 'publishers'
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
-
-    def update(self, request, pk, partial=False):
-        publisher = self.get_object()
-        serializer = self.get_serializer(publisher, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        app_label = publisher._meta.app_label
-        async_result = tasks.publisher.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
-            kwargs={'publisher_pk': publisher.pk,
-                    'app_label': app_label,
-                    'serializer_name': serializer.__class__.__name__,
-                    'data': request.data,
-                    'partial': partial}
-        )
-        return OperationPostponedResponse([async_result], request)
-
-    def destroy(self, request, pk):
-        publisher = self.get_object()
-        async_result = tasks.publisher.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
-            kwargs={'publisher_pk': publisher.pk}
-        )
-
-        return OperationPostponedResponse([async_result], request)
 
 
 class PublicationViewSet(NamedModelViewSet):
