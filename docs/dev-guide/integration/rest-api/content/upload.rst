@@ -63,6 +63,9 @@ and provide offset information for Pulp to use when assembling it.
 
 | :return:`None`
 
+**Note:**
+* When uploading a whole file in a single request, you must still specify the offset of 0.
+
 Import into a Repository
 ------------------------
 
