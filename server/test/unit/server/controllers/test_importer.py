@@ -409,7 +409,6 @@ class TestUpdateImporterConfig(unittest.TestCase):
         """
         Update an importer config in the minimal way.
         """
-        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
         mock_imp_inst = mock.MagicMock()
         mock_plugin_config = mock.MagicMock()
@@ -418,17 +417,15 @@ class TestUpdateImporterConfig(unittest.TestCase):
         mock_validate_config.return_value = (True, 'message')
 
         result = importer.update_importer_config('mrepo', {'test': 'config'})
-        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
-                                                     mock_importer.config)
-        mock_importer.save.assert_called_once_with()
-        mock_ser.assert_called_once_with(mock_importer)
+
+        self.assertEqual(mock_validate_config.call_count, 2)
+        self.assertEqual(mock_importer.save.call_count, 2)
         self.assertTrue(result is mock_ser.return_value.data)
 
     def test_unset(self, mock_model, mock_plugin_api, mock_validate_config):
         """
         Test that keys with value None are removed from the config.
         """
-        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
         mock_importer.config = {'keep': 'keep', 'dont_keep': 'dont_keep'}
         mock_imp_inst = mock.MagicMock()
@@ -439,28 +436,24 @@ class TestUpdateImporterConfig(unittest.TestCase):
 
         result = importer.update_importer_config(
             'mrepo', {'test': 'change', 'dont_keep': None, 'unknown': None})
-        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
-                                                     {'test': 'change', 'keep': 'keep'})
+        self.assertEqual(mock_validate_config.call_count, 2)
         self.assertDictEqual(mock_importer.config, {'test': 'change', 'keep': 'keep'})
-        mock_importer.save.assert_called_once_with()
-        mock_ser.assert_called_once_with(mock_importer)
+        self.assertEqual(mock_importer.save.call_count, 2)
         self.assertTrue(result is mock_ser.return_value.data)
 
     def test_invalid(self, mock_model, mock_plugin_api, mock_validate_config):
         """
         Test behavior if config is invalid.
         """
-        mock_repo = mock_model.Repository.objects.get_repo_or_missing_resource.return_value
         mock_importer = mock_model.Importer.objects.get_or_404.return_value
-        mock_importer.save.side_effect = ValidationError
+        mock_importer.save.side_effect = [None, ValidationError]
         mock_imp_inst = mock.MagicMock()
         mock_plugin_config = mock.MagicMock()
         mock_plugin_api.get_importer_by_id.return_value = (mock_imp_inst, mock_plugin_config)
 
         self.assertRaises(exceptions.InvalidValue, importer.update_importer_config,
                           'mrepo', {'test': 'config'})
-        mock_validate_config.assert_called_once_with(mock_repo, mock_importer.importer_type_id,
-                                                     mock_importer.config)
+        self.assertEqual(mock_validate_config.call_count, 2)
 
 
 @mock.patch('pulp.server.controllers.importer.update_importer_config')
