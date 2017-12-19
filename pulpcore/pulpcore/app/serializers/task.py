@@ -27,6 +27,10 @@ class CreatedResourceSerializer(ModelSerializer):
         url = reverse.reverse(view_name, kwargs={'pk': data.pk}, request=request, format=format_)
         return url
 
+    class Meta:
+        model = models.CreatedResource
+        fields = ModelSerializer.Meta.fields
+
 
 class TaskSerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(
