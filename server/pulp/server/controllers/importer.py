@@ -262,15 +262,22 @@ def update_importer_config(repo_id, importer_config):
     repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
     repo_importer = model.Importer.objects.get_or_404(repo_id=repo_id)
 
-    # repo_importer.config needs to be changed
+    # MongoDB does not allow to change keys of the DictField and values of the same DictField
+    # simultaneously thus we need to save repo_importer twice.
     for k, v in importer_config.iteritems():
         if v is None:
             repo_importer.config.pop(k, None)
-        else:
+
+    # Config can be invalid if some options got removed but their complementary options did not,
+    # e.g. basic_auth_username and basic_auth_password should be either both present or both absent.
+    validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
+    repo_importer.save()
+
+    for k, v in importer_config.iteritems():
+        if v is not None:
             repo_importer.config[k] = v
 
     validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
-
     try:
         repo_importer.save()
     except ValidationError, e:
