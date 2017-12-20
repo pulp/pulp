@@ -5,23 +5,11 @@ The User and UserManager classes are based on Django documentation for creating 
 objects. More information can be found here:
 https://docs.djangoproject.com/en/1.8/topics/auth/customizing/#specifying-a-custom-user-model
 """
-import random
 from gettext import gettext as _
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-
-
-def gen_random_jwt_secret():
-    """
-    Generate random 150 chars long string for usage as jwt_secret.
-
-    Returns:
-        str: random 150 chars long string
-    """
-    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-    return ''.join(random.choice(chars) for i in range(150))
 
 
 class UserManager(BaseUserManager):
@@ -63,18 +51,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         }
     )
 
-    jwt_secret = models.CharField(
-        verbose_name=_("User's JWT authentication secret."),
-        max_length=150,
-        default=gen_random_jwt_secret,
-    )
-
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
-
-    # Defined outside to be usable as default
-    gen_random_jwt_secret = gen_random_jwt_secret
 
     def get_full_name(self):
         """
@@ -91,7 +70,3 @@ class User(AbstractBaseUser, PermissionsMixin):
         :rtype: str
         """
         return self.get_full_name()
-
-    def jwt_reset(self):
-        self.jwt_secret = gen_random_jwt_secret()
-        self.save()
