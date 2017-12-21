@@ -96,21 +96,3 @@
 #
 # content:
 #   web_server: django
-
-# JWT Authentication configuration
-#
-# For more JWT settings, see
-# https://getblimp.github.io/django-rest-framework-jwt/#additional-settings
-#
-# `JWT_AUTH`:
-#   `JWT_VERIFY_EXPIRATION`: Verify token expiration time
-#   `JWT_EXPIRATION_DELTA`: Token expiration time default 14 days
-#   `JWT_LEEWAY`: Add margin to expiration time
-#   `JWT_ALLOW_SETTING_USER_SECRET`: Allow setting user's secret via REST API
-#   `JWT_AUTH_HEADER_PREFIX`: Authorization header prefix
-#
-# JWT_AUTH:
-#   JWT_VERIFY_EXPIRATION: True
-#   JWT_EXPIRATION_DELTA: 1209600
-#   JWT_ALLOW_SETTING_USER_SECRET: False
-#   JWT_AUTH_HEADER_PREFIX: Bearer

@@ -1,7 +1,6 @@
 from gettext import gettext as _
 
 from django.core import validators
-from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import six
 from rest_framework import serializers
@@ -58,27 +57,6 @@ class UserSerializer(ModelSerializer):
         write_only=True
     )
 
-    jwt_secret = serializers.CharField(
-        help_text=_("User JWT authentication secret"),
-        required=False,
-        write_only=not settings.DEBUG,  # If pulp in DEBUG mode secret is visible
-        validators=[validators.MaxLengthValidator(
-            User._meta.get_field('jwt_secret').max_length,
-            message=_('The length of jwt_secret must be less than {} characters').format(
-                User._meta.get_field('jwt_secret').max_length))
-        ],
-    )
-
-    def __init__(self, *args, **kwargs):
-        """
-        Remove ability to read/set jwt_secret if disabled in settings.
-        """
-        super(UserSerializer, self).__init__(*args, **kwargs)
-
-        if not settings.JWT_AUTH.get("JWT_ALLOW_SETTING_USER_SECRET"):
-            self.fields.pop('jwt_secret')
-
     class Meta:
         model = User
-        fields = ModelSerializer.Meta.fields + (
-            'username', 'is_superuser', 'password', 'jwt_secret')
+        fields = ModelSerializer.Meta.fields + ('username', 'is_superuser', 'password')

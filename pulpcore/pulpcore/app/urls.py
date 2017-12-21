@@ -6,7 +6,6 @@ from django.conf.urls import url, include
 
 from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
-from rest_framework_jwt.views import obtain_jwt_token
 
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.views import ContentView, StatusView
@@ -114,7 +113,6 @@ root_router = routers.DefaultRouter()
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
     url(r'^api/v3/status/', StatusView.as_view()),
-    url(r'^api/v3/jwt/', obtain_jwt_token),
 ]
 
 # if drf_openapi is installed add live docs route
