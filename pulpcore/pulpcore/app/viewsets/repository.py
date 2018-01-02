@@ -97,9 +97,11 @@ class ImporterFilter(ContentAdaptorFilter):
        - to specify a plugin importer model for which filter is defined
        - to extend `fields` with specific ones
     """
+    name_in_list = CharInFilter(name='name', lookup_expr='in')
+
     class Meta:
         model = Importer
-        fields = ContentAdaptorFilter.Meta.fields
+        fields = ContentAdaptorFilter.Meta.fields + ['name_in_list']
 
 
 class PublisherFilter(ContentAdaptorFilter):
