@@ -43,7 +43,7 @@ on GitHub. The basic protection that disallows force-push and deletion is the
 only option that should be enabled. There should be no restrictions on required
 status checks or who can push. There is a script at
 `devel/scripts/protected-branches.py
-<https://github.com/pulp/devel/tree/master/scripts/protected-branches.py>`_
+<https://github.com/pulp/devel/blob/master/scripts/protect-branches.py>`_
 that will mark all appropriate branches as protected. Any time new branches are
 created that should be protected, that script can be run to do the work.
 
