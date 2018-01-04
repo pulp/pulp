@@ -88,6 +88,17 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                 return []
             return pieces
 
+    def initial(self, request, *args, **kwargs):
+        """
+        Runs anything that needs to occur prior to calling the method handler.
+
+        For nested ViewSets, it checks that the parent object exists, otherwise return 404.
+        For non-nested Viewsets, this does nothing.
+        """
+        if self.parent_lookup_kwargs:
+            self.get_parent_field_and_object()
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Gets a QuerySet based on the current request.
