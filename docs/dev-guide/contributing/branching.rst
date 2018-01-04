@@ -6,17 +6,9 @@ the platform, and then each supported content family (like "rpm" and "puppet")
 has its own repository.
 
 Pulp uses a version scheme x.y.z. Pulp's branching strategy is designed for
-bugfix development for older ``x.y`` release streams without interfering with
-development or contribution of new features to a future, unreleased ``x`` or
-``x.y`` release. This strategy encourages a clear separation of bugfixes and
-features as encouraged by `Semantic Versioning <http://semver.org/>`_.
-
-.. note::
-
-   Pulp's branching model is inspired by the strategy described by Vincent Driessen in
-   `this article <http://nvie.com/posts/a-successful-git-branching-model/>`_, but is not
-   identical to it.
-
+bugfix development on the ``master`` branch with cherry-picking fixes into
+``x.y`` streams as necessary. This version scheme is based
+on the `Semantic Versioning <http://semver.org/>`_ strategy.
 
 master
 ------
@@ -87,9 +79,16 @@ Bug Fix Branches
 
 When creating a Pull Request (PR) that fixes a specific bug, title the PR as
 you would a :ref:`git commit message <commit_messages>` with a short,
-human-readable description. Bug fixes should always be made against
-the latest available ``x.y-dev`` branch.
+human-readable description. Bug fixes should always be made against the
+``master`` branch. Mind tracking any ``x.y`` streams that the fix might be
+relevant for, on the bug reported in Pulp Redmine_. The person merging the fix
+to the ``master`` branch should cherry-pick the fix to those ``x.y-dev``
+branches and update the bug accordingly. Conflicting cherry-picks should be
+abandoned on affected ``x.y-dev`` branches and documented on the bug. See also
+PUP-0003_.
 
+.. _Redmine: https://pulp.plan.io
+.. _PUP-0003: https://github.com/pulp/pups/blob/master/pup-0003.md
 
 .. _feature_branches:
 
@@ -141,8 +140,8 @@ we recommend `Tim Pope's blog post on the subject
 <http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html>`_.
 
 It's also recommended that every commit message in Pulp reference an issue in
-`Pulp's Redmine issue tracker <https://pulp.plan.io>`_. To do this you should
-use both a keyword and a link to the issue.
+Pulp's Redmine_ issue tracker. To do this you should use both a keyword and a
+link to the issue.
 
 To reference the issue (but not change its state), use ``re`` or ``ref``::
 
