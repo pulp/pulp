@@ -18,3 +18,7 @@ manage_dirs_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 
 ## Allow httpd_t to read link files with the context pulp_cert_t
 read_lnk_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
+
+## Allow httpd_t to make connections to amqp and mongod ports
+corenet_tcp_connect_amqp_port(httpd_t)
+corenet_tcp_connect_mongod_port(httpd_t)
