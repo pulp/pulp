@@ -7,6 +7,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
+    BaseURLField,
     DetailIdentityField,
     DetailRelatedField,
     FileField,
@@ -227,11 +228,15 @@ class DistributionSerializer(ModelSerializer):
         queryset=models.Publication.objects.all(),
         view_name='publications-detail'
     )
+    base_url = BaseURLField(
+        source='base_path', read_only=True,
+        help_text=_('The URL for accessing the publication as defined by this distribution.')
+    )
 
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'http', 'https', 'publisher', 'publication',
+            'name', 'base_path', 'http', 'https', 'publisher', 'publication', 'base_url'
         )
 
 

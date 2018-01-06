@@ -93,6 +93,11 @@
 #                 streaming the content to Apache.  Requires: mod_xsendfile to be installed.
 #                 When set to 'nginx', the X-Accel-Redirect header is injected which delegates
 #                 streaming the content to NGINX.
+#   `host`: The host name or IP and an optional port number for the Content App. (e.g.
+#           example.com:8000) This value should be specified only if the Content App is served on
+#           a host that's different from the REST API. The default value is the same as the host
+#           used to serve the REST API.
 #
 # content:
 #   web_server: django
+#   host: pulp.example.com
