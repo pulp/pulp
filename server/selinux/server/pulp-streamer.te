@@ -17,6 +17,7 @@ require {
         type rpm_exec_t;
         type pulp_var_run_t;
         type pulp_streamer_tmp_t;
+        type httpd_t;
 }
 
 
@@ -61,6 +62,7 @@ auth_use_nsswitch(streamer_t)
 
 ## Fetching remote content
 corenet_tcp_connect_all_ports(streamer_t)
+corenet_tcp_connect_squid_port(httpd_t)
 
 ## Listens on 8751
 allow streamer_t self:tcp_socket { listen accept };
