@@ -9,6 +9,7 @@ from mongoengine import NotUniqueError
 from pulp.common import constants
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
+from pulp.server.constants import PULP_PROCESS_HEARTBEAT_INTERVAL, PULP_PROCESS_TIMEOUT_INTERVAL
 from pulp.server.db.model import dispatch, Worker
 from pulp.server.managers.factory import initialize
 
@@ -327,7 +328,7 @@ class TestCeleryProcessTimeoutMonitorRun(unittest.TestCase):
         self.assertRaises(self.SleepException, scheduler.CeleryProcessTimeoutMonitor().run)
 
         # verify the frequency
-        mock_sleep.assert_called_once_with(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
+        mock_sleep.assert_called_once_with(PULP_PROCESS_HEARTBEAT_INTERVAL)
 
     @mock.patch.object(scheduler._logger, 'error', spec_set=True)
     @mock.patch.object(scheduler.CeleryProcessTimeoutMonitor, 'check_celery_processes',
@@ -375,7 +376,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     def test_deletes_workers(self, mock_worker, mock_delete_worker):
         mock_worker.objects.all.return_value = [
             Worker(name='name1', last_heartbeat=datetime.utcnow() -
-                   timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL + 10)),
+                   timedelta(seconds=PULP_PROCESS_TIMEOUT_INTERVAL + 10)),
             Worker(name='name2', last_heartbeat=datetime.utcnow()),
         ]
 
@@ -418,8 +419,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
     def test_debug_logging(self, mock__logger, mock_worker, mock_delete_worker):
-        combined_delay = constants.PULP_PROCESS_TIMEOUT_INTERVAL + \
-            constants.PULP_PROCESS_HEARTBEAT_INTERVAL
+        combined_delay = PULP_PROCESS_TIMEOUT_INTERVAL + \
+            PULP_PROCESS_HEARTBEAT_INTERVAL
         now = datetime.utcnow()
 
         mock_worker.objects.all.return_value = [
@@ -433,7 +434,7 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
         mock__logger.debug.assert_has_calls([
             mock.call(
                 'Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes are '
-                'missing for more than %d seconds' % constants.PULP_PROCESS_TIMEOUT_INTERVAL
+                'missing for more than %d seconds' % PULP_PROCESS_TIMEOUT_INTERVAL
             ),
             mock.call(
                 '1 pulp_worker processes, 1 pulp_celerybeat processes, '

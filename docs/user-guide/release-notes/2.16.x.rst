@@ -1,0 +1,12 @@
+=======================
+Pulp 2.16 Release Notes
+=======================
+
+Pulp 2.16.0
+===========
+
+New Features
+------------
+
+* Added a `worker_timeout` config setting for users to customize when Pulp should consider workers
+  are dead and attempt to kill them.

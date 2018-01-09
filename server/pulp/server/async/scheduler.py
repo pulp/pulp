@@ -14,6 +14,7 @@ from pulp.common.dateutils import ensure_tz
 from pulp.server.async import worker_watcher
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
+from pulp.server.constants import PULP_PROCESS_HEARTBEAT_INTERVAL, PULP_PROCESS_TIMEOUT_INTERVAL
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import UnsafeRetry
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
@@ -47,7 +48,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         """
         _logger.info(_('Worker Timeout Monitor Started'))
         while True:
-            time.sleep(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
+            time.sleep(PULP_PROCESS_HEARTBEAT_INTERVAL)
             try:
                 self.check_celery_processes()
             except Exception as e:
@@ -67,11 +68,18 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         correctly.
         """
         msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes '
-                'are missing for more than %d seconds') % constants.PULP_PROCESS_TIMEOUT_INTERVAL
+                'are missing for more than %d seconds') % PULP_PROCESS_TIMEOUT_INTERVAL
         _logger.debug(msg)
         now = ensure_tz(datetime.utcnow())
-        oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+        oldest_heartbeat_time = now - timedelta(seconds=PULP_PROCESS_TIMEOUT_INTERVAL)
         worker_list = Worker.objects.all()
+
+        if(ensure_tz(datetime.utcnow()) - now > timedelta(seconds=PULP_PROCESS_HEARTBEAT_INTERVAL)):
+            sec = (ensure_tz(datetime.utcnow()) - now).total_seconds()
+            msg = _("Celery process check took {time}s which exceeds heartbeat interval. Consider "
+                    "adjusting the worker_timeout setting.").format(time=sec)
+            _logger.warn(msg)
+
         worker_count = 0
         resource_manager_count = 0
         scheduler_count = 0
@@ -129,7 +137,7 @@ class Scheduler(beat.Scheduler):
 
     # the superclass reads this attribute, which is the maximum number of seconds
     # that will ever elapse before the scheduler looks for new or changed schedules.
-    max_interval = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
+    max_interval = PULP_PROCESS_HEARTBEAT_INTERVAL
 
     # allows mongo initialization to occur exactly once during the first call to setup_schedule()
     _mongo_initialized = False
@@ -206,7 +214,7 @@ class Scheduler(beat.Scheduler):
             self._heap = None
 
         now = ensure_tz(datetime.utcnow())
-        old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+        old_timestamp = now - timedelta(seconds=PULP_PROCESS_TIMEOUT_INTERVAL)
 
         # Updating the current lock if lock is on this instance of celerybeat
         result = CeleryBeatLock.objects(name=CELERYBEAT_NAME).\
@@ -239,7 +247,7 @@ class Scheduler(beat.Scheduler):
 
             except mongoengine.NotUniqueError:
                 # Setting a default wait time for celerybeat instances with no lock
-                ret = constants.PULP_PROCESS_HEARTBEAT_INTERVAL
+                ret = PULP_PROCESS_HEARTBEAT_INTERVAL
 
                 if self._first_lock_acq_check:
                     _logger.info(_("Hot spare celerybeat instance '%(celerybeat_name)s' detected.")

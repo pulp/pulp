@@ -130,6 +130,7 @@ _default_values = {
         'keyfile': '/etc/pki/pulp/qpid/client.crt',
         'certfile': '/etc/pki/pulp/qpid/client.crt',
         'login_method': '',
+        'worker_timeout': '30',
     },
     'lazy': {
         'redirect_host': socket.getfqdn(),

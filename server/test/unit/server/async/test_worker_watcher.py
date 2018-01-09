@@ -1,5 +1,6 @@
 import unittest
 
+import datetime
 import mock
 
 from pulp.server.async import worker_watcher
@@ -14,6 +15,7 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
         """
         Ensure that we save a record and log when a new worker comes online.
         """
+        mock_datetime.utcnow.return_value = datetime.datetime(2017, 1, 1, 1, 1, 1)
         mock_worker.objects.return_value.first.return_value = None
         worker_watcher.handle_worker_heartbeat('fake-worker')
         mock_logger.info.assert_called_once_with('New worker \'fake-worker\' discovered')
@@ -27,6 +29,7 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
         """
         Ensure that we don't log when an existing worker is updated.
         """
+        mock_datetime.utcnow.return_value = datetime.datetime(2017, 1, 1, 1, 1, 1)
         mock_worker.objects.return_value.first.return_value = mock.Mock()
         worker_watcher.handle_worker_heartbeat('fake-worker')
         self.assertEquals(mock_logger.info.called, False)

@@ -16,6 +16,7 @@ import mongoengine
 from pulp.common import constants, dateutils
 from pulp.server import initialization
 from pulp.server.async import tasks, worker_watcher
+from pulp.server.constants import PULP_PROCESS_HEARTBEAT_INTERVAL, PULP_PROCESS_TIMEOUT_INTERVAL
 from pulp.server.db.model import Worker, ResourceManagerLock
 from pulp.server.db.connection import reconnect
 from pulp.server.managers.repo import _common as common_utils
@@ -73,7 +74,7 @@ class HeartbeatStep(bootsteps.StartStopStep):
         :type  worker: celery.worker.consumer.Consumer
         """
         self.timer_ref = consumer.timer.call_repeatedly(
-            constants.PULP_PROCESS_HEARTBEAT_INTERVAL,
+            PULP_PROCESS_HEARTBEAT_INTERVAL,
             self._record_heartbeat,
             (consumer, ),
             priority=10,
@@ -212,7 +213,7 @@ def get_resource_manager_lock(name):
     while True:
 
         now = dateutils.ensure_tz(datetime.utcnow())
-        old_timestamp = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+        old_timestamp = now - timedelta(seconds=PULP_PROCESS_TIMEOUT_INTERVAL)
 
         ResourceManagerLock.objects(timestamp__lte=old_timestamp).delete()
 
@@ -238,4 +239,4 @@ def get_resource_manager_lock(name):
                              % {'name': name})
                 _first_check = False
 
-            time.sleep(constants.PULP_PROCESS_HEARTBEAT_INTERVAL)
+            time.sleep(PULP_PROCESS_HEARTBEAT_INTERVAL)

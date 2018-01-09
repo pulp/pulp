@@ -13,11 +13,12 @@ Other functions in this module are helper functions designed to deduplicate the 
 code between the event handlers.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
 
 from pulp.server.async.tasks import _delete_worker
+from pulp.server.constants import PULP_PROCESS_HEARTBEAT_INTERVAL
 from pulp.server.db.model import Worker
 
 
@@ -34,6 +35,7 @@ def handle_worker_heartbeat(worker_name):
     :param worker_name: The hostname of the worker
     :type  worker_name: basestring
     """
+    start = datetime.utcnow()
     existing_worker = Worker.objects(name=worker_name).first()
 
     if not existing_worker:
@@ -47,6 +49,12 @@ def handle_worker_heartbeat(worker_name):
 
     Worker.objects(name=worker_name).update_one(set__last_heartbeat=timestamp,
                                                 upsert=True)
+
+    if(datetime.utcnow() - start > timedelta(seconds=PULP_PROCESS_HEARTBEAT_INTERVAL)):
+        sec = (datetime.utcnow() - start).total_seconds()
+        msg = _("Worker {name} heartbeat time {time}s exceeds heartbeat interval. Consider "
+                "adjusting the worker_timeout setting.").format(time=sec, name=worker_name)
+        _logger.warn(msg)
 
 
 def handle_worker_offline(worker_name):
