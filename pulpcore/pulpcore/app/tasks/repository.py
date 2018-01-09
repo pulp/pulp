@@ -81,6 +81,25 @@ def delete_version(pk):
         # delete any relationships added in the version being deleted and removed in the next one.
         repo_relations.filter(version_added=version, version_removed=next_version).delete()
 
+        # If the same content is deleted in version, but added back in next_version
+        # set version_removed field in relation to None, and remove relation adding the content
+        # in next_version
+        content_added = repo_relations.filter(version_added=next_version).values_list('content_id')
+
+        # use list() to force the evaluation of the queryset, otherwise queryset is affected
+        # by the update() operation before delete() is ran
+        content_removed_and_readded = list(repo_relations.filter(version_removed=version,
+                                                                 content_id__in=content_added)
+                                           .values_list('content_id'))
+
+        repo_relations.filter(version_removed=version,
+                              content_id__in=content_removed_and_readded)\
+            .update(version_removed=None)
+
+        repo_relations.filter(version_added=next_version,
+                              content_id__in=content_removed_and_readded)\
+            .delete()
+
         # "squash" by moving other additions and removals forward to the next version
         repo_relations.filter(version_added=version).update(version_added=next_version)
         repo_relations.filter(version_removed=version).update(version_removed=next_version)
