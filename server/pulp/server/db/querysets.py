@@ -6,9 +6,9 @@ from mongoengine import Q
 from mongoengine.queryset import DoesNotExist, QuerySetNoCache
 from pymongo import ASCENDING
 
-from pulp.common import constants
 from pulp.common.dateutils import ensure_tz
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.constants import PULP_PROCESS_TIMEOUT_INTERVAL
 
 
 class QuerySetPreventCache(QuerySetNoCache):
@@ -136,7 +136,7 @@ class WorkerQuerySet(CriteriaQuerySet):
         """
         query_set = self
         now = ensure_tz(datetime.utcnow())
-        oldest_heartbeat_time = now - timedelta(seconds=constants.PULP_PROCESS_TIMEOUT_INTERVAL)
+        oldest_heartbeat_time = now - timedelta(seconds=PULP_PROCESS_TIMEOUT_INTERVAL)
         return query_set.filter(last_heartbeat__gte=oldest_heartbeat_time)
 
 

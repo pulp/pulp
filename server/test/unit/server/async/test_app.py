@@ -8,8 +8,9 @@ import unittest
 
 import mock
 
-from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, PULP_PROCESS_HEARTBEAT_INTERVAL
+from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME
 from pulp.server.async import app
+from pulp.server.constants import PULP_PROCESS_HEARTBEAT_INTERVAL
 from pulp.server.managers.factory import initialize
 
 

@@ -69,13 +69,6 @@ SCHEDULER_WORKER_NAME = 'scheduler'
 # Resource manager worker name
 RESOURCE_MANAGER_WORKER_NAME = 'resource_manager'
 
-# The amount of time (in seconds) between process wakeups to "heartbeat" and perform
-# their tasks.
-PULP_PROCESS_HEARTBEAT_INTERVAL = 5
-
-# The amount of time (in seconds) after which a Celery process is considered missing.
-PULP_PROCESS_TIMEOUT_INTERVAL = 25
-
 # The amount of time the migration script will wait to confirm that no processes are running.
 # This is the 90s CELERY_TICK_DEFAULT_WAIT_TIME used in Pulp version < 2.12 and a 2s buffer.
 # This ensures that the process check feature works correctly even in cases where a user
