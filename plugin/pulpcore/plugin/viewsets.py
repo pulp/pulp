@@ -8,5 +8,5 @@ from pulpcore.app.viewsets import (  # NOQA
     PublisherViewSet
 )
 
-# Allow plugins to dispatch reserved tasks
+# Allow plugins viewsets to dispatch reserved tasks
 from pulpcore.common import tags  # noqa
