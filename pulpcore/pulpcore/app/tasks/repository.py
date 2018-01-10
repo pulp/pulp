@@ -69,14 +69,17 @@ def delete_version(pk):
 
         log.info(_('Deleting and squashing version %(v)d of repository %(r)s'),
                  {'v': version.number, 'r': version.repository.name})
+
+        repo_relations = models.RepositoryContent.objects.filter(repository=version.repository)
+
         try:
             next_version = version.next()
         except models.RepositoryVersion.DoesNotExist:
-            # do something friendly here
-            log.info(_('Cannot delete and squash version until a newer one is created.'))
-            raise
-
-        repo_relations = models.RepositoryContent.objects.filter(repository=version.repository)
+            # version is the latest version so simply update repo contents and delete the version
+            repo_relations.filter(version_added=version).delete()
+            repo_relations.filter(version_removed=version).update(version_removed=None)
+            version.delete()
+            return
 
         # delete any relationships added in the version being deleted and removed in the next one.
         repo_relations.filter(version_added=version, version_removed=next_version).delete()
