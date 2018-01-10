@@ -18,6 +18,9 @@ class Repository(Model):
 
         name (models.TextField): The repository name.
         description (models.TextField): An optional description.
+        last_version (models.PositiveIntegerField): A record of the last created version number.
+            Used when a repository version is deleted so as not to create a new vesrion with the
+            same version number.
 
     Relations:
 
@@ -26,6 +29,7 @@ class Repository(Model):
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField(blank=True)
+    last_version = models.PositiveIntegerField(default=0)
 
     notes = GenericKeyValueRelation(Notes)
 
@@ -241,7 +245,7 @@ class RepositoryVersion(Model):
         repository (models.ForeignKey): The associated repository.
     """
     repository = models.ForeignKey(Repository)
-    number = models.PositiveIntegerField(db_index=True, default=1)
+    number = models.PositiveIntegerField(db_index=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -327,8 +331,8 @@ class RepositoryVersion(Model):
         """
         Save the version while setting the number automatically.
         """
-        with suppress(self.DoesNotExist):
-            self.number = self.repository.versions.latest().number + 1
+        if self.number is None:
+            self.number = self.repository.last_version + 1
         super().save(*args, **kwargs)
 
     def next(self):
