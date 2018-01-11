@@ -11,6 +11,7 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
     models
     serializers
     viewsets
+    tasks
     changeset
     asyncio
     futures
