@@ -1,11 +1,11 @@
 from gettext import gettext as _
 
-from rest_framework import serializers, reverse
+from rest_framework import serializers
 
 from pulpcore.app import models
 from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
 
-from .base import view_name_for_model
+from .base import viewset_for_model
 
 
 class TaskTagSerializer(serializers.ModelSerializer):
@@ -22,10 +22,9 @@ class CreatedResourceSerializer(ModelSerializer):
 
     def to_representation(self, data):
         request = self.context['request']
-        format_ = self.context.get('format', None)
-        view_name = view_name_for_model(data.content_object, 'detail')
-        url = reverse.reverse(view_name, kwargs={'pk': data.pk}, request=request, format=format_)
-        return url
+        viewset = viewset_for_model(data.content_object)
+        serializer = viewset.serializer_class(data.content_object, context={'request': request})
+        return serializer.data.get('_href')
 
     class Meta:
         model = models.CreatedResource
