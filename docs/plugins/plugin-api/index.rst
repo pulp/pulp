@@ -10,6 +10,7 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
 .. toctree::
     models
     serializers
+    storage
     viewsets
     changeset
     asyncio
