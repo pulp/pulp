@@ -2,4 +2,4 @@
 from pulpcore.app.apps import PulpPluginAppConfig  # noqa
 
 # Allow plugin writers to subclass PulpException
-from pulpcore.exceptions import PulpException  # NOQA
+from pulpcore.exceptions import PulpException  # noqa

@@ -5,6 +5,7 @@ from pulpcore.app.models import (  # NOQA
     Artifact,
     Content,
     ContentArtifact,
+    CreatedResource,
     ProgressBar,
     ProgressSpinner,
     Publication,
@@ -14,7 +15,6 @@ from pulpcore.app.models import (  # NOQA
     RemoteArtifact,
     RepositoryVersion,
 )
-
 
 from .publisher import Publisher  # noqa
 from .importer import Importer  # noqa

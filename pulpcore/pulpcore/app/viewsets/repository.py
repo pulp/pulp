@@ -185,15 +185,6 @@ class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
 
-    @decorators.detail_route(methods=('post',))
-    def sync(self, request, pk):
-        importer = self.get_object()
-        async_result = tasks.importer.sync.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(importer.repository.pk),
-            kwargs={'importer_pk': importer.pk}
-        )
-        return OperationPostponedResponse([async_result], request)
-
 
 class PublisherViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     endpoint_name = 'publishers'
