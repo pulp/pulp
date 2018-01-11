@@ -111,7 +111,7 @@ for viewset in sorted_by_depth:
 root_router = routers.DefaultRouter()
 
 urlpatterns = [
-    url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
+    url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view(), name='content-app'),
     url(r'^api/v3/status/', StatusView.as_view()),
 ]
 

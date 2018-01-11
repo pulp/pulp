@@ -206,6 +206,7 @@ _DEFAULT_PULP_SETTINGS = {
     },
     'content': {
         'web_server': 'django',
+        'host': None,
     },
     'broker': {
         'url': 'amqp://guest@localhost//',

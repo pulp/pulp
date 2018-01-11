@@ -1,6 +1,7 @@
 from gettext import gettext as _
 import os
 
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
@@ -165,3 +166,15 @@ class LatestVersionField(NestedHyperlinkedRelatedField):
 
         """
         return instance.versions
+
+
+class BaseURLField(serializers.CharField):
+    """
+    Serializer Field for the base_url field of the Distribution.
+    """
+    def to_representation(self, value):
+        if settings.CONTENT['host']:
+            host = settings.CONTENT['host']
+        else:
+            host = self.context['request'].get_host()
+        return ''.join([host, reverse('content-app'), value])
