@@ -21,14 +21,15 @@ class ViewSetNode:
     The structure of the tree becomes the url heirarchy when the ViewSets are registered.
 
     Example Structure:
+
         RootNode
-          ├─ some-non-nested viewset
-          └─ RepositoryViewSet (non-nested)
-                ├─ PluginPublisherViewSet
-                │   └─ DistributionViewSet
-                ├─ AnotherPluginPublisherViewSet
-                │   └─ DistributionViewSet (This node is attached to all Publisher Detail parents)
-                └─ FileImporterViewSet
+        ├─ RepositoryViewSet
+        │  ├─ PluginPublisherViewSet (non-nested)
+        │  │  └─ DistributionViewSet
+        │  ├─ AnotherPluginPublisherViewSet
+        │  │  └─ DistributionViewSet (This node is attached to all Publisher Detail parents)
+        │  └─ FileImporterViewSet
+        └─ some-non-nested viewset
     """
     def __init__(self, viewset=None):
         """

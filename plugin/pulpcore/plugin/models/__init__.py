@@ -14,6 +14,7 @@ from pulpcore.app.models import (  # NOQA
     Repository,
     RemoteArtifact,
     RepositoryVersion,
+    RepositoryContent,
 )
 
 from .publisher import Publisher  # noqa

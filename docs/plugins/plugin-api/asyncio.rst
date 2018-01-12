@@ -243,8 +243,7 @@ descendants of BaseDownloader.
 .. autoclass:: pulpcore.plugin.download.asyncio.BaseDownloader
     :members:
 
-.. autoclass:: pulpcore.plugin.download.asyncio.attach_url_to_exception
-    :members:
+.. autofunction:: pulpcore.plugin.download.asyncio.attach_url_to_exception
 
 .. _validation-exceptions:
 

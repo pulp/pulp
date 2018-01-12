@@ -63,7 +63,7 @@ class Artifact(Model):
         Is equal by matching digest.
 
         Args:
-            other (Artifact): A artifact to match.
+            other (pulpcore.app.models.Artifact): A artifact to match.
 
         Returns:
             bool: True when equal.

@@ -32,6 +32,8 @@ class Pending:
     @property
     def settled(self):
         """
+        Check settled status.
+
         Returns:
             bool: All matters are settled.  See: _settled.
         """
@@ -65,8 +67,8 @@ class PendingContent(Pending):
     Represents content that is contained within the remote repository.
 
     Attributes:
-        model (pulpcore.plugin.Content): A content model instance.
-        changeset (pulpcore.plugin.ChangeSet): A changeset.
+        model (pulpcore.plugin.models.Content): A content model instance.
+        changeset (pulpcore.plugin.changeset.ChangeSet): A changeset.
             Set by the ContentIterator.
         artifacts (set): The set of related `PendingArtifact`.
 
@@ -126,6 +128,8 @@ class PendingContent(Pending):
     @property
     def model(self):
         """
+        The model attribute getter.
+
         Returns:
             pulpcore.plugin.models.Content: The pending model.
         """
@@ -134,6 +138,8 @@ class PendingContent(Pending):
     @property
     def stored_model(self):
         """
+        The stored model attribute getter.
+
         Returns:
             pulpcore.plugin.models.Content: The stored model.
         """
@@ -142,7 +148,10 @@ class PendingContent(Pending):
     @stored_model.setter
     def stored_model(self, model):
         """
+        The stored model attribute getter.
+
         Notes:
+
           - The artifacts are matched by `relative_path` and their
             their stored_model set.
 
@@ -254,6 +263,8 @@ class PendingArtifact(Pending):
     @property
     def model(self):
         """
+        The model getter.
+
         Returns:
             pulpcore.plugin.models.Artifact: The pending model.
         """
@@ -262,6 +273,8 @@ class PendingArtifact(Pending):
     @property
     def stored_model(self):
         """
+        The stored model getter.
+
         Returns:
             pulpcore.plugin.models.Artifact: The stored model.
         """
@@ -270,14 +283,18 @@ class PendingArtifact(Pending):
     @stored_model.setter
     def stored_model(self, model):
         """
+        The stored model setter.
+
         Args:
-            model (pulpcore.plugin.Artifact): The stored model.
+            model (pulpcore.plugin.models.Artifact): The stored model.
         """
         self._stored_model = model
 
     @property
     def changeset(self):
         """
+        The changeset getter.
+
         Returns:
             pulpcore.plugin.changeset.Changeset: The active changeset.
         """
@@ -286,6 +303,8 @@ class PendingArtifact(Pending):
     @property
     def importer(self):
         """
+        The importer getter.
+
         Returns:
             pulpcore.plugin.models.Importer: An importer.
         """

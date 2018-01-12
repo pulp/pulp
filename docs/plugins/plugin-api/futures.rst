@@ -66,6 +66,7 @@ Events
 During the download flow, predefined events are raised.  This provides an opportunity for external
 objects to participate in the download flow without having to subclass the download object.
 This is intended to support common customizations such as:
+
  * Progress reporting.
  * Error handling.
  * Digest calculation.
@@ -121,13 +122,13 @@ Settings
 
 Common settings are abstracted to provide consistency across download objects.
 
-.. autoclass:: pulpcore.download.SSL
+.. autoclass:: pulpcore.plugin.download.futures.SSL
     :members:
 
-.. autoclass:: pulpcore.download.User
+.. autoclass:: pulpcore.plugin.download.futures.User
     :members:
 
-.. autoclass:: pulpcore.download.Timeout
+.. autoclass:: pulpcore.plugin.download.futures.Timeout
     :members:
 
 

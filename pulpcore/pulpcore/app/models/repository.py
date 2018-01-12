@@ -334,7 +334,8 @@ class RepositoryVersion(Model):
     def next(self):
         """
         Returns:
-            RepositoryVersion: The next RepositoryVersion with the same repository.
+            pulpcore.app.models.RepositoryVersion: The next RepositoryVersion with the same
+                repository.
 
         Raises:
             RepositoryVersion.DoesNotExist: if there is not a RepositoryVersion for the same
