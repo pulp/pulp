@@ -134,10 +134,11 @@ One of the ways to perform synchronization:
   ``on_demand`` or ``background`` download policy), feel free to skip this step.
 * Save all artifact and content data in one transaction:
 
-  * in case of downloaded content, create an instance of :class:`~pulpcore.plugin.models
-      .Artifact`. Set the `file` field to the absolute path of the downloaded file. Pulp will
-      move the file into place when the Artifact is saved.
-    which refers to a downloaded file on a filesystem and contains calculated checksums for it.
+  * in case of downloaded content, create an instance of
+    :class:`~pulpcore.plugin.models .Artifact`. Set the `file` field to the
+    absolute path of the downloaded file. Pulp will move the file into place
+    when the Artifact is saved. The Artifact refers to a downloaded file on a
+    filesystem and contains calculated checksums for it.
   * in case of downloaded content, update the :class:`~pulpcore.plugin.models.ContentArtifact` with
     a reference to the created :class:`~pulpcore.plugin.models.Artifact`.
   * create and save an instance of the :class:`~pulpcore.plugin.models.RepositoryContent` to

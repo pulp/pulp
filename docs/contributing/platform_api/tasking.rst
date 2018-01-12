@@ -24,11 +24,6 @@ pulp.tasking.services.manage_workers
 
 .. automodule:: pulpcore.tasking.services.manage_workers
 
-pulp.tasking.services.scheduler
--------------------------------
-
-.. automodule:: pulpcore.tasking.services.scheduler
-
 pulp.tasking.services.storage
 -----------------------------
 

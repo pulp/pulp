@@ -23,6 +23,7 @@ the plugin writing process.
    first-plugin
    basics
    releasing
+   cli
 
 The Pulp :doc:`../plugin-api/index` is versioned separately from the Pulp Core and consists
 of everything importable within the :mod:`pulpcore.plugin` namespace. When writing plugins, care should

@@ -227,13 +227,17 @@ class RepositoryContent(Model):
 class RepositoryVersion(Model):
     """
     A version of a repository's content set.
+
     Fields:
+
         number (models.PositiveIntegerField): A positive integer that uniquely identifies a version
             of a specific repository. Each new version for a repo should have this field set to
             1 + the most recent version.
         created (models.DateTimeField): When the version was created.
         action  (models.TextField): The action that produced the version.
+
     Relations:
+
         repository (models.ForeignKey): The associated repository.
     """
     repository = models.ForeignKey(Repository)
@@ -330,7 +334,8 @@ class RepositoryVersion(Model):
     def next(self):
         """
         Returns:
-            RepositoryVersion: The next RepositoryVersion with the same repository.
+            pulpcore.app.models.RepositoryVersion: The next RepositoryVersion with the same
+                repository.
 
         Raises:
             RepositoryVersion.DoesNotExist: if there is not a RepositoryVersion for the same

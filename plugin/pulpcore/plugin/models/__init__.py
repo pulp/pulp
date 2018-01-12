@@ -13,6 +13,7 @@ from pulpcore.app.models import (  # NOQA
     Repository,
     RemoteArtifact,
     RepositoryVersion,
+    RepositoryContent,
 )
 
 

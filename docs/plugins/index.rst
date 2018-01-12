@@ -30,15 +30,15 @@ Let us know when the plugin is ready and we will be happy to add it to the list 
      - Install with RPM
 
    * - File 
-     - `File docs <https://github.com/pulp/pulp_file/blob/master/README.rst>`_
-     - `File source <https://github.com/pulp/pulp_file>`_
-     - `File tracker <https://pulp.plan.io/projects/pulp_file?jump=welcome>`_
+     - `File plug-in docs <https://github.com/pulp/pulp_file/blob/master/README.rst>`_
+     - `File plug-in source <https://github.com/pulp/pulp_file>`_
+     - `File plug-in tracker <https://pulp.plan.io/projects/pulp_file?jump=welcome>`_
      - Yes
      - No
 
    * - Example
-     - `File docs <https://github.com/pulp/pulp_example/blob/master/README.rst>`_
-     - `File source <https://github.com/pulp/pulp_example>`_
-     - `File tracker <https://pulp.plan.io/projects/pulp_example?jump=welcome>`_
+     - `Example plug-in docs <https://github.com/pulp/pulp_example/blob/master/README.rst>`_
+     - `Example plug-in source <https://github.com/pulp/pulp_example>`_
+     - `Example plug-in tracker <https://pulp.plan.io/projects/pulp_example?jump=welcome>`_
      - Yes
      - No
