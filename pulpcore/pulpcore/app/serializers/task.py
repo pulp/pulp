@@ -21,6 +21,9 @@ class TaskTagSerializer(serializers.ModelSerializer):
 class CreatedResourceSerializer(ModelSerializer):
 
     def to_representation(self, data):
+        # If the content object was deleted
+        if data.content_object is None:
+            return None
         request = self.context['request']
         viewset = viewset_for_model(data.content_object)
         serializer = viewset.serializer_class(data.content_object, context={'request': request})
