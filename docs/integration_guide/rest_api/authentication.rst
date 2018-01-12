@@ -18,7 +18,7 @@ All calls to REST API endpoints must be authenticated as a particular User.
   If you are using django rest framework browsable API these browser addons may come handy:
 
   * Chrome `ModHeader <https://chrome.google.com/webstore/detail/modheader/idgpnmonknjnojddfkpgkljpfnnfcklj>`_
-  * Firefox `Modify Headers <https://addons.mozilla.org/cs/firefox/addon/modify-headers/>`_
+  * Firefox `Modify Header Value <https://addons.mozilla.org/en-US/firefox/addon/modify-header-value/>`_
 
 Basic Authentication
 --------------------
