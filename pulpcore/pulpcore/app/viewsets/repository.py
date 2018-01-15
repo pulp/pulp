@@ -137,11 +137,17 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         return self._paginated_response(self.get_object().content(), request)
 
     @decorators.detail_route()
-    def added(self, request, repository_pk, number):
+    def added_content(self, request, repository_pk, number):
+        """
+        Display content added since the previous Repository Version.
+        """
         return self._paginated_response(self.get_object().added(), request)
 
     @decorators.detail_route()
-    def removed(self, request, repository_pk, number):
+    def removed_content(self, request, repository_pk, number):
+        """
+        Display content removed since the previous Repository Version.
+        """
         return self._paginated_response(self.get_object().removed(), request)
 
     def _paginated_response(self, content, request):
