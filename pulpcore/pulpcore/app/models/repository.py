@@ -239,8 +239,8 @@ class RepositoryVersion(Model):
             1 + the most recent version.
         created (models.DateTimeField): When the version was created.
         action  (models.TextField): The action that produced the version.
-        complete (models.BooleanField): False indicates that the Repository Version is still being
-            created, or the task failed before completion.
+        complete (models.BooleanField): If true, the RepositoryVersion is visible. This field is set
+            to true when the task that creates the RepositoryVersion is complete.
 
     Relations:
 
