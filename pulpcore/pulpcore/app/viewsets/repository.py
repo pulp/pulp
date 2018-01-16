@@ -169,7 +169,8 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
             number (str): the "number" attribute for the version
 
         Returns:
-            OperationPostponedResponse: a response with information about the queued task
+            pulpcore.app.response.OperationPostponedResponse: a response with information
+                about the queued task
         """
         version = self.get_object()
         async_result = tasks.repository.delete_version.apply_async_with_reservation(
