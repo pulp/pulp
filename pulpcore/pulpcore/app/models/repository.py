@@ -239,6 +239,8 @@ class RepositoryVersion(Model):
             1 + the most recent version.
         created (models.DateTimeField): When the version was created.
         action  (models.TextField): The action that produced the version.
+        complete (models.BooleanField): False indicates that the Repository Version is still being
+            created, or the task failed before completion.
 
     Relations:
 
@@ -247,6 +249,7 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository)
     number = models.PositiveIntegerField(db_index=True)
     created = models.DateTimeField(auto_now_add=True)
+    complete = models.BooleanField(default=False)
 
     class Meta:
         default_related_name = 'versions'

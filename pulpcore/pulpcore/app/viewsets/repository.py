@@ -130,7 +130,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
     parent_viewset = RepositoryViewSet
     parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
     serializer_class = RepositoryVersionSerializer
-    queryset = RepositoryVersion.objects.all()
+    queryset = RepositoryVersion.objects.exclude(complete=False)
 
     @decorators.detail_route()
     def content(self, request, repository_pk, number):
