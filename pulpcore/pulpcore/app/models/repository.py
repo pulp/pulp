@@ -2,8 +2,9 @@
 Repository related Django models.
 """
 from contextlib import suppress
+from gettext import gettext as _
 
-from django.db import models
+from django.db import models, transaction
 from django.db.utils import IntegrityError
 
 from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
@@ -329,6 +330,23 @@ class RepositoryVersion(Model):
             version_removed=None,
         )
         q_set.update(version_removed=self)
+
+    def delete_incomplete_version(self):
+        """
+        Deletes an incomplete Repository Version
+
+        This method deletes a RepositoryVersion only if its 'complete' property is False. All
+        RepositoryContent added in the deleted RepositoryVersion are deleted also. All
+        RepositoryContent removed in the deleted RepositoryVersion has the version_removed set to
+        None.
+        """
+        assert not self.complete, _("Version {version} for repository {repo} is "
+                                    "complete.").format(version=self.number,
+                                                        repo=self.repository.name)
+        with transaction.atomic():
+            self.added().delete()
+            self.removed().update(version_removed=None)
+            self.delete()
 
     def next(self):
         """
