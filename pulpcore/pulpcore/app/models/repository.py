@@ -239,6 +239,8 @@ class RepositoryVersion(Model):
             1 + the most recent version.
         created (models.DateTimeField): When the version was created.
         action  (models.TextField): The action that produced the version.
+        complete (models.BooleanField): If true, the RepositoryVersion is visible. This field is set
+            to true when the task that creates the RepositoryVersion is complete.
 
     Relations:
 
@@ -247,6 +249,7 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository)
     number = models.PositiveIntegerField(db_index=True)
     created = models.DateTimeField(auto_now_add=True)
+    complete = models.BooleanField(default=False)
 
     class Meta:
         default_related_name = 'versions'
@@ -327,14 +330,6 @@ class RepositoryVersion(Model):
         )
         q_set.update(version_removed=self)
 
-    def save(self, *args, **kwargs):
-        """
-        Save the version while setting the number automatically.
-        """
-        if self.number is None:
-            self.number = self.repository.last_version + 1
-        super().save(*args, **kwargs)
-
     def next(self):
         """
         Returns:
@@ -346,6 +341,7 @@ class RepositoryVersion(Model):
                 repository and with a higher "number".
         """
         try:
-            return self.repository.versions.filter(number__gt=self.number).order_by('number')[0]
+            return self.repository.versions.exclude(complete=False).filter(
+                number__gt=self.number).order_by('number')[0]
         except IndexError:
             raise self.DoesNotExist
