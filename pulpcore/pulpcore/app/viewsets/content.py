@@ -49,20 +49,6 @@ class ContentViewSet(CreateDestroyReadNamedModelViewSet):
 
     @transaction.atomic
     def create(self, request):
-        """
-        Create a new Content instance from a JSON payload in the request.
-
-        Args:
-            request (:class:`rest_framework.request.Request`): request containing JSON payload with
-                information about the content being created.
-
-        Returns:
-            :class:`rest_framework.response.Response` with a 201 status code.
-
-        Raises:
-            :class:`rest_framework.exceptions.ValidationError` when artifact URLs are not valid or
-                the relative paths start with a '/'.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         artifacts = serializer.validated_data.pop('artifacts')
@@ -84,17 +70,7 @@ class ArtifactViewSet(CreateDestroyReadNamedModelViewSet):
 
     def destroy(self, request, pk):
         """
-        Remove :class:`~pulpcore.app.models.Artifact` only if it is not associated with any
-        `~pulpcore.app.models.Content`
-
-        Args:
-            request (:class:`rest_framework.request.Request`): request containing JSON payload
-                with information about the artifact being deleted.
-            pk (:class:`uuid.UUID`): Unique id of the artifact being deleted.
-
-        Returns:
-            :class:`rest_framework.response.Response` with a 204 status code in case of
-                successful deletion, 409 status code if deletion is not allowed.
+        Remove Artifact only if it is not associated with any Content.
         """
         try:
             return super(ArtifactViewSet, self).destroy(request, pk)

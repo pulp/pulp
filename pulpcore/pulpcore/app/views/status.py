@@ -25,13 +25,6 @@ class StatusView(APIView):
         """
         Returns app information including the version, known workers, database connection status,
         and messaging connection status
-
-        Args:
-            request (rest_framework.request.Request): container representing request state
-            format (str): requested format of the status response (e.g. json)
-
-        Returns:
-            rest_framework.response.Response: container for the response information
         """
         versions = [{'component': 'pulpcore', 'version': get_distribution("pulpcore").version}]
         broker_status = {'connected': self._get_broker_conn_status()}

@@ -44,7 +44,7 @@ class RepositoryViewSet(NamedModelViewSet):
 
     def update(self, request, pk, partial=False):
         """
-        Generates a Task to update a :class:`~pulpcore.app.models.Repository`
+        Generates a Task to update a Repository
         """
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -59,7 +59,7 @@ class RepositoryViewSet(NamedModelViewSet):
 
     def destroy(self, request, pk):
         """
-        Generates a Task to delete a :class:`~pulpcore.app.models.Repository`
+        Generates a Task to delete a Repository
         """
         repo = self.get_object()
         async_result = tasks.repository.delete.apply_async_with_reservation(
@@ -162,15 +162,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
 
     def destroy(self, request, repository_pk, number):
         """
-        Queues a task to handle deletion.
-        Args:
-            request (rest_framework.request.Request): the current HTTP request being handled
-            repository_pk (UUID): primary key for a Repository associated with the version
-            number (str): the "number" attribute for the version
-
-        Returns:
-            pulpcore.app.response.OperationPostponedResponse: a response with information
-                about the queued task
+        Queues a task to handle deletion of a RepositoryVersion
         """
         version = self.get_object()
         async_result = tasks.repository.delete_version.apply_async_with_reservation(
