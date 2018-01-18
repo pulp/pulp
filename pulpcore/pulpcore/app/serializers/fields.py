@@ -145,7 +145,7 @@ class LatestVersionField(NestedHyperlinkedRelatedField):
                 are no versions, returns None
         """
         try:
-            version = obj.latest()
+            version = obj.exclude(complete=False).latest()
         except obj.model.DoesNotExist:
             return None
 
