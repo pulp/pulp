@@ -279,11 +279,11 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
     _added_href = NestedHyperlinkedIdentityField(
-        view_name='versions-added',
+        view_name='versions-added-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
     _removed_href = NestedHyperlinkedIdentityField(
-        view_name='versions-removed',
+        view_name='versions-removed-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
     number = serializers.IntegerField(
