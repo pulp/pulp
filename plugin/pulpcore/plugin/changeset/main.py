@@ -1,15 +1,15 @@
 import itertools
+
 from collections.abc import Sized, Iterable
 from gettext import gettext as _
 from logging import getLogger
 
 from django.db import transaction
 
-from ..download.futures import Batch
 from ..models import ContentArtifact, RemoteArtifact, ProgressBar
 from ..tasking import Task
 
-from .iterator import ArtifactIterator, BatchIterator, ContentIterator, DownloadIterator
+from .iterator import BatchIterator, DownloadIterator
 from .report import ChangeReport
 
 
@@ -39,12 +39,10 @@ class ChangeSet:
         importer (pulpcore.plugin.Importer): An importer.
         additions (SizedIterable): The content to be added to the repository.
         removals (SizedIterable): The content IDs to be removed.
-        deferred (bool): Downloading is deferred.  When true, downloads are not performed
-            but content is still created and added to the repository.
         added (int): The number of content units successfully added.
         removed (int): The number of content units successfully removed.
         failed (int): The number of changes that failed.
-        repo_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
+        repository_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
             content should be added and removed
 
     Examples:
@@ -62,11 +60,11 @@ class ChangeSet:
         >>>
     """
 
-    def __init__(self, importer, repo_version, additions=(), removals=()):
+    def __init__(self, importer, repository_version, additions=(), removals=()):
         """
         Args:
             importer (pulpcore.plugin.models.Importer): An importer.
-            repo_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
+            repository_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
                 content should be added and removed
             additions (SizedIterable): The content to be added to the repository.
             removals (SizedIterable): The content IDs to be removed.
@@ -77,12 +75,12 @@ class ChangeSet:
             of provided content models as needed.
         """
         self.importer = importer
+        self.repository_version = repository_version
         self.additions = additions
         self.removals = removals
         self.added = 0
         self.removed = 0
         self.failed = 0
-        self.repo_version = repo_version
 
     @property
     def repository(self):
@@ -94,21 +92,6 @@ class ChangeSet:
         """
         return self.importer.repository
 
-    def _downloads(self):
-        """
-        Get an iterable (flattened) of download objects for all pending artifacts.
-        Builds an iterator chain which provides streams-processing of the pending content
-        and related artifacts.  Each iterator in the chain has logic for transforming
-        the objects being iterated.  See each iterator for details.
-
-        Returns:
-            DownloadIterator: An iterable of download objects.
-        """
-        content = ContentIterator((c.bind(self) for c in self.additions))
-        artifacts = ArtifactIterator(content)
-        downloads = DownloadIterator(artifacts, self.importer.is_deferred)
-        return downloads
-
     def _add_content(self, content):
         """
         Add the specified content to the repository.
@@ -117,7 +100,8 @@ class ChangeSet:
         Args:
             content (PendingContent): The content to be added.
         """
-        self.repo_version.add_content(content.stored_model)
+        with transaction.atomic():
+            self.repository_version.add_content(content.stored_model)
 
     def _remove_content(self, content):
         """
@@ -131,7 +115,8 @@ class ChangeSet:
             importer=self.importer,
             content_artifact__in=ContentArtifact.objects.filter(content=content))
         q_set.delete()
-        self.repo_version.remove_content(content)
+        with transaction.atomic():
+            self.repository_version.remove_content(content)
 
     def _apply_additions(self):
         """
@@ -146,21 +131,22 @@ class ChangeSet:
             {
                 'r': self.repository.name
             })
-        with Batch(self._downloads()) as batch:
-            with ProgressBar(message=_('Add Content'), total=len(self.additions)) as bar:
-                for plan in batch():
-                    artifact = plan.download.attachment
-                    content = artifact.content
-                    try:
-                        plan.result()
-                    except Exception as error:
-                        task = Task()
-                        task.append_non_fatal_error(error)
-                        bar.increment()
-                        report = ChangeReport(ChangeReport.ADDED, content.model)
-                        report.error = plan.error
-                        yield report
-                        continue
+
+        downloads = DownloadIterator((c.bind(self) for c in self.additions))
+
+        with ProgressBar(message=_('Add Content'), total=len(self.additions)) as bar:
+            for artifact, download in downloads:
+                content = artifact.content
+                try:
+                    download.result()
+                except Exception as error:
+                    task = Task()
+                    task.append_non_fatal_error(error)
+                    bar.increment()
+                    report = ChangeReport(ChangeReport.ADDED, content.model)
+                    report.error = error
+                    yield report
+                else:
                     artifact.settle()
                     content.settle()
                     if not content.settled:
@@ -169,7 +155,7 @@ class ChangeSet:
                         self._add_content(content)
                         bar.increment()
                     report = ChangeReport(ChangeReport.ADDED, content.model)
-                    yield report
+                yield report
 
     def _apply_removals(self):
         """

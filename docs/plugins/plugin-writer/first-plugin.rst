@@ -32,8 +32,7 @@ Here is a gist of how models are related to each other and what each model is re
 * :class:`~pulpcore.plugin.models.Importer` knows specifics of the plugin
   :class:`~pulpcore.plugin.models.Content` to put it into Pulp.
   :class:`~pulpcore.plugin.models.Importer` defines how to synchronize remote content. Pulp
-  Platform provides two implementations for concurrent downloads of remote content:
-  :ref:`concurrent.futures <futures-docs>` and :ref:`asyncio <asyncio-docs>` approaches.
+  Platform provides support for concurrent  :ref:`downloading <download-docs>` of remote content.
   Plugin writer is encouraged to use one of them but is not required to.
 * :class:`~pulpcore.plugin.models.PublishedArtifact` refers to
   :class:`~pulpcore.plugin.models.ContentArtifact` which is published and belongs to a certain
@@ -128,10 +127,9 @@ One of the ways to perform synchronization:
     from remote source and to make a relation with :class:`~pulpcore.plugin.models.ContentArtifact`
     created before.
 
-* If a remote content should be downloaded right away (aka ``immediate`` download policy), use one
-  of the suggested download solutions (:ref:`concurrent.futures <futures-docs>` or :ref:`asyncio
-  <asyncio-docs>` approach) to start downloading. If content should be downloaded later (aka
-  ``on_demand`` or ``background`` download policy), feel free to skip this step.
+* If a remote content should be downloaded right away (aka ``immediate`` download policy), use
+  the suggested  :ref:`downloading <download-docs>` solution. If content should be downloaded
+  later (aka ``on_demand`` or ``background`` download policy), feel free to skip this step.
 * Save all artifact and content data in one transaction:
 
   * in case of downloaded content, create an instance of
@@ -163,11 +161,6 @@ in the :ref:`understanding-models` section:
   :attr:`~pulpcore.plugin.models.ContentArtifact.artifact`. It should be updated whenever
   corresponding :class:`~pulpcore.plugin.models.Artifact` is downloaded.
 
-Check ``pulp_example`` implementation of importers: `one uses asyncio
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L529-L833>`_ as
-a solution for downloading, `the other one follows concurrent.futures approach
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L184-L526>`_.
-
 The importer implementation suggestion above allows plugin writer to have an understanding and
 control at a low level.
 The plugin API has a higher level, more simplified, API which introduces the concept of
@@ -181,10 +174,6 @@ It allows plugin writer:
 Check :ref:`documentation and detailed examples <changeset-docs>` for the
 :class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
 <https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py#L72-L224>`_ which uses it.
-Currently :class:`~pulpcore.plugin.changeset.ChangeSet` has support for
-:ref:`concurrent.futures <futures-docs>` download solution only but it is expected to have
-integration with any download solution provided by Pulp Core.
-
 
 .. _define-publisher:
 
