@@ -1,7 +1,6 @@
 from pulpcore.app.models import Importer as PlatformImporter
 
-from pulpcore.plugin.download.asyncio import DownloaderFactory
-from pulpcore.plugin.download.futures import Factory as FuturesFactory
+from pulpcore.plugin.download import DownloaderFactory
 
 
 class Importer(PlatformImporter):
@@ -24,30 +23,8 @@ class Importer(PlatformImporter):
     class Meta:
         abstract = True
 
-    def get_futures_downloader(self, url, destination, artifact=None):
-        """
-        Get an appropriate download object based on the URL that is fully configured using
-        the importer attributes.  When an artifact is specified, the download is tailored
-        for the artifact.  Plugin writers are expected to override when additional
-        configuration is needed or when another class of download is required.
-
-        Args:
-
-            url (str): The download URL.
-            destination (str): The absolute path to where the downloaded file is to be stored.
-            artifact (pulpcore.app.models.Artifact): An optional artifact.
-
-        Returns:
-            pulpcore.download.futures.Download: The appropriate download object.
-
-        Notes:
-            This method supports plugins downloading metadata and the
-            `streamer` downloading artifacts.
-        """
-        return FuturesFactory(self).build(url, destination, artifact)
-
     @property
-    def asyncio_download_factory(self):
+    def download_factory(self):
         """
         Return the DownloaderFactory which can be used to generate asyncio capable downloaders.
 
@@ -58,7 +35,7 @@ class Importer(PlatformImporter):
 
         Returns:
             DownloadFactory: The instantiated DownloaderFactory to be used by
-                get_asyncio_downloader()
+                get_downloader()
         """
         try:
             return self._download_factory
@@ -66,7 +43,7 @@ class Importer(PlatformImporter):
             self._download_factory = DownloaderFactory(self)
             return self._download_factory
 
-    def get_asyncio_downloader(self, url, **kwargs):
+    def get_downloader(self, url, **kwargs):
         """
         Get an asyncio capable downloader that is configured with the importer settings.
 
@@ -76,10 +53,10 @@ class Importer(PlatformImporter):
         Args:
             url (str): The download URL.
             kwargs (dict): This accepts the parameters of
-                :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
+                :class:`~pulpcore.plugin.download.BaseDownloader`.
 
         Returns:
-            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
             is configured with the importer settings.
         """
-        return self.asyncio_download_factory.build(url, **kwargs)
+        return self.download_factory.build(url, **kwargs)

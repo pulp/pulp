@@ -1,3 +1,5 @@
+import asyncio
+
 from gettext import gettext as _
 from logging import getLogger
 
@@ -5,9 +7,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.utils import IntegrityError
 
-from pulpcore.app.models import Artifact, ContentArtifact, RemoteArtifact
-
-from ..download.futures import Event, DownloadMonitor
+from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact
+from pulpcore.plugin.download import BaseDownloader
 
 log = getLogger(__name__)
 
@@ -219,9 +220,6 @@ class PendingArtifact(Pending):
         relative_path (str): The relative path within the content.
         content (PendingContent): The associated pending content.
             This is the reverse relationship.
-        _monitor (pulpcore.plugin.DownloadMonitor): Used to collect facts about
-            downloaded artifacts.
-        _path (str): An absolute path to a downloaded artifact.
 
     Examples:
         >>>
@@ -238,8 +236,6 @@ class PendingArtifact(Pending):
         'url',
         'relative_path',
         'content',
-        '_monitor',
-        '_path',
     )
 
     def __init__(self, model, url, relative_path, content=None):
@@ -255,8 +251,6 @@ class PendingArtifact(Pending):
         self.url = url
         self.relative_path = relative_path
         self.content = content
-        self._monitor = None
-        self._path = ''
         if content:
             content.artifacts.add(self)
 
@@ -310,23 +304,42 @@ class PendingArtifact(Pending):
         """
         return self.changeset.importer
 
+    @property
     def downloader(self):
         """
-        Get a downloader.
+        A downloader used to download the artifact.
+        The downloader may be a NopDownloader (no-operation) when:
+        - The _stored_model is set to an model fetched from the DB.
+        - The download policy is deferred.
 
         Returns:
-            pulpcore.download.Download: A downloader.
+            asyncio.Future: A download future based on a downloader.
         """
-        def succeeded(event):
-            self._path = event.download.writer.path
-        download = self.importer.get_futures_downloader(
-            self.url,
-            self.relative_path,
-            self._model)
-        download.attachment = self
-        download.register(Event.SUCCEEDED, succeeded)
-        self._monitor = DownloadMonitor(download)
-        return download
+        def done(task):
+            try:
+                task.result()
+            except Exception:
+                pass
+            else:
+                self.downloaded(downloader)
+        if self.importer.is_deferred or self._stored_model:
+            downloader = NopDownloader()
+            future = asyncio.ensure_future(downloader.run())
+        else:
+            downloader = self.importer.get_downloader(self.url)
+            future = asyncio.ensure_future(downloader.run())
+            future.add_done_callback(done)
+        return future
+
+    def downloaded(self, downloader):
+        """
+        The artifact (file) has been downloaded.
+        A new _stored_model is created (and assigned) for the downloaded file.
+
+        Args:
+            downloader (BaseDownloader): The downloader that successfully completed.
+        """
+        self._stored_model = Artifact(file=downloader.path, **downloader.artifact_attributes)
 
     def artifact_q(self):
         """
@@ -354,15 +367,14 @@ class PendingArtifact(Pending):
 
     def save(self):
         """
-        Update the DB model to store the downloaded file.
-        Then, save in the DB.
+        Update the DB:
+         - Create (or fetch) the Artifact.
+         - Create (or fetch) the ContentArtifact.
+         - Create (or update) the RemoteArtifact.
         """
-        if self._path and (not self._stored_model):  # downloaded
+        if self._stored_model:
             try:
                 with transaction.atomic():
-                    self._stored_model = Artifact(
-                        file=self._path,
-                        **self._monitor.facts())
                     self._stored_model.save()
             except IntegrityError:
                 q = self.artifact_q()
@@ -405,3 +417,42 @@ class PendingArtifact(Pending):
 
     def __hash__(self):
         return hash(self.relative_path)
+
+
+class NopDownloader(BaseDownloader):
+    """
+    A no-operation (NOP) downloader.
+    """
+
+    def __init__(self):
+        super().__init__('')
+
+    async def run(self):
+        pass
+
+
+class NopPendingArtifact(PendingArtifact):
+    """
+    No operation (NOP) pending artifact.
+    """
+
+    def __init__(self, content):
+        """
+        Args:
+            content (PendingContent): The associated pending content.
+        """
+        super().__init__(Artifact(), '', '')
+        self.content = content
+
+    @property
+    def downloader(self):
+        return asyncio.ensure_future(NopDownloader().run())
+
+    def downloaded(self, downloader):
+        pass
+
+    def settle(self):
+        pass
+
+    def save(self):
+        pass

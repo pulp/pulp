@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 
 from collections.abc import Iterable
@@ -7,9 +8,7 @@ from django.db.models import Q
 
 from pulpcore.app.models import Artifact
 
-from pulpcore.plugin.download.futures import Download
-
-from .model import PendingArtifact
+from .model import NopPendingArtifact
 
 
 log = getLogger(__name__)
@@ -142,46 +141,6 @@ class ContentIterator(Iterable):
         return iter(self._iter())
 
 
-class DownloadIterator(Iterable):
-    """
-    Iterate the content artifacts and yield the appropriate download object.
-    When downloading is deferred or the artifact is already downloaded,
-    A NopDownload is yielded.
-
-    Attributes:
-        artifacts (iterable): An iterable of PendingArtifact.
-        deferred (bool): Downloading is deferred.
-    """
-
-    def __init__(self, artifacts, deferred):
-        """
-        Args:
-            artifacts (iterable): An iterable of PendingArtifact.
-            deferred (bool): Downloading is deferred.
-        """
-        self.artifacts = artifacts
-        self.deferred = deferred
-
-    def _iter(self):
-        """
-        Iterate the content artifacts and yield the appropriate download object.
-        When downloading is deferred or the artifact is already downloaded,
-        A NopDownload is yielded.
-
-        Yields:
-            Download: The appropriate download object.
-        """
-        for artifact in self.artifacts:
-            if self.deferred or artifact.stored_model:
-                download = NopDownload(artifact)
-            else:
-                download = artifact.downloader()
-            yield download
-
-    def __iter__(self):
-        return iter(self._iter())
-
-
 class ArtifactIterator(Iterable):
     """
     Iterate `PendingContent` and foreach artifact, replace the DB model instance
@@ -244,7 +203,7 @@ class ArtifactIterator(Iterable):
         Args:
             fetched (dict): Artifacts fetched from the DB.
                 Keyed with (field, digest)
-            artifact (PendingArtifact): A pending artifact.
+            artifact (pulpcore.plugin.changeset.PendingArtifact): A pending artifact.
 
         """
         if isinstance(artifact, NopPendingArtifact):
@@ -268,7 +227,7 @@ class ArtifactIterator(Iterable):
         batched to limit the memory footprint.
 
         Yields:
-            PendingArtifact: The flattened pending artifacts.
+            pulpcore.plugin.changeset.PendingArtifact: The flattened pending artifacts.
         """
         for batch in self._batch_artifacts():
             q = self._batch_q(batch)
@@ -286,44 +245,50 @@ class ArtifactIterator(Iterable):
         return iter(self._iter())
 
 
-class NopDownload(Download):
+class DownloadIterator(Iterable):
     """
-    A no-operation (NOP) download.
+    Download pending artifacts.
+
+    Attributes:
+        content (pulpcore.plugin.changeset.PendingContent): Pending content to be iterated.
     """
 
-    def __init__(self, artifact):
+    # The (default) number of concurrent downloads.
+    CONCURRENT = 10
+
+    def __init__(self, content, concurrent=CONCURRENT):
         """
         Args:
-            artifact (PendingArtifact): The pending artifact.
+            content (Iterable): Pending content to be iterated.
+            concurrent (int): The number of concurrent downloads.
         """
-        super().__init__('', None)
-        self.attachment = artifact
-
-    def _send(self):
-        pass
-
-    def __call__(self):
-        pass
-
-
-class NopPendingArtifact(PendingArtifact):
-    """
-    No operation (NOP) pending artifact.
-    """
-
-    def __init__(self, content):
-        """
-        Args:
-            content (PendingContent): The associated pending content.
-        """
-        super().__init__(None, '', '')
         self.content = content
+        self.concurrent = concurrent
 
-    def downloader(self):
-        return NopDownload(self)
+    def _iter(self):
+        """
+        Build the iterator pipeline:
+            ContentIterator => ArtifactIterator => Downloader.
+        Then, execute each downloader (coroutine).
 
-    def settle(self):
-        pass
+        Yields:
+            tuple: Completed downloads:
+              * pulpcore.plugin.changeset.PendingArtifact
+              * asyncio.Future.
+        """
+        content = ContentIterator(self.content)
+        artifacts = ArtifactIterator(content)
+        loop = asyncio.get_event_loop()
+        downloads = ((a, a.downloader) for a in artifacts)
+        for batch in BatchIterator(downloads, self.concurrent):
+            correlation = {d: a for a, d in batch}
+            pending = correlation.keys()
+            while pending:
+                future = asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                completed, pending = loop.run_until_complete(future)
+                for task in completed:
+                    artifact = correlation[task]
+                    yield (artifact, task)
 
-    def save(self):
-        pass
+    def __iter__(self):
+        return iter(self._iter())

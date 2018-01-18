@@ -17,7 +17,7 @@ Args:
         :class:`~pulpcore.plugin.models.Artifact` fields. This includes the computed digest values
         along with size information.
     exception (Exception): Any downloader exception emitted while the
-        :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` is downloading. Otherwise this
+        :class:`~pulpcore.plugin.download.GroupDownloader` is downloading. Otherwise this
         value is `None`.
 """
 
@@ -32,12 +32,12 @@ def attach_url_to_exception(func):
     >>>         pass  # downloader implementation of run() goes here
 
     The url is stored on the exception as the `_pulp_url` attribute. This is used by the
-    :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` to know the url a given exception
+    :class:`~pulpcore.plugin.download.GroupDownloader` to know the url a given exception
     is for.
 
     Args:
         func: The method being decorated. This is expected to be the `run()` method of a subclass of
-            :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`
+            :class:`~pulpcore.plugin.download.BaseDownloader`
 
     Returns:
         A function that will attach the `url` to any exception emitted by `func`
@@ -56,27 +56,27 @@ class BaseDownloader:
     The base class of all downloaders, providing digest calculation, validation, and file handling.
 
     This is an abstract class and is meant to be subclassed. Subclasses are required to implement
-    the :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.run` method and do two things:
+    the :meth:`~pulpcore.plugin.download.BaseDownloader.run` method and do two things:
 
         1. Pass all downloaded data to
-           :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+           :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
-        2. Call :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.finalize` after all data has
-           been delivered to :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+        2. Call :meth:`~pulpcore.plugin.download.BaseDownloader.finalize` after all data has
+           been delivered to :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
     Passing all downloaded data the into
-    :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data` allows the file digests to
+    :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data` allows the file digests to
     be computed while data is written to disk. The digests computed are required if the download is
     to be saved as an :class:`~pulpcore.plugin.models.Artifact` which avoids having to re-read the
     data later.
 
-    The :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data` method by default
+    The :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data` method by default
     writes to a random file in the current working directory or you can pass in your own file
     object. See the ``custom_file_object`` keyword argument for more details. Allowing the download
     instantiator to define the file to receive data allows the streamer to receive the data instead
     of having it written to disk.
 
-    The call to :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.finalize` ensures that all
+    The call to :meth:`~pulpcore.plugin.download.BaseDownloader.finalize` ensures that all
     data written to the file-like object is quiesced to disk before the file-like object has
     `close()` called on it.
 
@@ -97,7 +97,7 @@ class BaseDownloader:
             url (str): The url to download.
             custom_file_object (file object): An open, writable file object that downloaded data
                 can be written to by
-                :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
             expected_digests (dict): Keyed on the algorithm name provided by hashlib and stores the
                 value of the expected digest. e.g. {'md5': '912ec803b2ce49e4a541068d495ab570'}
             expected_size (int): The number of bytes the download is expected to have.
@@ -134,15 +134,15 @@ class BaseDownloader:
         Flush downloaded data, close the file writer, and validate the data.
 
         All subclasses are required to call this method after all data has been passed to
-        :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+        :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
         Raises:
-            :class:`~pulpcore.plugin.download.asyncio.DigestValidationError`: When any of the
+            :class:`~pulpcore.plugin.download.DigestValidationError`: When any of the
                 ``expected_digest`` values don't match the digest of the data passed to
-                :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
-            :class:`~pulpcore.plugin.download.asyncio.SizeValidationError`: When the
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+            :class:`~pulpcore.plugin.download.SizeValidationError`: When the
                 ``expected_size`` value doesn't match the size of the data passed to
-                :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         self._writer.flush()
         os.fsync(self._writer.fileno())
@@ -155,7 +155,7 @@ class BaseDownloader:
         Run the download synchronously and return the `DownloadResult`.
 
         Returns:
-            :class:`~pulpcore.plugin.download.asyncio.DownloadResult`
+            :class:`~pulpcore.plugin.download.DownloadResult`
 
         Raises:
             Exception: Any fatal exception emitted during downloading
@@ -190,9 +190,9 @@ class BaseDownloader:
         Validate all digests validate if ``expected_digests`` is set
 
         Raises:
-            :class:`~pulpcore.plugin.download.asyncio.DigestValidationError`: When any of the
+            :class:`~pulpcore.plugin.download.DigestValidationError`: When any of the
                 ``expected_digest`` values don't match the digest of the data passed to
-                :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         if self.expected_digests:
             for algorithm, expected_digest in self.expected_digests.items():
@@ -204,9 +204,9 @@ class BaseDownloader:
         Validate the size if ``expected_size`` is set
 
         Raises:
-            :class:`~pulpcore.plugin.download.asyncio.SizeValidationError`: When the
+            :class:`~pulpcore.plugin.download.SizeValidationError`: When the
                 ``expected_size`` value doesn't match the size of the data passed to
-                :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         if self.expected_size:
             if self._size != self.expected_size:
@@ -220,27 +220,27 @@ class BaseDownloader:
         required to implement this method and do two things:
 
         1. Pass all downloaded data to
-           :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+           :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
-        2. Call :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.finalize` after all data has
-           been delivered to :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.handle_data`.
+        2. Call :meth:`~pulpcore.plugin.download.BaseDownloader.finalize` after all data has
+           been delivered to :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
         It is also expected that the subclass implementation return a
-        :class:`~pulpcore.plugin.download.asyncio.DownloadResult` object. The
+        :class:`~pulpcore.plugin.download.DownloadResult` object. The
         ``artifact_attributes`` value of the
-        :class:`~pulpcore.plugin.download.asyncio.DownloadResult` is usually set to the
-        :attr:`~pulpcore.plugin.download.asyncio.BaseDownloader.artifact_attributes` property value.
+        :class:`~pulpcore.plugin.download.DownloadResult` is usually set to the
+        :attr:`~pulpcore.plugin.download.BaseDownloader.artifact_attributes` property value.
 
         It is also expected that the subclass implementation be decorated with the
-        :class:`~pulpcore.plugin.download.asyncio.attach_url_to_exception` decorator. This is
-        required to allow the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` to properly
+        :class:`~pulpcore.plugin.download.attach_url_to_exception` decorator. This is
+        required to allow the :class:`~pulpcore.plugin.download.GroupDownloader` to properly
         record the exceptions emitted from subclassed downloaders.
 
         Returns:
-            :class:`~pulpcore.plugin.download.asyncio.DownloadResult`
+            :class:`~pulpcore.plugin.download.DownloadResult`
 
         Raises:
             Validation errors could be emitted when subclassed implementations call
-            :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.finalize`.
+            :meth:`~pulpcore.plugin.download.BaseDownloader.finalize`.
         """
         raise NotImplementedError('Subclasses must define a run() method that returns a coroutine')

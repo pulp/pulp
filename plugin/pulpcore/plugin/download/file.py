@@ -1,5 +1,8 @@
 import os
+
 from urllib.parse import urlparse
+
+import aiofiles
 
 from .base import attach_url_to_exception, BaseDownloader, DownloadResult
 
@@ -10,10 +13,10 @@ class FileDownloader(BaseDownloader):
 
     It provides digest and size validation along with computation of the digests needed to save the
     file as an Artifact. It writes a new file to the disk and the return path is included in the
-    :class:`~pulpcore.plugin.download.asyncio.DownloadResult`.
+    :class:`~pulpcore.plugin.download.DownloadResult`.
 
     This downloader has all of the attributes of
-    :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`
+    :class:`~pulpcore.plugin.download.BaseDownloader`
     """
 
     def __init__(self, url, **kwargs):
@@ -23,9 +26,9 @@ class FileDownloader(BaseDownloader):
         Args:
             url (str): The url to the file. This is expected to begin with `file://`
             kwargs (dict): This accepts the parameters of
-                :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
+                :class:`~pulpcore.plugin.download.BaseDownloader`.
         """
-        p = urlparse.urlparse(url)
+        p = urlparse(url)
         self._path = os.path.abspath(os.path.join(p.netloc, p.path))
         super().__init__(url, **kwargs)
 
@@ -35,11 +38,11 @@ class FileDownloader(BaseDownloader):
         Read, validate, and compute digests on the `url`. This is a coroutine.
 
         This method provides the same return object type and documented in
-        :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.run`.
+        :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
         """
-        with open(self._path, 'r') as f_handle:
+        async with aiofiles.open(self._path, 'rb') as f_handle:
             while True:
-                chunk = await f_handle.read(1024 * 1024)
+                chunk = await f_handle.read(1048576)
                 if not chunk:
                     self.finalize()
                     break  # the reading is done

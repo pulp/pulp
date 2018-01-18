@@ -15,16 +15,16 @@ class GroupDownloader:
     """
     Download groups of files, with all downloads from all groups occurring in parallel.
 
-    This downloads any number of :class:`~pulpcore.plugin.download.asyncio.Group` objects by adding
-    them explicitly using :meth:`~pulpcore.plugin.download.asyncio.GroupDownloader.schedule_group`
+    This downloads any number of :class:`~pulpcore.plugin.download.Group` objects by adding
+    them explicitly using :meth:`~pulpcore.plugin.download.GroupDownloader.schedule_group`
     or via an iterator, such as a generator, with
-    :meth:`~pulpcore.plugin.download.asyncio.GroupDownloader.schedule_from_iterator`. The generator
+    :meth:`~pulpcore.plugin.download.GroupDownloader.schedule_from_iterator`. The generator
     case is useful for limiting the number of in-memory objects.
 
     This downloader does not raise Exceptions. Instead any exception emitted by the downloader is
     recorded as a non-fatal exception using :meth:`~pulpcore.plugin.Task.append_non_fatal_error`.
     This exception is also recorded on the ``exception`` attribute of the
-    :class:`~pulpcore.plugin.download.asyncio.DownloadResult`.
+    :class:`~pulpcore.plugin.download.DownloadResult`.
 
     The Group configures downloaders with the expected size and expected digest values of the
     :class:`~pulpcore.plugin.models.RemoteArtifact`. This ensures that validation errors are
@@ -37,7 +37,7 @@ class GroupDownloader:
         >>> my_group = Group('my_id', [artifact_a, artifact_b])
         >>> downloader.schedule_group(my_group)
         >>> for group in downloader:
-        >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.asyncio.Group`
+        >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.Group`
 
     If you register a large number of groups, you could use a lot of memory holding those objects,
     their associated downloaders, and other related objects. To resolve this, the GroupDownloader
@@ -53,7 +53,7 @@ class GroupDownloader:
         >>> downloader = GroupDownloader(importer)
         >>> downloader.schedule_from_iterator(group_generator)
         >>> for group in downloader:
-        >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.asyncio.Group`
+        >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.Group`
     """
 
     def __init__(self, importer, downloader_overrides=None):
@@ -80,7 +80,7 @@ class GroupDownloader:
 
         When scheduling groups from the iterator, the ``parallel_group_limit`` argument defines the
         number of groups that are handled in parallel. Once one
-        :class:`~pulpcore.plugin.download.asyncio.Group` completes and is returned to the user,
+        :class:`~pulpcore.plugin.download.Group` completes and is returned to the user,
         another one is scheduled which maintains the number of parallel groups until the iterator is
         exhausted.
 
@@ -93,7 +93,7 @@ class GroupDownloader:
 
         Args:
             group_iterator (iterable): An iterable of
-                :class:`~pulpcore.plugin.download.asyncio.Group` objects.
+                :class:`~pulpcore.plugin.download.Group` objects.
             parallel_group_limit (int): The number of groups to be handled in parallel at any time.
         """
         if self.group_iterator:
@@ -111,7 +111,7 @@ class GroupDownloader:
         Schedules a group of `remote_artifacts` for downloading, referred to by an `id`.
 
         Args:
-            group (:class:`~pulpcore.plugin.download.asyncio.Group`): The group to be scheduled.
+            group (:class:`~pulpcore.plugin.download.Group`): The group to be scheduled.
         """
         self.groups_not_done.append(group)
         for url in group.urls:
@@ -147,7 +147,7 @@ class GroupDownloader:
     def __next__(self):
         """
         Returns:
-            :class:`pulpcore.plugin.download.asyncio.Group`
+            :class:`pulpcore.plugin.download.Group`
         """
         while self.downloads_not_done:
             done_this_time, self.downloads_not_done = \
@@ -181,14 +181,14 @@ class Group:
     """
     A group of :class:`~pulpcore.plugin.models.RemoteArtifact` objects to download.
 
-    Each group is downloaded with the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader`.
+    Each group is downloaded with the :class:`~pulpcore.plugin.download.GroupDownloader`.
 
     Attributes:
         id (hashable): This id is used to uniquely identify the group.
         remote_artifacts (dict): Keyed on the remote url with the value containing the
             :class:`~pulpcore.plugin.models.RemoteArtifact`.
         downloaded_files (dict): Keyed on the remote url with the value containing the
-             :class:`~pulpcore.plugin.download.asyncio.DownloadResult`
+             :class:`~pulpcore.plugin.download.DownloadResult`
         urls (set): All remote urls in this group.
         finished_urls (list): A list of completed urls.
     """
@@ -215,7 +215,7 @@ class Group:
         Update the Group with download result calculated during the download from the URL
 
         Args:
-            download_result (:class:`~pulpcore.plugin.download.asyncio.DownloadResult`): The return
+            download_result (:class:`~pulpcore.plugin.download.DownloadResult`): The return
                 argument from an HttpDownloader
         """
         self.finished_urls.append(download_result.url)

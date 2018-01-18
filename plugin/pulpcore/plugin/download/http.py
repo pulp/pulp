@@ -62,7 +62,7 @@ class HttpDownloader(BaseDownloader):
             as its values. e.g. `{'Transfer-Encoding': 'chunked'}`. This can also be None.
 
     This downloader also has all of the attributes of
-    :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`
+    :class:`~pulpcore.plugin.download.BaseDownloader`
     """
 
     def __init__(self, url, session=None, auth=None, proxy=None, proxy_auth=None,
@@ -81,7 +81,7 @@ class HttpDownloader(BaseDownloader):
                 available. The dictionary passed has the header names as the keys and header values
                 as its values. e.g. `{'Transfer-Encoding': 'chunked'}`
             kwargs (dict): This accepts the parameters of
-                :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`.
+                :class:`~pulpcore.plugin.download.BaseDownloader`.
         """
         if session:
             self.session = session
@@ -123,7 +123,7 @@ class HttpDownloader(BaseDownloader):
         Download, validate, and compute digests on the `url`. This is a coroutine.
 
         This method provides the same return object type and documented in
-        :meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.run`.
+        :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
         """
         async with self.session.get(self.url) as response:
             response.raise_for_status()

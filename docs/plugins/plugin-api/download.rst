@@ -1,7 +1,7 @@
-.. _asyncio-docs:
+.. _download-docs:
 
-pulpcore.plugin.download.asyncio
-================================
+pulpcore.plugin.download
+========================
 
 The module implements downloaders that solve many of the common problems plugin writers have while
 downloading remote data. A high level list of features provided by these downloaders include:
@@ -13,7 +13,7 @@ downloading remote data. A high level list of features provided by these downloa
 * customizable download behaviors via subclassing
 
 All classes documented here should be imported directly from the
-``pulpcore.plugin.download.asyncio`` namespace.
+``pulpcore.plugin.download`` namespace.
 
 Basic Downloading
 -----------------
@@ -24,16 +24,16 @@ The most basic downloading from a url can be done like this:
 >>> result = downloader.fetch()
 
 The example above downloads the data synchronously. The
-:meth:`~pulpcore.plugin.download.asyncio.HttpDownloader.fetch` call blocks until the data is
-downloaded and the :class:`~pulpcore.plugin.download.asyncio.DownloadResult` is returned or a fatal
+:meth:`~pulpcore.plugin.download.HttpDownloader.fetch` call blocks until the data is
+downloaded and the :class:`~pulpcore.plugin.download.DownloadResult` is returned or a fatal
 exception is raised.
 
 Parallel Downloading
 --------------------
 
-Any downloader in the ``pulpcore.plugin.download.asyncio`` package can be run in parallel with the
+Any downloader in the ``pulpcore.plugin.download`` package can be run in parallel with the
 ``asyncio`` event loop. Each downloader has a
-:meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.run` method which returns a coroutine object
+:meth:`~pulpcore.plugin.download.BaseDownloader.run` method which returns a coroutine object
 that ``asyncio`` can schedule in parallel. Consider this example:
 
 >>> download_coroutines = [
@@ -58,7 +58,7 @@ Download Results
 The download result contains all the information about a completed download and is returned from a
 the downloader's `run()` method when the download is complete.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.DownloadResult
+.. autoclass:: pulpcore.plugin.download.DownloadResult
     :no-members:
 
 .. _configuring-from-an-importer:
@@ -76,7 +76,7 @@ the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` call. Here i
 
 The :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` internally calls the
 `DownloaderFactory`, so it expects a `url` that the `DownloaderFactory` can build a downloader for.
-See the :class:`~pulpcore.plugin.download.asyncio.DownloaderFactory` for more information on
+See the :class:`~pulpcore.plugin.download.DownloaderFactory` for more information on
 supported urls.
 
 .. tip::
@@ -86,7 +86,7 @@ supported urls.
     information.
 
 .. note::
-    All :class:`~pulpcore.plugin.download.asyncio.HttpDownload` downloaders produced by the same
+    All :class:`~pulpcore.plugin.download.HttpDownload` downloaders produced by the same
     importer instance share an `aiohttp` session, which provides a connection pool, connection
     reusage and keep-alives shared across all downloaders produced by a single importer.
 
@@ -96,7 +96,7 @@ Exception Handling
 ------------------
 
 All downloaders are expected to handle recoverable errors automatically. For example, the
-:class:`~pulpcore.plugin.download.asyncio.HttpDownloader` is expected to retry if a server is too
+:class:`~pulpcore.plugin.download.HttpDownloader` is expected to retry if a server is too
 busy or if a redirect occurs.
 
 Unrecoverable errors of several types can be raised during downloading. One example is a
@@ -106,10 +106,10 @@ size or digest validation. There can also be protocol specific errors such as an
 403.
 
 If downloading synchronously, exceptions are raised from
-:meth:`~pulpcore.plugin.download.asyncio.BaseDownloader.fetch`. If downloading in parallel,
+:meth:`~pulpcore.plugin.download.BaseDownloader.fetch`. If downloading in parallel,
 exceptions are raised when checking the `result()` method of a downloader. Exceptions encountered
-while downloading is done by the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` are
-handled differently. See the :class:`~pulpcore.plugin.download.asyncio.GroupDownloader` docs for
+while downloading is done by the :class:`~pulpcore.plugin.download.GroupDownloader` are
+handled differently. See the :class:`~pulpcore.plugin.download.GroupDownloader` docs for
 more information.
 
 Any exception raised is a fatal exception and should likely be recorded with the
@@ -119,7 +119,7 @@ recorded as a non-fatal exception on the task. Plugin writers can also choose to
 task by allowing the exception be uncaught which would mark the entire task as failed.
 
 .. note::
-    The :class:`~pulpcore.plugin.download.asyncio.HttpDownloader` will raise an exception for any
+    The :class:`~pulpcore.plugin.download.HttpDownloader` will raise an exception for any
     response code that is 400 or greater.
 
 .. _custom-download-behavior:
@@ -134,10 +134,10 @@ downloader knew of several mirrors. Here is an `example of that
 code.
 
 A custom downloader can be given as the downloader to use for a given protocol using the
-``downloader_overrides`` on the :class:`~pulpcore.plugin.download.asyncio.DownloaderFactory`.
+``downloader_overrides`` on the :class:`~pulpcore.plugin.download.DownloaderFactory`.
 Additionally, you can implement the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader`
 method to specify the ``downloader_overrides`` to the
-:class:`~pulpcore.plugin.download.asyncio.DownloaderFactory`.
+:class:`~pulpcore.plugin.download.DownloaderFactory`.
 
 .. _adding-new-protocol-support:
 
@@ -145,8 +145,8 @@ Adding New Protocol Support
 ---------------------------
 
 To create a new protocol downloader implement a subclass of the
-:class:`~pulpcore.plugin.download.asyncio.BaseDownloader`. See the docs on
-:class:`~pulpcore.plugin.download.asyncio.BaseDownloader` for more information on the requirements.
+:class:`~pulpcore.plugin.download.BaseDownloader`. See the docs on
+:class:`~pulpcore.plugin.download.BaseDownloader` for more information on the requirements.
 
 .. _group-downloader:
 
@@ -167,15 +167,15 @@ and while waiting on A, B, and C you are not also downloading D, E, and F in par
 GroupDownloader Overview
 ########################
 
-The GroupDownloader allows you to schedule a :class:`~pulpcore.plugin.download.asyncio.Group`
+The GroupDownloader allows you to schedule a :class:`~pulpcore.plugin.download.Group`
 of downloads in a way that results are returned when the entire Group is ready instead of
 download-by-download. This is significant because multiple downloads from multiple groups still run
 in parallel. See the examples below.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.GroupDownloader
+.. autoclass:: pulpcore.plugin.download.GroupDownloader
     :members:
 
-.. autoclass:: pulpcore.plugin.download.asyncio.Group
+.. autoclass:: pulpcore.plugin.download.Group
     :members:
 
 .. _downloader-factory:
@@ -190,7 +190,7 @@ The DownloaderFactory constructs and configures a downloader for any given url. 
 2. Auto-configure the selected downloader with settings from an importer including (auth, ssl,
    proxy).
 
-The :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` method constructs one
+The :meth:`~pulpcore.plugin.download.DownloaderFactory.build` method constructs one
 downloader for any given url.
 
 .. note::
@@ -199,12 +199,12 @@ downloader for any given url.
    reusage and keep-alives shared across all downloaders produced by a single factory.
 
 .. tip::
-    The :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` method accepts kwargs that
+    The :meth:`~pulpcore.plugin.download.DownloaderFactory.build` method accepts kwargs that
     enable size or digest based validation or the specification of a file-like object for the data
-    to be written into. See :meth:`~pulpcore.plugin.download.asyncio.DownloaderFactory.build` for
+    to be written into. See :meth:`~pulpcore.plugin.download.DownloaderFactory.build` for
     more information.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.DownloaderFactory
+.. autoclass:: pulpcore.plugin.download.DownloaderFactory
     :members:
 
 .. _http-downloader:
@@ -214,9 +214,9 @@ HttpDownloader
 
 This downloader is an asyncio-aware parallel downloader which is the default downloader produced by
 the :ref:`downloader-factory` for urls starting with `http://` or `https://`. It also supports
-synchronous downloading using :meth:`~pulpcore.plugin.download.asyncio.HttpDownloader.fetch`.
+synchronous downloading using :meth:`~pulpcore.plugin.download.HttpDownloader.fetch`.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.HttpDownloader
+.. autoclass:: pulpcore.plugin.download.HttpDownloader
     :members:
     :inherited-members: fetch
 
@@ -228,7 +228,7 @@ FileDownloader
 This downloader is an asyncio-aware parallel file reader which is the default downloader produced by
 the :ref:`downloader-factory` for urls starting with `file://`.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.FileDownloader
+.. autoclass:: pulpcore.plugin.download.FileDownloader
     :members:
     :inherited-members: fetch
 
@@ -240,16 +240,17 @@ BaseDownloader
 This is an abstract downloader that is meant for subclassing. All downloaders are expected to be
 descendants of BaseDownloader.
 
-.. autoclass:: pulpcore.plugin.download.asyncio.BaseDownloader
+.. autoclass:: pulpcore.plugin.download.BaseDownloader
     :members:
 
-.. autofunction:: pulpcore.plugin.download.asyncio.attach_url_to_exception
+.. autofunction:: pulpcore.plugin.download.attach_url_to_exception
+
 
 .. _validation-exceptions:
 
 Validation Exceptions
 ---------------------
 
-.. autoclass:: pulpcore.plugin.download.asyncio.DigestValidationError
-.. autoclass:: pulpcore.plugin.download.asyncio.SizeValidationError
-.. autoclass:: pulpcore.plugin.download.asyncio.DownloaderValidationError
+.. autoclass:: pulpcore.plugin.download.DigestValidationError
+.. autoclass:: pulpcore.plugin.download.SizeValidationError
+.. autoclass:: pulpcore.plugin.download.DownloaderValidationError

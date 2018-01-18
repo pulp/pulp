@@ -98,10 +98,10 @@ class DownloaderFactory:
         Args:
             url (str): The download URL.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
-                include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
+                include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
 
         Returns:
-            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
             is configured with the importer settings.
         """
         scheme = urlparse(url).scheme.lower()
@@ -118,14 +118,14 @@ class DownloaderFactory:
         Build a downloader for http:// or https:// URLs.
 
         Args:
-            download_class (:class:`~pulpcore.plugin.download.asyncio.BaseDownloader`): The download
+            download_class (:class:`~pulpcore.plugin.download.BaseDownloader`): The download
                 class to be instantiated.
             url (str): The download URL.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
-                include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
+                include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
 
         Returns:
-            :class:`~pulpcore.plugin.download.asyncio.HttpDownloader`: A downloader that
+            :class:`~pulpcore.plugin.download.HttpDownloader`: A downloader that
             is configured with the importer settings.
         """
         options = {'session': self._session}
@@ -139,14 +139,14 @@ class DownloaderFactory:
         Build a generic downloader based on the url.
 
         Args:
-            download_class (:class:`~pulpcore.plugin.download.asyncio.BaseDownloader`): The download
+            download_class (:class:`~pulpcore.plugin.download.BaseDownloader`): The download
                 class to be instantiated.
             url (str): The download URL.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
-                include the :class:`~pulpcore.plugin.download.asyncio.BaseDownloader` parameters.
+                include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
 
         Returns:
-            subclass of :class:`~pulpcore.plugin.download.asyncio.BaseDownloader`: A downloader that
+            subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
             is configured with the importer settings.
         """
         return download_class(url, **kwargs)

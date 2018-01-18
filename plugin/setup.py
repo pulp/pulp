@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 requirements = [
     'pulpcore',
     'aiohttp',
+    'aiofiles',
 ]
 
 with open('README.rst') as f:
