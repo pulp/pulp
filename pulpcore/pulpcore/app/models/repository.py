@@ -2,6 +2,7 @@
 Repository related Django models.
 """
 from contextlib import suppress
+from gettext import gettext as _
 
 from django.db import models
 from django.db.utils import IntegrityError
@@ -307,6 +308,9 @@ class RepositoryVersion(Model):
         Args:
             content (pulpcore.plugin.models.Content): a content model to add
         """
+        assert not self.complete, _("Cannot update version {version} for repository "
+                                    "{repo}").format(version=self.number, repo=self.repository.name)
+
         # duplicates are ok
         with suppress(IntegrityError):
             association = RepositoryContent(
@@ -323,6 +327,9 @@ class RepositoryVersion(Model):
         Args:
             content (pulpcore.plugin.models.Content): A content model to remove
         """
+        assert not self.complete, _("Cannot update version {version} for repository "
+                                    "{repo}").format(version=self.number, repo=self.repository.name)
+
         q_set = RepositoryContent.objects.filter(
             repository=self.repository,
             content=content,
