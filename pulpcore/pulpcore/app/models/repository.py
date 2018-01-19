@@ -350,8 +350,8 @@ class RepositoryVersion(Model):
                                     "complete.").format(version=self.number,
                                                         repo=self.repository.name)
         with transaction.atomic():
-            self.added().delete()
-            self.removed().update(version_removed=None)
+            RepositoryContent.objects.filter(version_added=self).delete()
+            RepositoryContent.objects.filter(version_removed=self).update(version_removed=None)
             self.delete()
 
     def next(self):
