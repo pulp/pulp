@@ -1,9 +1,18 @@
+from gettext import gettext as _
+from urllib.parse import urlparse
+
+
+from django.urls import resolve
+from django.urls.exceptions import Resolver404
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
-from rest_framework import decorators, mixins
+from rest_framework import decorators, mixins, serializers
+from rest_framework.exceptions import ValidationError
+
 
 from pulpcore.app import tasks
-from pulpcore.app.models import (Distribution,
+from pulpcore.app.models import (Content,
+                                 Distribution,
                                  Importer,
                                  Publication,
                                  Publisher,
@@ -176,6 +185,68 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
             kwargs={'pk': version.pk}
         )
         return OperationPostponedResponse([async_result], request)
+
+    def get_content_unit_pk(self, url):
+        """
+        Extracts the Content's PK from a URL
+
+        This method also validates that the URL belongs to an existing Content resource
+
+        Args:
+            url (str): href that needs validation
+
+        Returns:
+            PK of the Content
+
+        Raises:
+            :class:`rest_framework.exceptions.ValidationError`: When the URL is not a valid
+                Content resource
+        """
+
+        try:
+            resolver = resolve(urlparse(url).path)
+        except Resolver404 as e:
+            raise ValidationError(detail=_("Invalid hyperlink. %s") % url)
+
+        if not resolver.view_name.startswith('content') or not resolver.view_name.endswith(
+                'detail'):
+            # URL exists, but does not correspond to Content resource
+            raise ValidationError(detail=_("Invalid hyperlink. %s") % url)
+
+        content_field = serializers.HyperlinkedRelatedField(view_name=resolver.view_name,
+                                                            queryset=Content.objects.all(),
+                                                            source='*', initial=url)
+        try:
+            content_field.run_validation(data=url)
+        except ValidationError as e:
+            # Append the URL of missing Content to the error message
+            e.detail[0] = "%s %s" % (e.detail[0], url)
+            raise e
+        return resolver.kwargs['pk']
+
+    def create(self, request, repository_pk):
+        """
+        Queues a task that creates a new RepositoryVersion by adding and removing content units
+        """
+        add_content_units = []
+        remove_content_units = []
+        if 'add_content_units' in request.data:
+            for url in request.data['add_content_units']:
+                add_content_units.append(self.get_content_unit_pk(url))
+
+        if 'remove_content_units' in request.data:
+            for url in request.data['remove_content_units']:
+                remove_content_units.append(self.get_content_unit_pk(url))
+
+        result = tasks.repository.add_and_remove.apply_async_with_reservation(
+            tags.RESOURCE_REPOSITORY_TYPE, repository_pk,
+            kwargs={
+                'repository_pk': repository_pk,
+                'add_content_units': add_content_units,
+                'remove_content_units': remove_content_units
+            }
+        )
+        return OperationPostponedResponse([result], request)
 
 
 class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
