@@ -18,56 +18,6 @@ initialize()
 
 
 class InitializeWorkerTestCase(unittest.TestCase):
-    """
-    This class contains tests for the initialize_worker() function.
-    """
-    @mock.patch('pulp.server.async.app.common_utils.delete_worker_working_directory')
-    @mock.patch('pulp.server.async.app.common_utils.create_worker_working_directory')
-    @mock.patch('pulp.server.async.app.initialization.initialize')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    @mock.patch('pulp.server.async.app.get_resource_manager_lock')
-    def test_initialize_worker(self,
-                               mock_get_resource_manager_lock,
-                               _delete_worker, mock_initialize,
-                               create_worker_working_directory,
-                               delete_worker_working_directory):
-        """
-        Assert that initialize_worker() calls Pulp's initialization code and the appropriate worker
-        monitoring code for a non-resource mananger worker.
-        """
-        sender = 'reserved_resource_worker-0' + '@' + platform.node()
-        # The instance argument isn't used and don't matter, so we'll just pass a mock
-        app.initialize_worker(sender, mock.MagicMock())
-
-        mock_initialize.assert_called_once_with()
-        _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
-        create_worker_working_directory.assert_called_once_with(sender)
-        delete_worker_working_directory.assert_called_once_with(sender)
-        mock_get_resource_manager_lock.assert_not_called()
-
-    @mock.patch('pulp.server.async.app.common_utils.delete_worker_working_directory')
-    @mock.patch('pulp.server.async.app.common_utils.create_worker_working_directory')
-    @mock.patch('pulp.server.async.app.initialization.initialize')
-    @mock.patch('pulp.server.async.app.tasks._delete_worker')
-    @mock.patch('pulp.server.async.app.get_resource_manager_lock')
-    def test_initialize_worker_resource_manager(self,
-                                                mock_get_resource_manager_lock,
-                                                _delete_worker, mock_initialize,
-                                                create_worker_working_directory,
-                                                delete_worker_working_directory):
-        """
-        Assert that initialize_worker() calls Pulp's initialization code and the appropriate worker
-        monitoring code for a resource mananger worker.
-        """
-        sender = RESOURCE_MANAGER_WORKER_NAME + '@' + platform.node()
-        # The instance argument isn't used and don't matter, so we'll just pass a mock
-        app.initialize_worker(sender, mock.MagicMock())
-
-        mock_initialize.assert_called_once_with()
-        _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
-        create_worker_working_directory.assert_called_once_with(sender)
-        delete_worker_working_directory.assert_called_once_with(sender)
-        mock_get_resource_manager_lock.assert_called_once_with(sender)
 
     @mock.patch('pulp.server.async.app.time')
     @mock.patch('pulp.server.async.app.datetime')

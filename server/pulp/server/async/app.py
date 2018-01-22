@@ -42,36 +42,45 @@ class HeartbeatStep(bootsteps.StartStopStep):
     method periodically. This allows each worker to write its own worker record to the
     database, instead of relying on pulp_celerybeat to do so.
 
+    We also use this bootstep to perform initialization of the pulp worker as well as
+    cleanup of previous workers who might have died unexpectedly.
+
     http://docs.celeryproject.org/en/master/userguide/extending.html
     https://groups.google.com/d/msg/celery-users/3fs0ocREYqw/C7U1lCAp56sJ
-
-    :param worker: The worker instance (unused)
-    :type  worker: celery.apps.worker.Worker
     """
 
     def __init__(self, consumer, **kwargs):
         """
-        Create variable for timer reference.
+        Create variable for timer reference and set up database connections and
+        other initialization functions.
 
         The step init is called when the consumer instance is created, It is called with the
         consumer instance as the first argument and all keyword arguments from the original
         consumer.__init__ call.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = None
+        self.first_start = True
+        initialization.initialize()
 
     def start(self, consumer):
         """
-        Create a timer which periodically runs the heartbeat routine.
+        Create a timer which periodically runs the heartbeat routine. Delete any stale worker data.
 
         This method is called when the worker starts up and also whenever the AMQP connection is
         reset (which triggers an internal restart). The timer is reset when the connection is lost,
         so we have to install the timer again for every call to self.start.
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        We are using this to deleting any stale worker data from improperly killed workers.
+        We need to do this here, because if this happens any earlier in the process, the task
+        revokation inside of _delete_worker() will cause the process to lock up. However, since
+        this method runs every time the consumer restarts, and we don't want to delete stale
+        worker data every time that happens, set a guard variable so that it only happens once.
+
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = consumer.timer.call_repeatedly(
             PULP_PROCESS_HEARTBEAT_INTERVAL,
@@ -81,6 +90,18 @@ class HeartbeatStep(bootsteps.StartStopStep):
         )
         self._record_heartbeat(consumer)
 
+        # Delete any potential old worker state
+        if self.first_start:
+            tasks._delete_worker(consumer.hostname, normal_shutdown=True)
+
+            # Create a new working directory for worker that is starting now
+            # The working directory is specified in /etc/pulp/server.conf
+            # (/var/cache/pulp/<worker_name>
+            common_utils.delete_worker_working_directory(consumer.hostname)
+            common_utils.create_worker_working_directory(consumer.hostname)
+
+        self.first_start = False
+
     def stop(self, consumer):
         """
         Stop the timer when the worker is stopped.
@@ -88,8 +109,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         This method is called every time the worker is restarted (i.e. connection is lost)
         and also at shutdown.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         if self.timer_ref:
             self.timer_ref.cancel()
@@ -111,8 +132,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         """
         This method creates or updates the worker record
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         name = consumer.hostname
         # Update the worker record timestamp and handle logging new workers
@@ -128,34 +149,16 @@ celery.steps['consumer'].add(HeartbeatStep)
 
 
 @celeryd_after_setup.connect
-def initialize_worker(sender, instance, **kwargs):
+def wait_for_manager_lock(sender, instance, **kwargs):
     """
-    This function performs all the necessary initialization of the Celery worker.
-
-    We clean up old state in case this worker was previously running, but died unexpectedly.
-    In such cases, any Pulp tasks that were running or waiting on this worker will show incorrect
-    state. Any reserved_resource reservations associated with the previous worker will also be
-    removed along with the worker entry in the database itself. The working directory specified in
-    /etc/pulp/server.conf (/var/cache/pulp/<worker_name>) by default is removed and recreated. This
-    is called early in the worker start process, and later when it's fully online, pulp_celerybeat
-    will discover the worker as usual to allow new work to arrive at this worker. If there is no
-    previous work to cleanup, this method still runs, but has no effect on the database.
-
-    After cleaning up old state, it ensures the existence of the worker's working directory.
-
-    Lastly, this function makes the call to Pulp's initialization code.
-
-    It uses the celeryd_after_setup signal[0] so that it gets called by Celery after logging is
+    We use the celeryd_after_setup signal[0] so that it gets called by Celery after logging is
     initialized, but before Celery starts to run tasks.
 
     If the worker is a resource manager, it tries to acquire a lock stored within the database.
     If the lock cannot be acquired immediately, it will wait until the currently active instance
     becomes unavailable, at which point the worker cleanup routine will clear the lock for us to
     acquire. While the worker remains in this waiting state, it is not connected to the broker and
-    will not attempt to do any work. A side effect of this is that, if terminated while in this
-    state, the process will not send the "worker-offline" signal used by the EventMonitor to
-    immediately clean up terminated workers. Therefore, we override the SIGTERM signal handler
-    while in this state so that cleanup is done properly.
+    will not attempt to do any work.
 
     [0] http://celery.readthedocs.org/en/latest/userguide/signals.html#celeryd-after-setup
 
@@ -166,14 +169,6 @@ def initialize_worker(sender, instance, **kwargs):
     :param kwargs:   Other params (unused)
     :type  kwargs:   dict
     """
-    initialization.initialize()
-
-    # Delete any potential old state
-    tasks._delete_worker(sender, normal_shutdown=True)
-
-    # Create a new working directory for worker that is starting now
-    common_utils.delete_worker_working_directory(sender)
-    common_utils.create_worker_working_directory(sender)
 
     # If the worker is a resource manager, try to acquire the lock, or wait until it
     # can be acquired
