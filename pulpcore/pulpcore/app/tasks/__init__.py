@@ -1,1 +1,1 @@
-from pulpcore.app.tasks import base, orphan, publisher, repository  # noqa
+from pulpcore.app.tasks import base, orphan, repository  # noqa

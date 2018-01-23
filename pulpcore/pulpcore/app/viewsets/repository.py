@@ -263,22 +263,13 @@ class PublisherViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     filter_class = PublisherFilter
 
 
-class PublicationViewSet(NamedModelViewSet):
+class PublicationViewSet(GenericNamedModelViewSet,
+                         mixins.RetrieveModelMixin,
+                         mixins.ListModelMixin,
+                         mixins.DestroyModelMixin):
     endpoint_name = 'publications'
     queryset = Publication.objects.all()
     serializer_class = PublicationSerializer
-
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        publisher = serializer.validated_data.pop('publisher')
-        result = tasks.publisher.publish.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(publisher.repository.pk),
-            kwargs={
-                'publisher_pk': publisher.pk,
-            }
-        )
-        return OperationPostponedResponse([result], request)
 
 
 class DistributionViewSet(NamedModelViewSet):
