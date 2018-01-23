@@ -16,7 +16,8 @@ from pulpcore.app.serializers import (
     MasterModelSerializer,
     ModelSerializer,
 )
-from rest_framework_nested.relations import NestedHyperlinkedIdentityField
+from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
+                                             NestedHyperlinkedRelatedField)
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 
@@ -259,6 +260,12 @@ class PublicationSerializer(ModelSerializer):
         help_text=_('Timestamp of when the publication was created.'),
         read_only=True
     )
+    repository_version = NestedHyperlinkedRelatedField(
+        view_name='versions-detail',
+        lookup_field='number',
+        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+        read_only=True,
+    )
 
     class Meta:
         model = models.Publication
@@ -266,6 +273,7 @@ class PublicationSerializer(ModelSerializer):
             'publisher',
             'created',
             'distributions',
+            'repository_version',
         )
 
 
