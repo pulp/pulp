@@ -77,6 +77,7 @@ class RSyncPublishStep(PublishStep):
         os.makedirs(os.path.join(tmpdir, path.lstrip("/")))
         args = ['rsync', '-avrK', '-f+ */']
         args.extend(self.make_authentication())
+        args.extend(self.make_extra_args())
         args.append("%s/" % tmpdir)
         args.append(self.make_destination(path).replace(str(path), ""))
         _logger.debug("remote mkdir: %s" % args)
@@ -124,6 +125,15 @@ class RSyncPublishStep(PublishStep):
                 ssh_parts.append(arg)
 
         return ['-e', " ".join(ssh_parts)]
+
+    def make_extra_args(self):
+        """
+        Returns a list of strings representing args given by the 'rsync_extra_args' config option
+
+        :return: list of extra rsync arguments. Empty list if none given
+        :rtype: list
+        """
+        return self.get_config().get("rsync_extra_args", [])
 
     def make_full_path(self, relative_path):
         """
@@ -210,8 +220,7 @@ class RSyncPublishStep(PublishStep):
             args.append("--links")
         else:
             args.append("--copy-links")
-        if self.get_config().get("rsync_extra_args"):
-            args.extend(self.get_config().get("rsync_extra_args"))
+        args.extend(self.make_extra_args())
 
         args.append(source_prefix)
         args.append(self.make_destination(dest_prefix))
