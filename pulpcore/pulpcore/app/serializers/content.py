@@ -94,19 +94,21 @@ class ArtifactSerializer(base.ModelSerializer):
             data['size'] = data['file'].size
 
         for algorithm in hashlib.algorithms_guaranteed:
-            digest = data['file'].hashers[algorithm].hexdigest()
+            if algorithm in models.Artifact.DIGEST_FIELDS:
+                digest = data['file'].hashers[algorithm].hexdigest()
 
-            if algorithm in data and digest != data[algorithm]:
-                raise serializers.ValidationError(_("The %s checksum did not match.") % algorithm)
-            else:
-                data[algorithm] = digest
-            if algorithm in UNIQUE_ALGORITHMS:
-                validator = UniqueValidator(models.Artifact.objects.all(),
-                                            message=_("{0} checksum must be "
-                                                      "unique.").format(algorithm))
-                validator.field_name = algorithm
-                validator.instance = None
-                validator(digest)
+                if algorithm in data and digest != data[algorithm]:
+                    raise serializers.ValidationError(_("The %s checksum did not match.")
+                                                      % algorithm)
+                else:
+                    data[algorithm] = digest
+                if algorithm in UNIQUE_ALGORITHMS:
+                    validator = UniqueValidator(models.Artifact.objects.all(),
+                                                message=_("{0} checksum must be "
+                                                          "unique.").format(algorithm))
+                    validator.field_name = algorithm
+                    validator.instance = None
+                    validator(digest)
         return data
 
     class Meta:
