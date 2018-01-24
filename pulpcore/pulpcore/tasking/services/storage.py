@@ -24,28 +24,64 @@ class WorkingDirectory:
     @classmethod
     def create(cls):
         """
-        Create the directory on the Filesystem.
+        Create a working directory for a running Celery task on the Filesystem.
 
         The directory (tree) is deleted and recreated when already exist.
 
         Returns:
             pulpcore.tasking.services.storage.WorkingDirectory: The created directory.
         """
-        path = cls._build_path()
+        def mkdir(p):
+            os.makedirs(p, mode=cls.MODE)
+        path = cls.task_path()
         try:
-            os.makedirs(path, mode=cls.MODE)
+            mkdir(path)
         except FileExistsError:
             _dir = cls(path)
             _dir.delete()
-            os.makedirs(path, mode=cls.MODE)
+            mkdir(path)
             return _dir
         else:
             return cls(path)
 
-    @staticmethod
-    def _build_path():
+    @classmethod
+    def for_worker(cls, hostname):
         """
-        Build the directory path using format: <root>/<worker-name>/<task_id>
+        Factory method for building a WorkingDirectory object for a worker by name.
+
+        Args:
+            hostname (str): The worker hostname.
+
+        Returns:
+            pulpcore.tasking.services.storage.WorkingDirectory: The created directory.
+
+        Raises:
+            FileNotFoundError: When directory not found.
+        """
+        path = cls.worker_path(hostname)
+        return cls(path)
+
+    @staticmethod
+    def worker_path(hostname):
+        """
+        Get the root directory path for a worker by hostname.
+
+        Args:
+            hostname (str): The worker hostname.
+
+        Returns:
+            str: The absolute path to a worker's root working directory.
+        """
+        root = settings.SERVER['working_directory']
+        path = os.path.join(root, hostname)
+        return path
+
+    @staticmethod
+    def task_path():
+        """
+        Get the directory path for a running Celery task.
+
+        Format: <root>/<worker-name>/<task_id>
 
         Returns:
             str: The absolute directory path.
@@ -53,11 +89,9 @@ class WorkingDirectory:
         Raises:
             RuntimeError: When used outside a Celery task.
         """
-        root = settings.SERVER['working_directory']
         try:
             return os.path.join(
-                root,
-                task.current.request.hostname,
+                WorkingDirectory.worker_path(task.current.request.hostname),
                 task.current.request.id)
         except AttributeError:
             raise RuntimeError(_('WorkingDirectory may only be used within a Task.'))
@@ -68,10 +102,11 @@ class WorkingDirectory:
             The absolute path to the directory.
 
         Raises:
-            RuntimeError: When used outside a Celery task.
+            FileNotFound: When path is not a directory.
         """
         self._path = path
-        assert os.path.isdir(path), _('{p} must be real directory'.format(p=path))
+        if not os.path.isdir(path):
+            raise FileNotFoundError('{p} must be a directory'.format(p=path))
 
     @property
     def path(self):

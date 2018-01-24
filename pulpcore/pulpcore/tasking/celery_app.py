@@ -20,7 +20,7 @@ from django.utils import timezone
 # of Django.
 from pulpcore.tasking.celery_instance import celery  # noqa
 from pulpcore.tasking.constants import TASKING_CONSTANTS
-from pulpcore.tasking.services import storage
+from pulpcore.tasking.services.storage import WorkingDirectory
 
 celery.autodiscover_tasks()
 
@@ -163,8 +163,13 @@ def initialize_worker(sender, instance, **kwargs):
     # Mark if present old instance of worker as offline
     mark_worker_offline(sender, normal_shutdown=True)
 
-    storage.delete_worker_working_directory(sender)
-    storage.create_worker_working_directory(sender)
+    # Delete (task) working directories previously created for this worker.
+    try:
+        working_dir = WorkingDirectory.for_worker(sender)
+    except FileNotFoundError:
+        pass
+    else:
+        working_dir.delete()
 
     if sender.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
         get_resource_manager_lock(sender)
