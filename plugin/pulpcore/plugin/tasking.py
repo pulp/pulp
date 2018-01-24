@@ -2,8 +2,14 @@ from pulpcore.app import models
 from pulpcore.exceptions import exception_to_dict
 from pulpcore.tasking.util import get_current_task_id
 
+# Support plugins creating Celery tasks.
+from pulpcore.tasking.tasks import UserFacingTask  # noqa
 
-class Task(object):
+# Support plugins working with the working directory.
+from pulpcore.tasking.services.storage import WorkingDirectory  # noqa
+
+
+class Task:
     """
     The task which is currently executing.
 
