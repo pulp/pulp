@@ -211,7 +211,8 @@ class TestDeleteWorker(ResourceReservationTests):
                                                       {'task_id': mock_task_id_b}]
         tasks._delete_worker('worker1')
 
-        self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])
+        self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a, revoke_task=False),
+                                           mock.call(mock_task_id_b, revoke_task=False)])
 
 
 class TestReleaseResource(unittest.TestCase):
