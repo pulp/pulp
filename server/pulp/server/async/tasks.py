@@ -270,7 +270,7 @@ def _delete_worker(name, normal_shutdown=False):
     # Cancel all of the tasks that were assigned to this worker's queue
     for task_status in TaskStatus.objects(worker_name=name,
                                           state__in=constants.CALL_INCOMPLETE_STATES):
-        cancel(task_status['task_id'])
+        cancel(task_status['task_id'], revoke_task=False)
 
 
 @task(base=PulpTask)
@@ -631,13 +631,17 @@ class Task(PulpTask, ReservedTaskMixin):
             self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
 
 
-def cancel(task_id):
+def cancel(task_id, revoke_task=True):
     """
     Cancel the task that is represented by the given task_id. This method cancels only the task
     with given task_id, not the spawned tasks. This also updates task's state to 'canceled'.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
+
+    :param revoke_task: Whether to perform a celery revoke() on the task in edition to cancelling
+                        Works around issue #2835 (https://pulp.plan.io/issues/2835)
+    :type  revoke_task: bool
 
     :raises MissingResource: if a task with given task_id does not exist
     :raises PulpCodedException: if given task is already in a complete state
@@ -662,7 +666,8 @@ def cancel(task_id):
         consumer_id = tag_dict.get(tags.RESOURCE_CONSUMER_TYPE)
         agent_manager.cancel_request(consumer_id, task_id)
     else:
-        controller.revoke(task_id, terminate=True)
+        if revoke_task:
+            controller.revoke(task_id, terminate=True)
 
     qs = TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES)
     qs.update_one(set__state=constants.CALL_CANCELED_STATE)
