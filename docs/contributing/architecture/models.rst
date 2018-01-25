@@ -53,11 +53,6 @@ An important feature of the current design is deduplication of
 See more details on how it affects importer implementation in :ref:`define-importer` section.
 
 
-Check ``pulp_example`` `implementation <https://github.com/pulp/pulp_example/>`_ to see how all
-those models are used in practice.
-More detailed explanation of model usage with references to ``pulp_example`` code is below.
-
-
 .. _define-content-type:
 
 

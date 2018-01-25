@@ -6,6 +6,12 @@ Python Version
 All Pulp 3+ code will use Python 3.5+. It is not necessary to maintain backwards compatibility
 with Python 2.Y.
 
+When introducing new dependencies to Pulp,
+ensure they support Python 3 (see http://fedora.portingdb.xyz/). If they do not,
+please file an issue in Redmine (related to https://pulp.plan.io/issues/2247) to
+track the conversion of the dependency to support Python 3 and begin working with
+upstream to convert the package.
+
 PEP-8
 -----
 All code should be compliant with PEP-8_ where reasonable.
@@ -112,5 +118,12 @@ Putting this all together, the following is an example of a good commit message:
 
     closes #1392
     https://pulp.plan.io/issues/1392
+
+Documentation
+-------------
+
+#TODO
+When writing Documentation...
+<link to language guide>
 
 
