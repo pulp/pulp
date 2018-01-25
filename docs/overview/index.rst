@@ -1,16 +1,13 @@
-# TODO(asmacdo) link to Workflows
-# TODO(asmacdo) link to architecture
+TODO:
+    After a concept is fully explained, link to related Workflows
 
-Definitions
-===========
+High Level Overview of Pulp Concepts
+====================================
 
-Purpose
--------
-
-This guide defines and explains Pulp terms and concepts. Before you contribute to the Pulp docs,
-please read through this guide and use the established language where possible. This document is
-designed to be comprehensive, and should be understandable to an anyone who is familiar with
-software management. This document favors clarity and accuracy over ease of reading.
+This document should communicate a high level overview of Pulp Concepts, introduce Pulp
+terminology. This document is designed to be comprehensive, and should be understandable to an
+anyone who is familiar with software management. This document favors clarity and accuracy over
+ease of reading.
 
 Notation
 --------
