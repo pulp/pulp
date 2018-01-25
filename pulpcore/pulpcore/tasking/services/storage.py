@@ -9,7 +9,9 @@ from django.conf import settings
 
 class WorkerDirectory:
     """
-    Celery worker directory.
+    The directory associated with a Celery worker.
+
+    Path format: <root>/<worker-hostname>
 
     Attributes:
         _path (str): The absolute path.
@@ -22,6 +24,8 @@ class WorkerDirectory:
     def _worker_path(hostname):
         """
         Get the root directory path for a worker by hostname.
+
+        Format: <root>/<worker-hostname>
 
         Args:
             hostname (str): The worker hostname.
@@ -54,7 +58,7 @@ class WorkerDirectory:
         """
         Create the directory.
 
-        The directory (tree) is deleted and recreated when already exist.
+        The directory is deleted and recreated when already exists.
         """
         def create():
             os.makedirs(self.path, mode=self.MODE)
@@ -66,7 +70,7 @@ class WorkerDirectory:
 
     def delete(self):
         """
-        Delete the directory (tree).
+        Delete the directory.
 
         On permission denied - an attempt is made to recursively fix the
         permissions on the tree and the delete is retried.
@@ -90,9 +94,21 @@ class WorkerDirectory:
         return self.path
 
 
-class TaskDirectory(WorkerDirectory):
+class WorkingDirectory(WorkerDirectory):
     """
-    Celery task directory.
+    Celery task working directory.
+
+    Path format: <worker-dir>/<task-id>
+
+    Examples:
+        >>>
+        >>> with WorkingDirectory() as working_dir:
+        >>>     # directory created.
+        >>>     # process CWD = working_dir.path.
+        >>>     ....
+        >>> # directory deleted.
+        >>> # process CWD restored.
+        >>>
     """
 
     @staticmethod
@@ -131,40 +147,6 @@ class TaskDirectory(WorkerDirectory):
         super().__init__(self._hostname())
         self._path = os.path.join(self._path, self._task_id())
 
-
-class WorkingDirectory:
-    """
-    Celery task working directory context manager.
-
-    Attributes:
-        _task_dir (TaskDirectory): A task directory.
-
-    Examples:
-        >>>
-        >>> with WorkingDirectory.create() as working_dir:
-        >>>     ....
-        >>>
-    """
-
-    @classmethod
-    def create(cls):
-        """
-        Create a task working directory.
-
-        Returns:
-            pulpcore.tasking.service.WorkingDirectory: self
-        """
-        task_dir = TaskDirectory()
-        task_dir.create()
-        return cls(task_dir)
-
-    def __init__(self, task_dir):
-        """
-        Args:
-            task_dir (TaskDirectory): A task directory.
-        """
-        self._task_dir = task_dir
-
     def __enter__(self):
         """
         Create the directory and set the CWD to the path.
@@ -175,8 +157,9 @@ class WorkingDirectory:
         Raises:
             OSError: On failure.
         """
+        self.create()
         self._prev_dir = os.getcwd()
-        os.chdir(self._task_dir.path)
+        os.chdir(self._path)
         return self
 
     def __exit__(self, *unused):
@@ -184,4 +167,4 @@ class WorkingDirectory:
         Delete the directory (tree) and restore the original CWD.
         """
         os.chdir(self._prev_dir)
-        self._task_dir.delete()
+        self.delete()

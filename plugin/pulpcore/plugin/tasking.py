@@ -15,7 +15,6 @@ class Task:
 
     Attributes:
         id (str): The task identifier.
-
     """
 
     def __init__(self):
