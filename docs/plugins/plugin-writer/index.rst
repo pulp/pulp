@@ -1,10 +1,7 @@
 Plugin Writer's Guide
 =====================
 
-# TODO(asmacdo) use file plugin instead
-Along with this guide `an example of plugin implementation
-<https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
-
+.
 .. toctree::
    :maxdepth: 2
    checklist
@@ -12,13 +9,6 @@ Along with this guide `an example of plugin implementation
    concepts
    releasing
    cli
-
-The Pulp :doc:`../plugin-api/index` is versioned separately from the Pulp Core and consists
-of everything importable within the :mod:`pulpcore.plugin` namespace. When writing plugins, care should
-be taken to only import Pulp Core components exposed in this namespace; importing from elsewhere
-within the Pulp Core (e.g. importing directly from ``pulpcore.app``, ``pulpcore.exceptions``, etc.)
-is unsupported, and not protected by the Pulp Plugin API's semantic versioning guarantees.
-
 .. warning::
 
     # TODO(asmacdo) Revise this

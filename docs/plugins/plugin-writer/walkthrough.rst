@@ -1,6 +1,11 @@
 Plugin Writing Walkthrough
 ==========================
 
+# TODO(asmacdo) use file plugin instead
+Along with this guide `an example of plugin implementation
+<https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
+.
+
 For a complete list of what should be done to have a working plugin, check :doc:`checklist`.
 In this section key parts of plugin implementation are covered in more detail to help you as
 a plugin writer to get started.
