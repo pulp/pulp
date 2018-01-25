@@ -7,71 +7,38 @@ from celery import task
 from django.conf import settings
 
 
-class WorkingDirectory:
+class WorkerDirectory:
     """
-    A context manager used to manage a Celery task's working directory.
+    Celery worker directory.
 
-    Examples:
-        >>>
-        >>> with WorkingDirectory.create() as working_dir:
-        >>>     ...
-        >>>
+    Attributes:
+        _path (str): The absolute path.
     """
 
     # Directory permissions.
     MODE = 0o700
 
-    @classmethod
-    def create(cls):
-        """
-        Create the directory on the Filesystem.
-
-        The directory (tree) is deleted and recreated when already exist.
-
-        Returns:
-            pulpcore.tasking.services.storage.WorkingDirectory: The created directory.
-        """
-        path = cls._build_path()
-        try:
-            os.makedirs(path, mode=cls.MODE)
-        except FileExistsError:
-            _dir = cls(path)
-            _dir.delete()
-            os.makedirs(path, mode=cls.MODE)
-            return _dir
-        else:
-            return cls(path)
-
     @staticmethod
-    def _build_path():
+    def _worker_path(hostname):
         """
-        Build the directory path using format: <root>/<worker-name>/<task_id>
+        Get the root directory path for a worker by hostname.
+
+        Args:
+            hostname (str): The worker hostname.
 
         Returns:
-            str: The absolute directory path.
-
-        Raises:
-            RuntimeError: When used outside a Celery task.
+            str: The absolute path to a worker's root directory.
         """
         root = settings.SERVER['working_directory']
-        try:
-            return os.path.join(
-                root,
-                task.current.request.hostname,
-                task.current.request.id)
-        except AttributeError:
-            raise RuntimeError(_('WorkingDirectory may only be used within a Task.'))
+        path = os.path.join(root, hostname)
+        return path
 
-    def __init__(self, path):
+    def __init__(self, hostname):
         """
         Args:
-            The absolute path to the directory.
-
-        Raises:
-            RuntimeError: When used outside a Celery task.
+            hostname (str): The worker hostname.
         """
-        self._path = path
-        assert os.path.isdir(path), _('{p} must be real directory'.format(p=path))
+        self._path = self._worker_path(hostname)
 
     @property
     def path(self):
@@ -83,6 +50,20 @@ class WorkingDirectory:
         """
         return self._path
 
+    def create(self):
+        """
+        Create the directory.
+
+        The directory (tree) is deleted and recreated when already exist.
+        """
+        def create():
+            os.makedirs(self.path, mode=self.MODE)
+        try:
+            create()
+        except FileExistsError:
+            self.delete()
+            create()
+
     def delete(self):
         """
         Delete the directory (tree).
@@ -92,6 +73,8 @@ class WorkingDirectory:
         """
         try:
             shutil.rmtree(self.path)
+        except FileNotFoundError:
+            pass
         except PermissionError:
             self._set_permissions()
             self.delete()
@@ -103,18 +86,97 @@ class WorkingDirectory:
         for path in os.walk(self.path):
             os.chmod(path[0], mode=self.MODE)
 
+    def __str__(self):
+        return self.path
+
+
+class TaskDirectory(WorkerDirectory):
+    """
+    Celery task directory.
+    """
+
+    @staticmethod
+    def _hostname():
+        """
+        The worker hostname.
+
+        Returns:
+            str: The worker hostname.
+
+        Raises:
+            RuntimeError: When used outside of a celery task.
+        """
+        try:
+            return task.current.request.hostname
+        except AttributeError:
+            raise RuntimeError(_('May only be used within a Task.'))
+
+    @staticmethod
+    def _task_id():
+        """
+        The current task ID.
+
+        Returns:
+            str: The current task ID.
+
+        Raises:
+            RuntimeError: When used outside of a celery task.
+        """
+        try:
+            return task.current.request.id
+        except AttributeError:
+            raise RuntimeError(_('May only be used within a Task.'))
+
+    def __init__(self):
+        super().__init__(self._hostname())
+        self._path = os.path.join(self._path, self._task_id())
+
+
+class WorkingDirectory:
+    """
+    Celery task working directory context manager.
+
+    Attributes:
+        _task_dir (TaskDirectory): A task directory.
+
+    Examples:
+        >>>
+        >>> with WorkingDirectory.create() as working_dir:
+        >>>     ....
+        >>>
+    """
+
+    @classmethod
+    def create(cls):
+        """
+        Create a task working directory.
+
+        Returns:
+            pulpcore.tasking.service.WorkingDirectory: self
+        """
+        task_dir = TaskDirectory()
+        task_dir.create()
+        return cls(task_dir)
+
+    def __init__(self, task_dir):
+        """
+        Args:
+            task_dir (TaskDirectory): A task directory.
+        """
+        self._task_dir = task_dir
+
     def __enter__(self):
         """
         Create the directory and set the CWD to the path.
 
         Returns:
-            WorkingDirectory: self
+            pulpcore.tasking.service.WorkingDirectory: self
 
         Raises:
             OSError: On failure.
         """
         self._prev_dir = os.getcwd()
-        os.chdir(self.path)
+        os.chdir(self._task_dir.path)
         return self
 
     def __exit__(self, *unused):
@@ -122,7 +184,4 @@ class WorkingDirectory:
         Delete the directory (tree) and restore the original CWD.
         """
         os.chdir(self._prev_dir)
-        self.delete()
-
-    def __str__(self):
-        return self.path
+        self._task_dir.delete()
