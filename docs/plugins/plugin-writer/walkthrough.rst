@@ -1,69 +1,19 @@
-Writing Your First Plugin
-=========================
+Plugin Writing Walkthrough
+==========================
 
 For a complete list of what should be done to have a working plugin, check :doc:`checklist`.
 In this section key parts of plugin implementation are covered in more detail to help you as
 a plugin writer to get started.
 
 In addition, `the Plugin template <https://github.com/pulp/plugin_template>`_ can be used to help
-with plugin layout and stubs for necessary classes.
+with plugin layout and stubs for necessary classes. This guide assumes that you have used the
+template to bootstrap your plugin.
+
+# TODO(asmacdo) Write here a walkthrough of implementing the models
+# TODO(asmacdo) Instruct plugin writer to read models.rst in contributor docs
 
 .. _understanding-models:
 
-Understanding models
---------------------
-There are models which are expected to be used in plugin implementation, so understanding what they
-are designed for is useful for a plugin writer. Each model below has a link to its documentation
-where its purpose, all attributes and relations are listed.
-
-Here is a gist of how models are related to each other and what each model is responsible for.
-
-* :class:`~pulpcore.app.models.Repository` contains :class:`~pulpcore.plugin.models.Content`.
-  :class:`~pulpcore.plugin.models.RepositoryContent` is used to represent this relation.
-* :class:`~pulpcore.plugin.models.Content` can have :class:`~pulpcore.plugin.models.Artifact`
-  associated with it. :class:`~pulpcore.plugin.models.ContentArtifact` is used to represent this
-  relation.
-* :class:`~pulpcore.plugin.models.ContentArtifact` can have
-  :class:`~pulpcore.plugin.models.RemoteArtifact` associated with it.
-* :class:`~pulpcore.plugin.models.Artifact` is a file.
-* :class:`~pulpcore.plugin.models.RemoteArtifact` contains information about
-  :class:`~pulpcore.plugin.models.Artifact` from a remote source, including URL to perform
-  download later at any point.
-* :class:`~pulpcore.plugin.models.Importer` knows specifics of the plugin
-  :class:`~pulpcore.plugin.models.Content` to put it into Pulp.
-  :class:`~pulpcore.plugin.models.Importer` defines how to synchronize remote content. Pulp
-  Platform provides support for concurrent  :ref:`downloading <download-docs>` of remote content.
-  Plugin writer is encouraged to use one of them but is not required to.
-* :class:`~pulpcore.plugin.models.PublishedArtifact` refers to
-  :class:`~pulpcore.plugin.models.ContentArtifact` which is published and belongs to a certain
-  :class:`~pulpcore.app.models.Publication`.
-* :class:`~pulpcore.plugin.models.PublishedMetadata` is a repository metadata which is published,
-  located in ``/var/lib/pulp/published`` and belongs to a certain
-  :class:`~pulpcore.app.models.Publication`.
-* :class:`~pulpcore.plugin.models.Publisher` knows specifics of the plugin
-  :class:`~pulpcore.plugin.models.Content` to make it available outside of Pulp.
-  :class:`~pulpcore.plugin.models.Publisher` defines how to publish content available in Pulp.
-* :class:`~pulpcore.app.models.Publication` is a result of publish operation of a specific
-  :class:`~pulpcore.plugin.models.Publisher`.
-* :class:`~pulpcore.app.models.Distribution` defines how a publication is distributed for a specific
-  :class:`~pulpcore.plugin.models.Publisher`.
-* :class:`~pulpcore.plugin.models.ProgressBar` is used to report progress of the task.
-
-
-An important feature of the current design is deduplication of
-:class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact` data.
-:class:`~pulpcore.plugin.models.Content` is shared between :class:`~pulpcore.app.models.Repository`,
-:class:`~pulpcore.plugin.models.Artifact` is shared between
-:class:`~pulpcore.plugin.models.Content`.
-See more details on how it affects importer implementation in :ref:`define-importer` section.
-
-
-Check ``pulp_example`` `implementation <https://github.com/pulp/pulp_example/>`_ to see how all
-those models are used in practice.
-More detailed explanation of model usage with references to ``pulp_example`` code is below.
-
-
-.. _define-content-type:
 
 Define your plugin Content type
 -------------------------------
@@ -101,14 +51,54 @@ To define a new importer, e.g. ``ExampleImporter``:
 * :class:`pulpcore.plugin.models.Importer` should be subclassed and extended with additional
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
-* ``sync`` method should be defined on a plugin importer model ``ExampleImporter``,
 * create a serializer for your new importer as a subclass of
   :class:`pulpcore.plugin.serializers.ImporterSerializer`,
 * create a viewset for your new importer as a subclass of
   :class:`pulpcore.plugin.viewsets.ImporterViewSet`.
 
-:class:`~pulpcore.plugin.models.Importer` model should not be used directly anywhere in plugin code.
-Only plugin-defined Importer classes are expected to be used.
+:class:`~pulpcore.plugin.models.Importer` model should not be used directly anywhere in plugin
+code, except as the parent class to the plugin importer. Only plugin-defined Importer classes are
+expected to be used.
+
+There are several important aspects relevant to importer implementation which were briefly mentioned
+# TODO(asmacdo) update to models.rst
+in the :ref:`understanding-models` section:
+
+# TODO(asmacdo) responsibility of changeset?
+# TODO(asmacdo) I think this whole section should be removed, and placed in a separate guide for
+updating content without ChangeSets.
+* due to deduplication of :class:`~pulpcore.plugin.models.Content` and
+  :class:`~pulpcore.plugin.models.Artifact` data, the importer needs to
+  fetch and use them when they already exist.
+* :class:`~pulpcore.plugin.models.ContentArtifact` associates
+  :class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact`. If
+  :class:`~pulpcore.plugin.models.Artifact` is not downloaded yet,
+  :class:`~pulpcore.plugin.models.ContentArtifact` contains ``NULL`` value for
+  :attr:`~pulpcore.plugin.models.ContentArtifact.artifact`. It should be updated whenever
+  corresponding :class:`~pulpcore.plugin.models.Artifact` is downloaded.
+# TODO(asmacdo) </end removable section>
+
+# TODO(mention the low level docs section, but introduce changeset as "the way"
+The importer implementation suggestion above allows plugin writer to have an understanding and
+control at a low level.
+The plugin API has a higher level, more simplified, API which introduces the concept of
+:class:`~pulpcore.plugin.changeset.ChangeSet`.
+It allows plugin writer:
+
+* to specify a set of changes (which :class:`~pulpcore.plugin.models.Content` to add or to remove)
+  to be made to a repository
+* apply those changes (add to a repository, remove from a repository, download files if needed)
+
+Check :ref:`documentation and detailed examples <changeset-docs>` for the
+:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py#L72-L224>`_ which uses it.
+
+.. _define-publisher:
+
+Define your sync task
+---------------------
+# TODO(asmacdo)
+* ``sync`` method should be defined on a plugin importer model ``ExampleImporter``,
 
 One of the ways to perform synchronization:
 
@@ -148,34 +138,6 @@ One of the ways to perform synchronization:
 * Use :class:`~pulpcore.plugin.models.ProgressBar` to report the progress of some steps if needed.
 
 
-There are several important aspects relevant to importer implementation which were briefly mentioned
-in the :ref:`understanding-models` section:
-
-* due to deduplication of :class:`~pulpcore.plugin.models.Content` and
-  :class:`~pulpcore.plugin.models.Artifact` data, they may already exist and the importer needs to
-  fetch and use them when they do.
-* :class:`~pulpcore.plugin.models.ContentArtifact` associates
-  :class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact`. If
-  :class:`~pulpcore.plugin.models.Artifact` is not downloaded yet,
-  :class:`~pulpcore.plugin.models.ContentArtifact` contains ``NULL`` value for
-  :attr:`~pulpcore.plugin.models.ContentArtifact.artifact`. It should be updated whenever
-  corresponding :class:`~pulpcore.plugin.models.Artifact` is downloaded.
-
-The importer implementation suggestion above allows plugin writer to have an understanding and
-control at a low level.
-The plugin API has a higher level, more simplified, API which introduces the concept of
-:class:`~pulpcore.plugin.changeset.ChangeSet`.
-It allows plugin writer:
-
-* to specify a set of changes (which :class:`~pulpcore.plugin.models.Content` to add or to remove)
-  to be made to a repository
-* apply those changes (add to a repository, remove from a repository, download files if needed)
-
-Check :ref:`documentation and detailed examples <changeset-docs>` for the
-:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
-<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py#L72-L224>`_ which uses it.
-
-.. _define-publisher:
 
 Define your plugin Publisher
 ----------------------------
@@ -185,7 +147,6 @@ To define a new publisher, e.g. ``ExamplePublisher``:
 * :class:`pulpcore.plugin.models.Publisher` should be subclassed and extended with additional
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
-* ``publish`` method should be defined on a plugin publisher model ``ExamplePublisher``,
 * create a serializer for your new publisher a subclass of
   :class:`pulpcore.plugin.serializers.PublisherSerializer`,
 * create a viewset for your new publisher as a subclass of
@@ -194,6 +155,13 @@ To define a new publisher, e.g. ``ExamplePublisher``:
 :class:`~pulpcore.plugin.models.Publisher` model should not be used directly anywhere in plugin
 code. Only plugin-defined Publisher classes are expected to be used.
 
+# TODO(asmacdo) change to pulp_file
+Check ``pulp_example`` implementation of `the ExamplePublisher
+<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L117-L181>`_.
+
+Define your publish task
+------------------------
+# TODO(asmacdo)
 One of the ways to perform publishing:
 
 * Find :class:`~pulpcore.plugin.models.ContentArtifact` objects which should be published
@@ -206,5 +174,3 @@ One of the ways to perform publishing:
   :class:`~pulpcore.app.models.Publication` to which this metadata belongs.
 * Use :class:`~pulpcore.plugin.models.ProgressBar` to report progress of some steps if needed.
 
-Check ``pulp_example`` implementation of `the ExamplePublisher
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L117-L181>`_.

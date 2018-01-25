@@ -1,18 +1,37 @@
 Plugins
 =======
 
-Plugins add support for a type of content to Pulp. 
+Plugins add support for a type of content to Pulp.
 For example, the File plugin adds support for Pulp to manage files.
-
-All known Pulp plugins are listed below.
-If you are interested in writing your own plugin, those docs will help you:
 
 .. toctree::
    :maxdepth: 1
-   
-   plugin-api/index
-   plugin-writer/index 
 
+   plugin-api/index
+   plugin-writer/index
+
+
+What plugins do
+---------------
+
+ * :ref:`Plugin django app is defined using PulpAppConfig as a parent <plugin-django-application>`
+ * :ref:`Plugin entry point is defined <plugin-entry-point>`
+ * `pulpcore-plugin is specified as a requirement <https://github.com/pulp/pulp_example/blob/master/setup.py#L6>`_
+ * Necessary models/serializers/viewsets are :ref:`defined <subclassing-platform-models>` and :ref:`discoverable <model-serializer-viewset-discovery>`. At a minimum:
+
+   * models for plugin content type, importer, publisher
+   * serializers for plugin content type, importer, publisher
+   * viewsets for plugin content type, importer, publisher
+   * tasks for sync, publish
+
+ * :ref:`Errors are handled according to Pulp conventions <error-handling-basics>`
+ * Docs for plugin are available (any location and format preferred and provided by plugin writer)
+
+Available Plugins
+-----------------
+
+All known Pulp plugins are listed below.
+If you are interested in writing your own plugin, those docs will help you:
 And don't hesitate to :doc:`contact us <../troubleshooting/index>` with any questions during development.
 Let us know when the plugin is ready and we will be happy to add it to the list of available plugins for Pulp!
 
@@ -29,7 +48,7 @@ Let us know when the plugin is ready and we will be happy to add it to the list 
      - Install with PyPI
      - Install with RPM
 
-   * - File 
+   * - File
      - `File plug-in docs <https://github.com/pulp/pulp_file/blob/master/README.rst>`_
      - `File plug-in source <https://github.com/pulp/pulp_file>`_
      - `File plug-in tracker <https://pulp.plan.io/projects/pulp_file?jump=welcome>`_

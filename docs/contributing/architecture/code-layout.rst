@@ -1,5 +1,5 @@
-Pulp Platform Application Layout
-================================
+Pulp Core Architecture
+======================
 
 This documentation is for Pulp Platform developers. For Plugin development,
 see the :doc:`../../plugins/plugin-writer/index`.

@@ -1,3 +1,6 @@
+Common Problems
+===============
+
 Troubleshooting
 ===============
 

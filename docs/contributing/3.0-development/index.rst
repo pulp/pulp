@@ -1,3 +1,4 @@
+TODO(asmacdo) move all 3.0-dev to contrib or wiki
 .. warning::
     All documents within the 3.0-Development section should be considered temporary, and will be
     removed or relocated prior to the release of Pulp 3.0.

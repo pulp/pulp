@@ -12,9 +12,9 @@ the Master/Detail relationship).
 Our API starts at a :term:`DRF` :term:`Router`. Each :term:`ViewSet` is attached to this
 router, and the router's routes are exposed in urls.py. Subclasses of
 :class:`pulp.app.viewsets.base.NamedModelViewSet` are automatically registered with the API router,
-and most (possibly all) ViewSets created by plugins should be subclasses of this base class.
-NamedModelViewSets are associated with a Django queryset, a :term:`Serializer` that is able to
-represent members of the Django queryset in the API, and an endpoint name used when registering
+and all ViewSets created by plugins should be subclasses of this base class. NamedModelViewSets are
+associated with a Django queryset, a :term:`Serializer` that is able to represent members of the
+Django queryset in the API, and an endpoint name used when registering
 the ViewSet with the API router.
 
 All models exposed via the API must have a corresponding Serializer. Each NamedModelViewSet must
@@ -54,7 +54,7 @@ When creating API components, consider these guidelines:
   should plural, not singular (e.g. /api/v3/repositories/, not /api/v3/repository/).
 
 * DRF supports natural keys on models in ModelViewSets with the "lookup_field" class attribute, but
-  only if the natural key is derived from a single field (e.g. ``Repository.name``). For natural
+  only if the natural key is derived from a single field. For nested urls where the natural
   keys made up of multiple fields, a custom Viewset and Serializer are required. The custom ViewSet
   ensures that the correct URL endpoints are created, and that a model instance can be returned for
   a given natural key. The custom Serializer (and any necessary related serializer fields), at a
@@ -221,6 +221,7 @@ for a ModelSerializer, either instantiate it in an interpreter, or capture the o
 and output it explicitly.
 
 
+# TODO(asmacdo) start review/update here
 Master/Detail Relationships Overview
 ------------------------------------
 

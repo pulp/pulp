@@ -10,8 +10,9 @@ PEP-8
 -----
 All code should be compliant with PEP-8_ where reasonable.
 
-It is recommended that contributors check for compliance by running flake8_. We include
-``flake8.cfg`` files in our git repositories for convenience.
+We include ``flake8.cfg`` files in our git repositories for convenience. Additionally, pull
+requests are checked using ``pep8speaks``, which must pass before changes are merged.  It is
+recommended that contributors check for compliance by running flake8_.
 
 .. _PEP-8: https://www.python.org/dev/peps/pep-0008
 .. _flake8: http://flake8.pycqa.org/en/latest/
@@ -33,6 +34,7 @@ Exceptions and Clarifications
 #. Modules should not include license information.
 #. The type of each Args value should be included after the variable name in parentheses. The type of each Returns value should be the first item on the line.
 #. Following the type of Args and Returns values, there will be a colon and a single space followed by the description. Additional spaces should not be used to align types and descriptions.
+#. When referencing imported code, types should be fully qualified
 #. Fields and Relations sections will be used when documenting fields on Django models. The Fields section will be used for non-related fields on Model classes. The Relations section will be used for related fields on Model classes.
 
 Auto-Documentation
@@ -55,6 +57,8 @@ Example Docstring
         Args:
             arg1 (str): The argument is visible, and its type is clearly indicated.
             much_longer_argument (str): Types and descriptions are not aligned.
+            imported_object_type (fully.qualified.import.path): Fully qualified types are helpful.
+                If the explanation goes longer than one line, indent 4 spaces.
 
         Returns:
             bool: The return value and type is very clearly visible.
@@ -63,21 +67,50 @@ Example Docstring
 
 Encoding
 --------
-Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the 
+Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the
 file.
 
 .. _error-handling:
 
-Error Handling
---------------
 
-Errors in Tasks
-***************
+Commit Messages
+---------------
 
-All uncaught exceptions in a task are treated as fatal exceptions. The task is then marked as
-failed. The error traceback, description, and code are returned to the user under the
-:attr:`~pulpcore.app.models.Task.error` attribute of the :class:`~pulpcore.app.models.Task`
-object.
+Commit messages in Pulp should contain a human readable explanation of what
+was fixed in the commit. They should also follow the standard git message
+format of starting with a subject line or title (usually wrapped at about 50
+chars) and optionally, a longer message (usually wrapped at 72 characters)
+broken up into paragraphs. For more on what constitutes a good commit message,
+we recommend `Tim Pope's blog post on the subject
+<http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html>`_.
 
-When raising exceptions `built-in Python Exceptions <https://docs.python.org/3/library/exceptions.html>`_
-should be used if possible. :doc:`Coded Exceptions <./platform_api/exceptions>` should be used for known error situations.
+It's also recommended that every commit message in Pulp reference an issue in
+`Pulp's Redmine issue tracker <https://pulp.plan.io>`_. To do this you should
+use both a keyword and a link to the issue.
+
+To reference the issue (but not change its state), use ``re`` or ``ref``::
+
+    re #123
+    ref #123
+
+To update the issue's state to MODIFIED and set the %done to 100, use
+``fixes`` or ``closes``::
+
+    fixes #123
+    closes #123
+
+You can also reference multiple issues in a commit::
+
+    fixes #123, #124
+
+Putting this all together, the following is an example of a good commit message::
+
+    Update node install and quickstart
+
+    The nodes install and quickstart was leaving out an important step on
+    the child node to configure the server.conf on the child node.
+
+    closes #1392
+    https://pulp.plan.io/issues/1392
+
+
