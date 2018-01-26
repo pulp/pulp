@@ -1,27 +1,88 @@
 Plugin Writing Walkthrough
 ==========================
 
-# TODO(asmacdo) use file plugin instead
-Along with this guide `an example of plugin implementation
-<https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
-.
+Boilerplate
+-----------
 
-For a complete list of what should be done to have a working plugin, check :doc:`checklist`.
-In this section key parts of plugin implementation are covered in more detail to help you as
-a plugin writer to get started.
+Plugins are Django apps that are discoverable by the ``pulpcore`` `Django app
+<plugin-django-application>` using `entry points. <plugin-entry-point>`. `pulpcore-plugin is
+specified as a requirement. <https://github.com/pulp/pulp_example/blob/master/setup.py#L6>`_
+Plugins use tools and parent classes that are available in the TODO(linkto, pluginapi).
 
-In addition, `the Plugin template <https://github.com/pulp/plugin_template>`_ can be used to help
-with plugin layout and stubs for necessary classes. This guide assumes that you have used the
-template to bootstrap your plugin.
+Plugins are required to :ref:`implement subclasses<subclassing-platform-models>` for models,
+serializers, viewsets which are :ref:`discoverable <model-serializer-viewset-discovery>`.
 
-# TODO(asmacdo) Write here a walkthrough of implementing the models
-# TODO(asmacdo) Instruct plugin writer to read models.rst in contributor docs
+`A simple plugin implementation
+<https://github.com/pulp/pulp_file/>`_, ``pulp_file``, is provided.
 
-.. _understanding-models:
+Checklist
+---------
 
+A complete Pulp plugin will do all of the following:
+
+* Plugin django app is defined using PulpAppConfig as a parent
+* Plugin entry point is defined
+* pulpcore-plugin is specified as a requirement
+* Necessary models/serializers/viewsets are defined and discoverable. At a minimum:
+** models for plugin content type, importer, publisher
+** serializers for plugin content type, importer, publisher
+** viewset for plugin content type, importer, publisher
+* Actions are defined:
+** sync
+** publish
+* Errors are handled according to Pulp conventions
+* Docs for plugin are available (any location and format preferred and provided by plugin writer).
+
+Recommended Reading
+-------------------
+
+Before you get started, it is recommended that you familiarize yourself with the Pulp concepts.
+TODO(link, overview). It is also encouraged to read the TODO(link, styleguide).
+
+We provide a developer environment specifically designed for writing plugins. Please see
+TODO(link, dev-setup/plugin-writer-install).
+
+As you develop your plugin, the following documents may be especially helpful:
+* TODO(link, architecture/code-layout)
+* TODO(link, architecture/models)
+* TODO(link, architecture/error-handling)
+* TODO(link, architecutre/dependencies)
+* TODO(link, glossary)
+* TODO(link, bugs-features)
+
+Plugin Template
+---------------
+
+We provide a `Plugin template <https://github.com/pulp/plugin_template>`_ that is used to generate
+a bootstraped plugin. Use the `README
+<https://github.com/pulp/plugin_template/blob/master/README.rst>`_ to get started. This guide
+assumes that you have used the template.
+
+The template will create a best-guess implementation of each step. It is recommended that a plugin
+writer follow along and ensure that each step is correct and complete.
+
+.. _confirm-discoverable:
+
+Confirm Discoverability
+***********************
+
+The result of using the plugin template should already be discoverable by ``pulpcore``. To test
+this,
+
+TODO(asmacdo, does this work?)
+# Start the server
+# runserver --noreload
+# Make an API call TODO(link, httpie)
+http http://pulp3.dev:8000/api/v3/status/
+
+If your plugin is discoverable, it will be listed in the respoonse.
+
+
+.. _define-content-type:
 
 Define your plugin Content type
--------------------------------
+*******************************
+
 
 To define a new content type(s), e.g. ``ExampleContent``:
 
@@ -38,6 +99,11 @@ To define a new content type(s), e.g. ``ExampleContent``:
 :class:`~pulpcore.plugin.models.Content` model should not be used directly anywhere in plugin code.
 Only plugin-defined Content classes are expected to be used.
 
+To make sure all of this is working, you should have a new API endpoint available
+
+  $ http http://pulp3.dev:8000/content/example/
+
+# TODO(asmacdo) update to pulp_file
 Check ``pulp_example`` implementation of `the ExampleContent
 <https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L87-L114>`_ and its
 `serializer <https://github.com/pulp/pulp_example/blob/master/pulp_example/app/serializers.py#L7-L13>`_
@@ -66,83 +132,36 @@ code, except as the parent class to the plugin importer. Only plugin-defined Imp
 expected to be used.
 
 There are several important aspects relevant to importer implementation which were briefly mentioned
-# TODO(asmacdo) update to models.rst
+# TODO(asmacdo) where is this now?
 in the :ref:`understanding-models` section:
 
-# TODO(asmacdo) responsibility of changeset?
-# TODO(asmacdo) I think this whole section should be removed, and placed in a separate guide for
-updating content without ChangeSets.
-* due to deduplication of :class:`~pulpcore.plugin.models.Content` and
-  :class:`~pulpcore.plugin.models.Artifact` data, the importer needs to
-  fetch and use them when they already exist.
-* :class:`~pulpcore.plugin.models.ContentArtifact` associates
-  :class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact`. If
-  :class:`~pulpcore.plugin.models.Artifact` is not downloaded yet,
-  :class:`~pulpcore.plugin.models.ContentArtifact` contains ``NULL`` value for
-  :attr:`~pulpcore.plugin.models.ContentArtifact.artifact`. It should be updated whenever
-  corresponding :class:`~pulpcore.plugin.models.Artifact` is downloaded.
-# TODO(asmacdo) </end removable section>
-
-# TODO(mention the low level docs section, but introduce changeset as "the way"
-The importer implementation suggestion above allows plugin writer to have an understanding and
-control at a low level.
-The plugin API has a higher level, more simplified, API which introduces the concept of
-:class:`~pulpcore.plugin.changeset.ChangeSet`.
-It allows plugin writer:
-
-* to specify a set of changes (which :class:`~pulpcore.plugin.models.Content` to add or to remove)
-  to be made to a repository
-* apply those changes (add to a repository, remove from a repository, download files if needed)
-
-Check :ref:`documentation and detailed examples <changeset-docs>` for the
-:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
-<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py#L72-L224>`_ which uses it.
-
-.. _define-publisher:
+.. _define-sync-:
 
 Define your sync task
 ---------------------
 # TODO(asmacdo)
 * ``sync`` method should be defined on a plugin importer model ``ExampleImporter``,
 
-One of the ways to perform synchronization:
+Plugin Responsibilities for Synchronization:
 
 * Download and analyze repository metadata from a remote source.
 * Decide what needs to be added to repository or removed from it.
-* Associate already existing content to a repository by creating an instance of
-  :class:`~pulpcore.plugin.models.RepositoryContent` and saving it.
-* Remove :class:`~pulpcore.plugin.models.RepositoryContent` objects which were identified for
-  removal.
-* For every content which should be added to Pulp create but do not save yet:
+** For each item that needs to be added:
+*** Create an instance of ``ExampleContent``
+*** Create an instance (or instances if necessary) of :class:`~pulpcore.plugin.models.Artifact`
+*** Use PendingArtifact and PendingContent to update the database.
+** Get each ContentUnit to remove from the database.
 
-  * instance of ``ExampleContent`` which will be later associated to a repository.
-  * instance of :class:`~pulpcore.plugin.models.ContentArtifact` to be able to create relations with
-    the artifact models.
-  * instance of :class:`~pulpcore.plugin.models.RemoteArtifact` to store information about artifact
-    from remote source and to make a relation with :class:`~pulpcore.plugin.models.ContentArtifact`
-    created before.
-
-* If a remote content should be downloaded right away (aka ``immediate`` download policy), use
-  the suggested  :ref:`downloading <download-docs>` solution. If content should be downloaded
-  later (aka ``on_demand`` or ``background`` download policy), feel free to skip this step.
-* Save all artifact and content data in one transaction:
-
-  * in case of downloaded content, create an instance of
-    :class:`~pulpcore.plugin.models .Artifact`. Set the `file` field to the
-    absolute path of the downloaded file. Pulp will move the file into place
-    when the Artifact is saved. The Artifact refers to a downloaded file on a
-    filesystem and contains calculated checksums for it.
-  * in case of downloaded content, update the :class:`~pulpcore.plugin.models.ContentArtifact` with
-    a reference to the created :class:`~pulpcore.plugin.models.Artifact`.
-  * create and save an instance of the :class:`~pulpcore.plugin.models.RepositoryContent` to
-    associate the content to a repository.
-  * save all created artifacts and content: ``ExampleContent``,
-    :class:`~pulpcore.plugin.models.ContentArtifact`,
-    :class:`~pulpcore.plugin.models.RemoteArtifact`.
-
-* Use :class:`~pulpcore.plugin.models.ProgressBar` to report the progress of some steps if needed.
+Sync should use the following tools to interact with ``pulpcore``:
+* pulpcore.plugin.tasking.WorkingDirectory to write to the file system
+* pulpcore.plugin.facades.RepositoryVersion to safely create a new RepositoryVersion TODO(link,
+  plugin-api/RepositoryVersion)
+* :class:`~pulpcore.plugin.changeset.ChangeSet` to `add/remove content to a RepositoryVersions <changeset-docs>`
+* :class:`~pulpcore.plugin.models.ProgressBar` to report the progress. TODO(link,
+  pluginapi/progress bar
 
 
+.. _define-publisher:
 
 Define your plugin Publisher
 ----------------------------
@@ -163,6 +182,8 @@ code. Only plugin-defined Publisher classes are expected to be used.
 # TODO(asmacdo) change to pulp_file
 Check ``pulp_example`` implementation of `the ExamplePublisher
 <https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L117-L181>`_.
+
+.. _define-publish-task:
 
 Define your publish task
 ------------------------
