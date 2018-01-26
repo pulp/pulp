@@ -1,31 +1,25 @@
 Contributing Guide
 ==================
 
-Why you should contribute to Pulp
----------------------------------
+STUB(Invitation to contribute)
 
-TODO(stub)
+Write a bug or request a feature
+   TODO(link) /bugs-features
 
-Types of Contributions
-----------------------
+Write a plugin
+   TODO link plugin writer index
+
+Help other users or chat with us:
+   TODO link troubleshooting/get-help
 
 .. toctree::
-   :maxdepth: 2
+   :titlesonly:
 
-   /bugs-features
+   style guide <style_guide>
+   dev-setup/index
    pull-request-walkthrough
-   /plugins/plugin-writer/index
-
-# TODO(link to get-help)
-We also encourage users to offer help to each other, and ask questions.
-
-In Depth
---------
-
-.. toctree::
-   :maxdepth: 2
-
    architecture/index
    internal/index
    platform_api/index
-   style_guide/index
+
+

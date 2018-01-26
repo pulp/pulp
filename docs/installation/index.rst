@@ -8,4 +8,6 @@ Installation Guide
    configuration-files
    distributed-installation
    migration
-   dev-setup/index
+
+If you are a contributor or plugin writer, please see our developer setup.
+   TODO(link) /contributing/dev-setup/index
