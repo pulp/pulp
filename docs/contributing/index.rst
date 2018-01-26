@@ -6,13 +6,19 @@ Why you should contribute to Pulp
 
 Types of Contributions
 ----------------------
-   bug/feature requests + link to <bug/feature guide>
-   submit a patch <link to contributing/pull-request-walkthrough>
-   write a plugin <link to plugins/plugin-writer.index>
 
-   Help the community:
-      IRC (list channels)
-      Mailing list <mailto:>
+.. toctree::
+   :maxdepth: 2
+
+   /bugs-features
+   pull-request-walkthrough
+   /plugins/plugin-writer/index
+
+We also encourage users to offer help to each other, and ask questions:
+   _`getting-help`
+
+In Depth
+--------
 
 .. toctree::
    :maxdepth: 2

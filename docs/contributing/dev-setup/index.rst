@@ -15,3 +15,4 @@ To ease developer setup, we have Ansible roles, playbooks and a Vagrantfile in o
    quickstart
    source
    ansible
+   plugin-writer-install

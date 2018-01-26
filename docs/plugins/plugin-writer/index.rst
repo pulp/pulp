@@ -1,10 +1,10 @@
 Plugin Writer's Guide
 =====================
 
-.
+
 .. toctree::
    :maxdepth: 2
-   checklist
+
    walkthrough
    concepts
    releasing

@@ -1,19 +1,13 @@
-Common Problems
-===============
-
 Troubleshooting
 ===============
 
-Common problems and how to identify and deal with them can be found here,
-as well as how to file a bug if your issue was not covered.
+If you have discovered a bug or want to request a feature, please use our TODO(link, bugs-features).
 
-.. toctree::
-   :maxdepth: 2
 
-   common-problems
-   file-bug
+Get Help
+--------
 
-In case of any questions feel free to reach out to Pulp community and developers via mailing list or IRC.
+Feel free to reach out to Pulp community and developers via mailing list or IRC.
 
 * Usage discussions
 
@@ -24,3 +18,10 @@ In case of any questions feel free to reach out to Pulp community and developers
 
   * pulp-dev@redhat.com
   * #pulp-dev channel on Freenode
+
+* Ask a question on StackOverflow with the ``pulpcore`` tag.
+
+Common Problems
+---------------
+
+STUB

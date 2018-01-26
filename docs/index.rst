@@ -4,11 +4,13 @@ Pulp Documentation
    :maxdepth: 2
 
    installation/index
+   overview/index
    workflows/index
    cli_guide/index
+   plugins/index
    integration_guide/index
    contributing/index
-   plugins/index
    release_notes/index
-   troubleshooting/index
+   troubleshooting
+   bugs-features
    glossary

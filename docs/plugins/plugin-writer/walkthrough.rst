@@ -9,8 +9,9 @@ Plugins are Django apps that are discoverable by the ``pulpcore`` `Django app
 specified as a requirement. <https://github.com/pulp/pulp_example/blob/master/setup.py#L6>`_
 Plugins use tools and parent classes that are available in the TODO(linkto, pluginapi).
 
-Plugins are required to :ref:`implement subclasses<subclassing-platform-models>` for models,
-serializers, viewsets which are :ref:`discoverable <model-serializer-viewset-discovery>`.
+TODO(where are these?)
+#.. Plugins are required to :ref`implement subclasses<subclassing-platform-models>` for models,
+#.. serializers, viewsets which are :ref`discoverable <model-serializer-viewset-discovery>`.
 
 `A simple plugin implementation
 <https://github.com/pulp/pulp_file/>`_, ``pulp_file``, is provided.
@@ -24,12 +25,12 @@ A complete Pulp plugin will do all of the following:
 * Plugin entry point is defined
 * pulpcore-plugin is specified as a requirement
 * Necessary models/serializers/viewsets are defined and discoverable. At a minimum:
-** models for plugin content type, importer, publisher
-** serializers for plugin content type, importer, publisher
-** viewset for plugin content type, importer, publisher
+  * models for plugin content type, importer, publisher
+  * serializers for plugin content type, importer, publisher
+  * viewset for plugin content type, importer, publisher
 * Actions are defined:
-** sync
-** publish
+  * sync
+  * publish
 * Errors are handled according to Pulp conventions
 * Docs for plugin are available (any location and format preferred and provided by plugin writer).
 
@@ -133,7 +134,7 @@ expected to be used.
 
 There are several important aspects relevant to importer implementation which were briefly mentioned
 # TODO(asmacdo) where is this now?
-in the :ref:`understanding-models` section:
+# .. in the :ref:understanding-models` section:
 
 .. _define-sync-:
 
@@ -145,20 +146,17 @@ Define your sync task
 Plugin Responsibilities for Synchronization:
 
 * Download and analyze repository metadata from a remote source.
-* Decide what needs to be added to repository or removed from it.
-** For each item that needs to be added:
-*** Create an instance of ``ExampleContent``
-*** Create an instance (or instances if necessary) of :class:`~pulpcore.plugin.models.Artifact`
-*** Use PendingArtifact and PendingContent to update the database.
-** Get each ContentUnit to remove from the database.
+* Decide units to be added to repository. For each item that needs to be added:
+    * Create an instance of ``ExampleContent``
+    * Create an instance (or instances if necessary) of :class:`~pulpcore.plugin.models.Artifact`
+    * Use PendingArtifact and PendingContent to update the database.
+* Retrieve ContentUnits from the database that should be removed.
 
 Sync should use the following tools to interact with ``pulpcore``:
 * pulpcore.plugin.tasking.WorkingDirectory to write to the file system
-* pulpcore.plugin.facades.RepositoryVersion to safely create a new RepositoryVersion TODO(link,
-  plugin-api/RepositoryVersion)
+* pulpcore.plugin.facades.RepositoryVersion to safely create a new RepositoryVersion TODO(link, plugin-api/RepositoryVersion)
 * :class:`~pulpcore.plugin.changeset.ChangeSet` to `add/remove content to a RepositoryVersions <changeset-docs>`
-* :class:`~pulpcore.plugin.models.ProgressBar` to report the progress. TODO(link,
-  pluginapi/progress bar
+* :class:`~pulpcore.plugin.models.ProgressBar` to report the progress. TODO(link, pluginapi/progress bar)
 
 
 .. _define-publisher:

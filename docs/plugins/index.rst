@@ -29,7 +29,7 @@ Available Plugins
 
 All known Pulp plugins are listed below.
 If you are interested in writing your own plugin, those docs will help you:
-And don't hesitate to :doc:`contact us <../troubleshooting/index>` with any questions during development.
+And don't hesitate to :doc:`contact us <../troubleshooting>` with any questions during development.
 Let us know when the plugin is ready and we will be happy to add it to the list of available plugins for Pulp!
 
 

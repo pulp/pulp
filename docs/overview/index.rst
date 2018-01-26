@@ -4,10 +4,9 @@ TODO:
 High Level Overview of Pulp Concepts
 ====================================
 
-This document should communicate a high level overview of Pulp Concepts, introduce Pulp
-terminology. This document is designed to be comprehensive, and should be understandable to an
-anyone who is familiar with software management. This document favors clarity and accuracy over
-ease of reading.
+This document introduces Pulp terminology and concepts. This document is designed to be comprehensive,
+and should be understandable to an anyone who is familiar with software management. This document
+favors clarity and accuracy over ease of reading.
 
 Notation
 --------
