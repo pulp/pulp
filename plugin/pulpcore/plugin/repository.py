@@ -1,8 +1,8 @@
 from contextlib import suppress
 from gettext import gettext as _
+
 from django.db import transaction
 from django.db.utils import IntegrityError
-
 
 from pulpcore.app import models
 from pulpcore.tasking.util import get_current_task_id
@@ -31,14 +31,13 @@ class RepositoryVersion:
         Get the latest RepositoryVersion on a repository
 
         Args:
-            repository (pulpcore.plugin.repository): to get the latest version of
+            repository (pulpcore.plugin.models.Repository): to get the latest version of
 
         Returns:
             pulpcore.plugin.repository.RepositoryVersion: The latest RepositoryVersion
 
         """
         with suppress(models.RepositoryVersion.DoesNotExist):
-
             model = repository.versions.exclude(complete=False).latest()
             return RepositoryVersion(model)
 
@@ -48,7 +47,7 @@ class RepositoryVersion:
         Create a new RepositoryVersion
 
         Args:
-            repository (pulpcore.plugin.repository): to create a new version of
+            repository (pulpcore.plugin.models.Repository): to create a new version of
 
         Returns:
             pulpcore.plugin.repository.RepositoryVersion: The Created RepositoryVersion
@@ -66,16 +65,14 @@ class RepositoryVersion:
             version.save()
             resource = models.CreatedResource(content_object=version)
             resource.save()
-            return cls(version, resource)
+            return cls(version)
 
-    def __init__(self, model, resource=None):
+    def __init__(self, model):
         """
         Args:
             model (pulpcore.models.repository.RepositoryVersion)
-            resource (pulpcore.models.task.CreatedResource)
         """
         self._model = model
-        self._created_resource = resource
 
     @property
     def number(self):
@@ -158,11 +155,10 @@ class RepositoryVersion:
             models.RepositoryContent.objects.filter(version_added=self._model).delete()
             models.RepositoryContent.objects.filter(version_removed=self._model)\
                 .update(version_removed=None)
+            models.CreatedResource.objects.filter(object_id=self._model.pk).delete()
             self._model.repository.last_version = self._model.number - 1
             self._model.repository.save()
             self._model.delete()
-            if self._created_resource is not None:
-                self._created_resource.delete()
 
     def __enter__(self):
         """
