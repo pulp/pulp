@@ -1,11 +1,7 @@
 """
 Repository related Django models.
 """
-from contextlib import suppress
-from gettext import gettext as _
-
-from django.db import models, transaction
-from django.db.utils import IntegrityError
+from django.db import models
 
 from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
 from pulpcore.app.models.storage import get_tls_path
@@ -258,11 +254,12 @@ class RepositoryVersion(Model):
         get_latest_by = 'number'
         ordering = ('number',)
 
+    @property
     def content(self):
         """
-        Returns:
-            QuerySet: The Content objects that are related to this version.
-        """
+     -  Returns:
+     -      QuerySet: The Content objects that are related to this version.
+     -  """
         relationships = RepositoryContent.objects.filter(
             repository=self.repository, version_added__number__lte=self.number).exclude(
             version_removed__number__lte=self.number
@@ -280,7 +277,7 @@ class RepositoryVersion(Model):
         Returns:
             dict: of {<type>: <count>}
         """
-        mapping = self.content().values('type').annotate(count=models.Count('type'))
+        mapping = self.content.values('type').annotate(count=models.Count('type'))
         return {m['type']: m['count'] for m in mapping}
 
     def added(self):
@@ -300,59 +297,6 @@ class RepositoryVersion(Model):
         # Surely there is a better way to access the model. Maybe it should be in this module.
         content_model = self.repository.content.model
         return content_model.objects.filter(version_memberships__version_removed=self)
-
-    def add_content(self, content):
-        """
-        Add a content unit to this version.
-
-        Args:
-            content (pulpcore.plugin.models.Content): a content model to add
-        """
-        assert not self.complete, _("Cannot update version {version} for repository "
-                                    "{repo}").format(version=self.number, repo=self.repository.name)
-
-        # duplicates are ok
-        with suppress(IntegrityError):
-            association = RepositoryContent(
-                repository=self.repository,
-                content=content,
-                version_added=self
-            )
-            association.save()
-
-    def remove_content(self, content):
-        """
-        Remove content from the repository.
-
-        Args:
-            content (pulpcore.plugin.models.Content): A content model to remove
-        """
-        assert not self.complete, _("Cannot update version {version} for repository "
-                                    "{repo}").format(version=self.number, repo=self.repository.name)
-
-        q_set = RepositoryContent.objects.filter(
-            repository=self.repository,
-            content=content,
-            version_removed=None,
-        )
-        q_set.update(version_removed=self)
-
-    def delete_incomplete_version(self):
-        """
-        Deletes an incomplete Repository Version
-
-        This method deletes a RepositoryVersion only if its 'complete' property is False. All
-        RepositoryContent added in the deleted RepositoryVersion are deleted also. All
-        RepositoryContent removed in the deleted RepositoryVersion has the version_removed set to
-        None.
-        """
-        assert not self.complete, _("Version {version} for repository {repo} is "
-                                    "complete.").format(version=self.number,
-                                                        repo=self.repository.name)
-        with transaction.atomic():
-            RepositoryContent.objects.filter(version_added=self).delete()
-            RepositoryContent.objects.filter(version_removed=self).update(version_removed=None)
-            self.delete()
 
     def next(self):
         """

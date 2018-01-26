@@ -143,7 +143,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
 
     @decorators.detail_route()
     def content(self, request, repository_pk, number):
-        return self._paginated_response(self.get_object().content(), request)
+        return self._paginated_response(self.get_object().content, request)
 
     @decorators.detail_route()
     def added_content(self, request, repository_pk, number):
@@ -223,30 +223,6 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
             e.detail[0] = "%s %s" % (e.detail[0], url)
             raise e
         return resolver.kwargs['pk']
-
-    def create(self, request, repository_pk):
-        """
-        Queues a task that creates a new RepositoryVersion by adding and removing content units
-        """
-        add_content_units = []
-        remove_content_units = []
-        if 'add_content_units' in request.data:
-            for url in request.data['add_content_units']:
-                add_content_units.append(self.get_content_unit_pk(url))
-
-        if 'remove_content_units' in request.data:
-            for url in request.data['remove_content_units']:
-                remove_content_units.append(self.get_content_unit_pk(url))
-
-        result = tasks.repository.add_and_remove.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repository_pk,
-            kwargs={
-                'repository_pk': repository_pk,
-                'add_content_units': add_content_units,
-                'remove_content_units': remove_content_units
-            }
-        )
-        return OperationPostponedResponse([result], request)
 
 
 class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
