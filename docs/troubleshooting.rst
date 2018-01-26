@@ -3,6 +3,7 @@ Troubleshooting
 
 If you have discovered a bug or want to request a feature, please use our TODO(link, bugs-features).
 
+.. _get-help:
 
 Get Help
 --------

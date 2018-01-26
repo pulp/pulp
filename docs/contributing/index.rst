@@ -4,6 +4,8 @@ Contributing Guide
 Why you should contribute to Pulp
 ---------------------------------
 
+TODO(stub)
+
 Types of Contributions
 ----------------------
 
@@ -14,8 +16,8 @@ Types of Contributions
    pull-request-walkthrough
    /plugins/plugin-writer/index
 
-We also encourage users to offer help to each other, and ask questions:
-   _`getting-help`
+# TODO(link to get-help)
+We also encourage users to offer help to each other, and ask questions.
 
 In Depth
 --------
@@ -24,7 +26,6 @@ In Depth
    :maxdepth: 2
 
    architecture/index
-   dev-setup/index
    internal/index
    platform_api/index
    style_guide/index
