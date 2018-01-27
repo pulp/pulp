@@ -1,15 +1,22 @@
 Plugin Writer's Guide
 =====================
 
-This documentation is for Pulp Plugin developers. For Core development,
-see the :doc:`../../contributing/3.0-development/app-layout`.
+.. note::
+   This documentation is for Pulp Plugin developers. For Pulp Core development, see the
+   :doc:`../../contributing/3.0-development/app-layout`.
 
-The Pulp Core does not manage any content itself. This functionality is provided by
-its plugins, which use the Pulp Core Plugin API to manage specific types of content,
-like RPM Packages or Puppet Modules. To do this, the Pulp Core extends the Django
-Web Framework and the Django REST Framework to provide a set of base classes that can be
-implemented in plugins to manage content in a way that is consistent across plugins, while
-still allowing plugin writers the freedom to define their workflows as they deem necessary.
+The Pulp Core does not manage content itself, but instead relies on plugins to add support for one
+content type or another. Examples of a content type include a RPM package, Ansible role, or
+Docker container.
+
+This documentation outlines how to create a Pulp plugin that provides features like:
+
+* Define a new content type and its attributes
+* Download and save the new type of content into Pulp Core
+* Publish the new type of content, allowing Pulp Core to serve it via https or http
+* Export content to remote servers or CDNs
+* Add custom web application views
+* Implement custom features, e.g. dependency solving, retension/deletion policies, etc.
 
 Along with this guide `an example of plugin implementation
 <https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
@@ -18,14 +25,15 @@ the plugin writing process.
 
 .. toctree::
    :maxdepth: 2
-   
+
+   planning-guide
    checklist
    first-plugin
    basics
    releasing
    cli
 
-The Pulp :doc:`../plugin-api/index` is versioned separately from the Pulp Core and consists
+The Pulp :doc:`../plugin-api/overview` is versioned separately from the Pulp Core and consists
 of everything importable within the :mod:`pulpcore.plugin` namespace. When writing plugins, care should
 be taken to only import Pulp Core components exposed in this namespace; importing from elsewhere
 within the Pulp Core (e.g. importing directly from ``pulpcore.app``, ``pulpcore.exceptions``, etc.)
