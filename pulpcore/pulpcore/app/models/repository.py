@@ -257,9 +257,11 @@ class RepositoryVersion(Model):
     @property
     def content(self):
         """
-     -  Returns:
-     -      QuerySet: The Content objects that are related to this version.
-     -  """
+        Returns a set of content objects for a repository version
+
+        Returns:
+            QuerySet: The Content objects that are related to this version.
+        """
         relationships = RepositoryContent.objects.filter(
             repository=self.repository, version_added__number__lte=self.number).exclude(
             version_removed__number__lte=self.number
