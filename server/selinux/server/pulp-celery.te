@@ -30,7 +30,7 @@ require {
         type sysfs_t;
         class sock_file { create link unlink write };
         class unix_stream_socket connectto;
-        class dir { getattr search read write remove_name create add_name rmdir relabelto relabelfrom };
+        class dir { add_name create getattr open read relabelfrom relabelto remove_name rename reparent rmdir search setattr write };
         class file { lock rename write setattr getattr read create link unlink open relabelto relabelfrom map };
         class filesystem getattr;
         class process { setsched signal signull execmem };
@@ -202,9 +202,12 @@ optional_policy(`
     tunable_policy(`pulp_manage_puppet', `
         # Puppet modules can contain symlinks, though it seems they often do not. This line allows
         # Pulp to install the symlinks if they are present.
+        allow celery_t puppet_etc_t:dir { add_name create getattr open read remove_name rename reparent rmdir search setattr write};
+        allow celery_t puppet_etc_t:file { create getattr open setattr write };
         allow celery_t puppet_etc_t:lnk_file { create read getattr unlink };
         manage_dirs_pattern(celery_t, puppet_etc_t, puppet_etc_t)
         manage_files_pattern(celery_t, puppet_etc_t, puppet_etc_t)
+        puppet_read_config(celery_t)
     ')
 ')
 

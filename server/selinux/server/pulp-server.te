@@ -4,7 +4,10 @@ policy_module(pulp-server, 0.0.0)
 type pulp_cert_t;
 
 require {
+    type puppet_etc_t;
     type httpd_t;
+    class dir { read remove_name rmdir write };
+    class file { getattr unlink };
 }
 
 ##### Certificates #####
@@ -22,3 +25,17 @@ read_lnk_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 ## Allow httpd_t to make connections to amqp and mongod ports
 corenet_tcp_connect_amqp_port(httpd_t)
 corenet_tcp_connect_mongod_port(httpd_t)
+
+
+######################################
+#
+# Add some policies under the pulp_manage_puppet selinux boolean to allow httpd access
+# to manage files, directory, and symlinks under the puppet_etc_t label
+#
+
+optional_policy(`
+    tunable_policy(`pulp_manage_puppet', `
+        allow httpd_t puppet_etc_t:dir { read remove_name rmdir write };
+        allow httpd_t puppet_etc_t:file { getattr unlink };
+    ')
+')
