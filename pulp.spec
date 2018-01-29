@@ -32,7 +32,7 @@
 %global gofer_version 2.5
 
 # The release number
-%global release_number 0.2.beta
+%global release_number 1
 
 # Create tag for the Source0 and setup
 %global git_tag %{name}-%{version}-%{release_number}
