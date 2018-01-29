@@ -6,8 +6,8 @@ from django.db import transaction
 
 from pulpcore.app import models
 from pulpcore.app import serializers
+from pulpcore.app.wrappers import RepositoryVersion
 from pulpcore.tasking.tasks import UserFacingTask
-
 
 log = getLogger(__name__)
 
@@ -109,3 +109,27 @@ def delete_version(pk):
 
         # With no more relationships remaining, delete the version.
         version.delete()
+
+
+@shared_task(base=UserFacingTask)
+def add_and_remove(repository_pk, add_content_units, remove_content_units):
+    """
+    Create a new repository version by adding and then removing content units.
+
+    Args:
+        repository_pk (UUID): The primary key for a Repository for which a new Repository Version
+            should be created.
+        add_content_units (list): List of PKs for :class:`~pulpcore.app.models.Content` that
+            should be added to the previous Repository Version for this Repository.
+        remove_content_units (list): List of PKs for:class:`~pulpcore.app.models.Content` that
+            should be removed from the previous Repository Version for this Repository.
+    """
+    repository = models.Repository.objects.get(pk=repository_pk)
+
+    with RepositoryVersion.create(repository) as new_version:
+        for pk in add_content_units:
+            content = models.Content.objects.get(pk=pk)
+            new_version.add_content(content)
+        for pk in remove_content_units:
+            content = models.Content.objects.get(pk=pk)
+            new_version.remove_content(content)
