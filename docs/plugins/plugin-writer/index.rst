@@ -1,3 +1,5 @@
+.. _plugin-writer-guide:
+
 Plugin Writer's Guide
 =====================
 

@@ -15,11 +15,11 @@ Help other users or chat with us:
 .. toctree::
    :titlesonly:
 
-   style guide <style_guide>
+   style-guide
    dev-setup/index
    pull-request-walkthrough
    architecture/index
    internal/index
-   platform_api/index
+   platform-api/index
 
 

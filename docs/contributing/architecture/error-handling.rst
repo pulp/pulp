@@ -10,4 +10,4 @@ failed. The error traceback, description, and code are returned to the user unde
 object.
 
 When raising exceptions `built-in Python Exceptions <https://docs.python.org/3/library/exceptions.html>`_
-should be used if possible. :doc:`Coded Exceptions </contributing/platform_api/exceptions>` should be used for known error situations.
+should be used if possible. :doc:`Coded Exceptions </contributing/platform-api/exceptions>` should be used for known error situations.

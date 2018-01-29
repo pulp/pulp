@@ -229,6 +229,8 @@ The Master/Detail pattern that we're using in our Models requires some specific 
 be properly implemented in the API. Care has been taken to expose the inner workings of these
 behaviors to be easy to override or customize in plugins (if needed).
 
+.. _viewsets:
+
 ViewSets
 ^^^^^^^^
 

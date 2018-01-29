@@ -4,5 +4,4 @@
    code-layout
    dependencies
    error-handling
-   models
    rest-api

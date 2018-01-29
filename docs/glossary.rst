@@ -20,8 +20,53 @@ Glossary
     DRF
         The Django Rest Framework.
 
+    Pull (was sync)
+        Plugin-defined task that adds and/or removes ContentUnits to a Repository, creating a new
+        RepositoryVersion.
+
+    Union pull.mode
+        Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
+        the **previous version or the external source**. Same behavior as "additive" sync_mode
+        in Pulp 2. This operation is **only additive**.
+
+    Intersection pull.mode
+        Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
+        **both** the **previous version and the external source**.  This operation is **only
+        subtractive**.
+
+    Synchronize pull.mode
+        Task creates a new RepositoryVersion that contains exactly the set of ContentUnits that are
+        present in the **external source**.
+
+    Remote (was Importer)
+        User-definable settings that define how to interact with an **external source**. These
+        settings are used to :term:`Pull` from the :term:`Remote`.
+
+    PublishSettings (was Publisher)
+        User-definable settings to be used by a publish task.
+
+    RepositoryVersion(was RepositoryVersino)
+        A version of a Repository's content set. A new version is created whenever content is added
+        to or removed from a Repository. Within the context of the plugin.RepositoryVersion
+        wrapper, all changes are **staged**. As soon as the context is exited, changes are
+        **committed**, creating 1 RepositoryVersion. RepositoryVersions are numbered serially,
+        their content set is immutable, but any RepositoryVersion can be deleted. When
+        a RepositoryVersions are deleted, its changes are **squashed** into the next committed
+        RepositoryVersion. If a failure prevents a RepositoryVersion from being created, its
+        ``complete`` flag is left ``False`` until it is cleaned up. Failed RepositoryVersions are
+        still assigned a version number, and the next new RepositoryVersion will increment again.
+
+    Repository
+        A series of RepositoryVersions. A ContentUnit can be considered "in a Repository" if the
+        ContentUnit is in the latest RepositoryVersion. It is also correct to say that a
+        ContentUnit is "in a RepositoryVersion".
+
     Pagination
         The practice of splitting large datasets into multiple pages.
+
+    pulpcore
+        A generalized backend with a Plugin API an a REST API. It uses :term:`Plugins` to manage
+        :term:`ContentUnits`.
 
     Plugin
         A Django app that exends ``pulpcore`` to manage one or more "types" of ContentUnit.
@@ -59,7 +104,6 @@ Glossary
         via the API must have a related serializer.
 
         http://www.django-rest-framework.org/api-guide/serializers/
-
     type
         Plugins define "types" of ContentUnit, like rpm or debian
 
