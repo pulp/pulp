@@ -38,15 +38,15 @@ class HeartbeatStep(bootsteps.StartStopStep):
     Adds pulp heartbeat updating to celery workers.
 
     This class is a celery "Blueprint". It extends the functionality of the celery
-    worker by establishing a timer on consumer startup which calls the '_record_heartbeat()'
+    consumer by establishing a timer on consumer startup which calls the '_record_heartbeat()'
     method periodically. This allows each worker to write its own worker record to the
     database, instead of relying on pulp_celerybeat to do so.
 
     http://docs.celeryproject.org/en/master/userguide/extending.html
     https://groups.google.com/d/msg/celery-users/3fs0ocREYqw/C7U1lCAp56sJ
 
-    :param worker: The worker instance (unused)
-    :type  worker: celery.apps.worker.Worker
+    :param consumer: The consumer instance (unused)
+    :type  consumer: celery.worker.consumer.Consumer
     """
 
     def __init__(self, consumer, **kwargs):
@@ -57,8 +57,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         consumer instance as the first argument and all keyword arguments from the original
         consumer.__init__ call.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = None
 
@@ -70,8 +70,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         reset (which triggers an internal restart). The timer is reset when the connection is lost,
         so we have to install the timer again for every call to self.start.
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         self.timer_ref = consumer.timer.call_repeatedly(
             PULP_PROCESS_HEARTBEAT_INTERVAL,
@@ -83,13 +83,13 @@ class HeartbeatStep(bootsteps.StartStopStep):
 
     def stop(self, consumer):
         """
-        Stop the timer when the worker is stopped.
+        Stop the timer when the consumer is stopped.
 
         This method is called every time the worker is restarted (i.e. connection is lost)
         and also at shutdown.
 
-        :param worker: The consumer instance (unused)
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance (unused)
+        :type  consumer: celery.worker.consumer.Consumer
         """
         if self.timer_ref:
             self.timer_ref.cancel()
@@ -111,8 +111,8 @@ class HeartbeatStep(bootsteps.StartStopStep):
         """
         This method creates or updates the worker record
 
-        :param worker: The consumer instance
-        :type  worker: celery.worker.consumer.Consumer
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
         """
         name = consumer.hostname
         # Update the worker record timestamp and handle logging new workers
