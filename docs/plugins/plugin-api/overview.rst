@@ -21,7 +21,7 @@ is unsupported, and not protected by the Pulp Plugin API's semantic versioning g
     serializers
     storage
     viewsets
-    tasks
+    tasking
     download
     changeset
 

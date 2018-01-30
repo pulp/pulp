@@ -18,8 +18,7 @@ Help other users or chat with us:
    style-guide
    dev-setup/index
    pull-request-walkthrough
+   documentation
    architecture/index
    internal/index
    platform-api/index
-
-

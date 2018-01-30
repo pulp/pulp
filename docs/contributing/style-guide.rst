@@ -118,12 +118,3 @@ Putting this all together, the following is an example of a good commit message:
 
     closes #1392
     https://pulp.plan.io/issues/1392
-
-Documentation
--------------
-
-#TODO
-When writing Documentation...
-<link to language guide>
-
-

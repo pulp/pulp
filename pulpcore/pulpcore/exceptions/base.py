@@ -45,3 +45,22 @@ def exception_to_dict(exc, traceback=None):
     if isinstance(exc, PulpException):
         result['code'] = exc.error_code
     return result
+
+
+class ResourceImmutableError(PulpException):
+    """
+    Exceptions that are raised due to trying to update an immutable resource
+    """
+
+    def __init__(self, model):
+        """
+        Args:
+            model (pulpcore.app.models.Model): that the user is trying to update
+        """
+        super(ResourceImmutableError, self).__init__("PLP0003")
+        self.model = model
+
+    def __str__(self):
+        msg = _("Cannot update immutable resource {model_pk} of type {model_type}")\
+            .format(resource=str(self.model.pk), type=type(self.model).__name__)
+        return msg

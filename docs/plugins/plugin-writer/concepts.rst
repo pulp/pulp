@@ -86,7 +86,7 @@ of the ``pulp_example`` plugin.
 Error Handling
 --------------
 
-Please see the :ref:`error-handling` section in the code guidelines.
+Please see the :ref:`error-handling` section for details on fatal exceptions.
 
 Non fatal exceptions should be recorded with the
 :meth:`~pulpcore.plugin.tasking.Task.append_non_fatal_error` method. These non-fatal exceptions

@@ -7,7 +7,7 @@ stable version 1.0 is reached.
 
 The Plugin API currently supports version 3.y of Pulp Core.
 
-See :doc:`Plugin API <../../plugins/plugin-api/index>` and
+See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 :doc:`Plugin Development <../../plugins/plugin-writer/index>`.
 
 

@@ -1,31 +1,18 @@
 Plugins
 =======
 
+What plugins do
+---------------
+
 Plugins add support for a type of content to Pulp. Pulp needs at least one plugin to manage
-content. For example, the File plugin adds support for Pulp to manage files.
+content. For example, the `File_plugin <https://github.com/pulp/pulp_file>`_ adds support for Pulp
+to manage files.
 
 .. toctree::
    :maxdepth: 1
 
    plugin-api/index
    plugin-writer/index
-
-
-What plugins do
----------------
-
-   At a minimum:
-
-   * models for plugin content type, importer, publisher
-   * serializers for plugin content type, importer, publisher
-   * viewsets for plugin content type, importer, publisher
-   * tasks for sync, publish
-
- * :ref:`Errors are handled according to Pulp conventions <error-handling-basics>`
- * Docs for plugin are available (any location and format preferred and provided by plugin writer)
-
-Available Plugins
------------------
 
 All known Pulp plugins are listed below.
 If you are interested in writing your own plugin, those docs will help you:
@@ -52,9 +39,9 @@ Let us know when the plugin is ready and we will be happy to add it to the list 
      - Yes
      - No
 
-   * - Example
-     - `Example plug-in docs <https://github.com/pulp/pulp_example/blob/master/README.rst>`_
-     - `Example plug-in source <https://github.com/pulp/pulp_example>`_
-     - `Example plug-in tracker <https://pulp.plan.io/projects/pulp_example?jump=welcome>`_
-     - Yes
-     - No
+.. note::
+   Are we missing a plugin? Let us know via the pulp-dev@redhat.com mailing list.
+
+.. toctree::
+   plugin-writer/index
+   plugin-api/overview
