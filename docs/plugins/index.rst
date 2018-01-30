@@ -9,14 +9,13 @@ content. For example, the `File_plugin <https://github.com/pulp/pulp_file>`_ add
 to manage files.
 
 .. toctree::
-   :maxdepth: 1
 
-   plugin-api/index
+   plugin-api/overview
    plugin-writer/index
 
 All known Pulp plugins are listed below.
 If you are interested in writing your own plugin, those docs will help you:
-And don't hesitate to :doc:`contact us <../troubleshooting>` with any questions during development.
+And don't hesitate to :doc:`contact us<../bugs-features>` with any questions before and during development.
 Let us know when the plugin is ready and we will be happy to add it to the list of available plugins for Pulp!
 
 
@@ -42,6 +41,3 @@ Let us know when the plugin is ready and we will be happy to add it to the list 
 .. note::
    Are we missing a plugin? Let us know via the pulp-dev@redhat.com mailing list.
 
-.. toctree::
-   plugin-writer/index
-   plugin-api/overview

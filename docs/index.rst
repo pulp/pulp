@@ -20,7 +20,7 @@ Entry Points:
 
 1) Users
    0) Prospective user evaluation
-      root index -> overview(why) -> overview concepts -> plugin docs
+   root index -> overview(why) -> overview concepts -> plugin docs
 
    1) New user quickstart
       root index (here) -> installation -> plugin installation -> plugin quickstart
@@ -52,7 +52,8 @@ Entry Points:
 .. toctree::
    :maxdepth: 2
 
-   overview/index
+   overview/concepts
+   overview/why
    installation/index
    plugins/index
    workflows/index

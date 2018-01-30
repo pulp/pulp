@@ -33,12 +33,12 @@ Add publish tasks(s):
 Available Plugins
 -----------------
 
+A<<<<<<< HEAD
+A=======
 
-<<<<<<< HEAD
-=======
 .. note::
    This documentation is for Pulp Plugin developers. For Pulp Core development, see the
-   :doc:`../../contributing/3.0-development/app-layout`.
+   TODO(asmacdo, fixlink):doc`../../contributing/3.0-development/app-layout`.
 
 The Pulp Core does not manage content itself, but instead relies on plugins to add support for one
 content type or another. Examples of a content type include a RPM package, Ansible role, or
@@ -62,16 +62,11 @@ the plugin writing process.
 .. toctree::
    :maxdepth: 2
 
-<<<<<<< HEAD
    walkthrough
    concepts
    releasing
    cli
-=======
    planning-guide
-   checklist
-   first-plugin
-   basics
    releasing
    cli
 

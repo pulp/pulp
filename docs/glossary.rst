@@ -20,29 +20,35 @@ Glossary
     DRF
         The Django Rest Framework.
 
-    Pull (was sync)
+    Pull
+        (was sync)
         Plugin-defined task that adds and/or removes ContentUnits to a Repository, creating a new
         RepositoryVersion.
 
-    Union pull.mode
+    Union
+        pull.mode
         Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
         the **previous version or the external source**. Same behavior as "additive" sync_mode
         in Pulp 2. This operation is **only additive**.
 
-    Intersection pull.mode
+    Intersection
+        pull.mode
         Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
         **both** the **previous version and the external source**.  This operation is **only
         subtractive**.
 
-    Synchronize pull.mode
+    Synchronize
+        pull.mode
         Task creates a new RepositoryVersion that contains exactly the set of ContentUnits that are
         present in the **external source**.
 
-    Remote (was Importer)
+    Remote
+        (was Importer)
         User-definable settings that define how to interact with an **external source**. These
         settings are used to :term:`Pull` from the :term:`Remote`.
 
-    PublishSettings (was Publisher)
+    PublishSettings
+        (was Publisher)
         User-definable settings to be used by a publish task.
 
     RepositoryVersion(was RepositoryVersino)
@@ -82,6 +88,7 @@ Glossary
         A plugin-defined object that contains settings required to publish a specific type of
         ContentUnit.
 
+
     Repository
         A versioned set of ContentUnits.
 
@@ -104,6 +111,7 @@ Glossary
         via the API must have a related serializer.
 
         http://www.django-rest-framework.org/api-guide/serializers/
+
     type
         Plugins define "types" of ContentUnit, like rpm or debian
 
