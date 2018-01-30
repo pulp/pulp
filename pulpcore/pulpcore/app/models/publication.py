@@ -6,6 +6,7 @@ from pulpcore.app.models import Model, storage
 class Publication(Model):
     """
     Fields:
+        complete (models.BooleanField): State tracking; for internal use. Indexed.
         created (models.DatetimeField): When the publication was created UTC.
 
     Relations:
@@ -14,11 +15,17 @@ class Publication(Model):
             create this Publication.
     """
 
+    complete = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
 
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['complete']),
+        ]
 
 
 class PublishedFile(Model):

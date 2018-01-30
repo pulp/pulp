@@ -244,7 +244,7 @@ class PublicationViewSet(GenericNamedModelViewSet,
                          mixins.ListModelMixin,
                          mixins.DestroyModelMixin):
     endpoint_name = 'publications'
-    queryset = Publication.objects.all()
+    queryset = Publication.objects.exclude(complete=False)
     serializer_class = PublicationSerializer
 
 
