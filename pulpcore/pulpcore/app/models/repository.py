@@ -1,10 +1,17 @@
 """
 Repository related Django models.
 """
+from contextlib import suppress
 from django.db import models
+from django.db import transaction
+from django.db.utils import IntegrityError
 
-from pulpcore.app.models import Model, Notes, MasterModel, GenericKeyValueRelation
+from .base import Model, MasterModel
+from .generic import Notes, GenericKeyValueRelation
+from .task import CreatedResource
+
 from pulpcore.app.models.storage import get_tls_path
+from pulpcore.exceptions import ResourceImmutableError
 
 
 class Repository(Model):
@@ -229,6 +236,18 @@ class RepositoryVersion(Model):
     """
     A version of a repository's content set.
 
+    Plugin Writers are strongly encouraged to use RepositoryVersion as a context manager to provide
+    transactional safety, working directory set up, and cleaning up the database on failures.
+
+    Examples:
+        >>>
+        >>> with RepositoryVersion.create(repository) as new_version:
+        >>>     new_version.add_content(content)
+        >>>     new_version.remove_content(content)
+        >>>     changeset = ChangeSet(importer, new_version, additions=additions,
+        >>>                      removals=removals)
+        >>>
+
     Fields:
 
         number (models.PositiveIntegerField): A positive integer that uniquely identifies a version
@@ -282,6 +301,46 @@ class RepositoryVersion(Model):
         mapping = self.content.values('type').annotate(count=models.Count('type'))
         return {m['type']: m['count'] for m in mapping}
 
+    @classmethod
+    def create(cls, repository):
+        """
+        Create a new RepositoryVersion
+        Creation of a RepositoryVersion should be done in a celery Task.
+
+        Args:
+            repository (pulpcore.app.models.Repository): to create a new version of
+
+        Returns:
+            pulpcore.app.models.RepositoryVersion: The Created RepositoryVersion
+        """
+
+        with transaction.atomic():
+            version = cls(
+                repository=repository,
+                number=repository.last_version + 1)
+            repository.last_version = version.number
+            repository.save()
+            version.save()
+            resource = CreatedResource(content_object=version)
+            resource.save()
+            return version
+
+    @staticmethod
+    def latest(repository):
+        """
+        Get the latest RepositoryVersion on a repository
+
+        Args:
+            repository (pulpcore.app.models.Repository): to get the latest version of
+
+        Returns:
+            pulpcore.app.models.RepositoryVersion: The latest RepositoryVersion
+
+        """
+        with suppress(RepositoryVersion.DoesNotExist):
+            model = repository.versions.exclude(complete=False).latest()
+            return model
+
     def added(self):
         """
         Returns:
@@ -315,3 +374,125 @@ class RepositoryVersion(Model):
                 number__gt=self.number).order_by('number')[0]
         except IndexError:
             raise self.DoesNotExist
+
+    def add_content(self, content):
+        """
+        Add a content unit to this version.
+
+        Args:
+           content (pulpcore.app.models.Content): a content model to add
+
+        Raise:
+            pulpcore.exception.ResourceImmutableError: if add_content is called on a
+                complete RepositoryVersion
+        """
+        if self.complete:
+            raise ResourceImmutableError(self)
+        with suppress(IntegrityError):
+            association = RepositoryContent(
+                repository=self.repository,
+                content=content,
+                version_added=self)
+            association.save()
+
+    def remove_content(self, content):
+        """
+        Remove content from the repository.
+
+        Args:
+            content (pulpcore.app.models.Content): A content model to remove
+
+        Raise:
+            pulpcore.exception.ResourceImmutableError: if remove_content is called on a
+                complete RepositoryVersion
+        """
+
+        if self.complete:
+            raise ResourceImmutableError(self)
+
+        q_set = RepositoryContent.objects.filter(
+            repository=self.repository,
+            content=content,
+            version_removed=None)
+        q_set.update(version_removed=self)
+
+    def _squash(self, repo_relations, next_version):
+        """
+        Squash a complete repo version into the next version
+        """
+        # delete any relationships added in the version being deleted and removed in the next one.
+        repo_relations.filter(version_added=self, version_removed=next_version).delete()
+
+        # If the same content is deleted in version, but added back in next_version
+        # set version_removed field in relation to None, and remove relation adding the content
+        # in next_version
+        content_added = repo_relations.filter(version_added=next_version).values_list('content_id')
+
+        # use list() to force the evaluation of the queryset, otherwise queryset is affected
+        # by the update() operation before delete() is ran
+        content_removed_and_readded = list(repo_relations.filter(version_removed=self,
+                                                                 content_id__in=content_added)
+                                           .values_list('content_id'))
+
+        repo_relations.filter(version_removed=self,
+                              content_id__in=content_removed_and_readded)\
+            .update(version_removed=None)
+
+        repo_relations.filter(version_added=next_version,
+                              content_id__in=content_removed_and_readded).delete()
+
+        # "squash" by moving other additions and removals forward to the next version
+        repo_relations.filter(version_added=self).update(version_added=next_version)
+        repo_relations.filter(version_removed=self).update(version_removed=next_version)
+
+    def delete(self):
+        """
+        Deletes a RepositoryVersion
+
+        If RepositoryVersion is complete and has a successor, squash RepositoryContent changes into
+        the successor. If version is incomplete, delete and and clean up RepositoryContent,
+        CreatedResource, and Repository objects.
+
+        Deletion of a complete RepositoryVersion should be done in a celery Task.
+        """
+        if self.complete:
+            repo_relations = RepositoryContent.objects.filter(repository=self.repository)
+            try:
+                next_version = self.next()
+                self._squash(repo_relations, next_version)
+
+            except RepositoryVersion.DoesNotExist:
+                # version is the latest version so simply update repo contents
+                # and delete the version
+                repo_relations.filter(version_added=self).delete()
+                repo_relations.filter(version_removed=self).update(version_removed=None)
+            super(RepositoryVersion, self).delete()
+
+        else:
+            with transaction.atomic():
+                RepositoryContent.objects.filter(version_added=self).delete()
+                RepositoryContent.objects.filter(version_removed=self) \
+                    .update(version_removed=None)
+                CreatedResource.objects.filter(object_id=self.pk).delete()
+                self.repository.last_version = self.number - 1
+                self.repository.save()
+                super(RepositoryVersion, self).delete()
+
+    def __enter__(self):
+        """
+        Create the repository version
+
+        Returns:
+            RepositoryVersion: self
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """
+        Save the RepositoryVersion if no errors are raised, delete it if not
+        """
+        if exc_value:
+            self.delete_incomplete()
+        else:
+            self.complete = True
+            self.save()
