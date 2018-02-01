@@ -492,7 +492,7 @@ class RepositoryVersion(Model):
         Save the RepositoryVersion if no errors are raised, delete it if not
         """
         if exc_value:
-            self.delete_incomplete()
+            self.delete()
         else:
             self.complete = True
             self.save()
