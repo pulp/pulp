@@ -53,38 +53,7 @@ class Repository(Model):
         return (self.name,)
 
 
-class ContentAdaptor(MasterModel):
-    """
-    An Abstract model for objects that import or publish content.
-
-    Fields:
-
-        name (models.TextField): The ContentAdaptor name.
-        last_updated (models.DatetimeField): When the adaptor was last updated.
-
-    Relations:
-
-        repository (models.ForeignKey): The associated repository.
-    """
-    name = models.TextField(db_index=True)
-    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
-
-    class Meta:
-        abstract = True
-        unique_together = ('repository', 'name')
-
-    def natural_key(self):
-        """
-        Get the model's natural key.
-
-        Returns:
-
-            tuple: The model's natural key.
-        """
-        return (self.repository, self.name)
-
-
-class Importer(ContentAdaptor):
+class Importer(MasterModel):
     """
     A content importer.
 
@@ -137,16 +106,8 @@ class Importer(ContentAdaptor):
         """
         return get_tls_path(self, name)
 
-    # Setting this with "unique=True" will trigger a model validation warning, telling us that we
-    # should use a OneToOneField here instead. While it is correct, doing it this way makes it
-    # easy to allow multiple importers later: Move the 'repository' field from Importer and
-    # Publisher to ContentAdaptor (without unique=True). This should make any migration that
-    # allows multiple importers to be simple, since all that's needed is removing a constraint.
-    # Using a OneToOneField here would break forward-compatibility with the idea of having
-    # multiple importers associated with a Repository, since this exposes a ManyRelatedManager
-    # on Repository with name "importers", and a OneToOneField would instead expose the single
-    # related Importer instance.
-    repository = models.ForeignKey(Repository, on_delete=models.CASCADE, unique=True)
+    name = models.TextField(db_index=True)
+    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     feed_url = models.TextField()
     validate = models.BooleanField(default=True)
@@ -165,7 +126,7 @@ class Importer(ContentAdaptor):
     sync_mode = models.TextField(choices=SYNC_MODES)
     last_synced = models.DateTimeField(blank=True, null=True)
 
-    class Meta(ContentAdaptor.Meta):
+    class Meta:
         default_related_name = 'importers'
 
     @property
@@ -179,7 +140,7 @@ class Importer(ContentAdaptor):
         return self.download_policy != self.IMMEDIATE
 
 
-class Publisher(ContentAdaptor):
+class Publisher(MasterModel):
     """
     A content publisher.
 
@@ -194,12 +155,13 @@ class Publisher(ContentAdaptor):
     """
     TYPE = 'publisher'
 
-    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
+    name = models.TextField(db_index=True)
+    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     auto_publish = models.BooleanField(default=True)
     last_published = models.DateTimeField(blank=True, null=True)
 
-    class Meta(ContentAdaptor.Meta):
+    class Meta:
         default_related_name = 'publishers'
 
 

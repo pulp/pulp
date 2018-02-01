@@ -90,7 +90,7 @@ class ChangeSet:
         Returns:
             pulpcore.plugin.models.Repository: The repository being updated.
         """
-        return self.importer.repository
+        return self.repository_version.repository
 
     def _add_content(self, content):
         """

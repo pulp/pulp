@@ -3,7 +3,7 @@ from gettext import gettext as _
 from django.core import validators
 
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
@@ -44,13 +44,11 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
         required=False
     )
-    importers = DetailRelatedField(many=True, read_only=True)
-    publishers = DetailRelatedField(many=True, read_only=True)
 
     class Meta:
         model = models.Repository
         fields = ModelSerializer.Meta.fields + ('_versions_href', '_latest_version_href', 'name',
-                                                'description', 'notes', 'importers', 'publishers')
+                                                'description', 'notes')
 
 
 class ImporterSerializer(MasterModelSerializer):
@@ -60,7 +58,8 @@ class ImporterSerializer(MasterModelSerializer):
     """
     _href = DetailIdentityField()
     name = serializers.CharField(
-        help_text=_('A name for this importer, unique within the associated repository.')
+        help_text=_('A unique name for this importer.'),
+        validators=[UniqueValidator(queryset=models.Importer.objects.all())]
     )
     feed_url = serializers.CharField(
         help_text='The URL of an external content source.',
@@ -123,25 +122,14 @@ class ImporterSerializer(MasterModelSerializer):
         read_only=True
     )
 
-    repository = serializers.HyperlinkedRelatedField(
-        view_name='repositories-detail',
-        queryset=models.Repository.objects.all(),
-    )
-
     class Meta:
         abstract = True
         model = models.Importer
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'feed_url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
-            'username', 'password', 'last_synced', 'last_updated', 'repository',
+            'username', 'password', 'last_synced', 'last_updated',
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=models.Importer.objects.all(),
-                fields=('name', 'repository')
-            )
-        ]
 
 
 class PublisherSerializer(MasterModelSerializer):
@@ -151,15 +139,12 @@ class PublisherSerializer(MasterModelSerializer):
     """
     _href = DetailIdentityField()
     name = serializers.CharField(
-        help_text=_('A name for this publisher, unique within the associated repository.')
+        help_text=_('A unique name for this publisher.'),
+        validators=[UniqueValidator(queryset=models.Importer.objects.all())]
     )
     last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
-    )
-    repository = serializers.HyperlinkedRelatedField(
-        view_name='repositories-detail',
-        queryset=models.Repository.objects.all(),
     )
     auto_publish = serializers.BooleanField(
         help_text=_('An indication that the automatic publish may happen when'
@@ -180,14 +165,8 @@ class PublisherSerializer(MasterModelSerializer):
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'repository', 'auto_publish', 'last_published', 'distributions',
+            'name', 'last_updated', 'auto_publish', 'last_published', 'distributions',
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=models.Publisher.objects.all(),
-                fields=('name', 'repository')
-            )
-        ]
 
 
 class DistributionSerializer(ModelSerializer):
@@ -200,7 +179,8 @@ class DistributionSerializer(ModelSerializer):
             models.Distribution._meta.get_field('name').max_length,
             message=_('Distribution name length must be less than {} characters').format(
                 models.Distribution._meta.get_field('name').max_length
-            ))]
+            )),
+            UniqueValidator(queryset=models.Repository.objects.all())]
     )
     base_path = serializers.CharField(
         help_text=_('The base (relative) path component of the published url.'),
@@ -219,15 +199,23 @@ class DistributionSerializer(ModelSerializer):
         help_text=_('The publication is distributed using HTTPS.')
     )
     publisher = DetailRelatedField(
-        help_text=_('Publications created by this publisher are automatically'
+        required=False,
+        help_text=_('Publications created by this publisher and repository are automatically'
                     'served as defined by this distribution'),
         queryset=models.Publisher.objects.all(),
     )
     publication = serializers.HyperlinkedRelatedField(
-        allow_null=True,
+        required=False,
         help_text=_('The publication being served as defined by this distribution'),
         queryset=models.Publication.objects.exclude(complete=False),
         view_name='publications-detail'
+    )
+    repository = serializers.HyperlinkedRelatedField(
+        required=False,
+        help_text=_('Publications created by this repository and publisher are automatically'
+                    'served as defined by this distribution'),
+        queryset=models.Repository.objects.all(),
+        view_name='repositories-detail'
     )
     base_url = BaseURLField(
         source='base_path', read_only=True,
@@ -237,7 +225,8 @@ class DistributionSerializer(ModelSerializer):
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'http', 'https', 'publisher', 'publication', 'base_url'
+            'name', 'base_path', 'http', 'https', 'publisher', 'publication', 'base_url',
+            'repository',
         )
 
 

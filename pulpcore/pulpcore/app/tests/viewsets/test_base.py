@@ -12,11 +12,11 @@ class TestGetQuerySet(TestCase):
         is being added to the queryset based on its "parent_lookup_kwargs" value.
         """
         pk = uuid4()
-        viewset = viewsets.ImporterViewSet()
+        viewset = viewsets.RepositoryVersionViewSet()
         viewset.kwargs = {'repository_pk': pk}
         queryset = viewset.get_queryset()
 
-        expected = models.Importer.objects.filter(repository__pk=pk)
+        expected = models.RepositoryVersion.objects.filter(repository__pk=pk)
 
         self.assertQuerysetEqual(queryset, expected)
 
