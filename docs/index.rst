@@ -1,10 +1,5 @@
 Pulp Documentation
 
-Documentation architecture reflects the recommended linear progression for each of our audiences:
-(1) Users
-(2) Plugin Writers
-(3) Pulpcore contributors
-
 The documentation contains 3 types of documents:
 (1) Guides: Guides are introductory materials and have relatively little prerequisite knowledge.
 Guides focus on high level concepts and practical use.
@@ -16,38 +11,70 @@ read the relevant introductory material, though expected knowledge should be exp
 For each audience, there are "entry points" that are the start of a linear flow through all the
 information that the user would need for a particular topic.
 
+Documentation architecture reflects the recommended linear progression for each of our audiences:
+
 Entry Points:
 
 1) Users
    0) Prospective user evaluation
-   root index -> overview(why) -> overview concepts -> plugin docs
+   root index
+      overview
+         whytousepulp
+         concepts(guide)
+   plugin docs
 
    1) New user quickstart
-      root index (here) -> installation -> plugin installation -> plugin quickstart
+      root index (here)
+         installation(guide)
+         plugin
+            installation
+            quickstart
 
    2) Intermediate user designing their workflow
-      Overview -> Concepts -> Workflows -> CLI guide -> Plugin Guides
+      Overview Concepts(guide)
+      Workflows(links)
+         Plugin Guides
+      CLI (reference)
 
-   3) Advanced User tweaking their workflow
-      Workflows -> CLI guide -> REST API reference -> Plugin Topics -> bugs-feature -> contributing
-      docs
+   3) Advanced User tweaking their workflow->
+      Workflows
+         Plugin Docs
+      Topics
+      REST API
+      bugs-feature
+         contributing docs
 
    4) User with problems
-      guide/topic -> bugs-features
+      guide/topic
+      bugs-features
 
    5) User with a feature request
-      Overview -> bugs-features
+      Overview
+      bugs-features
 
 2) Plugin Writer
-   Overview -> plugins -> plugin-writer-guide -> plugin template quickstart -> plugin-api -> rest api ->
-   contributing/architecture -> bugs-features
+   Overview
+   plugins
+      plugin-writer-guide
+         plugin template quickstart
+      plugin-api
+   contributing/architecture
+   rest api
+   bugs/features
 
 3) Integrator (REST API consumer)
-   Overview -> workflows -> integration guide
+   Overview
+   workflows
+   integration guide
 
 4) pulpcore contributors
-   overview -> contributing/dev-setup -> contributing/pull-request-walkthrough ->
-   contributing/architecture -> internal PUPs -> style guide
+   overview
+   contributing
+      dev-setup
+      pull-request-walkthrough
+      architecture
+      style guide
+   internal PUPs
 
 .. toctree::
    :maxdepth: 2
