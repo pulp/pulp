@@ -24,6 +24,11 @@ class CreatedResourceSerializer(ModelSerializer):
         # If the content object was deleted
         if data.content_object is None:
             return None
+        try:
+            if not data.content_object.complete:
+                return None
+        except AttributeError:
+            pass
         request = self.context['request']
         viewset = viewset_for_model(data.content_object)
         serializer = viewset.serializer_class(data.content_object, context={'request': request})

@@ -445,7 +445,7 @@ class RepositoryVersion(Model):
         repo_relations.filter(version_added=self).update(version_added=next_version)
         repo_relations.filter(version_removed=self).update(version_removed=next_version)
 
-    def delete(self):
+    def delete(self, **kwargs):
         """
         Deletes a RepositoryVersion
 
@@ -466,7 +466,7 @@ class RepositoryVersion(Model):
                 # and delete the version
                 repo_relations.filter(version_added=self).delete()
                 repo_relations.filter(version_removed=self).update(version_removed=None)
-            super(RepositoryVersion, self).delete()
+            super().delete(**kwargs)
 
         else:
             with transaction.atomic():
@@ -476,7 +476,7 @@ class RepositoryVersion(Model):
                 CreatedResource.objects.filter(object_id=self.pk).delete()
                 self.repository.last_version = self.number - 1
                 self.repository.save()
-                super(RepositoryVersion, self).delete()
+                super().delete(**kwargs)
 
     def __enter__(self):
         """
@@ -492,7 +492,7 @@ class RepositoryVersion(Model):
         Save the RepositoryVersion if no errors are raised, delete it if not
         """
         if exc_value:
-            self.delete_incomplete()
+            self.delete()
         else:
             self.complete = True
             self.save()
