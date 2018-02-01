@@ -265,7 +265,7 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository)
     number = models.PositiveIntegerField(db_index=True)
     created = models.DateTimeField(auto_now_add=True)
-    complete = models.BooleanField(default=False)
+    complete = models.BooleanField(db_index=True, default=False)
 
     class Meta:
         default_related_name = 'versions'
