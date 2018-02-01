@@ -73,6 +73,16 @@ class Publication(Model):
             resource.save()
             return publication
 
+    @property
+    def repository(self):
+        """
+        Return the associated repository
+
+        Returns:
+            pulpcore.app.models.Repository: The repository associated to this publication
+        """
+        self.repository_version.repository
+
     def delete(self, **kwargs):
         """
         Delete the publication.
@@ -95,8 +105,11 @@ class Publication(Model):
             with transaction.atomic():
                 self.complete = True
                 self.save()
+
                 # Auto-Distribution
-                for distribution in Distribution.objects.filter(publisher=self.publisher):
+                distributions = Distribution.objects.filter(publisher=self.publisher,
+                                                            repository=self.repository)
+                for distribution in distributions:
                     distribution.publication = self
                     distribution.save()
         else:
@@ -167,20 +180,22 @@ class Distribution(Model):
 
     Relations:
         publisher (models.ForeignKey): The associated publisher.
-            All publications created by the specified publisher will be automatically associated.
+            All publications of the repository that are created by the publisher will be
+            automatically associated.
+        repository (models.ForeignKey): The associated repository.
         publication (models.ForeignKey): The current publication associated with
             the distribution.  This is the publication being served by Pulp through
             this relative URL path and settings.
     """
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True, unique=True)
     base_path = models.CharField(max_length=255, unique=True)
     http = models.BooleanField(default=False)
     https = models.BooleanField(default=True)
 
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
     publisher = models.ForeignKey('Publisher', null=True, on_delete=models.SET_NULL)
+    repository = models.ForeignKey('Repository', null=True, on_delete=models.SET_NULL)
 
     class Meta:
-        unique_together = ('publisher', 'name')
         default_related_name = 'distributions'

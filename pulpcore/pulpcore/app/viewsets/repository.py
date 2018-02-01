@@ -70,27 +70,7 @@ class RepositoryViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
 
-class ContentAdaptorFilter(filterset.FilterSet):
-    """
-    A base ContentAdaptor filter which cannot be used on its own.
-
-    Importer/Publisher base filters would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify model for which filter is defined
-       - to extend `fields` with specific ones
-    """
-    repo_name = CharFilter(name="repository__name")
-
-    class Meta:
-        # One should not specify ContentAdaptor model here because it is an abstract model
-        # so it does not have managers which are required by filters to query data from db.
-        fields = ['name', 'last_updated', 'repo_name']
-
-
-class ImporterFilter(ContentAdaptorFilter):
+class ImporterFilter(filterset.FilterSet):
     """
     Plugin importer filter would need:
      - to inherit from this class
@@ -104,10 +84,10 @@ class ImporterFilter(ContentAdaptorFilter):
 
     class Meta:
         model = Importer
-        fields = ContentAdaptorFilter.Meta.fields + ['name_in_list']
+        fields = ['name', 'last_updated', 'name_in_list']
 
 
-class PublisherFilter(ContentAdaptorFilter):
+class PublisherFilter(filterset.FilterSet):
     """
     Plugin publisher filter would need:
      - to inherit from this class
@@ -119,7 +99,7 @@ class PublisherFilter(ContentAdaptorFilter):
     """
     class Meta:
         model = Publisher
-        fields = ContentAdaptorFilter.Meta.fields
+        fields = ['name', 'last_updated']
 
 
 class RepositoryVersionContentFilter(CharFilter):
