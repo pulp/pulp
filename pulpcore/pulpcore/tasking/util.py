@@ -5,6 +5,8 @@ import logging
 from celery import current_app, current_task
 from celery.app import control
 
+from django.db import transaction
+
 from pulpcore.app.models import Task
 from pulpcore.common import TASK_FINAL_STATES
 from pulpcore.exceptions import MissingResource
@@ -38,12 +40,41 @@ def cancel(task_id):
         return
 
     celery_controller.revoke(task_id, terminate=True)
-    task_status.state = Task.CANCELED
-    task_status.save()
+
+    with transaction.atomic():
+        task_status.state = Task.CANCELED
+        task_status.save()
+        _delete_incomplete_resources(task_status)
 
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     _logger.info(msg)
+
+
+def _delete_incomplete_resources(task):
+    """
+    Delete all incomplete created-resources on a canceled task.
+
+    Args:
+        task (Task): A task.
+    """
+    if not task.state == Task.CANCELED:
+        raise RuntimeError(_('Task must be canceled.'))
+    for model in (r.content_object for r in task.created_resources.all()):
+        try:
+            if model.complete:
+                continue
+        except AttributeError:
+            continue
+        try:
+            with transaction.atomic():
+                model.delete()
+        except Exception as error:
+            _logger.error(
+                _('Delete created resource, failed: %(reason)s'),
+                {
+                    'reason': str(error)
+                })
 
 
 def get_current_task_id():
