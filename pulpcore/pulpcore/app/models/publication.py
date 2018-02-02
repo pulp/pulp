@@ -1,31 +1,106 @@
-from django.db import models
+from django.db import models, transaction
 
-from pulpcore.app.models import Model, storage
+from . import storage
+from .base import Model
+from .task import CreatedResource
 
 
 class Publication(Model):
     """
+    A publication contains metadata and artifacts associated with content
+    contained within a RepositoryVersion.
+
+    Using as a context manager is highly encouraged.  On context exit, the complete attribute
+    is set True provided that an exception has not been raised.  In the event and exception
+    has been raised, the publication is deleted.
+
     Fields:
         complete (models.BooleanField): State tracking; for internal use. Indexed.
         created (models.DatetimeField): When the publication was created UTC.
 
     Relations:
         publisher (models.ForeignKey): The publisher that created the publication.
-        repository_version (models.ForeignKey): The RepositoryVersion whose content set was used to
+        repository_version (models.ForeignKey): The RepositoryVersion used to
             create this Publication.
+
+    Examples:
+        >>> publisher = ...
+        >>> repository_version = ...
+        >>>
+        >>> with Publication.create(repository_version, publisher) as publication:
+        >>>     for content in repository_version.content():
+        >>>         for content_artifact in content.contentartifact_set.all():
+        >>>             artifact = PublishedArtifact(...)
+        >>>             artifact.save()
+        >>>             metadata = PublishedMetadata(...)
+        >>>             metadata.save()
+        >>>             ...
+        >>>
     """
 
-    complete = models.BooleanField(default=False)
+    complete = models.BooleanField(db_index=True, default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
-
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['complete']),
-        ]
+    @classmethod
+    def create(cls, repository_version, publisher):
+        """
+        Create a publication.
+
+        This should be used to create a publication.  Using Publication() directly
+        is highly discouraged.
+
+        Args:
+            repository_version (pulpcore.app.models.RepositoryVersion): The repository
+                version to be published.
+            publisher (pulpcore.app.models.Publisher): The publisher used
+                to create the publication.
+
+        Returns:
+            pulpcore.app.models.Publication: A created Publication in an incomplete state.
+
+        Notes:
+            Adds a Task.created_resource for the publication.
+        """
+        with transaction.atomic():
+            publication = cls(
+                repository_version=repository_version,
+                publisher=publisher)
+            publication.save()
+            resource = CreatedResource(content_object=publication)
+            resource.save()
+            return publication
+
+    def delete(self, **kwargs):
+        """
+        Delete the publication.
+
+        Args:
+            **kwargs (dict): Delete options.
+
+        Notes:
+            Deletes the Task.created_resource when complete is False.
+        """
+        with transaction.atomic():
+            CreatedResource.objects.delete(object_id=self.pk)
+            super().delete(**kwargs)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not exc_val:
+            with transaction.atomic():
+                self.complete = True
+                self.save()
+                # Auto-Distribution
+                for distribution in Distribution.objects.filter(publisher=self.publisher):
+                    distribution.publication = self
+                    distribution.save()
+        else:
+            self.delete()
 
 
 class PublishedFile(Model):
