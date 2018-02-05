@@ -226,7 +226,7 @@ class DistributionSerializer(ModelSerializer):
     publication = serializers.HyperlinkedRelatedField(
         allow_null=True,
         help_text=_('The publication being served as defined by this distribution'),
-        queryset=models.Publication.objects.all(),
+        queryset=models.Publication.objects.exclude(complete=False),
         view_name='publications-detail'
     )
     base_url = BaseURLField(
