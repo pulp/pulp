@@ -86,11 +86,11 @@ class PluginCallConfiguration:
 
         return default
 
-    def get_boolean(self, key):
+    def get_boolean(self, key, default=None):
         """
         Parses the given key as a boolean value. If the key is not present or
-        is not one of the acceptable values for representing a boolean, None
-        is returned.
+        is not one of the acceptable values for representing a boolean, a default
+        value (defaulting to None) is returned.
 
         :param key: key to look up in the configuration
         :type  key: str
@@ -112,7 +112,7 @@ class PluginCallConfiguration:
                 return True
             elif str_bool == 'false':
                 return False
-        return None
+        return default
 
     def flatten(self):
         """
