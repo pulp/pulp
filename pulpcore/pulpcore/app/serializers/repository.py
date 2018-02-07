@@ -140,7 +140,7 @@ class PublisherSerializer(MasterModelSerializer):
     _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A unique name for this publisher.'),
-        validators=[UniqueValidator(queryset=models.Importer.objects.all())]
+        validators=[UniqueValidator(queryset=models.Publisher.objects.all())]
     )
     last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),

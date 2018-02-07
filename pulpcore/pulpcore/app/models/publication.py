@@ -81,7 +81,7 @@ class Publication(Model):
         Returns:
             pulpcore.app.models.Repository: The repository associated to this publication
         """
-        self.repository_version.repository
+        return self.repository_version.repository
 
     def delete(self, **kwargs):
         """
