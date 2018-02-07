@@ -106,7 +106,7 @@ class Importer(MasterModel):
         """
         return get_tls_path(self, name)
 
-    name = models.TextField(db_index=True)
+    name = models.TextField(db_index=True, unique=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     feed_url = models.TextField()
@@ -155,7 +155,7 @@ class Publisher(MasterModel):
     """
     TYPE = 'publisher'
 
-    name = models.TextField(db_index=True)
+    name = models.TextField(db_index=True, unique=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     auto_publish = models.BooleanField(default=True)
