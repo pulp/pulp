@@ -1,10 +1,16 @@
 import warnings
 
+from gettext import gettext as _
+from urllib.parse import urlparse
+
 from pulpcore.app import tasks
 from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
 
+from django.urls import resolve, Resolver404
+
 from rest_framework import viewsets, mixins
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 
 
@@ -32,6 +38,34 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
     nest_prefix = None
     parent_viewset = None
     parent_lookup_kwargs = {}
+
+    @staticmethod
+    def get_resource(uri, model):
+        """
+        Resolve a resource URI to an instance of the resource.
+
+        Provides a means to resolve an href passed in a POST body to an
+        instance of the resource.
+
+        Args:
+            uri (str): A resource URI.
+            model (django.models.Model): A model class.
+
+        Returns:
+            django.models.Model: The resource fetched from the DB.
+
+        Raises:
+            ValidationError: on invalid URI or resource not found.
+        """
+        try:
+            match = resolve(urlparse(uri).path)
+        except Resolver404:
+            raise ValidationError(detail=_('URI not valid: {u}').format(u=uri))
+        pk = match.kwargs['pk']
+        try:
+            return model.objects.get(pk=pk)
+        except model.DoesNotExist:
+            raise ValidationError(detail=_('URI not found: {u}').format(u=uri))
 
     @classmethod
     def is_master_viewset(cls):
