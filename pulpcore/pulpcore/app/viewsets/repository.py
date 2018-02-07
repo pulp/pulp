@@ -1,7 +1,8 @@
+import itertools
+
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
 from rest_framework import decorators, mixins
-
 
 from pulpcore.app import tasks
 from pulpcore.app.models import (Content,
@@ -10,6 +11,7 @@ from pulpcore.app.models import (Content,
                                  Publication,
                                  Publisher,
                                  Repository,
+                                 RepositoryContent,
                                  RepositoryVersion)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
@@ -29,11 +31,10 @@ from pulpcore.common import tags
 
 class RepositoryFilter(filterset.FilterSet):
     name_in_list = CharInFilter(name='name', lookup_expr='in')
-    content_added_since = filters.Filter(name='last_content_added', lookup_expr='gt')
 
     class Meta:
         model = Repository
-        fields = ['name', 'name_in_list', 'content_added_since']
+        fields = ['name', 'name_in_list']
 
 
 class RepositoryViewSet(NamedModelViewSet):
@@ -121,6 +122,86 @@ class PublisherFilter(ContentAdaptorFilter):
         fields = ContentAdaptorFilter.Meta.fields
 
 
+class RepositoryVersionContentFilter(CharFilter):
+    """
+    Filter used to get the repository versions where some given content can be found.
+
+    Given a content_href, this filter will:
+        1. Get the RepositoryContent that the content can be found in
+        2. Get a list of version_added and version_removed where the content was
+           changed on the repository
+        3. Calculate and return the versions that the content can be found on
+    """
+
+    def filter(self, qs, value):
+        """
+        Args:
+            qs (django.db.models.query.QuerySet): The RepositoryVersion Queryset
+            value (string): of content href to filter
+
+        Returns:
+            Queryset of the RepositoryVersions containing the specified content
+        """
+
+        # If no value is passed, return queryset as-is
+        if not value:
+            return qs
+
+        # Get the content object from the content_href
+        content = GenericNamedModelViewSet.get_resource(value, Content)
+
+        # Get the repository from the parent request.
+        repository_pk = self.parent.request.parser_context['kwargs']['repository_pk']
+        repository = Repository.objects.get(pk=repository_pk)
+
+        repository_content_set = RepositoryContent.objects.filter(content=content,
+                                                                  repository=repository)
+
+        # Get the sorted list of version_added and version_removed.
+        version_added = list(repository_content_set.values_list('version_added__number', flat=True))
+
+        # None values have to be filtered out from version_removed,
+        # in order for zip_longest to pass it a default fillvalue
+        version_removed = list(filter(None.__ne__, repository_content_set
+                                      .values_list('version_removed__number', flat=True)))
+
+        # The range finding should work as long as both lists are sorted
+        # Why it works: https://gist.github.com/werwty/6867f83ae5adbae71e452c28ecd9c444
+        version_added.sort()
+        version_removed.sort()
+
+        # Match every version_added to a version_removed, if len(version_removed)
+        # is shorter than len(version_added), pad out the remaining space with the current
+        # repository version +1 (the +1 is to the current version gets included when we
+        # calculate range)
+        version_tuples = itertools.zip_longest(version_added, version_removed,
+                                               fillvalue=repository.last_version + 1)
+
+        # Get the ranges between paired version_added and version_removed to get all
+        # the versions the content is present in.
+        versions = [list(range(added, removed)) for (added, removed) in version_tuples]
+        # Flatten the list of lists
+        versions = list(itertools.chain.from_iterable(versions))
+
+        return qs.filter(number__in=versions)
+
+
+class RepositoryVersionFilter(filterset.FilterSet):
+
+    version_min = filters.NumberFilter(name='number', lookup_expr='gte')
+    version_max = filters.NumberFilter(name='number', lookup_expr='lte')
+
+    created_after = filters.DateTimeFilter(name='created', lookup_expr='gte')
+    created_before = filters.DateTimeFilter(name='created', lookup_expr='lte')
+
+    content = RepositoryVersionContentFilter(label="Content HREF is equivalent to")
+
+    class Meta:
+        model = RepositoryVersion
+
+        fields = ['version_min', 'version_max', 'created_after', 'created_before', 'content']
+
+
 class RepositoryVersionViewSet(GenericNamedModelViewSet,
                                mixins.RetrieveModelMixin,
                                mixins.ListModelMixin,
@@ -133,6 +214,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
     parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
     serializer_class = RepositoryVersionSerializer
     queryset = RepositoryVersion.objects.exclude(complete=False)
+    filter_class = RepositoryVersionFilter
 
     @decorators.detail_route()
     def content(self, request, repository_pk, number):
