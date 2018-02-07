@@ -8,6 +8,7 @@ from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
 
 from django.urls import resolve, Resolver404
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import ValidationError
@@ -66,6 +67,8 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
             return model.objects.get(pk=pk)
         except model.DoesNotExist:
             raise ValidationError(detail=_('URI not found: {u}').format(u=uri))
+        except DjangoValidationError:
+            raise ValidationError(detail=_('UUID invalid: {u}').format(u=pk))
 
     @classmethod
     def is_master_viewset(cls):
