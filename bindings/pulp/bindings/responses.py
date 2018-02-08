@@ -93,6 +93,7 @@ class Task(object):
         self.exception = response_body.get('exception')
         self.traceback = response_body.get('traceback')
         self.error = response_body.get('error')
+        self.worker_name = response_body.get('worker_name')
         self.spawned_tasks = []
         spawned_tasks = response_body.get('spawned_tasks')
         if spawned_tasks:

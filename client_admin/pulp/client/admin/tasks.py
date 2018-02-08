@@ -11,8 +11,9 @@ from pulp.common.constants import CALL_COMPLETE_STATES, CALL_CANCELED_STATE
 
 # Guidance for render_document_list on how to display task info
 TASK_DETAILS_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time',
-                          'result', 'task_id']
-TASK_LIST_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'task_id']
+                          'result', 'task_id', 'worker_name']
+TASK_LIST_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'task_id',
+                       'worker_name']
 # This constant set is used for purging the completed tasks from the collection.
 VALID_STATES = set(filter(lambda state: state != CALL_CANCELED_STATE, CALL_COMPLETE_STATES))
 
@@ -91,7 +92,7 @@ class BaseTasksSection(PulpCliSection):
         task_documents = []
         for task in task_objects:
             # Interpret task values
-            state, start_time, finish_time, result = self.parse_state(task)
+            state, start_time, finish_time, result, worker_name = self.parse_state(task)
             actions, resources = self.parse_tags(task)
 
             task_doc = {
@@ -101,6 +102,7 @@ class BaseTasksSection(PulpCliSection):
                 'state': state,
                 'start_time': start_time,
                 'finish_time': finish_time,
+                'worker_name': task.worker_name,
             }
             task_documents.append(task_doc)
 
@@ -118,7 +120,7 @@ class BaseTasksSection(PulpCliSection):
         task = response.response_body
 
         # Interpret task values
-        state, start_time, finish_time, result = self.parse_state(task)
+        state, start_time, finish_time, result, worker_name = self.parse_state(task)
         actions, resources = self.parse_tags(task)
 
         # Assemble document to be displayed
@@ -131,6 +133,7 @@ class BaseTasksSection(PulpCliSection):
             'finish_time': finish_time,
             'result': result,
             'progress_report': task.progress_report,
+            'worker_name': task.worker_name
         }
 
         if task.exception:
@@ -182,6 +185,7 @@ class BaseTasksSection(PulpCliSection):
 
         state = _('Unknown')
         result = _('Unknown')
+        worker_name = task.worker_name or _('Unknown')
         start_time = task.start_time or _('Unstarted')
         finish_time = task.finish_time or _('Incomplete')
 
@@ -208,7 +212,7 @@ class BaseTasksSection(PulpCliSection):
                 state = _('Canceled')
                 result = _('N/A')
 
-        return state, start_time, finish_time, result
+        return state, start_time, finish_time, result, worker_name
 
     @staticmethod
     def parse_tags(task):
@@ -250,7 +254,7 @@ class BaseTasksSection(PulpCliSection):
 
 
 class AllTasksSection(BaseTasksSection):
-    FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+    FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time', 'worker_name')
 
     # Flags for purge command
     purge_all = PulpCliFlag('--all', _('if specified, all tasks in "successful, '
