@@ -319,8 +319,16 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         help_text=_('A list of counts of each type of content in this version.'),
         read_only=True
     )
+    add_content_units = serializers.ListField(
+        help_text=_('A list of content units to add to a new repository version'),
+        write_only=True
+    )
+    remove_content_units = serializers.ListField(
+        help_text=_('A list of content units to remove from the latest repository version'),
+        write_only=True
+    )
 
     class Meta:
         model = models.RepositoryVersion
         fields = ('_href', '_content_href', '_added_href', '_removed_href', 'number', 'created',
-                  'content_summary')
+                  'content_summary', 'add_content_units', 'remove_content_units')
