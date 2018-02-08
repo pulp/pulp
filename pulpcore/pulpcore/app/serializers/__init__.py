@@ -9,6 +9,7 @@ from pulpcore.app.serializers.fields import (BaseURLField, ContentRelatedField, 
 from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa
 from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa
 from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
+                                                 ExporterSerializer,
                                                  ImporterSerializer,
                                                  PublisherSerializer,
                                                  PublicationSerializer,

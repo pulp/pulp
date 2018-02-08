@@ -165,6 +165,29 @@ class Publisher(MasterModel):
         default_related_name = 'publishers'
 
 
+class Exporter(MasterModel):
+    """
+    A publication exporter.
+
+    Fields:
+
+        name (models.CharField): The exporter unique name.
+        last_updated (models.DatetimeField): Timestamp of the last update.
+        last_export (models.DatetimeField): When the last successful export occurred.
+
+    Relations:
+
+    """
+    TYPE = 'exporter'
+
+    name = models.CharField(max_length=255, db_index=True, unique=True)
+    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
+    last_export = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        default_related_name = 'exporters'
+
+
 class RepositoryContent(Model):
     """
     Association between a repository and its contained content.
