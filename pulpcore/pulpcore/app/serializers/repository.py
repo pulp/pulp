@@ -169,6 +169,31 @@ class PublisherSerializer(MasterModelSerializer):
         )
 
 
+class ExporterSerializer(MasterModelSerializer):
+    _href = DetailIdentityField()
+    name = serializers.CharField(
+        help_text=_('The exporter unique name.'),
+        validators=[UniqueValidator(queryset=models.Exporter.objects.all())]
+    )
+    last_updated = serializers.DateTimeField(
+        help_text=_('Timestamp of the last update.'),
+        read_only=True
+    )
+    last_export = serializers.DateTimeField(
+        help_text=_('Timestamp of the last export.'),
+        read_only=True
+    )
+
+    class Meta:
+        abstract = True
+        model = models.Exporter
+        fields = MasterModelSerializer.Meta.fields + (
+            'name',
+            'last_updated',
+            'last_export',
+        )
+
+
 class DistributionSerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(
         view_name='distributions-detail'

@@ -7,8 +7,15 @@ from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyVa
 
 from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
 from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa
-from .repository import (Repository, Importer, Publisher, RepositoryContent,  # noqa
-                         RepositoryVersion)  # noqa
+from .repository import (  # noqa
+    Exporter,
+    Importer,
+    Publisher,
+    Repository,
+    RepositoryContent,
+    RepositoryVersion,
+)
+
 from .task import CreatedResource, ReservedResource, Worker, Task, TaskTag, TaskLock  # noqa
 
 # Moved here to avoid a circular import with Task

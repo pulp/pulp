@@ -5,26 +5,34 @@ from django_filters import CharFilter
 from rest_framework import decorators, mixins
 
 from pulpcore.app import tasks
-from pulpcore.app.models import (Content,
-                                 Distribution,
-                                 Importer,
-                                 Publication,
-                                 Publisher,
-                                 Repository,
-                                 RepositoryContent,
-                                 RepositoryVersion)
+from pulpcore.app.models import (
+    Content,
+    Distribution,
+    Exporter,
+    Importer,
+    Publication,
+    Publisher,
+    Repository,
+    RepositoryContent,
+    RepositoryVersion
+)
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import (ContentSerializer,
-                                      DistributionSerializer,
-                                      ImporterSerializer,
-                                      PublicationSerializer,
-                                      PublisherSerializer,
-                                      RepositorySerializer,
-                                      RepositoryVersionSerializer)
-from pulpcore.app.viewsets import (NamedModelViewSet,
-                                   GenericNamedModelViewSet,
-                                   CreateReadAsyncUpdateDestroyNamedModelViewset)
+from pulpcore.app.serializers import (
+    ContentSerializer,
+    DistributionSerializer,
+    ExporterSerializer,
+    ImporterSerializer,
+    PublicationSerializer,
+    PublisherSerializer,
+    RepositorySerializer,
+    RepositoryVersionSerializer
+)
+from pulpcore.app.viewsets import (
+    NamedModelViewSet,
+    GenericNamedModelViewSet,
+    CreateReadAsyncUpdateDestroyNamedModelViewset,
+)
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
 
@@ -100,6 +108,15 @@ class PublisherFilter(filterset.FilterSet):
     class Meta:
         model = Publisher
         fields = ['name', 'last_updated']
+
+
+class ExporterFilter(filterset.FilterSet):
+    class Meta:
+        model = Exporter
+        fields = [
+            'name',
+            'last_export'
+        ]
 
 
 class RepositoryVersionContentFilter(CharFilter):
@@ -280,6 +297,13 @@ class PublisherViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
+
+
+class ExporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
+    endpoint_name = 'exporters'
+    serializer_class = ExporterSerializer
+    queryset = Exporter.objects.all()
+    filter_class = ExporterFilter
 
 
 class PublicationViewSet(GenericNamedModelViewSet,
