@@ -264,13 +264,14 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         """
         add_content_units = []
         remove_content_units = []
+
         if 'add_content_units' in request.data:
-            for url in request.data['add_content_units']:
+            for url in request.data['add_content_units'].split(','):
                 content = self.get_resource(url, Content)
                 add_content_units.append(content.pk)
 
         if 'remove_content_units' in request.data:
-            for url in request.data['remove_content_units']:
+            for url in request.data['remove_content_units'].split(','):
                 content = self.get_resource(url, Content)
                 remove_content_units.append(content.pk)
 
