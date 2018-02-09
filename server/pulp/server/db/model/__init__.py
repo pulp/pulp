@@ -4,6 +4,7 @@ import os
 import random
 import shutil
 import uuid
+from celery import __version__ as celery_version
 from collections import namedtuple
 from gettext import gettext as _
 from hashlib import sha256
@@ -423,7 +424,8 @@ class Worker(AutoRetryDocument):
         :return: The name of the queue that this Worker is uniquely subcribed to.
         :rtype:  basestring
         """
-        return "%(name)s.dq" % {'name': self.name}
+        queue_name = "%(name)s.dq2" if celery_version.startswith('4') else "%(name)s.dq"
+        return queue_name % {'name': self.name}
 
 
 class MigrationTracker(AutoRetryDocument):
