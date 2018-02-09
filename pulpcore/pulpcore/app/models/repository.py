@@ -4,7 +4,6 @@ Repository related Django models.
 from contextlib import suppress
 from django.db import models
 from django.db import transaction
-from django.db.utils import IntegrityError
 
 from .base import Model, MasterModel
 from .content import Content
@@ -284,6 +283,15 @@ class RepositoryVersion(Model):
         )
         return Content.objects.filter(version_memberships__in=relationships)
 
+    def contains(self, content):
+        """
+        Check whether a content exists in this repository version's set of content
+
+        Returns:
+            bool: True if the repository version contains the content, False otherwise
+        """
+        return self.content.filter(pk=content.pk).exists()
+
     @property
     def content_summary(self):
         """
@@ -378,12 +386,15 @@ class RepositoryVersion(Model):
         """
         if self.complete:
             raise ResourceImmutableError(self)
-        with suppress(IntegrityError):
-            association = RepositoryContent(
-                repository=self.repository,
-                content=content,
-                version_added=self)
-            association.save()
+
+        if self.contains(content):
+            return
+
+        association = RepositoryContent(
+            repository=self.repository,
+            content=content,
+            version_added=self)
+        association.save()
 
     def remove_content(self, content):
         """
@@ -399,6 +410,9 @@ class RepositoryVersion(Model):
 
         if self.complete:
             raise ResourceImmutableError(self)
+
+        if not self.contains(content):
+            return
 
         q_set = RepositoryContent.objects.filter(
             repository=self.repository,
