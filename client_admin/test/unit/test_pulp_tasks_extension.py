@@ -108,7 +108,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
         # Verify
         mock_search.assert_called_once_with(fields=('tags', 'task_id', 'state', 'start_time',
-                                                    'finish_time'))
+                                                    'finish_time', 'worker_name'))
 
     @mock.patch('pulp.bindings.search.SearchAPI.search')
     def test_list_default(self, mock_search):
@@ -122,7 +122,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
         self.all_tasks_section.list(**data)
 
         # Verify
-        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time', 'worker_name')
         filters = {'state': {'$in': ['running', 'waiting']}, 'group_id': None}
         mock_search.assert_called_once_with(fields=fields, filters=filters)
 
@@ -138,7 +138,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
         self.all_tasks_section.list(**data)
 
         # Verify
-        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time', 'worker_name')
         filters = {'state': {'$in': 'canceled,error'}, 'group_id': None}
         mock_search.assert_called_once_with(fields=fields, filters=filters)
 
