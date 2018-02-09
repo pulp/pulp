@@ -125,7 +125,7 @@ class TaskResourceView(View):
             raise MissingResource(task_id)
 
         task_dict = task_serializer(task)
-        if 'worker_name' in task_dict:
+        if 'worker_name' in task_dict and task_dict['worker_name']:
             queue_name = Worker(name=task_dict['worker_name'],
                                 last_heartbeat=datetime.now()).queue_name
             task_dict.update({'queue': queue_name})
