@@ -1,10 +1,11 @@
 Workflows and Use Cases
 =======================
 
-Suggested workflows and common use cases can be found here.
+Best practices for content management are discussed here. The goal of this document is to provide a
+framework for users to design their own workflows with any content type. For specific examples,
+users should refer to :ref:`plugin<plugin-table>` documentation. This page assumes that the reader
+is familiar with the fundamentals discussed in the :doc:`/overview/index`.
 
-It can help you to find a convenient workflow or give you
-additional ideas of what Pulp can be used for.
 
 .. toctree::
    :maxdepth: 2

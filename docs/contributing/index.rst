@@ -1,15 +1,32 @@
-Contributing Guide
-==================
+Contributing
+============
+
+Contribution documentation generally assumes that the reader is familiar with
+:doc:`Pulp basics</overview/index>`. If you have problems, you can :ref:`contact us<community>`
+or :doc:`file an issue</bugs-features>`.
+
+Fundamentals
+------------
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
-   3.0-development/index
    dev-setup/index
-   platform_api/index
+   style-guide
+   pull-request-walkthrough
+
+
+Reference
+---------
+
+.. toctree::
+   :maxdepth: 1
+
+   architecture/index
+   error-handling
+   platform-api/index
    git
-   new_contributors
-   style_guide
    continuous_integration
-   language_guide
-   build_guide
+   documentation
+   pups
+   build-guide
