@@ -424,6 +424,9 @@ class Worker(AutoRetryDocument):
         :return: The name of the queue that this Worker is uniquely subcribed to.
         :rtype:  basestring
         """
+        if not self.name:
+            return ""
+
         queue_name = "%(name)s.dq2" if celery_version.startswith('4') else "%(name)s.dq"
         return queue_name % {'name': self.name}
 
