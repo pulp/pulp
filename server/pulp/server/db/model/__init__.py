@@ -423,6 +423,9 @@ class Worker(AutoRetryDocument):
         :return: The name of the queue that this Worker is uniquely subcribed to.
         :rtype:  basestring
         """
+        if not self.name:
+            return ""
+
         return "%(name)s.dq" % {'name': self.name}
 
 
