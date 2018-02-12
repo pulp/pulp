@@ -94,7 +94,7 @@ class Publication(Model):
             Deletes the Task.created_resource when complete is False.
         """
         with transaction.atomic():
-            CreatedResource.objects.delete(object_id=self.pk)
+            CreatedResource.objects.filter(object_id=self.pk).delete()
             super().delete(**kwargs)
 
     def __enter__(self):
