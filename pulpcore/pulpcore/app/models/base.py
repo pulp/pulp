@@ -101,7 +101,7 @@ class MasterModel(Model):
             if rel.one_to_one and issubclass(rel.related_model, self._meta.model):
                 # The name of this relation is the name of the attr on the model instance.
                 # If that attr as a value, that means a row exists for this model in the
-                # related detail table. Cast and resturn this value, recursively following
+                # related detail table. Cast and return this value, recursively following
                 # master/detail relationships down to the last table (the most detailed).
                 try:
                     return getattr(self, rel.name).cast()

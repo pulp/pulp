@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 
 from .base import Model, MasterModel
+from .content import Content
 from .generic import Notes, GenericKeyValueRelation
 from .task import CreatedResource
 
@@ -261,19 +262,27 @@ class RepositoryVersion(Model):
     @property
     def content(self):
         """
-        Returns a set of content objects for a repository version
+        Returns a set of content for a repository version
 
         Returns:
-            QuerySet: The Content objects that are related to this version.
+            django.db.models.QuerySet: The content that is contained within this version.
+
+        Examples:
+            >>> repository_version = ...
+            >>>
+            >>> for content in repository_version.content:
+            >>>     content = content.case()  # optional downcast.
+            >>>     ...
+            >>>
+            >>> for content in FileContent.objects.filter(pk__in=repository_version.content):
+            >>>     ...
+            >>>
         """
         relationships = RepositoryContent.objects.filter(
             repository=self.repository, version_added__number__lte=self.number).exclude(
             version_removed__number__lte=self.number
         )
-        # Surely there is a better way to access the model. Maybe it should be in this module.
-        content_model = self.repository.content.model
-        # This causes a SQL subquery to happen.
-        return content_model.objects.filter(version_memberships__in=relationships)
+        return Content.objects.filter(version_memberships__in=relationships)
 
     @property
     def content_summary(self):
@@ -283,8 +292,8 @@ class RepositoryVersion(Model):
         Returns:
             dict: of {<type>: <count>}
         """
-        mapping = self.content.values('type').annotate(count=models.Count('type'))
-        return {m['type']: m['count'] for m in mapping}
+        annotated = self.content.values('type').annotate(count=models.Count('type'))
+        return {c['type']: c['count'] for c in annotated}
 
     @classmethod
     def create(cls, repository):
@@ -302,7 +311,7 @@ class RepositoryVersion(Model):
         with transaction.atomic():
             version = cls(
                 repository=repository,
-                number=repository.last_version + 1)
+                number=int(repository.last_version) + 1)
             repository.last_version = version.number
             repository.save()
             version.save()
@@ -331,18 +340,14 @@ class RepositoryVersion(Model):
         Returns:
             QuerySet: The Content objects that were added by this version.
         """
-        # Surely there is a better way to access the model. Maybe it should be in this module.
-        content_model = self.repository.content.model
-        return content_model.objects.filter(version_memberships__version_added=self)
+        return Content.objects.filter(version_memberships__version_added=self)
 
     def removed(self):
         """
         Returns:
             QuerySet: The Content objects that were removed by this version.
         """
-        # Surely there is a better way to access the model. Maybe it should be in this module.
-        content_model = self.repository.content.model
-        return content_model.objects.filter(version_memberships__version_removed=self)
+        return Content.objects.filter(version_memberships__version_removed=self)
 
     def next(self):
         """
