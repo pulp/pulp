@@ -16,7 +16,6 @@ class Publication(Model):
 
     Fields:
         complete (models.BooleanField): State tracking; for internal use. Indexed.
-        created (models.DatetimeField): When the publication was created UTC.
 
     Relations:
         publisher (models.ForeignKey): The publisher that created the publication.
@@ -39,7 +38,6 @@ class Publication(Model):
     """
 
     complete = models.BooleanField(db_index=True, default=False)
-    created = models.DateTimeField(auto_now_add=True)
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
