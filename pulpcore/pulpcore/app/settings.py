@@ -211,9 +211,9 @@ _DEFAULT_PULP_SETTINGS = {
     'broker': {
         'url': 'amqp://guest@localhost//',
         'celery_require_ssl': False,
-        'ssl_ca_certificate': '/etc/pki/pulp/qpid/ca.crt',
-        'ssl_client_key': '/etc/pki/pulp/qpid/client.crt',
-        'ssl_client_certificate': '/etc/pki/pulp/qpid/client.crt',
+        'ssl_ca_certificate': '/etc/pki/pulp/broker/ca.crt',
+        'ssl_client_key': '/etc/pki/pulp/broker/client.crt',
+        'ssl_client_certificate': '/etc/pki/pulp/broker/client.crt',
         'login_method': None
     },
     'profiling': {
