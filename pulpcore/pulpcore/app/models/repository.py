@@ -108,7 +108,6 @@ class Importer(MasterModel):
         return get_tls_path(self, name)
 
     name = models.TextField(db_index=True, unique=True)
-    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     feed_url = models.TextField()
     validate = models.BooleanField(default=True)
@@ -157,7 +156,6 @@ class Publisher(MasterModel):
     TYPE = 'publisher'
 
     name = models.TextField(db_index=True, unique=True)
-    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     auto_publish = models.BooleanField(default=True)
     last_published = models.DateTimeField(blank=True, null=True)
@@ -182,7 +180,6 @@ class Exporter(MasterModel):
     TYPE = 'exporter'
 
     name = models.CharField(max_length=255, db_index=True, unique=True)
-    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
     last_export = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -239,7 +236,6 @@ class RepositoryVersion(Model):
         number (models.PositiveIntegerField): A positive integer that uniquely identifies a version
             of a specific repository. Each new version for a repo should have this field set to
             1 + the most recent version.
-        created (models.DateTimeField): When the version was created.
         action  (models.TextField): The action that produced the version.
         complete (models.BooleanField): If true, the RepositoryVersion is visible. This field is set
             to true when the task that creates the RepositoryVersion is complete.
@@ -250,7 +246,6 @@ class RepositoryVersion(Model):
     """
     repository = models.ForeignKey(Repository)
     number = models.PositiveIntegerField(db_index=True)
-    created = models.DateTimeField(auto_now_add=True)
     complete = models.BooleanField(db_index=True, default=False)
 
     class Meta:
@@ -271,7 +266,7 @@ class RepositoryVersion(Model):
             >>> repository_version = ...
             >>>
             >>> for content in repository_version.content:
-            >>>     content = content.case()  # optional downcast.
+            >>>     content = content.cast()  # optional downcast.
             >>>     ...
             >>>
             >>> for content in FileContent.objects.filter(pk__in=repository_version.content):

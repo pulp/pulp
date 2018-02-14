@@ -11,7 +11,9 @@ class Model(models.Model):
     behavior.
 
     Fields:
-        id: UUID ID Primary Key Field
+        id (models.UUIDField): UUID ID Primary Key Field
+        created (models.DateTimeField): Created timestamp UTC.
+        last_updated (models.DateTimeField): Last updated timestamp UTC.
 
     References:
 
@@ -20,10 +22,9 @@ class Model(models.Model):
         * https://www.postgresql.org/docs/current/static/datatype-uuid.html
 
     """
-    # ...we have zero interest in using a mongo-specific datatype (ObjectId) as
-    # the django PK, but it is possible to convert ObjectIds to UUIDs if we want to
-    # maintain PKs from mongo to postgres.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         abstract = True
