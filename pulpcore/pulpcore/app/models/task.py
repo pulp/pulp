@@ -7,7 +7,7 @@ import logging
 
 import celery
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from pulpcore.app.models import Model, GenericRelationModel
@@ -26,16 +26,16 @@ class ReservedResource(Model):
 
     Fields:
 
-        resource (models.TextField): The name of the resource reserved for the task.
+        resource (models.TextField): The url of the resource reserved for the task.
 
     Relations:
 
         task (models.ForeignKey): The task associated with this reservation
         worker (models.ForeignKey): The worker associated with this reservation
     """
-    resource = models.TextField()
+    resource = models.TextField(unique=True, blank=False)
 
-    task = models.OneToOneField("Task")
+    tasks = models.ManyToManyField("Task", related_name="reserved_resources")
     worker = models.ForeignKey("Worker", on_delete=models.CASCADE, related_name="reservations")
 
 
@@ -83,6 +83,25 @@ class WorkerManager(models.Manager):
                            last_heartbeat__gte=age_threshold,
                            online=True)
 
+    def with_reservations(self, resources):
+        """
+        Returns a worker with ANY of the reservations for resources specified by resource urls. This
+        is useful when looking for a worker to queue work against as we don't care if it doesn't
+        have all the reservations as we can still try creating reservations for the additional
+        resources we need.
+
+        Arguments:
+            resources (list): a list of resource urls
+
+        Returns:
+            :class:`pulpcore.app.models.Worker`: A worker with locks on resources
+
+        Raises:
+            Worker.DoesNotExist: If no worker has all resources locked
+            Worker.MultipleObjectsReturned: More than one worker holds reservations
+        """
+        return self.filter(reservations__resource__in=resources).distinct().get()
+
 
 class Worker(Model):
     """
@@ -114,6 +133,25 @@ class Worker(Model):
                 only update an existing database record.
         """
         self.save(update_fields=['last_heartbeat'])
+
+    def lock_resources(self, task, resource_urls):
+        """
+        Attempt to lock all resources by their urls. Must be atomic to prevent deadlocks.
+
+        Arguments:
+            task (pulpcore.app.models.Task): task to lock the resource for
+            resource_urls (List): a list of resource urls to be locked
+
+        Raises:
+            django.db.IntegrityError: If the reservation already exists
+        """
+        with transaction.atomic():
+            for resource in resource_urls:
+                if self.reservations.filter(resource=resource).exists():
+                    reservation = self.reservations.get(resource=resource)
+                else:
+                    reservation = ReservedResource.objects.create(worker=self, resource=resource)
+                reservation.tasks.add(task)
 
 
 class TaskLock(Model):
@@ -251,6 +289,16 @@ class Task(Model):
         self.finished_at = timezone.now()
         self.error = exception_to_dict(exc, einfo.traceback)
         self.save()
+
+    def release_resources(self):
+        """
+        Release the reserved resources that are reserved by this task. If a reserved resource no
+        longer has any tasks reserving it, delete it.
+        """
+        for reservation in self.reserved_resources.all():
+            reservation.tasks.remove(self.id)
+            if not reservation.tasks.exists():
+                reservation.delete()
 
 
 class TaskTag(Model):

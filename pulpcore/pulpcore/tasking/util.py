@@ -6,8 +6,10 @@ from celery import current_app, current_task
 from celery.app import control
 
 from django.db import transaction
+from django.urls import reverse
 
 from pulpcore.app.models import Task
+from pulpcore.app.serializers import view_name_for_model
 from pulpcore.common import TASK_FINAL_STATES
 from pulpcore.exceptions import MissingResource
 
@@ -87,3 +89,17 @@ def get_current_task_id():
     """
     with suppress(AttributeError):
         return current_task.request.id
+
+
+def get_url(model):
+    """
+    Get a resource url for the specified model object. This returns the path component of the
+    resource URI.  This is used in our resource locking/reservation code to identify resources.
+
+    Args:
+        model (django.models.Model): A model object.
+
+    Returns:
+        str: The path component of the resource url
+    """
+    return reverse(view_name_for_model(model, 'detail'), args=[model.pk])

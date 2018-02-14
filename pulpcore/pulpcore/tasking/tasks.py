@@ -14,7 +14,7 @@ from django.conf import settings as pulp_settings
 from django.db import IntegrityError, transaction
 
 from pulpcore.app.models import Task as TaskStatus
-from pulpcore.app.models import ReservedResource, Worker
+from pulpcore.app.models import Worker
 from pulpcore.common import TASK_STATES
 from pulpcore.exceptions import PulpException
 from pulpcore.tasking import util
@@ -41,8 +41,36 @@ class PulpTask(CeleryTask):
     pass
 
 
+def _acquire_worker(resources):
+    """
+    Attempts to acquire a worker for a set of resource urls. If no worker has any of those resources
+    reserved, then the first available worker is returned
+
+    Arguments:
+        resources (list): a list of resource urls
+
+    Returns:
+        :class:`pulpcore.app.models.Worker`: A worker to queue work for
+
+    Raises:
+        Worker.DoesNotExist: If no worker is found
+    """
+    # Find a worker who already has this reservation, it is safe to send this work to them
+    try:
+        worker = Worker.objects.with_reservations(resources)
+    except Worker.MultipleObjectsReturned:
+        raise Worker.DoesNotExist
+    except Worker.DoesNotExist:
+        pass
+    else:
+        return worker
+
+    # Otherwise, return any available worker
+    return Worker.objects.get_unreserved_worker()
+
+
 @task(base=PulpTask, acks_late=True)
-def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwargs, options):
+def _queue_reserved_task(name, inner_task_id, resources, inner_args, inner_kwargs, options):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
     called the "inner" task, and a task name, UUID, and accepts a list of positional args
@@ -59,7 +87,7 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
         inner_task_id (basestring): The UUID to be set on the task being called. By providing
             the UUID, the caller can have an asynchronous reference to the inner task
             that will be dispatched.
-        resource_id (basestring): The name of the resource you wish to reserve for your task.
+        resources (basestring): The urls of the resource you wish to reserve for your task.
             The system will ensure that no other tasks that want that same reservation will run
             concurrently with yours.
         inner_args (tuple): The positional arguments to pass on to the task.
@@ -69,47 +97,43 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
     Returns:
         An AsyncResult instance as returned by Celery's apply_async
     """
-    while True:
-        # Find a worker who already has this reservation, it is safe to send this work to them
-        try:
-            worker = ReservedResource.objects.filter(resource=resource_id)[0].worker
-        except IndexError:
-            pass
-        else:
-            break
-
-        try:
-            worker = Worker.objects.get_unreserved_worker()
-        except Worker.DoesNotExist:
-            pass
-        else:
-            break
-
-        # No worker is ready for this work, so we need to wait
-        time.sleep(0.25)
-
     task_status = TaskStatus.objects.get(pk=inner_task_id)
+    while True:
+        try:
+            worker = _acquire_worker(resources)
+        except Worker.DoesNotExist:
+            # no worker is ready so we need to wait
+            time.sleep(0.25)
+            continue
+
+        try:
+            worker.lock_resources(task_status, resources)
+        except IntegrityError:
+            # we have a worker but we can't create the reservations so wait
+            time.sleep(0.25)
+        else:
+            # we have a worker with the locks
+            break
+
     task_status.worker = worker
     task_status.save()
-    ReservedResource.objects.create(task=task_status, worker=worker, resource=resource_id)
 
     try:
         celery.tasks[name].apply_async(args=inner_args, task_id=inner_task_id,
                                        routing_key=worker.name, exchange=DEDICATED_QUEUE_EXCHANGE,
                                        kwargs=inner_kwargs, **options)
     finally:
-        _release_resource.apply_async(args=(inner_task_id, ), routing_key=worker.name,
-                                      exchange=DEDICATED_QUEUE_EXCHANGE)
+        _release_resources.apply_async(args=(inner_task_id, ), routing_key=worker.name,
+                                       exchange=DEDICATED_QUEUE_EXCHANGE)
 
 
 @task(base=PulpTask)
-def _release_resource(task_id):
+def _release_resources(task_id):
     """
     Do not queue this task yourself. It will be used automatically when your task is dispatched by
     the _queue_reserved_task task.
 
-    When a resource-reserving task is complete, this method releases the resource by removing the
-    ReservedResource object by UUID.
+    When a resource-reserving task is complete, this method releases the task's resource(s)
 
     Args:
         task_id (basestring): The UUID of the task that requested the reservation
@@ -130,7 +154,7 @@ def _release_resource(task_id):
 
         new_task.on_failure(runtime_exception, task_id, (), {}, MyEinfo)
 
-    ReservedResource.objects.filter(task__pk=task_id).delete()
+    TaskStatus.objects.get(pk=task_id).release_resources()
 
 
 class UserFacingTask(PulpTask):
@@ -152,12 +176,12 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, resource_type, resource_id, tags=[], group_id=None,
-                                     args=None, kwargs=None, **options):
+    def apply_async_with_reservation(self, resources, tags=[], group_id=None, args=None,
+                                     kwargs=None, **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
-        resource name. No two tasks that claim the same resource name can execute concurrently. It
-        accepts resource_type and resource_id and combines them to form a reservation key.
+        resource urls. No two tasks that claim the same resource can execute concurrently. It
+        accepts resources which it transforms into a list of urls (one for each resource).
 
         This does not dispatch the task directly, but instead promises to dispatch it later by
         encapsulating the desired task through a call to a :func:`_queue_reserved_task` task. See
@@ -168,9 +192,8 @@ class UserFacingTask(PulpTask):
         before it returns.
 
         Args:
-            resource_type (basestring): A string that identifies type of a resource
-            resource_id (basestring): A string that identifies some named resource, guaranteeing
-                that only one task reserving this same string can happen at a time.
+            resources (list): A list of resources to reserve guaranteeing that only one task
+                reserves these resources
             tags (list): A list of tags (strings) to place onto the task, used for searching
                 for tasks by tag. This is an optional argument which is pulled out of kwargs.
             group_id (uuid.UUID): The id to identify which group of tasks a task belongs to.
@@ -182,9 +205,7 @@ class UserFacingTask(PulpTask):
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async
         """
-        # Form a resource_id for reservation by combining given resource type and id. This way,
-        # two different resources having the same id will not block each other.
-        resource_id = ":".join((resource_type, resource_id))
+        resources = {util.get_url(resource) for resource in resources}
         inner_task_id = str(uuid.uuid4())
         task_name = self.name
 
@@ -199,7 +220,7 @@ class UserFacingTask(PulpTask):
                 task_status.tags.create(name=tag)
 
         # Call the outer task which is a promise to call the real task when it can.
-        _queue_reserved_task.apply_async(args=(task_name, inner_task_id, resource_id, args,
+        _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
                                                kwargs, options),
                                          queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)

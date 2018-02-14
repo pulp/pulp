@@ -222,8 +222,7 @@ class AsyncUpdateMixin(object):
         serializer.is_valid(raise_exception=True)
         app_label = instance._meta.app_label
         async_result = tasks.base.general_update.apply_async_with_reservation(
-            instance._meta.db_table, pk,
-            args=(pk, app_label, serializer.__class__.__name__),
+            [instance], args=(pk, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result], request)
@@ -245,7 +244,7 @@ class AsyncRemoveMixin(object):
         serializer = self.get_serializer(instance)
         app_label = instance._meta.app_label
         async_result = tasks.base.general_delete.apply_async_with_reservation(
-            instance._meta.db_table, pk,
+            [instance],
             args=(pk, app_label, serializer.__class__.__name__)
         )
         return OperationPostponedResponse([async_result], request)

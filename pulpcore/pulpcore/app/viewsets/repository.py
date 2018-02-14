@@ -34,7 +34,6 @@ from pulpcore.app.viewsets import (
     CreateReadAsyncUpdateDestroyNamedModelViewset,
 )
 from pulpcore.app.viewsets.custom_filters import CharInFilter
-from pulpcore.common import tags
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -61,7 +60,7 @@ class RepositoryViewSet(NamedModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         async_result = tasks.repository.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(instance.id),
+            [instance],
             args=(instance.id, ),
             kwargs={'data': request.data,
                     'partial': partial}
@@ -74,7 +73,7 @@ class RepositoryViewSet(NamedModelViewSet):
         """
         repo = self.get_object()
         async_result = tasks.repository.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, str(repo.id), kwargs={'repo_id': repo.id})
+            [repo], kwargs={'repo_id': repo.id})
         return OperationPostponedResponse([async_result], request)
 
 
@@ -253,8 +252,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         """
         version = self.get_object()
         async_result = tasks.repository.delete_version.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repository_pk,
-            kwargs={'pk': version.pk}
+            [version.repository], kwargs={'pk': version.pk}
         )
         return OperationPostponedResponse([async_result], request)
 
@@ -264,6 +262,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         """
         add_content_units = []
         remove_content_units = []
+        version = self.get_object()
 
         if 'add_content_units' in request.data:
             for url in request.data['add_content_units'].split(','):
@@ -276,7 +275,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
                 remove_content_units.append(content.pk)
 
         result = tasks.repository.add_and_remove.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repository_pk,
+            [version.repository],
             kwargs={
                 'repository_pk': repository_pk,
                 'add_content_units': add_content_units,
