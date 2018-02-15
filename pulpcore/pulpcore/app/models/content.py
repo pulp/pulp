@@ -136,7 +136,7 @@ class ContentArtifact(Model):
     """
     artifact = models.ForeignKey(Artifact, on_delete=models.PROTECT, null=True)
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
-    relative_path = models.CharField(max_length=64)
+    relative_path = models.CharField(max_length=256)
 
     class Meta:
         unique_together = ('content', 'relative_path')
