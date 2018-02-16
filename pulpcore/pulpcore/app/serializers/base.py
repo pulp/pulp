@@ -103,6 +103,16 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('_href',)
 
     def create(self, validated_data):
+        """
+        Handles the creation of a Model with generic related fields.
+
+        Args:
+            validated_data (dict): of data needed to create a Model
+
+        Returns:
+            django.db.model: Meta.model created from the validated_data
+        """
+
         # pop related fields out of validated data
         generic_field_mappings = self._generic_field_mappings(validated_data)
 
