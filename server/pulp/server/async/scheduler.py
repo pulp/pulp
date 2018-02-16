@@ -152,6 +152,7 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._loaded_from_db_count = 0
+        self._most_recent_timestamp = None
         self._first_lock_acq_check = True
 
         # Force the use of the Pulp celery_instance when this custom Scheduler is used.
@@ -313,9 +314,10 @@ class Scheduler(beat.Scheduler):
             logging.debug(_('number of enabled schedules has changed'))
             return True
 
-        if utils.get_updated_since(self._most_recent_timestamp).count() > 0:
-            logging.debug(_('one or more enabled schedules has been updated'))
-            return True
+        if self._most_recent_timestamp is not None:
+            if utils.get_updated_since(self._most_recent_timestamp).count() > 0:
+                logging.debug(_('one or more enabled schedules has been updated'))
+                return True
 
         return False
 
