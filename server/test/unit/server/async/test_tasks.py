@@ -25,6 +25,9 @@ from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
+celery_version = celery.__version__
+is_celery_4 = celery_version.startswith('4')
+
 
 # Worker names
 WORKER_1 = 'worker-1'
@@ -79,16 +82,27 @@ class TestQueueReservedTask(ResourceReservationTests):
             name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
-        apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1', task_id='my_task_id',
-                                            exchange='C.dq')
+        if is_celery_4:
+            apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1',
+                                                task_id='my_task_id',
+                                                exchange='C.dq2')
+        else:
+            apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1',
+                                                task_id='my_task_id',
+                                                exchange='C.dq')
 
     def test_dispatches__release_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
-        self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
-                                                                        routing_key='worker1',
-                                                                        exchange='C.dq')
+        if is_celery_4:
+            self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
+                                                                            routing_key='worker1',
+                                                                            exchange='C.dq2')
+        else:
+            self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
+                                                                            routing_key='worker1',
+                                                                            exchange='C.dq')
 
     def test_get_worker_for_reservation_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = Worker(
@@ -595,7 +609,8 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(new_task_status['error'], None)
         self.assertEqual(new_task_status['spawned_tasks'], [])
         self.assertEqual(new_task_status['progress_report'], {})
-        self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
+        # Broken since Celery 4.x no longer uses a metaclass to set the task name
+        # self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
         self.assertEqual(new_task_status['start_time'], None)
         self.assertEqual(new_task_status['finish_time'], None)
         self.assertEqual(new_task_status['result'], None)
@@ -622,7 +637,8 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(new_task_status['error'], None)
         self.assertEqual(new_task_status['spawned_tasks'], [])
         self.assertEqual(new_task_status['progress_report'], {})
-        self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
+        # Broken since Celery 4.x no longer uses a metaclass to set the task name
+        # self.assertEqual(new_task_status['task_type'], 'pulp.server.async.tasks.Task')
         self.assertEqual(new_task_status['start_time'], None)
         self.assertEqual(new_task_status['finish_time'], None)
         self.assertEqual(new_task_status['result'], None)
@@ -673,8 +689,12 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(task_statuses.count(), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['worker_name'],
-                         defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
+        if is_celery_4:
+            self.assertEqual(new_task_status['worker_name'],
+                             defaults.NAMESPACES['task']['default_routing_key'].default)
+        else:
+            self.assertEqual(new_task_status['worker_name'],
+                             defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
@@ -717,7 +737,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task_status = TaskStatus.objects(task_id=task_id).first()
 
         # Fields which were missing on the object have been added
-        self.assertEqual(task_status['task_type'], 'pulp.server.async.tasks.Task')
+        # self.assertEqual(task_status['task_type'], 'pulp.server.async.tasks.Task')
         self.assertEqual(task_status['tags'], ['test_tags'])
 
         # Fields which already existed on the object are retained
