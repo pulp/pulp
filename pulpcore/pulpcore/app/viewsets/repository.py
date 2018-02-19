@@ -262,20 +262,20 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         """
         add_content_units = []
         remove_content_units = []
-        version = self.get_object()
+        repository = self.get_parent_object()
 
         if 'add_content_units' in request.data:
-            for url in request.data['add_content_units'].split(','):
+            for url in request.data['add_content_units']:
                 content = self.get_resource(url, Content)
                 add_content_units.append(content.pk)
 
         if 'remove_content_units' in request.data:
-            for url in request.data['remove_content_units'].split(','):
+            for url in request.data['remove_content_units']:
                 content = self.get_resource(url, Content)
                 remove_content_units.append(content.pk)
 
         result = tasks.repository.add_and_remove.apply_async_with_reservation(
-            [version.repository],
+            [repository],
             kwargs={
                 'repository_pk': repository_pk,
                 'add_content_units': add_content_units,
