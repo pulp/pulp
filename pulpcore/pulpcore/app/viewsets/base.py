@@ -183,6 +183,18 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                 filters[parent_lookup] = self.kwargs[key]
             return parent_field, get_object_or_404(self.parent_viewset.queryset, **filters)
 
+    def get_parent_object(self):
+        """
+        For nested ViewSets, retrieve the nested parent implied by the url.
+
+        Returns:
+            Model: parent model object
+        Raises:
+            django.http.Http404: When the parent implied by the url does not exist. Synchronous
+                                 use should allow this to bubble up and return a 404.
+        """
+        return self.get_parent_field_and_object()[1]
+
 
 class NamedModelViewSet(mixins.CreateModelMixin,
                         mixins.RetrieveModelMixin,
