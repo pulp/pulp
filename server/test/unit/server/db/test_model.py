@@ -5,6 +5,7 @@ Tests for the pulp.server.db.model module.
 """
 from hashlib import sha256
 from mock import patch, Mock, call
+import celery
 import os
 import shutil
 import stat
@@ -24,6 +25,9 @@ from pulp.server.db import model
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.querysets import CriteriaQuerySet, WorkerQuerySet
 from pulp.server.webservices.views import serializers
+
+celery_version = celery.__version__
+is_celery_4 = celery_version.startswith('4')
 
 
 class TestAutoRetryDocument(unittest.TestCase):
@@ -687,7 +691,10 @@ class TestWorkerModel(unittest.TestCase):
     def test_queue_name(self):
         worker = model.Worker()
         worker.name = "fake-worker"
-        self.assertEquals(worker.queue_name, 'fake-worker.dq')
+        if is_celery_4:
+            self.assertEquals(worker.queue_name, 'fake-worker.dq2')
+        else:
+            self.assertEquals(worker.queue_name, 'fake-worker.dq')
 
     def test_attributes(self):
         self.assertTrue(isinstance(model.Worker.name, StringField))
