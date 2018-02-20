@@ -1,4 +1,10 @@
+Flow
+
+   Overview
+   workflows
+   integration guide
+
 .. toctree::
    :maxdepth: 2
 
-   rest_api/index
+   rest-api/index

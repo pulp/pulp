@@ -63,7 +63,7 @@ Example Docstring
 
 Encoding
 --------
-Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the 
+Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the
 file.
 
 .. _error-handling:
@@ -80,4 +80,4 @@ failed. The error traceback, description, and code are returned to the user unde
 object.
 
 When raising exceptions `built-in Python Exceptions <https://docs.python.org/3/library/exceptions.html>`_
-should be used if possible. :doc:`Coded Exceptions <./platform_api/exceptions>` should be used for known error situations.
+should be used if possible. :doc:`Coded Exceptions <./platform-api/exceptions>` should be used for known error situations.
