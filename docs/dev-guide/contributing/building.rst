@@ -22,46 +22,7 @@ of a build that the Pulp build scripts can later assemble. The components within
 file specify the target koji tag as well as the individual git repositories and branches that
 will be assembled as part of a build. In addition it specifies the directories within
 https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
-will be published. The file has the following format:
-::
-
-  koji-target-prefix: pulp-2.9
-  rsync-target-dir: 2.9/dev
-  tsync-tested-dir: 2.9/stage
-  repositories:
-    - name: pulp
-      external_deps: deps/external_deps.json
-      git_url: git@github.com:pulp/pulp.git
-      git_branch: 2.9-dev
-      version: 2.9.0-0.7.beta
-
-``koji-target-prefix``: This target needs to exist in koji.
-
-``rsync-target-dir``: The directory to rsync the RPMs to when the build is complete.
-
-``rsync-tested-dir``: The directory to rsync the RPMs to when the build is complete
-and passes automated testing.
-
-``repositories``: describes a list of Git repositories to include in the build.
-
-Each repository has the following fields:
-
-``name``: name of the project in repository. This should be the same as the name
-of the root directory of a project.
-
-``external_deps``: path inside root directory of repository of the json file describing external
-dependencies that need to be included in the RPM repository at the end of build process.
-
-``git_url``: URL used to clone a project
-
-``git_branch``: Branch or tag to checkout after cloning the git repository
-
-``parent_branch``: This is only used when a project is being built from a hotfix branch. This value
-specifies which branch the current branch should be merged into.
-
-``version``: The version that is being built. When building an alpha, beta, or RC the format is the
-following: X.Y.Z-0.<build_number>.<alpha,beta,rc> When building a GA version the format is
-X.Y.Z-<build_number>
+will be published.
 
 .. note::
 
@@ -92,8 +53,8 @@ config README, located next to the
 When to build from a -dev branch, a tag or hotfix branch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All alphas and betas are built from the -dev branch of each project. As changes are added to the
--dev branch of a project, those changes are released with the next alpha or beta. Once a beta is
+All betas are built from the -release branch of each project. As changes are cherry-picked
+to the -release branch of a project, those changes are released with the next beta. Once a beta is
 considered stable, the release candidate should be built from the tag that was generated during
 the build process of the stable beta. This guarantees that the RPMs generated will be exactly the
 same as the ones that were part of the stable beta. Similarly, a GA release should be built from
@@ -101,14 +62,8 @@ the tag created by the release candidate.
 
 In some situations you want to include something extra on top of the stable beta. This could be
 documentation changes or a particular fix for an issue that was found after releasing the first
-release candidate. In these situations either a -dev branch or a hotfix branch is used to do the
-build. The -dev branch can be used only if it contains exactly the changes you'd want to have in
-the build and nothing more. If other changes have been made to the -dev branch, then the changes
-that need to be included in the next release candidate should be put on a hotfix branch that is
-created from the tag that was created when building the previous release candidate. In the
-situation where a hotfix branch is used, the yaml config should include a `parent_branch`. The
-`parent_branch` in this case should be the name of the -dev branch that was used to build the
-betas.
+release candidate. Hotfixes can be merged to the x.y-release branch that is used to do the
+build, and tags updated.
 
 Tools used when building
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -119,16 +74,15 @@ for validation.  When those jobs are initiated manually there is a parameter to 
 release build process in koji.  If a release build is performed with Jenkins you will still need
 to sign the rpms and manually push them to the final location on fedorapeople.
 
-Pulp has some helper scripts in the
-`pulp-ci/ci <https://github.com/pulp/pulp-ci/tree/master/ci>`_ directory to assist
-with builds. These wrapper scripts call `tito <https://github.com/dgoodwin/tito>`_
+Pulp utilizes an ansible based tool called obal `obal <https://github.com/theforeman/obal>`_
+to assist with builds. These scripts call `tito <https://github.com/dgoodwin/tito>`_
 and `koji <https://fedoraproject.org/wiki/Koji>`_ to do the actual tagging and
 build work.
 
-Both packages are in Fedora and EPEL so you should not need to install from
+Both tito and koji are in Fedora and EPEL so you should not need to install from
 source. Technically you do not need to ever call these scripts directly.
 However, some familiarity with both tito and koji is good, especially when
-debugging build issues.
+debugging build issues.  Obal can be installed from pip: ``pip install obal``.
 
 What you will need
 ^^^^^^^^^^^^^^^^^^
@@ -148,22 +102,17 @@ packages to the fedorapeople.org repository. You can get this from members of th
 Additionally you will need to install the following packages on the machine
 you will be building from, using dnf or yum:
 
-* createrepo
 * koji
 * tito
+* obal
 
 Configuring your build environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are interested in building Pulp, it is strongly recommended that you use a separate checkout
-from your normal development environment to avoid any potential errors such as building in local
-changes, or building the wrong branches. It is also a good idea to use a build host in a location
-with good outbound bandwidth, as the repository publish can be at or over 250 MB. Thus, the first
-step is to make a clean checkout of the pulp_packging somewhere away from your other checkouts::
+If you are interested in building Pulp, you should start by making a clean checkout of
+the pulp-packging repository ::
 
-    $ mkdir ~/pulp_build
-    $ cd ~/pulp_build
-    $ git clone git@github.com:pulp/pulp-ci.git
+    $ git clone git@github.com:pulp/pulp-packaging.git
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder.
@@ -217,72 +166,57 @@ Building Dependencies
 ^^^^^^^^^^^^^^^^^^^^^
 
 If you wish to add or update the version or release of one of our dependencies, you should begin by
-adding/updating the dependency's tarball, patches, and spec file in the Pulp git repository as
-appropriate for the task at hand. **Don't forget to set the version/release in the spec file.** Once
-you have finished that work, you are ready to test the changes. In the directory that contains the
-dependency, use tito to build a test RPM. For example, for python-celery::
+adding/updating the dependency's spec file in the pulp-packaging repository as appropriate for the
+task at hand. **Don't forget to set the version/release in the spec file.** Once you have finished
+that work, you are ready to test the changes. In the root of the pulp-packaging directory, use obal
+to build a test RPM. For example, for python-celery::
 
-    $ cd deps/python-celery
-    $ tito build --test --rpm
+    $ obal scratch python-celery -e 'build_package_test=true'
 
-Pay attention to the output from tito. There may be errors you will need to respond to. If all goes
-well, it should tell you the location that it placed some RPMs. You should install these RPMs and
+Pay attention to the output. There may be errors you will need to respond to. If all goes
+well, you should be able to download rpms from the koji task. You should install these RPMs and
 test them to make sure they work with Pulp and that you want to introduce this change to the
 repository.
 
 If you are confident in your changes, submit a pull request with the changes you have made so far.
-Once someone approves the changes, merge the pull request. Once you have done this, you are ready to
-tag the git repository with your changes::
+Once someone approves the changes, merge the pull request. Once you have done this, you are ready
+to release the dependency::
 
-    $ tito tag --keep-version
-
-Pay attention to the output of tito here as well. It will instruct you to push your branch and the
-new tag to GitHub.
+    $ obal release python-celery
 
 .. warning::
 
-   It is very important that you perform the steps that tito instructs you to do. If you do not,
-   others will not be able to reproduce the changes you have made!
+   If this dependency is for other releases of pulp, you will need tag them into other
+   version-release tags in koji
 
-At this point the dependency will automatically be built during all test builds of Pulp and will
-automatically have a release build performed when the next release build containing this
-dependency is performed.
+   $ koji tag-build pulp-x.y-el7 python-celery-x.y.z-1.el7
+
 
 Test Building Pulp and the plugins
 ----------------------------------
 
 Are you ready to build something? The next step is to ensure that the build that you are going to do
-has an appropriate yaml file in ``pulp-ci/ci/config/releases/<build-name>.yaml`` (explained
-in detail above). Double check for each repository that the ``git_branch`` field points to the
-branch or tag that you wish to build from and that the ``version`` field is correct. The
-``pulp-ci/ci/build-all.py`` script which will perform the following actions:
+has an appropriate branch in ``pulp-packaging`` (explained in detail above). Double check for each
+spec file that the ``Source0`` field points to the branch or tag that you wish to build from and
+that the ``version`` field is correct. The ``obal`` script which will perform the following actions:
 
-#. Load the specified configuration from ``pulp-ci/ci/config/releases``.
-#. Clone all the required git repositories to the ``working/<repo_name>`` directory.
-#. Check out the appropriate branch or tag for each of git repos.
-#. If branch, check that the branch has been merged forward.
-#. Update version in main spec file to match version in yaml config provided.
-#. If on branch, merge forward the spec change using -ours strategy
-#. Find all the spec files in the repositories.
-#. Check koji to determine if the version in the spec already exists in koji.
-#. Test build all the packages that do not already exist in koji.
-#. Optionally (if ``--release`` is passed), create tag and push it to GitHub.
-#. Optionally (if ``--release`` is passed), release build all the packages that do not already exist
-   in Koji.
-#. Download the already existing packages from koji.
-#. Download the scratch built packages from koji.
-#. Assemble the repositories for all the associated distributions.
-#. Optionally (if ``--disable-push`` is not passed) push the repositories to fedorapeople.
+#. Reads package_manifest.yaml
+#. Downloads the Source0 file with git-annex for package
+#. Uses tito to build the package in koji
+#. (If ``obal release``) Tag the successful build in koji
+
 
 Run the build script with the following syntax::
 
-    $ ./build-all.py <name of yaml file> [options]
+    $ obal [options] <name of package or group>
 
-For example, to perform a test build of the 2.6-build release as specified in
-``pulp-ci/ci/config/releases/2.6-build.py`` where the results are not pushed to
-fedorapeople::
+For example, to perform a test build of the 2.15 release as specified in ``pulp-packaging``
 
-    $ ./build-all.py 2.6-dev --disable-push
+    $ obal release pulp_packages -e 'build_package_test=true'
+
+Once builds have finished, ssh into koji and run the pulp mash script to generate the pulp repos.  Once
+that has finished, rsync them over from koji to the testing repo for that x.y version of pulp.
+
 
 Reconcile Redmine Issues
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -296,11 +230,12 @@ to the branch being released have the Platform Release field set correctly. See 
 `MODIFIED - No Release <https://pulp.plan.io/projects/pulp/issues?query_id=65>`_ report in Redmine
 for a list of issues that are ``MODIFIED`` but not value for the Platform Release field.
 
-All ``MODIFIED`` issues should include a link to the pull request for the related bugfix or feature.
-The target release can be determined by examining the destination branch of the pull request:
+All ``MODIFIED`` issues should include a link to the pull request for the related bugfix or feature,
+as well as all commits associated with it. The target release can be determined by examining it's
+tracker type in redmine.
 
-* Changes made on an ``x.y-dev`` branch belong in the next bugfix (Z) release.
-* Changes made on master go into the next feature (Y) release.
+* Issues or changes that don't impact user interaction belong in the next bugfix (Z) release.
+* Stories or changes that add new user visible items to pulp go into the next feature (Y) release.
 
 If in doubt, check with the developer that fixed the issue to determine which target
 release is appropriate.
@@ -317,37 +252,20 @@ Submit to Koji
 
 We are now prepared to submit the build to Koji. This task is simple::
 
-    $ cd pulp-ci/ci
-    $ ./build-all.py 2.6-build --release
+    $ cd pulp-packaging/
+    $ obal release pulp_packages -t wait
 
 This command will build SRPMs, upload them to Koji, and monitor the resulting builds. If any of them
 fail, you can view the
 `failed builds <http://koji.katello.org/koji/tasks?state=failed&view=tree&method=all&order=-id>`_ to
-see what went wrong. If the build was successful, it will automatically download the results into a
-new folder called mash that will be a peer to the ``pulp-ci`` directory.
+see what went wrong. If the build was successful, it will tag them into it's koji release tag.
 
-At the end it will automatically upload the resulting build to fedorapeople in the directory
-specified in the release config file. You can disable the push to fedorapeople by supplying
---disable-push flag.
+The mash script will need to be ran on koji and the generated repo needs to be rsynced to fedorapeople.
 
 If you want to start our Jenkins builder to run the unit tests in all the supported operating
 systems, you should wait until the build script is finished so that it can push the correct tag to
 GitHub. You can configure Jenkins to run the tests in the git branch or tag that you are building.
 Make sure these pass before publishing the build.
-
-After the repositories are built, the next step is to merge the tag changes you have made all the
-way forward to master.
-
-.. warning::
-
-   Do not use the ours strategy, as that will drop the changelog entries. You must manually resolve
-   the conflicts!
-
-You will experience conflicts with this step if you are building a stream that is not the latest
-stream. Be sure to merge forward on all of the repositories, keeping the changelog entries in
-chronological order. Be cautious not to clobber the versions in the spec file! Then you can
-``git push <branch>:<branch>`` after you check the diff to make sure it is correct. Lastly, do a new
-git checkout elsewhere and check that ``tito build --srpm`` is tagged correctly and builds.
 
 .. _building-updating-versions:
 
@@ -356,20 +274,15 @@ Updating Versions
 
 We use Jenkins to make nightly builds, so once you have built the package successfully and merged
 the changelog forward, you should update the yaml file that Jenkins uses and bump the versions of
-all the projects that were included in this build. You can use
-``update-version-and-merge-forward.py`` to update the versions. This script checks out all the
-projects and updates the version in the spec file and in all of the setup.py files.
+all the projects that were included in this build. You can use the ``update-version.py`` script in
+the pulp-ci repo to update the versions. This script updates the version in all of the setup.py files.
 
-This script should be run on dev branches after the first prerelease (beta and rc releases)
-of a given version to ensure that the nightly builds for that branch are clearly newer than the
-current release in progress. This means that the versions of packages building from -dev branches
-in the x.y-dev config should be higher than the versions of those same pages in the corresponding
-x.y-build and x.y-release configs.
+This script should be run on the master branch after the first prerelease (beta and rc releases)
+of a given x.y version to ensure that the nightly builds for that branch are clearly newer than the
+current release in progress.
 
-At this point you can inspect the files to ensure the versions are as you expect. You can rerun the
-script with ``--push`` flag to push the changes to Github.
-
-You should also push the changes in the release config yaml file to Github.
+At this point you can inspect the files to ensure the versions are as you expect. Create a merge
+request to the appropriate branch to update the version.
 
 Updating Docs
 -------------
@@ -396,22 +309,19 @@ When releasing a new X or Y release, ensure the following:
 
 Once the above changes are merged and the docs building job for the release exists, run the docs
 building job for that release from the `Docs Builders page <https://pulp-jenkins.rhev-ci-vms.eng.
-rdu2.redhat.com/view/Docs%20Builders/>`_. This should be done for pre-releases (using the
-``x.y-build`` release config) and GA releases (using the ``x.y-release`` config).
+rdu2.redhat.com/view/Docs%20Builders/>`_. This should be done for pre-releases and GA releases.
 
 Testing the Build
 -----------------
 
 In order to test the build you have just made, you can publish it to the Pulp testing repositories.
-Be sure to add the shared SSH keypair to your ssh-agent, and cd into the mash directory::
+Be sure to add the shared SSH keypair to your ssh-agent, ssh into koji::
 
-    $ ssh-add /path/to/key
-    $ cd mash/
-    $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/testing/<X.Y>/
+    [user@koij ~]$ rsync -avz --delete /mnt/koji/releases/split/yum/pulp-<x.y>/pulp/ pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/testing/<X.Y>/
 
-For our 2.4 beta example, the rsync command would be:
+For our 2.15 beta example, the rsync command would be:
 
-    $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/testing/2.4/
+    $ rsync -avz --delete /mnt/koji/releases/split/yum/pulp-2.15/pulp/ pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/testing/2.15/
 
 You can now run the automated QE suite against the testing repository to ensure that the build is
 stable and has no known issues. We have a Jenkins server for this purpose, and you can configure it
@@ -458,13 +368,25 @@ substituting X with your intended release::
 
     %_gpg_name Pulp (X)
 
+For each {name}-x.y.z-{release}.dist, run: (pulp 2.15.0 beta example)::
+
+    $ koji download-build pulp-2.15.0-0.2.beta.el7
+    $ koji download-build pulp-2.15.0-0.2.beta.fc25
+    $ koji download-build pulp-2.15.0-0.2.beta.fc26
+    etc...
+
 Next, run the following from your mash directory::
 
-    $ find -name "*.rpm" | xargs rpm --addsign
+    $ find . -name "*.rpm" | xargs rpm --addsign
 
 This will sign all of the RPMs in the mash. You then need to import signatures into koji::
 
-   $ find -name "*.rpm" | xargs koji import-sig
+   $ find . -name "*.rpm" | xargs koji import-sig
+
+Then write the signed RPM
+
+   $ for r in `find . -name "*src.rpm"`; do basename $r; done | sort | uniq | sed s/\.src\.rpm//g > /tmp/builds
+   $ for x in `cat /tmp/builds`; do koji write-signed-rpm [sig_hash] $x; done
 
 .. note::
 
@@ -473,24 +395,11 @@ This will sign all of the RPMs in the mash. You then need to import signatures i
    directory when the ``write-signed-rpm`` command is issued. The original
    unsigned RPM will remain untouched.
 
-As ``list-signed`` does not seem to work, do a random check in
-http://koji.katello.org/packages/ that
-http://koji.katello.org/packages/<name>/<version>/<release>/data/sigcache/<sig-hash>/
-exists and has some content in it. Once this is complete, you will need to
-tell koji to write out the signed RPMs (both commands are run from your mash dir)::
+Mash the release on koji (pulp 2.15 example) and sync it locally::
 
-   $ for r in `find -name "*src.rpm"`; do basename $r; done | sort | uniq | sed s/\.src\.rpm//g > /tmp/builds
-   $ for x in `cat /tmp/builds`; do koji write-signed-rpm <SIGNATURE-HASH> $x; done
-
-Sync down your mash one more time (run from the ``pulp-ci/ci`` dir)::
-
-   $ ./build-all.py <release_config> --disable-push --rpmsig <SIGNATURE-HASH>
-
-.. note::
-
-   This command does not download signed RPMs for RHEL 5, due to bugs in RHEL 5
-   related to signature verification. While we sign all RPMs including RHEL 5, we
-   do not publish the signed RPMs for this particular platform.
+   [user@koji ~]$ pulp-mash-split-2.15.py
+   [user@koji ~]$ exit
+   [user@local ~]$ rsync -avz --delete koji.katello.org:/mnt/koji/releases/split/yum/pulp-2.15/pulp/ .
 
 Finally, verify the downloaded signatures of the rpms in your mash directory::
 
@@ -510,12 +419,12 @@ Alpha builds should only be published to the testing repository. If you have a b
 that has passed tests in the testing repository, and you wish to promote it to the appropriate
 place, you can use a similar rsync command to do so::
 
-    $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/<stream>/<X.Y>/ --dry-run
+    [user@koji] $ rsync -avz --delete /mnt/koji/releases/split/yum/pulp-<x.y>/pulp/ pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/<stream>/<X.Y>/ --dry-run
 
-Replace ``<stream>`` with "beta" or "stable", and ``<X.Y>`` with the correct version. For our 2.4 beta
+Replace ``<stream>`` with "beta" or "stable", and ``<X.Y>`` with the correct version. For our 2.15 beta
 example::
 
-    $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/beta/2.4/ --dry-run
+    [user@koji] $ rsync -avz --delete /mnt/koji/releases/split/yum/pulp-2.15/pulp/ pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/beta/2.15/ --dry-run
 
 Note the ``--dry-run`` argument. This causes rsync to print out what it *would* do. Review its
 output to ensure that it is correct. If it is, run the command again while omitting that flag.
