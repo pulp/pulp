@@ -1,8 +1,26 @@
-Git
-===
+Pull Request Walkthrough
+========================
+
+Changes are submitted via Pull Requests TODO(link, github definition) to the TODO(link, pulp/pulp)
+repository. Plugin repositories are listed on the TODO(link, plugin table). This page
+
+Working with Git
+----------------
+
+The Pulp project uses TODO(link, git)
+
+Describe here, link to PUP 3
+
+* 3.0-dev
+* from master to master
+
+Feature branches
+
+Rebase and Squash
+*****************
 
 Commit Messages
----------------
+***************
 
 Commit messages in Pulp should contain a human readable explanation of what
 was fixed in the commit. They should also follow the standard git message
@@ -31,7 +49,7 @@ You can also reference multiple issues in a commit::
 
     fixes #123, #124
 
-Putting this altogether, the following is an example of a good commit message::
+Putting this all together, the following is an example of a good commit message::
 
     Update node install and quickstart
 
@@ -40,3 +58,22 @@ Putting this altogether, the following is an example of a good commit message::
 
     closes #1392
     https://pulp.plan.io/issues/1392
+Commit message <link to style_guide/commitmessage>
+
+Testing
+-------
+
+Style Guide
+-----------
+link
+
+Documentation
+-------------
+
+If a change affects the user experience, please update the documentation. Documentation changes
+should be included in the Pull Request that adds/updates a feature.
+
+link contributing/documentation
+
+Open a PR on GitHub
+-------------------

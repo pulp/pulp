@@ -6,12 +6,19 @@ Python Version
 All Pulp 3+ code will use Python 3.5+. It is not necessary to maintain backwards compatibility
 with Python 2.Y.
 
+When introducing new dependencies to Pulp,
+ensure they support Python 3 (see http://fedora.portingdb.xyz/). If they do not,
+please file an issue in Redmine (related to https://pulp.plan.io/issues/2247) to
+track the conversion of the dependency to support Python 3 and begin working with
+upstream to convert the package.
+
 PEP-8
 -----
 All code should be compliant with PEP-8_ where reasonable.
 
-It is recommended that contributors check for compliance by running flake8_. We include
-``flake8.cfg`` files in our git repositories for convenience.
+We include ``flake8.cfg`` files in our git repositories for convenience. Additionally, pull
+requests are checked using ``pep8speaks``, which must pass before changes are merged.  It is
+recommended that contributors check for compliance by running flake8_.
 
 .. _PEP-8: https://www.python.org/dev/peps/pep-0008
 .. _flake8: http://flake8.pycqa.org/en/latest/
@@ -33,6 +40,7 @@ Exceptions and Clarifications
 #. Modules should not include license information.
 #. The type of each Args value should be included after the variable name in parentheses. The type of each Returns value should be the first item on the line.
 #. Following the type of Args and Returns values, there will be a colon and a single space followed by the description. Additional spaces should not be used to align types and descriptions.
+#. When referencing imported code, types should be fully qualified
 #. Fields and Relations sections will be used when documenting fields on Django models. The Fields section will be used for non-related fields on Model classes. The Relations section will be used for related fields on Model classes.
 
 Auto-Documentation
@@ -55,6 +63,8 @@ Example Docstring
         Args:
             arg1 (str): The argument is visible, and its type is clearly indicated.
             much_longer_argument (str): Types and descriptions are not aligned.
+            imported_object_type (fully.qualified.import.path): Fully qualified types are helpful.
+                If the explanation goes longer than one line, indent 4 spaces.
 
         Returns:
             bool: The return value and type is very clearly visible.
@@ -63,21 +73,7 @@ Example Docstring
 
 Encoding
 --------
-Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the 
+Python 3 assumes that files are encoded with UTF-8, so it is not necessary to declare this in the
 file.
 
 .. _error-handling:
-
-Error Handling
---------------
-
-Errors in Tasks
-***************
-
-All uncaught exceptions in a task are treated as fatal exceptions. The task is then marked as
-failed. The error traceback, description, and code are returned to the user under the
-:attr:`~pulpcore.app.models.Task.error` attribute of the :class:`~pulpcore.app.models.Task`
-object.
-
-When raising exceptions `built-in Python Exceptions <https://docs.python.org/3/library/exceptions.html>`_
-should be used if possible. :doc:`Coded Exceptions <./platform_api/exceptions>` should be used for known error situations.

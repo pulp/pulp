@@ -1,14 +1,24 @@
 Contributing Guide
 ==================
 
-.. toctree::
-   :maxdepth: 3
+STUB(Invitation to contribute)
 
-   3.0-development/index
+Write a bug or request a feature
+   TODO(link) /bugs-features
+
+Write a plugin
+   TODO link plugin writer index
+
+Help other users or chat with us:
+   TODO link troubleshooting/get-help
+
+.. toctree::
+   :titlesonly:
+
+   style-guide
    dev-setup/index
-   platform_api/index
-   git
-   new_contributors
-   style_guide
-   language_guide
-   build_guide
+   pull-request-walkthrough
+   documentation
+   architecture/index
+   internal/index
+   platform-api/index

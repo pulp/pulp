@@ -1,5 +1,13 @@
-Pulp Plugin Basics
-==================
+Pulp Plugin Concepts
+====================
+
+The Pulp Core does not manage any content itself. This functionality is provided by
+its plugins, which use the Pulp Core Plugin API to manage specific types of content,
+like RPM Packages or Puppet Modules. To do this, the Pulp Core extends the Django
+Web Framework and the Django REST Framework to provide a set of base classes that can be
+implemented in plugins to manage content in a way that is consistent across plugins, while
+still allowing plugin writers the freedom to define their workflows as they deem necessary.
+
 
 .. _plugin-django-application:
 
@@ -10,12 +18,12 @@ Like the Pulp Core itself, all Pulp Plugins begin as Django Applications, starte
 any other with ``django-admin startapp <your_plugin>``. However, instead of subclassing
 Django's ``django.apps.AppConfig`` as seen `in the Django documentation
 <https://docs.djangoproject.com/en/1.8/ref/applications/#for-application-authors>`_,
-Pulp Plugins identify themselves as plugins to the Pulp Core by subclassing
+Pulp Plugins identify themselves as plugins to the ``pulpcore`` by subclassing
 :class:`pulpcore.plugin.PulpPluginAppConfig`. ``PulpPluginAppConfig``
 also provides the application autoloading behaviors, such as automatic registration of
-viewsets with the API router, necessary for Pulp plugins.
+viewsets with the API router, which is necessary for Pulp plugins to create API endpoints.
 
-The ``PulpPluginAppConfig`` subclass for any plugin must set its ``name`` attribute to
+For any plugin, the subclass of ``PulpPluginAppConfig`` must set its ``name`` attribute to
 the importable dotted Python location of the plugin application (the Python namespace
 that contains at least models and viewsets). Additionally, it should also set its ``label``
 attribute to something that unambiguously labels which plugin is represented by that
@@ -73,36 +81,12 @@ Take a look at `the structure <https://github.com/pulp/pulp_example/tree/master/
 of the ``pulp_example`` plugin.
 
 
-.. _subclassing-platform-models:
-
-Subclassing Content, Importer, Publisher
-----------------------------------------
-
-The following classes are expected to be defined by plugin.
-For more details and examples see :ref:`define-content-type`, :ref:`define-importer`, :ref:`define-publisher` sections of the guide.
-
-Models:
- * model(s) for the specific content type(s) used in plugin, should be subclassed from Content model
- * model(s) for the plugin specific importer(s), should be subclassed from Importer model
- * model(s) for the plugin specific publisher(s), should be subclassed from Publisher model
-
-Serializers:
- * serializer(s) for plugin specific content type(s), should be subclassed from ContentSerializer
- * serializer(s) for plugin specific importer(s), should be subclassed from ImporterSerializer
- * serializer(s) for plugin specific publisher(s), should be subclassed from PublisherSerializer
-
-Viewsets:
- * viewset(s) for plugin specific content type(s), should be subclassed from ContentViewset
- * viewset(s) for plugin specific importer(s), should be subclassed from ImporterViewset
- * viewset(s) for plugin specific publisher(s), should be subclassed from PublisherViewset
-
-
 .. _error-handling-basics:
 
 Error Handling
 --------------
 
-Please see the :ref:`error-handling` section in the code guidelines.
+Please see the :ref:`error-handling` section for details on fatal exceptions.
 
 Non fatal exceptions should be recorded with the
 :meth:`~pulpcore.plugin.tasking.Task.append_non_fatal_error` method. These non-fatal exceptions
