@@ -5,39 +5,36 @@ Pulp lives on `GitHub <https://github.com/pulp>`_. The "pulp" repository is for
 the platform, and then each supported content family (like "rpm" and "puppet")
 has its own repository.
 
-Pulp uses a version scheme x.y.z. Pulp's branching strategy is designed for
-bugfix development for older ``x.y`` release streams without interfering with
-development or contribution of new features to a future, unreleased ``x`` or
-``x.y`` release. This strategy encourages a clear separation of bugfixes and
-features as encouraged by `Semantic Versioning <http://semver.org/>`_.
+Pulp uses a version scheme ``x.y.z``. Pulp's branching strategy is designed for
+bugfix development on the ``master`` branch with cherry-picking fixes into
+``x.y`` streams as necessary. This version scheme is based
+on the `Semantic Versioning <http://semver.org/>`_ strategy.
 
 .. note::
 
-   Pulp's branching model is inspired by the strategy described by Vincent Driessen in
-   `this article <http://nvie.com/posts/a-successful-git-branching-model/>`_, but is not
-   identical to it.
+   For additional information on Pulp's branching strategy decision, please
+   refer to PUP-0003_
 
+.. _PUP-0003: https://github.com/pulp/pups/blob/master/pup-0003.md
 
 master
 ------
 
-This is the latest bleeding-edge code. All new feature work should be done out
-of this branch. Typically this is the development branch for future, unreleased
-``x`` or ``x.y`` release.
+This is the latest bleeding-edge code. All work should be done out of this branch.
 
 
 Version-Specific Branches
 -------------------------
 
-Each ``x.y`` release will have one corresponding branch called ``x.y-dev``. For
-example, all work for the 2.7.z series of releases gets merged into ``2.7-dev``.
+Each ``x.y`` release will have one corresponding branch called ``x.y-release``.  Fixes
+are cherry-picked back to these branches for each ``x.y.z`` release.
 
 
 Protected Branches
 ------------------
 
-Within each repository, the ``master`` branch, any branch ending in ``-dev``, and any
-branch ending in ``-release`` should be marked as
+Within each repository, the ``master`` branch, and any branch ending in ``-release``
+should be marked as
 `protected <https://help.github.com/articles/about-protected-branches/>`_
 on GitHub. The basic protection that disallows force-push and deletion is the
 only option that should be enabled. There should be no restrictions on required
@@ -53,7 +50,7 @@ Build Tags
 
 Builds will be represented only as tags.
 
-.. note:: In the past, the latest beta and GA release of an x.y stream would be
+.. note:: In the past, the latest beta and GA release of an ``x.y`` stream would be
     represented additionally by branches, but that is no longer the case as of
     pulp 2.7.
 
@@ -61,12 +58,10 @@ Builds will be represented only as tags.
 Build Lifecycle
 ---------------
 
-Alpha and Beta releases will be built from the tip of an ``x.y-dev`` branch. If
-the beta fails testing, blocking issues will have fixes merged to the
-``x.y-dev`` branch like any other bug fix, and then a new build will be made.
-Other changes unrelated to the blocking issues may get merged to the
-``x.y-dev`` branch between builds, and no effort will be made to "freeze" the
-branch. Any such unrelated changes will be included in the next beta build.
+Alpha and Beta releases will be built from the tip of an ``x.y-release`` branch. If
+the beta fails testing, blocking issues will have fixes merged to the master branch
+and picked back to the ``x.y-release`` branch like any other bug fix, and then a new
+build will be made.
 
 Release candidates will be built from the most recent beta tag. GA releases
 will be built from the most recent release candidate tag.
@@ -75,10 +70,9 @@ will be built from the most recent release candidate tag.
 Hotfix
 ------
 
-When a hotfix needs to be made, a branch will be created from the most recent
-``x.y.z`` release tag. The fix will be made (via pull request from a personal
-fork to the hotfix branch), a new tag will be built from the tip of the hotfix
-branch, and the hotfix branch can be merged to ``x.y-dev``.
+When a hotfix needs to be made. The fix will be made (via pull request from a personal
+fork to the ``x.y-release`` branch), a new tag will be built from the tip of the
+branch, and the fix can be cherry-picked forward with a pull request to ``master``.
 
 .. _bug_fix_branches:
 
@@ -88,7 +82,7 @@ Bug Fix Branches
 When creating a Pull Request (PR) that fixes a specific bug, title the PR as
 you would a :ref:`git commit message <commit_messages>` with a short,
 human-readable description. Bug fixes should always be made against
-the latest available ``x.y-dev`` branch.
+the ``master`` branch.
 
 
 .. _feature_branches:
@@ -99,10 +93,7 @@ Feature Branches
 Similar to bug fix branches, the name of a feature branch and its associated
 Pull Request should be a short, human-readable description of the feature being added.
 For example, a branch to add persistent named searches might be named
-``feature/named-searches``. Also new features should go into latest ``x.y-dev`` branch
-which does not have corresponding ``x.y-release`` branch. In case there is
-no such branch then the ``master`` branch is the right one. If you are not sure
-``master`` branch is always the correct one.
+``feature/named-searches``. New features should go into the ``master`` branch.
 
 
 .. _choosing-upstream-branch:
@@ -111,9 +102,9 @@ Choosing an Upstream Branch
 ---------------------------
 
 When creating a bug fix or feature branch, it is very important to choose the
-right upstream branch. The general rule is to always choose the oldest supported upstream
-branch that will need to contain your work. For more info see above
-:ref:`Feature Branches <feature_branches>` or :ref:`Bug Fix Branches <bug_fix_branches>`.
+right upstream branch. The general rule is to always choose the ``master`` branch.
+For more info see above :ref:`Feature Branches <feature_branches>` or
+:ref:`Bug Fix Branches <bug_fix_branches>`.
 
 
 .. _naming-of-the-new-branch:
@@ -141,8 +132,8 @@ we recommend `Tim Pope's blog post on the subject
 <http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html>`_.
 
 It's also recommended that every commit message in Pulp reference an issue in
-`Pulp's Redmine issue tracker <https://pulp.plan.io>`_. To do this you should
-use both a keyword and a link to the issue.
+Pulp's Redmine_ issue tracker. To do this you should use both a keyword and a
+link to the issue.
 
 To reference the issue (but not change its state), use ``re`` or ``ref``::
 
@@ -173,22 +164,17 @@ Putting this altogether, the following is an example of a good commit message::
   In case you have multiple commits use ``re`` or ``ref`` in all of them and ``fixes`` or ``close``
   only in the last one to avoid closing the issue before it's completely done.
 
-Cherry-picking and Rebasing
----------------------------
+
+.. _Redmine: https://pulp.plan.io
+
+Rebasing
+--------
 
 Don't do it! Seriously though, this should not happen between release branches.
 It is a good idea (but not required) for a developer to rebase his or her
-development branch *before* merging a pull request. Cherry-picking may also
-be valuable among development branches. However, master and release branches
-should not be involved in either.
-
-The reason is that both of these operations generate new and unique commits from
-the same changes. We do not want pulp-x.y and master to have the same bug fix
-applied by two different commits. By merging the same commit into both, we can
-easily verify months later that a critical bug fix is present in every appropriate
-release branch and build tag.
+development branch *before* merging a pull request.
 
 .. note::
- If you are not sure what "rebasing" and "cherry-picking" mean,
+ If you are not sure what "rebasing" means,
  `Pro Git <http://git-scm.com/book>`_ by Scott Chacon is an excellent resource
  for learning about git, including advanced topics such as these.
