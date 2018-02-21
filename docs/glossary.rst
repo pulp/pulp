@@ -3,124 +3,56 @@ Glossary
 
 .. glossary::
 
-    Artifact
-        A file that belongs to a :term:`ContentUnit`.
+    :class:`~pulpcore.plugin.models.Artifact`
+        A file that belongs to a :term:`content unit<content>`.
 
-    Artifacts
-        Just to make sphinx happy
+    :class:`~pulpcore.plugin.models.Content`
+        The smallest that of data that is managed by Pulp. When singular, "content unit" should be
+        used. Content is added and removed to :term:`Repositories<repository>`, and can have multiple
+        :term:`artifacts<artifact>`. Each content unit has a :term:`type` (like .rpm or .deb) which
+        that is defined by a :term:`plugin`
 
-    ContentUnit
-        The smallest that of data that is managed by Pulp. :term:`ContentUnits` are added and removed to
-        :term:`Repositories`, and can have multiple :term:`Artifacts`. `ContentUnits` have a :term:`type` (like .rpm or
-        .deb) that is defined by :term:`Plugins`.
+    content app
+        A `Django <https://docs.djangoproject.com>`_ app provided by :term:`pulpcore` that serves
+        :term:`content`.
 
-    ContentUnits
-        Just to make sphinx happy about crosslinks
+    :class:`~pulpcore.plugin.models.Distribution`
+        User facing settings that specify how and where associated
+        :term:`publications<publication>` are served.
 
-    DRF
-        The Django Rest Framework.
+    :class:`~pulpcore.plugin.models.Importer`
+        User facing settings that specify how Pulp should to interact with an external
+        :term:`content` source.
 
-    Pull
-        (was sync)
-        Plugin-defined task that adds and/or removes ContentUnits to a Repository, creating a new
-        RepositoryVersion.
+    plugin
+        A `Django <https://docs.djangoproject.com>`_ app that exends :term:`pulpcore` to manage one or more
+        :term:`types<type>` of :term:`content`.
 
-    Union
-        pull.mode
-        Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
-        the **previous version or the external source**. Same behavior as "additive" sync_mode
-        in Pulp 2. This operation is **only additive**.
+    publication
+        The metadata and :term:`artifacts<Artifact>` of the :term:`content units<content>` in a
+        :term:`repository version<RepositoryVersion>`. Publications are served by the
+        :term:`content app` when they are assigned to a :term:`distribution`.
 
-    Intersection
-        pull.mode
-        Pull creates a new RepositoryVersion that contains all ContentUnits that were present in
-        **both** the **previous version and the external source**.  This operation is **only
-        subtractive**.
-
-    Synchronize
-        pull.mode
-        Task creates a new RepositoryVersion that contains exactly the set of ContentUnits that are
-        present in the **external source**.
-
-    Remote
-        (was Importer)
-        User-definable settings that define how to interact with an **external source**. These
-        settings are used to :term:`Pull` from the :term:`Remote`.
-
-    PublishSettings
-        (was Publisher)
-        User-definable settings to be used by a publish task.
-
-    RepositoryVersion(was RepositoryVersino)
-        A version of a Repository's content set. A new version is created whenever content is added
-        to or removed from a Repository. Within the context of the plugin.RepositoryVersion
-        wrapper, all changes are **staged**. As soon as the context is exited, changes are
-        **committed**, creating 1 RepositoryVersion. RepositoryVersions are numbered serially,
-        their content set is immutable, but any RepositoryVersion can be deleted. When
-        a RepositoryVersions are deleted, its changes are **squashed** into the next committed
-        RepositoryVersion. If a failure prevents a RepositoryVersion from being created, its
-        ``complete`` flag is left ``False`` until it is cleaned up. Failed RepositoryVersions are
-        still assigned a version number, and the next new RepositoryVersion will increment again.
-
-    Repository
-        A series of RepositoryVersions. A ContentUnit can be considered "in a Repository" if the
-        ContentUnit is in the latest RepositoryVersion. It is also correct to say that a
-        ContentUnit is "in a RepositoryVersion".
-
-    Pagination
-        The practice of splitting large datasets into multiple pages.
+    publisher
+        A :term:`plugin` defined object that contains settings required to publish a specific :term:`type` of
+        :term:`content unit<content>`.
 
     pulpcore
-        A generalized backend with a Plugin API an a REST API. It uses :term:`Plugins` to manage
-        :term:`ContentUnits`.
+        A generalized backend with a :doc:`plugins/plugin-api/overview` an a :doc:`REST
+        API<integration-guide/rest-api/index>`. It uses :term:`plugins<plugin>` to manage
+        :term:`content`.
 
-    Plugin
-        A Django app that exends ``pulpcore`` to manage one or more "types" of ContentUnit.
+    :class:`~pulpcore.app.models.Repository`
+        A versioned set of :term:`content units<content>`.
 
-    Plugins
-        stupid sphinx, just do what i want
+    :class:`~pulpcore.app.models.RepositoryVersion`
+        An immutable snapshot of the set of :term:`content units<content>` that are in a :term:`repository`.
 
-    Publication
-        The metadata and Artifacts of the ContentUnits in a RepositoryVersion. Publications are
-        hosted when they are assigned to a Distribution.
-
-    Publisher
-        A plugin-defined object that contains settings required to publish a specific type of
-        ContentUnit.
-
-
-    Repository
-        A versioned set of ContentUnits.
-
-    Repositories
-        Just to make sphinx happy about crosslinks
-
-    RepositoryVersion
-        An immutable snapshot of the set of ContentUnits that are in a Repository.
-
-    Router
-        A :term:`DRF` API router exposes registered views (like a :term:`ViewSet`) at
-        programatically-made URLs. Among other things, routers save us the trouble of having
-        to manually write URLs for every API view.
-
-        http://www.django-rest-framework.org/api-guide/routers/
-
-    Serializer
-        A :term:`DRF` Serializer is responsible for representing python objects in the API,
-        and for converting API objects back into native python objects. Every model exposed
-        via the API must have a related serializer.
-
-        http://www.django-rest-framework.org/api-guide/serializers/
+    sync
+        A :term:`plugin` defined task that fetches :term:`content` from an external source using an
+        :term:`importer`. The task adds and/or removes the :term:`content units<content>` to a
+        :term:`repository`, creating a new :term:`repository version<RepositoryVersion>`.
 
     type
-        Plugins define "types" of ContentUnit, like rpm or debian
-
-    ViewSet
-        A :term:`DRF` ViewSet is a collection of views representing all API actions available
-        at an API endpoint. ViewSets use a :term:`Serializer` or Serializers to correctly
-        represent API-related objects, and are exposed in urls.py by being registered with
-        a :term:`Router`. API actions provided by a ViewSet include "list", "create", "retreive",
-        "update", "partial_update", and "destroy". Each action is one of the views that make up
-        a ViewSet, and additional views can be added as-needed.
-
-        http://www.django-rest-framework.org/api-guide/viewsets/
+        Each :term:`content unit<content>` has a type (ex. rpm or docker) which is defined by a
+        :term:`Plugin<plugin>`.
