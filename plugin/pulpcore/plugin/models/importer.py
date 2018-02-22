@@ -7,9 +7,8 @@ class Importer(PlatformImporter):
     """
     The base settings used to sync content.
 
-    This is meant to be subclassed by plugin authors as an opportunity to provide:
-
-    * Add persistent data attributes for a plugin importer subclass
+    This is meant to be subclassed by plugin authors as an opportunity to provide plugin-specific
+    persistent data attributes for a plugin importer subclass.
 
     This object is a Django model that inherits from :class: `pulpcore.app.models.Importer` which
     provides the platform persistent attributes for an importer object. Plugin authors can add
