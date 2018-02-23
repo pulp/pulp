@@ -5,10 +5,7 @@ TODO(from PUP3) We do Git Github. Link to "a successful branching strategy" or w
 git org page. This document is definitive for pulpcore only, but some plugins may choose to follow
 the same strategies.
 
-Merging Work
-------------
-
-TODO(We use PRs)
+.. _git-branch:
 
 Branches
 --------
