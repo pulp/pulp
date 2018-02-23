@@ -1,8 +1,32 @@
 Git
 ===
 
+TODO(from PUP3) We do Git Github. Link to "a successful branching strategy" or whatever. Link to
+git org page. This document is definitive for pulpcore only, but some plugins may choose to follow
+the same strategies.
+
+Merging Work
+------------
+
+TODO(We use PRs)
+
+Branches
+--------
+
+.. note::
+
+    During development of Pulp 3.0, we will be using the `3.0-dev` branch instead of `master`.
+
+Commits
+-------
+
+TODO(1 per change)
+
+Squash
+******
+
 Commit Messages
----------------
+***************
 
 Commit messages in Pulp should contain a human readable explanation of what
 was fixed in the commit. They should also follow the standard git message

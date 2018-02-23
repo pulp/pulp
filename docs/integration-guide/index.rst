@@ -1,8 +1,5 @@
-Flow
-
-   Overview
-   workflows
-   integration guide
+REST API Integration
+====================
 
 .. toctree::
    :maxdepth: 2

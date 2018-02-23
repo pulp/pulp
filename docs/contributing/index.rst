@@ -1,33 +1,29 @@
-Contributing Guide
-==================
-FLOW
-overview
-contributing
-dev-setup
-pull-request-walkthrough
-architecture
-style guide
-internal PUPs
+Contributing
+============
 
-STUB(Invitation to contribute)
+New contributors to :term:`pulpcore` should start by becoming familiar some fundamentals:
 
-Write a bug or request a feature
-   TODO(link) /bugs-features
+#. :doc:`High level overview</overview/index>`
+#. :doc:`dev-setup/index`
+#. :ref:`Tracking bugs and features<trackers>`
+#. :doc:`Code style guide<style-guide>`
 
-Write a plugin
-   TODO link plugin writer index
+The :doc:`pull-request-walkthrough` is recommended as an introduction for new contributors and a
+checklist for experienced contributors. If you would like to write a plugin, please see the
+:doc:`/plugins/plugin-writer/index`.
 
-Help other users or chat with us:
-   TODO link troubleshooting/get-help
+Table of Contents
+-----------------
 
 .. toctree::
-   :titlesonly:
+   :maxdepth: 1
 
    style-guide
    dev-setup/index
    pull-request-walkthrough
    documentation
    architecture/index
+   error-handling
    internal/index
    platform-api/index
 
