@@ -18,13 +18,13 @@ Table of Contents
 .. toctree::
    :maxdepth: 1
 
-   style-guide
    dev-setup/index
-   pull-request-walkthrough
-   documentation
    architecture/index
-   error-handling
-   internal/index
    platform-api/index
-
-
+   error-handling
+   git
+   documentation
+   pups
+   style-guide
+   pull-request-walkthrough
+   build-guide
