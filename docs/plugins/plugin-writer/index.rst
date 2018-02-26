@@ -19,7 +19,7 @@ This documentation outlines how to create a Pulp plugin that provides features l
 * Implement custom features, e.g. dependency solving, retension/deletion policies, etc.
 
 Along with this guide `an example of plugin implementation
-<https://github.com/pulp/pulp_example/>`_, ``pulp_example``, is provided.
+<https://github.com/pulp/pulp_file/>`_, ``pulp_file``, is provided.
 `The Plugin Template <https://github.com/pulp/plugin_template>`_ can be used to start
 the plugin writing process.
 

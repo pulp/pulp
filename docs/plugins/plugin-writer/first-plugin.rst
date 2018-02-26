@@ -58,9 +58,9 @@ An important feature of the current design is deduplication of
 See more details on how it affects importer implementation in :ref:`define-importer` section.
 
 
-Check ``pulp_example`` `implementation <https://github.com/pulp/pulp_example/>`_ to see how all
+Check ``pulp_file`` `implementation <https://github.com/pulp/pulp_file/>`_ to see how all
 those models are used in practice.
-More detailed explanation of model usage with references to ``pulp_example`` code is below.
+More detailed explanation of model usage with references to ``pulp_file`` code is below.
 
 
 .. _define-content-type:
@@ -83,10 +83,10 @@ To define a new content type(s), e.g. ``ExampleContent``:
 :class:`~pulpcore.plugin.models.Content` model should not be used directly anywhere in plugin code.
 Only plugin-defined Content classes are expected to be used.
 
-Check ``pulp_example`` implementation of `the ExampleContent
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L87-L114>`_ and its
-`serializer <https://github.com/pulp/pulp_example/blob/master/pulp_example/app/serializers.py#L7-L13>`_
-and `viewset <https://github.com/pulp/pulp_example/blob/master/pulp_example/app/viewsets.py#L13-L17>`_.
+Check ``pulp_file`` implementation of `the FileContent
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_ and its
+`serializer <https://github.com/pulp/pulp_file/blob/master/pulp_file/app/serializers.py>`_
+and `viewset <https://github.com/pulp/pulp_file/blob/master/pulp_file/app/viewsets.py>`_.
 For a general reference for serializers and viewsets, check `DRF documentation
 <http://www.django-rest-framework.org/api-guide/viewsets/>`_.
 
@@ -173,7 +173,7 @@ It allows plugin writer:
 
 Check :ref:`documentation and detailed examples <changeset-docs>` for the
 :class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
-<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py#L72-L224>`_ which uses it.
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_ which uses it.
 
 .. _define-publisher:
 
@@ -206,5 +206,5 @@ One of the ways to perform publishing:
   :class:`~pulpcore.app.models.Publication` to which this metadata belongs.
 * Use :class:`~pulpcore.plugin.models.ProgressBar` to report progress of some steps if needed.
 
-Check ``pulp_example`` implementation of `the ExamplePublisher
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/models.py#L117-L181>`_.
+Check ``pulp_file`` implementation of `the FilePublisher
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_.
