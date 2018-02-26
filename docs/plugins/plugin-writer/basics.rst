@@ -20,8 +20,8 @@ the importable dotted Python location of the plugin application (the Python name
 that contains at least models and viewsets). Additionally, it should also set its ``label``
 attribute to something that unambiguously labels which plugin is represented by that
 subclass. See `how it is done
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/app/__init__.py>`_ in
-``pulp_example`` plugin.
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/__init__.py>`_ in
+``pulp_file`` plugin.
 
 
 .. _plugin-entry-point:
@@ -50,9 +50,9 @@ the ``pulpcore.plugin`` entry point must be an importable identifier with a stri
 containing the importable dotted path to your plugin's application config class, just
 as ``default_app_config`` does.
 
-Check out ``pulp_example`` plugin: `default_app_config
-<https://github.com/pulp/pulp_example/blob/master/pulp_example/__init__.py>`_ and `setup.py example
-<https://github.com/pulp/pulp_example/blob/master/setup.py>`_.
+Check out ``pulp_file`` plugin: `default_app_config
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/__init__.py>`_ and `setup.py example
+<https://github.com/pulp/pulp_file/blob/master/setup.py>`_.
 
 
 .. _model-serializer-viewset-discovery:
@@ -69,8 +69,8 @@ of a plugin app, and so on.
 This matching of module names is required for the Pulp Core to be able to auto-discover
 plugin components, particularly for both models and viewsets.
 
-Take a look at `the structure <https://github.com/pulp/pulp_example/tree/master/pulp_example/app>`_
-of the ``pulp_example`` plugin.
+Take a look at `the structure <https://github.com/pulp/pulp_file/tree/master/pulp_file/app>`_
+of the ``pulp_file`` plugin.
 
 
 .. _subclassing-platform-models:
