@@ -205,7 +205,7 @@ class DistributionSerializer(ModelSerializer):
             message=_('Distribution name length must be less than {} characters').format(
                 models.Distribution._meta.get_field('name').max_length
             )),
-            UniqueValidator(queryset=models.Repository.objects.all())]
+            UniqueValidator(queryset=models.Distribution.objects.all())]
     )
     base_path = serializers.CharField(
         help_text=_('The base (relative) path component of the published url.'),
@@ -228,6 +228,7 @@ class DistributionSerializer(ModelSerializer):
         help_text=_('Publications created by this publisher and repository are automatically'
                     'served as defined by this distribution'),
         queryset=models.Publisher.objects.all(),
+        allow_null=True
     )
     publication = serializers.HyperlinkedRelatedField(
         required=False,
@@ -240,7 +241,8 @@ class DistributionSerializer(ModelSerializer):
         help_text=_('Publications created by this repository and publisher are automatically'
                     'served as defined by this distribution'),
         queryset=models.Repository.objects.all(),
-        view_name='repositories-detail'
+        view_name='repositories-detail',
+        allow_null=True
     )
     base_url = BaseURLField(
         source='base_path', read_only=True,
@@ -253,6 +255,30 @@ class DistributionSerializer(ModelSerializer):
             'name', 'base_path', 'http', 'https', 'publisher', 'publication', 'base_url',
             'repository',
         )
+
+    def validate(self, data):
+        if 'publisher' in data:
+            publisher = data['publisher']
+        elif self.instance:
+            publisher = self.instance.publisher
+        else:
+            publisher = None
+
+        if 'repository' in data:
+            repository = data['repository']
+        elif self.instance:
+            repository = self.instance.repository
+        else:
+            repository = None
+
+        if publisher and not repository:
+            raise serializers.ValidationError({'repository': _("Repository must be set if "
+                                                               "publisher is set.")})
+        if repository and not publisher:
+            raise serializers.ValidationError({'publisher': _("Publisher must be set if "
+                                                              "repository is set.")})
+
+        return data
 
 
 class PublicationSerializer(ModelSerializer):
