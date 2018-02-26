@@ -8,10 +8,9 @@ from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
 
 from django.urls import resolve, Resolver404
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.exceptions import ValidationError
 
-from rest_framework import viewsets, mixins
-from rest_framework.exceptions import ValidationError
+from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
 
 
@@ -56,19 +55,19 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
             django.models.Model: The resource fetched from the DB.
 
         Raises:
-            ValidationError: on invalid URI or resource not found.
+            rest_framework.exceptions.ValidationError: on invalid URI or resource not found.
         """
         try:
             match = resolve(urlparse(uri).path)
         except Resolver404:
-            raise ValidationError(detail=_('URI not valid: {u}').format(u=uri))
+            raise serializers.ValidationError(detail=_('URI not valid: {u}').format(u=uri))
         pk = match.kwargs['pk']
         try:
             return model.objects.get(pk=pk)
         except model.DoesNotExist:
-            raise ValidationError(detail=_('URI not found: {u}').format(u=uri))
-        except DjangoValidationError:
-            raise ValidationError(detail=_('UUID invalid: {u}').format(u=pk))
+            raise serializers.ValidationError(detail=_('URI not found: {u}').format(u=uri))
+        except ValidationError:
+            raise serializers.ValidationError(detail=_('UUID invalid: {u}').format(u=pk))
 
     @classmethod
     def is_master_viewset(cls):

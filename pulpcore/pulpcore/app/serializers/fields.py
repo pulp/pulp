@@ -3,7 +3,6 @@ import os
 
 from django.conf import settings
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.reverse import reverse
 from rest_framework_nested.relations import NestedHyperlinkedRelatedField
 
@@ -57,8 +56,8 @@ class ContentArtifactsField(serializers.DictField):
         ret = {}
         for relative_path, url in data.items():
             if os.path.isabs(relative_path):
-                raise ValidationError(_("Relative path can't start with '/'. "
-                                        "{0}").format(relative_path))
+                raise serializers.ValidationError(_("Relative path can't start with '/'. "
+                                                    "{0}").format(relative_path))
             artifactfield = \
                 serializers.HyperlinkedRelatedField(view_name='artifacts-detail',
                                                     queryset=models.Artifact.objects.all(),
@@ -66,7 +65,7 @@ class ContentArtifactsField(serializers.DictField):
             try:
                 artifact = artifactfield.run_validation(data=url)
                 ret[relative_path] = artifact
-            except ValidationError as e:
+            except serializers.ValidationError as e:
                 # Append the URL of missing Artifact to the error message
                 e.detail[0] = "%s %s" % (e.detail[0], url)
                 raise e
