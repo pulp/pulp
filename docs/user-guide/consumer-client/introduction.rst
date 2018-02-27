@@ -44,3 +44,12 @@ Troubleshooting with verbose flag
 You can run pulp-consumer commands in verbose mode to get additional information
 in case of a failure. Look at the example usage of verbose flag in the
 :ref:`admin client troubleshooting section <client-verbose-flag>`.
+
+
+DNF Support
+-----------
+
+It should be noted that as of Pulp 3, consumers will no longer be supported in
+Pulp. As such, we have no plans to add support for DNF in Pulp 2. For more
+information, see our `blog post on this
+<https://pulpproject.org/2018/03/01/deprecating-consumers/>`_.
