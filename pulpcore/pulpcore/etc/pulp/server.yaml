@@ -17,15 +17,15 @@
 # shipped with your version of Django, or online at
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 #
-# By default, Pulp will attempt to connect to PostgreSQL on a local Unix
-# socket using the 'pulp' user with a database name of 'pulp'.
+# By default, Pulp will use a sqlite3 database. If your environment is used in production
+# consider configuring Postgresql or another Django supported database.
 #
 # databases:
 #   default:
 #     CONN_MAX_AGE: 0
-#     ENGINE: django.db.backends.postgresql_psycopg2
-#     NAME: pulp
-#     USER: pulp
+#     ENGINE: django.db.backends.sqlite3
+#     NAME:
+#     USER:
 #     PASSWORD:
 #     HOST:
 #     PORT:
