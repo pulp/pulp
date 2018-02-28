@@ -169,7 +169,7 @@ _DEFAULT_PULP_SETTINGS = {
     'databases': {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '',
+            'NAME': 'pulp',
             'USER': '',
             'CONN_MAX_AGE': 0,
         },
