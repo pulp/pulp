@@ -2,6 +2,9 @@ sudo: false
 # https://docs.travis-ci.com/user/trusty-ci-environment/
 dist: trusty
 language: python
+env:
+  - DB=sqlite
+  - DB=postgres
 python:
     # python versions used in el7 SCL & supported fedora
     - "3.5"
@@ -20,8 +23,10 @@ install:
     - "pushd pulpcore/ && pip install -e . && popd"
     - "pushd plugin/ && pip install -e .  && popd"
 before_script:
-    - psql -U postgres -c "CREATE USER pulp WITH SUPERUSER LOGIN;"
-    - psql -U postgres -c "CREATE DATABASE pulp OWNER pulp;"
+    - sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'ENGINE': 'django.db.backends.sqlite3'/'ENGINE': 'django.db.backends.postgresql_psycopg2'/\" pulpcore/pulpcore/app/settings.py"
+    - sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'USER': ''/'USER': 'pulp'/\" pulpcore/pulpcore/app/settings.py"
+    - sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'"
+    - sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'"
 script:
     # flake8
     - "flake8 --config flake8.cfg"
