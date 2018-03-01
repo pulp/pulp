@@ -27,6 +27,7 @@ before_script: |
     sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'USER': ''/'USER': 'pulp'/\" pulpcore/pulpcore/app/settings.py; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'; fi";
+    sh -c "sed -i \"s/\/var\/lib\/pulp\/sqlite3.db/pulp/\" pulpcore/pulpcore/app/settings.py";
 script:
     # flake8
     - "flake8 --config flake8.cfg"
