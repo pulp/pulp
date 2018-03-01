@@ -61,8 +61,8 @@ PyPI Installation
 
 2. Create a pulp venv::
 
-   $ python3 -m venv {venv}
-   $ source {venv}/bin/activate
+   $ python3 -m venv pulpvenv
+   $ source pulpvenv/bin/activate
 
 3. Install Pulp::
 
@@ -71,7 +71,7 @@ PyPI Installation
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
 
-   $ export PULP_SETTINGS={venv}/lib/{python_version}/site-packages/pulpcore/etc/pulp/server.yaml
+   $ export PULP_SETTINGS=pulpvenv/lib/python3.6/site-packages/pulpcore/etc/pulp/server.yaml
 
    .. note::
 
@@ -79,13 +79,15 @@ PyPI Installation
        /lib/python3.5/, /lib/python3.6/
 
 
-5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file
+5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
+
+   $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
 
 6. Tell Django which settings you're using::
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-7. Go through the  :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
+7. Go through the :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
 
 8. Run Django Migrations::
 
@@ -110,8 +112,8 @@ Source Installation
 
 2. Create a pulp venv::
 
-   $ python3 -m venv {venv}
-   $ source {venv}/bin/activate
+   $ python3 -m venv pulpvenv
+   $ source pulpvenv/bin/activate
 
 3. Install pulpcore-common, pulpcore and pulpcore-plugin::
 
@@ -122,18 +124,21 @@ Source Installation
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
 
-   $ export PULP_SETTINGS={venv}/src/pulpcore/pulpcore/pulpcore/etc/pulp/server.yaml
+   $ export PULP_SETTINGS=pulpvenv/src/pulpcore/pulpcore/pulpcore/etc/pulp/server.yaml
 
-5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file
+5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
 
-6. Tell Django which settings you're using::
+   $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
+
+6. Tell Django which settings file to use::
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-7. Go through the  :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
+7. Go through the :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
 
 8. Run Django Migrations::
 
+   $ pulp-manager makemigrations
    $ pulp-manager migrate --noinput auth
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
@@ -147,36 +152,10 @@ Source Installation
 Database Setup
 --------------
 
-.. tip::
-
-    These are the manual steps to install the database. There are Ansible roles that will do all
-    of the following for you.
-
-You must provide a running Postgres instance for Pulp to use. You can use the same host that you
-will run Pulp on, or you can give Postgres its own separate host if you like::
-
-   $ sudo dnf install postgresql postgresql-server python3-psycopg2
-   $ sudo postgresql-setup --initdb /var/lib/pgsql/data/base
-
-After installing Postgres, you should configure it to start at boot and start it::
-
-   $ sudo systemctl enable postgresql
-   $ sudo systemctl start postgresql
-
-Initialize the pulp database::
-
-   $ sudo -u postgres -i bash
-   $ createuser --username=postgres -d -l pulp
-   $ createdb --owner=pulp --username=postgres pulp
-   $ exit
-
-Make sure to update your `/var/lib/pgsql/data/pg_hba.conf
-<https://www.postgresql.org/docs/9.1/static/auth-pg-hba-conf.html>`_ file, to grant an appropriate
-level of database access.
-
-Restart Postgres after updating ``pg_hba.conf``::
-
-   $ sudo systemctl restart postgresql
+To keep Pulp lightweight sqlite3 is the default database, but for production usage PostgreSQL is
+recommended. Setup PostgreSQL and configure it in the `databases` section of your server.yaml. See
+the `Django database settings documentation <https://docs.djangoproject.com/en/1.11/ref/settings/#databases>`_
+for more information on setting the `databases` values in settings.yaml.
 
 .. _broker-install:
 
