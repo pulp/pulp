@@ -246,7 +246,7 @@ class Task(Model):
         """
         if self.state != self.WAITING:
             msg = _('Task __call__() occurred but Task %s is not at WAITING')
-            _logger.warning(msg % self.request.id)
+            _logger.warning(msg % self.id)
         self.state = Task.RUNNING
         self.started_at = timezone.now()
         self.save()
@@ -269,7 +269,7 @@ class Task(Model):
             self.state = Task.COMPLETED
         else:
             msg = _('Task set_completed() occurred but Task %s is already in final state')
-            _logger.warning(msg % self.pk)
+            _logger.warning(msg % self.id)
 
         self.save()
 
