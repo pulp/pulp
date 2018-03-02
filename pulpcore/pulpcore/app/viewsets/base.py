@@ -187,7 +187,7 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
         For nested ViewSets, retrieve the nested parent implied by the url.
 
         Returns:
-            Model: parent model object
+            pulpcore.app.models.Model: parent model object
         Raises:
             django.http.Http404: When the parent implied by the url does not exist. Synchronous
                                  use should allow this to bubble up and return a 404.

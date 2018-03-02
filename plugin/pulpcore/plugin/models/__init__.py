@@ -7,6 +7,8 @@ from pulpcore.app.models import (  # NOQA
     ContentArtifact,
     CreatedResource,
     Distribution,
+    MasterModel,
+    Model,
     ProgressBar,
     ProgressSpinner,
     Publication,
