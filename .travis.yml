@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 # https://docs.travis-ci.com/user/trusty-ci-environment/
 dist: trusty
 language: python
@@ -15,6 +15,7 @@ addons:
     postgresql: "9.5"
 services:
     - postgresql
+    - rabbitmq
 install:
     # dev_requirements should not be needed for testing; don't install them to make sure
     - "pip install -r test_requirements.txt"
@@ -23,13 +24,21 @@ install:
     - "pushd common/ && pip install -e . && popd"
     - "pushd pulpcore/ && pip install -e . && popd"
     - "pushd plugin/ && pip install -e .  && popd"
+    - "pip install git+https://github.com/PulpQE/pulp-smash.git#egg=pulp-smash pytest"
+    - "mkdir -p ~/.config/pulp_smash"
+    - "cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json"
+    - "sudo mkdir /var/lib/pulp"
+    - "sudo mkdir /var/cache/pulp"
+    - "sudo chown travis:travis /var/lib/pulp"
+    - "sudo chown travis:travis /var/cache/pulp"
+    - "sudo service rabbitmq-server start"
 before_script: |
     set -ex -o pipefail
     sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'ENGINE': 'django.db.backends.sqlite3'/'ENGINE': 'django.db.backends.postgresql_psycopg2'/\" pulpcore/pulpcore/app/settings.py; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'USER': ''/'USER': 'pulp'/\" pulpcore/pulpcore/app/settings.py; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'; fi";
-    sh -c "sed -i \"s/\/var\/lib\/pulp\/sqlite3.db/pulp/\" pulpcore/pulpcore/app/settings.py";
+    sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/\/var\/lib\/pulp\/sqlite3.db/pulp/\" pulpcore/pulpcore/app/settings.py; fi";
 script: |
   set -ex -o pipefail
   if [ $DB == "docs" ]; then
@@ -44,4 +53,13 @@ script: |
     pulp-manager migrate auth --noinput
     pulp-manager migrate --noinput && pulp-manager test
     pulp-manager test pulpcore/pulpcore/app/tests
+    pulp-manager reset-admin-password --password admin
+    pulp-manager runserver >>~/django_runserver.log 2>&1 &
+    celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%h -Q resource_manager -c 1 --events --umask 18 >>~/resource_manager.log 2>&1 &
+    celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker_1@%h -c 1 --events --umask 18 >>~/reserved_workers-1.log 2>&1 &
+    sleep 5
+    py.test -v --color=yes --pyargs pulp_smash.tests.pulp3.pulpcore
+    cat ~/django_runserver.log
+    cat ~/resource_manager.log
+    cat ~/reserved_workers-1.log
   fi
