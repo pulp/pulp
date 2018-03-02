@@ -5,6 +5,7 @@ language: python
 env:
   - DB=sqlite
   - DB=postgres
+  - DB=docs
 python:
     # python versions used in el7 SCL & supported fedora
     - "3.5"
@@ -28,11 +29,17 @@ before_script: |
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'; fi";
     sh -c "sed -i \"s/\/var\/lib\/pulp\/sqlite3.db/pulp/\" pulpcore/pulpcore/app/settings.py";
-script:
+script: |
+  if [ $DB == "docs" ]; then
+    pip3 install sphinx sphinxcontrib-swaggerdoc
+    cd docs
+    make html
+  else
     # flake8
-    - "flake8 --config flake8.cfg"
+    flake8 --config flake8.cfg
     # chain these so we don't try to run tests if the db reset fails
-    - "pulp-manager makemigrations pulp_app --noinput"
-    - "pulp-manager migrate auth --noinput"
-    - "pulp-manager migrate --noinput && pulp-manager test"
-    - "pulp-manager test pulpcore/pulpcore/app/tests"
+    pulp-manager makemigrations pulp_app --noinput
+    pulp-manager migrate auth --noinput
+    pulp-manager migrate --noinput && pulp-manager test
+    pulp-manager test pulpcore/pulpcore/app/tests
+  fi
