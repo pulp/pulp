@@ -1,7 +1,19 @@
 language: python
 python:
     - "2.7"
+addons:
+  apt:
+    packages:
+      - graphviz
 install:
-    - "pip install flake8"
+    - "pip install flake8 sphinx sphinxcontrib-swaggerdoc celery sphinxcontrib-swaggerdoc 'django<2' git+https://github.com/snide/sphinx_rtd_theme.git@abfa98539a2bfc44198a9ca8c2f16efe84cc4d26 pyyaml"
+    # setup plantuml
+    - wget "https://fossies.org/linux/dmelt/lib/graph/plantuml.jar" -O plantuml.jar
+    - sudo mkdir -p /opt/plantuml
+    - sudo cp plantuml.jar /opt/plantuml
+    - echo "#! /bin/sh" > plantuml
+    - echo 'exec java -jar /opt/plantuml/plantuml.jar "$@"' >> plantuml
+    - sudo install -m 755 -D plantuml /usr/bin/plantuml
 script:
     - "flake8 --config flake8.cfg"
+    - "cd docs && make html"
