@@ -24,12 +24,14 @@ install:
     - "pushd pulpcore/ && pip install -e . && popd"
     - "pushd plugin/ && pip install -e .  && popd"
 before_script: |
+    set -ex -o pipefail
     sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'ENGINE': 'django.db.backends.sqlite3'/'ENGINE': 'django.db.backends.postgresql_psycopg2'/\" pulpcore/pulpcore/app/settings.py; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then sed -i \"s/'USER': ''/'USER': 'pulp'/\" pulpcore/pulpcore/app/settings.py; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'; fi";
     sh -c "if [ '$DB' = 'postgres' ]; then psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'; fi";
     sh -c "sed -i \"s/\/var\/lib\/pulp\/sqlite3.db/pulp/\" pulpcore/pulpcore/app/settings.py";
 script: |
+  set -ex -o pipefail
   if [ $DB == "docs" ]; then
     pip3 install sphinx sphinxcontrib-swaggerdoc
     cd docs
