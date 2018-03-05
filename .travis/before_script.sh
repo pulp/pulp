@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-set -ev
+set -v
 
 # add secret key to django settings.py
 echo "SECRET_KEY = '$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50)'" >> pulpcore/pulpcore/app/settings.py
@@ -16,6 +16,7 @@ mkdir -p ~/.config/pulp_smash
 cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json
 
 sudo mkdir /var/lib/pulp
+sudo mkdir /var/lib/pulp/tmp
 sudo mkdir /var/cache/pulp
-sudo chown travis:travis /var/lib/pulp
+sudo chown -R travis:travis /var/lib/pulp
 sudo chown travis:travis /var/cache/pulp
