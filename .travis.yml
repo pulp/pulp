@@ -2,14 +2,27 @@ sudo: required
 # https://docs.travis-ci.com/user/trusty-ci-environment/
 dist: trusty
 language: python
-env:
-  - DB=sqlite
-  - DB=postgres
-  - DB=docs
 python:
     # python versions used in el7 SCL & supported fedora
     - "3.5"
     - "3.6"
+env:
+  - DB=sqlite TEST=pulp
+  - DB=sqlite TEST=pulp_file
+  - DB=postgres TEST=pulp
+  - DB=postgres TEST=pulp_file
+  - TEST=docs
+matrix:
+  fast_finish: true
+  allow_failures:
+    - python: "3.5"
+      env: DB=sqlite TEST=pulp_file
+    - python: "3.5"
+      env: DB=postgres TEST=pulp_file
+    - python: "3.6"
+      env: DB=sqlite TEST=pulp_file
+    - python: "3.6"
+      env: DB=postgres TEST=pulp_file
 addons:
     # postgres versions provided by el7 RHSCL (lowest supportable version)
     postgresql: "9.5"
