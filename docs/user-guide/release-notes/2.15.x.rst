@@ -2,6 +2,14 @@
 Pulp 2.15 Release Notes
 =======================
 
+Pulp 2.15.3
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.15.3`
+
 Pulp 2.15.2
 ===========
 
@@ -25,7 +33,7 @@ New Features
 ------------
 
 * Logging of `force_full` being enabled
-  `force_full` is usefull for debugging, but it has known performance issues long term.  
+  `force_full` is usefull for debugging, but it has known performance issues long term.
 
 Bug Fixes
 ---------
