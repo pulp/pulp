@@ -4,7 +4,6 @@ from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import GenericNamedModelViewSet
-from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.tasking.util import cancel as cancel_task
 
 from rest_framework.decorators import detail_route
@@ -13,11 +12,10 @@ from rest_framework import status, mixins
 
 
 class TaskFilter(filterset.FilterSet):
-    tags = CharInFilter(name='tag__name', lookup_expr='in')
 
     class Meta:
         model = Task
-        fields = ['state', 'worker__name', 'tags']
+        fields = ['state', 'worker__name']
 
 
 class TaskViewSet(mixins.RetrieveModelMixin,

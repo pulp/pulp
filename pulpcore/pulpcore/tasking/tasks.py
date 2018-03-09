@@ -11,7 +11,7 @@ from celery import task
 from celery.app import control
 from celery.result import AsyncResult
 from django.conf import settings as pulp_settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 
 from pulpcore.app.models import Task as TaskStatus
 from pulpcore.app.models import Worker
@@ -176,8 +176,7 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, resources, tags=[], group_id=None, args=None,
-                                     kwargs=None, **options):
+    def apply_async_with_reservation(self, resources, args=None, kwargs=None, **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
         resource urls. No two tasks that claim the same resource can execute concurrently. It
@@ -194,10 +193,6 @@ class UserFacingTask(PulpTask):
         Args:
             resources (list): A list of resources to reserve guaranteeing that only one task
                 reserves these resources
-            tags (list): A list of tags (strings) to place onto the task, used for searching
-                for tasks by tag. This is an optional argument which is pulled out of kwargs.
-            group_id (uuid.UUID): The id to identify which group of tasks a task belongs to.
-                This is an optional argument which is pulled out of kwargs.
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
             options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
@@ -212,12 +207,7 @@ class UserFacingTask(PulpTask):
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
 
-        # Create a new task status with the task id and tags.
-        with transaction.atomic():
-            task_status = TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
-                                                    group=group_id, **parent_arg)
-            for tag in tags:
-                task_status.tags.create(name=tag)
+        TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING, **parent_arg)
 
         # Call the outer task which is a promise to call the real task when it can.
         _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
@@ -225,7 +215,7 @@ class UserFacingTask(PulpTask):
                                          queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)
 
-    def apply_async(self, tags=[], group_id=None, args=None, kwargs=None, **options):
+    def apply_async(self, args=None, kwargs=None, **options):
         """
         A wrapper around the super() apply_async method. It allows us to accept a few more
         arguments than Celery does for our own purposes, listed below. It also allows us
@@ -233,9 +223,6 @@ class UserFacingTask(PulpTask):
         during it's lifetime.
 
         Args:
-            tags (list): A list of tags (strings) to place onto the task, used for searching for
-                tasks by tag
-            group_id (uuid.UUID): The id that identifies which group of tasks a task belongs to
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
             options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
@@ -249,18 +236,11 @@ class UserFacingTask(PulpTask):
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
 
-        # Create a new task status with the task id and tags.
-        with transaction.atomic():
-            try:
-                task_status = TaskStatus.objects.create(pk=async_result.id,
-                                                        state=TaskStatus.WAITING,
-                                                        group=group_id, **parent_arg)
-            except IntegrityError:
-                # The TaskStatus was already created with the call to apply_async_with_reservation
-                pass
-            else:
-                for tag in tags:
-                    task_status.tags.create(name=tag)
+        try:
+            TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
+        except IntegrityError:
+            # The TaskStatus was already created with the call to apply_async_with_reservation
+            pass
 
         return async_result
 
