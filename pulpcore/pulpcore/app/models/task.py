@@ -183,7 +183,6 @@ class Task(Model):
 
     Fields:
 
-        group (models.UUIDField): The group this task belongs to
         state (models.TextField): The state of the task
         started_at (models.DateTimeField): The time the task started executing
         finished_at (models.DateTimeField): The time the task finished executing
@@ -212,7 +211,6 @@ class Task(Model):
         (CANCELED, 'Canceled')
     )
 
-    group = models.UUIDField(null=True)
     state = models.TextField(choices=STATES)
 
     started_at = models.DateTimeField(null=True)
@@ -299,23 +297,6 @@ class Task(Model):
             reservation.tasks.remove(self.id)
             if not reservation.tasks.exists():
                 reservation.delete()
-
-
-class TaskTag(Model):
-    """
-    Custom tags for a task
-
-    Fields:
-
-        name (models.TextField): The name of the tag
-
-    Relations:
-
-        task (models.ForeignKey): The task this tag is associated with
-    """
-    name = models.TextField()
-
-    task = models.ForeignKey("Task", related_name="tags", related_query_name="tag")
 
 
 class CreatedResource(GenericRelationModel):

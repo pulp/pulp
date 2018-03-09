@@ -8,16 +8,6 @@ from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
 from .base import viewset_for_model
 
 
-class TaskTagSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        help_text=_("The name of the tag")
-    )
-
-    class Meta:
-        model = models.TaskTag
-        fields = ('name',)
-
-
 class CreatedResourceSerializer(ModelSerializer):
 
     def to_representation(self, data):
@@ -42,11 +32,6 @@ class CreatedResourceSerializer(ModelSerializer):
 class TaskSerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(
         view_name='tasks-detail',
-    )
-
-    group = serializers.UUIDField(
-        help_text=_("The group that this task belongs to."),
-        read_only=True
     )
 
     state = serializers.CharField(
@@ -97,11 +82,6 @@ class TaskSerializer(ModelSerializer):
         view_name='tasks-detail'
     )
 
-    tags = TaskTagSerializer(
-        many=True,
-        read_only=True
-    )
-
     progress_reports = ProgressReportSerializer(
         many=True,
         read_only=True
@@ -115,10 +95,10 @@ class TaskSerializer(ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ModelSerializer.Meta.fields + ('group', 'state', 'started_at',
-                                                'finished_at', 'non_fatal_errors',
-                                                'error', 'worker', 'parent', 'spawned_tasks',
-                                                'tags', 'progress_reports', 'created_resources')
+        fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
+                                                'non_fatal_errors', 'error', 'worker', 'parent',
+                                                'spawned_tasks', 'progress_reports',
+                                                'created_resources')
 
 
 class WorkerSerializer(ModelSerializer):

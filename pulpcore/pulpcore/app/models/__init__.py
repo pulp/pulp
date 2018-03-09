@@ -16,7 +16,7 @@ from .repository import (  # noqa
     RepositoryVersion,
 )
 
-from .task import CreatedResource, ReservedResource, Worker, Task, TaskTag, TaskLock  # noqa
+from .task import CreatedResource, ReservedResource, Worker, Task, TaskLock  # noqa
 
 # Moved here to avoid a circular import with Task
 from .progress import ProgressBar, ProgressReport, ProgressSpinner  # noqa
