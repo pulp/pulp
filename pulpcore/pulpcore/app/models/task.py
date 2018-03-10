@@ -36,7 +36,7 @@ class ReservedResource(Model):
     resource = models.TextField(unique=True, blank=False)
 
     tasks = models.ManyToManyField("Task", related_name="reserved_resources")
-    worker = models.ForeignKey("Worker", on_delete=models.CASCADE, related_name="reservations")
+    worker = models.ForeignKey("Worker", related_name="reservations", on_delete=models.CASCADE)
 
 
 class WorkerManager(models.Manager):
@@ -260,8 +260,10 @@ class Task(Model):
     non_fatal_errors = JSONField(default=list)
     error = JSONField(null=True)
 
-    parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks")
-    worker = models.ForeignKey("Worker", null=True, related_name="tasks")
+    parent = models.ForeignKey("Task", null=True, related_name="spawned_tasks",
+                               on_delete=models.SET_NULL)
+    worker = models.ForeignKey("Worker", null=True, related_name="tasks",
+                               on_delete=models.SET_NULL)
 
     @staticmethod
     def current():
