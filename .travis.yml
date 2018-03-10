@@ -7,11 +7,14 @@ python:
     - "3.5"
     - "3.6"
 env:
-  - DB=sqlite TEST=pulp
-  - DB=sqlite TEST=pulp_file
-  - DB=postgres TEST=pulp
-  - DB=postgres TEST=pulp_file
-  - TEST=docs
+  global:
+    - secure: "eQaYhRSRqjV7JQaAfkZk2KHJCcAsWmBuptSdVKOeOPwltWjVBoxntAVHkrJifyF1Vw8bnDYUBMGKGmEqr5teOlfl66uWx/uXMjtPZVS1ItVDzVZ6mpsxUjLyIEo04Jq2TRCXpfyzQrlBAlkuHLO8Irvy+/nLCsm0O9VB9u3rcd8="
+  matrix:
+    - DB=sqlite TEST=pulp
+    - DB=sqlite TEST=pulp_file
+    - DB=postgres TEST=pulp
+    - DB=postgres TEST=pulp_file
+    - TEST=docs
 matrix:
   fast_finish: true
   allow_failures:

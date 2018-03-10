@@ -39,24 +39,28 @@ else
 
   if [ $TEST = 'pulp_file' ]; then
     py.test -v --color=yes --pyargs pulp_smash.tests.pulp3
+    rm jkfdlsfjskdlfjsklfjsdkldfsjl
   else
     py.test -v --color=yes --pyargs pulp_smash.tests.pulp3.pulpcore
   fi
   if [ $? -ne 0 ]; then
+    cat ~/django_runserver.log
+    cat ~/resource_manager.log
+    cat ~/reserved_workers-1.log
     result=1
   fi
 
-  if [ $DB = 'postgres']; then
+  if [ $DB = 'postgres' ]; then
     # make sure we actually ran postgres
     if [ -f '/var/lib/pulp/sqlite3.db' ]; then
       echo "Error!!!! sqlite database exists."
       result=1
     fi
   fi
+fi
 
-  cat ~/django_runserver.log
-  cat ~/resource_manager.log
-  cat ~/reserved_workers-1.log
+if [ $result != 0 ] && [ $TEST = 'pulp_file' ]; then
+  python .travis/warning.py
 fi
 
 exit $result
