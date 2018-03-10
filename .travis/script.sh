@@ -44,19 +44,18 @@ else
   fi
   if [ $? -ne 0 ]; then
     result=1
+    cat ~/django_runserver.log
+    cat ~/resource_manager.log
+    cat ~/reserved_workers-1.log
   fi
 
-  if [ $DB = 'postgres']; then
+  if [ $DB = 'postgres' ]; then
     # make sure we actually ran postgres
     if [ -f '/var/lib/pulp/sqlite3.db' ]; then
       echo "Error!!!! sqlite database exists."
       result=1
     fi
   fi
-
-  cat ~/django_runserver.log
-  cat ~/resource_manager.log
-  cat ~/reserved_workers-1.log
 fi
 
 exit $result
