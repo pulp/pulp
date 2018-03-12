@@ -217,12 +217,6 @@ class DistributionSerializer(ModelSerializer):
             UniqueValidator(queryset=models.Distribution.objects.all()),
         ],
     )
-    http = serializers.BooleanField(
-        help_text=_('The publication is distributed using HTTP.'),
-    )
-    https = serializers.BooleanField(
-        help_text=_('The publication is distributed using HTTPS.')
-    )
     publisher = DetailRelatedField(
         required=False,
         help_text=_('Publications created by this publisher and repository are automatically'
@@ -252,8 +246,7 @@ class DistributionSerializer(ModelSerializer):
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'http', 'https', 'publisher', 'publication', 'base_url',
-            'repository',
+            'name', 'base_path', 'publisher', 'publication', 'base_url', 'repository',
         )
 
     def validate(self, data):

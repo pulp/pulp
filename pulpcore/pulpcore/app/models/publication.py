@@ -173,8 +173,6 @@ class Distribution(Model):
         name (models.CharField): The name of the distribution.
             Examples: "rawhide" and "stable".
         base_path (models.CharField): The base (relative) path component of the published url.
-        http (models.BooleanField): The publication is distributed using HTTP.
-        https (models.BooleanField): The publication is distributed using HTTPS.
 
     Relations:
         publisher (models.ForeignKey): The associated publisher.
@@ -188,8 +186,6 @@ class Distribution(Model):
 
     name = models.CharField(max_length=255, db_index=True, unique=True)
     base_path = models.CharField(max_length=255, unique=True)
-    http = models.BooleanField(default=False)
-    https = models.BooleanField(default=True)
 
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
     publisher = models.ForeignKey('Publisher', null=True, on_delete=models.SET_NULL)
