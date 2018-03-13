@@ -5,7 +5,7 @@ Never import this module directly, instead `from django.conf import settings`, s
 https://docs.djangoproject.com/en/1.8/topics/settings/#using-settings-in-python-code
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.8/ref/settings/
+https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
@@ -20,7 +20,7 @@ import yaml
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -128,7 +128,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'pulp_app.User'
 
 # Password validation
-# https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -147,7 +147,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.9/topics/i18n/
+# https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -161,14 +161,14 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.9/howto/static-files/
+# https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
 
 # A set of default settings to use if the configuration file in
 # /etc/pulp/ is missing or if it does not have values for every setting
 _DEFAULT_PULP_SETTINGS = {
-    # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+    # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
     'databases': {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -177,7 +177,7 @@ _DEFAULT_PULP_SETTINGS = {
             'CONN_MAX_AGE': 0,
         },
     },
-    # https://docs.djangoproject.com/en/1.8/ref/settings/#logging and
+    # https://docs.djangoproject.com/en/1.11/ref/settings/#logging and
     # https://docs.python.org/3/library/logging.config.html
     'logging': {
         'version': 1,
