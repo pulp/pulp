@@ -360,10 +360,7 @@ class Importer(AutoRetryDocument):
                 misc.mkdir(os.path.dirname(self._pki_path))
                 os.mkdir(self._pki_path, 0700)
             with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT, 0600), 'w') as pem_file:
-                if type(self.config[config_key]) is unicode:
-                    pem_file.write(self.config[config_key].encode('utf-8'))
-                else:
-                    pem_file.write(self.config[config_key])
+                pem_file.write(self.config[config_key].encode('utf-8'))
 
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
