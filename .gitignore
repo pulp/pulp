@@ -18,6 +18,7 @@ cover
 .DS_Store
 *,cover
 tags
+.pytest_cache
 
 # KDevelop
 .kdev4/
