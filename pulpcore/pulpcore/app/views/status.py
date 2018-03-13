@@ -6,6 +6,7 @@ import logging
 
 from pulpcore.app.models.task import Worker
 from pulpcore.app.serializers.status import StatusSerializer
+from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
 from pulpcore.tasking.celery_instance import celery
 
 
@@ -23,10 +24,14 @@ class StatusView(APIView):
 
     def get(self, request, format=None):
         """
-        Returns app information including the version, known workers, database connection status,
-        and messaging connection status
+        Returns app information including the version of pulpcore and loaded pulp plugins,
+        known workers, database connection status, and messaging connection status
         """
-        versions = [{'component': 'pulpcore', 'version': get_distribution("pulpcore").version}]
+        components = ['pulpcore'] + INSTALLED_PULP_PLUGINS
+        versions = [{
+            'component': component,
+            'version': get_distribution(component).version
+        } for component in components]
         broker_status = {'connected': self._get_broker_conn_status()}
         db_status = {'connected': self._get_db_conn_status()}
 
