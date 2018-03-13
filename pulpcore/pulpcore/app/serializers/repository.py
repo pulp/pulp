@@ -249,6 +249,9 @@ class DistributionSerializer(ModelSerializer):
             'name', 'base_path', 'publisher', 'publication', 'base_url', 'repository',
         )
 
+    def validate_base_path(self, path):
+        return self._validate_relative_path(path)
+
     def validate(self, data):
         if 'publisher' in data:
             publisher = data['publisher']

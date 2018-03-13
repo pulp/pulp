@@ -1,4 +1,8 @@
 from collections import OrderedDict
+from gettext import gettext as _
+from urllib.parse import urljoin
+
+from django.core.validators import URLValidator
 
 from rest_framework import serializers
 from rest_framework.fields import SkipField
@@ -149,6 +153,32 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         for field_name, mapping in field_mappings.items():
             field = getattr(instance, field_name)
             field.mapping.replace(mapping)
+
+    def _validate_relative_path(self, path):
+        """
+        Validate a relative path (eg from a url) to ensure it forms a valid url and does not begin
+        or end with slashes
+
+        Args:
+            path (str): A relative path to validate
+
+        Returns:
+            str: the validated path
+
+        Raises:
+            django.core.exceptions.ValidationError: if the relative path is invalid
+
+        """
+        base = "{}://{}".format(self.context['request'].scheme,
+                                self.context['request'].get_host())
+        validate = URLValidator()
+        validate(urljoin(base, path))
+
+        if path != path.strip("/"):
+            raise serializers.ValidationError(detail=_("Relative path cannot begin or end with "
+                                                       "slashes."))
+
+        return path
 
 
 class MasterModelSerializer(ModelSerializer):
