@@ -8,56 +8,10 @@ Installation Instructions
 
     $ sudo setenforce 0
 
-Ansible Galaxy Installation
----------------------------
-
-1. In order to be able to run playbook, ensure python3 and ansible (2.3.2+) are
-   installed on the control node::
-
-     $ sudo dnf install python3 ansible
-
-   If your package manager ships an older version of Ansible, consider creating
-   a venv and installing Ansible directly from PyPI::
-
-     $ python3 -m venv env
-     $ source env/bin/activate
-     $ pip install ansible
-
-2. Download ``requirements.yml`` and install Galaxy roles specified in the file::
-
-   $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/requirements.yml
-   $ ansible-galaxy install -r requirements.yml -p ./roles
-
-3. To install Pulp locally, download the ``deploy-pulp3.yml`` playbook and run::
-
-   $ wget https://raw.githubusercontent.com/pulp/devel/3.0-dev/ansible/deploy-pulp3.yml
-   $ ansible-playbook deploy-pulp3.yml -i localhost, -c local -K
-
-.. note::
-
-    To do a non-local install of Pulp, configure your Ansible
-    `inventory <http://docs.ansible.com/ansible/latest/intro_inventory.html>`_
-    and run::
-
-    $  ansible-playbook deploy-pulp3.yml
-
-4. Pulp can now be started by going to the target machine and running::
-
-   $ sudo -u pulp -i
-   $ source ~/pulpvenv/bin/activate
-   $ django-admin runserver
-
 PyPI Installation
 -----------------
 
-.. tip::
-
-    These are the manual steps to install Pulp. There are Ansible roles that will do all
-    of the following for you.
-
-1. Install python3.5(+)::
-
-   $ sudo dnf install python3
+1. Install python3.5(+).
 
 2. Create a pulp venv::
 
@@ -67,6 +21,13 @@ PyPI Installation
 3. Install Pulp::
 
    $ pip3 install pulpcore
+
+
+.. note::
+
+   To install from source, replace the pip3 install commands to specify a source install such as:
+
+   ``pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"``
 
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
@@ -100,52 +61,6 @@ PyPI Installation
 
    $ django-admin runserver
 
-CentOS, RHEL, Fedora Installation
----------------------------------
-
-Source Installation
--------------------
-
-1. Install python3.5(+)::
-
-   $ sudo dnf install python3
-
-2. Create a pulp venv::
-
-   $ python3 -m venv pulpvenv
-   $ source pulpvenv/bin/activate
-
-3. Install pulpcore-common, pulpcore and pulpcore-plugin::
-
-   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=common"
-   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"
-   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=plugin"
-
-4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
-   PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
-
-   $ export PULP_SETTINGS=pulpvenv/src/pulpcore/pulpcore/pulpcore/etc/pulp/server.yaml
-
-5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
-
-   $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
-
-6. Tell Django which settings file to use::
-
-   $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
-
-7. Go through the :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
-
-8. Run Django Migrations::
-
-   $ pulp-manager makemigrations
-   $ pulp-manager migrate --noinput auth
-   $ pulp-manager migrate --noinput
-   $ pulp-manager reset-admin-password --password admin
-
-9. Run Pulp::
-
-   $ django-admin runserver
 
 .. _database-install:
 
@@ -162,20 +77,14 @@ for more information on setting the `databases` values in settings.yaml.
 Message Broker
 --------------
 
-.. tip::
-
-    These are the manual steps to install the broker. There are Ansible roles that will install all
-    of the following for you.
-
 You must also provide a message broker for Pulp to use. At this time Pulp 3.0 will only work with
 RabbitMQ. This can be on a different host or the same host that Pulp is running on.
 
 RabbitMQ
 ^^^^^^^^
 
-To install RabbitMQ, run this command on the host you wish to be the message broker::
-
-   $ sudo dnf install rabbitmq-server
+To install RabbitMQ, refer to your package manager or the
+`RabbitMQ install docs <https://www.rabbitmq.com/download.html>`_.
 
 After installing and configuring RabbitMQ, you should configure it to start at boot and start it::
 
@@ -186,12 +95,6 @@ After installing and configuring RabbitMQ, you should configure it to start at b
 
 Systemd
 -------
-
-.. tip::
-
-    These are the manual steps to create the systemd files. There are Ansible roles that will do
-    the following for you.
-
 
 To run the Pulp services, three systemd files needs to be created in /etc/systemd/system/. Make
 sure to substitute ``Environment=PULP_SETTINGS=/path/to/pulp/server.yaml`` with the real location
