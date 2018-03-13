@@ -1,9 +1,10 @@
-from django_filters.rest_framework import filterset
+from django_filters.rest_framework import filters, filterset
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import GenericNamedModelViewSet
+from pulpcore.app.viewsets.custom_filters import CharInFilter, HyperlinkRelatedFilter
 from pulpcore.tasking.util import cancel as cancel_task
 
 from rest_framework.decorators import detail_route
@@ -12,10 +13,19 @@ from rest_framework import status, mixins
 
 
 class TaskFilter(filterset.FilterSet):
+    state_in_list = CharInFilter(name='state', lookup_expr='in')
+    worker = HyperlinkRelatedFilter(name='worker')
+
+    started_after = filters.DateTimeFilter(name='started_at', lookup_expr='gte')
+    started_before = filters.DateTimeFilter(name='started_at', lookup_expr='lte')
+
+    finished_after = filters.DateTimeFilter(name='finished_at', lookup_expr='gte')
+    finished_before = filters.DateTimeFilter(name='finished_at', lookup_expr='lte')
 
     class Meta:
         model = Task
-        fields = ['state', 'worker__name']
+        fields = ['state', 'state_in_list', 'worker', 'started_after', 'started_before',
+                  'finished_after', 'finished_before']
 
 
 class TaskViewSet(mixins.RetrieveModelMixin,

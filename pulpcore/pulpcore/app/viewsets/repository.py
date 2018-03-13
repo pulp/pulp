@@ -1,8 +1,9 @@
+from gettext import gettext as _
 import itertools
 
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
-from rest_framework import decorators, mixins
+from rest_framework import decorators, mixins, serializers
 
 from pulpcore.app import tasks
 from pulpcore.app.models import (
@@ -139,9 +140,8 @@ class RepositoryVersionContentFilter(CharFilter):
             Queryset of the RepositoryVersions containing the specified content
         """
 
-        # If no value is passed, return queryset as-is
         if not value:
-            return qs
+            raise serializers.ValidationError(detail=_('No value supplied for content filter'))
 
         # Get the content object from the content_href
         content = GenericNamedModelViewSet.get_resource(value, Content)
