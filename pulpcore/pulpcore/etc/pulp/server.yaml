@@ -15,16 +15,18 @@
 # `databases`: An associative array (dictionary) of databases to use. For the
 # full list of configuration options, refer to the Django database documentation
 # shipped with your version of Django, or online at
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 #
 # By default, Pulp will use a sqlite3 database. If your environment is used in production
 # consider configuring Postgresql or another Django supported database.
 #
-# databases:
-#   default:
-#     CONN_MAX_AGE: 0
-#     ENGINE: django.db.backends.sqlite3
-#     NAME: /var/lib/pulp/sqlite3.db
+databases:
+  default:
+    CONN_MAX_AGE: 0
+    ENGINE: django.db.backends.sqlite3
+    NAME: /var/lib/pulp/sqlite3.db
+    OPTIONS:
+      timeout: 20
 #     USER:
 #     PASSWORD:
 #     HOST:
