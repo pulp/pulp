@@ -205,7 +205,7 @@ _DEFAULT_PULP_SETTINGS = {
         }
     },
     'server': {
-        'working_directory': '/var/cache/pulp',
+        'working_directory': '/var/lib/pulp/tmp',
     },
     'content': {
         'web_server': 'django',

@@ -126,7 +126,7 @@ def initialize_worker(sender, instance, **kwargs):
     In such cases, any Pulp tasks that were running or waiting on this worker will show incorrect
     state. Any reserved_resource reservations associated with the previous worker will also be
     removed along with the setting of online=False on the worker record in the database itself.
-    The working directory specified in /etc/pulp/server.conf (/var/cache/pulp/<worker_name>)
+    The working directory specified in /etc/pulp/server.conf (/var/lib/pulp/tmp/<worker_name>)
     by default is removed and recreated. This is called early in the worker start process,
     and later when it's fully online. If there is no previous work to cleanup, this method still
     runs, but has no effect on the database.
