@@ -11,10 +11,8 @@ cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json
 
 sudo mkdir /var/lib/pulp
 sudo mkdir /var/lib/pulp/tmp
-sudo mkdir /var/cache/pulp
 sudo mkdir /etc/pulp/
 sudo chown -R travis:travis /var/lib/pulp
-sudo chown travis:travis /var/cache/pulp
 
 if [ "$DB" = 'postgres' ]; then
   sudo cp .travis/server.postgres.yaml /etc/pulp/server.yaml

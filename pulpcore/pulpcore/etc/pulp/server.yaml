@@ -83,7 +83,7 @@
 #                        for completion of tasks
 #
 # server:
-#   working_directory: /var/cache/pulp
+#   working_directory: /var/lib/pulp/tmp
 
 # Content Application
 #
