@@ -60,9 +60,12 @@ INSTALLED_APPS = [
     'pulpcore.app',
 ]
 
-# add plugins to INSTALLED_APPS after pulpcore
+# Enumerate the installed Pulp plugins during the loading process for use in the status API
+INSTALLED_PULP_PLUGINS = []
+
 for entry_point in iter_entry_points('pulpcore.plugin'):
     plugin_app_config = entry_point.load()
+    INSTALLED_PULP_PLUGINS.append(entry_point.module_name)
     INSTALLED_APPS.append(plugin_app_config)
 
 # Optional apps that help with development, or augment Pulp in some non-critical way
