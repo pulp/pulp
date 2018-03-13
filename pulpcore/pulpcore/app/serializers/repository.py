@@ -208,7 +208,8 @@ class DistributionSerializer(ModelSerializer):
             UniqueValidator(queryset=models.Distribution.objects.all())]
     )
     base_path = serializers.CharField(
-        help_text=_('The base (relative) path component of the published url.'),
+        help_text=_('The base (relative) path component of the published url. Avoid paths that \
+                    overlap with other distributor base paths (e.g. "foo" and "foo/bar")'),
         validators=[validators.MaxLengthValidator(
             models.Distribution._meta.get_field('base_path').max_length,
             message=_('Distribution base_path length must be less than {} characters').format(
