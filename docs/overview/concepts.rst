@@ -12,8 +12,8 @@ deb) is defined by a plugin.  Files that belong to a content unit are called
 shared by multiple content units.
 
 Content units in Pulp are organized by their membership in :term:`repositories<repository>` over
-time. Users can add or remove content units to a repository, which creates a new :term:`repository
-version<RepositoryVersion>`.
+time. Users can add or remove content units to a repository. Each time the content set of a
+repository is changed, a new :term:`repository version<RepositoryVersion>` is created.
 
 Content units can be created in Pulp manually. Users specify the content type and the artifacts
 that will belong to the new content unit.  Artifacts that are not already known by Pulp should be

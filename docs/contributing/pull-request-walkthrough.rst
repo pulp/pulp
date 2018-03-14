@@ -7,13 +7,13 @@ Changes to pulpcore are submitted via `GitHub Pull Requests
 table<plugin-table>`.
 
 TODO(how does django phrase this?)
-Especially if you have a major change, it is recommended that you :ref:`chat with us<getting-help>`
+Especially if you have a major change, it is recommended that you :ref:`chat with us<community>`
 before you invest a lot of time into patch.
 
 Checklist
 ---------
 
-#. `Fork <https://help.github.com/articles/fork-a-repo/`_ `pulp <https://github.com/pulp/pulp>`_ in
+#. `Fork <https://help.github.com/articles/fork-a-repo/>`_ `pulp <https://github.com/pulp/pulp>`_ in
    your GitHub account.
 #. :doc:`Install Pulp from source.<dev-setup/index>`
 #. Create a new branch from the :ref:`appropriate base branch<git-branch>`
@@ -23,8 +23,7 @@ Checklist
 #. Update any relevent :doc:`documentation`.
 #. TODO(link) Run the linter and unit tests.
 #. Check compliance with our :doc:`git` guidelines.
-#. Push your branch to your fork and open a `Pull request across
-   forks<https://help.github.com/articles/creating-a-pull-request-from-a-fork/>`_.
+#. Push your branch to your fork and open a `Pull request across forks <https://help.github.com/articles/creating-a-pull-request-from-a-fork/>`_.
 
 Review
 ------

@@ -15,15 +15,34 @@ pulp<installation/index>`, the simplest way to get concrete experience is to ins
 through our :doc:`workflows/index` to find best practices for common use cases. From there, users
 should explore the :doc:`cli-guide/index` and our reference documentation.
 
-Other Documentation Entry Points
---------------------------------
+.. _community:
 
-Plugin Writers: :doc:`plugins/plugin-writer/index`
+Community
+---------
 
-REST API Integration: :doc:`integration-guide/index`
+Pulp has an active commmunity that writes issues, fixes bugs, adds features, writes plugins,
+and helps each other with support from the core developers. If you have questions or want to help
+make Pulp better, please reach out!
 
-Contributors to pulpcore: :doc:`contributing/index`
+* Usage discussions
 
+  * pulp-list@redhat.com
+  * #pulp channel on Freenode
+
+* Development discussions
+
+  * pulp-dev@redhat.com
+  * #pulp-dev channel on Freenode
+
+* Source code
+
+  * `pulpcore <https://github.com/pulp/pulp/>`_
+  * `pulp-smash (test suite) <https://github.com/PulpQE/pulp-smash>`_
+  * :ref:`plugins<plugin-table>`
+
+
+Table of Contents
+-----------------
 
 .. toctree::
    :maxdepth: 2
