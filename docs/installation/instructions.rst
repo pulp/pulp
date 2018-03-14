@@ -25,9 +25,9 @@ PyPI Installation
 
 .. note::
 
-   To install from source, replace the pip3 install commands to specify a source install such as:
+   To install from source, replace the pip3 install commands to specify a source install such as::
 
-   ``pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"``
+   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"
 
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
@@ -49,6 +49,15 @@ PyPI Installation
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
 7. Go through the :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
+
+.. note::
+
+    In place of using the systemd unit files provided in the `systemd-setup` section, you can run
+    the commands yourself inside of a shell. This is fine for development but not recommended in production::
+
+    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%%h -Q resource_manager -c 1 --events --umask 18
+    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker-1@%%h -Q reserved_resource_worker-1 -c  --events --umask 18
+    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker-2@%%h -Q reserved_resource_worker-2 -c 1  --events --umask 18
 
 8. Run Django Migrations::
 
