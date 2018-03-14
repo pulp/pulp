@@ -10,3 +10,10 @@ New Features
 
 * Added a `worker_timeout` config setting for users to customize when Pulp should consider workers
   are dead and attempt to kill them.
+
+Dependency Changes
+------------------
+
+Celery on EL7 is being upgraded from form 3.z to 4.0.2. The associated Celery dependencies are also
+upgraded to match the new versions. Pulp explicitly added Celery 4 support several versions back and
+the newer stack has been in use on Fedora distros for a while.
