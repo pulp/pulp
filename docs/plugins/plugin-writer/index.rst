@@ -18,6 +18,7 @@ bugs/features
 Plugin Responsibilities
 ------------------------
 
+TODO(combine with what plugins do)
 Each plugin must do each of the following:
 
 Define a content type:
@@ -69,7 +70,6 @@ Along with this guide `an example of plugin implementation
 .. toctree::
    :maxdepth: 2
 
-   /overview/concepts
    basics
    planning-guide
    walkthrough
@@ -91,3 +91,60 @@ is unsupported, and not protected by the Pulp Plugin API's semantic versioning g
     semantic versioning of the Plugin API in the future. As our initial plugins are under
     development prior to the release of Pulp 3.0, the Plugin API can be assumed to have
     semantic major version 0, indicating it is unstable and still being developed.
+
+.. Pulp models
+.. ===========
+..
+.. Understanding models
+.. --------------------
+.. # TODO(asmacdo) move models of this to contributor docs
+.. # TODO(asmacdo) update for RepositoryVersions
+.. # TODO(asmacdo) update from language guide
+..
+.. There are models which are expected to be used in plugin implementation, so understanding what they
+.. are designed for is useful for a plugin writer. Each model below has a link to its documentation
+.. where its purpose, all attributes and relations are listed.
+..
+.. Here is a gist of how models are related to each other and what each model is responsible for.
+..
+..   :class:`~pulpcore.plugin.models.RepositoryContent` is used to represent this relation.
+.. * :class:`~pulpcore.plugin.models.Content` can have :class:`~pulpcore.plugin.models.Artifact`
+..   associated with it. :class:`~pulpcore.plugin.models.ContentArtifact` is used to represent this
+..   relation.
+.. * :class:`~pulpcore.plugin.models.ContentArtifact` can have
+..   :class:`~pulpcore.plugin.models.RemoteArtifact` associated with it.
+.. * :class:`~pulpcore.plugin.models.Artifact` is a file.
+.. * :class:`~pulpcore.plugin.models.RemoteArtifact` contains information about
+..   :class:`~pulpcore.plugin.models.Artifact` from a remote source, including URL to perform
+..   download later at any point.
+.. * :class:`~pulpcore.plugin.models.Importer` knows specifics of the plugin
+..   :class:`~pulpcore.plugin.models.Content` to put it into Pulp.
+..   :class:`~pulpcore.plugin.models.Importer` defines how to synchronize remote content. Pulp
+..   Platform provides support for concurrent  :ref:`downloading <download-docs>` of remote content.
+..   Plugin writer is encouraged to use one of them but is not required to.
+.. * :class:`~pulpcore.plugin.models.PublishedArtifact` refers to
+..   :class:`~pulpcore.plugin.models.ContentArtifact` which is published and belongs to a certain
+..   :class:`~pulpcore.app.models.Publication`.
+.. * :class:`~pulpcore.plugin.models.PublishedMetadata` is a repository metadata which is published,
+..   located in ``/var/lib/pulp/published`` and belongs to a certain
+..   :class:`~pulpcore.app.models.Publication`.
+.. * :class:`~pulpcore.plugin.models.Publisher` knows specifics of the plugin
+..   :class:`~pulpcore.plugin.models.Content` to make it available outside of Pulp.
+..   :class:`~pulpcore.plugin.models.Publisher` defines how to publish content available in Pulp.
+.. * :class:`~pulpcore.app.models.Publication` is a result of publish operation of a specific
+..   :class:`~pulpcore.plugin.models.Publisher`.
+.. * :class:`~pulpcore.app.models.Distribution` defines how a publication is distributed for a specific
+..   :class:`~pulpcore.plugin.models.Publisher`.
+.. * :class:`~pulpcore.plugin.models.ProgressBar` is used to report progress of the task.
+..
+..
+.. An important feature of the current design is deduplication of
+.. :class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact` data.
+.. :class:`~pulpcore.plugin.models.Content` is shared between :class:`~pulpcore.app.models.Repository`,
+.. :class:`~pulpcore.plugin.models.Artifact` is shared between
+.. :class:`~pulpcore.plugin.models.Content`.
+.. See more details on how it affects importer implementation in :ref:`define-importer` section.
+.. TODO:
+..     After a concept is fully explained, link to related Workflows
+
+

@@ -27,6 +27,8 @@ What plugins do
  * :ref:`Errors are handled according to Pulp conventions <error-handling-basics>`
  * Docs for plugin are available (any location and format preferred and provided by plugin writer)
 
+.. _plugin-table:
+
 Available Plugins
 -----------------
 
