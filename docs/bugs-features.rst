@@ -5,22 +5,18 @@ Bugs and feature requests for :term:`pulpcore` are tracked with `Redmine
 <https://pulp.plan.io/projects/pulp/issues/>`_. Please see the :ref:`plugin-table` for trackers for
 each plugin.
 
+.. _issue-writing:
+
 How to file an issue
 --------------------
 
-Before you file an issue, please see our :ref:`common-issues` section, hopefully you will be all set. You
-also might consider :ref:`connecting with the community<community>`.
-
-You can `file a new bug <https://pulp.plan.io/projects/pulp/issues/new>`_.
+`New pulpcore issue <https://pulp.plan.io/projects/pulp/issues/new>`_.
 
 .. warning::
-  Is this security related? If so, please follow the `Security Disclosures` TODO process.
+  Is this security related? If so, please follong the :ref`security-bugs` proceedure.
 
-Redmine Fields
-**************
-
-Please set the fields listed here. Fields that are not specified should be left blank
-
+Please set **only the fields in this table**. See :ref:`redmine-fields` for more detailed
+descriptions of all the fields and how they are used.
 
 .. list-table::
    :header-rows: 1
@@ -28,76 +24,57 @@ Please set the fields listed here. Fields that are not specified should be left 
    :align: center
 
    * - Field
-     - Description
+     - Instructions
 
    * - Tracker
      - For a bug, select ``Issue``, for a feature-request, choose ``Story``
 
    * - Subject
-     - Strive to be specific and concise. Please see :ref`good-bugs`
+     - Strive to be specific and concise.
 
    * - Description
-     - This is the most important part! Please see :ref:`good-bugs`
-
-   * - Status
-     - Leave this at ``NEW`` unless you would like to fix the issue.
-
-   * - Priority
-     - Will be determined during by :ref:`triage`. If set, considered a suggestion.
+     - This is the most important part! Please see :ref:`issue-description`.
 
    * - Category
      - Choose one if applicable, blank is OK.
 
-   * - Sprint/Milestone
-     - Internal use, please leave blank.
-
-   * - Severity
-     - Will be determined during by :ref:`triage`. If set, considered a suggestion.
-
    * - Version
-     - Version of pulpcore that the filer noticed the issue.
-
-   * - Platform Release
-     - Please leave blank.
-
-   * - Blocks Release
-     - Please leave blank.
+     - The version of pulpcore that you discovered the issue.
 
    * - OS
-     - Operating system the filer is running.
+     - Please select your operating system.
 
    * - Tags
      - For searching. Select 0 or many, best judgement.
 
+.. _issue-description:
 
-.. _good-bugs:
+Description
+***********
 
-Writing Good Issues
-*******************
+A well written description is very helpful to developers and other users with similar problems. It
+is ok if you aren't able to provide all the information requested here, but clear and detailed
+issues are more likely to be fixed quickly. Bonus points if they are `pretty
+<https://www.redmine.org/projects/redmine/wiki/RedmineTextFormattingMarkdown>`_.
 
-**Subject**
-TODO
+For **Issues** (Bugs) please include:
 
-**Description**
-TODO
+#. Detailed explanation of the problem. For problems involving external content sources, please
+   indicate the source (and a link) if you can.
+#. Clear steps to reproduce the problem. Commands and/or REST calls are highly encouraged.
+#. Expected results
+#. Actual results
+#. Snippet of relevant logs, especially Exceptions.
 
+You can also upload attachments, but please only upload relevant data. For example, if you have an
+entire log which contains some errors, please trim it to just the relevant portions and upload
+those.
 
-Fill in the *Subject* and *Description*. Leave the status at ``NEW``. Please
-select the closest corresponding *Category*, if any. Select the *Severity* field
-and any *Tags* based on your best judgement. (No matter the priority, all bugs will be reviewed in
-our :ref:`triage`.)
-
-Use the *Version* field to indicate which Pulp version you are using. It has an entry
-for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
-from source instead of a released version, the value ``master`` should be selected.
-
-Use the *OS* field to indicate which Operating System the bug was discovered on.
-
-You can also upload attachments, but please only upload relevant data. For
-example, if you have an entire log which contains some errors, please trim it
-to just the relevant portions and upload those.
-
-
+For **Feature Requests** (Stories), the description will depend on the feature. Please be specific
+when describing the requested behavior and include the motivation for adding it. If you have
+suggestions for how the commands/REST calls would look, please include that as well. Feature
+requests require follow-up from the filer, so please :ref:`reach out<community>` with a link to
+your issue.
 
 .. _triage:
 
@@ -107,3 +84,72 @@ Once a week, the Pulp team triages all new bugs, at which point its *Severity* r
 aspects of the report will be evaluated. If necessary, the bug may be commented on requesting more
 information or clarification from the reporter. When a bug has enough information, its *Priority*
 rating set and is marked as triaged using the *Triaged* boolean.
+
+
+.. _security-bugs:
+
+Security Disclosures
+--------------------
+
+We take security issues seriously and welcome responsible disclosure of security vulnerabilities in
+Pulp. Please email pulp-security@redhat.com (a private address for the Pulp Security Team) with all
+reports.
+
+Your report should include:
+
+#. Pulp version
+#. A vulnerability description
+#. Reproduction steps
+#. Feel free to submit a patch with your disclosure. A member of the Pulp Security Team will
+   confirm the vulnerability, determine its impact, and develop a fix.
+
+.. _redmine-fields:
+
+Redmine Fields
+--------------
+
++-------------+-----------------------------------------------------------------------------------+
+| Field       | Description                                                                       |
++-------------+-----------------------------------------------------------------------------------+
+| Tracker     | - ``Issue`` (bug) Defect in a feature that is expected to work.                   |
+|             | - ``Story`` New feature or functionality.                                         |
+|             | - ``Refactor`` Improvement that will not be visible to the user in any way.       |
+|             | - ``Task`` Infrastructure work that will not be a part of released code.          |
++-------------+-----------------------------------------------------------------------------------+
+| Subject     | - For an ``Issue``, summary of the situation and the unexpected result.           |
+|             | - For a ``Story``, takes the form "As a [user/dev/etc] I can ..."                 |
+|             | - For a ``Task`` or ``Refactor`` describe what should be done. in any way.        |
++-------------+-----------------------------------------------------------------------------------+
+| Description | A detailed explanation of the problem please see :ref:`issue-description`         |
++-------------+-----------------------------------------------------------------------------------+
+| Status      | - ``NEW`` Unassigned, incomplete                                                  |
+|             | - ``ASSIGNED`` Incomplete, assignee should also be set                            |
+|             | - ``POST`` Pull Request is open (with a link in a comment)                        |
+|             | - ``MODIFIED`` Change has been merged, but has not been released                  |
+|             | - ``CLOSED`` If you disagree, please re-open and comment                          |
++-------------+-----------------------------------------------------------------------------------+
+| Priority    | Assigned during :ref:`triage`.                                                    |
++-------------+-----------------------------------------------------------------------------------+
+| Assignee    | Contributor who is working on this issue.                                         |
++-------------+-----------------------------------------------------------------------------------+
+| Milestone   | A set of work that has been grouped together.                                     |
++-------------+-----------------------------------------------------------------------------------+
+| Parent Task | Indicates that this is a sub-task of the larger issue.                            |
++-------------+-----------------------------------------------------------------------------------+
+| Severity    | Assigned during :ref:`triage`.                                                    |
++-------------+-----------------------------------------------------------------------------------+
+| Version     | Filer experienced the problem while running this version of pulpcore              |
++-------------+-----------------------------------------------------------------------------------+
+| Platform    | - This field is set only on issues that have been completed                       |
+| Release     | - indicates the earliest version that contains these  changes                     |
++-------------+-----------------------------------------------------------------------------------+
+| Triaged     | Indicates whether an issue has gone through :ref:`bug triage<triage>`             |
++-------------+-----------------------------------------------------------------------------------+
+| Groomed     | Core developers mark issues groomed when they inludes all necessary information.  |
++-------------+-----------------------------------------------------------------------------------+
+| Sprint      | If set, indicates that the issue is accepted by the team and is ready to be done. |
++-------------+-----------------------------------------------------------------------------------+
+| Tags        | Used for filtering.                                                               |
++-------------+-----------------------------------------------------------------------------------+
+
+
