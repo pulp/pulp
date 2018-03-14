@@ -1,6 +1,7 @@
 from gettext import gettext as _
 
 from django.core import validators
+from django.db.models import Q
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -203,7 +204,7 @@ class DistributionSerializer(ModelSerializer):
     )
     base_path = serializers.CharField(
         help_text=_('The base (relative) path component of the published url. Avoid paths that \
-                    overlap with other distributor base paths (e.g. "foo" and "foo/bar")'),
+                    overlap with other distribution base paths (e.g. "foo" and "foo/bar")'),
         validators=[validators.MaxLengthValidator(
             models.Distribution._meta.get_field('base_path').max_length,
             message=_('Distribution base_path length must be less than {} characters').format(
@@ -244,8 +245,31 @@ class DistributionSerializer(ModelSerializer):
             'name', 'base_path', 'publisher', 'publication', 'base_url', 'repository',
         )
 
+    def _validate_path_overlap(self, path):
+        # look for any base paths nested in path
+        search = path.split("/")[0]
+        q = Q(base_path=search)
+        for subdir in path.split("/")[1:]:
+            search = "/".join((search, subdir))
+            q |= Q(base_path=search)
+
+        # look for any base paths that nest path
+        q |= Q(base_path__startswith='{}/'.format(path))
+        qs = models.Distribution.objects.filter(q)
+
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        match = qs.first()
+        if match:
+            raise serializers.ValidationError(detail=_("Overlaps with existing distribution '"
+                                                       "{}'").format(match.name))
+
+        return path
+
     def validate_base_path(self, path):
-        return self._validate_relative_path(path)
+        self._validate_relative_path(path)
+        return self._validate_path_overlap(path)
 
     def validate(self, data):
         if 'publisher' in data:
