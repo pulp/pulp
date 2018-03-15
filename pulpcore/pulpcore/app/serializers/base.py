@@ -169,8 +169,8 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
             django.core.exceptions.ValidationError: if the relative path is invalid
 
         """
-        base = "{}://{}".format(self.context['request'].scheme,
-                                self.context['request'].get_host())
+        # in order to use django's URLValidator we need to construct a full url
+        base = "http://localhost"  # use a scheme/hostname we know are valid
         validate = URLValidator()
         validate(urljoin(base, path))
 
