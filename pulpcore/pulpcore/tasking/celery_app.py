@@ -11,7 +11,7 @@ from datetime import timedelta
 from gettext import gettext as _
 
 from celery import bootsteps
-from celery.signals import celeryd_after_setup, worker_shutdown
+from celery.signals import celeryd_after_setup
 from django.db.utils import IntegrityError
 from django.utils import timezone
 
@@ -68,6 +68,7 @@ class PulpWorkerStep(bootsteps.StartStopStep):
         :param worker: The consumer instance
         :type  worker: celery.worker.consumer.Consumer
         """
+        from pulpcore.tasking.services.worker_watcher import mark_worker_online
 
         self.timer_ref = consumer.timer.call_repeatedly(
             TASKING_CONSTANTS.PULP_PROCESS_HEARTBEAT_INTERVAL,
@@ -75,6 +76,7 @@ class PulpWorkerStep(bootsteps.StartStopStep):
             (consumer, ),
             priority=10,
         )
+        mark_worker_online(consumer.hostname)
         self._on_tick(consumer)
 
     def stop(self, consumer):
@@ -90,6 +92,19 @@ class PulpWorkerStep(bootsteps.StartStopStep):
         if self.timer_ref:
             self.timer_ref.cancel()
             self.timer_ref = None
+
+    def shutdown(self, consumer):
+        """
+        Called when a worker is shutdown.
+        So far, this just marks the worker as offline.
+
+        :param consumer: The consumer instance
+        :type  consumer: celery.worker.consumer.Consumer
+        """
+        from pulpcore.tasking.services.worker_watcher import mark_worker_offline
+
+        # Mark the worker as offline
+        mark_worker_offline(consumer.hostname, normal_shutdown=True)
 
     def _on_tick(self, consumer):
         """
@@ -171,26 +186,6 @@ def initialize_worker(sender, instance, **kwargs):
         get_resource_manager_lock(sender)
 
 
-@worker_shutdown.connect
-def shutdown_worker(signal, sender, **kwargs):
-    """
-    Called when a worker is shutdown.
-    So far, this just marks the worker as offline.
-
-    :param signal:   The signal being sent to the workerTaskLock
-    :param type:     int
-
-    :param instance: The hostname of the worker
-    :type  instance: celery.apps.worker.Worker
-    :param kwargs:   Other params (unused)
-    :type  kwargs:   dict
-    """
-    from pulpcore.tasking.services.worker_watcher import mark_worker_offline
-
-    # Mark the worker as offline
-    mark_worker_offline(sender.hostname, normal_shutdown=True)
-
-
 def get_resource_manager_lock(name):
     """Block until the the resource manager lock is acquired.
     Tries to acquire the resource manager lock.
@@ -211,11 +206,7 @@ def get_resource_manager_lock(name):
 
     lock = TaskLock(name=name, lock=TaskLock.RESOURCE_MANAGER)
     worker, created = Worker.objects.get_or_create(name=name)
-
-    if not created:
-        worker.online = True
-    # Because the method save_heartbeat() can't save new models we have to save it now
-    worker.save()
+    worker.save_heartbeat()
 
     # Whether this is the first lock availability check for this instance
     _first_check = True

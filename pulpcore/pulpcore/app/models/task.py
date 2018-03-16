@@ -69,9 +69,9 @@ class WorkerManager(models.Manager):
         """
         Returns a queryset of workers meeting the criteria to be considered 'online'
 
-        To be considered 'online', a worker should both have its 'online' field set to True
-        and have a recent heartbeat. "Recent" is defined here as "within the pulp process timeout
-        interval".
+        To be considered 'online', a worker must have a recent heartbeat timestamp and must not
+        have the 'gracefully_stopped' flag set to True. "Recent" is defined here as "within
+        the pulp process timeout interval".
 
         Returns:
             :class:`django.db.models.query.QuerySet`:  A query set of the Worker objects which
@@ -79,9 +79,25 @@ class WorkerManager(models.Manager):
         """
         now = timezone.now()
         age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
-        return self.filter(name__startswith='reserved',
-                           last_heartbeat__gte=age_threshold,
-                           online=True)
+
+        return self.filter(last_heartbeat__gte=age_threshold, gracefully_stopped=False)
+
+    def missing_workers(self):
+        """
+        Returns a queryset of workers meeting the criteria to be considered 'missing'
+
+        To be considered missing, a worker must have a stale timestamp while also having
+        cleaned_up=False, meaning that it has not been cleaned up after an improper shutdown.
+        Stale is defined here as "beyond the pulp process timeout interval".
+
+        Returns:
+            :class:`django.db.models.query.QuerySet`:  A query set of the Worker objects which
+                are considered by Pulp to be 'missing'.
+        """
+        now = timezone.now()
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        return self.filter(last_heartbeat__lt=age_threshold, cleaned_up=False)
 
     def with_reservations(self, resources):
         """
@@ -117,16 +133,31 @@ class Worker(Model):
 
     name = models.TextField(db_index=True, unique=True)
     last_heartbeat = models.DateTimeField(auto_now=True)
-    online = models.BooleanField(default=True)
+    gracefully_stopped = models.BooleanField(default=True)
+    cleaned_up = models.BooleanField(default=False)
+
+    @property
+    def online(self):
+        """
+        Whether a worker can be considered 'online'
+
+        To be considered 'online', a worker must have a recent heartbeat timestamp and must not
+        have the 'gracefully_stopped' flag set to True. "Recent" is defined here as "within
+        the pulp process timeout interval".
+
+        Returns:
+            bool: True if the worker is considered online, otherwise False
+        """
+        now = timezone.now()
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        return not self.gracefully_stopped and self.last_heartbeat >= age_threshold
 
     def save_heartbeat(self):
-        """Save a worker heartbeat
-
+        """
         Update the last_heartbeat field to now and save it.
 
-        Warnings:
-
-            1) Only the last_heartbeat field will be saved. No other changes will be saved.
+        Only the last_heartbeat field will be saved. No other changes will be saved.
 
         Raises:
             ValueError: When the model instance has never been saved before. This method can

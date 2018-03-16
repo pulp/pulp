@@ -115,10 +115,17 @@ class WorkerSerializer(ModelSerializer):
     )
 
     online = serializers.BooleanField(
-        help_text='Whether the worker is online or not. Defaults to True.',
+        help_text=_('True if the worker is considered online, otherwise False'),
+        read_only=True
+    )
+
+    gracefully_stopped = serializers.BooleanField(
+        help_text=_('True when the worker was shut down properly, False when the worker is \
+            online, or if it crashed (determined by timestamp).'),
         read_only=True
     )
 
     class Meta:
         model = models.Worker
-        fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat', 'online')
+        fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat',
+                                                'online', 'gracefully_stopped')
