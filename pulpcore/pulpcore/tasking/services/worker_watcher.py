@@ -13,8 +13,6 @@ Other functions in this module are helper functions designed to deduplicate the 
 code between the event handlers.
 """
 
-from datetime import timedelta
-from django.utils import timezone
 from gettext import gettext as _
 import logging
 
@@ -46,8 +44,8 @@ def handle_worker_heartbeat(worker_name):
     Existing Worker objects are searched for one to update. If an existing one is found, it is
     updated. Otherwise a new Worker entry is created. Logging at the info level is also done.
 
-    :param worker_name: The hostname of the worker
-    :type  worker_name: basestring
+    Args:
+        worker_name (str): The hostname of the worker
     """
     worker, created = Worker.objects.get_or_create(name=worker_name)
     if created:
@@ -63,6 +61,11 @@ def handle_worker_heartbeat(worker_name):
     )
 
     _logger.debug(msg)
+
+    # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
+    if worker.name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
+        lock = TaskLock.objects.get(name=worker.name)
+        lock.update_timestamp()
 
 
 def check_celery_processes():
@@ -117,8 +120,8 @@ def handle_worker_offline(worker_name):
     _delete_worker() task is called to handle any work cleanup associated with a worker going
     offline. Logging at the info level is also done.
 
-    :param worker_name: The hostname of the worker
-    :type  worker_name: basestring
+    Args:
+        worker_name (str): The hostname of the worker
     """
     msg = _("Worker '%s' shutdown") % worker_name
     _logger.info(msg)

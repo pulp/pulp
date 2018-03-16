@@ -192,20 +192,30 @@ class TaskLock(Model):
     Fields:
 
         name (models.TextField): The name of the item that has the lock
-        timestamp (models.DateTimeField): The time the lock was acquired
+        timestamp (models.DateTimeField): The time the lock was last updated
         lock (models.TextField): The name of the lock acquired
 
     """
-    CELERY_BEAT = 'CeleryBeat'
     RESOURCE_MANAGER = 'ResourceManager'
     LOCK_STRINGS = (
-        (CELERY_BEAT, 'Celery Beat Lock'),
-        (RESOURCE_MANAGER, 'Resource Manager Lock')
+        (RESOURCE_MANAGER, 'Resource Manager Lock'),
     )
 
     name = models.TextField(db_index=True, unique=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now=True)
     lock = models.TextField(unique=True, null=False, choices=LOCK_STRINGS)
+
+    def update_timestamp(self):
+        """
+        Update the timestamp field to now and save it.
+
+        Only the timestamp field will be saved. No other changes will be saved.
+
+        Raises:
+            ValueError: When the model instance has never been saved before. This method can
+                only update an existing database record.
+        """
+        self.save(update_fields=['timestamp'])
 
 
 class Task(Model):
