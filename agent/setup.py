@@ -13,7 +13,7 @@ else:
 
 setup(
     name='pulp-agent',
-    version='2.15.3b1',
+    version='2.15.3',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
