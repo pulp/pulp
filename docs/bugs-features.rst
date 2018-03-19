@@ -49,8 +49,8 @@ descriptions of all the fields and how they are used.
 
 .. _issue-description:
 
-Description
-***********
+Description Field
+*****************
 
 A well written description is very helpful to developers and other users with similar problems. It
 is ok if you aren't able to provide all the information requested here, but clear and detailed
