@@ -44,12 +44,6 @@ class UserSerializer(ModelSerializer):
                     ],
     )
 
-    is_superuser = serializers.BooleanField(
-        help_text=_("Designates that this user has all permissions without explicitly assigning "
-                    "them."),
-        required=False
-    )
-
     password = PasswordSerializer(
         help_text=_("Password"),
         write_only=True
@@ -57,4 +51,4 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ModelSerializer.Meta.fields + ('username', 'is_superuser', 'password')
+        fields = ModelSerializer.Meta.fields + ('username', 'password')
