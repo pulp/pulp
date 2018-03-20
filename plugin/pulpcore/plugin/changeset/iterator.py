@@ -93,7 +93,8 @@ class ContentIterator(Iterable):
             dict: A dictionary of {model_class: [content,]}
                 Each content is: PendingContent.
         """
-        for batch in BatchIterator(self.content, 1024):
+        # should be < 1000 as higher values may hit the sqlite expression tree size limit
+        for batch in BatchIterator(self.content, 800):
             collated = {}
             for content in batch:
                 _list = collated.setdefault(type(content.model), list())
