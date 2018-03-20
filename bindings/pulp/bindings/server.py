@@ -44,7 +44,9 @@ class PulpConnection(object):
                  cert_filename=None,
                  server_wrapper=None,
                  verify_ssl=True,
-                 ca_path=DEFAULT_CA_PATH):
+                 ca_path=DEFAULT_CA_PATH,
+                 proxy_host=None,
+                 proxy_port=None):
 
         self.host = host
         self.port = port
@@ -61,6 +63,10 @@ class PulpConnection(object):
         self.oauth_key = oauth_key
         self.oauth_secret = oauth_secret
         self.oauth_user = oauth_user
+
+        # Proxy
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
 
         # Locale
         default_locale = locale.getdefaultlocale()[0]
@@ -331,12 +337,23 @@ class HTTPSServerWrapper(object):
             headers.update(oauth_header)
             headers['pulp-user'] = self.pulp_connection.oauth_user
 
-        connection = httpslib.HTTPSConnection(
-            self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
+        proxy_requested = self.pulp_connection.proxy_host and self.pulp_connection.proxy_port
+
+        if proxy_requested:
+            connection = httpslib.ProxyHTTPSConnection(self.pulp_connection.proxy_host,
+                self.pulp_connection.proxy_port, ssl_context=ssl_context)
+        else:
+            connection = httpslib.HTTPSConnection(
+                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
 
         try:
             # Request against the server
-            connection.request(method, url, body=body, headers=headers)
+            if proxy_requested:
+                request_url = 'https://%s:%d%s' % (self.pulp_connection.host,
+                    self.pulp_connection.port, url)
+            else:
+                request_url = url
+            connection.request(method, request_url, body=body, headers=headers)
             response = connection.getresponse()
         except SSL.SSLError, err:
             # Translate stale login certificate to an auth exception

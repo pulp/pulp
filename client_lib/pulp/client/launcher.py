@@ -181,6 +181,9 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
     hostname = config['server']['host']
     port = int(config['server']['port'])
 
+    proxy_host = config['server']['proxy_host']
+    proxy_port = config['server']['proxy_port']
+
     cert_dir = config['filesystem']['id_cert_dir']
     cert_name = config['filesystem']['id_cert_filename']
 
@@ -207,7 +210,7 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
         logger=cli_logger, api_responses_logger=api_logger, verify_ssl=verify_ssl,
-        ca_path=ca_path, path_prefix=path_prefix)
+        ca_path=ca_path, path_prefix=path_prefix, proxy_host=proxy_host, proxy_port=proxy_port)
     bindings = Bindings(conn)
 
     return bindings
