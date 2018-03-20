@@ -12,7 +12,7 @@ Pulp's documentation is designed with the following principles:
    they should see introductory material before advanced topics.
 #. Documentation should make heavy use of cross references to limit repitition.
 #. Pulp specific terminology should be be defined and added to the glossary.
-#. Documentation should stay consistent with the language used in the :ref:`/overview/concepts`.
+#. Documentation should stay consistent with the language used in the :doc:`/overview/concepts`.
 #. Each guide (being a set of documents to be consumed together) should contain:
    #. Summary of content
    #. Intended audience.
