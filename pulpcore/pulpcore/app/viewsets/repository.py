@@ -2,7 +2,7 @@ from gettext import gettext as _
 import itertools
 
 from django_filters.rest_framework import filters, filterset
-from django_filters import CharFilter
+from django_filters import Filter
 from rest_framework import decorators, mixins, serializers
 
 from pulpcore.app import tasks
@@ -119,7 +119,7 @@ class ExporterFilter(filterset.FilterSet):
         ]
 
 
-class RepositoryVersionContentFilter(CharFilter):
+class RepositoryVersionContentFilter(Filter):
     """
     Filter used to get the repository versions where some given content can be found.
 
