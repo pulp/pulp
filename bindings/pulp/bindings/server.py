@@ -46,7 +46,7 @@ class PulpConnection(object):
                  verify_ssl=True,
                  ca_path=DEFAULT_CA_PATH,
                  proxy_host=None,
-                 proxy_port=None):
+                 proxy_port=3128):
 
         self.host = host
         self.port = port
@@ -341,16 +341,18 @@ class HTTPSServerWrapper(object):
 
         if proxy_requested:
             connection = httpslib.ProxyHTTPSConnection(self.pulp_connection.proxy_host,
-                self.pulp_connection.proxy_port, ssl_context=ssl_context)
+                                                       self.pulp_connection.proxy_port,
+                                                       ssl_context=ssl_context)
         else:
-            connection = httpslib.HTTPSConnection(
-                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
+            connection = httpslib.HTTPSConnection(self.pulp_connection.host,
+                                                  self.pulp_connection.port,
+                                                  ssl_context=ssl_context)
 
         try:
             # Request against the server
             if proxy_requested:
                 request_url = 'https://%s:%d%s' % (self.pulp_connection.host,
-                    self.pulp_connection.port, url)
+                                                   self.pulp_connection.port, url)
             else:
                 request_url = url
             connection.request(method, request_url, body=body, headers=headers)
