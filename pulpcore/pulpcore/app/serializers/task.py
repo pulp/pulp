@@ -3,7 +3,7 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
+from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer, DetailIdentityField
 
 from .base import viewset_for_model
 
@@ -30,9 +30,10 @@ class CreatedResourceSerializer(ModelSerializer):
 
 
 class TaskSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='tasks-detail',
-    )
+    # _href = serializers.HyperlinkedIdentityField(
+    #     view_name='tasks-detail',
+    # )
+    _href = DetailIdentityField()
 
     state = serializers.CharField(
         help_text=_("The current state of the task. The possible values include:"

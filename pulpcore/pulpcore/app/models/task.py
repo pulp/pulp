@@ -10,7 +10,7 @@ import celery
 from django.db import models, transaction
 from django.utils import timezone
 
-from pulpcore.app.models import Model, GenericRelationModel
+from pulpcore.app.models import MasterModel, Model, GenericRelationModel
 from pulpcore.app.fields import JSONField
 from pulpcore.common import TASK_FINAL_STATES
 from pulpcore.exceptions import exception_to_dict
@@ -177,7 +177,7 @@ class TaskLock(Model):
     lock = models.TextField(unique=True, null=False, choices=LOCK_STRINGS)
 
 
-class Task(Model):
+class Task(MasterModel):
     """
     Represents a task
 
@@ -195,6 +195,7 @@ class Task(Model):
         parent (models.ForeignKey): Task that spawned this task (if any)
         worker (models.ForeignKey): The worker that this task is in
     """
+    TYPE = 'task'
 
     WAITING = 'waiting'
     SKIPPED = 'skipped'
@@ -297,6 +298,10 @@ class Task(Model):
             reservation.tasks.remove(self.id)
             if not reservation.tasks.exists():
                 reservation.delete()
+
+
+class CoreTask(Task):
+    type = "core"
 
 
 class CreatedResource(GenericRelationModel):

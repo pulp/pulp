@@ -14,6 +14,7 @@ from django.conf import settings as pulp_settings
 from django.db import IntegrityError
 
 from pulpcore.app.models import Task as TaskStatus
+from pulpcore.app.models.task import CoreTask
 from pulpcore.app.models import Worker
 from pulpcore.common import TASK_STATES
 from pulpcore.exceptions import PulpException
@@ -176,7 +177,8 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, resources, args=None, kwargs=None, **options):
+    def apply_async_with_reservation(self, resources, task_status=None, args=None, kwargs=None,
+                                     **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
         resource urls. No two tasks that claim the same resource can execute concurrently. It
@@ -201,19 +203,26 @@ class UserFacingTask(PulpTask):
             An AsyncResult instance as returned by Celery's apply_async
         """
         resources = {util.get_url(resource) for resource in resources}
-        inner_task_id = str(uuid.uuid4())
         task_name = self.name
 
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
 
-        TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING, **parent_arg)
+        if task_status is None:
+            inner_task_id = str(uuid.uuid4())
+            task_status = CoreTask.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
+                                                  **parent_arg)
+        else:
+            task_status.state = TaskStatus.WAITING
+            if parent_arg:
+                task_status.parent = parent_arg.get('parent')
+            task_status.save()
 
         # Call the outer task which is a promise to call the real task when it can.
-        _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
+        _queue_reserved_task.apply_async(args=(task_name, task_status.pk, list(resources), args,
                                                kwargs, options),
                                          queue=RESOURCE_MANAGER_QUEUE)
-        return AsyncResult(inner_task_id)
+        return AsyncResult(task_status.pk)
 
     def apply_async(self, args=None, kwargs=None, **options):
         """
@@ -237,7 +246,7 @@ class UserFacingTask(PulpTask):
         parent_arg = self._get_parent_arg()
 
         try:
-            TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
+            CoreTask.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
         except IntegrityError:
             # The TaskStatus was already created with the call to apply_async_with_reservation
             pass
