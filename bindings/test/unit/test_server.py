@@ -198,6 +198,8 @@ class TestPulpConnection(unittest.TestCase):
         self.assertEqual(connection.oauth_key, None)
         self.assertEqual(connection.oauth_secret, None)
         self.assertEqual(connection.oauth_user, 'admin')
+        self.assertEqual(connection.proxy_host, None)
+        self.assertEqual(connection.proxy_port, 3128)
 
         # Make sure the headers are right
         expected_locale = locale.getdefaultlocale()[0]
@@ -240,3 +242,15 @@ class TestPulpConnection(unittest.TestCase):
         connection = server.PulpConnection('host', verify_ssl=True)
 
         self.assertEqual(connection.verify_ssl, True)
+
+    def test___init___proxy_set(self):
+        """
+        Test __init__() with the proxy_host & proxy_port arguments explicitly set.
+        """
+        proxy_host = 'proxy'
+        proxy_port = 3128
+
+        connection = server.PulpConnection('host', proxy_host=proxy_host,
+                                           proxy_port=proxy_port)
+
+        self.assertEqual(connection.proxy_host, proxy_host)
