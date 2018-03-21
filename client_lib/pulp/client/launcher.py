@@ -182,7 +182,7 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
     port = int(config['server']['port'])
 
     proxy_host = config['server']['proxy_host']
-    proxy_port = config['server']['proxy_port']
+    proxy_port = int(config['server']['proxy_port'])
 
     cert_dir = config['filesystem']['id_cert_dir']
     cert_name = config['filesystem']['id_cert_filename']
