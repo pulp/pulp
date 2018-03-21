@@ -91,6 +91,17 @@ class Artifact(Model):
             self.file.close()
             raise
 
+    def delete(self, *args, **kwargs):
+        """
+        Deletes Artifact model and the file associated with the Artifact
+
+        Args:
+            args (list): list of positional arguments for Model.delete()
+            kwargs (dict): dictionary of keyword arguments to pass to Model.delete()
+        """
+        super().delete(*args, **kwargs)
+        self.file.delete(save=False)
+
 
 class Content(MasterModel):
     """
