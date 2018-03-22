@@ -30,8 +30,9 @@ class OperationPostponedResponse(Response):
             request (rest_framework.request.Request): Request used to generate the _href urls
         """
         tasks = []
+        # import ipdb; ipdb.set_trace()
         for result in task_results:
-            task = {"_href": reverse('tasks-detail', args=[result.task_id], request=request),
+            task = {"_href": reverse('tasks-core-updates-detail', args=[result.task_id], request=request),
                     "task_id": result.task_id}
             tasks.append(task)
         super(OperationPostponedResponse, self).__init__(data=tasks, status=202)

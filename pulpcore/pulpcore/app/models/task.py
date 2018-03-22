@@ -299,9 +299,13 @@ class Task(MasterModel):
             if not reservation.tasks.exists():
                 reservation.delete()
 
-
 class CoreTask(Task):
-    type = "core"
+
+    TYPE = "core"
+
+class CoreUpdateTask(Task):
+
+    TYPE = "update"
 
 
 class CreatedResource(GenericRelationModel):

@@ -8,6 +8,8 @@ from pulpcore.app.serializers import MasterModelSerializer
 
 from .base import viewset_for_model
 
+from pulpcore.app.models.task import CoreUpdateTask
+
 
 class CreatedResourceSerializer(ModelSerializer):
 
@@ -104,6 +106,13 @@ class TaskSerializer(MasterModelSerializer):
                                                 # 'spawned_tasks',
                                                 # 'progress_reports',
                                                 'created_resources')
+
+
+class CoreUpdateTaskSerializer(TaskSerializer):
+
+    class Meta:
+        model = CoreUpdateTask
+        fields = TaskSerializer.Meta.fields
 
 
 class WorkerSerializer(ModelSerializer):

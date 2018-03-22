@@ -14,7 +14,7 @@ from django.conf import settings as pulp_settings
 from django.db import IntegrityError
 
 from pulpcore.app.models import Task as TaskStatus
-from pulpcore.app.models.task import CoreTask
+from pulpcore.app.models.task import CoreUpdateTask
 from pulpcore.app.models import Worker
 from pulpcore.common import TASK_STATES
 from pulpcore.exceptions import PulpException
@@ -210,8 +210,8 @@ class UserFacingTask(PulpTask):
 
         if task_status is None:
             inner_task_id = str(uuid.uuid4())
-            task_status = CoreTask.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
-                                                  **parent_arg)
+            task_status = CoreUpdateTask.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
+                                                        **parent_arg)
         else:
             task_status.state = TaskStatus.WAITING
             if parent_arg:
@@ -246,7 +246,7 @@ class UserFacingTask(PulpTask):
         parent_arg = self._get_parent_arg()
 
         try:
-            CoreTask.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
+            CoreUpdateTask.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
         except IntegrityError:
             # The TaskStatus was already created with the call to apply_async_with_reservation
             pass

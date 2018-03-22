@@ -13,6 +13,9 @@ from django.core.exceptions import ValidationError
 from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
 
+import logging
+log = logging.getLogger(__name__)
+
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
@@ -110,8 +113,8 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                 except AttributeError:
                     # no endpoint_name defined, need to get more specific in the MRO
                     continue
-
-            pieces = (master_endpoint_name, cls.endpoint_name)
+            pieces = tuple(cls.endpoint_name.split('/'))
+            pieces = (master_endpoint_name,) + pieces
 
             # ensure that neither piece is None/empty and that they are not equal.
             if not all(pieces) or pieces[0] == pieces[1]:
@@ -122,6 +125,10 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                        'set to different values?').format(cls.__name__)
                 warnings.warn(msg, RuntimeWarning)
                 return []
+            log.warn('********************************************')
+            log.warn(cls)
+            log.warn(pieces)
+            log.warn('********************************************')
             return pieces
 
     def initial(self, request, *args, **kwargs):
