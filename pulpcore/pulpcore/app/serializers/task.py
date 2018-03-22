@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from pulpcore.app import models
 from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer, DetailIdentityField
+from pulpcore.app.serializers import MasterModelSerializer
 
 from .base import viewset_for_model
 
@@ -29,7 +30,7 @@ class CreatedResourceSerializer(ModelSerializer):
         fields = ModelSerializer.Meta.fields
 
 
-class TaskSerializer(ModelSerializer):
+class TaskSerializer(MasterModelSerializer):
     # _href = serializers.HyperlinkedIdentityField(
     #     view_name='tasks-detail',
     # )
@@ -96,9 +97,12 @@ class TaskSerializer(ModelSerializer):
 
     class Meta:
         model = models.Task
+        # fields = ModelSerializer.Meta.fields
         fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
-                                                'non_fatal_errors', 'error', 'worker', 'parent',
-                                                'spawned_tasks', 'progress_reports',
+                                                'non_fatal_errors', 'error', 'worker',
+                                                # 'parent',
+                                                # 'spawned_tasks',
+                                                # 'progress_reports',
                                                 'created_resources')
 
 
