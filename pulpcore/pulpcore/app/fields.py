@@ -4,7 +4,6 @@ Custom Django fields provided by pulpcore
 import json
 
 from django.db import models
-from django.utils.translation import six
 
 
 class JSONField(models.TextField):
@@ -24,7 +23,7 @@ class JSONField(models.TextField):
         Returns:
             Python representation of ``value``
         """
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             return self.to_python(value)
         return value
 
@@ -65,5 +64,5 @@ class JSONField(models.TextField):
         Returns:
             str: JSON Serialized value
         """
-        value = self._get_val_from_obj(obj)
+        value = self.value_from_object(obj)
         return self.get_db_prep_value(value, None)

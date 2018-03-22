@@ -6,7 +6,7 @@ with open('README.rst') as f:
 requirements = [
     'celery',
     'coreapi',
-    'Django>=1.8,<2',
+    'Django>=1.11',
     'django-filter',
     'djangorestframework',
     'drf-nested-routers',

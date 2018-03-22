@@ -205,9 +205,11 @@ class RepositoryContent(Model):
     content = models.ForeignKey('Content', on_delete=models.CASCADE,
                                 related_name='version_memberships')
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
-    version_added = models.ForeignKey('RepositoryVersion', related_name='added_memberships')
+    version_added = models.ForeignKey('RepositoryVersion', related_name='added_memberships',
+                                      on_delete=models.CASCADE)
     version_removed = models.ForeignKey('RepositoryVersion', null=True,
-                                        related_name='removed_memberships')
+                                        related_name='removed_memberships',
+                                        on_delete=models.CASCADE)
 
     class Meta:
         unique_together = (('repository', 'content', 'version_added'),
@@ -243,7 +245,7 @@ class RepositoryVersion(Model):
 
         repository (models.ForeignKey): The associated repository.
     """
-    repository = models.ForeignKey(Repository)
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(db_index=True)
     complete = models.BooleanField(db_index=True, default=False)
 
