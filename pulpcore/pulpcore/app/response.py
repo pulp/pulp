@@ -34,4 +34,4 @@ class OperationPostponedResponse(Response):
             task = {"_href": reverse('tasks-detail', args=[result.task_id], request=request),
                     "task_id": result.task_id}
             tasks.append(task)
-        super(OperationPostponedResponse, self).__init__(data=tasks, status=202)
+        super().__init__(data=tasks, status=202)

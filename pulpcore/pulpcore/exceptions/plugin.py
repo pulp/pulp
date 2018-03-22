@@ -14,7 +14,7 @@ class MissingPlugin(PulpException):
         :param resources: keyword arguments of resource_type=resource_id
         :type resources: dict
         """
-        super(MissingPlugin, self).__init__("PLP0002")
+        super().__init__("PLP0002")
         self.plugin_app_label = plugin_app_label
 
     def __str__(self):

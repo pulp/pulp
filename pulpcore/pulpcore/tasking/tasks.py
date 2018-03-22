@@ -231,7 +231,7 @@ class UserFacingTask(PulpTask):
             An AsyncResult instance as returned by Celery's apply_async
         """
 
-        async_result = super(UserFacingTask, self).apply_async(args=args, kwargs=kwargs, **options)
+        async_result = super().apply_async(args=args, kwargs=kwargs, **options)
 
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
@@ -270,7 +270,7 @@ class UserFacingTask(PulpTask):
             self.pr = cProfile.Profile()
             self.pr.enable()
 
-        return super(UserFacingTask, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """
