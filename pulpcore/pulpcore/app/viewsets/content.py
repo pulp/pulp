@@ -90,7 +90,7 @@ class ArtifactViewSet(CreateDestroyReadNamedModelViewSet):
         Remove Artifact only if it is not associated with any Content.
         """
         try:
-            return super(ArtifactViewSet, self).destroy(request, pk)
+            return super().destroy(request, pk)
         except models.ProtectedError:
             msg = _('The Artifact cannot be deleted because it is associated with Content.')
             data = {'detail': msg}

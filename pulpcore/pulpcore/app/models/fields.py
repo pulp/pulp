@@ -21,7 +21,7 @@ class ArtifactFileField(FileField):
         Returns:
             Field's value just before saving.
         """
-        file = super(FileField, self).pre_save(model_instance, add)
+        file = super().pre_save(model_instance, add)
         if file and file._committed and add:
             file._file = TemporaryDownloadedFile(open(file.name, 'rb'))
             file._committed = False

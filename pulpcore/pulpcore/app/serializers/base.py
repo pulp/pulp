@@ -92,7 +92,7 @@ class GenericKeyValueRelatedField(serializers.DictField):
     def to_representation(self, value):
         # The field being represented isn't a dict, but the mapping attr is,
         # so value.mapping is the actual value that needs to be represented.
-        return super(GenericKeyValueRelatedField, self).to_representation(value.mapping)
+        return super().to_representation(value.mapping)
 
 
 class ModelSerializer(serializers.HyperlinkedModelSerializer):
@@ -120,7 +120,7 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         # pop related fields out of validated data
         generic_field_mappings = self._generic_field_mappings(validated_data)
 
-        instance = super(ModelSerializer, self).create(validated_data)
+        instance = super().create(validated_data)
 
         # populate related fields
         self._populate_generic_fields(instance, generic_field_mappings)
@@ -131,7 +131,7 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         # pop related fields out of validated data
         generic_field_mappings = self._generic_field_mappings(validated_data)
 
-        instance = super(ModelSerializer, self).update(instance, validated_data)
+        instance = super().update(instance, validated_data)
 
         # populate related fields
         self._populate_generic_fields(instance, generic_field_mappings)
@@ -267,7 +267,7 @@ class _DetailFieldMixin:
             # needs to have it set before being called. Unfortunately, a model instance
             # is required to derive this value, so we can't make a view_name property.
             view_name = MatchingNullViewName()
-        super(_DetailFieldMixin, self).__init__(view_name, **kwargs)
+        super().__init__(view_name, **kwargs)
 
     def _view_name(self, obj):
         # this is probably memoizeable based on the model class if we want to get cachey
@@ -284,7 +284,7 @@ class _DetailFieldMixin:
     def get_url(self, obj, view_name, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         view_name = self._view_name(obj)
-        return super(_DetailFieldMixin, self).get_url(obj, view_name, *args, **kwargs)
+        return super().get_url(obj, view_name, *args, **kwargs)
 
 
 class DetailIdentityField(_DetailFieldMixin, serializers.HyperlinkedIdentityField):
@@ -310,7 +310,7 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
     """
     def get_object(self, *args, **kwargs):
         # return the cast object, not the generic contentunit
-        return super(DetailRelatedField, self).get_object(*args, **kwargs).cast()
+        return super().get_object(*args, **kwargs).cast()
 
     def use_pk_only_optimization(self):
         """

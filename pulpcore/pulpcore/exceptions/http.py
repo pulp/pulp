@@ -19,7 +19,7 @@ class MissingResource(PulpException):
         :param resources: keyword arguments of resource_type=resource_id
         :type resources: dict
         """
-        super(MissingResource, self).__init__("PLP0001")
+        super().__init__("PLP0001")
         self.resources = resources
 
     def __str__(self):

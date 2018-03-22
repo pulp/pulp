@@ -78,8 +78,7 @@ class DjangoGoogleDocstring(GoogleDocstring):
         # django-ness is added to the class before _parse runs. Thus, self._initialized.
         # See _parse below for how this attr gets used to delay parsing.
         self._initialized = False
-        super(DjangoGoogleDocstring, self).__init__(
-            docstring, config, app, what, name, obj, options)
+        super().__init__(docstring, config, app, what, name, obj, options)
         self._sections.update({
             'fields': self._parse_fields_section,
             'relations': self._parse_relations_section,
@@ -89,7 +88,7 @@ class DjangoGoogleDocstring(GoogleDocstring):
 
     def _parse(self):
         if self._initialized:
-            return super(DjangoGoogleDocstring, self)._parse()
+            return super()._parse()
 
     def _parse_fields_section(self, section):
         return self._parse_django_section(section, 'field')

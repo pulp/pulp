@@ -89,7 +89,7 @@ class MasterModel(Model):
         # to filter for specific detail model types across master's relations.
         if not self.type:
             self.type = self.TYPE
-        return super(MasterModel, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def cast(self):
         """Return a "Detail" model instance of this master-detail pair.
@@ -128,7 +128,7 @@ class MasterModel(Model):
         # similar to Model's __str__, but type-aware
         cast = self.cast()
         if cast is self:
-            return super(MasterModel, self).__str__()
+            return super().__str__()
 
         try:
             return '<{} (type={}): {}>'.format(self._meta.object_name, cast.TYPE, cast.name)

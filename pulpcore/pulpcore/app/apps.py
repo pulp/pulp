@@ -53,7 +53,7 @@ class PulpPluginAppConfig(apps.AppConfig):
     # own model importing method.
 
     def __init__(self, app_name, app_module):
-        super(PulpPluginAppConfig, self).__init__(app_name, app_module)
+        super().__init__(app_name, app_module)
 
         # Module containing viewsets eg. <module 'pulp_plugin.app.viewsets'
         # from 'pulp_plugin/app/viewsets.pyc'>. Set by import_viewsets().
