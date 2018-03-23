@@ -8,7 +8,7 @@ from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
 
 from django.urls import resolve, Resolver404
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldError, ValidationError
 
 from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
@@ -90,13 +90,25 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
             match = resolve(urlparse(uri).path)
         except Resolver404:
             raise serializers.ValidationError(detail=_('URI not valid: {u}').format(u=uri))
-        pk = match.kwargs['pk']
+        if 'pk' in match.kwargs:
+            kwargs = match.kwargs
+        else:
+            kwargs = {}
+            for key, value in match.kwargs.items():
+                if key.endswith('_pk'):
+                    kwargs["{}__pk".format(key[:-3])] = value
+                else:
+                    kwargs[key] = value
         try:
-            return model.objects.get(pk=pk)
+            return model.objects.get(**kwargs)
         except model.DoesNotExist:
-            raise serializers.ValidationError(detail=_('URI not found: {u}').format(u=uri))
+            raise serializers.ValidationError(detail=_('URI {u} not found for {m}.').format(
+                u=uri, m=model._meta.model_name))
         except ValidationError:
-            raise serializers.ValidationError(detail=_('UUID invalid: {u}').format(u=pk))
+            raise serializers.ValidationError(detail=_('UUID invalid: {u}').format(u=kwargs['pk']))
+        except FieldError:
+            raise serializers.ValidationError(detail=_('URI {u} is not a valid {m}.').format(
+                u=uri, m=model._meta.model_name))
 
     @classmethod
     def is_master_viewset(cls):
