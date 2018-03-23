@@ -13,9 +13,6 @@ from django.core.exceptions import ValidationError
 from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
 
-import logging
-log = logging.getLogger(__name__)
-
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
@@ -125,10 +122,6 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                        'set to different values?').format(cls.__name__)
                 warnings.warn(msg, RuntimeWarning)
                 return []
-            log.warn('********************************************')
-            log.warn(cls)
-            log.warn(pieces)
-            log.warn('********************************************')
             return pieces
 
     def initial(self, request, *args, **kwargs):
