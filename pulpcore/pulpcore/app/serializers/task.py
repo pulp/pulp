@@ -33,9 +33,6 @@ class CreatedResourceSerializer(ModelSerializer):
 
 
 class TaskSerializer(MasterModelSerializer):
-    # _href = serializers.HyperlinkedIdentityField(
-    #     view_name='tasks-detail',
-    # )
     _href = DetailIdentityField()
 
     state = serializers.CharField(
@@ -99,7 +96,7 @@ class TaskSerializer(MasterModelSerializer):
 
     class Meta:
         model = models.Task
-        # fields = ModelSerializer.Meta.fields
+        # Fields that serialize tasks are broken in this WIP
         fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
                                                 'non_fatal_errors', 'error', 'worker',
                                                 # 'parent',

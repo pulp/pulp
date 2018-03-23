@@ -52,35 +52,6 @@ class CoreUpdateTaskViewSet(TaskViewSet):
     model = CoreUpdateTask
     serializer_class = CoreUpdateTaskSerializer
 
-    #
-    # def create(self, request):
-    #     try:
-    #         repository_uri = request.data['repository']
-    #         # repository = self.get_resource(repository_uri, Repository)
-    #     except KeyError:
-    #         raise serializers.ValidationError(detail=_('Repository URI must be specified.'))
-    #
-    #     try:
-    #         importer_uri = request.data['importer']
-    #         # importer = self.get_resource(importer_uri, FileImporter)
-    #     except KeyError:
-    #         raise serializers.ValidationError(detail=_('Importer URI must be specified.'))
-    #
-    #     data = {"repository": repository_uri, "importer": importer_uri}
-    #     serializer = self.get_serializer(data=data)
-    #     try:
-    #         serializer.is_valid(raise_exception=True)
-    #     except Exception as damn:
-    #         # import ipdb; ipdb.set_trace()
-    #         print("damn")
-    #     serializer.save()
-    #
-    #     # if not importer.feed_url:
-    #     #     raise serializers.ValidationError(detail=_('A feed_url must be specified.'))
-    #
-    #     return Response(serializer.data)
-    #
-
 
 class WorkerViewSet(NamedModelViewSet):
     queryset = Worker.objects.all()

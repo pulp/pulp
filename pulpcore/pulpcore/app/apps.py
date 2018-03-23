@@ -114,12 +114,8 @@ class PulpPluginAppConfig(apps.AppConfig):
                     # gets registered in the named_viewsets registry.
                     if (obj not in base_viewsets and
                             issubclass(obj, GenericNamedModelViewSet)):
-                        try:
-                            model = obj.queryset.model
-                            self.named_viewsets[model] = obj
-                        except Exception as damn:
-                            # import ipdb; ipdb.set_trace()
-                            print("damn")
+                        model = obj.queryset.model
+                        self.named_viewsets[model] = obj
                 except TypeError:
                     # obj isn't a class, issubclass exploded but obj can be safely filtered out
                     continue
