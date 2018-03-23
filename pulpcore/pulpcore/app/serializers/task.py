@@ -98,16 +98,16 @@ class TaskSerializer(MasterModelSerializer):
 
         self.task = super().create(validated_data)
         self.celery_task.apply_async_with_reservation(
-            self.task_args,
+            self.reservations,
             task_status=self.task,
             kwargs=self.task_kwargs
         )
         return self.task
 
     @property
-    def task_args(self):
+    def reservations(self):
         task_args = []
-        for string_value in self.task_arg_structure:
+        for string_value in self.reservation_structure:
             task_args.append(self._str_to_nested_value(string_value))
         return task_args
 

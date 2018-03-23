@@ -177,7 +177,7 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, resources, task_status=None, args=None, kwargs=None,
+    def apply_async_with_reservation(self, reservations, task_status=None, args=None, kwargs=None,
                                      **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
@@ -202,7 +202,7 @@ class UserFacingTask(PulpTask):
         Returns (celery.result.AsyncResult):
             An AsyncResult instance as returned by Celery's apply_async
         """
-        resources = {util.get_url(resource) for resource in resources}
+        resources = {util.get_url(resource) for resource in reservations}
         task_name = self.name
 
         # Set the parent attribute if being dispatched inside of a Task
