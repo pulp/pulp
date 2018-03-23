@@ -94,6 +94,38 @@ class TaskSerializer(MasterModelSerializer):
         read_only=True
     )
 
+    def create(self, validated_data):
+
+        self.task = super().create(validated_data)
+        self.celery_task.apply_async_with_reservation(
+            self.task_args,
+            task_status=self.task,
+            kwargs=self.task_kwargs
+        )
+        return self.task
+
+    @property
+    def task_args(self):
+        task_args = []
+        for string_value in self.task_arg_structure:
+            task_args.append(self._str_to_nested_value(string_value))
+        return task_args
+
+    @property
+    def task_kwargs(self):
+        task_kwargs = {}
+        for (key, value) in self.task_kwarg_structure.items():
+            task_kwargs[key] = self._str_to_nested_value(value)
+        return task_kwargs
+
+    def _str_to_nested_value(self, nested_string):
+        nested_layers = nested_string.split('.')
+        value = self.task
+        for layer in nested_layers:
+            value = getattr(value, layer)
+
+        return value
+
     class Meta:
         model = models.Task
         # Fields that serialize tasks are broken in this WIP
