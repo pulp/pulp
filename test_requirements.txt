@@ -1,3 +1,5 @@
 # Test requirements
 flake8
 mock
+coveralls
+coverage
