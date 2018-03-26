@@ -143,7 +143,7 @@ class ProgressSpinner(ProgressReport):
     manager progress reporting is rate limited to every 500 milliseconds.
     Use it as follows:
 
-        >>> spinner = ProgressSpinner('Publishing Metadata')
+        >>> spinner = ProgressSpinner(message='Publishing Metadata')
         >>> spinner.save() # spinner is saved as 'waiting'
         >>> with spinner:
         >>>     # spinner is saved as 'running'
@@ -152,7 +152,7 @@ class ProgressSpinner(ProgressReport):
 
     You can also use this short form which handles all necessary save() calls:
 
-        >>> with ProgressSpinner('Publishing Metadata'):
+        >>> with ProgressSpinner(message='Publishing Metadata'):
         >>>     publish_metadata()
 
     ProgressSpinner objects are associated with a Task and auto-discover and populate the task id
@@ -177,7 +177,7 @@ class ProgressBar(ProgressReport):
 
     Update the state to COMPLETED and save it:
 
-        >>> progress_bar = ProgressBar('Publishing files', total=23, state='running')
+        >>> progress_bar = ProgressBar(message='Publishing files', total=23, state='running')
         >>> progress_bar.state = 'completed'
         >>> progress_bar.save()
 
