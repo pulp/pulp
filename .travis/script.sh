@@ -31,6 +31,8 @@ else
     result=1
   fi
 
+  coverage run test
+
   pulp-manager reset-admin-password --password admin
   pulp-manager runserver >>~/django_runserver.log 2>&1 &
   celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%h -Q resource_manager -c 1 --events --umask 18 >>~/resource_manager.log 2>&1 &

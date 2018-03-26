@@ -44,3 +44,4 @@ services:
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
 script: source .travis/script.sh
+after_success: coveralls
