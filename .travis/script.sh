@@ -26,7 +26,7 @@ else
     result=1
   fi
 
-  pulp-manager test pulpcore/pulpcore/app/tests
+  coverage run --source=pulpcore manage.py test pulpcore
   if [ $? -ne 0 ]; then
     result=1
   fi
@@ -56,6 +56,9 @@ else
       result=1
     fi
   fi
+
+  # upload coverage report to coveralls
+  coveralls
 fi
 
 exit $result
