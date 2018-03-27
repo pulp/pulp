@@ -15,5 +15,5 @@ from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
                                                  PublicationSerializer,
                                                  RepositorySerializer,
                                                  RepositoryVersionSerializer)
-from pulpcore.app.serializers.task import TaskSerializer, WorkerSerializer  # noqa
+from pulpcore.app.serializers.task import CoreUpdateTaskSerializer, TaskSerializer, WorkerSerializer  # noqa
 from pulpcore.app.serializers.user import UserSerializer  # noqa

@@ -177,7 +177,7 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, reservations, task_status=None, args=None, kwargs=None,
+    def apply_async_with_reservation(self, reservations, task_status, args=None, kwargs=None,
                                      **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
@@ -193,8 +193,9 @@ class UserFacingTask(PulpTask):
         before it returns.
 
         Args:
-            resources (list): A list of resources to reserve guaranteeing that only one task
+            reservations (list): A list of resources to reserve guaranteeing that only one task
                 reserves these resources
+            task_status: TODO
             args (tuple): The positional arguments to pass on to the task.
             kwargs (dict): The keyword arguments to pass on to the task.
             options (dict): For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  # noqa
@@ -208,15 +209,10 @@ class UserFacingTask(PulpTask):
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
 
-        if task_status is None:
-            inner_task_id = str(uuid.uuid4())
-            task_status = CoreUpdateTask.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
-                                                        **parent_arg)
-        else:
-            task_status.state = TaskStatus.WAITING
-            if parent_arg:
-                task_status.parent = parent_arg.get('parent')
-            task_status.save()
+        task_status.state = TaskStatus.WAITING
+        if parent_arg:
+            task_status.parent = parent_arg.get('parent')
+        task_status.save()
 
         # Call the outer task which is a promise to call the real task when it can.
         _queue_reserved_task.apply_async(args=(task_name, task_status.pk, list(resources), args,

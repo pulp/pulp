@@ -4,15 +4,16 @@ from gettext import gettext as _
 from urllib.parse import urlparse
 
 from pulpcore.app import tasks
-from pulpcore.app.models import MasterModel
+from pulpcore.app.models import CoreDeleteTask, CoreUpdateTask, Task, MasterModel
 from pulpcore.app.response import OperationPostponedResponse
+from pulpcore.app.serializers import CoreUpdateTaskSerializer
 
 from django.urls import resolve, Resolver404
 from django.core.exceptions import ValidationError
 
 from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
-
+from rest_framework.response import Response
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
@@ -232,11 +233,15 @@ class AsyncUpdateMixin(object):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         app_label = instance._meta.app_label
-        async_result = tasks.base.general_update.apply_async_with_reservation(
-            [instance], args=(pk, app_label, serializer.__class__.__name__),
+
+        task_status = CoreUpdateTask.objects.create()
+        tasks.base.general_update.apply_async_with_reservation(
+            [instance], task_status, args=(pk, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
-        return OperationPostponedResponse([async_result], request)
+
+        return Response(CoreUpdateTaskSerializer(task_status, context={'request': request}).data,
+                        status=202)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
@@ -254,11 +259,13 @@ class AsyncRemoveMixin(object):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         app_label = instance._meta.app_label
-        async_result = tasks.base.general_delete.apply_async_with_reservation(
-            [instance],
-            args=(pk, app_label, serializer.__class__.__name__)
+        task_status = CoreDeleteTask.objects.create()
+        tasks.base.general_delete.apply_async_with_reservation(
+            [instance], task_status, args=(pk, app_label, serializer.__class__.__name__),
         )
-        return OperationPostponedResponse([async_result], request)
+
+        return Response(CoreUpdateTaskSerializer(task_status, context={'request': request}).data,
+                        status=202)
 
 
 class CreateReadAsyncUpdateDestroyNamedModelViewset(mixins.CreateModelMixin,

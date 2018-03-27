@@ -8,7 +8,7 @@ from pulpcore.app.serializers import MasterModelSerializer
 
 from .base import viewset_for_model
 
-from pulpcore.app.models.task import CoreUpdateTask
+from pulpcore.app.models.task import CoreDeleteTask, CoreUpdateTask
 
 
 class CreatedResourceSerializer(ModelSerializer):
@@ -99,7 +99,7 @@ class TaskSerializer(MasterModelSerializer):
         self.task = super().create(validated_data)
         self.celery_task.apply_async_with_reservation(
             self.reservations,
-            task_status=self.task,
+            self.task,
             kwargs=self.task_kwargs
         )
         return self.task
@@ -142,6 +142,14 @@ class CoreUpdateTaskSerializer(TaskSerializer):
     class Meta:
         model = CoreUpdateTask
         fields = TaskSerializer.Meta.fields
+
+
+class CoreDeleteTaskSerializer(TaskSerializer):
+
+    class Meta:
+        model = CoreDeleteTask
+        fields = TaskSerializer.Meta.fields
+
 
 
 class WorkerSerializer(ModelSerializer):

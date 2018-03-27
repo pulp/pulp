@@ -53,6 +53,7 @@ class RepositoryViewSet(NamedModelViewSet):
     pagination_class = NamePagination
     filter_class = RepositoryFilter
 
+    # TODO(asmacdo) why isnt this AsyncUpdateMixin?
     def update(self, request, pk, partial=False):
         """
         Generates a Task to update a Repository
@@ -68,6 +69,7 @@ class RepositoryViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
+    # TODO(asmacdo) why isnt this AsyncDeleteMixin?
     def destroy(self, request, pk):
         """
         Generates a Task to delete a Repository
@@ -246,6 +248,7 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         serializer = ContentSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
+    # TODO(asmacdo) Create Task, deploy celery_task
     def destroy(self, request, repository_pk, number):
         """
         Queues a task to handle deletion of a RepositoryVersion

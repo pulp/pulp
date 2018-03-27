@@ -1,7 +1,7 @@
 from django_filters.rest_framework import filters, filterset
 
 from pulpcore.app.models import Task, Worker
-from pulpcore.app.models.task import CoreUpdateTask
+from pulpcore.app.models.task import CoreUpdateTask, CoreDeleteTask
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
 from pulpcore.app.serializers.task import CoreUpdateTaskSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
@@ -38,6 +38,7 @@ class TaskViewSet(mixins.RetrieveModelMixin,
     endpoint_name = 'tasks'
     filter_class = TaskFilter
 
+    # TODO(asmacdo) does this work?
     @detail_route(methods=('post',))
     def cancel(self, request, pk=None):
         task = self.get_object()
@@ -50,6 +51,14 @@ class CoreUpdateTaskViewSet(TaskViewSet):
     endpoint_name = 'core/updates'
     queryset = CoreUpdateTask.objects.all()
     model = CoreUpdateTask
+    serializer_class = CoreUpdateTaskSerializer
+
+
+class CoreDeleteTaskViewSet(TaskViewSet):
+
+    endpoint_name = 'core/deletes'
+    queryset = CoreDeleteTask.objects.all()
+    model = CoreDeleteTask
     serializer_class = CoreUpdateTaskSerializer
 
 
