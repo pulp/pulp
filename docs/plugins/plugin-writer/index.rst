@@ -26,6 +26,7 @@ the plugin writing process.
 .. toctree::
    :maxdepth: 2
 
+   developer-setup
    planning-guide
    checklist
    first-plugin

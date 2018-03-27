@@ -1,0 +1,84 @@
+# The contents below were provided by the Packer Vagrant post-processor
+
+Vagrant.configure("2") do |config|
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.driver = "kvm"
+  end
+end
+
+# The contents below (if any) are custom contents provided by the
+# Packer template during image build.
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+# Synced folders are declared here,
+# host => guest
+VAGRANT_SYNCED_FOLDERS = {
+  # This code
+  '.' => '/vagrant'
+}
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.box = "pulp/pulpcore"
+
+  # Comment out if you don't want Vagrant to add and remove entries from /etc/hosts for each VM.
+  # requires the vagrant-hostmanager plugin to be installed
+  if Vagrant.has_plugin?("vagrant-hostmanager")
+      config.hostmanager.enabled = true
+      config.hostmanager.manage_host = true
+  end
+
+  # Create the "pulp3_dev" box
+  config.vm.define :pulp3_dev do |pulp3_dev|
+    pulp3_dev.vm.host_name = "pulp3.dev"
+
+    VAGRANT_SYNCED_FOLDERS.each do |host_path, guest_path|
+        # Use SSHFS instead of NFS. Requires the vagrant-sshfs plugin to be installed.
+        # Use SSHFS to share directories. The ``-o nonempty`` option is passed to allow
+        # mounts on non-empty directories.
+        # pulp3_dev.vm.synced_folder host_path, guest_path, type: "sshfs", sshfs_opts_append: "-o nonempty"
+
+        # Comment this out if you use a different filesystem (like sshfs) or while using Virtualbox provider
+          pulp3_dev.vm.synced_folder host_path, guest_path, type: "nfs", nfs_version: 4, nfs_udp: false
+    end
+
+    pulp3_dev.vm.provider :libvirt do |domain, override|
+        domain.cpus = 4
+        # In some cases, the guest gets stuck at "Waiting for domain to get an IP address..." if
+        # the default cpu_mode, 'host-model', is used. Using 'host-passthrough' cpu_mode prevents
+        # VM migration between hosts with different CPUs. However, development environments are
+        # expected to live on a single host for the duration of their existence. Due to this known
+        # issue and our use case, the default cpu_mode is overridden.
+        domain.cpu_mode = "host-passthrough"
+        domain.graphics_type = "spice"
+        domain.memory = 2048
+        domain.video_type = "qxl"
+
+        # Uncomment this to expand the disk to the given size, in GB (default is usually 40)
+        # You'll also need to uncomment the provisioning step below that resizes the root partition
+        # do not set this to a size smaller than the base box, or you will be very sad
+        # domain.machine_virtual_size = 80
+
+        # Uncomment the following line if you would like to enable libvirt's unsafe cache
+        # mode. It is called unsafe for a reason, as it causes the virtual host to ignore all
+        # fsync() calls from the guest. Only do this if you are comfortable with the possibility of
+        # your development guest becoming corrupted (in which case you should only need to do a
+        # vagrant destroy and vagrant up to get a new one).
+        #
+        # domain.volume_cache = "unsafe"
+    end
+
+    pulp3_dev.vm.provider :virtualbox do |vb, override|
+        vb.cpus = 4
+        vb.memory = 2048
+
+        # Uncomment this to expand the disk to the given size, in GB (default is usually 40)
+        # You'll also need to uncomment the provisioning step below that resizes the root partition
+        # do not set this to a size smaller than the base box, or you will be very sad
+        # vb.machine_virtual_size = 80
+    end
+  end
+end
