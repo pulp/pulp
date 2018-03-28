@@ -4,15 +4,10 @@ pulp.tasking
 
 .. automodule:: pulpcore.tasking
 
-pulp.tasking.celery_app
+pulp.tasking.connection
 -----------------------
 
-.. automodule:: pulpcore.tasking.celery_app
-
-pulp.tasking.celery_instance
-----------------------------
-
-.. automodule:: pulpcore.tasking.celery_instance
+.. automodule:: pulpcore.tasking.connection
 
 pulp.tasking.constants
 ----------------------
@@ -39,10 +34,12 @@ pulp.tasking.tasks
 
 .. automodule:: pulpcore.tasking.tasks
 
-
 pulp.tasking.util
 -----------------
 
 .. automodule:: pulpcore.tasking.util
 
+pulp.tasking.worker
+-------------------
 
+.. automodule:: pulpcore.tasking.worker

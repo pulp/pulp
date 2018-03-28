@@ -34,9 +34,18 @@ PyPI Installation
 
    $ sudo apt-get install python3-venv
 
-3. Install Pulp::
+3. Install RQ from source::
 
-   $ pip3 install pulpcore
+   $ pip install -e git+https://github.com/rq/rq.git@3133d94b58e59cb86e8f4677492d48b2addcf5f8#egg=rq
+
+.. note::
+
+   This is a temporary step, due to Pulp requiring patches not yet in a release of RQ. It will go
+   away in the future.
+
+4. Install Pulp::
+
+   $ pip install pulpcore
 
 .. note::
 
@@ -45,12 +54,12 @@ PyPI Installation
 
    $ git clone -b 3.0-dev https://github.com/pulp/pulp.git
    $ cd pulp/pulpcore
-   $ pip3 install -e .
+   $ pip install -e .
 
    You will need to do this for all three main components of Pulp - ``pulpcore``, ``pulpcore-common``,
    and ``pulpcore-plugin`` in the ``pulpcore``, ``common``, and ``plugin`` subdirectories, respectively.
 
-4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
+5. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
 
    $ export PULP_SETTINGS=pulpvenv/lib/python3.6/site-packages/pulpcore/etc/pulp/server.yaml
@@ -60,33 +69,34 @@ PyPI Installation
        The exact path will depend on the operating system, Python version, and other factors.
 
 
-5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
+6. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
 
    $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
 
-6. Tell Django which settings you're using::
+7. Tell Django which settings you're using::
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-7. Go through the :ref:`database-install`, :ref:`broker-install`, and `systemd-setup` sections
+8. Go through the :ref:`database-install`, :ref:`redis-install`, and `systemd-setup` sections
 
 .. note::
 
     In place of using the systemd unit files provided in the `systemd-setup` section, you can run
     the commands yourself inside of a shell. This is fine for development but not recommended in production::
 
-    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%%h -Q resource_manager -c 1 --events --umask 18
-    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker-1@%%h -Q reserved_resource_worker-1 -c  --events --umask 18
-    $ /path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker-2@%%h -Q reserved_resource_worker-2 -c 1  --events --umask 18
+    $ /path/to/python/bin/rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker'
+    $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker'
+    $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_2@%h' -w 'pulpcore.tasking.worker.PulpWorker'
 
-8. Run Django Migrations::
+9. Run Django Migrations::
 
    $ pulp-manager makemigrations pulp_app
    $ pulp-manager migrate --noinput auth
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
 
-9. Run Pulp::
+10. Run Pulp:
+::
 
    $ django-admin runserver
 
@@ -121,26 +131,23 @@ After installing and configuring PostgreSQL, you should configure it to start at
    $ sudo systemctl enable postgresql
    $ sudo systemctl start postgresql
 
-.. _broker-install:
+.. _redis-install:
 
-Message Broker
---------------
+Redis
+-----
 
-You must also provide a message broker for Pulp to use. At this time Pulp 3.0 will only work with
-RabbitMQ. This can be on a different host or the same host that Pulp is running on.
+The Pulp tasking system runs on top of Redis. This can be on a different host or the same host that
+Pulp is running on.
 
-RabbitMQ
-^^^^^^^^
+To install Redis, refer to your package manager or the
+`Redis download docs <https://redis.io/download>`_.
 
-To install RabbitMQ, refer to your package manager or the
-`RabbitMQ install docs <https://www.rabbitmq.com/download.html>`_.
+For Fedora, CentOS, Debian, and Ubuntu, the package to install is named ``redis``.
 
-For Fedora, CentOS, Debian, and Ubuntu, the package to install is named ``rabbitmq-server``.
+After installing and configuring Redis, you should configure it to start at boot and start it::
 
-After installing and configuring RabbitMQ, you should configure it to start at boot and start it::
-
-   $ sudo systemctl enable rabbitmq-server
-   $ sudo systemctl start rabbitmq-server
+   $ sudo systemctl enable redis
+   $ sudo systemctl start redis
 
 .. _systemd-setup:
 
@@ -161,12 +168,13 @@ of server.yaml.
     [Service]
     # Set Environment if server.yaml is not in the default /etc/pulp/ directory
     Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
+    Environment="DJANGO_SETTINGS_MODULE=pulpcore.app.settings"
     User=pulp
     WorkingDirectory=/var/run/pulp_resource_manager/
     RuntimeDirectory=pulp_resource_manager
-    ExecStart=/path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery -n resource_manager@%%h\
-              -Q resource_manager -c 1 --events --umask 18\
-              --pidfile=/var/run/pulp_resource_manager/resource_manager.pid
+    ExecStart=/path/to/python/bin/rq worker -n resource_manager@%%h\
+              -w 'pulpcore.tasking.worker.PulpWorker'\
+              --pid=/var/run/pulp_resource_manager/resource_manager.pid
 
     [Install]
     WantedBy=multi-user.target
@@ -175,19 +183,20 @@ of server.yaml.
 ``pulp_worker@.service``::
 
     [Unit]
-    Description=Pulp Celery Worker
+    Description=Pulp Worker
     After=network-online.target
     Wants=network-online.target
 
     [Service]
     # Set Environment if server.yaml is not in the default /etc/pulp/ directory
     Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
+    Environment="DJANGO_SETTINGS_MODULE=pulpcore.app.settings"
     User=pulp
     WorkingDirectory=/var/run/pulp_worker_%i/
     RuntimeDirectory=pulp_worker_%i
-    ExecStart=/path/to/python/bin/celery worker -A pulpcore.tasking.celery_app:celery\
-              -n reserved_resource_worker_%i@%%h -c 1 --events --umask 18\
-              --pidfile=/var/run/pulp_worker_%i/reserved_resource_worker_%i.pid
+    ExecStart=/path/to/python/bin/rq worker -w 'pulpcore.tasking.worker.PulpWorker'\
+              -n reserved_resource_worker_%i@%%h\
+              --pid=/var/run/pulp_worker_%i/reserved_resource_worker_%i.pid
 
     [Install]
     WantedBy=multi-user.target

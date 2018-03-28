@@ -1,11 +1,8 @@
-from celery import shared_task
 from django.http import QueryDict
 
-from pulpcore.tasking.tasks import UserFacingTask
 from pulpcore.app.apps import get_plugin_config
 
 
-@shared_task(base=UserFacingTask)
 def general_update(instance_id, app_label, serializer_name, *args, **kwargs):
     """
     Update a model
@@ -39,7 +36,6 @@ def general_update(instance_id, app_label, serializer_name, *args, **kwargs):
     serializer.save()
 
 
-@shared_task(base=UserFacingTask)
 def general_delete(instance_id, app_label, serializer_name):
     """
     Delete a model

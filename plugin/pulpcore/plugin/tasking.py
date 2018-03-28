@@ -1,9 +1,10 @@
+from rq.job import get_current_job
+
 from pulpcore.app import models
 from pulpcore.exceptions import exception_to_dict
-from pulpcore.tasking.util import get_current_task_id
 
-# Support plugins creating Celery tasks.
-from pulpcore.tasking.tasks import UserFacingTask  # noqa
+# Support plugins dispatching tasks
+from pulpcore.tasking.tasks import enqueue_with_reservation  # noqa
 
 # Support plugins working with the working directory.
 from pulpcore.tasking.services.storage import WorkingDirectory  # noqa
@@ -14,11 +15,12 @@ class Task:
     The task which is currently executing.
 
     Attributes:
-        id (str): The task identifier.
+        job (str): The RQ job associated with the task.
     """
 
     def __init__(self):
-        self.id = get_current_task_id()
+
+        self.job = get_current_job()
 
     def append_non_fatal_error(self, error):
         """
@@ -36,7 +38,7 @@ class Task:
             pulpcore.app.models.Task.DoesNotExist: If not currently running inside a task.
 
         """
-        task = models.Task.objects.get(id=self.id)
+        task = models.Task.objects.get(id=self.job.id)
         serialized_error = exception_to_dict(error)
         task.non_fatal_errors.append(serialized_error)
         task.save()

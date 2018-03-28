@@ -10,7 +10,6 @@
                 "amqp broker": {"service": "rabbitmq"},
                 "api": {"port": 8000, "scheme": "http"},
                 "mongod": {},
-                "pulp celerybeat": {},
                 "pulp cli": {},
                 "pulp resource manager": {},
                 "pulp workers": {},

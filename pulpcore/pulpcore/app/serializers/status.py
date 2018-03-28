@@ -28,13 +28,13 @@ class DatabaseConnectionSerializer(serializers.Serializer):
     )
 
 
-class MessageBrokerConnectionSerializer(serializers.Serializer):
+class RedisConnectionSerializer(serializers.Serializer):
     """
-    Serializer for information about the message broker connection
+    Serializer for information about the Redis connection
     """
 
     connected = serializers.BooleanField(
-        help_text=_("Info about whether the app can connect to the message broker")
+        help_text=_("Info about whether the app can connect to Redis")
     )
 
 
@@ -49,15 +49,15 @@ class StatusSerializer(serializers.Serializer):
     )
 
     online_workers = WorkerSerializer(
-        help_text=_("List of online celery workers known to the application. An online worker is "
-                    "actively heartbeating and can respond to new work"),
+        help_text=_("List of online workers known to the application. An online worker is actively "
+                    "heartbeating and can respond to new work"),
         many=True
     )
 
     missing_workers = WorkerSerializer(
-        help_text=_("List of missing celery workers known to the application. A missing worker is "
-                    "a worker that was online, but has now stopped heartbeating and has "
-                    "potentially died"),
+        help_text=_("List of missing workers known to the application. A missing worker is a "
+                    "worker that was online, but has now stopped heartbeating and has potentially "
+                    "died"),
         many=True
     )
 
@@ -65,6 +65,6 @@ class StatusSerializer(serializers.Serializer):
         help_text=_("Database connection information")
     )
 
-    messaging_connection = MessageBrokerConnectionSerializer(
-        help_text=_("Message broker connection information")
+    redis_connection = RedisConnectionSerializer(
+        help_text=_("Redis connection information")
     )

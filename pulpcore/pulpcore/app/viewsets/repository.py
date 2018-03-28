@@ -32,6 +32,7 @@ from pulpcore.app.serializers import (
 )
 from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
+from pulpcore.tasking.tasks import enqueue_with_reservation
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -62,8 +63,8 @@ class RepositoryViewSet(NamedModelViewSet,
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        async_result = tasks.repository.update.apply_async_with_reservation(
-            [instance],
+        async_result = enqueue_with_reservation(
+            tasks.repository.update, [instance],
             args=(instance.id, ),
             kwargs={'data': request.data, 'partial': partial}
         )
@@ -74,8 +75,10 @@ class RepositoryViewSet(NamedModelViewSet,
         Generates a Task to delete a Repository
         """
         repo = self.get_object()
-        async_result = tasks.repository.delete.apply_async_with_reservation(
-            [repo], kwargs={'repo_id': repo.id})
+        async_result = enqueue_with_reservation(
+            tasks.repository.delete, [repo],
+            kwargs={'repo_id': repo.id}
+        )
         return OperationPostponedResponse(async_result, request)
 
 
@@ -220,7 +223,8 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         Queues a task to handle deletion of a RepositoryVersion
         """
         version = self.get_object()
-        async_result = tasks.repository.delete_version.apply_async_with_reservation(
+        async_result = enqueue_with_reservation(
+            tasks.repository.delete_version,
             [version.repository], kwargs={'pk': version.pk}
         )
         return OperationPostponedResponse(async_result, request)
@@ -243,8 +247,8 @@ class RepositoryVersionViewSet(NamedModelViewSet,
                 content = self.get_resource(url, Content)
                 remove_content_units.append(content.pk)
 
-        result = tasks.repository.add_and_remove.apply_async_with_reservation(
-            [repository],
+        result = enqueue_with_reservation(
+            tasks.repository.add_and_remove, [repository],
             kwargs={
                 'repository_pk': repository_pk,
                 'add_content_units': add_content_units,

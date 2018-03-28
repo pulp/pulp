@@ -1,22 +1,7 @@
-"""
-A module designed to handle celery events related to workers.
-
-Two celery events that need processing are the 'worker-heartbeat' and 'worker-offline'
-events. Each 'worker-heartbeat' event is passed to handle_worker_heartbeat() as an event for
-handling. Each 'worker-offline' event is passed to handle_worker_offline() for handling.
-See the individual function docblocks for more detail on how each event type is handled.
-
-The use of an 'event' or 'celery event' throughout this module refers to a dict built by celery
-that contains event information. Read more about this in the docs for celery.events.
-
-Other functions in this module are helper functions designed to deduplicate the amount of shared
-code between the event handlers.
-"""
-
 from gettext import gettext as _
 import logging
 
-from pulpcore.app.models import Worker, TaskLock
+from pulpcore.app.models import Worker
 from pulpcore.common import TASK_INCOMPLETE_STATES
 from pulpcore.tasking.constants import TASKING_CONSTANTS
 from pulpcore.tasking.util import cancel
@@ -48,9 +33,13 @@ def handle_worker_heartbeat(worker_name):
         worker_name (str): The hostname of the worker
     """
     worker, created = Worker.objects.get_or_create(name=worker_name)
+
     if created:
         _logger.info(_("New worker '{name}' discovered").format(name=worker_name))
     elif worker.online is False:
+        worker.gracefully_stopped = False
+        worker.cleaned_up = False
+        worker.save()
         _logger.info(_("Worker '{name}' is back online.").format(name=worker_name))
 
     worker.save_heartbeat()
@@ -62,18 +51,13 @@ def handle_worker_heartbeat(worker_name):
 
     _logger.debug(msg)
 
-    # If the worker is a resource manager, update the associated ResourceManagerLock timestamp
-    if worker.name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
-        lock = TaskLock.objects.get(name=worker.name)
-        lock.update_timestamp()
 
-
-def check_celery_processes():
+def check_worker_processes():
     """
-    Look for missing Celery processes, log and cleanup as needed.
+    Look for missing Pulp worker processes, log and cleanup as needed.
 
-    To find a missing Celery process, filter the Workers model for entries older than
-    utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
+    To find a missing Worker process, filter the Workers model for entries older than
+    utcnow() - WORKER_TTL. The heartbeat times are stored in native UTC, so this is
     a comparable datetime. For each missing worker found, call mark_worker_offline()
     synchronously for cleanup.
 
@@ -82,7 +66,7 @@ def check_celery_processes():
     correctly.
     """
     msg = _('Checking if pulp_workers or pulp_resource_manager processes are '
-            'missing for more than %d seconds') % TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL
+            'missing for more than %d seconds') % TASKING_CONSTANTS.WORKER_TTL
     _logger.debug(msg)
 
     for worker in Worker.objects.dirty_workers():
@@ -144,8 +128,6 @@ def mark_worker_offline(worker_name, normal_shutdown=False):
         normal_shutdown (bool): True if the worker shutdown normally, False otherwise. Defaults to
                                 False.
     """
-    is_resource_manager = worker_name.startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME)
-
     if not normal_shutdown:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': worker_name}
@@ -168,6 +150,3 @@ def mark_worker_offline(worker_name, normal_shutdown=False):
 
         worker.cleaned_up = True
         worker.save()
-
-    if is_resource_manager:
-        TaskLock.objects.filter(name=worker_name).delete()

@@ -4,7 +4,6 @@ with open('README.rst') as f:
     long_description = f.read()
 
 requirements = [
-    'celery>=4',
     'coreapi',
     'Django>=1.11',
     'django-filter',
@@ -13,6 +12,7 @@ requirements = [
     'drf-yasg',
     'psycopg2-binary',
     'PyYAML',
+    'rq',
     'setuptools',
     'pulpcore-common'
 ]

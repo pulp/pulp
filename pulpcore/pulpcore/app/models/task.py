@@ -4,11 +4,11 @@ Django models related to the Tasking system
 from datetime import timedelta
 from gettext import gettext as _
 import logging
-
-import celery
+import traceback
 
 from django.db import models, transaction
 from django.utils import timezone
+from rq.job import get_current_job
 
 from pulpcore.app.models import Model, GenericRelationModel
 from pulpcore.app.fields import JSONField
@@ -69,6 +69,8 @@ class WorkerManager(models.Manager):
         associated with it. If all workers have at least one ReservedResource relationship, a
         :class:`pulpcore.app.models.Worker.DoesNotExist` exception is raised.
 
+        This method filters out resource managers which do not process end-user Tasks.
+
         This method provides randomization for Worker selection to distribute load across workers.
 
         Returns:
@@ -98,7 +100,7 @@ class WorkerManager(models.Manager):
                 are considered by Pulp to be 'online'.
         """
         now = timezone.now()
-        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.WORKER_TTL)
 
         return self.filter(last_heartbeat__gte=age_threshold, gracefully_stopped=False)
 
@@ -115,7 +117,7 @@ class WorkerManager(models.Manager):
                 are considered by Pulp to be 'missing'.
         """
         now = timezone.now()
-        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.WORKER_TTL)
 
         return self.filter(last_heartbeat__lt=age_threshold, gracefully_stopped=False)
 
@@ -135,7 +137,7 @@ class WorkerManager(models.Manager):
                 are considered by Pulp to be 'dirty'.
         """
         now = timezone.now()
-        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.WORKER_TTL)
 
         return self.filter(last_heartbeat__lt=age_threshold,
                            cleaned_up=False, gracefully_stopped=False)
@@ -168,13 +170,15 @@ class Worker(Model):
 
         name (models.TextField): The name of the worker, in the format "worker_type@hostname"
         last_heartbeat (models.DateTimeField): A timestamp of this worker's last heartbeat
-        online (models.BooleanField): Whether is the worker online or not. Default is True.
+        gracefully_stopped (models.BooleanField): True if the worker has gracefully stopped. Default
+            is False.
+        cleaned_up (models.BooleanField): True if the worker has been cleaned up. Default is False.
     """
     objects = WorkerManager()
 
     name = models.TextField(db_index=True, unique=True)
     last_heartbeat = models.DateTimeField(auto_now=True)
-    gracefully_stopped = models.BooleanField(default=True)
+    gracefully_stopped = models.BooleanField(default=False)
     cleaned_up = models.BooleanField(default=False)
 
     @property
@@ -190,7 +194,7 @@ class Worker(Model):
             bool: True if the worker is considered online, otherwise False
         """
         now = timezone.now()
-        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.WORKER_TTL)
 
         return not self.gracefully_stopped and self.last_heartbeat >= age_threshold
 
@@ -207,7 +211,7 @@ class Worker(Model):
             bool: True if the worker is considered missing, otherwise False
         """
         now = timezone.now()
-        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.WORKER_TTL)
 
         return not self.gracefully_stopped and self.last_heartbeat < age_threshold
 
@@ -314,7 +318,7 @@ class Task(Model):
             pulpcore.app.models.Task: The current task.
         """
         try:
-            task_id = celery.current_task.request.id
+            task_id = get_current_job().id
         except AttributeError:
             task = None
         else:
@@ -333,14 +337,11 @@ class Task(Model):
         self.started_at = timezone.now()
         self.save()
 
-    def set_completed(self, error):
+    def set_completed(self):
         """
         Set this Task to the completed state, save it, and log output in warning cases.
 
         This updates the :attr:`finished_at` and sets the :attr:`state` to :attr:`COMPLETED`.
-
-        Args:
-            error (dict): Fatal errors to save on the :class:`~pulpcore.app.models.Task`
         """
         self.finished_at = timezone.now()
 
@@ -355,7 +356,7 @@ class Task(Model):
 
         self.save()
 
-    def set_failed(self, exc, einfo):
+    def set_failed(self, exc, tb):
         """
         Set this Task to the failed state and save it.
 
@@ -364,12 +365,12 @@ class Task(Model):
 
         Args:
             exc (Exception): The exception raised by the task.
-            einfo (celery.datastructures.ExceptionInfo): ExceptionInfo instance containing a
-                serialized traceback.
+            tb (traceback): Traceback instance for the current exception.
         """
         self.state = TASK_STATES.FAILED
         self.finished_at = timezone.now()
-        self.error = exception_to_dict(exc, einfo.traceback)
+        tb_str = ''.join(traceback.format_tb(tb))
+        self.error = exception_to_dict(exc, tb_str)
         self.save()
 
     def release_resources(self):
