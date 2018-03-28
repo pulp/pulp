@@ -1,0 +1,9 @@
+[run]
+branch = False
+
+source = pulpcore
+
+omit =
+  /*/tests/*
+  /*/docs/*
+  /*/migrations/*

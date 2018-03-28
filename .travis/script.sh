@@ -26,7 +26,7 @@ else
     result=1
   fi
 
-  coverage run --source=pulpcore manage.py test pulpcore
+  coverage run manage.py test pulpcore
   if [ $? -ne 0 ]; then
     result=1
   fi
