@@ -31,7 +31,7 @@ class GroupDownloader:
     recorded when the size or digests don't validate.
 
     Basic Usage:
-        >>> downloader = GroupDownloader(importer)
+        >>> downloader = GroupDownloader(remote)
         >>> artifact_a = RemoteArtifact(url=url_a, md5='912ec803b2ce49e4a541068d495ab570')
         >>> artifact_b = RemoteArtifact(url=url_b, size=4172)
         >>> my_group = Group('my_id', [artifact_a, artifact_b])
@@ -50,23 +50,23 @@ class GroupDownloader:
         >>>    yield Group('id_1', [RemoteArtifact(url=url_a), RemoteArtifact(url=url_b)])
         >>>    yield Group('id_2', [RemoteArtifact(url=url_a), RemoteArtifact(url=url_b)])
         >>>
-        >>> downloader = GroupDownloader(importer)
+        >>> downloader = GroupDownloader(remote)
         >>> downloader.schedule_from_iterator(group_generator)
         >>> for group in downloader:
         >>>     print(group)  # group is the :class:`~pulpcore.plugin.download.Group`
     """
 
-    def __init__(self, importer, downloader_overrides=None):
+    def __init__(self, remote, downloader_overrides=None):
         """
         Args:
-            importer (:class:`~pulpcore.plugin.models.Importer`): The importer used to configure
+            remote (:class:`~pulpcore.plugin.models.Remote`): The remote used to configure
                 downloaders with.
             downloader_overrides (dict): The downloader overrides which are passed along to the
                 :class:`pulpcore.plugin.downloader.asyncio.DownloaderFactory`
         """
-        self.importer = importer
+        self.remote = remote
 
-        self.downloader_factory = DownloaderFactory(self.importer,
+        self.downloader_factory = DownloaderFactory(self.remote,
                                                     downloader_overrides=downloader_overrides)
         self.group_iterator = None
         self.downloads_not_done = set()

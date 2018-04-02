@@ -1,9 +1,9 @@
 """
 
-The ``ChangeSet`` is the primary object used by plugin writers to support the Importer.
+The ``ChangeSet`` is the primary object used by plugin writers to support the Remote.
 It represents a set of changes to be made to the repository in terms of content
 that needs to be added (additions) and content that needs to be removed (removals).
-The term `remote` is used to describe the repository that the importer is synchronizing
+The term `remote` is used to describe the repository that the remote is synchronizing
 with.  The term ``PendingContent`` is content contained in the remote repository.
 
 Plugin writers need to pass `additions` to the `ChangeSet` as a collection of
@@ -13,7 +13,7 @@ repository that is not in the (local) Pulp repository and it needs to be added.
 Plugin writers need to pass `removals` to the `ChangeSet` as a collection of `Content`
 that has been fetched from the Pulp DB.  In other words, `removals` are a collection
 content that is in the Pulp (local) repository that is not in the remote repository.
-Or, content that needs to be removed for any reason as determined by the importer.
+Or, content that needs to be removed for any reason as determined by the remote.
 
 The `ChangeSet` is designed for `stream` processing.  It is strongly encouraged that both
 the `additions` and `removals` be a `generator` that is wrapped in a ``SizedIterable``.
@@ -37,7 +37,7 @@ Examples:
     >>> from collections import namedtuple
     >>> from pulpcore.plugin.changeset import (
     >>>     ChangeSet, PendingArtifact, PendingContent, SizedIterable)
-    >>> from pulpcore.plugin.models import Artifact, Content, Importer, Repository
+    >>> from pulpcore.plugin.models import Artifact, Content, Remote, Repository
     >>>
     >>>
     >>> Delta = namedtuple('Delta', ['additions', 'removals'])
@@ -47,7 +47,7 @@ Examples:
     >>>     pass
     >>>
     >>>
-    >>> class ThingImporter(Importer):
+    >>> class ThingRemote(Remote):
     >>>
     >>>     def _build_additions(self, delta, metadata):
     >>>         # Using the set of additions defined by the delta and the metadata,

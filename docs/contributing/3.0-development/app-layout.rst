@@ -176,7 +176,7 @@ Master/Detail Models
 ********************
 
 A few Pulp Platform models, including the Content model as well as
-Importers and Publishers, implement a strategy we refer to as "Master/Detail".
+Remotes and Publishers, implement a strategy we refer to as "Master/Detail".
 The Master/Detail strategy, as implemented in Pulp, allows us to define
 necessary relationships on a single master Model, while still allowing
 plugin developers to extend these Master classes with details pertinent

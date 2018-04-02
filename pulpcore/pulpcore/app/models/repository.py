@@ -53,9 +53,9 @@ class Repository(Model):
         return (self.name,)
 
 
-class Importer(MasterModel):
+class Remote(MasterModel):
     """
-    A content importer.
+    A content remote.
 
     Fields:
 
@@ -73,13 +73,13 @@ class Importer(MasterModel):
         password (models.TextField): The password to be used for authentication when syncing.
         download_policy (models.TextField): The policy for downloading content.
         last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
-        sync_mode (models.TextField) How the importer should sync from the upstream repository.
+        sync_mode (models.TextField) How the remote should sync from the upstream repository.
 
     Relations:
 
-        repository (models.ForeignKey): The repository that owns this Importer
+        repository (models.ForeignKey): The repository that owns this Remote
     """
-    TYPE = 'importer'
+    TYPE = 'remote'
 
     # Download Policies
     IMMEDIATE = 'immediate'
@@ -126,7 +126,7 @@ class Importer(MasterModel):
     last_synced = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        default_related_name = 'importers'
+        default_related_name = 'remotes'
 
     @property
     def is_deferred(self):
@@ -228,7 +228,7 @@ class RepositoryVersion(Model):
         >>> with RepositoryVersion.create(repository) as new_version:
         >>>     new_version.add_content(content)
         >>>     new_version.remove_content(content)
-        >>>     changeset = ChangeSet(importer, new_version, additions=additions,
+        >>>     changeset = ChangeSet(remote, new_version, additions=additions,
         >>>                      removals=removals)
         >>>
 

@@ -28,7 +28,7 @@ class ViewSetNode:
         │  │  └─ DistributionViewSet
         │  ├─ AnotherPluginPublisherViewSet
         │  │  └─ DistributionViewSet (This node is attached to all Publisher Detail parents)
-        │  └─ FileImporterViewSet
+        │  └─ FileRemoteViewSet
         └─ some-non-nested viewset
     """
     def __init__(self, viewset=None):

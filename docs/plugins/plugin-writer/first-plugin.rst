@@ -29,9 +29,9 @@ Here is a gist of how models are related to each other and what each model is re
 * :class:`~pulpcore.plugin.models.RemoteArtifact` contains information about
   :class:`~pulpcore.plugin.models.Artifact` from a remote source, including URL to perform
   download later at any point.
-* :class:`~pulpcore.plugin.models.Importer` knows specifics of the plugin
+* :class:`~pulpcore.plugin.models.Remote` knows specifics of the plugin
   :class:`~pulpcore.plugin.models.Content` to put it into Pulp.
-  :class:`~pulpcore.plugin.models.Importer` defines how to synchronize remote content. Pulp
+  :class:`~pulpcore.plugin.models.Remote` defines how to synchronize remote content. Pulp
   Platform provides support for concurrent  :ref:`downloading <download-docs>` of remote content.
   Plugin writer is encouraged to use one of them but is not required to.
 * :class:`~pulpcore.plugin.models.PublishedArtifact` refers to
@@ -55,7 +55,7 @@ An important feature of the current design is deduplication of
 :class:`~pulpcore.plugin.models.Content` is shared between :class:`~pulpcore.app.models.Repository`,
 :class:`~pulpcore.plugin.models.Artifact` is shared between
 :class:`~pulpcore.plugin.models.Content`.
-See more details on how it affects importer implementation in :ref:`define-importer` section.
+See more details on how it affects remote implementation in :ref:`define-remote` section.
 
 
 Check ``pulp_file`` `implementation <https://github.com/pulp/pulp_file/>`_ to see how all
@@ -91,24 +91,24 @@ For a general reference for serializers and viewsets, check `DRF documentation
 <http://www.django-rest-framework.org/api-guide/viewsets/>`_.
 
 
-.. _define-importer:
+.. _define-remote:
 
-Define your plugin Importer
+Define your plugin Remote
 ---------------------------
 
-To define a new importer, e.g. ``ExampleImporter``:
+To define a new remote, e.g. ``ExampleRemote``:
 
-* :class:`pulpcore.plugin.models.Importer` should be subclassed and extended with additional
+* :class:`pulpcore.plugin.models.Remote` should be subclassed and extended with additional
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
-* ``sync`` method should be defined on a plugin importer model ``ExampleImporter``,
-* create a serializer for your new importer as a subclass of
-  :class:`pulpcore.plugin.serializers.ImporterSerializer`,
-* create a viewset for your new importer as a subclass of
-  :class:`pulpcore.plugin.viewsets.ImporterViewSet`.
+* ``sync`` method should be defined on a plugin remote model ``ExampleRemote``,
+* create a serializer for your new remote as a subclass of
+  :class:`pulpcore.plugin.serializers.RemoteSerializer`,
+* create a viewset for your new remote as a subclass of
+  :class:`pulpcore.plugin.viewsets.RemoteViewSet`.
 
-:class:`~pulpcore.plugin.models.Importer` model should not be used directly anywhere in plugin code.
-Only plugin-defined Importer classes are expected to be used.
+:class:`~pulpcore.plugin.models.Remote` model should not be used directly anywhere in plugin code.
+Only plugin-defined Remote classes are expected to be used.
 
 One of the ways to perform synchronization:
 
@@ -148,11 +148,11 @@ One of the ways to perform synchronization:
 * Use :class:`~pulpcore.plugin.models.ProgressBar` to report the progress of some steps if needed.
 
 
-There are several important aspects relevant to importer implementation which were briefly mentioned
+There are several important aspects relevant to remote implementation which were briefly mentioned
 in the :ref:`understanding-models` section:
 
 * due to deduplication of :class:`~pulpcore.plugin.models.Content` and
-  :class:`~pulpcore.plugin.models.Artifact` data, they may already exist and the importer needs to
+  :class:`~pulpcore.plugin.models.Artifact` data, they may already exist and the remote needs to
   fetch and use them when they do.
 * :class:`~pulpcore.plugin.models.ContentArtifact` associates
   :class:`~pulpcore.plugin.models.Content` and :class:`~pulpcore.plugin.models.Artifact`. If
@@ -161,7 +161,7 @@ in the :ref:`understanding-models` section:
   :attr:`~pulpcore.plugin.models.ContentArtifact.artifact`. It should be updated whenever
   corresponding :class:`~pulpcore.plugin.models.Artifact` is downloaded.
 
-The importer implementation suggestion above allows plugin writer to have an understanding and
+The remote implementation suggestion above allows plugin writer to have an understanding and
 control at a low level.
 The plugin API has a higher level, more simplified, API which introduces the concept of
 :class:`~pulpcore.plugin.changeset.ChangeSet`.
@@ -172,7 +172,7 @@ It allows plugin writer:
 * apply those changes (add to a repository, remove from a repository, download files if needed)
 
 Check :ref:`documentation and detailed examples <changeset-docs>` for the
-:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin importer
+:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin remote
 <https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_ which uses it.
 
 .. _define-publisher:

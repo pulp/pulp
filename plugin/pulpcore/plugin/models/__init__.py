@@ -21,4 +21,4 @@ from pulpcore.app.models import (  # NOQA
 )
 
 from .publisher import Publisher  # noqa
-from .importer import Importer  # noqa
+from .remote import Remote  # noqa

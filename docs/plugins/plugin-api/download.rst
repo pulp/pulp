@@ -6,7 +6,7 @@ pulpcore.plugin.download
 The module implements downloaders that solve many of the common problems plugin writers have while
 downloading remote data. A high level list of features provided by these downloaders include:
 
-* auto-configuration from importer settings (auth, ssl, proxy)
+* auto-configuration from remote settings (auth, ssl, proxy)
 * synchronous or parallel downloading
 * digest and size validation computed during download
 * grouping downloads together to return to the user when all files are downloaded
@@ -61,34 +61,34 @@ the downloader's `run()` method when the download is complete.
 .. autoclass:: pulpcore.plugin.download.DownloadResult
     :no-members:
 
-.. _configuring-from-an-importer:
+.. _configuring-from-an-remote:
 
-Configuring from an Importer
+Configuring from an Remote
 ----------------------------
 
-When fetching content during a sync, the importer has settings like SSL certs, SSL validation, basic
+When fetching content during a sync, the remote has settings like SSL certs, SSL validation, basic
 auth credentials, and proxy settings. Downloaders commonly want to use these settings while
-downloading. The importer can automatically configure a downloader with these settings using
-the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` call. Here is an example:
+downloading. The remote can automatically configure a downloader with these settings using
+the :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` call. Here is an example:
 
->>> downloader = my_importer.get_asyncio_downloader('http://example.com')
+>>> downloader = my_remote.get_asyncio_downloader('http://example.com')
 >>> downloader.fetch()  # This downloader is fully configured
 
-The :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` internally calls the
+The :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` internally calls the
 `DownloaderFactory`, so it expects a `url` that the `DownloaderFactory` can build a downloader for.
 See the :class:`~pulpcore.plugin.download.DownloaderFactory` for more information on
 supported urls.
 
 .. tip::
-    The :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` accepts kwargs that can
+    The :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` accepts kwargs that can
     enable size or digest based validation, and specifying a file-like object for the data to be
-    written into. See :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader` for more
+    written into. See :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` for more
     information.
 
 .. note::
     All :class:`~pulpcore.plugin.download.HttpDownload` downloaders produced by the same
-    importer instance share an `aiohttp` session, which provides a connection pool, connection
-    reusage and keep-alives shared across all downloaders produced by a single importer.
+    remote instance share an `aiohttp` session, which provides a connection pool, connection
+    reusage and keep-alives shared across all downloaders produced by a single remote.
 
 .. _exception-handling:
 
@@ -135,7 +135,7 @@ code.
 
 A custom downloader can be given as the downloader to use for a given protocol using the
 ``downloader_overrides`` on the :class:`~pulpcore.plugin.download.DownloaderFactory`.
-Additionally, you can implement the :meth:`~pulpcore.plugin.models.Importer.get_asyncio_downloader`
+Additionally, you can implement the :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader`
 method to specify the ``downloader_overrides`` to the
 :class:`~pulpcore.plugin.download.DownloaderFactory`.
 
@@ -187,7 +187,7 @@ The DownloaderFactory constructs and configures a downloader for any given url. 
 
 1. Select the appropriate downloader based from these supported schemes: `http`, `https` or `file`.
 
-2. Auto-configure the selected downloader with settings from an importer including (auth, ssl,
+2. Auto-configure the selected downloader with settings from a remote including (auth, ssl,
    proxy).
 
 The :meth:`~pulpcore.plugin.download.DownloaderFactory.build` method constructs one

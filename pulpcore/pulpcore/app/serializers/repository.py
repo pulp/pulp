@@ -51,15 +51,15 @@ class RepositorySerializer(ModelSerializer):
                                                 'description', 'notes')
 
 
-class ImporterSerializer(MasterModelSerializer):
+class RemoteSerializer(MasterModelSerializer):
     """
-    Every importer defined by a plugin should have an Importer serializer that inherits from this
+    Every remote defined by a plugin should have an Remote serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
     _href = DetailIdentityField()
     name = serializers.CharField(
-        help_text=_('A unique name for this importer.'),
-        validators=[UniqueValidator(queryset=models.Importer.objects.all())]
+        help_text=_('A unique name for this remote.'),
+        validators=[UniqueValidator(queryset=models.Remote.objects.all())]
     )
     feed_url = serializers.CharField(
         help_text='The URL of an external content source.',
@@ -68,12 +68,12 @@ class ImporterSerializer(MasterModelSerializer):
     download_policy = serializers.ChoiceField(
         help_text='The policy for downloading content.',
         allow_blank=False,
-        choices=models.Importer.DOWNLOAD_POLICIES,
+        choices=models.Remote.DOWNLOAD_POLICIES,
     )
     sync_mode = serializers.ChoiceField(
-        help_text='How the importer should sync from the upstream repository.',
+        help_text='How the remote should sync from the upstream repository.',
         allow_blank=False,
-        choices=models.Importer.SYNC_MODES,
+        choices=models.Remote.SYNC_MODES,
     )
     validate = serializers.BooleanField(
         help_text='If True, the plugin will validate imported artifacts.',
@@ -118,13 +118,13 @@ class ImporterSerializer(MasterModelSerializer):
         read_only=True
     )
     last_updated = serializers.DateTimeField(
-        help_text='Timestamp of the most recent update of the importer.',
+        help_text='Timestamp of the most recent update of the remote.',
         read_only=True
     )
 
     class Meta:
         abstract = True
-        model = models.Importer
+        model = models.Remote
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'feed_url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',

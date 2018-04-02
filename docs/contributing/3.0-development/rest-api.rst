@@ -131,7 +131,7 @@ which increases usability. The opposite is also true, in that too much nesting m
 API usability, so the question of whether or not to nest a serializer should be handled case-by-
 case.
 
-An example of where this *might* be useful is nesting the complete Importer and Publisher
+An example of where this *might* be useful is nesting the complete Remote and Publisher
 definitions related to a Repository when viewing a Repository instance, so users could potentially
 create or update a fully functional repository with a single request.
 
@@ -255,8 +255,8 @@ example would then become ``content/rpm``.
 
 Note that the Detail ViewSet's ``endpoint_name`` only needs to be unique among its Detail
 ViewSet peers sharing the same Master ViewSet. It would be perfectly acceptable, for example,
-to have a Detail Importer ViewSet with ``endpoint_name`` "rpm", since the generated endpoint
-for that ViewSet would be something like ``importer/rpm``, and not conflict with any of the
+to have a Detail Remote ViewSet with ``endpoint_name`` "rpm", since the generated endpoint
+for that ViewSet would be something like ``remote/rpm``, and not conflict with any of the
 endpoints generated for Detail ViewSets that share the Content Model as a Master.
 
 Setting ``endpoint_name`` to a string literal rather than deriving its value is an intentional

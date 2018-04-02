@@ -97,11 +97,11 @@ Repository
 
 First, `Distributor` has been renamed to `Publisher` because it seems more appropriate.
 
-The repository models include importers and publishers.  The main difference being the
-consolidation of the importer and publisher and its configuration.  In the model, a
+The repository models include remotes and publishers.  The main difference being the
+consolidation of the remote and publisher and its configuration.  In the model, a
 `ContentAdaptor` is the base for plugin contributed models that can be associated to a repository.
-On importer and publisher base models, the *standard* configuration settings that were
-separate documents in Pulp 2 are attributes of the importer and publishers itself.  These models
+On remote and publisher base models, the *standard* configuration settings that were
+separate documents in Pulp 2 are attributes of the remote and publishers itself.  These models
 follow the *master-detail* pattern.  Adaptors needing additional configuration, need to extend the
 base model (master) and add the extra fields on a new (detail) model.
 
@@ -112,7 +112,7 @@ Examples:
 
 .. code-block:: python
 
-    Class MyImporter(Importer):
+    Class MyRemote(Remote):
 
         field_1 = models.TextField()
         field_2 = models.TextField()
