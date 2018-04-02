@@ -119,13 +119,12 @@ class WorkerSerializer(ModelSerializer):
         read_only=True
     )
 
-    gracefully_stopped = serializers.BooleanField(
-        help_text=_('True when the worker was shut down properly, False when the worker is \
-            online, or if it crashed (determined by timestamp).'),
+    missing = serializers.BooleanField(
+        help_text=_('True if the worker is considerd missing, otherwise False'),
         read_only=True
     )
 
     class Meta:
         model = models.Worker
         fields = ModelSerializer.Meta.fields + ('name', 'last_heartbeat',
-                                                'online', 'gracefully_stopped')
+                                                'online', 'missing')

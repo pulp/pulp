@@ -36,13 +36,19 @@ class StatusView(APIView):
         db_status = {'connected': self._get_db_conn_status()}
 
         try:
-            workers = Worker.objects.online_workers()
+            online_workers = Worker.objects.online_workers()
         except Exception:
-            workers = None
+            online_workers = None
+
+        try:
+            missing_workers = Worker.objects.missing_workers()
+        except Exception:
+            missing_workers = None
 
         data = {
             'versions': versions,
-            'known_workers': workers,
+            'online_workers': online_workers,
+            'missing_workers': missing_workers,
             'database_connection': db_status,
             'messaging_connection': broker_status
         }
