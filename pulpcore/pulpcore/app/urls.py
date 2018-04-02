@@ -8,7 +8,7 @@ from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
-from pulpcore.app.views import ContentView, StatusView
+from pulpcore.app.views import ContentView, OrphansView, StatusView
 
 import logging
 log = logging.getLogger(__name__)
@@ -114,6 +114,7 @@ root_router = routers.DefaultRouter()
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view(), name='content-app'),
     url(r'^api/v3/status/', StatusView.as_view()),
+    url(r'^api/v3/orphans/', OrphansView.as_view()),
 ]
 
 # if drf_openapi is installed add live docs route
