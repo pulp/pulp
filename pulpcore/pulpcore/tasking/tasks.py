@@ -13,7 +13,7 @@ from celery.result import AsyncResult
 from django.conf import settings as pulp_settings
 from django.db import IntegrityError
 
-from pulpcore.app.models import Task as TaskStatus
+from pulpcore.app.models import ReservedResource, Task as TaskStatus
 from pulpcore.app.models import Worker
 from pulpcore.common import TASK_STATES
 from pulpcore.exceptions import PulpException
@@ -99,6 +99,16 @@ def _queue_reserved_task(name, inner_task_id, resources, inner_args, inner_kwarg
     """
     task_status = TaskStatus.objects.get(pk=inner_task_id)
     while True:
+        if name == "pulpcore.app.tasks.orphan.orphan_cleanup":
+            if ReservedResource.objects.exists():
+                # wait until there are no reservations
+                time.sleep(0.25)
+                continue
+            else:
+                celery.tasks[name].apply(args=inner_args, task_id=inner_task_id,
+                                         kwargs=inner_kwargs, **options)
+                return
+
         try:
             worker = _acquire_worker(resources)
         except Worker.DoesNotExist:
@@ -210,9 +220,15 @@ class UserFacingTask(PulpTask):
         TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING, **parent_arg)
 
         # Call the outer task which is a promise to call the real task when it can.
-        _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
-                                               kwargs, options),
-                                         queue=RESOURCE_MANAGER_QUEUE)
+        if task_name == "pulpcore.app.tasks.orphan.orphan_cleanup":
+            _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
+                                                   kwargs, options),
+                                             queue=RESOURCE_MANAGER_QUEUE,
+                                             task_id=inner_task_id)
+        else:
+            _queue_reserved_task.apply_async(args=(task_name, inner_task_id, list(resources), args,
+                                                   kwargs, options),
+                                             queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)
 
     def apply_async(self, args=None, kwargs=None, **options):
