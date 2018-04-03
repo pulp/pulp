@@ -24,8 +24,9 @@ class TaskFilter(filterset.FilterSet):
 
     class Meta:
         model = Task
-        fields = ['state', 'state_in_list', 'worker', 'started_after', 'started_before',
-                  'finished_after', 'finished_before']
+        fields = ('state', 'state_in_list', 'worker',
+                  'started_after', 'started_before',
+                  'finished_after', 'finished_before')
 
 
 class TaskViewSet(mixins.RetrieveModelMixin,
@@ -43,9 +44,42 @@ class TaskViewSet(mixins.RetrieveModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class WorkerFilter(filterset.FilterSet):
+    name = filters.CharFilter()
+    last_heartbeat = filters.IsoDateTimeFilter()
+    online = filters.BooleanFilter(method='filter_online')
+    missing = filters.BooleanFilter(method='filter_missing')
+
+    class Meta:
+        model = Worker
+        fields = {
+            'name': ('exact', 'startswith', 'endswith', 'contains'),
+            'last_heartbeat': ('gte', 'lte'),
+            'online': ('exact'),
+            'missing': ('exact')
+        }
+
+    def filter_online(self, queryset, name, value):
+        online_workers = Worker.objects.online_workers()
+
+        if value:
+            return online_workers
+        else:
+            return queryset.difference(online_workers)
+
+    def filter_missing(self, queryset, name, value):
+        missing_workers = Worker.objects.missing_workers()
+
+        if value:
+            return missing_workers
+        else:
+            return queryset.difference(missing_workers)
+
+
 class WorkerViewSet(NamedModelViewSet):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializer
     endpoint_name = 'workers'
     http_method_names = ['get', 'options']
     lookup_value_regex = '[^/]+'
+    filter_class = WorkerFilter
