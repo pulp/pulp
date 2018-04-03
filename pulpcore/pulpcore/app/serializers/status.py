@@ -48,8 +48,16 @@ class StatusSerializer(serializers.Serializer):
         many=True
     )
 
-    known_workers = WorkerSerializer(
-        help_text=_("List of celery workers known to the application"),
+    online_workers = WorkerSerializer(
+        help_text=_("List of online celery workers known to the application. An online worker is "
+                    "actively heartbeating and can respond to new work"),
+        many=True
+    )
+
+    missing_workers = WorkerSerializer(
+        help_text=_("List of missing celery workers known to the application. A missing worker is "
+                    "a worker that was online, but has now stopped heartbeating and has "
+                    "potentially died"),
         many=True
     )
 

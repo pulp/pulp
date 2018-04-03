@@ -86,9 +86,9 @@ class WorkerManager(models.Manager):
         """
         Returns a queryset of workers meeting the criteria to be considered 'missing'
 
-        To be considered missing, a worker must have a stale timestamp while also having
-        cleaned_up=False, meaning that it has not been cleaned up after an improper shutdown.
-        Stale is defined here as "beyond the pulp process timeout interval".
+        To be considered missing, a worker must have a stale timestamp and must not
+        have the 'gracefully_stopped' flag set to True.  Stale is defined here as
+        "beyond the pulp process timeout interval".
 
         Returns:
             :class:`django.db.models.query.QuerySet`:  A query set of the Worker objects which
@@ -97,7 +97,28 @@ class WorkerManager(models.Manager):
         now = timezone.now()
         age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
 
-        return self.filter(last_heartbeat__lt=age_threshold, cleaned_up=False)
+        return self.filter(last_heartbeat__lt=age_threshold, gracefully_stopped=False)
+
+    def dirty_workers(self):
+        """
+        Returns a queryset of workers meeting the criteria to be considered 'dirty'
+
+        To be considered dirty, a worker must have a stale timestamp and must have both the
+        'cleaned_up' and 'gracefully_stopped' flags set to false.  Stale is defined here as
+        "beyond the pulp process timeout interval".
+
+        This is intended to be used to determine which workers need to be cleaned up after
+        following an improper 'hard' shutdown.
+
+        Returns:
+            :class:`django.db.models.query.QuerySet`:  A query set of the Worker objects which
+                are considered by Pulp to be 'dirty'.
+        """
+        now = timezone.now()
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        return self.filter(last_heartbeat__lt=age_threshold,
+                           cleaned_up=False, gracefully_stopped=False)
 
     def with_reservations(self, resources):
         """
@@ -152,6 +173,23 @@ class Worker(Model):
         age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
 
         return not self.gracefully_stopped and self.last_heartbeat >= age_threshold
+
+    @property
+    def missing(self):
+        """
+        Whether a worker can be considered 'missing'
+
+        To be considered 'missing', a worker must have a stale timestamp while also having
+        gracefully_stopped=False, meaning that it was not shutdown 'cleanly' and may have died.
+        Stale is defined here as "beyond the pulp process timeout interval".
+
+        Returns:
+            bool: True if the worker is considered missing, otherwise False
+        """
+        now = timezone.now()
+        age_threshold = now - timedelta(seconds=TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL)
+
+        return not self.gracefully_stopped and self.last_heartbeat < age_threshold
 
     def save_heartbeat(self):
         """

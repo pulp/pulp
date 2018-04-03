@@ -85,7 +85,7 @@ def check_celery_processes():
             'missing for more than %d seconds') % TASKING_CONSTANTS.PULP_PROCESS_TIMEOUT_INTERVAL
     _logger.debug(msg)
 
-    for worker in Worker.objects.missing_workers():
+    for worker in Worker.objects.dirty_workers():
         msg = _("Worker '%s' has gone missing, removing from list of workers") % worker.name
         _logger.error(msg)
 
