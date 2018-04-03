@@ -26,7 +26,7 @@ databases:
     ENGINE: django.db.backends.sqlite3
     NAME: /var/lib/pulp/sqlite3.db
     OPTIONS:
-      timeout: 20
+      timeout: 300
 #     USER:
 #     PASSWORD:
 #     HOST:
