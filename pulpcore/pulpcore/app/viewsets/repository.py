@@ -187,8 +187,8 @@ class RepositoryVersionFilter(filterset.FilterSet):
     version_min = filters.NumberFilter(name='number', lookup_expr='gte')
     version_max = filters.NumberFilter(name='number', lookup_expr='lte')
 
-    created_after = filters.DateTimeFilter(name='created', lookup_expr='gte')
-    created_before = filters.DateTimeFilter(name='created', lookup_expr='lte')
+    created_after = filters.IsoDateTimeFilter(name='created', lookup_expr='gte')
+    created_before = filters.IsoDateTimeFilter(name='created', lookup_expr='lte')
 
     content = RepositoryVersionContentFilter(label="Content HREF is equivalent to")
 
