@@ -1,6 +1,6 @@
 databases:
   default:
     OPTIONS:
-      timeout: 20
+      timeout: 300
 
 DEBUG: True
