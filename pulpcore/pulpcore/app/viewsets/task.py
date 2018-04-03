@@ -16,11 +16,11 @@ class TaskFilter(filterset.FilterSet):
     state_in_list = CharInFilter(name='state', lookup_expr='in')
     worker = HyperlinkRelatedFilter(name='worker')
 
-    started_after = filters.DateTimeFilter(name='started_at', lookup_expr='gte')
-    started_before = filters.DateTimeFilter(name='started_at', lookup_expr='lte')
+    started_after = filters.IsoDateTimeFilter(name='started_at', lookup_expr='gte')
+    started_before = filters.IsoDateTimeFilter(name='started_at', lookup_expr='lte')
 
-    finished_after = filters.DateTimeFilter(name='finished_at', lookup_expr='gte')
-    finished_before = filters.DateTimeFilter(name='finished_at', lookup_expr='lte')
+    finished_after = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='gte')
+    finished_before = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='lte')
 
     class Meta:
         model = Task
