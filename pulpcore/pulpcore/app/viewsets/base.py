@@ -258,7 +258,18 @@ class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,
     A customized NamedModelViewSet for models that don't support updates.
 
     A viewset that provides default `create()`, `retrieve()`, `destroy()` and `list()` actions.
+    """
+    pass
 
+
+class CreateReadNamedModelViewSet(mixins.CreateModelMixin,
+                                  mixins.RetrieveModelMixin,
+                                  mixins.ListModelMixin,
+                                  GenericNamedModelViewSet):
+    """
+    A customized NamedModelViewSet for models that don't support updates or deletes.
+
+    A viewset that provides default `create()`, `retrieve()`, and `list()` actions.
     """
     pass
 

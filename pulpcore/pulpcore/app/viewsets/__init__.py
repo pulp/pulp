@@ -1,5 +1,6 @@
 from pulpcore.app.viewsets.base import (GenericNamedModelViewSet, NamedModelViewSet,  # noqa
                                         CreateDestroyReadNamedModelViewSet,
+                                        CreateReadNamedModelViewSet,
                                         CreateReadAsyncUpdateDestroyNamedModelViewset)  # noqa
 from pulpcore.app.viewsets.content import ArtifactViewSet, ContentViewSet  # noqa
 from pulpcore.app.viewsets.repository import (DistributionViewSet,  # noqa

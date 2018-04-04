@@ -6,9 +6,9 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from pulpcore.app.models import Artifact, Content, ContentArtifact, RepositoryContent
+from pulpcore.app.models import Artifact, Content, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
-from pulpcore.app.viewsets import CreateDestroyReadNamedModelViewSet
+from pulpcore.app.viewsets import CreateDestroyReadNamedModelViewSet, CreateReadNamedModelViewSet
 
 
 class ContentFilter(filterset.FilterSet):
@@ -41,7 +41,7 @@ class ArtifactFilter(filterset.FilterSet):
         fields = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
 
-class ContentViewSet(CreateDestroyReadNamedModelViewSet):
+class ContentViewSet(CreateReadNamedModelViewSet):
     endpoint_name = 'content'
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
@@ -60,23 +60,6 @@ class ContentViewSet(CreateDestroyReadNamedModelViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def destroy(self, request, pk):
-        """
-        Remove Content unit only if it is not associated with a repository version
-        """
-        repository_content_set = RepositoryContent.objects.filter(content__pk=pk)
-
-        if repository_content_set:
-            msg = (_('The Content unit cannot be deleted because it is associated with a repository'
-                   ' version, which is immutable. Repository: ') +
-                   repository_content_set[0].repository.name)
-            data = {'detail': msg}
-            return Response(data, status=status.HTTP_409_CONFLICT)
-        else:
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ArtifactViewSet(CreateDestroyReadNamedModelViewSet):
