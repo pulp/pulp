@@ -348,7 +348,7 @@ class PendingArtifact(Pending):
         Returns:
             django.db.models.Q: A query to get the actual artifact.
         """
-        q = Q()
+        q = Q(pk=None)
         for field in Artifact.RELIABLE_DIGEST_FIELDS:
             digest = getattr(self._model, field)
             if digest:

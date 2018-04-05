@@ -73,7 +73,7 @@ class ContentIterator(Iterable):
         Returns:
             Q: The built query.
         """
-        q = Q()
+        q = Q(pk=None)
         for c in content:
             q |= Q(**c.key)
         return q
@@ -170,7 +170,7 @@ class ArtifactIterator(Iterable):
         Returns:
             Q: The built query.
         """
-        q = Q()
+        q = Q(pk=None)
         for artifact in (a for a in artifacts if not isinstance(a, NopPendingArtifact)):
             q |= artifact.artifact_q()
         return q
