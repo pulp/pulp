@@ -45,7 +45,8 @@ class RepositoryViewSet(NamedModelViewSet,
                         mixins.CreateModelMixin,
                         mixins.UpdateModelMixin,
                         mixins.RetrieveModelMixin,
-                        mixins.ListModelMixin):
+                        mixins.ListModelMixin,
+                        mixins.DestroyModelMixin):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
