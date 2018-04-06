@@ -1,1 +1,0 @@
--e git+https://github.com/limdauto/drf_openapi.git@54d24fb#egg=drf_openapi
