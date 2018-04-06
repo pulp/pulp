@@ -291,7 +291,7 @@ class RemoteViewSet(NamedModelViewSet,
                     mixins.ListModelMixin,
                     AsyncUpdateMixin,
                     AsyncRemoveMixin):
-    endpoint_name = 'importers'
+    endpoint_name = 'remotes'
     serializer_class = RemoteSerializer
     queryset = Remote.objects.all()
     filter_class = RemoteFilter
