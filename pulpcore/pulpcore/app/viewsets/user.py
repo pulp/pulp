@@ -1,4 +1,5 @@
 from django_filters.rest_framework import filterset
+from rest_framework import mixins
 
 from pulpcore.app.models import User
 from pulpcore.app.serializers import UserSerializer
@@ -14,7 +15,12 @@ class UserFilter(filterset.FilterSet):
         fields = ['username', 'username_in_list']
 
 
-class UserViewSet(NamedModelViewSet):
+class UserViewSet(NamedModelViewSet,
+                  mixins.CreateModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.ListModelMixin,
+                  mixins.DestroyModelMixin):
     endpoint_name = 'users'
     queryset = User.objects.all()
     serializer_class = UserSerializer

@@ -1,14 +1,13 @@
 from django_filters.rest_framework import filters, filterset
+from rest_framework import status, mixins
+from rest_framework.decorators import detail_route
+from rest_framework.response import Response
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
-from pulpcore.app.viewsets.base import GenericNamedModelViewSet
+from pulpcore.app.viewsets.base import NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter, HyperlinkRelatedFilter
 from pulpcore.tasking.util import cancel as cancel_task
-
-from rest_framework.decorators import detail_route
-from rest_framework.response import Response
-from rest_framework import status, mixins
 
 
 class TaskFilter(filterset.FilterSet):
@@ -28,9 +27,9 @@ class TaskFilter(filterset.FilterSet):
                   'finished_after', 'finished_before')
 
 
-class TaskViewSet(mixins.RetrieveModelMixin,
-                  mixins.ListModelMixin,
-                  GenericNamedModelViewSet):
+class TaskViewSet(NamedModelViewSet,
+                  mixins.RetrieveModelMixin,
+                  mixins.ListModelMixin):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     endpoint_name = 'tasks'
@@ -75,9 +74,9 @@ class WorkerFilter(filterset.FilterSet):
             return queryset.difference(missing_workers)
 
 
-class WorkerViewSet(mixins.RetrieveModelMixin,
-                    mixins.ListModelMixin,
-                    GenericNamedModelViewSet):
+class WorkerViewSet(NamedModelViewSet,
+                    mixins.RetrieveModelMixin,
+                    mixins.ListModelMixin):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializer
     endpoint_name = 'workers'

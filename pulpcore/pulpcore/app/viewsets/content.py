@@ -2,13 +2,12 @@ from gettext import gettext as _
 
 from django.db import models, transaction
 from django_filters.rest_framework import filterset
-from rest_framework import status
+from rest_framework import status, mixins
 from rest_framework.response import Response
-
 
 from pulpcore.app.models import Artifact, Content, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
-from pulpcore.app.viewsets import CreateDestroyReadNamedModelViewSet, CreateReadNamedModelViewSet
+from pulpcore.app.viewsets import NamedModelViewSet
 
 
 class ContentFilter(filterset.FilterSet):
@@ -41,7 +40,9 @@ class ArtifactFilter(filterset.FilterSet):
         fields = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
 
-class ContentViewSet(CreateReadNamedModelViewSet):
+class ContentViewSet(NamedModelViewSet,
+                     mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin):
     endpoint_name = 'content'
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
@@ -62,7 +63,11 @@ class ContentViewSet(CreateReadNamedModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-class ArtifactViewSet(CreateDestroyReadNamedModelViewSet):
+class ArtifactViewSet(NamedModelViewSet,
+                      mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.ListModelMixin,
+                      mixins.DestroyModelMixin):
     endpoint_name = 'artifacts'
     queryset = Artifact.objects.all()
     serializer_class = ArtifactSerializer
