@@ -3,4 +3,3 @@ flake8
 mock
 coveralls
 coverage
-jq
