@@ -41,6 +41,7 @@ class ArtifactFilter(filterset.FilterSet):
 
 
 class ContentViewSet(NamedModelViewSet,
+                     mixins.CreateModelMixin,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin):
     endpoint_name = 'content'
