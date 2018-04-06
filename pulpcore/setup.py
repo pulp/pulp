@@ -10,6 +10,7 @@ requirements = [
     'django-filter',
     'djangorestframework',
     'drf-nested-routers',
+    'drf-openapi'
     'psycopg2',
     'PyYAML',
     'setuptools',
