@@ -56,7 +56,7 @@ class PulpPluginAppConfig(apps.AppConfig):
         super().__init__(app_name, app_module)
 
         # Module containing viewsets eg. <module 'pulp_plugin.app.viewsets'
-        # from 'pulp_plugin/app/viewsets.pyc'>. Set by import_viewsets().
+        # from 'pulp_plugin/app/viewsets.py'>. Set by import_viewsets().
         # None if the application doesn't have a viewsets module, automatically set
         # when this app becomes ready.
         self.viewsets_module = None
@@ -93,16 +93,7 @@ class PulpPluginAppConfig(apps.AppConfig):
 
     def import_viewsets(self):
         # circular import avoidance
-        from pulpcore.app.viewsets import (GenericNamedModelViewSet, NamedModelViewSet,
-                                           CreateReadNamedModelViewSet,
-                                           CreateDestroyReadNamedModelViewSet,
-                                           CreateReadAsyncUpdateDestroyNamedModelViewset)
-        # These viewsets are used as base classes for actual model viewsets and
-        # should not be registered
-        base_viewsets = [GenericNamedModelViewSet, NamedModelViewSet,
-                         CreateReadNamedModelViewSet,
-                         CreateDestroyReadNamedModelViewSet,
-                         CreateReadAsyncUpdateDestroyNamedModelViewset]
+        from pulpcore.app.viewsets import NamedModelViewSet
         self.named_viewsets = {}
         if module_has_submodule(self.module, VIEWSETS_MODULE_NAME):
             # import the viewsets module and track any interesting viewsets
@@ -111,11 +102,9 @@ class PulpPluginAppConfig(apps.AppConfig):
             for objname in dir(self.viewsets_module):
                 obj = getattr(self.viewsets_module, objname)
                 try:
-                    # Any subclass of GenericNamedModelViewSet that isn't itself
-                    # GenericNamedModelViewSet or other base viewset
+                    # Any subclass of NamedModelViewSet that isn't itself NamedModelViewSet
                     # gets registered in the named_viewsets registry.
-                    if (obj not in base_viewsets and
-                            issubclass(obj, GenericNamedModelViewSet)):
+                    if (obj is not NamedModelViewSet and issubclass(obj, NamedModelViewSet)):
                         model = obj.queryset.model
                         self.named_viewsets[model] = obj
                 except TypeError:

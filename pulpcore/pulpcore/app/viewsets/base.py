@@ -10,7 +10,7 @@ from pulpcore.app.response import OperationPostponedResponse
 from django.urls import resolve, Resolver404
 from django.core.exceptions import FieldError, ValidationError
 
-from rest_framework import viewsets, mixins, serializers
+from rest_framework import viewsets, serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.schemas import AutoSchema
 
@@ -41,7 +41,7 @@ class DefaultSchema(AutoSchema):
         return method.lower() in ["get"]
 
 
-class GenericNamedModelViewSet(viewsets.GenericViewSet):
+class NamedModelViewSet(viewsets.GenericViewSet):
     """
     A customized named ModelViewSet that knows how to register itself with the Pulp API router.
 
@@ -236,47 +236,9 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
         return self.get_parent_field_and_object()[1]
 
 
-class NamedModelViewSet(mixins.CreateModelMixin,
-                        mixins.RetrieveModelMixin,
-                        mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.ListModelMixin,
-                        GenericNamedModelViewSet):
+class AsyncUpdateMixin:
     """
-    A viewset that provides default `create()`, `retrieve()`, `update()`, `partial_update()`,
-    `destroy()` and `list()` actions.
-    """
-    pass
-
-
-class CreateDestroyReadNamedModelViewSet(mixins.CreateModelMixin,
-                                         mixins.RetrieveModelMixin,
-                                         mixins.DestroyModelMixin,
-                                         mixins.ListModelMixin,
-                                         GenericNamedModelViewSet):
-    """
-    A customized NamedModelViewSet for models that don't support updates.
-
-    A viewset that provides default `create()`, `retrieve()`, `destroy()` and `list()` actions.
-    """
-    pass
-
-
-class CreateReadNamedModelViewSet(mixins.CreateModelMixin,
-                                  mixins.RetrieveModelMixin,
-                                  mixins.ListModelMixin,
-                                  GenericNamedModelViewSet):
-    """
-    A customized NamedModelViewSet for models that don't support updates or deletes.
-
-    A viewset that provides default `create()`, `retrieve()`, and `list()` actions.
-    """
-    pass
-
-
-class AsyncUpdateMixin(object):
-    """
-    Provides an update method that dispatches a task with reservation for a repository
+    Provides an update method that dispatches a task with reservation for the instance
     """
     def update(self, request, pk, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -295,9 +257,9 @@ class AsyncUpdateMixin(object):
         return self.update(request, *args, **kwargs)
 
 
-class AsyncRemoveMixin(object):
+class AsyncRemoveMixin:
     """
-    Provides a delete method that dispatches a task with reservation for a repository
+    Provides a delete method that dispatches a task with reservation for the instance
     """
     def destroy(self, request, pk, **kwargs):
         """
@@ -311,18 +273,3 @@ class AsyncRemoveMixin(object):
             args=(pk, app_label, serializer.__class__.__name__)
         )
         return OperationPostponedResponse([async_result], request)
-
-
-class CreateReadAsyncUpdateDestroyNamedModelViewset(mixins.CreateModelMixin,
-                                                    mixins.RetrieveModelMixin,
-                                                    mixins.ListModelMixin,
-                                                    AsyncUpdateMixin,
-                                                    AsyncRemoveMixin,
-                                                    GenericNamedModelViewSet):
-    """
-    A viewset that performs asynchronous update and remove operations
-
-    This viewset should be used with resources that require making a reservation for a repository
-    during an update or delete.
-    """
-    pass

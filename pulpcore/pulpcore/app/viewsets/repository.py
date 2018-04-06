@@ -29,11 +29,7 @@ from pulpcore.app.serializers import (
     RepositorySerializer,
     RepositoryVersionSerializer
 )
-from pulpcore.app.viewsets import (
-    NamedModelViewSet,
-    GenericNamedModelViewSet,
-    CreateReadAsyncUpdateDestroyNamedModelViewset,
-)
+from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 
 
@@ -45,7 +41,11 @@ class RepositoryFilter(filterset.FilterSet):
         fields = ['name', 'name_in_list']
 
 
-class RepositoryViewSet(NamedModelViewSet):
+class RepositoryViewSet(NamedModelViewSet,
+                        mixins.CreateModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.ListModelMixin):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
     endpoint_name = 'repositories'
@@ -144,7 +144,7 @@ class RepositoryVersionContentFilter(Filter):
             raise serializers.ValidationError(detail=_('No value supplied for content filter'))
 
         # Get the content object from the content_href
-        content = GenericNamedModelViewSet.get_resource(value, Content)
+        content = NamedModelViewSet.get_resource(value, Content)
 
         # Get the repository from the parent request.
         repository_pk = self.parent.request.parser_context['kwargs']['repository_pk']
@@ -198,10 +198,9 @@ class RepositoryVersionFilter(filterset.FilterSet):
         fields = ['version_min', 'version_max', 'created_after', 'created_before', 'content']
 
 
-class RepositoryVersionViewSet(GenericNamedModelViewSet,
+class RepositoryVersionViewSet(NamedModelViewSet,
                                mixins.RetrieveModelMixin,
-                               mixins.ListModelMixin,
-                               mixins.DestroyModelMixin):
+                               mixins.ListModelMixin):
     endpoint_name = 'versions'
     nest_prefix = 'repositories'
     router_lookup = 'version'
@@ -285,28 +284,43 @@ class RepositoryVersionViewSet(GenericNamedModelViewSet,
         return OperationPostponedResponse([result], request)
 
 
-class ImporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
+class ImporterViewSet(NamedModelViewSet,
+                      mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.ListModelMixin,
+                      AsyncUpdateMixin,
+                      AsyncRemoveMixin):
     endpoint_name = 'importers'
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
 
 
-class PublisherViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
+class PublisherViewSet(NamedModelViewSet,
+                       mixins.CreateModelMixin,
+                       mixins.RetrieveModelMixin,
+                       mixins.ListModelMixin,
+                       AsyncUpdateMixin,
+                       AsyncRemoveMixin):
     endpoint_name = 'publishers'
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
 
 
-class ExporterViewSet(CreateReadAsyncUpdateDestroyNamedModelViewset):
+class ExporterViewSet(NamedModelViewSet,
+                      mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.ListModelMixin,
+                      AsyncUpdateMixin,
+                      AsyncRemoveMixin):
     endpoint_name = 'exporters'
     serializer_class = ExporterSerializer
     queryset = Exporter.objects.all()
     filter_class = ExporterFilter
 
 
-class PublicationViewSet(GenericNamedModelViewSet,
+class PublicationViewSet(NamedModelViewSet,
                          mixins.RetrieveModelMixin,
                          mixins.ListModelMixin,
                          mixins.DestroyModelMixin):
@@ -315,7 +329,12 @@ class PublicationViewSet(GenericNamedModelViewSet,
     serializer_class = PublicationSerializer
 
 
-class DistributionViewSet(NamedModelViewSet):
+class DistributionViewSet(NamedModelViewSet,
+                          mixins.CreateModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.RetrieveModelMixin,
+                          mixins.ListModelMixin,
+                          mixins.DestroyModelMixin):
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
