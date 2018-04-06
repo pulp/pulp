@@ -467,13 +467,8 @@ a browsable site of API docs, listed here:
 http://www.django-rest-framework.org/topics/documenting-your-api/#endpoint-documentation
 
 Because "DRF Docs" and "Django REST Swagger" do not generate documentation for responses,
-Pulp is generating its REST API with `drf-openapi <https://github.com/limdauto/drf_openapi/>`_
+Pulp is generating its REST API with `drf-yasg <https://github.com/axnsan12/drf-yasg>`_
 until either DRF supports OpenAPI, or until CoreAPI supports response documentation.
-
-You can access the live REST API docs at `http://pulpserver/api/v3/docs/` by installing the
-pulpcore's doc_requirements.txt file::
-
-  $ pip3 install pulpcore/doc_requirements.txt
 
 
 Glossary

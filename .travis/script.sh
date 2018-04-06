@@ -4,7 +4,7 @@ set -v
 result=0
 
 if [ $TEST = 'docs' ]; then
-  pip3 install sphinx sphinxcontrib-swaggerdoc
+  pip3 install sphinx sphinxcontrib-openapi
   cd docs
   make html
   if [ $? -ne 0 ]; then

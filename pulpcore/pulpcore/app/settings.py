@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # third-party
     'django_filters',
+    'drf_yasg',
     'rest_framework',
     # pulp core app
     'pulpcore.app',
@@ -65,8 +66,7 @@ for entry_point in iter_entry_points('pulpcore.plugin'):
 # Optional apps that help with development, or augment Pulp in some non-critical way
 OPTIONAL_APPS = [
     'crispy_forms',
-    'django_extensions',
-    'drf_openapi'
+    'django_extensions'
 ]
 
 for app in OPTIONAL_APPS:
