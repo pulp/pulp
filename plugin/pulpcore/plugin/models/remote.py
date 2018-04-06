@@ -1,22 +1,22 @@
-from pulpcore.app.models import Importer as PlatformImporter
+from pulpcore.app.models import Remote as PlatformRemote
 
 from pulpcore.plugin.download import DownloaderFactory
 
 
-class Importer(PlatformImporter):
+class Remote(PlatformRemote):
     """
     The base settings used to sync content.
 
     This is meant to be subclassed by plugin authors as an opportunity to provide plugin-specific
-    persistent data attributes for a plugin importer subclass.
+    persistent data attributes for a plugin remote subclass.
 
-    This object is a Django model that inherits from :class: `pulpcore.app.models.Importer` which
-    provides the platform persistent attributes for an importer object. Plugin authors can add
-    additional persistent importer data by subclassing this object and adding Django fields. We
+    This object is a Django model that inherits from :class: `pulpcore.app.models.Remote` which
+    provides the platform persistent attributes for a remote object. Plugin authors can add
+    additional persistent remote data by subclassing this object and adding Django fields. We
     defer to the Django docs on extending this model definition with additional fields.
 
-    Validation of the importer is done at the API level by a plugin defined subclass of
-    :class: `pulpcore.plugin.serializers.repository.ImporterSerializer`.
+    Validation of the remote is done at the API level by a plugin defined subclass of
+    :class: `pulpcore.plugin.serializers.repository.RemoteSerializer`.
     """
 
     class Meta:
@@ -44,7 +44,7 @@ class Importer(PlatformImporter):
 
     def get_downloader(self, url, **kwargs):
         """
-        Get an asyncio capable downloader that is configured with the importer settings.
+        Get an asyncio capable downloader that is configured with the remote settings.
 
         Plugin writers are expected to override when additional configuration is needed or when
         another class of download is required.
@@ -56,6 +56,6 @@ class Importer(PlatformImporter):
 
         Returns:
             subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
-            is configured with the importer settings.
+            is configured with the remote settings.
         """
         return self.download_factory.build(url, **kwargs)

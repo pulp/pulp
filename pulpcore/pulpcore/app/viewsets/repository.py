@@ -10,7 +10,7 @@ from pulpcore.app.models import (
     Content,
     Distribution,
     Exporter,
-    Importer,
+    Remote,
     Publication,
     Publisher,
     Repository,
@@ -23,7 +23,7 @@ from pulpcore.app.serializers import (
     ContentSerializer,
     DistributionSerializer,
     ExporterSerializer,
-    ImporterSerializer,
+    RemoteSerializer,
     PublicationSerializer,
     PublisherSerializer,
     RepositorySerializer,
@@ -78,20 +78,20 @@ class RepositoryViewSet(NamedModelViewSet,
         return OperationPostponedResponse([async_result], request)
 
 
-class ImporterFilter(filterset.FilterSet):
+class RemoteFilter(filterset.FilterSet):
     """
-    Plugin importer filter would need:
+    Plugin remote filter would need:
      - to inherit from this class
      - to add any specific filters if needed
      - to define its own `Meta` class which needs:
 
-       - to specify a plugin importer model for which filter is defined
+       - to specify a plugin remote model for which filter is defined
        - to extend `fields` with specific ones
     """
     name_in_list = CharInFilter(name='name', lookup_expr='in')
 
     class Meta:
-        model = Importer
+        model = Remote
         fields = ['name', 'last_updated', 'name_in_list']
 
 
@@ -284,16 +284,16 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         return OperationPostponedResponse([result], request)
 
 
-class ImporterViewSet(NamedModelViewSet,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.ListModelMixin,
-                      AsyncUpdateMixin,
-                      AsyncRemoveMixin):
+class RemoteViewSet(NamedModelViewSet,
+                    mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.ListModelMixin,
+                    AsyncUpdateMixin,
+                    AsyncRemoveMixin):
     endpoint_name = 'importers'
-    serializer_class = ImporterSerializer
-    queryset = Importer.objects.all()
-    filter_class = ImporterFilter
+    serializer_class = RemoteSerializer
+    queryset = Remote.objects.all()
+    filter_class = RemoteFilter
 
 
 class PublisherViewSet(NamedModelViewSet,

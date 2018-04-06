@@ -157,9 +157,9 @@ class RemoteArtifact(Model):
     """
     Represents a content artifact that is provided by a remote (external) repository.
 
-    Importers that want to support deferred download policies should use this model to store
+    Remotes that want to support deferred download policies should use this model to store
     information required for downloading an Artifact at some point in the future. At a minimum this
-    includes the URL, the ContentArtifact, and the Importer that created it. It can also store
+    includes the URL, the ContentArtifact, and the Remote that created it. It can also store
     expected size and any expected checksums.
 
     Fields:
@@ -177,7 +177,7 @@ class RemoteArtifact(Model):
 
         content_artifact (:class:`pulpcore.app.models.GenericKeyValueRelation`): Arbitrary
             information stored with the content.
-        importer (:class:`django.db.models.ForeignKey`): Importer that created the
+        remote (:class:`django.db.models.ForeignKey`): Remote that created the
             RemoteArtifact.
     """
     url = models.TextField(blank=True, validators=[validators.URLValidator])
@@ -190,7 +190,7 @@ class RemoteArtifact(Model):
     sha512 = models.CharField(max_length=128, blank=True, null=True)
 
     content_artifact = models.ForeignKey(ContentArtifact, on_delete=models.CASCADE)
-    importer = models.ForeignKey('Importer', on_delete=models.CASCADE)
+    remote = models.ForeignKey('Remote', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('content_artifact', 'importer')
+        unique_together = ('content_artifact', 'remote')

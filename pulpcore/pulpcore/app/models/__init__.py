@@ -9,7 +9,7 @@ from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
 from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa
 from .repository import (  # noqa
     Exporter,
-    Importer,
+    Remote,
     Publisher,
     Repository,
     RepositoryContent,

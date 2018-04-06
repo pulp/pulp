@@ -36,7 +36,7 @@ class ChangeSet:
     - Deferred download catalog deleted for each artifact.
 
     Attributes:
-        importer (pulpcore.plugin.Importer): An importer.
+        remote (pulpcore.plugin.Remote): A remote.
         additions (SizedIterable): The content to be added to the repository.
         removals (SizedIterable): The content IDs to be removed.
         added (int): The number of content units successfully added.
@@ -60,10 +60,10 @@ class ChangeSet:
         >>>
     """
 
-    def __init__(self, importer, repository_version, additions=(), removals=()):
+    def __init__(self, remote, repository_version, additions=(), removals=()):
         """
         Args:
-            importer (pulpcore.plugin.models.Importer): An importer.
+            remote (pulpcore.plugin.models.Remote): A remote.
             repository_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
                 content should be added and removed
             additions (SizedIterable): The content to be added to the repository.
@@ -74,7 +74,7 @@ class ChangeSet:
             to the repository. Existing content is fetched and used instead
             of provided content models as needed.
         """
-        self.importer = importer
+        self.remote = remote
         self.repository_version = repository_version
         self.additions = additions
         self.removals = removals
@@ -112,7 +112,7 @@ class ChangeSet:
             content (pulpcore.plugin.Content): A content model to be removed.
         """
         q_set = RemoteArtifact.objects.filter(
-            importer=self.importer,
+            remote=self.remote,
             content_artifact__in=ContentArtifact.objects.filter(content=content))
         q_set.delete()
         with transaction.atomic():

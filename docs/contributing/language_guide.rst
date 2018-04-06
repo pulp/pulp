@@ -43,7 +43,7 @@ Definitions
 [**external source**, **sync**]
     Users can fetch ``ContentUnits`` and **add** them to their ``Repository`` by **syncing** with an
     **external source**. The logic and configuration that specifies how Pulp should to interact
-    with an **external source** is provided by an ``Importer`` and is defined by the same
+    with an **external source** is provided by an ``Remote`` and is defined by the same
     **plugin** that defines that ``type`` of ``ContentUnit`` that the **external source** contains.
     ``pulpcore`` supports multiple ``sync_modes``, including ``additive`` (``ContentUnits`` are
     only **added**) and ``mirror`` (``ContentUnits`` are **added** and **removed** to match the

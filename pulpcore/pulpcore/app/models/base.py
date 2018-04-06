@@ -69,10 +69,10 @@ class MasterModel(Model):
     # endpoints for Detail models, and will be seen in the URLs generated for those Detail models.
     # It can also be used for filtering across a relation where a model is related to a Master
     # model. Set this to something reasonable in Master and Detail model classes, e.g. when
-    # create a master model, like "Importer", its TYPE value could be "importer". Then, when
-    # creating an Importer Detail class like PackageImporter, its type value could be "package",
-    # not "package_importer", since "package_importer" would be redundant in the context of
-    # an importer Master model.
+    # create a master model, like "Remote", its TYPE value could be "remote". Then, when
+    # creating an Remote Detail class like PackageRemote, its type value could be "package",
+    # not "package_remote", since "package_remote" would be redundant in the context of
+    # a remote Master model.
     TYPE = None
 
     # This field must have a value when models are saved, and defaults to the value of

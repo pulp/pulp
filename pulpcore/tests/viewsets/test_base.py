@@ -8,7 +8,7 @@ from pulpcore.app import models, viewsets
 class TestGetQuerySet(TestCase):
     def test_adds_filters(self):
         """
-        Using ImporterViewSet as an example, tests to make sure the correct lookup
+        Using RemoteViewSet as an example, tests to make sure the correct lookup
         is being added to the queryset based on its "parent_lookup_kwargs" value.
         """
         pk = uuid4()

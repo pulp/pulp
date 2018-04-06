@@ -295,14 +295,14 @@ class PendingArtifact(Pending):
         return self.content.changeset
 
     @property
-    def importer(self):
+    def remote(self):
         """
-        The importer getter.
+        The remote getter.
 
         Returns:
-            pulpcore.plugin.models.Importer: An importer.
+            pulpcore.plugin.models.Remote: A remote.
         """
-        return self.changeset.importer
+        return self.changeset.remote
 
     @property
     def downloader(self):
@@ -322,11 +322,11 @@ class PendingArtifact(Pending):
                 pass
             else:
                 self.downloaded(downloader)
-        if self.importer.is_deferred or self._stored_model:
+        if self.remote.is_deferred or self._stored_model:
             downloader = NopDownloader()
             future = asyncio.ensure_future(downloader.run())
         else:
-            downloader = self.importer.get_downloader(self.url)
+            downloader = self.remote.get_downloader(self.url)
             future = asyncio.ensure_future(downloader.run())
             future.add_done_callback(done)
         return future
@@ -401,14 +401,14 @@ class PendingArtifact(Pending):
             with transaction.atomic():
                 remote_artifact = RemoteArtifact(
                     url=self.url,
-                    importer=self.importer,
+                    remote=self.remote,
                     content_artifact=content_artifact,
                     size=self._model.size,
                     **digests)
                 remote_artifact.save()
         except IntegrityError:
             q_set = RemoteArtifact.objects.filter(
-                importer=self.importer,
+                remote=self.remote,
                 content_artifact=content_artifact)
             q_set.update(
                 url=self.url,

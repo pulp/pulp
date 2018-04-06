@@ -75,25 +75,25 @@ of the ``pulp_file`` plugin.
 
 .. _subclassing-platform-models:
 
-Subclassing Content, Importer, Publisher
+Subclassing Content, Remote, Publisher
 ----------------------------------------
 
 The following classes are expected to be defined by plugin.
-For more details and examples see :ref:`define-content-type`, :ref:`define-importer`, :ref:`define-publisher` sections of the guide.
+For more details and examples see :ref:`define-content-type`, :ref:`define-remote`, :ref:`define-publisher` sections of the guide.
 
 Models:
  * model(s) for the specific content type(s) used in plugin, should be subclassed from Content model
- * model(s) for the plugin specific importer(s), should be subclassed from Importer model
+ * model(s) for the plugin specific remote(s), should be subclassed from Remote model
  * model(s) for the plugin specific publisher(s), should be subclassed from Publisher model
 
 Serializers:
  * serializer(s) for plugin specific content type(s), should be subclassed from ContentSerializer
- * serializer(s) for plugin specific importer(s), should be subclassed from ImporterSerializer
+ * serializer(s) for plugin specific remote(s), should be subclassed from RemoteSerializer
  * serializer(s) for plugin specific publisher(s), should be subclassed from PublisherSerializer
 
 Viewsets:
  * viewset(s) for plugin specific content type(s), should be subclassed from ContentViewset
- * viewset(s) for plugin specific importer(s), should be subclassed from ImporterViewset
+ * viewset(s) for plugin specific remote(s), should be subclassed from RemoteViewset
  * viewset(s) for plugin specific publisher(s), should be subclassed from PublisherViewset
 
 
