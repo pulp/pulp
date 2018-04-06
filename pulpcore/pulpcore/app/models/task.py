@@ -58,7 +58,7 @@ class WorkerManager(models.Manager):
         Raises:
             Worker.DoesNotExist: If all Workers have at least one ReservedResource entry.
         """
-        workers_qs = self.online_workers()
+        workers_qs = self.online_workers().filter(name__startswith=TASKING_CONSTANTS.WORKER_PREFIX)
         workers_qs_with_counts = workers_qs.annotate(models.Count('reservations'))
         try:
             return workers_qs_with_counts.filter(reservations__count=0).order_by('?')[0]
