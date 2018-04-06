@@ -2,7 +2,6 @@ from django_filters.rest_framework import filters, filterset
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
-from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import GenericNamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter, HyperlinkRelatedFilter
 from pulpcore.tasking.util import cancel as cancel_task
@@ -76,7 +75,9 @@ class WorkerFilter(filterset.FilterSet):
             return queryset.difference(missing_workers)
 
 
-class WorkerViewSet(NamedModelViewSet):
+class WorkerViewSet(mixins.RetrieveModelMixin,
+                    mixins.ListModelMixin,
+                    GenericNamedModelViewSet):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializer
     endpoint_name = 'workers'
