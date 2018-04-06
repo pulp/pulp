@@ -2,7 +2,7 @@
 Django settings for the Pulp Platform application
 
 Never import this module directly, instead `from django.conf import settings`, see
-https://docs.djangoproject.com/en/1.8/topics/settings/#using-settings-in-python-code
+https://docs.djangoproject.com/en/1.11/topics/settings/#using-settings-in-python-code
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
@@ -24,12 +24,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-
-# Silenced warnings
-# - fields.W342 is the warning for having "unique=True" on a ForeignKeyField, which is something
-#   we explicitly want, so we can enforce a single Importer per-repository in 3.0, but easily
-#   allow for multiple importers per-repository in a later version by lifting the contraint.
-SILENCED_SYSTEM_CHECKS = ["fields.W342"]
 
 ALLOWED_HOSTS = ['*']
 
