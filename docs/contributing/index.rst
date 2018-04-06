@@ -10,5 +10,6 @@ Contributing Guide
    git
    new_contributors
    style_guide
+   unit_tests
    language_guide
    build_guide
