@@ -59,7 +59,7 @@ class Remote(MasterModel):
 
     Fields:
 
-        feed_url (models.TextField): The URL of an external content source.
+        url (models.TextField): The URL of an external content source.
         validate (models.BooleanField): If True, the plugin will validate imported files.
         ssl_ca_certificate (models.TextField): A PEM encoded CA certificate used to validate the
             server certificate presented by the external source.
@@ -108,7 +108,7 @@ class Remote(MasterModel):
 
     name = models.TextField(db_index=True, unique=True)
 
-    feed_url = models.TextField()
+    url = models.TextField()
     validate = models.BooleanField(default=True)
 
     ssl_ca_certificate = models.FileField(blank=True, upload_to=tls_storage_path, max_length=255)
