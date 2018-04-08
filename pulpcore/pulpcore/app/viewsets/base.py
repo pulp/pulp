@@ -15,6 +15,7 @@ from rest_framework import viewsets, mixins, serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
+
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
     """
     A customized named ModelViewSet that knows how to register itself with the Pulp API router.

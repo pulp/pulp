@@ -137,6 +137,31 @@ class TaskSerializer(MasterModelSerializer):
                                                 'created_resources')
 
 
+class TaskListSerializer(ModelSerializer):
+    _href = DetailIdentityField()
+
+    state = serializers.CharField(
+        help_text=_("The current state of the task. The possible values include:"
+                    " 'waiting', 'skipped', 'running', 'completed', 'failed' and 'canceled'."),
+        read_only=True
+    )
+
+    started_at = serializers.DateTimeField(
+        help_text=_("Timestamp of the when this task started execution."),
+        read_only=True
+    )
+
+    finished_at = serializers.DateTimeField(
+        help_text=_("Timestamp of the when this task stopped execution."),
+        read_only=True
+    )
+
+    class Meta:
+        model = models.Task
+        # Fields that serialize tasks are broken in this WIP
+        fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at')
+
+
 class CoreUpdateTaskSerializer(TaskSerializer):
 
     class Meta:

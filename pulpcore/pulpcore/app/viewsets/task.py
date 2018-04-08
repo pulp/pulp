@@ -1,9 +1,10 @@
 from django_filters.rest_framework import filters, filterset
 
 from pulpcore.app.models import Task, Worker
-from pulpcore.app.models.task import CoreUpdateTask, CoreDeleteTask
+from pulpcore.app.models.task import CoreUpdateTask, CoreDeleteTask, CoreTask
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
-from pulpcore.app.serializers.task import CoreUpdateTaskSerializer
+from pulpcore.app.serializers.task import (
+    CoreUpdateTaskSerializer, TaskListSerializer)
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import GenericNamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter, HyperlinkRelatedFilter
@@ -34,16 +35,32 @@ class TaskViewSet(mixins.RetrieveModelMixin,
                   mixins.ListModelMixin,
                   GenericNamedModelViewSet):
     queryset = Task.objects.all()
-    serializer_class = TaskSerializer
+    serializer_class = TaskListSerializer
     endpoint_name = 'tasks'
     filter_class = TaskFilter
 
-    # TODO(asmacdo) does this work?
     @detail_route(methods=('post',))
     def cancel(self, request, pk=None):
         task = self.get_object()
         cancel_task(task.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AllTaskViewSet(mixins.ListModelMixin, GenericNamedModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskListSerializer
+    endpoint_name = 'tasks'
+    filter_class = TaskFilter
+
+    def is_master_viewset(cls):
+        return False
+
+
+class CoreTaskViewSet(TaskViewSet):
+    endpoint_name = 'core'
+    queryset = CoreTask.objects.all()
+    model = CoreTask
+    serializer_class = TaskListSerializer
 
 
 class CoreUpdateTaskViewSet(TaskViewSet):
