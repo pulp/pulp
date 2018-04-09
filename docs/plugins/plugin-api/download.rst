@@ -61,10 +61,10 @@ the downloader's `run()` method when the download is complete.
 .. autoclass:: pulpcore.plugin.download.DownloadResult
     :no-members:
 
-.. _configuring-from-an-remote:
+.. _configuring-from-a-remote:
 
-Configuring from an Remote
-----------------------------
+Configuring from a Remote
+-------------------------
 
 When fetching content during a sync, the remote has settings like SSL certs, SSL validation, basic
 auth credentials, and proxy settings. Downloaders commonly want to use these settings while
@@ -90,17 +90,25 @@ supported urls.
     remote instance share an `aiohttp` session, which provides a connection pool, connection
     reusage and keep-alives shared across all downloaders produced by a single remote.
 
+
+.. _automatic-retry:
+
+Automatic Retry
+---------------
+
+The :class:`~pulpcore.plugin.download.HttpDownloader` will automatically retry 10 times if the
+server responds with one of the following error codes:
+
+* 429 - Too Many Requests
+
+
 .. _exception-handling:
 
 Exception Handling
 ------------------
 
-All downloaders are expected to handle recoverable errors automatically. For example, the
-:class:`~pulpcore.plugin.download.HttpDownloader` is expected to retry if a server is too
-busy or if a redirect occurs.
-
 Unrecoverable errors of several types can be raised during downloading. One example is a
-:ref:`validation exception <validation-exceptions>` that are raised if the content downloaded fails
+:ref:`validation exception <validation-exceptions>` that is raised if the content downloaded fails
 size or digest validation. There can also be protocol specific errors such as an
 ``aiohttp.ClientResponse`` being raised when a server responds with a 400+ response such as an HTTP
 403.
@@ -119,8 +127,8 @@ recorded as a non-fatal exception on the task. Plugin writers can also choose to
 task by allowing the exception be uncaught which would mark the entire task as failed.
 
 .. note::
-    The :class:`~pulpcore.plugin.download.HttpDownloader` will raise an exception for any
-    response code that is 400 or greater.
+    The :class:`~pulpcore.plugin.download.HttpDownloader` automatically retry in some cases, but if
+    unsuccessful will raise an exception for any HTTP response code that is 400 or greater.
 
 .. _custom-download-behavior:
 
