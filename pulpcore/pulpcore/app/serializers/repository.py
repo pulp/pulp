@@ -146,11 +146,6 @@ class PublisherSerializer(MasterModelSerializer):
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
-    auto_publish = serializers.BooleanField(
-        help_text=_('An indication that the automatic publish may happen when'
-                    ' the repository content has changed.'),
-        required=False
-    )
     last_published = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent successful publish.'),
         read_only=True
@@ -165,7 +160,7 @@ class PublisherSerializer(MasterModelSerializer):
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'auto_publish', 'last_published', 'distributions',
+            'name', 'last_updated', 'last_published', 'distributions',
         )
 
 

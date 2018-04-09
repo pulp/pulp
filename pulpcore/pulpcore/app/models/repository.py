@@ -145,8 +145,6 @@ class Publisher(MasterModel):
 
     Fields:
 
-        auto_publish (models.BooleanField): Indicates that the adaptor may publish automatically
-            when the associated repository's content has changed.
         last_published (models.DatetimeField): When the last successful publish occurred.
 
     Relations:
@@ -155,8 +153,6 @@ class Publisher(MasterModel):
     TYPE = 'publisher'
 
     name = models.TextField(db_index=True, unique=True)
-
-    auto_publish = models.BooleanField(default=True)
     last_published = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -169,8 +165,7 @@ class Exporter(MasterModel):
 
     Fields:
 
-        name (models.CharField): The exporter unique name.
-        last_updated (models.DatetimeField): Timestamp of the last update.
+        name (models.TextField): The exporter unique name.
         last_export (models.DatetimeField): When the last successful export occurred.
 
     Relations:
@@ -178,7 +173,7 @@ class Exporter(MasterModel):
     """
     TYPE = 'exporter'
 
-    name = models.CharField(max_length=255, db_index=True, unique=True)
+    name = models.TextField(db_index=True, unique=True)
     last_export = models.DateTimeField(blank=True, null=True)
 
     class Meta:
