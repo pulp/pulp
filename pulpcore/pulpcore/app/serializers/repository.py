@@ -61,7 +61,7 @@ class RemoteSerializer(MasterModelSerializer):
         help_text=_('A unique name for this remote.'),
         validators=[UniqueValidator(queryset=models.Remote.objects.all())]
     )
-    feed_url = serializers.CharField(
+    url = serializers.CharField(
         help_text='The URL of an external content source.',
         required=False,
     )
@@ -126,7 +126,7 @@ class RemoteSerializer(MasterModelSerializer):
         abstract = True
         model = models.Remote
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'feed_url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
+            'name', 'url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
             'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
             'username', 'password', 'last_synced', 'last_updated',
         )
