@@ -63,7 +63,6 @@ class RemoteSerializer(MasterModelSerializer):
     )
     url = serializers.CharField(
         help_text='The URL of an external content source.',
-        required=False,
     )
     download_policy = serializers.ChoiceField(
         help_text='The policy for downloading content.',
