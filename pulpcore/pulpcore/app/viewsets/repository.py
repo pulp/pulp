@@ -106,9 +106,11 @@ class PublisherFilter(filterset.FilterSet):
        - to specify a plugin publisher model for which filter is defined
        - to extend `fields` with specific ones
     """
+    name_in_list = CharInFilter(name='name', lookup_expr='in')
+
     class Meta:
         model = Publisher
-        fields = ['name', 'last_updated']
+        fields = ['name', 'last_updated', 'name_in_list']
 
 
 class ExporterFilter(filterset.FilterSet):
