@@ -1,6 +1,32 @@
+import logging
+
 import aiohttp
+import backoff
 
 from .base import attach_url_to_exception, BaseDownloader, DownloadResult
+
+
+log = logging.getLogger(__name__)
+
+
+logging.getLogger('backoff').addHandler(logging.StreamHandler())
+
+
+def giveup(exc):
+    """
+    Inspect a raised exception and determine if we should give up.
+
+    Do not give up when the status code is one of the following:
+
+        429 - Too Many Requests
+
+    Args:
+        exc (aiohttp.ClientResponseException): The exception to inspect
+
+    Returns:
+        True if the download should give up, False otherwise
+    """
+    return not exc.code == 429
 
 
 class HttpDownloader(BaseDownloader):
@@ -49,6 +75,10 @@ class HttpDownloader(BaseDownloader):
         >>>         task.result()  # This is a DownloadResult
         >>>     except Exception as error:
         >>>         pass  # fatal exceptions are raised by result()
+
+    The HTTPDownloaders contain automatic retry logic if the server responds with HTTP 429 response.
+    The coroutine will automatically retry 10 times with exponential backoff before allowing a
+    final exception to be raised.
 
     Attributes:
         session (aiohttp.ClientSession): The session to be used by the downloader.
@@ -118,9 +148,13 @@ class HttpDownloader(BaseDownloader):
                               url=self.url, exception=None)
 
     @attach_url_to_exception
+    @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError, max_tries=10, giveup=giveup)
     async def run(self):
         """
         Download, validate, and compute digests on the `url`. This is a coroutine.
+
+        This method is decorated with a backoff-and-retry behavior to retry HTTP 429 errors. It
+        retries with exponential backoff 10 times before allowing a final exception to be raised.
 
         This method provides the same return object type and documented in
         :meth:`~pulpcore.plugin.download.BaseDownloader.run`.

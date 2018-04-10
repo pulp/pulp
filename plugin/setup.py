@@ -4,6 +4,7 @@ requirements = [
     'pulpcore',
     'aiohttp',
     'aiofiles',
+    'backoff',
 ]
 
 with open('README.rst') as f:

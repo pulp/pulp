@@ -1,11 +1,15 @@
 import asyncio
 from collections import namedtuple
 import hashlib
+import logging
 import os
 import tempfile
 
 from pulpcore.app.models import Artifact
 from .exceptions import DigestValidationError, SizeValidationError
+
+
+log = logging.getLogger(__name__)
 
 
 DownloadResult = namedtuple('DownloadResult', ['url', 'artifact_attributes', 'path', 'exception'])
@@ -40,7 +44,7 @@ def attach_url_to_exception(func):
             :class:`~pulpcore.plugin.download.BaseDownloader`
 
     Returns:
-        A function that will attach the `url` to any exception emitted by `func`
+        A coroutine that will attach the `url` to any exception emitted by `func`
     """
     async def wrapper(downloader):
         try:
