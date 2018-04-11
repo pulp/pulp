@@ -332,6 +332,18 @@ class PublicationViewSet(NamedModelViewSet,
     serializer_class = PublicationSerializer
 
 
+class DistributionFilter(filterset.FilterSet):
+    name = filters.CharFilter(name='name')
+    name__in_list = CharInFilter(name='name', lookup_expr='in')
+
+    base_path = filters.CharFilter(name='base_path')
+    base_path__in_list = CharInFilter(name='base_path', lookup_expr='in')
+
+    class Meta:
+        model = Distribution
+        fields = ['name', 'base_path']
+
+
 class DistributionViewSet(NamedModelViewSet,
                           mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
@@ -341,3 +353,4 @@ class DistributionViewSet(NamedModelViewSet,
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
+    filter_class = DistributionFilter
