@@ -14,17 +14,13 @@ class TaskFilter(filterset.FilterSet):
     state_in_list = CharInFilter(name='state', lookup_expr='in')
     worker = HyperlinkRelatedFilter(name='worker')
 
-    started_after = filters.IsoDateTimeFilter(name='started_at', lookup_expr='gte')
-    started_before = filters.IsoDateTimeFilter(name='started_at', lookup_expr='lte')
 
-    finished_after = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='gte')
-    finished_before = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='lte')
+    started_at = filters.IsoDateTimeFilter(name='started_at')
+    finished_at = filters.IsoDateTimeFilter(name='finished_at')
 
     class Meta:
         model = Task
-        fields = ('state', 'state_in_list', 'worker',
-                  'started_after', 'started_before',
-                  'finished_after', 'finished_before')
+        fields = ('state', 'state_in_list', 'worker', 'started_at', 'finished_at')
 
 
 class TaskViewSet(NamedModelViewSet,
