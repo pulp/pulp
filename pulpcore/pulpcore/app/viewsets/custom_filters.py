@@ -11,6 +11,14 @@ from django_filters import filters
 from rest_framework import serializers
 
 
+class NumberRangeFilter(filters.BaseRangeFilter, filters.NumberFilter):
+    """
+    Enables the user to filter a field by comma separated numbers, allowing them to retrieve more
+    than one object in a single query.
+    """
+    pass
+
+
 class CharInFilter(filters.BaseInFilter, filters.CharFilter):
     """
     Enables the user to filter a field by comma separated strings, allowing them to retrieve more

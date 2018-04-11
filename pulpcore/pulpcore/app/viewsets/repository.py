@@ -30,7 +30,7 @@ from pulpcore.app.serializers import (
     RepositoryVersionSerializer
 )
 from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
-from pulpcore.app.viewsets.custom_filters import CharInFilter
+from pulpcore.app.viewsets.custom_filters import CharInFilter, NumberRangeFilter
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -133,6 +133,10 @@ class RepositoryVersionContentFilter(Filter):
         3. Calculate and return the versions that the content can be found on
     """
 
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', _('Content Unit referenced by HREF'))
+        super().__init__(*args, **kwargs)
+
     def filter(self, qs, value):
         """
         Args:
@@ -187,16 +191,15 @@ class RepositoryVersionContentFilter(Filter):
 
 class RepositoryVersionFilter(filterset.FilterSet):
 
-    version_min = filters.NumberFilter(name='number', lookup_expr='gte')
-    version_max = filters.NumberFilter(name='number', lookup_expr='lte')
-
+    number = filters.NumberFilter(name='number')
+    number__range = NumberRangeFilter(name='number', lookup_expr='range')
 
     created = filters.IsoDateTimeFilter(name='created')
-    content = RepositoryVersionContentFilter(label="Content HREF is equivalent to")
+    content = RepositoryVersionContentFilter(name='content')
 
     class Meta:
         model = RepositoryVersion
-        fields = ['version_min', 'version_max', 'created', 'content']
+        fields = ['number', 'created', 'content']
 
 
 class RepositoryVersionViewSet(NamedModelViewSet,
