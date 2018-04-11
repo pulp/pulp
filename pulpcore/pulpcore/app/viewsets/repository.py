@@ -30,15 +30,15 @@ from pulpcore.app.serializers import (
     RepositoryVersionSerializer
 )
 from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
-from pulpcore.app.viewsets.custom_filters import CharInFilter, NumberRangeFilter
+from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 
 
 class RepositoryFilter(filterset.FilterSet):
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
+    name = filters.CharFilter()
 
     class Meta:
         model = Repository
-        fields = ['name', 'name_in_list']
+        fields = {'name': NAME_FILTER_OPTIONS}
 
 
 class RepositoryViewSet(NamedModelViewSet,
@@ -64,8 +64,7 @@ class RepositoryViewSet(NamedModelViewSet,
         async_result = tasks.repository.update.apply_async_with_reservation(
             [instance],
             args=(instance.id, ),
-            kwargs={'data': request.data,
-                    'partial': partial}
+            kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result], request)
 
@@ -77,49 +76,6 @@ class RepositoryViewSet(NamedModelViewSet,
         async_result = tasks.repository.delete.apply_async_with_reservation(
             [repo], kwargs={'repo_id': repo.id})
         return OperationPostponedResponse([async_result], request)
-
-
-class RemoteFilter(filterset.FilterSet):
-    """
-    Plugin remote filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin remote model for which filter is defined
-       - to extend `fields` with specific ones
-    """
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
-
-    class Meta:
-        model = Remote
-        fields = ['name', 'last_updated', 'name_in_list']
-
-
-class PublisherFilter(filterset.FilterSet):
-    """
-    Plugin publisher filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin publisher model for which filter is defined
-       - to extend `fields` with specific ones
-    """
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
-
-    class Meta:
-        model = Publisher
-        fields = ['name', 'last_updated', 'name_in_list']
-
-
-class ExporterFilter(filterset.FilterSet):
-    class Meta:
-        model = Exporter
-        fields = [
-            'name',
-            'last_export'
-        ]
 
 
 class RepositoryVersionContentFilter(Filter):
@@ -190,16 +146,17 @@ class RepositoryVersionContentFilter(Filter):
 
 
 class RepositoryVersionFilter(filterset.FilterSet):
-
-    number = filters.NumberFilter(name='number')
-    number__range = NumberRangeFilter(name='number', lookup_expr='range')
-
-    created = filters.IsoDateTimeFilter(name='created')
-    content = RepositoryVersionContentFilter(name='content')
+    number = filters.NumberFilter()
+    created = filters.IsoDateTimeFilter()
+    content = RepositoryVersionContentFilter()
 
     class Meta:
         model = RepositoryVersion
-        fields = ['number', 'created', 'content']
+        fields = {
+            'number': ['exact', 'lt', 'lte', 'gt', 'gte', 'range'],
+            'created': DATETIME_FILTER_OPTIONS,
+            'content': ['exact', 'in']
+        }
 
 
 class RepositoryVersionViewSet(NamedModelViewSet,
@@ -288,6 +245,27 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         return OperationPostponedResponse([result], request)
 
 
+class RemoteFilter(filterset.FilterSet):
+    """
+    Plugin remote filter would need:
+     - to inherit from this class
+     - to add any specific filters if needed
+     - to define its own `Meta` class which needs:
+
+       - to specify a plugin remote model for which filter is defined
+       - to extend `fields` with specific ones
+    """
+    name = filters.CharFilter()
+    last_updated = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Remote
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_updated': DATETIME_FILTER_OPTIONS
+        }
+
+
 class RemoteViewSet(NamedModelViewSet,
                     mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
@@ -300,6 +278,27 @@ class RemoteViewSet(NamedModelViewSet,
     filter_class = RemoteFilter
 
 
+class PublisherFilter(filterset.FilterSet):
+    """
+    Plugin publisher filter would need:
+     - to inherit from this class
+     - to add any specific filters if needed
+     - to define its own `Meta` class which needs:
+
+       - to specify a plugin publisher model for which filter is defined
+       - to extend `fields` with specific ones
+    """
+    name = filters.CharFilter()
+    last_updated = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Publisher
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_updated': DATETIME_FILTER_OPTIONS
+        }
+
+
 class PublisherViewSet(NamedModelViewSet,
                        mixins.CreateModelMixin,
                        mixins.RetrieveModelMixin,
@@ -310,6 +309,18 @@ class PublisherViewSet(NamedModelViewSet,
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
+
+
+class ExporterFilter(filterset.FilterSet):
+    name = filters.CharFilter()
+    last_export = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Exporter
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_export': DATETIME_FILTER_OPTIONS
+        }
 
 
 class ExporterViewSet(NamedModelViewSet,
@@ -334,15 +345,15 @@ class PublicationViewSet(NamedModelViewSet,
 
 
 class DistributionFilter(filterset.FilterSet):
-    name = filters.CharFilter(name='name')
-    name__in_list = CharInFilter(name='name', lookup_expr='in')
-
-    base_path = filters.CharFilter(name='base_path')
-    base_path__in_list = CharInFilter(name='base_path', lookup_expr='in')
+    name = filters.CharFilter()
+    base_path = filters.CharFilter()
 
     class Meta:
         model = Distribution
-        fields = ['name', 'base_path']
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'base_path': ['exact', 'in']
+        }
 
 
 class DistributionViewSet(NamedModelViewSet,
