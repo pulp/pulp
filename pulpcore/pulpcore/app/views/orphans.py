@@ -12,4 +12,4 @@ class OrphansView(APIView):
         """
         async_result = orphan_cleanup.apply_async_with_reservation([])
 
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)

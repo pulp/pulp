@@ -66,7 +66,7 @@ class RepositoryViewSet(NamedModelViewSet,
             args=(instance.id, ),
             kwargs={'data': request.data, 'partial': partial}
         )
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)
 
     def destroy(self, request, pk):
         """
@@ -75,7 +75,7 @@ class RepositoryViewSet(NamedModelViewSet,
         repo = self.get_object()
         async_result = tasks.repository.delete.apply_async_with_reservation(
             [repo], kwargs={'repo_id': repo.id})
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)
 
 
 class RepositoryVersionContentFilter(Filter):
@@ -220,7 +220,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         async_result = tasks.repository.delete_version.apply_async_with_reservation(
             [version.repository], kwargs={'pk': version.pk}
         )
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)
 
     def create(self, request, repository_pk):
         """
@@ -248,7 +248,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
                 'remove_content_units': remove_content_units
             }
         )
-        return OperationPostponedResponse([result], request)
+        return OperationPostponedResponse(result, request)
 
 
 class RemoteFilter(filterset.FilterSet):

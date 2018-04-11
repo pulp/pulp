@@ -292,7 +292,7 @@ class AsyncUpdateMixin:
             [instance], args=(pk, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
@@ -315,4 +315,4 @@ class AsyncRemoveMixin:
             [instance],
             args=(pk, app_label, serializer.__class__.__name__)
         )
-        return OperationPostponedResponse([async_result], request)
+        return OperationPostponedResponse(async_result, request)
