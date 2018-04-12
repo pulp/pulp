@@ -1,0 +1,11 @@
+celery
+coreapi
+django
+djangorestframework
+django-filter
+drf-nested-routers
+pyyaml
+psycopg2
+sphinx
+sphinx-rtd-theme
+sphinxcontrib-openapi

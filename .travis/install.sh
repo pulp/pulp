@@ -2,7 +2,7 @@
 set -v
 
 # dev_requirements should not be needed for testing; don't install them to make sure
-pip install "Django<=DJANGO_MAX"
+pip install "Django<=$DJANGO_MAX"
 pip install -r test_requirements.txt
 pushd common/ && pip install -e . && popd
 pushd pulpcore/ && pip install -e . && popd

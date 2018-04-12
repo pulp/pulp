@@ -1,9 +1,8 @@
 """pulp URL Configuration"""
-from contextlib import suppress
-from importlib import import_module
-
 from django.conf.urls import url, include
-
+from drf_yasg.views import get_schema_view as yasg_get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
 from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
 
@@ -117,12 +116,21 @@ urlpatterns = [
     url(r'^api/v3/orphans/', OrphansView.as_view()),
 ]
 
-# if drf_openapi is installed add live docs route
-with suppress(ImportError):
-    import_module('drf_openapi')
-    from pulpcore.apidocs.views import DocView
-    urlpatterns.append(url(r'^api/(?P<version>(v3))/docs/',
-                           DocView.as_view(title='Pulp API Docs'), name='api_schema'))
+docs_schema_view = yasg_get_schema_view(
+    openapi.Info(
+        title="Pulp3 API",
+        default_version='v3',
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+urlpatterns.append(url(r'^api/v3/docs/api(?P<format>\.json|\.yaml)',
+                   docs_schema_view.without_ui(cache_timeout=None),
+                   name='schema-json'))
+
+urlpatterns.append(url(r'^api/v3/docs/',
+                   docs_schema_view.with_ui('redoc', cache_timeout=None),
+                   name='schema-redoc'))
 
 schema_view = get_schema_view(title='Pulp API')
 
