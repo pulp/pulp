@@ -14,8 +14,15 @@ from rest_framework import viewsets, serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.schemas import AutoSchema
 
+# These should be used to prevent duplication and keep things consistent
 NAME_FILTER_OPTIONS = ['exact', 'in']
+# e.g.
+# /?name=foo
+# /?name__in=foo,bar
 DATETIME_FILTER_OPTIONS = ['lt', 'lte', 'gt', 'gte', 'range']
+# e.g.
+# /?created__gte=2018-04-12T19:45:52
+# /?created__range=2018-04-12T19:45:52,2018-04-13T19:45:52
 
 
 class DefaultSchema(AutoSchema):

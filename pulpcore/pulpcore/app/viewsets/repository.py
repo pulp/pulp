@@ -146,6 +146,12 @@ class RepositoryVersionContentFilter(Filter):
 
 
 class RepositoryVersionFilter(filterset.FilterSet):
+    # e.g.
+    # /?number=4
+    # /?name__range=4,6
+    # /?created__gte=2018-04-12T19:45
+    # /?created__range=2018-04-12T19:45,2018-04-13T20:00
+    # /?content=http://localhost:8000/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
     number = filters.NumberFilter()
     created = filters.IsoDateTimeFilter()
     content = RepositoryVersionContentFilter()
@@ -247,13 +253,12 @@ class RepositoryVersionViewSet(NamedModelViewSet,
 
 class RemoteFilter(filterset.FilterSet):
     """
-    Plugin remote filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin remote model for which filter is defined
-       - to extend `fields` with specific ones
+    Plugin remote filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin remote model for which filter is defined
+       - extend `fields` with specific ones
     """
     name = filters.CharFilter()
     last_updated = filters.IsoDateTimeFilter()
@@ -280,13 +285,12 @@ class RemoteViewSet(NamedModelViewSet,
 
 class PublisherFilter(filterset.FilterSet):
     """
-    Plugin publisher filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin publisher model for which filter is defined
-       - to extend `fields` with specific ones
+    Plugin publisher filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin publisher model for which filter is defined
+       - extend `fields` with specific ones
     """
     name = filters.CharFilter()
     last_updated = filters.IsoDateTimeFilter()
@@ -312,6 +316,14 @@ class PublisherViewSet(NamedModelViewSet,
 
 
 class ExporterFilter(filterset.FilterSet):
+    """
+    Plugin exporter filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin exporter model for which filter is defined
+       - extend `fields` with specific ones
+    """
     name = filters.CharFilter()
     last_export = filters.IsoDateTimeFilter()
 
@@ -345,6 +357,11 @@ class PublicationViewSet(NamedModelViewSet,
 
 
 class DistributionFilter(filterset.FilterSet):
+    # e.g.
+    # /?name=foo
+    # /?name__in=foo,bar
+    # /?base_path__contains=foo
+    # /?base_path__icontains=foo
     name = filters.CharFilter()
     base_path = filters.CharFilter()
 
@@ -352,7 +369,7 @@ class DistributionFilter(filterset.FilterSet):
         model = Distribution
         fields = {
             'name': NAME_FILTER_OPTIONS,
-            'base_path': ['exact', 'in']
+            'base_path': ['exact', 'contains', 'icontains', 'in']
         }
 
 

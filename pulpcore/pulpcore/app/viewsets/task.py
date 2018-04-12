@@ -20,7 +20,7 @@ class TaskFilter(filterset.FilterSet):
     class Meta:
         model = Task
         fields = {
-            'state': NAME_FILTER_OPTIONS,
+            'state': ['exact', 'in'],
             'worker': ['exact'],
             'started_at': DATETIME_FILTER_OPTIONS,
             'finished_at': DATETIME_FILTER_OPTIONS
