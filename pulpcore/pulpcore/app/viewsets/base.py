@@ -14,6 +14,16 @@ from rest_framework import viewsets, serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.schemas import AutoSchema
 
+# These should be used to prevent duplication and keep things consistent
+NAME_FILTER_OPTIONS = ['exact', 'in']
+# e.g.
+# /?name=foo
+# /?name__in=foo,bar
+DATETIME_FILTER_OPTIONS = ['lt', 'lte', 'gt', 'gte', 'range']
+# e.g.
+# /?created__gte=2018-04-12T19:45:52
+# /?created__range=2018-04-12T19:45:52,2018-04-13T19:45:52
+
 
 class DefaultSchema(AutoSchema):
     """
@@ -22,6 +32,7 @@ class DefaultSchema(AutoSchema):
     Schema can be customised per view(set). Override this class and set it as a ``schema``
     attribute of a view(set) of interest.
     """
+
     def _allows_filters(self, path, method):
         """
         Include filter fields only for read actions, or GET requests.
@@ -240,6 +251,7 @@ class AsyncUpdateMixin:
     """
     Provides an update method that dispatches a task with reservation for the instance
     """
+
     def update(self, request, pk, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -261,6 +273,7 @@ class AsyncRemoveMixin:
     """
     Provides a delete method that dispatches a task with reservation for the instance
     """
+
     def destroy(self, request, pk, **kwargs):
         """
         Delete a model instance

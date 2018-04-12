@@ -1,18 +1,18 @@
-from django_filters.rest_framework import filterset
+from django_filters.rest_framework import filters, filterset
 from rest_framework import mixins
 
 from pulpcore.app.models import User
 from pulpcore.app.serializers import UserSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
-from pulpcore.app.viewsets.custom_filters import CharInFilter
+from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS
 
 
 class UserFilter(filterset.FilterSet):
-    username_in_list = CharInFilter(name='username', lookup_expr='in')
+    username = filters.CharFilter()
 
     class Meta:
         model = User
-        fields = ['username', 'username_in_list']
+        fields = {'username': NAME_FILTER_OPTIONS}
 
 
 class UserViewSet(NamedModelViewSet,

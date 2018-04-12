@@ -6,23 +6,19 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from django.urls import resolve, Resolver404
-from django_filters import filters
+from django_filters import Filter
 
 from rest_framework import serializers
 
 
-class CharInFilter(filters.BaseInFilter, filters.CharFilter):
-    """
-    Enables the user to filter a field by comma separated strings, allowing them to retrieve more
-    than one object in a single query.
-    """
-    pass
-
-
-class HyperlinkRelatedFilter(filters.Filter):
+class HyperlinkRelatedFilter(Filter):
     """
     Enables a user to filter by a foreign key using that FK's href
     """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', _('Foreign Key referenced by HREF'))
+        super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         """
@@ -35,9 +31,8 @@ class HyperlinkRelatedFilter(filters.Filter):
         """
 
         if not value:
-            raise serializers.ValidationError(detail=_('No value supplied for {name} filter.').
-                                              format(name=self.name))
-
+            raise serializers.ValidationError(
+                detail=_('No value supplied for {name} filter.').format(name=self.name))
         try:
             match = resolve(urlparse(value).path)
         except Resolver404:

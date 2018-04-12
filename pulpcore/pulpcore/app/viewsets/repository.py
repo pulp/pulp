@@ -30,15 +30,15 @@ from pulpcore.app.serializers import (
     RepositoryVersionSerializer
 )
 from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
-from pulpcore.app.viewsets.custom_filters import CharInFilter
+from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 
 
 class RepositoryFilter(filterset.FilterSet):
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
+    name = filters.CharFilter()
 
     class Meta:
         model = Repository
-        fields = ['name', 'name_in_list']
+        fields = {'name': NAME_FILTER_OPTIONS}
 
 
 class RepositoryViewSet(NamedModelViewSet,
@@ -64,8 +64,7 @@ class RepositoryViewSet(NamedModelViewSet,
         async_result = tasks.repository.update.apply_async_with_reservation(
             [instance],
             args=(instance.id, ),
-            kwargs={'data': request.data,
-                    'partial': partial}
+            kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result], request)
 
@@ -79,49 +78,6 @@ class RepositoryViewSet(NamedModelViewSet,
         return OperationPostponedResponse([async_result], request)
 
 
-class RemoteFilter(filterset.FilterSet):
-    """
-    Plugin remote filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin remote model for which filter is defined
-       - to extend `fields` with specific ones
-    """
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
-
-    class Meta:
-        model = Remote
-        fields = ['name', 'last_updated', 'name_in_list']
-
-
-class PublisherFilter(filterset.FilterSet):
-    """
-    Plugin publisher filter would need:
-     - to inherit from this class
-     - to add any specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify a plugin publisher model for which filter is defined
-       - to extend `fields` with specific ones
-    """
-    name_in_list = CharInFilter(name='name', lookup_expr='in')
-
-    class Meta:
-        model = Publisher
-        fields = ['name', 'last_updated', 'name_in_list']
-
-
-class ExporterFilter(filterset.FilterSet):
-    class Meta:
-        model = Exporter
-        fields = [
-            'name',
-            'last_export'
-        ]
-
-
 class RepositoryVersionContentFilter(Filter):
     """
     Filter used to get the repository versions where some given content can be found.
@@ -132,6 +88,10 @@ class RepositoryVersionContentFilter(Filter):
            changed on the repository
         3. Calculate and return the versions that the content can be found on
     """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', _('Content Unit referenced by HREF'))
+        super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         """
@@ -186,19 +146,23 @@ class RepositoryVersionContentFilter(Filter):
 
 
 class RepositoryVersionFilter(filterset.FilterSet):
-
-    version_min = filters.NumberFilter(name='number', lookup_expr='gte')
-    version_max = filters.NumberFilter(name='number', lookup_expr='lte')
-
-    created_after = filters.IsoDateTimeFilter(name='created', lookup_expr='gte')
-    created_before = filters.IsoDateTimeFilter(name='created', lookup_expr='lte')
-
-    content = RepositoryVersionContentFilter(label="Content HREF is equivalent to")
+    # e.g.
+    # /?number=4
+    # /?name__range=4,6
+    # /?created__gte=2018-04-12T19:45
+    # /?created__range=2018-04-12T19:45,2018-04-13T20:00
+    # /?content=http://localhost:8000/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
+    number = filters.NumberFilter()
+    created = filters.IsoDateTimeFilter()
+    content = RepositoryVersionContentFilter()
 
     class Meta:
         model = RepositoryVersion
-
-        fields = ['version_min', 'version_max', 'created_after', 'created_before', 'content']
+        fields = {
+            'number': ['exact', 'lt', 'lte', 'gt', 'gte', 'range'],
+            'created': DATETIME_FILTER_OPTIONS,
+            'content': ['exact', 'in']
+        }
 
 
 class RepositoryVersionViewSet(NamedModelViewSet,
@@ -287,6 +251,26 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         return OperationPostponedResponse([result], request)
 
 
+class RemoteFilter(filterset.FilterSet):
+    """
+    Plugin remote filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin remote model for which filter is defined
+       - extend `fields` with specific ones
+    """
+    name = filters.CharFilter()
+    last_updated = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Remote
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_updated': DATETIME_FILTER_OPTIONS
+        }
+
+
 class RemoteViewSet(NamedModelViewSet,
                     mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
@@ -299,6 +283,26 @@ class RemoteViewSet(NamedModelViewSet,
     filter_class = RemoteFilter
 
 
+class PublisherFilter(filterset.FilterSet):
+    """
+    Plugin publisher filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin publisher model for which filter is defined
+       - extend `fields` with specific ones
+    """
+    name = filters.CharFilter()
+    last_updated = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Publisher
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_updated': DATETIME_FILTER_OPTIONS
+        }
+
+
 class PublisherViewSet(NamedModelViewSet,
                        mixins.CreateModelMixin,
                        mixins.RetrieveModelMixin,
@@ -309,6 +313,26 @@ class PublisherViewSet(NamedModelViewSet,
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
     filter_class = PublisherFilter
+
+
+class ExporterFilter(filterset.FilterSet):
+    """
+    Plugin exporter filter should:
+     - inherit from this class
+     - add any specific filters if needed
+     - define a `Meta` class which should:
+       - specify a plugin exporter model for which filter is defined
+       - extend `fields` with specific ones
+    """
+    name = filters.CharFilter()
+    last_export = filters.IsoDateTimeFilter()
+
+    class Meta:
+        model = Exporter
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'last_export': DATETIME_FILTER_OPTIONS
+        }
 
 
 class ExporterViewSet(NamedModelViewSet,
@@ -332,6 +356,23 @@ class PublicationViewSet(NamedModelViewSet,
     serializer_class = PublicationSerializer
 
 
+class DistributionFilter(filterset.FilterSet):
+    # e.g.
+    # /?name=foo
+    # /?name__in=foo,bar
+    # /?base_path__contains=foo
+    # /?base_path__icontains=foo
+    name = filters.CharFilter()
+    base_path = filters.CharFilter()
+
+    class Meta:
+        model = Distribution
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+            'base_path': ['exact', 'contains', 'icontains', 'in']
+        }
+
+
 class DistributionViewSet(NamedModelViewSet,
                           mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
@@ -341,3 +382,4 @@ class DistributionViewSet(NamedModelViewSet,
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
+    filter_class = DistributionFilter

@@ -5,26 +5,26 @@ from rest_framework.response import Response
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
-from pulpcore.app.viewsets.base import NamedModelViewSet
-from pulpcore.app.viewsets.custom_filters import CharInFilter, HyperlinkRelatedFilter
+from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
+from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
 from pulpcore.tasking.util import cancel as cancel_task
 
 
 class TaskFilter(filterset.FilterSet):
-    state_in_list = CharInFilter(name='state', lookup_expr='in')
-    worker = HyperlinkRelatedFilter(name='worker')
-
-    started_after = filters.IsoDateTimeFilter(name='started_at', lookup_expr='gte')
-    started_before = filters.IsoDateTimeFilter(name='started_at', lookup_expr='lte')
-
-    finished_after = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='gte')
-    finished_before = filters.IsoDateTimeFilter(name='finished_at', lookup_expr='lte')
+    state = filters.CharFilter()
+    worker = HyperlinkRelatedFilter()
+    started_at = filters.IsoDateTimeFilter(name='started_at')
+    finished_at = filters.IsoDateTimeFilter(name='finished_at')
 
     class Meta:
         model = Task
-        fields = ('state', 'state_in_list', 'worker',
-                  'started_after', 'started_before',
-                  'finished_after', 'finished_before')
+        fields = {
+            'state': ['exact', 'in'],
+            'worker': ['exact'],
+            'started_at': DATETIME_FILTER_OPTIONS,
+            'finished_at': DATETIME_FILTER_OPTIONS
+        }
 
 
 class TaskViewSet(NamedModelViewSet,
@@ -51,10 +51,10 @@ class WorkerFilter(filterset.FilterSet):
     class Meta:
         model = Worker
         fields = {
-            'name': ('exact', 'startswith', 'endswith', 'contains'),
-            'last_heartbeat': ('gte', 'lte'),
-            'online': ('exact'),
-            'missing': ('exact')
+            'name': NAME_FILTER_OPTIONS,
+            'last_heartbeat': DATETIME_FILTER_OPTIONS,
+            'online': ['exact'],
+            'missing': ['exact']
         }
 
     def filter_online(self, queryset, name, value):

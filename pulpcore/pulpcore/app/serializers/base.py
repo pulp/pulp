@@ -254,12 +254,14 @@ class MatchingNullViewName(object):
     of these related fields is equal to any view name it's compared to, bypassing DRF's
     view_name matching check.
     """
+
     def __eq__(self, other):
         return True
 
 
 class _DetailFieldMixin:
     """Mixin class containing code common to DetailIdentityField and DetailRelatedField"""
+
     def __init__(self, view_name=None, **kwargs):
         if view_name is None:
             # set view name to prevent a DRF assertion that view_name is not None
@@ -308,6 +310,7 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
     Subclasses must indicate the Master model they represent by declaring a queryset
     in their class body, usually <MasterModelImplementation>.objects.all().
     """
+
     def get_object(self, *args, **kwargs):
         # return the cast object, not the generic contentunit
         return super().get_object(*args, **kwargs).cast()
