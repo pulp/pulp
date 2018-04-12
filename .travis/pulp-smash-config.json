@@ -14,7 +14,7 @@
                 "pulp cli": {},
                 "pulp resource manager": {},
                 "pulp workers": {},
-                "shell": {},
+                "shell": {"transport": "local"},
                 "squid": {}
             }
         }
