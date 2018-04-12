@@ -148,7 +148,7 @@ class RepositoryVersionContentFilter(Filter):
 class RepositoryVersionFilter(filterset.FilterSet):
     # e.g.
     # /?number=4
-    # /?name__range=4,6
+    # /?number__range=4,6
     # /?created__gte=2018-04-12T19:45
     # /?created__range=2018-04-12T19:45,2018-04-13T20:00
     # /?content=http://localhost:8000/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/

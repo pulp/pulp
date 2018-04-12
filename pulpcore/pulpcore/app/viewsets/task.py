@@ -4,7 +4,7 @@ from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
 from pulpcore.app.models import Task, Worker
-from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
+from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
@@ -16,14 +16,16 @@ class TaskFilter(filterset.FilterSet):
     worker = HyperlinkRelatedFilter()
     started_at = filters.IsoDateTimeFilter(name='started_at')
     finished_at = filters.IsoDateTimeFilter(name='finished_at')
+    parent = HyperlinkRelatedFilter()
 
     class Meta:
         model = Task
         fields = {
             'state': ['exact', 'in'],
-            'worker': ['exact'],
+            'worker': ['exact', 'in'],
             'started_at': DATETIME_FILTER_OPTIONS,
-            'finished_at': DATETIME_FILTER_OPTIONS
+            'finished_at': DATETIME_FILTER_OPTIONS,
+            'parent': ['exact']
         }
 
 
@@ -31,9 +33,12 @@ class TaskViewSet(NamedModelViewSet,
                   mixins.RetrieveModelMixin,
                   mixins.ListModelMixin):
     queryset = Task.objects.all()
-    serializer_class = TaskSerializer
     endpoint_name = 'tasks'
     filter_class = TaskFilter
+    serializers = {
+        'list': MinimalTaskSerializer,
+        'default': TaskSerializer
+    }
 
     @detail_route(methods=('post',))
     def cancel(self, request, pk=None):
