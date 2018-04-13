@@ -6,9 +6,10 @@ import logging
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 from pulpcore.app.models import Model, Task
-from django.utils import timezone
+from pulpcore.common import TASK_STATES, TASK_CHOICES
 
 _logger = logging.getLogger(__name__)
 
@@ -39,22 +40,8 @@ class ProgressReport(Model):
         task: The task associated with this progress report. If left unset when save() is called
             it will be set to the current task_id.
     """
-    WAITING = 'waiting'
-    SKIPPED = 'skipped'
-    RUNNING = 'running'
-    COMPLETED = 'completed'
-    FAILED = 'failed'
-    CANCELED = 'canceled'
-    STATES = (
-        (WAITING, 'Waiting'),
-        (SKIPPED, 'Skipped'),
-        (RUNNING, 'Running'),
-        (COMPLETED, 'Completed'),
-        (FAILED, 'Failed'),
-        (CANCELED, 'Canceled')
-    )
     message = models.TextField()
-    state = models.TextField(choices=STATES, default=WAITING)
+    state = models.TextField(choices=TASK_CHOICES, default=TASK_STATES.WAITING)
 
     total = models.IntegerField(null=True)
     done = models.IntegerField(default=0)
@@ -95,7 +82,7 @@ class ProgressReport(Model):
         """
         Saves the progress report state as RUNNING
         """
-        self.state = self.RUNNING
+        self.state = TASK_STATES.RUNNING
         self.save()
 
         # Save needs occurs immediately so it is called before _using_context_manager is set
@@ -114,10 +101,10 @@ class ProgressReport(Model):
         """
         self._using_context_manager = False
         if type is None:
-            self.state = self.COMPLETED
+            self.state = TASK_STATES.COMPLETED
             self.save()
         else:
-            self.state = self.FAILED
+            self.state = TASK_STATES.FAILED
             self.save()
 
 
