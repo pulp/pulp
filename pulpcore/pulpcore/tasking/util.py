@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from pulpcore.app.models import Task
 from pulpcore.app.serializers import view_name_for_model
-from pulpcore.common import TASK_FINAL_STATES
+from pulpcore.common import TASK_FINAL_STATES, TASK_STATES
 from pulpcore.exceptions import MissingResource
 
 
@@ -44,7 +44,7 @@ def cancel(task_id):
     celery_controller.revoke(task_id, terminate=True)
 
     with transaction.atomic():
-        task_status.state = Task.CANCELED
+        task_status.state = TASK_STATES.CANCELED
         task_status.save()
         _delete_incomplete_resources(task_status)
 
@@ -60,7 +60,7 @@ def _delete_incomplete_resources(task):
     Args:
         task (Task): A task.
     """
-    if not task.state == Task.CANCELED:
+    if not task.state == TASK_STATES.CANCELED:
         raise RuntimeError(_('Task must be canceled.'))
     for model in (r.content_object for r in task.created_resources.all()):
         try:

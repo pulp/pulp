@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from pulpcore.app.models import Model, GenericRelationModel
 from pulpcore.app.fields import JSONField
-from pulpcore.common import TASK_FINAL_STATES
+from pulpcore.common import TASK_FINAL_STATES, TASK_CHOICES, TASK_STATES
 from pulpcore.exceptions import exception_to_dict
 from pulpcore.tasking.constants import TASKING_CONSTANTS
 
@@ -274,23 +274,7 @@ class Task(Model):
         parent (models.ForeignKey): Task that spawned this task (if any)
         worker (models.ForeignKey): The worker that this task is in
     """
-
-    WAITING = 'waiting'
-    SKIPPED = 'skipped'
-    RUNNING = 'running'
-    COMPLETED = 'completed'
-    FAILED = 'failed'
-    CANCELED = 'canceled'
-    STATES = (
-        (WAITING, 'Waiting'),
-        (SKIPPED, 'Skipped'),
-        (RUNNING, 'Running'),
-        (COMPLETED, 'Completed'),
-        (FAILED, 'Failed'),
-        (CANCELED, 'Canceled')
-    )
-
-    state = models.TextField(choices=STATES)
+    state = models.TextField(choices=TASK_CHOICES)
 
     started_at = models.DateTimeField(null=True)
     finished_at = models.DateTimeField(null=True)
@@ -323,10 +307,9 @@ class Task(Model):
 
         This updates the :attr:`started_at` and sets the :attr:`state` to :attr:`RUNNING`.
         """
-        if self.state != self.WAITING:
-            msg = _('Task __call__() occurred but Task %s is not at WAITING')
-            _logger.warning(msg % self.id)
-        self.state = Task.RUNNING
+        if self.state != TASK_STATES.WAITING:
+            _logger.warning(_('Task __call__() occurred but Task %s is not at WAITING') % self.id)
+        self.state = TASK_STATES.RUNNING
         self.started_at = timezone.now()
         self.save()
 
@@ -345,7 +328,7 @@ class Task(Model):
         # important for when the task has been canceled, so we don't move the task from canceled
         # to finished.
         if self.state not in TASK_FINAL_STATES:
-            self.state = Task.COMPLETED
+            self.state = TASK_STATES.COMPLETED
         else:
             msg = _('Task set_completed() occurred but Task %s is already in final state')
             _logger.warning(msg % self.id)
@@ -364,7 +347,7 @@ class Task(Model):
             einfo (celery.datastructures.ExceptionInfo): ExceptionInfo instance containing a
                 serialized traceback.
         """
-        self.state = Task.FAILED
+        self.state = TASK_STATES.FAILED
         self.finished_at = timezone.now()
         self.error = exception_to_dict(exc, einfo.traceback)
         self.save()

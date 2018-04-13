@@ -217,7 +217,7 @@ class UserFacingTask(PulpTask):
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
 
-        TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING, **parent_arg)
+        TaskStatus.objects.create(pk=inner_task_id, state=TASK_STATES.WAITING, **parent_arg)
 
         # Call the outer task which is a promise to call the real task when it can.
         if task_name == "pulpcore.app.tasks.orphan.orphan_cleanup":
@@ -253,7 +253,7 @@ class UserFacingTask(PulpTask):
         parent_arg = self._get_parent_arg()
 
         try:
-            TaskStatus.objects.create(pk=async_result.id, state=TaskStatus.WAITING, **parent_arg)
+            TaskStatus.objects.create(pk=async_result.id, state=TASK_STATES.WAITING, **parent_arg)
         except IntegrityError:
             # The TaskStatus was already created with the call to apply_async_with_reservation
             pass

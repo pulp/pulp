@@ -171,6 +171,7 @@ class BaseURLField(serializers.CharField):
     """
     Serializer Field for the base_url field of the Distribution.
     """
+
     def to_representation(self, value):
         if settings.CONTENT['host']:
             host = settings.CONTENT['host']
