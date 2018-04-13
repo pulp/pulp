@@ -101,6 +101,14 @@ class TaskSerializer(ModelSerializer):
                                                 'created_resources')
 
 
+class MinimalTaskSerializer(TaskSerializer):
+
+    class Meta:
+        model = models.Task
+        fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
+                                                'worker', 'parent')
+
+
 class WorkerSerializer(ModelSerializer):
     _href = serializers.HyperlinkedIdentityField(view_name='workers-detail')
 
