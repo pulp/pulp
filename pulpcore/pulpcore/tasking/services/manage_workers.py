@@ -34,8 +34,8 @@ def _get_concurrency():
     concurrency setting there. If they have, return that value. Otherwise, return the number of
     processors detected.
 
-    :return: The number of workers that should be running
-    :rtype:  int
+    Returns:
+        int: The number of workers that should be running
     """
     pipe = subprocess.Popen(". %s; echo $PULP_CONCURRENCY" % _ENVIRONMENT_FILE,
                             stdout=subprocess.PIPE, shell=True)
@@ -52,8 +52,8 @@ def _get_max_tasks():
     If process recycling is to be used, return the string adding the command line option. If
     disabled return an empty string.
 
-    :return: The argument string setting maxtasksperchild or empty string
-    :rtype:  basestring
+    Returns:
+        str: The argument string setting maxtasksperchild or empty string
     """
     pipe = subprocess.Popen(". %s; echo $PULP_MAX_TASKS_PER_CHILD" % _ENVIRONMENT_FILE,
                             stdout=subprocess.PIPE, shell=True)
@@ -68,10 +68,11 @@ def _get_file_contents(path):
     """
     Open the file at path, read() it, close the file, and return a string of its contents.
 
-    :param path: The path to the file
-    :type  path: basestring
-    :return:     The file's contents
-    :rtype:      str
+    Args:
+        path (str): The path to the file
+
+    Returns:
+        str: The file's contents
     """
     with open(path) as f:
         return f.read()
