@@ -40,3 +40,6 @@ Putting this altogether, the following is an example of a good commit message::
 
     closes #1392
     https://pulp.plan.io/issues/1392
+
+You can also reference additional Pull Requests that should be used by Travis
+when testing your Pull Request. See :ref:`continuous-integration` for details.

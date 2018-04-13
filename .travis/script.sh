@@ -14,9 +14,7 @@ else
   # flake8
   flake8 --config flake8.cfg || exit 1
 
-  if [ $TEST = 'pulp_file' ]; then
-    pulp-manager makemigrations pulp_file --noinput
-  fi
+  pulp-manager makemigrations pulp_file --noinput
 
   pulp-manager makemigrations pulp_app --noinput
 
@@ -37,11 +35,8 @@ else
   celery worker -A pulpcore.tasking.celery_app:celery -n reserved_resource_worker_1@%h -c 1 --events --umask 18 >>~/reserved_workers-1.log 2>&1 &
   sleep 5
 
-  if [ $TEST = 'pulp_file' ]; then
-    py.test -v --color=yes --pyargs pulp_smash.tests.pulp3
-  else
-    py.test -v --color=yes --pyargs pulp_smash.tests.pulp3.pulpcore
-  fi
+  py.test -v --color=yes --pyargs pulp_smash.tests.pulp3
+
   if [ $? -ne 0 ]; then
     result=1
     cat ~/django_runserver.log
