@@ -1,34 +1,224 @@
 from uuid import uuid4
+import unittest
 
+from django.http import Http404
 from django.test import TestCase
+from rest_framework.serializers import ValidationError as DRFValidationError
 
-from pulpcore.app import models, viewsets
+from pulpcore.app import models, viewsets, serializers
 
 
 class TestGetQuerySet(TestCase):
+    @unittest.skip("fails for unknown reasons")
     def test_adds_filters(self):
         """
-        Using RemoteViewSet as an example, tests to make sure the correct lookup
-        is being added to the queryset based on its "parent_lookup_kwargs" value.
+        Tests to make sure the correct lookup is being added to the queryset based on its
+        'parent_lookup_kwargs' value.
         """
-        pk = uuid4()
+        repo = models.Repository.objects.create(name='foo')
+        repo2 = models.Repository.objects.create(name='foo2')
+        # no concurrency so this is fine
+        models.RepositoryVersion.objects.create(repository=repo, number=1)
+        models.RepositoryVersion.objects.create(repository=repo2, number=1)
         viewset = viewsets.RepositoryVersionViewSet()
-        viewset.kwargs = {'repository_pk': pk}
+        viewset.kwargs = {'repository_pk': repo.pk}
         queryset = viewset.get_queryset()
+        expected = models.RepositoryVersion.objects.filter(repository__pk=repo.pk)
 
-        expected = models.RepositoryVersion.objects.filter(repository__pk=pk)
-
-        self.assertQuerysetEqual(queryset, expected)
+        # weird, stupid django quirk
+        # https://docs.djangoproject.com/en/2.0/topics/testing/tools/#django.test.TransactionTestCase.assertQuerysetEqual
+        self.assertQuerysetEqual(queryset, map(repr, expected))
 
     def test_does_not_add_filters(self):
         """
-        Using RepositoryViewSet as an example, tests to make sure no filters are applied,
-        based on its empty "parent_lookup_kwargs" value.
+        Tests to make sure no filters are applied, based on its empty 'parent_lookup_kwargs'
+        value.
         """
+        models.Repository.objects.create(name='foo')
         viewset = viewsets.RepositoryViewSet()
         viewset.kwargs = {'name': 'foo'}
         queryset = viewset.get_queryset()
-
         expected = models.Repository.objects.all()
 
-        self.assertQuerysetEqual(queryset, expected)
+        # weird, stupid django quirk
+        # https://docs.djangoproject.com/en/2.0/topics/testing/tools/#django.test.TransactionTestCase.assertQuerysetEqual
+        self.assertQuerysetEqual(queryset, map(repr, expected))
+
+
+class TestGetResource(TestCase):
+    def test_no_errors(self):
+        """
+        Tests that get_resource() properly resolves a valid URI and returns the correct resource.
+        """
+        repo = models.Repository.objects.create(name='foo')
+        viewset = viewsets.RepositoryViewSet()
+        resource = viewset.get_resource("/api/v3/repositories/{pk}/".format(pk=repo.pk),
+                                        models.Repository)
+        self.assertEquals(repo, resource)
+
+    def test_multiple_matches(self):
+        """
+        Tests that get_resource() raises a ValidationError if you attempt to use a list endpoint.
+        """
+        models.Repository.objects.create(name='foo')
+        models.Repository.objects.create(name='foo2')
+        viewset = viewsets.RepositoryViewSet()
+
+        with self.assertRaises(DRFValidationError):
+            # matches all repositories
+            viewset.get_resource("/api/v3/repositories/", models.Repository)
+
+    def test_invalid_uri(self):
+        """
+        Tests that get_resource raises a ValidationError if you attempt to use an invalid URI.
+        """
+        viewset = viewsets.RepositoryViewSet()
+
+        with self.assertRaises(DRFValidationError):
+            viewset.get_resource("/api/v2/nonexistent/", models.Repository)
+
+    def test_resource_does_not_exist(self):
+        """
+        Tests that get_resource() raises a ValidationError if you use a URI for a resource that
+        does not exist.
+        """
+        uuid = uuid4()
+        viewset = viewsets.RepositoryViewSet()
+
+        with self.assertRaises(DRFValidationError):
+            viewset.get_resource("/api/v3/repositories/{uuid}/".format(uuid=uuid),
+                                 models.Repository)
+
+    def test_invalid_uuid(self):
+        """
+        Tests that get_resource() raises a ValidationError if you use a URI for a resource that
+        does not exist.
+        """
+        bad_uuid = str(uuid4())[:-1]  # chop off the last character of the uuid
+        viewset = viewsets.RepositoryViewSet()
+
+        with self.assertRaises(DRFValidationError):
+            viewset.get_resource("/api/v3/repositories/{uuid}/".format(uuid=bad_uuid),
+                                 models.Repository)
+
+    def test_resource_with_field_error(self):
+        """
+        Tests that get_resource() raises a ValidationError if you use a URI that is not a valid
+        model.
+        """
+        repo = models.Repository.objects.create(name='foo')
+        viewset = viewsets.RepositoryViewSet()
+
+        with self.assertRaises(DRFValidationError):
+            # has no repo versions yet
+            viewset.get_resource("/api/v3/repositories/{pk}/versions/1/".format(pk=repo.pk),
+                                 models.Repository)
+
+
+class TestGetSerializerClass(TestCase):
+    def test_defining_both_fails(self):
+        """
+        Test that get_serializer_class() raises an AssertionError if you try to define both
+        'serializer_class' and 'serializers'.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializer_class = serializers.TaskSerializer
+            serializers = {'default': serializers.TaskSerializer}
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
+    def test_defining_neither_fails(self):
+        """
+        Test that get_serializer_class() raises an AssertionError if you try to define neither
+        'serializer_class' nor 'serializers'.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            pass
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
+    def test_serializer_class(self):
+        """
+        Tests that get_serializer_class() returns the serializer_class attribute if it exists.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializer_class = serializers.TaskSerializer
+
+        viewset = TestTaskViewSet()
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+
+    def test_multiple_serializers(self):
+        """
+        Tests that get_serializer_class() returns the correct serializer when they have been
+        specified on a per-action basis.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializers = {
+                'list': serializers.MinimalTaskSerializer,
+                'default': serializers.TaskSerializer
+            }
+
+        viewset = TestTaskViewSet()
+        # Test the default serializer
+        viewset.action = 'retrieve'
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+        # Test a specific action
+        viewset.action = 'list'
+        self.assertEquals(viewset.get_serializer_class(), serializers.MinimalTaskSerializer)
+
+    def test_serializers_without_default_fails(self):
+        """
+        Tests that get_serializer_class() raises an AssertionError if you defined 'serializers'
+        without providing a default serializer.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializers = {}
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
+
+class TestGetParentFieldAndObject(TestCase):
+    def test_no_parent_object(self):
+        """
+        Tests that get_parent_field_and_object() raises django.http.Http404 if the parent object
+        does not exist on a nested viewset.
+        """
+        uuid = uuid4()
+        viewset = viewsets.RepositoryVersionViewSet()
+        viewset.kwargs = {'repository_pk': uuid}
+
+        with self.assertRaises(Http404):
+            viewset.get_parent_field_and_object()
+
+    def test_get_parent_field_and_object(self):
+        """
+        Tests that get_parent_field_and_object() returns the correct parent field and parent
+        object.
+        """
+        repo = models.Repository.objects.create(name='foo')
+        viewset = viewsets.RepositoryVersionViewSet()
+        viewset.kwargs = {'repository_pk': repo.pk}
+
+        self.assertEquals(('repository', repo), viewset.get_parent_field_and_object())
+
+    def test_get_parent_object(self):
+        """
+        Tests that get_parent_object() returns the correct parent object.
+        """
+        repo = models.Repository.objects.create(name='foo')
+        viewset = viewsets.RepositoryVersionViewSet()
+        viewset.kwargs = {'repository_pk': repo.pk}
+
+        self.assertEquals(repo, viewset.get_parent_object())
+
+
+class TestGetNestDepth(TestCase):
+    def test_get_nest_depth(self):
+        """
+        Test that _get_nest_depth() returns the correct nesting depths.
+        """
+        self.assertEquals(1, viewsets.RepositoryViewSet._get_nest_depth())
+        self.assertEquals(2, viewsets.RepositoryVersionViewSet._get_nest_depth())

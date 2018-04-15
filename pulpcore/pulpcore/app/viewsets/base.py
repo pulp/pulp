@@ -78,7 +78,6 @@ class NamedModelViewSet(viewsets.GenericViewSet):
     parent_viewset = None
     parent_lookup_kwargs = {}
     schema = DefaultSchema()
-    serializers = {}
 
     def get_serializer_class(self):
         """
@@ -91,14 +90,19 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         e.g. serializers = {'default': TaskSerializer, 'list': MinimalTaskSerializer}
         """
         serializer_class = getattr(self, 'serializer_class', None)
+        serializers = getattr(self, 'serializers', None)
+        both = serializers and serializer_class
+        assert not both, _("{} defines both 'serializer_class' and 'serializers'. It should only "
+                           "define one.").format(self.__class__.__name__)
+
         if serializer_class:
             return serializer_class
 
-        serializers = getattr(self, 'serializers', None)
         valid = serializers and isinstance(serializers, dict) and serializers.get('default', None)
         assert valid, _("{} must either have a 'serializer_class' attribute, or it must have a "
                         "'serializers' attribute with a 'default' key set").\
             format(self.__class__.__name__)
+
         return self.serializers.get(self.action, self.serializers['default'])
 
     @staticmethod
