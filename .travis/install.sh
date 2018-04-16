@@ -28,7 +28,7 @@ fi
 if [ -z $PULP_SMASH_PR_NUMBER ]; then
   pip install git+https://github.com/PulpQE/pulp-smash.git#egg=pulp-smash
 else
-  export PULP_SMASH_SHA=$(http https://api.github.com/repos/PulpQE/pulp-smash/pulls/$PULP_SMASH_PR_NUMBER | jq -r '.merge_commit_sha')
+  export PULP_SMASH_SHA=$(curl https://api.github.com/repos/PulpQE/pulp-smash/pulls/$PULP_SMASH_PR_NUMBER | jq -r '.merge_commit_sha')
   cd ../
   git clone https://github.com/PulpQE/pulp-smash.git
   cd pulp-smash
