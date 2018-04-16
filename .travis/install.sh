@@ -1,6 +1,17 @@
 #!/usr/bin/env sh
 set -v
 
+install_pr () {
+  SHA=$(curl https://api.github.com/repos/$1/pulls/$2 | jq -r '.merge_commit_sha')
+  pushd ..
+  git clone https://github.com/$1.git
+  cd $(echo $1 | cut -d"/" -f2)
+  git fetch origin +refs/pull/$2/merge
+  git checkout $SHA
+  pip install -e .
+  popd
+}
+
 # dev_requirements should not be needed for testing; don't install them to make sure
 pip install "Django<=$DJANGO_MAX"
 pip install -r test_requirements.txt
@@ -15,25 +26,11 @@ export PULP_SMASH_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\
 if [ -z $PULP_FILE_PR_NUMBER ]; then
   pip install git+https://github.com/pulp/pulp_file.git#egg=pulp_file
 else
-  export PULP_FILE_SHA=$(curl https://api.github.com/repos/pulp/pulp_file/pulls/$PULP_FILE_PR_NUMBER | jq -r '.merge_commit_sha')
-  cd ../
-  git clone https://github.com/pulp/pulp_file.git
-  cd pulp_file
-  git fetch origin +refs/pull/$PULP_FILE_PR_NUMBER/merge
-  git checkout $PULP_FILE_SHA
-  pip install -e .
-  cd ../pulp
+  install_pr "pulp/pulp_file" $PULP_FILE_PR_NUMBER
 fi
 
 if [ -z $PULP_SMASH_PR_NUMBER ]; then
   pip install git+https://github.com/PulpQE/pulp-smash.git#egg=pulp-smash
 else
-  export PULP_SMASH_SHA=$(http https://api.github.com/repos/PulpQE/pulp-smash/pulls/$PULP_SMASH_PR_NUMBER | jq -r '.merge_commit_sha')
-  cd ../
-  git clone https://github.com/PulpQE/pulp-smash.git
-  cd pulp-smash
-  git fetch origin +refs/pull/$PULP_SMASH_PR_NUMBER/merge
-  git checkout $PULP_SMASH_SHA
-  pip install -e .
-  cd ../pulp
+  install_pr "PulpQE/pulp-smash" $PULP_SMASH_PR_NUMBER
 fi
