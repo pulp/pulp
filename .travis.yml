@@ -8,33 +8,12 @@ python:
     - "3.6"
 env:
   - DJANGO_MAX=1.11.100 DB=sqlite TEST=pulp
-  - DJANGO_MAX=1.11.100 DB=sqlite TEST=pulp_file
   - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp
-  - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp_file
   - DJANGO_MAX=2.2.100 DB=sqlite TEST=pulp
-  - DJANGO_MAX=2.2.100 DB=sqlite TEST=pulp_file
   - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-  - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp_file
   - TEST=docs
 matrix:
   fast_finish: true
-  allow_failures:
-    - python: "3.5"
-      env: DJANGO_MAX=1.11.100 DB=sqlite TEST=pulp_file
-    - python: "3.5"
-      env: DJANGO_MAX=1.11.100 DB=postgres TEST=pulp_file
-    - python: "3.5"
-      env: DJANGO_MAX=2.2.100 DB=sqlite TEST=pulp_file
-    - python: "3.5"
-      env: DJANGO_MAX=2.2.100 DB=postgres TEST=pulp_file
-    - python: "3.6"
-      env: DJANGO_MAX=1.11.100 DB=sqlite TEST=pulp_file
-    - python: "3.6"
-      env: DJANGO_MAX=1.11.100 DB=postgres TEST=pulp_file
-    - python: "3.6"
-      env: DJANGO_MAX=2.2.100 DB=sqlite TEST=pulp_file
-    - python: "3.6"
-      env: DJANGO_MAX=2.2.100 DB=postgres TEST=pulp_file
 addons:
     # postgres versions provided by el7 RHSCL (lowest supportable version)
     postgresql: "9.5"
