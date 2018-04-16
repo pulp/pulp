@@ -10,9 +10,10 @@ from pulpcore.app.response import OperationPostponedResponse
 from django.urls import resolve, Resolver404
 from django.core.exceptions import FieldError, ValidationError
 
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.schemas import AutoSchema
+from rest_framework.serializers import ValidationError as DRFValidationError
 
 # These should be used to prevent duplication and keep things consistent
 NAME_FILTER_OPTIONS = ['exact', 'in']
@@ -122,7 +123,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         try:
             match = resolve(urlparse(uri).path)
         except Resolver404:
-            raise serializers.ValidationError(detail=_('URI not valid: {u}').format(u=uri))
+            raise DRFValidationError(detail=_('URI not valid: {u}').format(u=uri))
         if 'pk' in match.kwargs:
             kwargs = match.kwargs
         else:
@@ -134,13 +135,16 @@ class NamedModelViewSet(viewsets.GenericViewSet):
                     kwargs[key] = value
         try:
             return model.objects.get(**kwargs)
+        except model.MultipleObjectsReturned:
+            raise DRFValidationError(detail=_('URI {u} matches more than one {m}.').format(
+                u=uri, m=model._meta.model_name))
         except model.DoesNotExist:
-            raise serializers.ValidationError(detail=_('URI {u} not found for {m}.').format(
+            raise DRFValidationError(detail=_('URI {u} not found for {m}.').format(
                 u=uri, m=model._meta.model_name))
         except ValidationError:
-            raise serializers.ValidationError(detail=_('UUID invalid: {u}').format(u=kwargs['pk']))
+            raise DRFValidationError(detail=_('UUID invalid: {u}').format(u=kwargs['pk']))
         except FieldError:
-            raise serializers.ValidationError(detail=_('URI {u} is not a valid {m}.').format(
+            raise DRFValidationError(detail=_('URI {u} is not a valid {m}.').format(
                 u=uri, m=model._meta.model_name))
 
     @classmethod
