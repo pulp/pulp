@@ -66,7 +66,7 @@ class WorkerFilter(filterset.FilterSet):
         online_workers = Worker.objects.online_workers()
 
         if value:
-            return online_workers
+            return queryset.intersection(online_workers)
         else:
             return queryset.difference(online_workers)
 
@@ -74,7 +74,7 @@ class WorkerFilter(filterset.FilterSet):
         missing_workers = Worker.objects.missing_workers()
 
         if value:
-            return missing_workers
+            return queryset.intersection(missing_workers)
         else:
             return queryset.difference(missing_workers)
 
