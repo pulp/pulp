@@ -1,4 +1,3 @@
-.. _tests: https://github.com/pulp/pulp/blob/3.0-dev/tests/
 .. _pulpcore: https://github.com/PulpQE/pulp-smash/tree/master/pulp_smash/tests/pulp3/pulpcore
 .. _file: https://github.com/PulpQE/pulp-smash/tree/master/pulp_smash/tests/pulp3/file
 .. _pulp-smash: https://github.com/PulpQE/pulp-smash/
@@ -12,7 +11,9 @@ Continuous Integration
 New code is highly encouraged to have basic unit tests that demonstrate its functionality. A Pull
 Request that has failing unit tests cannot be merged.
 
-The unit tests for both `pulpcore` and `pulpcore-plugin` live in the tests_ folder.
+The unit tests for `pulpcore` are in `pulpcore/tests <https://github.com/pulp/pulp/tree/3.0-dev/pulpcore/tests>`_.
+`pulpcore-plugin` unit tests are in `plugin/tests <https://github.com/pulp/pulp/tree/3.0-dev/plugin/tests>`_.
+
 
 Integration tests for new code should be added to a separate project called pulp-smash_. A Pull
 Request that has failing pulp-smash tests cannot be merged.
