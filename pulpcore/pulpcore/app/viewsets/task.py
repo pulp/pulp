@@ -3,6 +3,8 @@ from rest_framework import status, mixins
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
+from pulpcore.common import TASK_INCOMPLETE_STATES
+
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
@@ -31,7 +33,8 @@ class TaskFilter(filterset.FilterSet):
 
 class TaskViewSet(NamedModelViewSet,
                   mixins.RetrieveModelMixin,
-                  mixins.ListModelMixin):
+                  mixins.ListModelMixin,
+                  mixins.DestroyModelMixin):
     queryset = Task.objects.all()
     endpoint_name = 'tasks'
     filter_class = TaskFilter
@@ -45,6 +48,12 @@ class TaskViewSet(NamedModelViewSet,
         task = self.get_object()
         cancel_task(task.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def destroy(self, request, pk=None):
+        task = self.get_object()
+        if task.state in TASK_INCOMPLETE_STATES:
+            return Response(status=status.HTTP_409_CONFLICT)
+        return super().destroy(request, pk)
 
 
 class WorkerFilter(filterset.FilterSet):
