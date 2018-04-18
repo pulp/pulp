@@ -7,6 +7,7 @@ from pulpcore.exceptions.plugin import MissingPlugin
 
 VIEWSETS_MODULE_NAME = 'viewsets'
 SERIALIZERS_MODULE_NAME = 'serializers'
+URLS_MODULE_NAME = 'urls'
 
 
 def pulp_plugin_configs():
@@ -61,6 +62,9 @@ class PulpPluginAppConfig(apps.AppConfig):
         # when this app becomes ready.
         self.viewsets_module = None
 
+        # Module containing urlpatterns
+        self.urls_module = None
+
         # Mapping of model names to viewsets (viewsets unrelated to models are excluded)
         self.named_viewsets = None
         # Mapping of serializer names to serializers
@@ -69,6 +73,7 @@ class PulpPluginAppConfig(apps.AppConfig):
     def ready(self):
         self.import_viewsets()
         self.import_serializers()
+        self.import_urls()
 
     def import_serializers(self):
         # circular import avoidance
@@ -110,6 +115,14 @@ class PulpPluginAppConfig(apps.AppConfig):
                 except TypeError:
                     # obj isn't a class, issubclass exploded but obj can be safely filtered out
                     continue
+
+    def import_urls(self):
+        """
+        If a plugin defines a urls.py, include it.
+        """
+        if module_has_submodule(self.module, URLS_MODULE_NAME) and self.name != "pulpcore.app":
+            urls_module_name = '%s.%s' % (self.name, URLS_MODULE_NAME)
+            self.urls_module = import_module(urls_module_name)
 
 
 class PulpAppConfig(PulpPluginAppConfig):

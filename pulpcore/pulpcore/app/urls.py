@@ -98,9 +98,13 @@ class ViewSetNode:
 
 
 all_viewsets = []
+plugin_patterns = []
+# Iterate over each app, including pulpcore and the plugins.
 for app_config in pulp_plugin_configs():
     for viewset in app_config.named_viewsets.values():
         all_viewsets.append(viewset)
+    if app_config.urls_module:
+        plugin_patterns.append(app_config.urls_module)
 
 sorted_by_depth = sorted(all_viewsets, key=lambda vs: vs._get_nest_depth())
 vs_tree = ViewSetNode()
@@ -139,3 +143,7 @@ urlpatterns.append(url(r'^api/v3/$', schema_view))
 all_routers = [root_router] + vs_tree.register_with(root_router)
 for router in all_routers:
     urlpatterns.append(url(r'^api/v3/', include(router.urls)))
+
+# If plugins define a urls.py, include them into the root namespace.
+for plugin_pattern in plugin_patterns:
+    urlpatterns.append(url(r'', include(plugin_pattern)))
