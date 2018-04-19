@@ -35,8 +35,28 @@ class ReservedResource(Model):
     """
     resource = models.TextField(unique=True, blank=False)
 
-    tasks = models.ManyToManyField("Task", related_name="reserved_resources")
+    tasks = models.ManyToManyField("Task", related_name="reserved_resources",
+                                   through='TaskReservedResource')
     worker = models.ForeignKey("Worker", related_name="reservations", on_delete=models.CASCADE)
+
+
+class TaskReservedResource(Model):
+    """
+    Association between a Task and its ReservedResources.
+
+    Prevents the task from being deleted if it has any ReservedResource(s).
+
+    Fields:
+
+        created (models.DatetimeField): When the association was created.
+
+    Relations:
+
+        task (models.ForeignKey): The associated task.
+        resource (models.ForeignKey): The associated resource.
+    """
+    resource = models.ForeignKey('ReservedResource', on_delete=models.CASCADE)
+    task = models.ForeignKey('Task', on_delete=models.PROTECT)
 
 
 class WorkerManager(models.Manager):
@@ -220,7 +240,7 @@ class Worker(Model):
                     reservation = self.reservations.get(resource=resource)
                 else:
                     reservation = ReservedResource.objects.create(worker=self, resource=resource)
-                reservation.tasks.add(task)
+                TaskReservedResource.objects.create(resource=reservation, task=task)
 
 
 class TaskLock(Model):
@@ -358,7 +378,7 @@ class Task(Model):
         longer has any tasks reserving it, delete it.
         """
         for reservation in self.reserved_resources.all():
-            reservation.tasks.remove(self.id)
+            TaskReservedResource.objects.filter(task=self.id).delete()
             if not reservation.tasks.exists():
                 reservation.delete()
 
