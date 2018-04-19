@@ -1,6 +1,7 @@
 from django_filters.rest_framework import filters, filterset
 from rest_framework import status, mixins
 from rest_framework.decorators import detail_route
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
 from pulpcore.common import TASK_INCOMPLETE_STATES
@@ -42,6 +43,8 @@ class TaskViewSet(NamedModelViewSet,
         'list': MinimalTaskSerializer,
         'default': TaskSerializer
     }
+    filter_backends = (OrderingFilter,)
+    ordering = ('-created')
 
     @detail_route(methods=('post',))
     def cancel(self, request, pk=None):

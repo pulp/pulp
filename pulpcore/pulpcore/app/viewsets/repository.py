@@ -4,6 +4,7 @@ import itertools
 from django_filters.rest_framework import filters, filterset
 from django_filters import Filter
 from rest_framework import decorators, mixins, serializers
+from rest_framework.filters import OrderingFilter
 
 from pulpcore.app import tasks
 from pulpcore.app.models import (
@@ -177,6 +178,8 @@ class RepositoryVersionViewSet(NamedModelViewSet,
     serializer_class = RepositoryVersionSerializer
     queryset = RepositoryVersion.objects.exclude(complete=False)
     filter_class = RepositoryVersionFilter
+    filter_backends = (OrderingFilter,)
+    ordering = ('-number',)
 
     @decorators.detail_route()
     def content(self, request, repository_pk, number):
@@ -354,6 +357,8 @@ class PublicationViewSet(NamedModelViewSet,
     endpoint_name = 'publications'
     queryset = Publication.objects.exclude(complete=False)
     serializer_class = PublicationSerializer
+    filter_backends = (OrderingFilter,)
+    ordering = ('-created',)
 
 
 class DistributionFilter(filterset.FilterSet):
