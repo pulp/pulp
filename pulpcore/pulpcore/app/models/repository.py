@@ -71,31 +71,13 @@ class Remote(MasterModel):
             Format: scheme://user:password@host:port
         username (models.TextField): The username to be used for authentication when syncing.
         password (models.TextField): The password to be used for authentication when syncing.
-        download_policy (models.TextField): The policy for downloading content.
         last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
-        sync_mode (models.TextField) How the remote should sync from the upstream repository.
 
     Relations:
 
         repository (models.ForeignKey): The repository that owns this Remote
     """
     TYPE = 'remote'
-
-    # Download Policies
-    IMMEDIATE = 'immediate'
-    ON_DEMAND = 'on_demand'
-    BACKGROUND = 'background'
-    DOWNLOAD_POLICIES = (
-        (IMMEDIATE, 'Update the repository content and download all artifacts immediately.'),
-        (ON_DEMAND, 'Update the repository content but no artifacts are downloaded.'),
-        (BACKGROUND, 'Update the repository content and download artifacts in the background.'))
-
-    # Sync Modes
-    ADDITIVE = 'additive'
-    MIRROR = 'mirror'
-    SYNC_MODES = (
-        (ADDITIVE, 'Add new content from the remote repository.'),
-        (MIRROR, 'Add new content and remove content is no longer in the remote repository.'))
 
     def tls_storage_path(self, name):
         """
@@ -120,23 +102,10 @@ class Remote(MasterModel):
     proxy_url = models.TextField(blank=True)
     username = models.TextField(blank=True)
     password = models.TextField(blank=True)
-
-    download_policy = models.TextField(choices=DOWNLOAD_POLICIES)
-    sync_mode = models.TextField(choices=SYNC_MODES)
     last_synced = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         default_related_name = 'remotes'
-
-    @property
-    def is_deferred(self):
-        """
-        Get whether downloading is deferred.
-
-        Returns:
-            bool: True when deferred.
-        """
-        return self.download_policy != self.IMMEDIATE
 
 
 class Publisher(MasterModel):

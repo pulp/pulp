@@ -63,16 +63,6 @@ class RemoteSerializer(MasterModelSerializer):
     url = serializers.CharField(
         help_text='The URL of an external content source.',
     )
-    download_policy = serializers.ChoiceField(
-        help_text='The policy for downloading content.',
-        allow_blank=False,
-        choices=models.Remote.DOWNLOAD_POLICIES,
-    )
-    sync_mode = serializers.ChoiceField(
-        help_text='How the remote should sync from the upstream repository.',
-        allow_blank=False,
-        choices=models.Remote.SYNC_MODES,
-    )
     validate = serializers.BooleanField(
         help_text='If True, the plugin will validate imported artifacts.',
         required=False,
@@ -124,10 +114,9 @@ class RemoteSerializer(MasterModelSerializer):
         abstract = True
         model = models.Remote
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'url', 'download_policy', 'sync_mode', 'validate', 'ssl_ca_certificate',
-            'ssl_client_certificate', 'ssl_client_key', 'ssl_validation', 'proxy_url',
-            'username', 'password', 'last_synced', 'last_updated',
-        )
+            'name', 'url', 'validate', 'ssl_ca_certificate', 'ssl_client_certificate',
+            'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_synced',
+            'last_updated',)
 
 
 class PublisherSerializer(MasterModelSerializer):
