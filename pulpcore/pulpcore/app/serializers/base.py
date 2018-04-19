@@ -104,7 +104,12 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
     """
 
     class Meta:
-        fields = ('_href',)
+        fields = ('_href', 'created')
+
+    created = serializers.DateTimeField(
+        help_text=_('Timestamp of creation.'),
+        read_only=True
+    )
 
     def create(self, validated_data):
         """

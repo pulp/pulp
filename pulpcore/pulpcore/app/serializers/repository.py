@@ -34,12 +34,10 @@ class RepositorySerializer(ModelSerializer):
         help_text=_('A unique name for this repository.'),
         validators=[UniqueValidator(queryset=models.Repository.objects.all())]
     )
-
     description = serializers.CharField(
         help_text=_('An optional description.'),
         required=False
     )
-
     notes = GenericKeyValueRelatedField(
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
         required=False
@@ -287,10 +285,6 @@ class PublicationSerializer(ModelSerializer):
         read_only=True,
         view_name='distributions-detail',
     )
-    created = serializers.DateTimeField(
-        help_text=_('Timestamp of when the publication was created.'),
-        read_only=True
-    )
     repository_version = NestedHyperlinkedRelatedField(
         view_name='versions-detail',
         lookup_field='number',
@@ -302,7 +296,6 @@ class PublicationSerializer(ModelSerializer):
         model = models.Publication
         fields = ModelSerializer.Meta.fields + (
             'publisher',
-            'created',
             'distributions',
             'repository_version',
         )
@@ -328,10 +321,6 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
     number = serializers.IntegerField(
         read_only=True
     )
-    created = serializers.DateTimeField(
-        help_text=_('Timestamp of creation.'),
-        read_only=True
-    )
     content_summary = serializers.DictField(
         help_text=_('A list of counts of each type of content in this version.'),
         read_only=True
@@ -347,5 +336,5 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
 
     class Meta:
         model = models.RepositoryVersion
-        fields = ('_href', '_content_href', '_added_href', '_removed_href', 'number', 'created',
+        fields = ('_href', '_content_href', '_added_href', '_removed_href', 'number',
                   'content_summary', 'add_content_units', 'remove_content_units')
