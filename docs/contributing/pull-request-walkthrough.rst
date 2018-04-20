@@ -21,7 +21,7 @@ you :ref:`chat with us<community>` before you get started.
 Checklist
 ---------
 
-#. Add :doc:`unit tests<continuous_integration>` where appropriate.
+#. Add :ref:`unit tests<continuous-integration>` where appropriate.
 #. Update relevent :doc:`documentation`. Please build the docs to test!
 #. If your change would benefit from integration testing, write a `pulp smash issue
    <https://github.com/PulpQE/pulp-smash/issues/new>`_.
@@ -33,12 +33,7 @@ Checklist
 #. Add GitHub labels as appropriate.
 #. Change the status of the redmine issue to "POST".
 #. Add a link to the pull request in a comment on the issue.
-#. Set the "Target Release" field on the issue.
-
-.. note::
-    "Target Release" is available for Issues, Refactors, and Stories but not for Tasks. If you have
-    a task that appears to need a target release, please consider using one of the other three
-    issue types.
+#. Set the "Platform Release" field on the issue.
 
 Review
 ------
@@ -54,5 +49,5 @@ developers<community>` to get speedy review.
 
    We are very open and honest when we review each other's work. We will do our best to review your
    contribution with respect and professionalism. In return, we hope you will accept our review
-   process as an opportunity for everyone to learn something, and to make Pulp the best product it
+   process as an opportunity for everyone to learn something, and to make Pulp the best project it
    can be. If you are uncertain about comments or instructions, please let us know!

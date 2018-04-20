@@ -3,12 +3,12 @@ Glossary
 
 .. glossary::
 
-    :class:`~pulpcore.plugin.models.Artifact`
+    :class:`~pulpcore.app.models.Artifact`
         A file that belongs to a :term:`content unit<content>`.
 
-    :class:`~pulpcore.plugin.models.Content`
+    :class:`~pulpcore.app.models.Content`
         The smallest that of data that is managed by Pulp. When singular, "content unit" should be
-        used. Content is added and removed to :term:`Repositories<repository>`, and can have multiple
+        used. Content is added and removed to :term:`repositories<repository>`, and can have multiple
         :term:`artifacts<artifact>`. Each content unit has a :term:`type` (like .rpm or .deb) which
         that is defined by a :term:`plugin`
 
@@ -24,12 +24,12 @@ Glossary
         A `Django <https://docs.djangoproject.com>`_ app that exends :term:`pulpcore` to manage one or more
         :term:`types<type>` of :term:`content`.
 
-    publication
+    :class:`~pulpcore.app.models.Publication`
         The metadata and :term:`artifacts<Artifact>` of the :term:`content units<content>` in a
         :term:`repository version<RepositoryVersion>`. Publications are served by the
         :term:`content app` when they are assigned to a :term:`distribution`.
 
-    publisher
+    :class:`~pulpcore.app.models.Publisher`
         A :term:`plugin` defined object that contains settings required to publish a specific :term:`type` of
         :term:`content unit<content>`.
 

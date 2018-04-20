@@ -114,7 +114,7 @@ Redmine Fields
 | Tracker     | - ``Issue`` (bug) Defect in a feature that is expected to work.                   |
 |             | - ``Story`` New feature or functionality.                                         |
 |             | - ``Refactor`` Improvement that will not be visible to the user in any way.       |
-|             | - ``Task`` Infrastructure work that will not be a part of released code.          |
+|             | - ``Task`` Work that will not be a part of released code.                         |
 +-------------+-----------------------------------------------------------------------------------+
 | Subject     | - For an ``Issue``, summary of the situation and the unexpected result.           |
 |             | - For a ``Story``, takes the form "As a [user/dev/etc] I can ..."                 |
@@ -140,14 +140,14 @@ Redmine Fields
 +-------------+-----------------------------------------------------------------------------------+
 | Version     | Filer experienced the problem while running this version of pulpcore              |
 +-------------+-----------------------------------------------------------------------------------+
-| Platform    | - This field is set only on issues that have been completed                       |
-| Release     | - indicates the earliest version that contains these  changes                     |
+| Platform    | - Indicates the earliest version that contains these changes                      |
+| Release     | - This field is set only on issues that have been completed                       |
 +-------------+-----------------------------------------------------------------------------------+
 | Triaged     | Indicates whether an issue has gone through :ref:`bug triage<triage>`             |
 +-------------+-----------------------------------------------------------------------------------+
 | Groomed     | Core developers mark issues groomed when they inludes all necessary information.  |
 +-------------+-----------------------------------------------------------------------------------+
-| Sprint      | If set, indicates that the issue is accepted by the team and is ready to be done. |
+| Sprint      | If set, indicates that the issue is accepted and is ready to be worked on.        |
 +-------------+-----------------------------------------------------------------------------------+
 | Tags        | Used for filtering.                                                               |
 +-------------+-----------------------------------------------------------------------------------+

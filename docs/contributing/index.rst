@@ -26,7 +26,7 @@ Reference
    error-handling
    platform-api/index
    git
-   continuous_integration
+   continuous-integration
    documentation
    pups
    build-guide
