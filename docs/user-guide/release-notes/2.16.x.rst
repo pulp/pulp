@@ -5,14 +5,31 @@ Pulp 2.16 Release Notes
 Pulp 2.16.2
 ===========
 
-This is a security fix for CVE-2018-1090 which leaks security info via the `last_override_config` on
-importers and distributors serialized via the Rest API. See `issue 3521 <https://github.com/pulp/pulp/pull/3513>`_
-for more information. With this release, that field no longer reports the information saved in the
-database. Instead it will always show as::
+This release contains a security fix for CVE-2018-1090 which leaks security info via the
+`last_override_config` on importers and distributors serialized via the Rest API. See `issue 3521
+<https://github.com/pulp/pulp/pull/3513>`_ for more information. With this release, that field no
+longer reports the information saved in the database. Instead it will always show as::
 
     'last_override_config': {}
 
     
+Pulp 2.16.1
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.16.1`
+
+
+This release also contains some bug fixes for issues that were encountered while trying to run Pulp
+in a FIPS enabled environment. 
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.16.2`
+
 Pulp 2.16.1
 ===========
 
