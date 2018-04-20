@@ -3,7 +3,7 @@ Plugin Writer's Guide
 
 .. note::
    This documentation is for Pulp Plugin developers. For Pulp Core development, see the
-   :doc:`../../contributing/3.0-development/app-layout`.
+   :doc:`../../contributing/architecture/app-layout`.
 
 The Pulp Core does not manage content itself, but instead relies on plugins to add support for one
 content type or another. Examples of a content type include a RPM package, Ansible role, or

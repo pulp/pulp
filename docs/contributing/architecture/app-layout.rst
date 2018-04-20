@@ -65,7 +65,7 @@ This is the basic layout of the ``pulp.app`` package, on the filesystem::
     └── __init__.py
 
 
-The contents of this package are documented in detail in the :doc:`../platform_api/index`
+The contents of this package are documented in detail in the :doc:`../platform-api/index`
 documentation. Details how this package is organized can be found
 below, along with information about some of the modules found in this namespace.
 
@@ -73,7 +73,7 @@ below, along with information about some of the modules found in this namespace.
 
     This tree is incomplete, and maybe be out of date. Only the most notable and
     durable modules have been listed; the most complete listing of modules in this
-    namespace will always be the :doc:`../platform_api/index` documentation.
+    namespace will always be the :doc:`../platform-api/index` documentation.
 
 
 Module Imports
