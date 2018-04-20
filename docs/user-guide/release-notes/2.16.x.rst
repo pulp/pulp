@@ -2,6 +2,15 @@
 Pulp 2.16 Release Notes
 =======================
 
+Pulp 2.16.1
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.16.1`
+
+
 Pulp 2.16.0
 ===========
 
