@@ -21,7 +21,7 @@ you :ref:`chat with us<community>` before you get started.
 Checklist
 ---------
 
-#. Add :doc:`unit tests<unit_tests>` where appropriate.
+#. Add :doc:`unit tests<continuous_integration>` where appropriate.
 #. Update relevent :doc:`documentation`. Please build the docs to test!
 #. If your change would benefit from integration testing, write a `pulp smash issue
    <https://github.com/PulpQE/pulp-smash/issues/new>`_.
@@ -43,8 +43,9 @@ Checklist
 Review
 ------
 
-Before a pull request can be merged, the tests must pass and it must be reviewed by one of the
-committers. We encourage you to :ref:`reach out to the developers<community>` to get speedy review.
+Before a pull request can be merged, the :ref:`tests<continuous-integration>` must pass and it must
+be reviewed by one of the committers. We encourage you to :ref:`reach out to the
+developers<community>` to get speedy review.
 
 .. note::
    *To the community:* The Pulp Team is very grateful for your contribution and values your
