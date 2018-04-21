@@ -53,7 +53,7 @@ else
   fi
 
   # upload coverage report to coveralls
-  coveralls
+  codecov
 fi
 
 exit $result

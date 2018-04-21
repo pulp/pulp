@@ -1,5 +1,5 @@
 # Test requirements
 flake8
 mock
-coveralls
+codecov
 coverage
