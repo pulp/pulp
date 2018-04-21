@@ -48,7 +48,7 @@ class DefaultSchema(AutoSchema):
             return False
 
         if hasattr(self.view, 'action'):
-            return self.view.action in ["list", "retrieve"]
+            return self.view.action in ["list"]
 
         return method.lower() in ["get"]
 
@@ -177,7 +177,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
     def endpoint_pieces(cls):
         # This is a core ViewSet, not Master/Detail. We can use the endpoint as is.
         if cls.queryset.model._meta.master_model is None:
-            return (cls.endpoint_name,)
+            return [cls.endpoint_name]
         else:
             # Model is a Detail model. Go through its ancestry (via MRO) to find its
             # eldest superclass with a declared name, representing the Master ViewSet
@@ -193,7 +193,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
                     # no endpoint_name defined, need to get more specific in the MRO
                     continue
 
-            pieces = (master_endpoint_name, cls.endpoint_name)
+            pieces = [master_endpoint_name, cls.endpoint_name]
 
             # ensure that neither piece is None/empty and that they are not equal.
             if not all(pieces) or pieces[0] == pieces[1]:
@@ -225,7 +225,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         non-nested ViewSets, this returns the original QuerySet unchanged.
 
         Returns:
-            django.db.models.query.QuerySet: the queryset returned by the superclass with additional
+            django.db.models.query.QuerySet: The queryset returned by the superclass with additional
                 filters applied that match self.parent_lookup_kwargs, to scope the results to only
                 those associated with the parent object.
         """

@@ -10,58 +10,18 @@ from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 
 
-class ContentFilter(filterset.FilterSet):
-    """
-    Plugin content filters would need:
-     - to inherit from this class
-     - to add any plugin-specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify plugin content model
-       - to extend `fields` with plugin-specific ones
-    """
-    class Meta:
-        model = Content
-        fields = ['type']
-
-
 class ArtifactFilter(filterset.FilterSet):
     """
-    Artifact filter Plugin content filters would need:
-     - to inherit from this class
-     - to add any plugin-specific filters if needed
-     - to define its own `Meta` class which needs:
-
-       - to specify plugin content model
-       - to extend `fields` with plugin-specific ones
+    Artifact filter Plugin content filters should:
+     - inherit from this class
+     - add any plugin-specific filters if needed
+     - define its own `Meta` class should:
+       - specify plugin content model
+       - extend `fields` with plugin-specific ones
     """
     class Meta:
         model = Artifact
         fields = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
-
-
-class ContentViewSet(NamedModelViewSet,
-                     mixins.CreateModelMixin,
-                     mixins.RetrieveModelMixin,
-                     mixins.ListModelMixin):
-    endpoint_name = 'content'
-    queryset = Content.objects.all()
-    serializer_class = ContentSerializer
-    filter_class = ContentFilter
-
-    @transaction.atomic
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        artifacts = serializer.validated_data.pop('artifacts')
-        content = serializer.save()
-
-        for relative_path, artifact in artifacts.items():
-            ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
-            ca.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class ArtifactViewSet(NamedModelViewSet,
@@ -84,3 +44,44 @@ class ArtifactViewSet(NamedModelViewSet,
             msg = _('The Artifact cannot be deleted because it is associated with Content.')
             data = {'detail': msg}
             return Response(data, status=status.HTTP_409_CONFLICT)
+
+
+class ContentFilter(filterset.FilterSet):
+    """
+    Plugin content filters should:
+     - inherit from this class
+     - add any plugin-specific filters if needed
+     - define its own `Meta` class which should:
+       - specify plugin content model
+       - extend `fields` with plugin-specific ones
+    """
+    class Meta:
+        model = Content
+        fields = {'type': ['exact', 'in']}
+
+
+class ContentViewSet(NamedModelViewSet,
+                     mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.ListModelMixin):
+    endpoint_name = 'content'
+    queryset = Content.objects.all()
+    serializer_class = ContentSerializer
+    filter_class = ContentFilter
+
+    @transaction.atomic
+    def create(self, request):
+        """
+        Create a Content Artifact
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        artifacts = serializer.validated_data.pop('artifacts')
+        content = serializer.save()
+
+        for relative_path, artifact in artifacts.items():
+            ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
+            ca.save()
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

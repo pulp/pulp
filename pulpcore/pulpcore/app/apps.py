@@ -82,7 +82,8 @@ class PulpPluginAppConfig(apps.AppConfig):
         self.named_serializers = {}
         if module_has_submodule(self.module, SERIALIZERS_MODULE_NAME):
             # import the serializers module and track any discovered serializers
-            serializers_module_name = '%s.%s' % (self.name, SERIALIZERS_MODULE_NAME)
+            serializers_module_name = '{name}.{module}'.format(
+                name=self.name, module=SERIALIZERS_MODULE_NAME)
             self.serializers_module = import_module(serializers_module_name)
             for objname in dir(self.serializers_module):
                 obj = getattr(self.serializers_module, objname)
@@ -102,7 +103,8 @@ class PulpPluginAppConfig(apps.AppConfig):
         self.named_viewsets = {}
         if module_has_submodule(self.module, VIEWSETS_MODULE_NAME):
             # import the viewsets module and track any interesting viewsets
-            viewsets_module_name = '%s.%s' % (self.name, VIEWSETS_MODULE_NAME)
+            viewsets_module_name = '{name}.{module}'.format(
+                name=self.name, module=VIEWSETS_MODULE_NAME)
             self.viewsets_module = import_module(viewsets_module_name)
             for objname in dir(self.viewsets_module):
                 obj = getattr(self.viewsets_module, objname)
@@ -121,7 +123,8 @@ class PulpPluginAppConfig(apps.AppConfig):
         If a plugin defines a urls.py, include it.
         """
         if module_has_submodule(self.module, URLS_MODULE_NAME) and self.name != "pulpcore.app":
-            urls_module_name = '%s.%s' % (self.name, URLS_MODULE_NAME)
+            urls_module_name = '{name}.{module}'.format(
+                name=self.name, module=URLS_MODULE_NAME)
             self.urls_module = import_module(urls_module_name)
 
 

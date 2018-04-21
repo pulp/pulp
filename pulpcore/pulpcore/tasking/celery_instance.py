@@ -18,7 +18,6 @@ CELERYBEAT_SCHEDULE = {
 
 
 celery.conf.update(beat_schedule=CELERYBEAT_SCHEDULE)
-celery.conf.update(beat_scheduler='pulpcore.server.async.scheduler.Scheduler')
 celery.conf.update(worker_direct=True)
 celery.conf.update(task_serializer='json')
 celery.conf.update(accept_content=['json'])
