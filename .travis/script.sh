@@ -52,8 +52,10 @@ else
     fi
   fi
 
-  # upload coverage report to coveralls
-  codecov
+  if [ $result -eq 0 ]; then
+    # upload coverage report to codecov
+    codecov
+  fi
 fi
 
 exit $result
