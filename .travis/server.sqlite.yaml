@@ -1,6 +1,10 @@
 databases:
   default:
+    NAME: /home/travis/sqlite3.db
     OPTIONS:
       timeout: 300
 
 DEBUG: True
+
+server:
+  working_directory: /home/travis/pulp/

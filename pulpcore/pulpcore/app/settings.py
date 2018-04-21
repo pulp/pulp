@@ -27,7 +27,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-MEDIA_ROOT = '/var/lib/pulp/'
+MEDIA_ROOT = '/home/travis/'
 DEFAULT_FILE_STORAGE = 'pulpcore.app.models.storage.FileSystem'
 
 FILE_UPLOAD_TEMP_DIR = '/var/lib/pulp/tmp/'
