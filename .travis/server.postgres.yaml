@@ -5,3 +5,6 @@ databases:
     USER: pulp
 
 DEBUG: True
+
+server:
+  working_directory: /home/travis/pulp/

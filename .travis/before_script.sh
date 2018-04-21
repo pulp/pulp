@@ -9,16 +9,14 @@ fi
 mkdir -p ~/.config/pulp_smash
 cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json
 
-sudo mkdir /var/lib/pulp
-sudo mkdir /var/lib/pulp/tmp
-sudo mkdir /etc/pulp/
-sudo chown -R travis:travis /var/lib/pulp
+mkdir $HOME/pulp
+mkdir $HOME/pulp/tmp
 
 if [ "$DB" = 'postgres' ]; then
-  sudo cp .travis/server.postgres.yaml /etc/pulp/server.yaml
+  export PULP_SETTINGS=$TRAVIS_BUILD_DIR/.travis/server.postgres.yaml
 else
   # docs job also requires server.yaml
-  sudo cp .travis/server.sqlite.yaml /etc/pulp/server.yaml
+  export PULP_SETTINGS=$TRAVIS_BUILD_DIR/.travis/server.sqlite.yaml
 fi
 
-echo "SECRET_KEY: \"$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50)\"" | sudo tee -a /etc/pulp/server.yaml
+echo "SECRET_KEY: \"$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50)\"" | tee -a $PULP_SETTINGS
