@@ -114,7 +114,7 @@ Documenting your API
 --------------------
 
 Each instance of Pulp optionally hosts dynamically generated API documentation located at
-`http://pulpserver/api/v3/docs/` if you install `drf-openapi <https://github.com/limdauto/drf_openapi/>`_.
+`http://pulpserver/pulp/api/v3/docs/` if you install `drf-openapi <https://github.com/limdauto/drf_openapi/>`_.
 
 The API endpoint description is generated from the docstring on the CRUD methods on a ViewSet.
 

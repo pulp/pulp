@@ -6,6 +6,7 @@ from django.test import TestCase
 from rest_framework.serializers import ValidationError as DRFValidationError
 
 from pulpcore.app import models, viewsets, serializers
+from pulpcore.common.constants import API_ROOT
 
 
 class TestGetQuerySet(TestCase):
@@ -52,8 +53,10 @@ class TestGetResource(TestCase):
         """
         repo = models.Repository.objects.create(name='foo')
         viewset = viewsets.RepositoryViewSet()
-        resource = viewset.get_resource("/api/v3/repositories/{pk}/".format(pk=repo.pk),
-                                        models.Repository)
+        resource = viewset.get_resource(
+            "/{api_root}repositories/{pk}/".format(api_root=API_ROOT, pk=repo.pk),
+            models.Repository
+        )
         self.assertEquals(repo, resource)
 
     def test_multiple_matches(self):
@@ -66,7 +69,8 @@ class TestGetResource(TestCase):
 
         with self.assertRaises(DRFValidationError):
             # matches all repositories
-            viewset.get_resource("/api/v3/repositories/", models.Repository)
+            viewset.get_resource("/{api_root}repositories/".format(api_root=API_ROOT),
+                                 models.Repository)
 
     def test_invalid_uri(self):
         """
@@ -75,7 +79,7 @@ class TestGetResource(TestCase):
         viewset = viewsets.RepositoryViewSet()
 
         with self.assertRaises(DRFValidationError):
-            viewset.get_resource("/api/v2/nonexistent/", models.Repository)
+            viewset.get_resource("/pulp/api/v2/nonexistent/", models.Repository)
 
     def test_resource_does_not_exist(self):
         """
@@ -86,8 +90,10 @@ class TestGetResource(TestCase):
         viewset = viewsets.RepositoryViewSet()
 
         with self.assertRaises(DRFValidationError):
-            viewset.get_resource("/api/v3/repositories/{uuid}/".format(uuid=uuid),
-                                 models.Repository)
+            viewset.get_resource(
+                "/{api_root}repositories/{uuid}/".format(api_root=API_ROOT, uuid=uuid),
+                models.Repository
+            )
 
     def test_invalid_uuid(self):
         """
@@ -98,8 +104,10 @@ class TestGetResource(TestCase):
         viewset = viewsets.RepositoryViewSet()
 
         with self.assertRaises(DRFValidationError):
-            viewset.get_resource("/api/v3/repositories/{uuid}/".format(uuid=bad_uuid),
-                                 models.Repository)
+            viewset.get_resource(
+                "/{api_root}repositories/{uuid}/".format(api_root=API_ROOT, uuid=bad_uuid),
+                models.Repository
+            )
 
     def test_resource_with_field_error(self):
         """
@@ -111,8 +119,10 @@ class TestGetResource(TestCase):
 
         with self.assertRaises(DRFValidationError):
             # has no repo versions yet
-            viewset.get_resource("/api/v3/repositories/{pk}/versions/1/".format(pk=repo.pk),
-                                 models.Repository)
+            viewset.get_resource(
+                "/{api_root}repositories/{pk}/versions/1/".format(api_root=API_ROOT, pk=repo.pk),
+                models.Repository
+            )
 
 
 class TestGetSerializerClass(TestCase):

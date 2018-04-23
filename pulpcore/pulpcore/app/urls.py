@@ -8,6 +8,7 @@ from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.views import ContentView, OrphansView, StatusView
+from pulpcore.common.constants import API_ROOT
 
 import logging
 log = logging.getLogger(__name__)
@@ -116,8 +117,8 @@ root_router = routers.DefaultRouter()
 
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view(), name='content-app'),
-    url(r'^api/v3/status/', StatusView.as_view()),
-    url(r'^api/v3/orphans/', OrphansView.as_view()),
+    url(r'^{api_root}status/'.format(api_root=API_ROOT), StatusView.as_view()),
+    url(r'^{api_root}orphans/'.format(api_root=API_ROOT), OrphansView.as_view()),
 ]
 
 docs_schema_view = yasg_get_schema_view(
@@ -128,21 +129,21 @@ docs_schema_view = yasg_get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-urlpatterns.append(url(r'^api/v3/docs/api(?P<format>\.json|\.yaml)',
+urlpatterns.append(url(r'^{api_root}docs/api(?P<format>\.json|\.yaml)'.format(api_root=API_ROOT),
                    docs_schema_view.without_ui(cache_timeout=None),
                    name='schema-json'))
 
-urlpatterns.append(url(r'^api/v3/docs/',
+urlpatterns.append(url(r'^{api_root}docs/'.format(api_root=API_ROOT),
                    docs_schema_view.with_ui('redoc', cache_timeout=None),
                    name='schema-redoc'))
 
 schema_view = get_schema_view(title='Pulp API')
 
-urlpatterns.append(url(r'^api/v3/$', schema_view))
+urlpatterns.append(url(r'^{api_root}$'.format(api_root=API_ROOT), schema_view))
 
 all_routers = [root_router] + vs_tree.register_with(root_router)
 for router in all_routers:
-    urlpatterns.append(url(r'^api/v3/', include(router.urls)))
+    urlpatterns.append(url(r'^{api_root}'.format(api_root=API_ROOT), include(router.urls)))
 
 # If plugins define a urls.py, include them into the root namespace.
 for plugin_pattern in plugin_patterns:

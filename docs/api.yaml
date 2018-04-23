@@ -5,7 +5,7 @@ info:
 host: localhost:8000
 schemes:
   - http
-basePath: /api/v3
+basePath: /pulp/api/v3
 consumes:
   - application/json
 produces:
