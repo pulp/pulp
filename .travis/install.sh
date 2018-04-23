@@ -15,7 +15,9 @@ export PULP_SMASH_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\
 if [ -z $PULP_FILE_PR_NUMBER ]; then
   pip install git+https://github.com/pulp/pulp_file.git#egg=pulp_file
 else
-  export PULP_FILE_SHA=$(curl https://api.github.com/repos/pulp/pulp_file/pulls/$PULP_FILE_PR_NUMBER | jq -r '.merge_commit_sha')
+  export PR_INFO=$(curl https://api.github.com/repos/pulp/pulp_file/pulls/$PULP_FILE_PR_NUMBER)
+  echo $PR_INFO
+  export PULP_FILE_SHA=$(echo $PR_INFO | jq -r '.merge_commit_sha')
   cd ../
   git clone https://github.com/pulp/pulp_file.git
   cd pulp_file
