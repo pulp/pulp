@@ -40,6 +40,10 @@ databases:
 #
 # SECRET_KEY:
 
+# `MEDIA_ROOT`: Location where Pulp stores files (Artifacts, published metadata, etc)
+#
+# MEDIA_ROOT: /var/lib/pulp/
+
 # Logging configuration
 #
 # `logging`: Logging configuration for Pulp. By default, Pulp logs to syslog. Pulp also support
