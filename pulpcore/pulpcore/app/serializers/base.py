@@ -162,7 +162,7 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
     def _validate_relative_path(self, path):
         """
         Validate a relative path (eg from a url) to ensure it forms a valid url and does not begin
-        or end with slashes
+        or end with slashes nor contain spaces
 
         Args:
             path (str): A relative path to validate
@@ -176,6 +176,10 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
         """
         # in order to use django's URLValidator we need to construct a full url
         base = "http://localhost"  # use a scheme/hostname we know are valid
+
+        if ' ' in path:
+            raise serializers.ValidationError(detail=_("Relative path cannot contain spaces."))
+
         validate = URLValidator()
         validate(urljoin(base, path))
 
