@@ -4,14 +4,14 @@ with open('README.rst') as f:
     long_description = f.read()
 
 requirements = [
-    'celery',
+    'celery>=4',
     'coreapi',
     'Django>=1.11',
     'django-filter',
     'djangorestframework',
     'drf-nested-routers',
     'drf-yasg',
-    'psycopg2',
+    'psycopg2-binary',
     'PyYAML',
     'setuptools',
     'pulpcore-common'
@@ -21,7 +21,7 @@ setup(
     name='pulpcore',
     description='Pulp Django Application and Related Modules',
     long_description=long_description,
-    version='3.0.0a1',
+    version='3.0.0b1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
@@ -32,7 +32,7 @@ setup(
     classifiers=(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX :: Linux',
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Framework :: Django',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
