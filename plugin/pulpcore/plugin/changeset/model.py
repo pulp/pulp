@@ -322,7 +322,7 @@ class PendingArtifact(Pending):
                 pass
             else:
                 self.downloaded(downloader)
-        if self.remote.is_deferred or self._stored_model:
+        if self._stored_model:
             downloader = NopDownloader()
             future = asyncio.ensure_future(downloader.run())
         else:
