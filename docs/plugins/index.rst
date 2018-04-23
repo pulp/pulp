@@ -35,6 +35,13 @@ Plugin List
      - Yes
      - No
 
+   * - Ansible plug-in
+     - `Ansible plug-in docs <https://github.com/pulp/pulp_ansible/blob/master/README.rst>`_
+     - `Ansible plug-in source <https://github.com/pulp/pulp_ansible>`_
+     - `Ansible plug-in tracker <https://pulp.plan.io/projects/ansible_plugin?jump=welcome>`_
+     - No
+     - No
+
 .. note::
    Are we missing a plugin? Let us know via the pulp-dev@redhat.com mailing list.
 
