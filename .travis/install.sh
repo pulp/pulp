@@ -15,12 +15,11 @@ export PULP_SMASH_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\
 if [ -z $PULP_FILE_PR_NUMBER ]; then
   pip install git+https://github.com/pulp/pulp_file.git#egg=pulp_file
 else
-  export PULP_FILE_SHA=$(curl https://api.github.com/repos/pulp/pulp_file/pulls/$PULP_FILE_PR_NUMBER | jq -r '.merge_commit_sha')
   cd ../
   git clone https://github.com/pulp/pulp_file.git
   cd pulp_file
   git fetch origin +refs/pull/$PULP_FILE_PR_NUMBER/merge
-  git checkout $PULP_FILE_SHA
+  git checkout FETCH_HEAD
   pip install -e .
   cd ../pulp
 fi
@@ -28,12 +27,11 @@ fi
 if [ -z $PULP_SMASH_PR_NUMBER ]; then
   pip install git+https://github.com/PulpQE/pulp-smash.git#egg=pulp-smash
 else
-  export PULP_SMASH_SHA=$(curl https://api.github.com/repos/PulpQE/pulp-smash/pulls/$PULP_SMASH_PR_NUMBER | jq -r '.merge_commit_sha')
   cd ../
   git clone https://github.com/PulpQE/pulp-smash.git
   cd pulp-smash
   git fetch origin +refs/pull/$PULP_SMASH_PR_NUMBER/merge
-  git checkout $PULP_SMASH_SHA
+  git checkout FETCH_HEAD
   pip install -e .
   cd ../pulp
 fi
