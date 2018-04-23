@@ -129,7 +129,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         except Resolver404:
             raise DRFValidationError(detail=_('URI not valid: {u}').format(u=uri))
         if 'pk' in match.kwargs:
-            kwargs = match.kwargs
+            kwargs = {'pk': match.kwargs['pk']}
         else:
             kwargs = {}
             for key, value in match.kwargs.items():
