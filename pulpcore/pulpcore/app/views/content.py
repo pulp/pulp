@@ -32,7 +32,7 @@ class ContentView(View):
     2. Match: PublishedFile.relative_path
     """
 
-    BASE_PATH = 'content'
+    BASE_PATH = 'pulp/content'
 
     @staticmethod
     def _base_paths(path):

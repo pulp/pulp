@@ -51,7 +51,7 @@ When creating API components, consider these guidelines:
 
 * :class:`pulp.app.viewsets.base.NamedModelViewSet` subclasses defined in a plugin's "viewsets" module
   are automatically registered with the API router. Endpoint names (the ``endpoint_name`` attribute)
-  should plural, not singular (e.g. /api/v3/repositories/, not /api/v3/repository/).
+  should plural, not singular (e.g. /pulp/api/v3/repositories/, not /pulp/api/v3/repository/).
 
 * DRF supports natural keys on models in ModelViewSets with the "lookup_field" class attribute, but
   only if the natural key is derived from a single field (e.g. ``Repository.name``). For natural
@@ -171,7 +171,7 @@ For example:
 .. code-block:: json
 
 	{
-		"_href": "http://apihost/api/v3/repository/reponame/",
+		"_href": "http://apihost/pulp/api/v3/repository/reponame/",
 		"name": "reponame",
 		"notes": {
 			"foo": "bar"
@@ -350,7 +350,7 @@ To use this request:
 
 .. code-block:: bash
 
-    http 'http://192.168.121.134:8000/api/v3/repositories/?name=singing-gerbil'
+    http 'http://192.168.121.134:8000/pulp/api/v3/repositories/?name=singing-gerbil'
 
 This is what the ViewSet should look like:
 
@@ -370,7 +370,7 @@ that allows the same request:
 
 .. code-block:: bash
 
-    http 'http://192.168.121.134:8000/api/v3/repositories/?name=singing-gerbil'
+    http 'http://192.168.121.134:8000/pulp/api/v3/repositories/?name=singing-gerbil'
 
 
 .. code:: python
@@ -398,7 +398,7 @@ https://django-filter.readthedocs.io/en/latest/ref/filters.html#filters
 
 Simply define any filters in the `FilterSet` and then include them in `fields` in the Filter's Meta class.
 
-`http 'http://192.168.121.134:8000/api/v3/repositories/?name_contains=singing'`
+`http 'http://192.168.121.134:8000/pulp/api/v3/repositories/?name_contains=singing'`
 
 .. code-block:: python
 
@@ -421,7 +421,7 @@ custom filter based on the `BaseInFilter`.
 
 .. code-block:: bash
 
-    http 'http://192.168.121.134:8000/api/v3/repositories/?name_in_list=singing-gerbil,versatile-pudu'
+    http 'http://192.168.121.134:8000/pulp/api/v3/repositories/?name_in_list=singing-gerbil,versatile-pudu'
 
 
 .. code-block:: python

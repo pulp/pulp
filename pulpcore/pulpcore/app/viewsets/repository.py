@@ -152,7 +152,7 @@ class RepositoryVersionFilter(filterset.FilterSet):
     # /?number__range=4,6
     # /?created__gte=2018-04-12T19:45
     # /?created__range=2018-04-12T19:45,2018-04-13T20:00
-    # /?content=http://localhost:8000/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
+    # /?content=http://localhost:8000/pulp/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
     number = filters.NumberFilter()
     created = filters.IsoDateTimeFilter()
     content = RepositoryVersionContentFilter()
