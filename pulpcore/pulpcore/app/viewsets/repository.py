@@ -1,7 +1,7 @@
 from gettext import gettext as _
 import itertools
 
-from django_filters.rest_framework import filters, filterset
+from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
 from django_filters import Filter
 from rest_framework import decorators, mixins, serializers
 from rest_framework.filters import OrderingFilter
@@ -178,7 +178,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
     serializer_class = RepositoryVersionSerializer
     queryset = RepositoryVersion.objects.exclude(complete=False)
     filter_class = RepositoryVersionFilter
-    filter_backends = (OrderingFilter,)
+    filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-number',)
 
     @decorators.detail_route()
@@ -357,7 +357,7 @@ class PublicationViewSet(NamedModelViewSet,
     endpoint_name = 'publications'
     queryset = Publication.objects.exclude(complete=False)
     serializer_class = PublicationSerializer
-    filter_backends = (OrderingFilter,)
+    filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-created',)
 
 
