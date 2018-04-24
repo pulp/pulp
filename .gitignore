@@ -44,4 +44,4 @@ docs/_diagrams
 # Django migrations
 # Ignored during early development to prevent accidental commits;
 # we'll want these to not be ignored when releasing pulp 3.0
-app/pulp/app/migrations
+pulpcore/pulpcore/app/migrations
