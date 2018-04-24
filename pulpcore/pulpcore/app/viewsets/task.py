@@ -1,4 +1,4 @@
-from django_filters.rest_framework import filters, filterset
+from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
 from rest_framework import status, mixins
 from rest_framework.decorators import detail_route
 from rest_framework.filters import OrderingFilter
@@ -43,7 +43,7 @@ class TaskViewSet(NamedModelViewSet,
         'list': MinimalTaskSerializer,
         'default': TaskSerializer
     }
-    filter_backends = (OrderingFilter,)
+    filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-created')
 
     @detail_route(methods=('post',))
