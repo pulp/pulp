@@ -16,9 +16,7 @@ content that is in the Pulp (local) repository that is not in the remote reposit
 Or, content that needs to be removed for any reason as determined by the remote.
 
 The `ChangeSet` is designed for `stream` processing.  It is strongly encouraged that both
-the `additions` and `removals` be a `generator` that is wrapped in a ``SizedIterable``.
-Wrapping the generator in a `SizedIterable` provides the total number of items that the
-generator will yield.  This is needed for progress reporting.
+the `additions` and `removals` be a `generator`.
 
 Once the `ChangeSet` is constructed, the `apply()` method is called which returns an
 iterator of ``ChangeReport``.  Due to the `streams processing` design of the `ChangeSet`,
@@ -36,7 +34,7 @@ Examples:
     >>> from django.db.models import Q
     >>> from collections import namedtuple
     >>> from pulpcore.plugin.changeset import (
-    >>>     ChangeSet, PendingArtifact, PendingContent, SizedIterable)
+    >>>     ChangeSet, PendingArtifact, PendingContent)
     >>> from pulpcore.plugin.models import Artifact, Content, Remote, Repository
     >>>
     >>>
@@ -111,12 +109,8 @@ Examples:
     >>>         metadata = # <fetched metadata>
     >>>         inventory = self._fetch_inventory()
     >>>         delta = self.find_delta(metadata, inventory)
-    >>>         additions = SizedIterable(
-    >>>             self._build_additions(delta, metadata),
-    >>>             len(delta.additions))
-    >>>         removals = SizedIterable(
-    >>>             self._fetch_removals(delta),
-    >>>             len(delta.removals))
+    >>>         additions = self._build_additions(delta, metadata)
+    >>>         removals = self._fetch_removals(delta)
     >>>         return ChangeSet(self, additions=additions, removals=removals)
     >>>
     >>>     def sync(self):
@@ -131,7 +125,7 @@ Examples:
     >>>
 """
 
-from .iterator import BatchIterator  # noqa
-from .main import ChangeSet, SizedIterable  # noqa
+from .iterator import BatchIterator, ContentIterator  # noqa
+from .main import ChangeSet  # noqa
 from .model import PendingArtifact, PendingContent  # noqa
 from .report import ChangeReport, ChangeFailed  # noqa
