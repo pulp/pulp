@@ -76,10 +76,9 @@ PyPI Installation
 Database Setup
 --------------
 
-To keep Pulp lightweight sqlite3 is the default database, but for production usage PostgreSQL is
-recommended. Setup PostgreSQL and configure it in the `databases` section of your server.yaml. See
-the `Django database settings documentation <https://docs.djangoproject.com/en/1.11/ref/settings/#databases>`_
-for more information on setting the `databases` values in settings.yaml.
+Databases can be configed in the `databases` section of your server.yaml. See the `Django database
+settings documentation <https://docs.djangoproject.com/en/1.11/ref/settings/#databases>`_ for more
+information on setting the `databases` values in settings.yaml.
 
 .. _broker-install:
 

@@ -165,9 +165,9 @@ _DEFAULT_PULP_SETTINGS = {
     # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
     'databases': {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/var/lib/pulp/sqlite3.db',
-            'USER': '',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'pulp',
+            'USER': 'pulp',
             'CONN_MAX_AGE': 0,
         },
     },

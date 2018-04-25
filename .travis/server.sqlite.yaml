@@ -1,6 +1,0 @@
-databases:
-  default:
-    OPTIONS:
-      timeout: 300
-
-DEBUG: True
