@@ -246,7 +246,7 @@ MongoDB Automatic Retry
 
 Pulp can be configured to automatically retry calls to the database if there is a connection error
 between the server and the database. The setting, ``unsafe_autoretry`` is located in the
-``[database]`` section of ``/etc/pupl/server.conf``.
+``[database]`` section of ``/etc/pulp/server.conf``.
 
 .. warning:: This feature can result in duplicate records, use with caution.
 
