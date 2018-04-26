@@ -349,5 +349,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
 
     class Meta:
         model = models.RepositoryVersion
-        fields = ('_href', '_content_href', '_added_href', '_removed_href', 'number',
-                  'content_summary', 'add_content_units', 'remove_content_units')
+        fields = ModelSerializer.Meta.fields + (
+            '_href', '_content_href', '_added_href', '_removed_href', 'number',
+            'content_summary', 'add_content_units', 'remove_content_units'
+        )
