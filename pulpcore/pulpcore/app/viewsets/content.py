@@ -74,14 +74,4 @@ class ContentViewSet(NamedModelViewSet,
         """
         Create a Content Artifact
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        artifacts = serializer.validated_data.pop('artifacts')
-        content = serializer.save()
-
-        for relative_path, artifact in artifacts.items():
-            ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
-            ca.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return super().create(request)

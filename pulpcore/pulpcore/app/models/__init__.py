@@ -5,7 +5,7 @@ from .base import Model, MasterModel  # noqa
 from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyValueRelation,  # noqa
                       GenericKeyValueModel, Config, Notes)  # noqa
 
-from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
+from .content import Content, Artifact, ContentArtifact, RemoteArtifact, SingleArtifactContent  # noqa
 from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa
 from .repository import (  # noqa
     Exporter,

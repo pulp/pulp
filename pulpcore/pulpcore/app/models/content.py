@@ -138,6 +138,27 @@ class Content(MasterModel):
         return tuple(getattr(self, f) for f in self.natural_key_fields())
 
 
+class SingleArtifactContent(Content):
+    """
+    Class for plugin content that only have a single artifact.
+    """
+
+    def _calc_relative_path(self):
+        pass
+
+    @property
+    def artifact(self):
+        return self.artifacts.first().pk
+
+    @artifact.setter
+    def artifact(self, artifact):
+        if self.pk:
+            ca = ContentArtifact(artifact=artifact,
+                                 content=self,
+                                 relative_path=self._calc_relative_path())
+            ca.save()
+
+
 class ContentArtifact(Model):
     """
     A relationship between a Content and an Artifact.
