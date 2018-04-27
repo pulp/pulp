@@ -232,8 +232,12 @@ class MasterModelSerializer(ModelSerializer):
         ret = OrderedDict()
 
         instance = instance.cast()
-        viewset = viewset_for_model(instance)
-        fields = viewset.serializer_class(context=self._context)._readable_fields
+        viewset = viewset_for_model(instance)()
+        if self.parent and self.parent.many:
+            viewset.action = 'list'
+        else:
+            viewset.action = 'get'
+        fields = viewset.get_serializer_class()(context=self._context)._readable_fields
 
         for field in fields:
             try:

@@ -126,28 +126,6 @@ class TestGetResource(TestCase):
 
 
 class TestGetSerializerClass(TestCase):
-    def test_defining_both_fails(self):
-        """
-        Test that get_serializer_class() raises an AssertionError if you try to define both
-        'serializer_class' and 'serializers'.
-        """
-        class TestTaskViewSet(viewsets.NamedModelViewSet):
-            serializer_class = serializers.TaskSerializer
-            serializers = {'default': serializers.TaskSerializer}
-
-        with self.assertRaises(AssertionError):
-            TestTaskViewSet().get_serializer_class()
-
-    def test_defining_neither_fails(self):
-        """
-        Test that get_serializer_class() raises an AssertionError if you try to define neither
-        'serializer_class' nor 'serializers'.
-        """
-        class TestTaskViewSet(viewsets.NamedModelViewSet):
-            pass
-
-        with self.assertRaises(AssertionError):
-            TestTaskViewSet().get_serializer_class()
 
     def test_serializer_class(self):
         """
@@ -178,6 +156,30 @@ class TestGetSerializerClass(TestCase):
         viewset.action = 'list'
         self.assertEquals(viewset.get_serializer_class(), serializers.MinimalTaskSerializer)
 
+    def test_defining_neither_fails(self):
+        """
+        Test that get_serializer_class() raises an AssertionError if you try to define neither
+        'serializer_class' nor 'serializers'.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            pass
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
+    def test_defining_both_uses_dict(self):
+        """
+        Test that get_serializer_class() will use 'serializers' if both 'serializer_class' and
+        'serializers' are defined.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializer_class = serializers.MinimalTaskSerializer
+            serializers = {'default': serializers.TaskSerializer}
+
+        viewset = TestTaskViewSet()
+        viewset.action = 'list'
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+
     def test_serializers_without_default_fails(self):
         """
         Tests that get_serializer_class() raises an AssertionError if you defined 'serializers'
@@ -188,6 +190,21 @@ class TestGetSerializerClass(TestCase):
 
         with self.assertRaises(AssertionError):
             TestTaskViewSet().get_serializer_class()
+
+    def test_multiple_derived_viewsets(self):
+        """
+        Tests that get_serializer_class() works on a viewset derived from another viewset which
+        inherits from NamedModelViewSet.
+        """
+        class TestAlternateSerializer(serializers.ContentSerializer):
+            pass
+
+        class TestDerivedViewSet(viewsets.ContentViewSet):
+            serializers = {'default': TestAlternateSerializer}
+
+        viewset = TestDerivedViewSet()
+        viewset.action = 'list'
+        self.assertEquals(viewset.get_serializer_class(), TestAlternateSerializer)
 
 
 class TestGetParentFieldAndObject(TestCase):

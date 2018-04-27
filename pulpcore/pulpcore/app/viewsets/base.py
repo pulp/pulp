@@ -90,22 +90,25 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         defines a 'default' serializer, and can override that serializer on a per-action basis.
 
         e.g. serializers = {'default': TaskSerializer, 'list': MinimalTaskSerializer}
+
+        If you define both, the 'serializer_class' attribute will be ignored and the 'serializers'
+        attribute will be used. This is because plugin viewsets may want to use multiple
+        serializers, but they inherit from basic viewsets such as Content which will have a
+        'serializer_class' attribute defined.
         """
         serializer_class = getattr(self, 'serializer_class', None)
         serializers = getattr(self, 'serializers', None)
-        both = serializers and serializer_class
-        assert not both, _("{} defines both 'serializer_class' and 'serializers'. It should only "
-                           "define one.").format(self.__class__.__name__)
 
-        if serializer_class:
-            return serializer_class
+        msg = _("{} must either have a 'serializer_class' attribute, or it must have a "
+                "'serializers' attribute with a 'default' key set").format(self.__class__.__name__)
+        assert serializer_class or serializers, msg
 
-        valid = serializers and isinstance(serializers, dict) and serializers.get('default', None)
-        assert valid, _("{} must either have a 'serializer_class' attribute, or it must have a "
-                        "'serializers' attribute with a 'default' key set").\
-            format(self.__class__.__name__)
+        if serializers:
+            valid = isinstance(serializers, dict) and 'default' in serializers.keys()
+            assert valid, msg
+            return self.serializers.get(self.action, serializers['default'])
 
-        return self.serializers.get(self.action, self.serializers['default'])
+        return serializer_class
 
     @staticmethod
     def get_resource(uri, model):
