@@ -12,3 +12,6 @@ New Features
 * Added support for the user to optionally specify a CA file in the HTTP notifier
   configuration. When specified, the CA is used for HTTP requests instead of the
   system CA.
+
+* Added `proxy_port` and `proxy_host` config settings for client tools to
+  facilitate the use of anonymous proxy.
