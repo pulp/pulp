@@ -1,0 +1,11 @@
+=======================
+Pulp 2.17 Release Notes
+=======================
+
+Pulp 2.17.0
+===========
+
+New Features
+------------
+
+* Added `proxy_port` and `proxy_host` config settings for client tools to facilitate the use of anonymous proxy.
