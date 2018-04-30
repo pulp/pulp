@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 
-from collections import Iterable, Sized
+from collections import Iterable
 from logging import getLogger
 
 from django.db.models import Q
@@ -48,36 +48,9 @@ class BatchIterator(Iterable):
         while True:
             batch = tuple(itertools.islice(generator, 0, self.batch))
             if batch:
-                yield Batch(batch, len(batch))
+                yield batch
             else:
                 return
-
-
-class Batch(Iterable, Sized):
-    """
-    Batch yielded by the BatchIterator.
-
-    Provides a sized object.
-
-    Attributes:
-        _iterable (Iterable): The batch content.
-        _length (int): The batch length.
-    """
-
-    def __init__(self, iterable, length):
-        """
-        Args:
-            iterable: The batch content.
-            length: The batch length.
-        """
-        self._iterable = iterable
-        self._length = length
-
-    def __iter__(self):
-        return iter(self._iterable)
-
-    def __len__(self):
-        return self._length
 
 
 class ContentIterator(Iterable):
@@ -311,13 +284,14 @@ class DownloadIterator(Iterable):
         content = ContentIterator(self.content)
         artifacts = ArtifactIterator(content)
         loop = asyncio.get_event_loop()
-        downloads = ((a, a.downloader) for a in artifacts)
-        for batch in BatchIterator(downloads, self.concurrent):
-            correlation = {d: a for a, d in batch}
-            pending = correlation.keys()
+        for batch in BatchIterator(artifacts):
             if self.bar:
                 self.bar.total += len(batch)
                 self.bar.save()
+            marker = self.concurrent
+            initial = batch[:marker]
+            correlation = {a.downloader: a for a in initial}
+            pending = [a.downloader for a in initial]
             while pending:
                 future = asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                 completed, pending = loop.run_until_complete(future)
@@ -325,6 +299,12 @@ class DownloadIterator(Iterable):
                     if self.bar:
                         self.bar.increment()
                         self.bar.save()
+                    if marker < len(batch):
+                        artifact = batch[marker]
+                        downloader = artifact.downloader
+                        correlation[downloader] = artifact
+                        pending.add(downloader)
+                        marker += 1
                     artifact = correlation[task]
                     yield (artifact, task)
 

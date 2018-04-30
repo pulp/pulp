@@ -220,6 +220,8 @@ class PendingArtifact(Pending):
         relative_path (str): The relative path within the content.
         content (PendingContent): The associated pending content.
             This is the reverse relationship.
+        _downloader (asyncio.Future): A future used to download the
+            associated file.
 
     Examples:
         >>>
@@ -236,6 +238,7 @@ class PendingArtifact(Pending):
         'url',
         'relative_path',
         'content',
+        '_downloader',
     )
 
     def __init__(self, model, url, relative_path, content=None):
@@ -251,6 +254,7 @@ class PendingArtifact(Pending):
         self.url = url
         self.relative_path = relative_path
         self.content = content
+        self._downloader = None
         if content:
             content.artifacts.add(self)
 
@@ -322,14 +326,16 @@ class PendingArtifact(Pending):
                 pass
             else:
                 self.downloaded(downloader)
-        if self._stored_model:
-            downloader = NopDownloader()
-            future = asyncio.ensure_future(downloader.run())
-        else:
-            downloader = self.remote.get_downloader(self.url)
-            future = asyncio.ensure_future(downloader.run())
-            future.add_done_callback(done)
-        return future
+        if not self._downloader:
+            if self._stored_model:
+                downloader = NopDownloader()
+                future = asyncio.ensure_future(downloader.run())
+            else:
+                downloader = self.remote.get_downloader(self.url)
+                future = asyncio.ensure_future(downloader.run())
+                future.add_done_callback(done)
+            self._downloader = future
+        return self._downloader
 
     def downloaded(self, downloader):
         """
