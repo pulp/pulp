@@ -1,44 +1,37 @@
 """
 
-The ``ChangeSet`` is the primary object used by plugin writers to support the Remote.
-It represents a set of changes to be made to the repository in terms of content
-that needs to be added (additions) and content that needs to be removed (removals).
-The term `remote` is used to describe the repository that the remote is synchronizing
-with.  The term ``PendingContent`` is content contained in the remote repository.
+The ``PendingVersion`` is the primary object used by plugin writers to support the Remote. It is a
+declarative interface whereby the plugin writer declares the remote content as `PendingContent` and
+their associated `PendingArtifact` objects. The `PendingContent` objects are passed as the
+`pending_content` argument to `PendingVersion`.
 
-Plugin writers need to pass `additions` to the `ChangeSet` as a collection of
-`PendingContent`.  In other words, `additions` are a collection of content in the remote
-repository that is not in the (local) Pulp repository and it needs to be added.
+With this information the ``PendingVersion.apply()`` method will:
 
-Plugin writers need to pass `removals` to the `ChangeSet` as a collection of `Content`
-that has been fetched from the Pulp DB.  In other words, `removals` are a collection
-content that is in the Pulp (local) repository that is not in the remote repository.
-Or, content that needs to be removed for any reason as determined by the remote.
+* Create the `RepositoryVersion` object
+* For each `PendingContent` object:
+  * Determine if all associated `PendingArtifact` objects are downloaded. If not download them.
+  * Determine if the `PendingContent` object is already saved in the database. If not, save it when
+    all `PendingArtifact` objects are downloaded.
+  * Ensure the new `RepositoryVersion` is associated with the `ContentUnit`.
+* Mark the `RepositoryVersion` as complete
 
-The `ChangeSet` is designed for `stream` processing.  It is strongly encouraged that both
-the `additions` and `removals` be a `generator`.
+The ``PendingVersion`` object takes a sync_mode argument supporting 'additive' and 'mirror' modes.
+In 'additive' mode (the default), `ContentUnit` objects are never removed even if their
+corresponding `PendingContent` object was not emitted by `pending_content`. In 'mirror' mode, any
+`ContentUnit` associated with the `RepositoryVersion` that did not correspond with an emitted
+`ContentUnit` is deleted.
 
-Once the `ChangeSet` is constructed, the `apply()` method is called which returns an
-iterator of ``ChangeReport``.  Due to the `streams processing` design of the `ChangeSet`,
-the returned iterator **must** be iterated for work to be performed.  The `ChangeReport`
-contains:
+The `PendingContent` is designed for stream processing. It is recommended that the `pending_content`
+argument be a generator that yields `PendingContent` objects. For efficiency, yielding the
+`PendingContent` units as soon they are known is recommended. Consider the example below.
 
-- The requested action (ADD|REMOVE).
-- The content (model) instance that was added/removed.
-- A list of any exceptions raised.
-
-The ChangeSet is used something like this:
+The PendingVersion is used something like this:
 
 Examples:
     >>>
-    >>> from django.db.models import Q
-    >>> from collections import namedtuple
     >>> from pulpcore.plugin.changeset import (
-    >>>     ChangeSet, PendingArtifact, PendingContent)
+    >>>     PendingArtifact, PendingContent, PendingVersion)
     >>> from pulpcore.plugin.models import Artifact, Content, Remote, Repository
-    >>>
-    >>>
-    >>> Delta = namedtuple('Delta', ['additions', 'removals'])
     >>>
     >>>
     >>> class Thing(Content):
@@ -47,14 +40,9 @@ Examples:
     >>>
     >>> class ThingRemote(Remote):
     >>>
-    >>>     def _build_additions(self, delta, metadata):
-    >>>         # Using the set of additions defined by the delta and the metadata,
-    >>>         # build and yield the content that needs to be added.
-    >>>
+    >>>     def _pending_content(self):
+    >>>         metadata = # <fetched metadata>
     >>>         for item in metadata:
-    >>>             # Needed?
-    >>>             if not item.natural_key in delta.additions:
-    >>>                 continue
     >>>             # Create a concrete model instance for Thing content
     >>>             # using the (thing) metadata.
     >>>             thing = Thing(...)
@@ -70,62 +58,13 @@ Examples:
     >>>                 })
     >>>             yield content
     >>>
-    >>>     def _fetch_removals(self, delta):
-    >>>         # Query the DB and yield any content in the repository
-    >>>         # matching the natural key in the delta.
-    >>>         for natural_keys in BatchIterator(delta.removals):
-    >>>             q = Q()
-    >>>             for key in natural_keys:
-    >>>                 q |= Q(...)
-    >>>             q_set = self.repository.content.filter(q)
-    >>>             q_set = q_set.only('artifacts')
-    >>>             for content in q_set:
-    >>>                 yield content
-    >>>
-    >>>     def _find_delta(self, metadata, inventory):
-    >>>         # Using the metadata and inventory (of content in the repository),
-    >>>         # determine the set of content that needs to be added and the set of
-    >>>         # content that needs to be removed.
-    >>>         remote = set()
-    >>>         for thing in metadata:
-    >>>             remote.add(thing.natural_key())
-    >>>             additions = remote - inventory
-    >>>             removals = inventory - remote
-    >>>         return Delta(additions=additions, removals=removals)
-    >>>
-    >>>     def _fetch_inventory(self):
-    >>>         # Query the DB and find all `Thing` content in the repository.
-    >>>         # The `inventory` is used for comparison and should only be the natural
-    >>>         # key for each content.
-    >>>         inventory = set()
-    >>>         q_set = Thing.objects.filter(repositories=self.repository)
-    >>>         q_set = q_set.only(*Thing.natural_key_fields())
-    >>>         for content in (c.cast() for c in q_set):
-    >>>             inventory.add(content.natural_key())
-    >>>         return inventory
-    >>>
-    >>>     def _build_changeset(self):
-    >>>         # Build a changeset.
-    >>>         metadata = # <fetched metadata>
-    >>>         inventory = self._fetch_inventory()
-    >>>         delta = self.find_delta(metadata, inventory)
-    >>>         additions = self._build_additions(delta, metadata)
-    >>>         removals = self._fetch_removals(delta)
-    >>>         return ChangeSet(self, additions=additions, removals=removals)
-    >>>
     >>>     def sync(self):
-    >>>         changeset = self._build_changeset()
-    >>>         for report in changeset.apply():
-    >>>             try:
-    >>>                 report.result()
-    >>>             except ChangeFailed:
-    >>>                 # Failed
-    >>>             else:
-    >>>                 # Succeeded
+    >>>         pending_version = PendingVersion(
+    >>>             self, pending_content=self._pending_content, sync_mode='mirror'
+    >>>         )
+    >>>         repo_version = pending_version.create():
     >>>
 """
 
-from .iterator import BatchIterator, ContentIterator  # noqa
-from .main import ChangeSet  # noqa
 from .model import PendingArtifact, PendingContent  # noqa
-from .report import ChangeReport, ChangeFailed  # noqa
+from .pending_version import PendingVersion  # noqa
