@@ -143,8 +143,11 @@ class PublishedArtifact(PublishedFile):
     content_artifact = models.ForeignKey('ContentArtifact', on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('publication', 'content_artifact')
         default_related_name = 'published_artifact'
+        unique_together = (
+            ('publication', 'content_artifact'),
+            ('publication', 'relative_path')
+        )
 
 
 class PublishedMetadata(PublishedFile):
@@ -161,8 +164,11 @@ class PublishedMetadata(PublishedFile):
     file = models.FileField(upload_to=_storage_path, max_length=255)
 
     class Meta:
-        unique_together = ('publication', 'file')
         default_related_name = 'published_metadata'
+        unique_together = (
+            ('publication', 'file'),
+            ('publication', 'relative_path')
+        )
 
 
 class Distribution(Model):
