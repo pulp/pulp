@@ -21,7 +21,7 @@ setup(
     name='pulpcore',
     description='Pulp Django Application and Related Modules',
     long_description=long_description,
-    version='3.0.0b1',
+    version='3.0.0b2',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
