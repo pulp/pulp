@@ -125,7 +125,7 @@ Examples:
     >>>
 """
 
-from .iterator import BatchIterator, ContentIterator  # noqa
+from .iterator import BatchIterator  # noqa
 from .main import ChangeSet  # noqa
 from .model import PendingArtifact, PendingContent  # noqa
 from .report import ChangeReport, ChangeFailed  # noqa
