@@ -1,10 +1,19 @@
 Installation Instructions
 =========================
 
+Supported Platforms
+-------------------
+
+Pulp should work on any operating system that can provide a Python 3.5+ runtime environment and
+the supporting dependencies e.g. a database. Pulp has been demonstrated to work on Ubuntu, Debian,
+Fedora, CentOS, and Mac OSX.
+
 .. note::
 
     As Pulp 3 currently does not have an SELinux Policy, it currently requires the target
-    machine to have SELinux set to permissive mode::
+    machine to have SELinux set to permissive mode or disabled.
+
+    This step only applies to Linux distributions with SELinux, such as Fedora or CentOS::
 
     $ sudo setenforce 0
 
@@ -18,16 +27,28 @@ PyPI Installation
    $ python3 -m venv pulpvenv
    $ source pulpvenv/bin/activate
 
+.. note::
+
+   On some operating systems you may need to install a package which provides the ``venv`` module.
+   For example, on Ubuntu or Debian you need to run::
+
+   $ sudo apt-get install python3-venv
+
 3. Install Pulp::
 
    $ pip3 install pulpcore
 
-
 .. note::
 
-   To install from source, replace the pip3 install commands to specify a source install such as::
+   To install from source, clone the git repository, checkout the 3.0-dev branch, navigate to the
+   directory containing the ``setup.py`` file, and do a local, editable pip installation::
 
-   $ pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=pulpcore"
+   $ git clone -b 3.0-dev https://github.com/pulp/pulp.git
+   $ cd pulp/pulpcore
+   $ pip3 install -e .
+
+   You will need to do this for all three main components of Pulp - ``pulpcore``, ``pulpcore-common``,
+   and ``pulpcore-plugin`` in the ``pulpcore``, ``common``, and ``plugin`` subdirectories, respectively.
 
 4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
@@ -36,8 +57,7 @@ PyPI Installation
 
    .. note::
 
-       The exact path will depend on the major *and* minor Python version found by venv e.g.
-       /lib/python3.5/, /lib/python3.6/
+       The exact path will depend on the operating system, Python version, and other factors.
 
 
 5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
@@ -76,9 +96,30 @@ PyPI Installation
 Database Setup
 --------------
 
-Databases can be configed in the `databases` section of your server.yaml. See the `Django database
-settings documentation <https://docs.djangoproject.com/en/1.11/ref/settings/#databases>`_ for more
-information on setting the `databases` values in settings.yaml.
+You must provide a compatible SQL database for Pulp to use. At this time Pulp 3.0 is only known to work
+properly with PostgreSQL. It may work with other databases that Django supports, but no guarantees.
+
+PostgreSQL
+^^^^^^^^^^
+
+To install PostgreSQL, refer to the package manager or the
+`PostgreSQL install docs <http://postgresguide.com/setup/install.html>`_. Oftentimes you can also find better
+installation instructions for your particular operating system from third-parties such as Digital Ocean.
+
+On Ubuntu and Debian, the package to install is named ``postgresql``. On Fedora and CentOS, the package
+is named ``postgresql-server``.
+
+The default PostgreSQL user and database name in the provided server.yaml file is ``pulp``. Unless you plan to
+customize the configuration of your Pulp installation, you will need to create this user with the proper permissions
+and also create the ``pulp`` database owned by the ``pulp`` user. If you do choose to customize your installation,
+the database options can be configured in the `databases` section of your server.yaml settings file.
+See the `Django database settings documentation <https://docs.djangoproject.com/en/1.11/ref/settings/#databases>`_
+for more information on setting the `databases` values in server.yaml.
+
+After installing and configuring PostgreSQL, you should configure it to start at boot, and then start it::
+
+   $ sudo systemctl enable postgresql
+   $ sudo systemctl start postgresql
 
 .. _broker-install:
 
@@ -93,6 +134,8 @@ RabbitMQ
 
 To install RabbitMQ, refer to your package manager or the
 `RabbitMQ install docs <https://www.rabbitmq.com/download.html>`_.
+
+For Fedora, CentOS, Debian, and Ubuntu, the package to install is named ``rabbitmq-server``.
 
 After installing and configuring RabbitMQ, you should configure it to start at boot and start it::
 
