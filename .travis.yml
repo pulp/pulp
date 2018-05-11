@@ -7,9 +7,12 @@ python:
     - "3.5"
     - "3.6"
 env:
+  matrix:
   - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp
   - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
   - TEST=docs
+  global:
+    secure: kzbI/DagIGIOFjVEyLyYGEi/xVwiq5M8FCEM3mOtXK9ocYs1Ky1ABkcgLrOLBb+S7SMNjy4XnUWGUxhBGWQLDw2/OimKFoHpCHGt1Cb4rXhWDSVPGgDXQzyW8pJsPKtAbemfx5a4oRP82vmpgB/htJ+8dE5CIAZWU8d9dbvQbro=
 matrix:
   fast_finish: true
 addons:
@@ -21,3 +24,34 @@ services:
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
 script: source .travis/script.sh
+stages:
+- name: test
+- name: deploy-pulpcore
+  if: tag =~ ^pulpcore-3.0.0*
+- name: deploy-plugin
+  if: tag =~ ^pulpcore-plugin*
+- name: deploy-common
+  if: tag =~ ^pulpcore-common*
+jobs:
+  include:
+  - stage: deploy-pulpcore
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/deploy.sh pulpcore
+      on:
+        tags: true
+  - stage: deploy-plugin
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/deploy.sh plugin
+      on:
+        tags: true
+  - stage: deploy-common
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/deploy.sh common
+      on:
+        tags: true
