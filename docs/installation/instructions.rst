@@ -81,7 +81,7 @@ PyPI Installation
 
 8. Run Django Migrations::
 
-   $ pulp-manager makemigrations
+   $ pulp-manager makemigrations pulp_app
    $ pulp-manager migrate --noinput auth
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
