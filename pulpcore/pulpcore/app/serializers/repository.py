@@ -211,7 +211,8 @@ class DistributionSerializer(ModelSerializer):
         required=False,
         help_text=_('The publication being served as defined by this distribution'),
         queryset=models.Publication.objects.exclude(complete=False),
-        view_name='publications-detail'
+        view_name='publications-detail',
+        allow_null=True
     )
     repository = serializers.HyperlinkedRelatedField(
         required=False,
