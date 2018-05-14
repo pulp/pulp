@@ -35,7 +35,7 @@ def exception_to_dict(exc, traceback=None):
 
     :param exc: Exception that is being serialized
     :type exc: Exception
-    :param traceback: String representation of a traceback generated when the exception occured.
+    :param traceback: String representation of a traceback generated when the exception occurred.
     :type traceback: str
 
     :return: dictionary representing the Exception

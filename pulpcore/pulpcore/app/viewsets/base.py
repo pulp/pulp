@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from pulpcore.app import tasks
 from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
+from pulpcore.tasking.tasks import enqueue_with_reservation
 
 from django.urls import resolve, Resolver404
 from django.core.exceptions import FieldError, ValidationError
@@ -288,8 +289,9 @@ class AsyncUpdateMixin:
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         app_label = instance._meta.app_label
-        async_result = tasks.base.general_update.apply_async_with_reservation(
-            [instance], args=(pk, app_label, serializer.__class__.__name__),
+        async_result = enqueue_with_reservation(
+            tasks.base.general_update, [instance],
+            args=(pk, app_label, serializer.__class__.__name__),
             kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse(async_result, request)
@@ -311,8 +313,8 @@ class AsyncRemoveMixin:
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         app_label = instance._meta.app_label
-        async_result = tasks.base.general_delete.apply_async_with_reservation(
-            [instance],
+        async_result = enqueue_with_reservation(
+            tasks.base.general_delete, [instance],
             args=(pk, app_label, serializer.__class__.__name__)
         )
         return OperationPostponedResponse(async_result, request)

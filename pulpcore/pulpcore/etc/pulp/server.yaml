@@ -66,19 +66,17 @@ databases:
 #       handlers: ["syslog"]
 #       level: INFO
 
-# Broker configuration
+# Redis configuration
 #
-# `broker`: Broker configuration for Pulp. By default, Pulp uses the RabbitMQ
-# broker without SSL. It is possible to change this by providing a different
-# broker string. The remaining options are used to configure SSL settings.
+# `redis`: Redis provides the basis for the Pulp tasking system. For security ensure your Redis
+# deployment can only be reached via trusted network endpoints per https://redis.io/topics/security.
+# Pulp does support password based authenticated from the client. For encrypted communication
+# of Redis traffic over untrusted networks Redis recommends spiped.
 #
-# broker:
-#   url: amqp://localhost/
-#   celery_require_ssl: False
-#   ssl_ca_certificate: /etc/pki/pulp/broker/ca.crt
-#   ssl_client_key: /etc/pki/pulp/broker/client.crt
-#   ssl_client_certificate: /etc/pki/pulp/broker/client.crt
-#   login_method:
+# redis:
+#   host: 127.0.0.1
+#   port: 6379
+#   password:
 
 # Server configuration
 #

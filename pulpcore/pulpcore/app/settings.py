@@ -205,13 +205,10 @@ _DEFAULT_PULP_SETTINGS = {
         'web_server': 'django',
         'host': None,
     },
-    'broker': {
-        'url': 'amqp://guest@localhost//',
-        'celery_require_ssl': False,
-        'ssl_ca_certificate': '/etc/pki/pulp/broker/ca.crt',
-        'ssl_client_key': '/etc/pki/pulp/broker/client.crt',
-        'ssl_client_certificate': '/etc/pki/pulp/broker/client.crt',
-        'login_method': None
+    'redis': {
+        'host': '127.0.0.1',
+        'port': 6379,
+        'password': ''
     },
     'profiling': {
         'enabled': False,

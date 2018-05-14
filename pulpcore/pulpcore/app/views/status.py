@@ -7,7 +7,7 @@ import logging
 from pulpcore.app.models.task import Worker
 from pulpcore.app.serializers.status import StatusSerializer
 from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
-from pulpcore.tasking.celery_instance import celery
+from pulpcore.tasking.connection import get_redis_connection
 
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class StatusView(APIView):
             'component': component,
             'version': get_distribution(component).version
         } for component in components]
-        broker_status = {'connected': self._get_broker_conn_status()}
+        redis_status = {'connected': self._get_redis_conn_status()}
         db_status = {'connected': self._get_db_conn_status()}
 
         try:
@@ -50,7 +50,7 @@ class StatusView(APIView):
             'online_workers': online_workers,
             'missing_workers': missing_workers,
             'database_connection': db_status,
-            'messaging_connection': broker_status
+            'redis_connection': redis_status
         }
 
         context = {'request': request}
@@ -74,19 +74,18 @@ class StatusView(APIView):
             return True
 
     @staticmethod
-    def _get_broker_conn_status():
+    def _get_redis_conn_status():
         """
-        Returns True if pulp can connect to the message broker
+        Returns True if pulp can connect to Redis
 
         Returns:
-            bool: True if pulp can connect to the broker. False otherwise.
+            bool: True if pulp can connect to Redis. False otherwise.
         """
+        conn = get_redis_connection()
         try:
-            conn = celery.connection()
-            conn.connect()
-            conn.release()
+            conn.ping()
         except Exception:
-            _logger.exception(_('Connection to broker failed during status check!'))
+            _logger.error(_('Connection to Redis failed during status check!'))
             return False
         else:
             return True

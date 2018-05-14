@@ -1,20 +1,19 @@
-from contextlib import suppress
 from gettext import gettext as _
 import logging
-
-from celery import current_app, current_task
-from celery.app import control
+import time
 
 from django.db import transaction
 from django.urls import reverse
+from rq.job import Job
 
 from pulpcore.app.models import Task
 from pulpcore.app.serializers import view_name_for_model
 from pulpcore.common import TASK_FINAL_STATES, TASK_STATES
 from pulpcore.exceptions import MissingResource
+from pulpcore.tasking import connection
+from pulpcore.tasking.constants import TASKING_CONSTANTS
 
 
-celery_controller = control.Control(app=current_app)
 _logger = logging.getLogger(__name__)
 
 
@@ -37,20 +36,26 @@ def cancel(task_id):
 
     if task_status.state in TASK_FINAL_STATES:
         # If the task is already done, just stop
-        msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
-        _logger.info(msg % {'task_id': task_id, 'state': task_status.state})
+        msg = _('Task [{task_id}] already in a completed state: {state}')
+        _logger.info(msg.format(task_id=task_id, state=task_status.state))
         return
 
-    celery_controller.revoke(task_id, terminate=True)
+    redis_conn = connection.get_redis_connection()
+    job = Job(id=str(task_id), connection=redis_conn)
+
+    if job.is_started:
+        redis_conn.sadd(TASKING_CONSTANTS.KILL_KEY, job.get_id())
+    job.delete()
+
+    # A hack to ensure that we aren't deleting resources still being used by the workhorse
+    time.sleep(1.5)
 
     with transaction.atomic():
         task_status.state = TASK_STATES.CANCELED
         task_status.save()
         _delete_incomplete_resources(task_status)
 
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
-    _logger.info(msg)
+    _logger.info(_('Task canceled: {id}.').format(id=task_id))
 
 
 def _delete_incomplete_resources(task):
@@ -72,23 +77,7 @@ def _delete_incomplete_resources(task):
             with transaction.atomic():
                 model.delete()
         except Exception as error:
-            _logger.error(
-                _('Delete created resource, failed: %(reason)s'),
-                {
-                    'reason': str(error)
-                })
-
-
-def get_current_task_id():
-    """"
-    Get the current task id from celery. If this is called outside of a running
-    celery task it will return None
-
-    :return: The ID of the currently running celery task or None if not in a task
-    :rtype: str
-    """
-    with suppress(AttributeError):
-        return current_task.request.id
+            _logger.error(_('Delete created resource, failed: {}').format(str(error)))
 
 
 def get_url(model):

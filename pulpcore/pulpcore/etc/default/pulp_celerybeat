@@ -1,4 +1,0 @@
-# Configuration file for Pulp's Celerybeat worker
-
-# Configure Python's encoding for writing all logs, stdout and stderr
-PYTHONIOENCODING="UTF-8"

@@ -1,10 +1,6 @@
-from celery import shared_task
-
 from pulpcore.app.models import Artifact, Content, ContentArtifact, ProgressBar, RepositoryContent
-from pulpcore.tasking.tasks import UserFacingTask
 
 
-@shared_task(base=UserFacingTask)
 def orphan_cleanup():
     """
     Delete all orphan Content and Artifact records.

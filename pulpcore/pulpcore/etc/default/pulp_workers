@@ -1,4 +1,4 @@
-# Configuration file for Pulp's Celery workers
+# Configuration file for Pulp's workers
 
 # Define the number of worker nodes you wish to have here. This defaults to the number of processors
 # that are detected on the system if left commented here.

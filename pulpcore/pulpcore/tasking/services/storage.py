@@ -3,13 +3,13 @@ import shutil
 
 from gettext import gettext as _
 
-from celery import task
 from django.conf import settings
+from rq.job import get_current_job
 
 
 class WorkerDirectory:
     """
-    The directory associated with a Celery worker.
+    The directory associated with a RQ worker.
 
     Path format: <root>/<worker-hostname>
 
@@ -96,7 +96,7 @@ class WorkerDirectory:
 
 class WorkingDirectory(WorkerDirectory):
     """
-    Celery task working directory.
+    RQ Job working directory.
 
     Path format: <worker-dir>/<task-id>
 
@@ -120,10 +120,10 @@ class WorkingDirectory(WorkerDirectory):
             str: The worker hostname.
 
         Raises:
-            RuntimeError: When used outside of a celery task.
+            RuntimeError: When used outside of an RQ task.
         """
         try:
-            return task.current.request.hostname
+            return get_current_job().origin
         except AttributeError:
             raise RuntimeError(_('May only be used within a Task.'))
 
@@ -136,10 +136,10 @@ class WorkingDirectory(WorkerDirectory):
             str: The current task ID.
 
         Raises:
-            RuntimeError: When used outside of a celery task.
+            RuntimeError: When used outside of an RQ task.
         """
         try:
-            return task.current.request.id
+            return get_current_job().id
         except AttributeError:
             raise RuntimeError(_('May only be used within a Task.'))
 

@@ -268,7 +268,7 @@ class RepositoryVersion(Model):
     def create(cls, repository):
         """
         Create a new RepositoryVersion
-        Creation of a RepositoryVersion should be done in a celery Task.
+        Creation of a RepositoryVersion should be done in a RQ Job.
 
         Args:
             repository (pulpcore.app.models.Repository): to create a new version of
@@ -418,7 +418,7 @@ class RepositoryVersion(Model):
         the successor. If version is incomplete, delete and and clean up RepositoryContent,
         CreatedResource, and Repository objects.
 
-        Deletion of a complete RepositoryVersion should be done in a celery Task.
+        Deletion of a complete RepositoryVersion should be done in a RQ Job.
         """
         if self.complete:
             repo_relations = RepositoryContent.objects.filter(repository=self.repository)

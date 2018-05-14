@@ -1,17 +1,14 @@
 from gettext import gettext as _
 from logging import getLogger
 
-from celery import shared_task
 from django.db import transaction
 
 from pulpcore.app import models
 from pulpcore.app import serializers
-from pulpcore.tasking.tasks import UserFacingTask
 
 log = getLogger(__name__)
 
 
-@shared_task(base=UserFacingTask)
 def delete(repo_id):
     """
     Delete a :class:`~pulpcore.app.models.Repository`
@@ -23,7 +20,6 @@ def delete(repo_id):
     models.Repository.objects.filter(pk=repo_id).delete()
 
 
-@shared_task(base=UserFacingTask)
 def update(repo_id, partial=True, data=None):
     """
     Updates a :class:`~pulpcore.app.models.Repository`
@@ -42,7 +38,6 @@ def update(repo_id, partial=True, data=None):
     serializer.save()
 
 
-@shared_task(base=UserFacingTask)
 def delete_version(pk):
     """
     Delete a repository version by squashing its changes with the next newer version. This ensures
@@ -72,7 +67,6 @@ def delete_version(pk):
         version.delete()
 
 
-@shared_task(base=UserFacingTask)
 def add_and_remove(repository_pk, add_content_units, remove_content_units):
     """
     Create a new repository version by adding and then removing content units.
