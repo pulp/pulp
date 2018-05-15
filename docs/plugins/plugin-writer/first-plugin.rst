@@ -94,14 +94,13 @@ For a general reference for serializers and viewsets, check `DRF documentation
 .. _define-remote:
 
 Define your plugin Remote
----------------------------
+-------------------------
 
 To define a new remote, e.g. ``ExampleRemote``:
 
 * :class:`pulpcore.plugin.models.Remote` should be subclassed and extended with additional
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
-* ``sync`` method should be defined on a plugin remote model ``ExampleRemote``,
 * create a serializer for your new remote as a subclass of
   :class:`pulpcore.plugin.serializers.RemoteSerializer`,
 * create a viewset for your new remote as a subclass of
@@ -109,43 +108,6 @@ To define a new remote, e.g. ``ExampleRemote``:
 
 :class:`~pulpcore.plugin.models.Remote` model should not be used directly anywhere in plugin code.
 Only plugin-defined Remote classes are expected to be used.
-
-One of the ways to perform synchronization:
-
-* Download and analyze repository metadata from a remote source.
-* Decide what needs to be added to repository or removed from it.
-* Associate already existing content to a repository by creating an instance of
-  :class:`~pulpcore.plugin.models.RepositoryContent` and saving it.
-* Remove :class:`~pulpcore.plugin.models.RepositoryContent` objects which were identified for
-  removal.
-* For every content which should be added to Pulp create but do not save yet:
-
-  * instance of ``ExampleContent`` which will be later associated to a repository.
-  * instance of :class:`~pulpcore.plugin.models.ContentArtifact` to be able to create relations with
-    the artifact models.
-  * instance of :class:`~pulpcore.plugin.models.RemoteArtifact` to store information about artifact
-    from remote source and to make a relation with :class:`~pulpcore.plugin.models.ContentArtifact`
-    created before.
-
-* If a remote content should be downloaded right away (aka ``immediate`` download policy), use
-  the suggested  :ref:`downloading <download-docs>` solution. If content should be downloaded
-  later (aka ``on_demand`` or ``background`` download policy), feel free to skip this step.
-* Save all artifact and content data in one transaction:
-
-  * in case of downloaded content, create an instance of
-    :class:`~pulpcore.plugin.models .Artifact`. Set the `file` field to the
-    absolute path of the downloaded file. Pulp will move the file into place
-    when the Artifact is saved. The Artifact refers to a downloaded file on a
-    filesystem and contains calculated checksums for it.
-  * in case of downloaded content, update the :class:`~pulpcore.plugin.models.ContentArtifact` with
-    a reference to the created :class:`~pulpcore.plugin.models.Artifact`.
-  * create and save an instance of the :class:`~pulpcore.plugin.models.RepositoryContent` to
-    associate the content to a repository.
-  * save all created artifacts and content: ``ExampleContent``,
-    :class:`~pulpcore.plugin.models.ContentArtifact`,
-    :class:`~pulpcore.plugin.models.RemoteArtifact`.
-
-* Use :class:`~pulpcore.plugin.models.ProgressBar` to report the progress of some steps if needed.
 
 
 There are several important aspects relevant to remote implementation which were briefly mentioned
@@ -185,7 +147,6 @@ To define a new publisher, e.g. ``ExamplePublisher``:
 * :class:`pulpcore.plugin.models.Publisher` should be subclassed and extended with additional
   attributes to the plugin needs,
 * define ``TYPE`` class attribute which is used for filtering purposes,
-* ``publish`` method should be defined on a plugin publisher model ``ExamplePublisher``,
 * create a serializer for your new publisher a subclass of
   :class:`pulpcore.plugin.serializers.PublisherSerializer`,
 * create a viewset for your new publisher as a subclass of
@@ -193,6 +154,60 @@ To define a new publisher, e.g. ``ExamplePublisher``:
 
 :class:`~pulpcore.plugin.models.Publisher` model should not be used directly anywhere in plugin
 code. Only plugin-defined Publisher classes are expected to be used.
+
+Check ``pulp_file`` implementation of `the FilePublisher
+<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_.
+
+
+
+Define your Tasks
+-----------------
+
+Tasks such as sync and publish are needed to tell Pulp how to perform certain actions.
+
+Sync
+^^^^
+
+One of the ways to perform synchronization:
+
+* Download and analyze repository metadata from a remote source.
+* Decide what needs to be added to repository or removed from it.
+* Associate already existing content to a repository by creating an instance of
+  :class:`~pulpcore.plugin.models.RepositoryContent` and saving it.
+* Remove :class:`~pulpcore.plugin.models.RepositoryContent` objects which were identified for
+  removal.
+* For every content which should be added to Pulp create but do not save yet:
+
+  * instance of ``ExampleContent`` which will be later associated to a repository.
+  * instance of :class:`~pulpcore.plugin.models.ContentArtifact` to be able to create relations with
+    the artifact models.
+  * instance of :class:`~pulpcore.plugin.models.RemoteArtifact` to store information about artifact
+    from remote source and to make a relation with :class:`~pulpcore.plugin.models.ContentArtifact`
+    created before.
+
+* If a remote content should be downloaded right away (aka ``immediate`` download policy), use
+  the suggested  :ref:`downloading <download-docs>` solution. If content should be downloaded
+  later (aka ``on_demand`` or ``background`` download policy), feel free to skip this step.
+* Save all artifact and content data in one transaction:
+
+  * in case of downloaded content, create an instance of
+    :class:`~pulpcore.plugin.models .Artifact`. Set the `file` field to the
+    absolute path of the downloaded file. Pulp will move the file into place
+    when the Artifact is saved. The Artifact refers to a downloaded file on a
+    filesystem and contains calculated checksums for it.
+  * in case of downloaded content, update the :class:`~pulpcore.plugin.models.ContentArtifact` with
+    a reference to the created :class:`~pulpcore.plugin.models.Artifact`.
+  * create and save an instance of the :class:`~pulpcore.plugin.models.RepositoryContent` to
+    associate the content to a repository.
+  * save all created artifacts and content: ``ExampleContent``,
+    :class:`~pulpcore.plugin.models.ContentArtifact`,
+    :class:`~pulpcore.plugin.models.RemoteArtifact`.
+
+* Use :class:`~pulpcore.plugin.models.ProgressBar` to report the progress of some steps if needed.
+
+Publish
+^^^^^^^
+
 
 One of the ways to perform publishing:
 
@@ -205,6 +220,3 @@ One of the ways to perform publishing:
   :class:`~pulpcore.plugin.models.PublishedMetadata` which refers to a corresponding file and
   :class:`~pulpcore.app.models.Publication` to which this metadata belongs.
 * Use :class:`~pulpcore.plugin.models.ProgressBar` to report progress of some steps if needed.
-
-Check ``pulp_file`` implementation of `the FilePublisher
-<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_.

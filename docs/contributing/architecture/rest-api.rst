@@ -131,10 +131,6 @@ which increases usability. The opposite is also true, in that too much nesting m
 API usability, so the question of whether or not to nest a serializer should be handled case-by-
 case.
 
-An example of where this *might* be useful is nesting the complete Remote and Publisher
-definitions related to a Repository when viewing a Repository instance, so users could potentially
-create or update a fully functional repository with a single request.
-
 An example of where this *might not* be useful is including complete Detail representations
 of Content related to a Repository when viewing a Repository instance, since those instances
 would have to be `cast()`, and there could literally be millions of them.

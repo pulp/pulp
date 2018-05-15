@@ -91,11 +91,11 @@ example the Python Package Index (PyPI) provides such a service with the "simple
 
 For example, here is the url format for the "simple" PyPI API:
 
-   ``https://pypi.python.org/simple/<package_name_here>/``
+   ``https://pypi.org/simple/<package_name_here>/``
 
 Here is a concrete example:
 
-   ``https://pypi.python.org/simple/pulpcore/``
+   ``https://pypi.org/simple/pulpcore/``
 
 .. note::
    How does a client discover content to download?
@@ -123,7 +123,7 @@ Here is an example of how *pip* downloads a specific *Remote Content Unit* that 
 
 With this case, *pip* discovers and then downloads a package as follows:
 
-1. Request package metadata from the server via *https://pypi.python.org/simple/foo/*
+1. Request package metadata from the server via *https://pypi.org/simple/foo/*
 2. Parse the results which includes urls to its corresponding egg, wheel, and other artifact types
 3. Download the type of interest
 

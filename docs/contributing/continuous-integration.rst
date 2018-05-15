@@ -12,8 +12,6 @@ New code is highly encouraged to have basic unit tests that demonstrate its func
 Request that has failing unit tests cannot be merged.
 
 The unit tests for `pulpcore` are in `pulpcore/tests <https://github.com/pulp/pulp/tree/3.0-dev/pulpcore/tests>`_.
-`pulpcore-plugin` unit tests are in `plugin/tests <https://github.com/pulp/pulp/tree/3.0-dev/plugin/tests>`_.
-
 
 Integration tests for new code should be added to a separate project called pulp-smash_. A Pull
 Request that has failing pulp-smash tests cannot be merged.
