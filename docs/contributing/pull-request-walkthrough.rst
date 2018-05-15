@@ -33,7 +33,6 @@ Checklist
 #. Add GitHub labels as appropriate.
 #. Change the status of the redmine issue to "POST".
 #. Add a link to the pull request in a comment on the issue.
-#. Set the "Platform Release" field on the issue.
 
 Review
 ------

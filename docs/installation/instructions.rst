@@ -77,7 +77,7 @@ PyPI Installation
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-8. Go through the :ref:`database-install`, :ref:`redis-install`, and `systemd-setup` sections
+8. Go through the :ref:`database-install`, :ref:`redis-install`, and :ref:`systemd-setup` sections
 
 .. note::
 

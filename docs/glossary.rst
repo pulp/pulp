@@ -7,8 +7,8 @@ Glossary
         A file that belongs to a :term:`content unit<content>`.
 
     :class:`~pulpcore.app.models.Content`
-        The smallest that of data that is managed by Pulp. When singular, "content unit" should be
-        used. Content is added and removed to :term:`repositories<repository>`, and can have multiple
+        The smallest unit of data that can be added and removed from :term:`repositories<repository>`.
+        When singular, "content unit" should be used. Content units can have multiple
         :term:`artifacts<artifact>`. Each content unit has a :term:`type` (like .rpm or .deb) which
         that is defined by a :term:`plugin`
 

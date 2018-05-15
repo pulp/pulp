@@ -6,9 +6,12 @@ Configuration Files
 server.yaml
 -----------
 
-Pulp's server configuration file should be located at `/etc/pulp/server.yaml`
+Pulp's server configuration file is located by default at `/etc/pulp/server.yaml`, but you can
+also set the `PULP_SETTINGS` environment variable to specify a custom location.
 
 SECRET_KEY
+^^^^^^^^^^
+
     In order to get a pulp server up and running a `Django SECRET_KEY
     <https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-SECRET_KEY>`_ *must* be
     provided in server.yaml. It is highly recommend that this SECRET_KEY be enclosed in single quotes,
@@ -25,6 +28,8 @@ SECRET_KEY
    print(''.join(random.choice(chars) for i in range(50)))
 
 logging
+^^^^^^^
+
     By default Pulp logs at an INFO level to syslog. Pulp also comes with a `console` handler.
     Additional handlers can be defined and used like so:
 
@@ -44,12 +49,12 @@ logging
 content
 ^^^^^^^
 
-The configuration for the content serving application.
-
 web_server
   Defines the type of web server that is running the content application.
   When set to `django`, the content is streamed.
   When set to `apache`, the `X-SENDFILE` header is injected which delegates
-  streaming the content to Apache.  Requires: `mod_xsendfile` to be installed.
+  streaming the content to Apache.  This requires
+  `mod_xsendfile <https://tn123.org/mod_xsendfile/>`_ to be installed.
+
   When set to `nginx`, the `X-Accel-Redirect` header is injected which delegates
   streaming the content to NGINX.

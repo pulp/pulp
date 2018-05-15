@@ -43,8 +43,8 @@ Plugin List
      - No
 
    * - Python plug-in
-     - `Python plug-in docs <https://github.com/pulp/pulp_python/blob/3.0-dev/README.rst>`_
-     - `Python plug-in source <https://github.com/pulp/pulp_python>`_
+     - `Python plug-in docs <http://pulp-python.readthedocs.io/en/latest/>`_
+     - `Python plug-in source <https://github.com/pulp/pulp_python/tree/3.0-dev>`_
      - `Python plug-in tracker <https://pulp.plan.io/projects/pulp_python?jump=welcome>`_
      - Yes
      - No
