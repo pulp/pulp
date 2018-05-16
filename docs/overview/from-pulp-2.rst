@@ -39,6 +39,6 @@ an immutable :term:`publication` is created.
 Publications are hosted by :term:`distributions<distribution>`, which contain configuration for how
 and where to serve a specific publication.
 
-The combination of publicaitons and distributions allows users to promote and rollback instantly.
+The combination of publications and distributions allows users to promote and rollback instantly.
 In a synchronous call, the user can update a distribution (eg. "Production") to host any
 pre-created publication.
