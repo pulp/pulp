@@ -11,16 +11,18 @@ Fedora, CentOS, and Mac OSX.
 .. note::
 
     As Pulp 3 currently does not have an SELinux Policy, it currently requires the target
-    machine to have SELinux set to permissive mode or disabled.
+    machine to have SELinux set to permissive mode or disabled. If you are not sure if the system is capabable or is currently running SELinux run the following command:
 
-    This step only applies to Linux distributions with SELinux, such as Fedora or CentOS::
+    $ getenforce
+
+    If the command is not found or the return status is "Permissive" or "Disabled" then skip to step 1. If the return of the command is "Enforcing" then this next command should be applied:
 
     $ sudo setenforce 0
 
 PyPI Installation
 -----------------
 
-1. Install python3.5(+).
+1. Install python3.5(+) and pip. 
 
 2. Create a pulp venv::
 
@@ -53,11 +55,11 @@ PyPI Installation
    directory containing the ``setup.py`` file, and do a local, editable pip installation::
 
    $ git clone -b 3.0-dev https://github.com/pulp/pulp.git
-   $ cd pulp/pulpcore
-   $ pip install -e .
+   $ cd pulp/
+   $ pip install -e pulpcore/
+   $ pip install -e common/
+   $ pip install -e plugin/
 
-   You will need to do this for all three main components of Pulp - ``pulpcore``, ``pulpcore-common``,
-   and ``pulpcore-plugin`` in the ``pulpcore``, ``common``, and ``plugin`` subdirectories, respectively.
 
 5. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
