@@ -1,5 +1,5 @@
 ============================
-Plugin API 0.0 Release Notes
+Plugin API 0.1 Release Notes
 ============================
 
 The Plugin API is not yet declared as stable. Backwards incompatible changes might be made until
@@ -11,8 +11,15 @@ See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 :doc:`Plugin Development <../../plugins/plugin-writer/index>`.
 
 
-Plugin API 0.0.1
-================
+0.1.0b2
+=======
 
-Features
---------
+* Tasking system switching from Celery+RabbitMQ to RQ+Redis. This breaking change impacts both
+  plugin writers and users. See
+  `the blog post about this change and how to update <https://pulpproject.org/2018/05/08/pulp3-moving-to-rq/>`_.
+
+
+0.1.0b1
+=======
+
+Initial beta release

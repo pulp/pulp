@@ -11,4 +11,4 @@ Release Notes
    :maxdepth: 2
    :caption: Plugin API
 
-   plugin_api/0.0.z
+   plugin_api/0.1.z
