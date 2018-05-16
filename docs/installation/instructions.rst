@@ -11,11 +11,13 @@ Fedora, CentOS, and Mac OSX.
 .. note::
 
     As Pulp 3 currently does not have an SELinux Policy, it currently requires the target
-    machine to have SELinux set to permissive mode or disabled. If you are not sure if the system is capabable or is currently running SELinux run the following command:
+    machine to have SELinux set to permissive mode or disabled. If you are not sure if the system is
+    capable or is currently running SELinux run the following command::
 
     $ getenforce
 
-    If the command is not found or the return status is "Permissive" or "Disabled" then skip to step 1. If the return of the command is "Enforcing" then this next command should be applied:
+    If the command is not found or the return status is "Permissive" or "Disabled" then skip to step
+    1. If the return of the command is "Enforcing" then this next command should be applied::
 
     $ sudo setenforce 0
 
@@ -97,7 +99,13 @@ PyPI Installation
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
 
-10. Run Pulp:
+10. Collect and Serve Static Media
+
+   Pulp will operate correctly without static media being served, but if browsing the Pulp API with
+   a web browser you probably want to configure it. See :ref:`static-content` for more info on
+   collecting and serving static content.
+
+11. Run Pulp:
 ::
 
    $ django-admin runserver
