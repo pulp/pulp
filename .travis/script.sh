@@ -31,9 +31,9 @@ else
 
   export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
   pulp-manager reset-admin-password --password admin
-  pulp-manager runserver >> ~/django_runserver.log 2>&1 &
-  rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/resource_manager.log 2>&1 &
-  rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/reserved_worker-1.log 2>&1 &
+  coverage run $(which pulp-manager) runserver >> ~/django_runserver.log 2>&1 &
+  coverage run $(which rq) worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/resource_manager.log 2>&1 &
+  coverage run $(which rq) worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/reserved_worker-1.log 2>&1 &
 
   sleep 5
 
@@ -46,10 +46,23 @@ else
     cat ~/reserved_worker-1.log
   fi
 
-  if [ $result -eq 0 ]; then
-    # upload coverage report to codecov
-    codecov
-  fi
+  ls -la
+  bash <(curl -s https://codecov.io/bash) -c -F unittests
+  rm -f .coverage
+
+  pkill -f pulpcore.tasking.worker.PulpWorker
+  sleep 5
+  ls -la
+  coverage combine
+  ls -la
+  bash <(curl -s https://codecov.io/bash) -c -F workers
+  rm -f .coverage.travis*
+  rm -f .coverage
+
+  pkill -SIGINT -f runserver
+  sleep 5
+  ls -la
+  bash <(curl -s https://codecov.io/bash) -c -F webserver
 
 fi
 
