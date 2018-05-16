@@ -38,6 +38,11 @@ databases:
 #
 # SECRET_KEY:
 
+# `DEBUG`: A boolean that turns on/off debug mode. See the Django docs for more information on the
+# behaviors this affects.
+#
+# DEBUG: False
+
 # `MEDIA_ROOT`: Location where Pulp stores files (Artifacts, published metadata, etc)
 #
 # MEDIA_ROOT: /var/lib/pulp/

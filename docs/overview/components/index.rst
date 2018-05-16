@@ -18,8 +18,11 @@ Queue
 SQL Database
   Refer to the database documentation on how to scale it and/or make it highly available.
 
+Static Content
+  Pulp's browsable api uses some static content.  See the :ref:`static-content` docs for more info
+  on deploying and scaling this component.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    webserver

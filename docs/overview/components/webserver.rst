@@ -24,4 +24,38 @@ Plugin Views
 
 Using the urls above you can choose which webservers and how many will serve the different parts of
 the Pulp application. If you want to have a single rule to serve all components of the Pulp web
-application, routing ``/`` to it will is simple and will always work.
+application, routing ``/`` to it is simple and will always work.
+
+.. _static-content:
+
+Static Content
+==============
+
+When browsing the REST API or the browsable documentation with a web browser, for a good experience,
+you'll need static content to be served.
+
+In Development
+--------------
+
+If using the built-in Django webserver and your settings.yaml has ``DEBUG: True`` then static
+content is automatically served for you.
+
+In Production
+-------------
+
+For production environments, configure static content as follows:
+
+1. Pick the URL static content is served at, e.g. ``/static/`` and set that as the STATIC_URL in the
+settings.yaml file. Then select the path on the local filesystem where static content will be
+stored, and set that as STATIC_ROOT.
+
+2. Configure your webserver to serve the STATIC_ROOT directory's contents at the STATIC_URL url.
+
+3. Once configured, collect all of the static content into place using the ``collectstatic`` command
+as follows::
+
+    $ pulp-manager collectstatic
+
+For more information on scaling your static content, configuring object storage to serve your static
+media, and other topics refer to the
+`Django Static Media docs <https://docs.djangoproject.com/en/2.0/howto/static-files/deployment/>`_
