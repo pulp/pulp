@@ -162,7 +162,7 @@ STATIC_URL = '/static/'
 # /etc/pulp/ is missing or if it does not have values for every setting
 _DEFAULT_PULP_SETTINGS = {
     # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-    'databases': {
+    'DATABASES': {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'pulp',
@@ -197,21 +197,21 @@ _DEFAULT_PULP_SETTINGS = {
             },
         }
     },
-    'server': {
-        'working_directory': '/var/lib/pulp/tmp',
+    'SERVER': {
+        'WORKING_DIRECTORY': '/var/lib/pulp/tmp',
     },
-    'content': {
-        'web_server': 'django',
-        'host': None,
+    'CONTENT': {
+        'WEB_SERVER': 'django',
+        'HOST': None,
     },
-    'redis': {
-        'host': '127.0.0.1',
-        'port': 6379,
-        'password': ''
+    'REDIS': {
+        'HOST': '127.0.0.1',
+        'PORT': 6379,
+        'PASSWORD': ''
     },
-    'profiling': {
-        'enabled': False,
-        'directory': '/var/lib/pulp/c_profiles'
+    'PROFILING': {
+        'ENABLED': False,
+        'DIRECTORY': '/var/lib/pulp/c_profiles'
     }
 }
 

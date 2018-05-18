@@ -13,7 +13,7 @@ SECRET_KEY
 ^^^^^^^^^^
 
     In order to get a pulp server up and running a `Django SECRET_KEY
-    <https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-SECRET_KEY>`_ *must* be
+    <https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-secret_key>`_ *must* be
     provided in server.yaml. It is highly recommend that this SECRET_KEY be enclosed in single quotes,
     so yaml string escaping does not to be dealt with.
 
@@ -46,10 +46,10 @@ logging
          handlers: ["myCustomHandler"]
          level: DEBUG
 
-content
+CONTENT
 ^^^^^^^
 
-web_server
+WEB_SERVER
   Defines the type of web server that is running the content application.
   When set to `django`, the content is streamed.
   When set to `apache`, the `X-SENDFILE` header is injected which delegates

@@ -199,7 +199,7 @@ class ContentView(View):
             django.http.HttpResponseForbidden: on forbidden.
 
         """
-        server = settings.CONTENT['web_server']
+        server = settings.CONTENT['WEB_SERVER']
 
         try:
             path = request.path.strip('/')

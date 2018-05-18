@@ -48,11 +48,11 @@ class TestLoadSettings(TestCase):
     def test_settings_file(self):
         """Assert loading a file merges the file settings with the default"""
         override = """
-        allowed_hosts:
+        ALLOWED_HOSTS:
           - subdomains.all.the.way.down.www.example.com
         """
         expected = pulp_settings._DEFAULT_PULP_SETTINGS.copy()
-        expected['allowed_hosts'] = ['subdomains.all.the.way.down.www.example.com']
+        expected['ALLOWED_HOSTS'] = ['subdomains.all.the.way.down.www.example.com']
 
         mocked_open = mock.mock_open(read_data=override)
         with mock.patch('pulpcore.app.settings.open', mocked_open, create=True):

@@ -4,15 +4,15 @@
 
 # Django Settings
 #
-# `allowed_hosts`: A list of strings representing the host/domain names that
+# `ALLOWED_HOSTS`: A list of strings representing the host/domain names that
 # Pulp can serve. This is a security measure to prevent HTTP Host header
 # attacks. A value beginning with a period can be used as a sub-domain wildcard.
 # The default is the host's FQDN.
 #
-# allowed_hosts:
+# ALLOWED_HOSTS:
 #   - pulp.example.com
 
-# `databases`: An associative array (dictionary) of databases to use. For the
+# `DATABASES`: An associative array (dictionary) of databases to use. For the
 # full list of configuration options, refer to the Django database documentation
 # shipped with your version of Django, or online at
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -20,7 +20,7 @@
 # By default, Pulp will use a Postgresql database. The following configuration can be configured to
 # use another Django supported database.
 #
-databases:
+DATABASES:
   default:
     CONN_MAX_AGE: 0
     ENGINE: django.db.backends.postgresql_psycopg2
@@ -73,38 +73,38 @@ databases:
 
 # Redis configuration
 #
-# `redis`: Redis provides the basis for the Pulp tasking system. For security ensure your Redis
+# `REDIS`: Redis provides the basis for the Pulp tasking system. For security ensure your Redis
 # deployment can only be reached via trusted network endpoints per https://redis.io/topics/security.
 # Pulp does support password based authenticated from the client. For encrypted communication
 # of Redis traffic over untrusted networks Redis recommends spiped.
 #
-# redis:
-#   host: 127.0.0.1
-#   port: 6379
-#   password:
+# REDIS:
+#   HOST: 127.0.0.1
+#   PORT: 6379
+#   PASSWORD:
 
 # Server configuration
 #
-# `server`: Server behavior configuration of pulp.
-#   `working_directory`: Path for pulp workers to create temporary directories
+# `SERVER`: Server behavior configuration of pulp.
+#   `WORKING_DIRECTORY`: Path for pulp workers to create temporary directories
 #                        for completion of tasks
 #
-# server:
-#   working_directory: /var/lib/pulp/tmp
+# SERVER:
+#   WORKING_DIRECTORY: /var/lib/pulp/tmp
 
 # Content Application
 #
-# `content`: The content serving application.
-#   `web_server`: The type of web server.  Must be: (django|apache|nginx).
+# `CONTENT`: The content serving application.
+#   `WEB_SERVER`: The type of web server.  Must be: (django|apache|nginx).
 #                 When set to 'apache', the X-SENDFILE header is injected which delegates
 #                 streaming the content to Apache.  Requires: mod_xsendfile to be installed.
 #                 When set to 'nginx', the X-Accel-Redirect header is injected which delegates
 #                 streaming the content to NGINX.
-#   `host`: The host name or IP and an optional port number for the Content App. (e.g.
+#   `HOST`: The host name or IP and an optional port number for the Content App. (e.g.
 #           example.com:8000) This value should be specified only if the Content App is served on
 #           a host that's different from the REST API. The default value is the same as the host
 #           used to serve the REST API.
 #
-# content:
-#   web_server: django
-#   host: pulp.example.com
+# CONTENT:
+#   WEB_SERVER: django
+#   HOST: pulp.example.com
