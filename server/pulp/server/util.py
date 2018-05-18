@@ -4,6 +4,7 @@ This module contains utility code to be used by pulp.server.
 from contextlib import contextmanager
 from gettext import gettext as _
 import hashlib
+import inspect
 import logging
 import os
 from shutil import copy, Error
@@ -16,11 +17,20 @@ from pulp.server.exceptions import PulpCodedException, PulpExecutionException
 _logger = logging.getLogger(__name__)
 
 
+# support md5 for fips
+def md5(*args, **kwargs):
+    if 'usedforsecurity' in inspect.getargspec(hashlib.new)[0]:
+        kwargs['usedforsecurity'] = False
+        return hashlib.md5(*args, **kwargs)
+    else:
+        return hashlib.md5(*args, **kwargs)
+
+
 # Number of bytes to read into RAM at a time when validating the checksum
 CHECKSUM_CHUNK_SIZE = 8 * 1024 * 1024
 
 # Constants to pass in as the checksum type in verify_checksum
-TYPE_MD5 = hashlib.md5().name
+TYPE_MD5 = md5().name
 TYPE_SHA = 'sha'
 TYPE_SHA1 = hashlib.sha1().name
 TYPE_SHA256 = hashlib.sha256().name
@@ -28,7 +38,7 @@ TYPE_SHA256 = hashlib.sha256().name
 HASHLIB_ALGORITHMS = (TYPE_MD5, TYPE_SHA, TYPE_SHA1, TYPE_SHA256)
 
 CHECKSUM_FUNCTIONS = {
-    TYPE_MD5: hashlib.md5,
+    TYPE_MD5: md5,
     TYPE_SHA: hashlib.sha1,
     TYPE_SHA1: hashlib.sha1,
     TYPE_SHA256: hashlib.sha256,
