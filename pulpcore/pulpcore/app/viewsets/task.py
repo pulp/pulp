@@ -60,6 +60,9 @@ class TaskViewSet(NamedModelViewSet,
 
 
 class WorkerFilter(filterset.FilterSet):
+    """
+    Testing ...
+    """
     name = filters.CharFilter()
     last_heartbeat = filters.IsoDateTimeFilter()
     online = filters.BooleanFilter(method='filter_online')
