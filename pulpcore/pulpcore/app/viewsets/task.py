@@ -78,17 +78,17 @@ class WorkerFilter(filterset.FilterSet):
         online_workers = Worker.objects.online_workers()
 
         if value:
-            return queryset.intersection(online_workers)
+            return queryset.filter(pk__in=online_workers)
         else:
-            return queryset.difference(online_workers)
+            return queryset.exclude(pk__in=online_workers)
 
     def filter_missing(self, queryset, name, value):
         missing_workers = Worker.objects.missing_workers()
 
         if value:
-            return queryset.intersection(missing_workers)
+            return queryset.filter(pk__in=missing_workers)
         else:
-            return queryset.difference(missing_workers)
+            return queryset.exclude(pk__in=missing_workers)
 
 
 class WorkerViewSet(NamedModelViewSet,
