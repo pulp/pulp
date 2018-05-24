@@ -186,7 +186,12 @@ def _make_priv_key():
     if exit_code != 0:
         raise Exception("error generating private key: %s" % error)
     output = p.stdout.read()
-    pem_str = output[output.index("-----BEGIN RSA PRIVATE KEY-----"):]
+    try:
+        start_index = output.index("-----BEGIN RSA PRIVATE KEY-----")
+    except ValueError:
+        # OpenSSL does not support RSA in FIPS mode
+        start_index = output.index("-----BEGIN PRIVATE KEY-----")
+    pem_str = output[start_index:]
     return pem_str
 
 
