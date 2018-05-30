@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from pulpcore.common import TASK_INCOMPLETE_STATES
 
 from pulpcore.app.models import Task, Worker
-from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer
+from pulpcore.app.serializers import TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
@@ -38,11 +38,8 @@ class TaskViewSet(NamedModelViewSet,
                   mixins.DestroyModelMixin):
     queryset = Task.objects.all()
     endpoint_name = 'tasks'
+    serializer_class = TaskSerializer
     filter_class = TaskFilter
-    serializers = {
-        'list': MinimalTaskSerializer,
-        'default': TaskSerializer
-    }
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-created')
 
