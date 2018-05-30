@@ -6,7 +6,7 @@ addons:
     packages:
       - graphviz
 install:
-    - "pip install flake8 sphinx sphinxcontrib-swaggerdoc celery sphinxcontrib-swaggerdoc 'django<2' git+https://github.com/snide/sphinx_rtd_theme.git@abfa98539a2bfc44198a9ca8c2f16efe84cc4d26 pyyaml"
+    - "pip install flake8 sphinx sphinxcontrib-swaggerdoc celery sphinxcontrib-swaggerdoc 'django<2' sphinx_rtd_theme pyyaml"
     # setup plantuml
     - wget "https://fossies.org/linux/dmelt/lib/graph/plantuml.jar" -O plantuml.jar
     - sudo mkdir -p /opt/plantuml
