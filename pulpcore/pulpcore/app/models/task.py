@@ -247,39 +247,6 @@ class Worker(Model):
                 TaskReservedResource.objects.create(resource=reservation, task=task)
 
 
-class TaskLock(Model):
-    """
-    Locking mechanism for services that utilize active/passive fail-over
-
-    Fields:
-
-        name (models.TextField): The name of the item that has the lock
-        timestamp (models.DateTimeField): The time the lock was last updated
-        lock (models.TextField): The name of the lock acquired
-
-    """
-    RESOURCE_MANAGER = 'ResourceManager'
-    LOCK_STRINGS = (
-        (RESOURCE_MANAGER, 'Resource Manager Lock'),
-    )
-
-    name = models.TextField(db_index=True, unique=True)
-    timestamp = models.DateTimeField(auto_now=True)
-    lock = models.TextField(unique=True, null=False, choices=LOCK_STRINGS)
-
-    def update_timestamp(self):
-        """
-        Update the timestamp field to now and save it.
-
-        Only the timestamp field will be saved. No other changes will be saved.
-
-        Raises:
-            ValueError: When the model instance has never been saved before. This method can
-                only update an existing database record.
-        """
-        self.save(update_fields=['timestamp'])
-
-
 class Task(Model):
     """
     Represents a task
