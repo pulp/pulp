@@ -11,7 +11,6 @@ from pulpcore.app.serializers import (
     BaseURLField,
     DetailIdentityField,
     DetailRelatedField,
-    FileField,
     GenericKeyValueRelatedField,
     LatestVersionField,
     MasterModelSerializer,
@@ -67,18 +66,18 @@ class RemoteSerializer(MasterModelSerializer):
         help_text='If True, the plugin will validate imported artifacts.',
         required=False,
     )
-    ssl_ca_certificate = FileField(
+    ssl_ca_certificate = serializers.FileField(
         help_text='A PEM encoded CA certificate used to validate the server '
                   'certificate presented by the remote server.',
         write_only=True,
         required=False,
     )
-    ssl_client_certificate = FileField(
+    ssl_client_certificate = serializers.FileField(
         help_text='A PEM encoded client certificate used for authentication.',
         write_only=True,
         required=False,
     )
-    ssl_client_key = FileField(
+    ssl_client_key = serializers.FileField(
         help_text='A PEM encoded private key used for authentication.',
         write_only=True,
         required=False,

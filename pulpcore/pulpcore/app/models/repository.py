@@ -61,11 +61,11 @@ class Remote(MasterModel):
 
         url (models.TextField): The URL of an external content source.
         validate (models.BooleanField): If True, the plugin will validate imported files.
-        ssl_ca_certificate (models.TextField): A PEM encoded CA certificate used to validate the
+        ssl_ca_certificate (models.FileField): A PEM encoded CA certificate used to validate the
             server certificate presented by the external source.
-        ssl_client_certificate (models.TextField): A PEM encoded client certificate used
+        ssl_client_certificate (models.FileField): A PEM encoded client certificate used
             for authentication.
-        ssl_client_key (models.TextField): A PEM encoded private key used for authentication.
+        ssl_client_key (models.FileField): A PEM encoded private key used for authentication.
         ssl_validation (models.BooleanField): If True, SSL peer validation must be performed.
         proxy_url (models.TextField): The optional proxy URL.
             Format: scheme://user:password@host:port
