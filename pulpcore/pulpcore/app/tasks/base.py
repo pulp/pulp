@@ -1,5 +1,3 @@
-from django.http import QueryDict
-
 from pulpcore.app.apps import get_plugin_config
 
 
@@ -29,9 +27,7 @@ def general_update(instance_id, app_label, serializer_name, *args, **kwargs):
     partial = kwargs.pop('partial', False)
     serializer_class = get_plugin_config(app_label).named_serializers[serializer_name]
     instance = serializer_class.Meta.model.objects.get(id=instance_id).cast()
-    data_querydict = QueryDict('', mutable=True)
-    data_querydict.update(data)
-    serializer = serializer_class(instance, data=data_querydict, partial=partial)
+    serializer = serializer_class(instance, data=data, partial=partial)
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
