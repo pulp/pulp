@@ -553,7 +553,13 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
         set_on_insert = {}
         for field in fields_to_set_on_insert:
             set_on_insert[field] = stuff_to_update.pop(field)
+
         task_id = stuff_to_update.pop('task_id')
+
+        # Don't try to set Mongoengine internal values.
+        # Can cause silent failures if you accidentally overwrite 'id'.
+        for internal_field in ('id', '_ns'):
+            stuff_to_update.pop(internal_field, None)
 
         update = {'$set': stuff_to_update,
                   '$setOnInsert': set_on_insert}
