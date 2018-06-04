@@ -1324,6 +1324,7 @@ class TestLazyCatalogEntry(unittest.TestCase):
         expected = [
             [('importer_id', 1)],
             [('path', -1), ('importer_id', -1), ('revision', -1)],
+            [('unit_id', 1), ('unit_type_id', 1)],
             [(u'_id', 1)]
         ]
         result = model.LazyCatalogEntry.list_indexes()
