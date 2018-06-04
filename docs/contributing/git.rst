@@ -26,11 +26,6 @@ cherry-picked into ``x.y`` stream.
 .. _PUP-0003: https://github.com/pulp/pups/blob/master/pup-0003.md
 
 
-.. note::
-
-    During development of Pulp 3.0, we will be using the `3.0-dev` branch instead of `master`.
-
-
 Commits
 -------
 

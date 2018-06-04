@@ -112,7 +112,7 @@ package tarball or egg via *http://* also.
 In the simplest case, *pip* is told the url and can download it without "discovering" it. For
 example with a command like:
 
-``pip3 install -e "git+https://github.com/pulp/pulp.git@3.0-dev#egg=pulpcore&subdirectory=common"``
+``pip3 install -e "git+https://github.com/pulp/pulp.git#egg=pulpcore&subdirectory=common"``
 
 The *Remote Content Unit* can be downloaded using the url.
 

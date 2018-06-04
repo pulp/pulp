@@ -53,10 +53,10 @@ PyPI Installation
 
 .. note::
 
-   To install from source, clone the git repository, checkout the 3.0-dev branch, navigate to the
-   directory containing the ``setup.py`` file, and do a local, editable pip installation::
+   To install from source, clone the git repository, navigate to the directory containing the
+   ``setup.py`` file, and do a local, editable pip installation::
 
-   $ git clone -b 3.0-dev https://github.com/pulp/pulp.git
+   $ git clone https://github.com/pulp/pulp.git
    $ cd pulp/
    $ pip install -e pulpcore/
    $ pip install -e common/

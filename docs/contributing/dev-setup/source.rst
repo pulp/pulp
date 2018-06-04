@@ -14,8 +14,6 @@ You will need ``pulp/devel`` and ``pulp/pulp`` at a minimum::
     $ git clone https://github.com/pulp/devel.git
     $ git clone https://github.com/pulp/pulp.git
 
-The current base branch on each of these repositories is the 3.0-dev branch.
-
 If you want to use the ``plugin`` role, you'll need to clone the corresponding plugin repository.::
 
     $ git clone https://github.com/pulp/pulp_file.git

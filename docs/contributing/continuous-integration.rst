@@ -11,7 +11,7 @@ Continuous Integration
 New code is highly encouraged to have basic unit tests that demonstrate its functionality. A Pull
 Request that has failing unit tests cannot be merged.
 
-The unit tests for `pulpcore` are in `pulpcore/tests <https://github.com/pulp/pulp/tree/3.0-dev/pulpcore/tests>`_.
+The unit tests for `pulpcore` are in `pulpcore/tests <https://github.com/pulp/pulp/tree/master/pulpcore/tests>`_.
 
 Integration tests for new code should be added to a separate project called pulp-smash_. A Pull
 Request that has failing pulp-smash tests cannot be merged.
