@@ -14,7 +14,7 @@ def delete(repo_id):
     Delete a :class:`~pulpcore.app.models.Repository`
 
     Args:
-        repo_id (UUID): The name of the repository to be deleted
+        repo_id (int): The name of the repository to be deleted
     """
 
     models.Repository.objects.filter(pk=repo_id).delete()
@@ -25,7 +25,7 @@ def update(repo_id, partial=True, data=None):
     Updates a :class:`~pulpcore.app.models.Repository`
 
     Args:
-        repo_id (UUID): The id of the repository to be updated
+        repo_id (int): The id of the repository to be updated
         partial (bool): Boolean to allow partial updates. If set to False, values for all
                         required fields must be passed or a validation error will be raised.
                         Defaults to True
@@ -48,7 +48,7 @@ def delete_version(pk):
     guarantee.
 
     Args:
-        pk (UUID): the primary key for a RepositoryVersion to delete
+        pk (int): the primary key for a RepositoryVersion to delete
 
     Raises:
         models.RepositoryVersion.DoesNotExist: if there is not a newer version to squash into.
@@ -72,7 +72,7 @@ def add_and_remove(repository_pk, add_content_units, remove_content_units):
     Create a new repository version by adding and then removing content units.
 
     Args:
-        repository_pk (UUID): The primary key for a Repository for which a new Repository Version
+        repository_pk (int): The primary key for a Repository for which a new Repository Version
             should be created.
         add_content_units (list): List of PKs for :class:`~pulpcore.app.models.Content` that
             should be added to the previous Repository Version for this Repository.

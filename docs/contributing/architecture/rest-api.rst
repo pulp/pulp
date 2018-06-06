@@ -311,7 +311,7 @@ http://www.django-rest-framework.org/api-guide/pagination/#cursorpagination
 
 Other methods are supported by DRF, and might be more appropriate in specific use-cases, but
 cursor-based pagination provides the best support for our largest set of data, which is Content
-stored in a Repository (or Repositories). By default, an object's UUID is used for the purposes
+stored in a Repository (or Repositories). By default, an object's id is used for the purposes
 of cursor-based pagination, allowing an API user to reliably consume large datasets with no
 duplicated entries.
 

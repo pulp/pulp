@@ -17,11 +17,11 @@ class GenericRelationModel(Model):
     """Base model class for implementing Generic Relations.
 
     This class provides the required fields to implement generic relations. Instances of
-    this class can only be related models with a UUID primary key, such as those subclassing
+    this class can only be related models with a primary key, such as those subclassing
     Pulp's base Model class.
     """
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.UUIDField()
+    object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:

@@ -20,7 +20,7 @@ from pulpcore.app.models import (
     RepositoryContent,
     RepositoryVersion
 )
-from pulpcore.app.pagination import UUIDPagination, NamePagination
+from pulpcore.app.pagination import IDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
     AsnycOperationResponseSerializer,
@@ -241,7 +241,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         Returns:
             rest_framework.response.Response: a paginated response for the corresponding content
         """
-        paginator = UUIDPagination()
+        paginator = IDPagination()
         page = paginator.paginate_queryset(content, request)
         serializer = ContentSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
