@@ -1084,6 +1084,13 @@ class LazyCatalogEntry(AutoRetryDocument):
                 ],
                 'unique': True
             },
+            {
+                'fields': [
+                    'unit_id',
+                    'unit_type_id',
+                ],
+                'unique': False
+            },
         ],
     }
 
