@@ -24,7 +24,7 @@ Fedora, CentOS, and Mac OSX.
 PyPI Installation
 -----------------
 
-1. Install python3.5(+) and pip. 
+1. Install python3.5(+) and pip.
 
 2. Create a pulp venv::
 
@@ -38,16 +38,7 @@ PyPI Installation
 
    $ sudo apt-get install python3-venv
 
-3. Install RQ from source::
-
-   $ pip install -e git+https://github.com/rq/rq.git@3133d94b58e59cb86e8f4677492d48b2addcf5f8#egg=rq
-
-.. note::
-
-   This is a temporary step, due to Pulp requiring patches not yet in a release of RQ. It will go
-   away in the future.
-
-4. Install Pulp::
+3. Install Pulp::
 
    $ pip install pulpcore
 
@@ -63,7 +54,7 @@ PyPI Installation
    $ pip install -e plugin/
 
 
-5. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
+4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
    PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
 
    $ export PULP_SETTINGS=pulpvenv/lib/python3.6/site-packages/pulpcore/etc/pulp/server.yaml
@@ -73,15 +64,15 @@ PyPI Installation
        The exact path will depend on the operating system, Python version, and other factors.
 
 
-6. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
+5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
 
    $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
 
-7. Tell Django which settings you're using::
+6. Tell Django which settings you're using::
 
    $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 
-8. Go through the :ref:`database-install`, :ref:`redis-install`, and :ref:`systemd-setup` sections
+7. Go through the :ref:`database-install`, :ref:`redis-install`, and :ref:`systemd-setup` sections
 
 .. note::
 
@@ -92,20 +83,20 @@ PyPI Installation
     $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker'
     $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_2@%h' -w 'pulpcore.tasking.worker.PulpWorker'
 
-9. Run Django Migrations::
+8. Run Django Migrations::
 
    $ pulp-manager makemigrations pulp_app
    $ pulp-manager migrate --noinput auth
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
 
-10. Collect and Serve Static Media
+9. Collect and Serve Static Media
 
    Pulp will operate correctly without static media being served, but if browsing the Pulp API with
    a web browser you probably want to configure it. See :ref:`static-content` for more info on
    collecting and serving static content.
 
-11. Run Pulp:
+10. Run Pulp:
 ::
 
    $ django-admin runserver
