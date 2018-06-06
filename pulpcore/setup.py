@@ -12,7 +12,7 @@ requirements = [
     'drf-yasg',
     'psycopg2-binary',
     'PyYAML',
-    'rq',
+    'rq>=0.11.0',
     'setuptools',
     'pulpcore-common'
 ]

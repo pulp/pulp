@@ -1,9 +1,6 @@
 #!/usr/bin/env sh
 set -v
 
-# temporary workaround until a newer RQ release is available
-pip install git+https://github.com/rq/rq.git@3133d94b58e59cb86e8f4677492d48b2addcf5f8
-
 # dev_requirements should not be needed for testing; don't install them to make sure
 pip install "Django<=$DJANGO_MAX"
 pip install -r test_requirements.txt
