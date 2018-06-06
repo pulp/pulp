@@ -124,7 +124,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
             raise DRFValidationError(detail=_('URI {u} not found for {m}.').format(
                 u=uri, m=model._meta.model_name))
         except ValidationError:
-            raise DRFValidationError(detail=_('UUID invalid: {u}').format(u=kwargs['pk']))
+            raise DRFValidationError(detail=_('ID invalid: {u}').format(u=kwargs['pk']))
         except FieldError:
             raise DRFValidationError(detail=_('URI {u} is not a valid {m}.').format(
                 u=uri, m=model._meta.model_name))

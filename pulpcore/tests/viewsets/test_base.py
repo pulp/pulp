@@ -1,4 +1,3 @@
-from uuid import uuid4
 import unittest
 
 from django.http import Http404
@@ -86,26 +85,12 @@ class TestGetResource(TestCase):
         Tests that get_resource() raises a ValidationError if you use a URI for a resource that
         does not exist.
         """
-        uuid = uuid4()
+        pk = 500
         viewset = viewsets.RepositoryViewSet()
 
         with self.assertRaises(DRFValidationError):
             viewset.get_resource(
-                "/{api_root}repositories/{uuid}/".format(api_root=API_ROOT, uuid=uuid),
-                models.Repository
-            )
-
-    def test_invalid_uuid(self):
-        """
-        Tests that get_resource() raises a ValidationError if you use a URI for a resource that
-        does not exist.
-        """
-        bad_uuid = str(uuid4())[:-1]  # chop off the last character of the uuid
-        viewset = viewsets.RepositoryViewSet()
-
-        with self.assertRaises(DRFValidationError):
-            viewset.get_resource(
-                "/{api_root}repositories/{uuid}/".format(api_root=API_ROOT, uuid=bad_uuid),
+                "/{api_root}repositories/{pk}/".format(api_root=API_ROOT, pk=pk),
                 models.Repository
             )
 
@@ -131,9 +116,8 @@ class TestGetParentFieldAndObject(TestCase):
         Tests that get_parent_field_and_object() raises django.http.Http404 if the parent object
         does not exist on a nested viewset.
         """
-        uuid = uuid4()
         viewset = viewsets.RepositoryVersionViewSet()
-        viewset.kwargs = {'repository_pk': uuid}
+        viewset.kwargs = {'repository_pk': 500}
 
         with self.assertRaises(Http404):
             viewset.get_parent_field_and_object()

@@ -5,6 +5,7 @@ from datetime import timedelta
 from gettext import gettext as _
 import logging
 import traceback
+import uuid
 
 from django.db import models, transaction
 from django.utils import timezone
@@ -265,6 +266,7 @@ class Task(Model):
         parent (models.ForeignKey): Task that spawned this task (if any)
         worker (models.ForeignKey): The worker that this task is in
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     state = models.TextField(choices=TASK_CHOICES)
 
     started_at = models.DateTimeField(null=True)

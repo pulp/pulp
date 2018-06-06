@@ -1,5 +1,3 @@
-import uuid
-
 from django.db import models
 from django.db.models import options
 
@@ -7,22 +5,15 @@ from django.db.models import options
 class Model(models.Model):
     """Base model class for all Pulp models.
 
-    Uses UUID as its primary key field, named "id" to mimic default Django model
-    behavior.
-
     Fields:
-        id (models.UUIDField): UUID ID Primary Key Field
         created (models.DateTimeField): Created timestamp UTC.
         last_updated (models.DateTimeField): Last updated timestamp UTC.
 
     References:
 
         * https://docs.djangoproject.com/en/1.8/topics/db/models/#automatic-primary-key-fields
-        * https://docs.djangoproject.com/en/1.8/ref/models/fields/#uuidfield
-        * https://www.postgresql.org/docs/current/static/datatype-uuid.html
 
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
 
