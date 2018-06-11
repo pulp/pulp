@@ -15,6 +15,7 @@ END
 )
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
+FIPS_ENABLED=(`cat /proc/sys/crypto/fips_enabled`)
 
 TMP="$(mktemp -d)"
 CA_KEY=${PULP_CONF[0]}
@@ -32,7 +33,12 @@ fi
 umask 027
 
 # create CA key
-openssl genrsa -out ${CA_KEY} 4096 &> /dev/null
+if [ ${FIPS_ENABLED} -eq 1 ]; then
+  # FIPS does not support 4096-bit keys, so use 3072
+  openssl genrsa -out ${CA_KEY} 3072 &> /dev/null
+else
+  openssl genrsa -out ${CA_KEY} 4096 &> /dev/null
+fi
 chgrp apache ${CA_KEY}
 chmod 640 ${CA_KEY}
 
