@@ -180,7 +180,7 @@ class DistributionSerializer(ModelSerializer):
         view_name='distributions-detail'
     )
     name = serializers.CharField(
-        help_text=_('The name of the distribution. Ex, `rawhide` and `stable`.'),
+        help_text=_('A unique distribution name. Ex, `rawhide` and `stable`.'),
         validators=[validators.MaxLengthValidator(
             models.Distribution._meta.get_field('name').max_length,
             message=_('Distribution name length must be less than {} characters').format(
