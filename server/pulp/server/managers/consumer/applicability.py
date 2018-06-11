@@ -248,7 +248,14 @@ class ApplicabilityRegenerationManager(object):
             else:
                 unit_profile = UnitProfile.get_collection().find_one({'id': profile_id},
                                                                      projection=['profile'])
-                profile = unit_profile['profile']
+                try:
+                    profile = unit_profile['profile']
+                except TypeError:
+                    # It means that unit_profile = None.
+                    # Consumer can be removed during applicability regeneration,
+                    # so it is possible that its profile no longer exists. It is harmless.
+                    return
+
             call_config = PluginCallConfiguration(plugin_config=profiler_cfg,
                                                   repo_plugin_config=None)
             try:
