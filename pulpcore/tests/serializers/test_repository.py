@@ -1,7 +1,44 @@
+import mock
 from unittest import TestCase
 
 from pulpcore.app.models import Distribution
-from pulpcore.app.serializers import DistributionSerializer
+from pulpcore.app.serializers import (
+    DistributionSerializer,
+    RepositoryPublishURLSerializer,
+)
+from rest_framework import serializers
+
+
+class TestRepositoryPublishURLSerializer(TestCase):
+
+    @mock.patch('pulpcore.app.serializers.repository.models.RepositoryVersion')
+    def test_validate_repository_only(self, mock_version):
+        mock_repo = mock.MagicMock()
+        data = {'repository': mock_repo}
+        serializer = RepositoryPublishURLSerializer()
+        new_data = serializer.validate(data)
+        self.assertEqual(new_data, {'repository_version': mock_version.latest.return_value})
+        mock_version.latest.assert_called_once_with(mock_repo)
+
+    def test_validate_repository_version_only(self):
+        mock_version = mock.MagicMock()
+        data = {'repository_version': mock_version}
+        serializer = RepositoryPublishURLSerializer()
+        new_data = serializer.validate(data)
+        self.assertEqual(new_data, {'repository_version': mock_version})
+
+    def test_validate_repository_and_repository_version(self):
+        mock_version = mock.MagicMock()
+        mock_repository = mock.MagicMock()
+        data = {'repository_version': mock_version, 'repository': mock_repository}
+        serializer = RepositoryPublishURLSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate(data)
+
+    def test_validate_no_repository_no_version(self):
+        serializer = RepositoryPublishURLSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate({})
 
 
 class TestDistributionPath(TestCase):
