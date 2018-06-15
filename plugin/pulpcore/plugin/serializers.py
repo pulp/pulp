@@ -2,5 +2,7 @@
 from pulpcore.app.serializers import (  # NOQA
     ContentSerializer,
     RemoteSerializer,
-    PublisherSerializer
+    PublisherSerializer,
+    RepositorySyncURLSerializer,
+    RepositoryPublishURLSerializer,
 )
