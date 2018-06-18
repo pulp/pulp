@@ -5,21 +5,30 @@ Pulp 2.16 Release Notes
 Pulp 2.16.2
 ===========
 
-This release contains a security fix for CVE-2018-1090 which leaks security info via the
-`last_override_config` on importers and distributors serialized via the Rest API. See `issue 3521
-<https://github.com/pulp/pulp/pull/3513>`_ for more information. With this release, that field no
-longer reports the information saved in the database. Instead it will always show as::
-
-    'last_override_config': {}
-
-
-This release also contains some bug fixes for issues that were encountered while trying to run Pulp
-in a FIPS enabled environment. 
-
 Bug Fixes
 ---------
 
-See the list of :fixedbugs_pulp:`2.16.2`
+See the full list of :fixedbugs_pulp:`2.16.2`
+
+
+* Security fix: `Issue 3521 <https://github.com/pulp/pulp/pull/3513>`_
+
+  * `CVE-2018-1090 <https://nvd.nist.gov/vuln/detail/CVE-2018-1090>`_
+  * The `last_override_config` field on importers and distributors was serialized via the Rest API
+    and potentially included sensitive information. With this release, that field no longer
+    reports the information saved in the database. Instead it will always show as::
+
+    'last_override_config': {}
+
+* Fixes toward supporting a FIPS enabled system:
+
+ * `Issue 3768 <https://pulp.plan.io/issues/3768>`_
+ * `Issue 3646 <https://pulp.plan.io/issues/3646>`_
+ * `Issue 3676 <https://pulp.plan.io/issues/3676>`_
+
+* Greatly improved performance for orphan cleanup. `Issue 3663
+  <https://pulp.plan.io/issues/3663>`_.
+
 
 Pulp 2.16.1
 ===========
