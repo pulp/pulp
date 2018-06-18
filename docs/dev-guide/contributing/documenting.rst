@@ -43,7 +43,7 @@ Platform and plugins each have their own Sphinx project which allow docs to be
 built without checking out additional repositories. The Sphinx project for
 platform and each plugin are located in the ``docs`` directory in the top level
 of the repository. For example, the platform Sphinx project
-`is located here <https://github.com/pulp/pulp/tree/master/docs>`_.
+`is located here <https://github.com/pulp/pulp/tree/2-master/docs>`_.
 
 Doc Hosting
 -----------
