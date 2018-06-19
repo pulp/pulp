@@ -87,6 +87,8 @@ class ArtifactSerializer(base.ModelSerializer):
             :class:`rest_framework.exceptions.ValidationError`: When the expected file size or any
                 of the checksums don't match their actual values.
         """
+        super().validate(data)
+
         if 'size' in data:
             if data['file'].size != int(data['size']):
                 raise serializers.ValidationError(_("The size did not match actual size of file."))

@@ -3,7 +3,7 @@
 # - all can import directly from base and fields if needed
 from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # noqa
     ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
-    view_name_for_model, viewset_for_model)
+    view_name_for_model, viewset_for_model, validate_unknown_fields)
 from pulpcore.app.serializers.fields import (BaseURLField, ContentRelatedField,  # noqa
                                              LatestVersionField)
 from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa

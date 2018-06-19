@@ -16,6 +16,7 @@ from pulpcore.app.serializers import (
     MasterModelSerializer,
     ModelSerializer,
 )
+from pulpcore.app.serializers import validate_unknown_fields
 from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
                                              NestedHyperlinkedRelatedField)
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
@@ -183,6 +184,9 @@ class RepositoryPublishURLSerializer(serializers.Serializer):
     )
 
     def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            validate_unknown_fields(self.initial_data, self.fields)
+
         repository = data.pop('repository', None)
         repository_version = data.get('repository_version')
         if not repository and not repository_version:
@@ -314,6 +318,8 @@ class DistributionSerializer(ModelSerializer):
         return self._validate_path_overlap(path)
 
     def validate(self, data):
+        super().validate(data)
+
         if 'publisher' in data:
             publisher = data['publisher']
         elif self.instance:
