@@ -40,6 +40,21 @@ class TestRepositoryPublishURLSerializer(TestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.validate({})
 
+    @mock.patch('pulpcore.app.serializers.repository.models.RepositoryVersion')
+    def test_validate_repository_only_unknown_field(self, mock_version):
+        mock_repo = mock.MagicMock()
+        data = {'repository': mock_repo, 'unknown_field': 'unknown'}
+        serializer = RepositoryPublishURLSerializer(data=data)
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate(data)
+
+    def test_validate_repository_version_only_unknown_field(self):
+        mock_version = mock.MagicMock()
+        data = {'repository_version': mock_version, 'unknown_field': 'unknown'}
+        serializer = RepositoryPublishURLSerializer(data=data)
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate(data)
+
 
 class TestDistributionPath(TestCase):
     def test_overlap(self):

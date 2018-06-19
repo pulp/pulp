@@ -76,6 +76,16 @@ def view_name_for_model(model_obj, view_action):
     raise LookupError('view not found')
 
 
+def validate_unknown_fields(initial_data, defined_fields):
+    """
+    This will raise a `ValidationError` if a serializer is passed fields that are unknown.
+    """
+    unknown_fields = set(initial_data) - set(defined_fields)
+    if unknown_fields:
+        unknown_fields = {field: _('Unexpected field') for field in unknown_fields}
+        raise serializers.ValidationError(unknown_fields)
+
+
 # Defined here instead of generic.py to avoid potential circular imports issues,
 # since this is used by ModelSerializer
 class GenericKeyValueRelatedField(serializers.DictField):
@@ -216,6 +226,11 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
                 ret[field.field_name] = field.to_representation(attribute)
 
         return ret
+
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            validate_unknown_fields(self.initial_data, self.fields)
+        return data
 
 
 class MasterModelSerializer(ModelSerializer):
