@@ -129,11 +129,11 @@ You will now need to merge your changes forward. Here are the rules for merging 
 - If your commit is on ``X.Y-dev``, you want to merge ``X.Y-dev`` to  the next
   higher version's dev branch. This will typically be ``X.Y+1-dev``.
 - When you are done merging through the various dev branches, merge the highest
-  dev branch to ``master``.
+  dev branch to ``2-master``.
 
 For example, if you merge a PR to ``2.7-dev`` and the only newer dev branch
 is ``2.8-dev``, you would merge ``2.7-dev`` into ``2.8-dev``, then ``2.8-dev``
-into ``master``.
+into ``2-master``.
 
 You will also want to set the "Target Release" field in the redmine issue.
 "Target Release" is available for Issues, Refactors, and Stories but not for
