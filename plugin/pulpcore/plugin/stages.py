@@ -1,6 +1,6 @@
 import asyncio
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 from django.db.models import Q
 
@@ -84,6 +84,7 @@ async def query_existing_artifacts(in_q, out_q):
     """Batch query for existing Artifacts, attach to Content unit in memory, and send to out_q"""
     await asyncio.sleep(4)  # TODO remove me. temporary to allow the queue to build up the batch
     declarative_content = []
+    shutdown = False
     while True:
         try:
             content = in_q.get_nowait()
@@ -98,8 +99,8 @@ async def query_existing_artifacts(in_q, out_q):
         all_artifacts_q = Q(pk=None)
         for content in declarative_content:
             if content is None:
-                # the producer emits None to indicate that it is done
-                break
+                shutdown = True
+                continue
 
             for declarative_artifact in content.artifacts:
                 one_artifact_q = Q()
@@ -111,11 +112,21 @@ async def query_existing_artifacts(in_q, out_q):
                 all_artifacts_q |= one_artifact_q
 
         for artifact in Artifact.objects.filter(all_artifacts_q):
-            1+1  # TODO overwrite Artifact results onto declarative_content.artifacts
-            1+1
+            for content in declarative_content:
+                if content is None:
+                    continue
+                for i, declarative_artifact in enumerate(content.artifacts):
+                    if not isinstance(declarative_artifact, DeclarativeArtifact):
+                        continue
+                    for digest_name in artifact.DIGEST_FIELDS:
+                        digest_value = getattr(declarative_artifact.artifact, digest_name)
+                        if digest_value and digest_value == getattr(artifact, digest_name):
+                            content.artifacts[i] = artifact  # replace the DeclarativeArtifact with real one
         for content in declarative_content:
             await out_q.put(content)
         declarative_content = []
+        if shutdown:
+            break
     await out_q.put(None)
 
 
@@ -165,8 +176,12 @@ async def artifact_downloader(in_q, out_q):
                     for i, artifact_or_da in enumerate(content.artifacts):
                         if isinstance(artifact_or_da, DeclarativeArtifact):
                             attributes = download_result.artifact_attributes
+                            declarative_artifact = DeclarativeArtifact()
                             content.artifacts[i] = Artifact(**attributes)
                     await out_q.put(content)
+        else:
+            if shutdown:
+                break
     await out_q.put(None)
 
 
@@ -185,48 +200,79 @@ async def artifact_saver(in_q, out_q):
 async def query_existing_content_units(in_q, out_q):
     """Batch query for existing Content Units, to Content unit in memory, and send to out_q"""
     await asyncio.sleep(10)
-    import pydevd
-    pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
-    declarative_content = []
+    declarative_content_list = []
+    shutdown = False
     while True:
         try:
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content:
+            if not declarative_content_list:
                 await asyncio.sleep(0.5)
                 continue
         else:
-            declarative_content.append(content)
+            declarative_content_list.append(content)
             continue
 
-        all_artifacts_q = Q(pk=None)
-        for content in declarative_content:
-            if content is None:
-                # the producer emits None to indicate that it is done
-                break
+        content_q_by_type = defaultdict(lambda: Q(pk=None))
+        for declarative_content in declarative_content_list:
+            if declarative_content is None:
+                shutdown = True
+                continue
 
-            for declarative_artifact in content.artifacts:
-                one_artifact_q = Q()
-                for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
-                    digest_value = getattr(declarative_artifact.artifact, digest_name)
-                    if digest_value:
-                        key = {digest_name: digest_value}
-                        one_artifact_q &= Q(**key)
-                all_artifacts_q |= one_artifact_q
+            unit_key = {}
+            for field in declarative_content.content.natural_key_fields():
+                unit_key[field] = getattr(declarative_content.content, field)
+            model_type = type(declarative_content.content)
+            content_q_by_type[model_type] = content_q_by_type[model_type] | Q(**unit_key)
 
-        for artifact in Artifact.objects.filter(all_artifacts_q):
-            1+1  # TODO overwrite Artifact results onto declarative_content.artifacts
-            1+1
-        for content in declarative_content:
-            await out_q.put(content)
-        declarative_content = []
+        for model_type in content_q_by_type.keys():
+            for result in model_type.objects.filter(content_q_by_type[model_type]):
+                for i, declarative_content in enumerate(declarative_content_list):
+                    if declarative_content is None:
+                        continue
+                    for field in result.natural_key_fields():
+                        if getattr(declarative_content.content, field) != getattr(result, field):
+                            break
+                    new_dc = DeclarativeContent(
+                        content=result, artifacts=declarative_content.artifacts
+                    )
+                    declarative_content_list[i] = new_dc
+        for declarative_content in declarative_content_list:
+            await out_q.put(declarative_content)
+        declarative_content_list = []
+        if shutdown:
+            break
     await out_q.put(None)
 
 
-class DeclarativeVersion:
+async def content_unit_saver(in_q, out_q):
+    """For each Content Unit ensure it is saved"""
+    while True:
+        declarative_content = await in_q.get()
+        if declarative_content is None:
+            break
+        declarative_content.content.save()
+        for artifact in declarative_content.artifacts:
+            ContentArtifact(content=declarative_content.content, artifact=artifact, relative_path=)
+        await out_q.put(declarative_content.content)
+    await out_q.put(None)
 
-    stages = [query_existing_artifacts, artifact_downloader, artifact_saver,
-              query_existing_content_units]
+
+def content_unit_association(new_version):
+    version = new_version
+    async def actual_stage(in_q, out_q):
+        """For each Content Unit associate it with the repository version"""
+        while True:
+            content = await in_q.get()
+            if content is None:
+                break
+            version.add_content(content)
+        await out_q.put(None)
+    return actual_stage
+
+
+
+class DeclarativeVersion:
 
     def __init__(self, in_q, repository, remote, sync_mode='mirror'):
         """
@@ -240,10 +286,17 @@ class DeclarativeVersion:
         self.sync_mode = sync_mode
 
     def create(self):
+        import pydevd
+        pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
+                stages = [
+                    query_existing_artifacts, artifact_downloader, artifact_saver,
+                    query_existing_content_units, content_unit_saver,
+                    content_unit_association(new_version)
+                ]
                 pipeline = queue_run_stages(
-                    DeclarativeVersion.stages, self.in_q
+                    stages, self.in_q
                 )
                 loop.run_until_complete(pipeline)
