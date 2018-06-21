@@ -16,73 +16,15 @@ DeclarativeContent = namedtuple('DeclarativeContent', ['content', 'artifacts'])
 async def queue_run_stages(stages, in_q=None):
     futures = []
     for stage in stages:
-        out_q = asyncio.Queue(maxsize=2)
+        out_q = asyncio.Queue(maxsize=100)
         futures.append(stage(in_q, out_q))
         in_q = out_q
     await asyncio.gather(*futures)
 
 
-class ArtifactDownloaderStage:
-    """Stage that runs do_work() concurrently (with limited concurrency)."""
-
-    def __init__(self, max_concurrent=2):
-        self.max_concurrent = max_concurrent
-
-    async def run(self, in_q, out_q):
-        self._pending = set()
-        self._schedule_next_future(in_q)
-        saturated = False
-        try:
-            while self._pending:
-                done, self._pending = await asyncio.wait(self._pending, return_when=asyncio.FIRST_COMPLETED)
-                for future in done:
-                    if future is self._next_future:
-                        # The input queue yielded a new Content object.
-                        assert not saturated
-                        content = future.result()
-                        if content:
-                            self._schedule_work(content)
-                            if len(self._pending) < self.max_concurrent:
-                                self._schedule_next_future(in_q)
-                            else:
-                                saturated = True
-                                self._next_future = None
-                                print_t("queue_stage_concurrent: Stop getting new upstream items")
-                        else:
-                            # input stream depleted
-                            continue
-                    else:
-                        # One of our workers has finished
-                        await out_q.put(future.result())
-                        if saturated:
-                            self._schedule_next_future(in_q)
-                            print_t("queue_stage_concurrent: Start getting new upstream items again")
-                            saturated = False
-            await out_q.put(None)
-        except asyncio.CancelledError:
-            # asyncio.wait does not cancel its tasks when cancelled, we need to do this
-            self._cancel_pending()
-            raise
-
-
-    def _schedule_next_future(self, in_q):
-        """Schedule getting the next item from the in queue in_q."""
-        self._next_future = asyncio.ensure_future(in_q.get())
-        self._pending.add(self._next_future)
-
-    def _schedule_work(self, content):
-        print_t(f"queue_stage_concurrent: Adding '{content}' to pending Futures")
-        future = asyncio.ensure_future(content.do_work())
-        self._pending.add(future)
-
-    def _cancel_pending(self):
-        for future in self._pending:
-            future.cancel()
-
-
 async def query_existing_artifacts(in_q, out_q):
     """Batch query for existing Artifacts, attach to Content unit in memory, and send to out_q"""
-    await asyncio.sleep(4)  # TODO remove me. temporary to allow the queue to build up the batch
+    # await asyncio.sleep(4)  # TODO remove me. temporary to allow the queue to build up the batch
     declarative_content = []
     shutdown = False
     while True:
@@ -90,7 +32,7 @@ async def query_existing_artifacts(in_q, out_q):
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not declarative_content:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.1)
                 continue
         else:
             declarative_content.append(content)
@@ -116,12 +58,14 @@ async def query_existing_artifacts(in_q, out_q):
                 if content is None:
                     continue
                 for i, declarative_artifact in enumerate(content.artifacts):
-                    if not isinstance(declarative_artifact, DeclarativeArtifact):
-                        continue
                     for digest_name in artifact.DIGEST_FIELDS:
                         digest_value = getattr(declarative_artifact.artifact, digest_name)
                         if digest_value and digest_value == getattr(artifact, digest_name):
-                            content.artifacts[i] = artifact  # replace the DeclarativeArtifact with real one
+                            new_da = DeclarativeArtifact(
+                                artifact=artifact, relative_path=declarative_artifact.relative_path,
+                                url=declarative_artifact.url, remote=declarative_artifact.remote
+                            )
+                            content.artifacts[i] = new_da
         for content in declarative_content:
             await out_q.put(content)
         declarative_content = []
@@ -132,7 +76,7 @@ async def query_existing_artifacts(in_q, out_q):
 
 async def artifact_downloader(in_q, out_q):
     """For each DeclarativeArtifact object, download and replace it with an unsaved Artifact"""
-    await asyncio.sleep(6)
+    # await asyncio.sleep(6)
     pending = set()
     incoming_content = []
     shutdown = False
@@ -141,7 +85,7 @@ async def artifact_downloader(in_q, out_q):
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not incoming_content and not shutdown and not pending:
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.1)
                 continue
         else:
             incoming_content.append(content)
@@ -152,10 +96,12 @@ async def artifact_downloader(in_q, out_q):
                 shutdown = True
                 continue
             downloaders_for_content = []
-            for artifact_or_da in content.artifacts:
-                if isinstance(artifact_or_da, DeclarativeArtifact):
+            for declarative_artifact in content.artifacts:
+                if declarative_artifact.artifact._state.adding:
                     # this needs to be downloaded
-                    downloader = artifact_or_da.remote.get_downloader(artifact_or_da.url)
+                    downloader = declarative_artifact.remote.get_downloader(
+                        declarative_artifact.url
+                    )
                     next_future = asyncio.ensure_future(downloader.run())
                     downloaders_for_content.append(next_future)
             if not downloaders_for_content:
@@ -173,11 +119,15 @@ async def artifact_downloader(in_q, out_q):
                 results = gathered_downloaders.result()
                 for download_result in results[:-1]:
                     content = results[-1]
-                    for i, artifact_or_da in enumerate(content.artifacts):
-                        if isinstance(artifact_or_da, DeclarativeArtifact):
+                    for i, declarative_artifact in enumerate(content.artifacts):
+                        if declarative_artifact.artifact._state.adding:
                             attributes = download_result.artifact_attributes
-                            declarative_artifact = DeclarativeArtifact()
-                            content.artifacts[i] = Artifact(**attributes)
+                            new_da = DeclarativeArtifact(
+                                artifact=Artifact(**attributes), url=declarative_artifact.url,
+                                relative_path=declarative_artifact.relative_path,
+                                remote=declarative_artifact.remote
+                            )
+                            content.artifacts[i] = new_da
                     await out_q.put(content)
         else:
             if shutdown:
@@ -191,15 +141,15 @@ async def artifact_saver(in_q, out_q):
         declarative_content = await in_q.get()
         if declarative_content is None:
             break
-        for artifact in declarative_content.artifacts:
-            artifact.save()
+        for declarative_artifact in declarative_content.artifacts:
+            declarative_artifact.artifact.save()
         await out_q.put(declarative_content)
     await out_q.put(None)
 
 
 async def query_existing_content_units(in_q, out_q):
     """Batch query for existing Content Units, to Content unit in memory, and send to out_q"""
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
     declarative_content_list = []
     shutdown = False
     while True:
@@ -207,7 +157,7 @@ async def query_existing_content_units(in_q, out_q):
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not declarative_content_list:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.1)
                 continue
         else:
             declarative_content_list.append(content)
@@ -251,9 +201,13 @@ async def content_unit_saver(in_q, out_q):
         declarative_content = await in_q.get()
         if declarative_content is None:
             break
-        declarative_content.content.save()
-        for artifact in declarative_content.artifacts:
-            ContentArtifact(content=declarative_content.content, artifact=artifact, relative_path=)
+        if declarative_content.content._state.adding:
+            declarative_content.content.save()
+            for declarative_artifact in declarative_content.artifacts:
+                ContentArtifact(
+                    content=declarative_content.content, artifact=declarative_artifact.artifact,
+                    relative_path=declarative_artifact.relative_path
+                ).save()
         await out_q.put(declarative_content.content)
     await out_q.put(None)
 
@@ -286,8 +240,11 @@ class DeclarativeVersion:
         self.sync_mode = sync_mode
 
     def create(self):
-        import pydevd
-        pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
+        # import cProfile
+        # pr = cProfile.Profile()
+        # pr.enable()
+        # import pydevd
+        # pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
@@ -300,3 +257,5 @@ class DeclarativeVersion:
                     stages, self.in_q
                 )
                 loop.run_until_complete(pipeline)
+        # pr.disable()
+        # pr.dump_stats('/home/vagrant/devel/outputdump.profile')
