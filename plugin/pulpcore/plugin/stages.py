@@ -5,7 +5,7 @@ from collections import defaultdict, namedtuple
 from django.db.models import Q
 
 from pulpcore.plugin.tasking import WorkingDirectory
-from pulpcore.plugin.models import Artifact, ContentArtifact, RepositoryVersion
+from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact, RepositoryVersion
 
 
 DeclarativeArtifact = namedtuple('DeclarativeArtifact', ['artifact', 'url', 'relative_path', 'remote'])
@@ -197,18 +197,45 @@ async def query_existing_content_units(in_q, out_q):
 
 async def content_unit_saver(in_q, out_q):
     """For each Content Unit ensure it is saved"""
+    declarative_content_list = []
     while True:
-        declarative_content = await in_q.get()
-        if declarative_content is None:
-            break
-        if declarative_content.content._state.adding:
-            declarative_content.content.save()
-            for declarative_artifact in declarative_content.artifacts:
-                ContentArtifact(
-                    content=declarative_content.content, artifact=declarative_artifact.artifact,
-                    relative_path=declarative_artifact.relative_path
-                ).save()
-        await out_q.put(declarative_content.content)
+        try:
+            declarative_content = in_q.get_nowait()
+        except asyncio.QueueEmpty:
+            if not declarative_content_list:
+                await asyncio.sleep(0.1)
+                continue
+        else:
+            declarative_content_list.append(declarative_content)
+            continue
+
+        bulk_save_by_type = defaultdict(list)
+        content_artifact_bulk = []
+        remote_artifact_bulk = []
+
+        for declarative_content in declarative_content_list:
+            if declarative_content.content._state.adding:
+                unit = declarative_content.content
+                bulk_save_by_type[type(unit)].append(unit)
+                for declarative_artifact in declarative_content.artifacts:
+                    content_artifact = ContentArtifact(
+                        content=declarative_content.content, artifact=declarative_artifact.artifact,
+                        relative_path=declarative_artifact.relative_path
+                    )
+                    content_artifact_bulk.append(content_artifact)
+                    #RemoteArtifact(content=declarative_content.content, artifact=declarative_artifact.artifact, relative_path=declarative_artifact.relative_path)
+                    1+1
+                    1+1
+
+
+        for model_class in bulk_save_by_type.keys():
+            model_class.objects.bulk_create(bulk_save_by_type[model_class])
+
+        for declarative_content in declarative_content_list:
+            if declarative_content is None:
+                break
+            await out_q.put(declarative_content.content)
+        declarative_content_list = []
     await out_q.put(None)
 
 
@@ -243,8 +270,8 @@ class DeclarativeVersion:
         # import cProfile
         # pr = cProfile.Profile()
         # pr.enable()
-        # import pydevd
-        # pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
+        import pydevd
+        pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
