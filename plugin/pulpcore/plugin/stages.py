@@ -198,59 +198,96 @@ async def query_existing_content_units(in_q, out_q):
 async def content_unit_saver(in_q, out_q):
     """For each Content Unit ensure it is saved"""
     declarative_content_list = []
+    shutdown = False
     while True:
         try:
             declarative_content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content_list:
+            if not declarative_content_list and not shutdown:
                 await asyncio.sleep(0.1)
                 continue
         else:
             declarative_content_list.append(declarative_content)
             continue
 
-        bulk_save_by_type = defaultdict(list)
         content_artifact_bulk = []
         remote_artifact_bulk = []
 
         for declarative_content in declarative_content_list:
+            if declarative_content is None:
+                shutdown = True
+                continue
             if declarative_content.content._state.adding:
-                unit = declarative_content.content
-                bulk_save_by_type[type(unit)].append(unit)
+                # TODO add transaction here
+                declarative_content.content.save()
                 for declarative_artifact in declarative_content.artifacts:
                     content_artifact = ContentArtifact(
                         content=declarative_content.content, artifact=declarative_artifact.artifact,
                         relative_path=declarative_artifact.relative_path
                     )
                     content_artifact_bulk.append(content_artifact)
-                    #RemoteArtifact(content=declarative_content.content, artifact=declarative_artifact.artifact, relative_path=declarative_artifact.relative_path)
-                    1+1
-                    1+1
+                    remote_artifact = RemoteArtifact(
+                        url=declarative_artifact.url, size=declarative_artifact.artifact.size,
+                        md5=declarative_artifact.artifact.md5,
+                        sha1=declarative_artifact.artifact.sha1,
+                        sha224=declarative_artifact.artifact.sha224,
+                        sha256=declarative_artifact.artifact.sha256,
+                        sha384=declarative_artifact.artifact.sha384,
+                        sha512=declarative_artifact.artifact.sha512,
+                        content_artifact=content_artifact,
+                        remote=declarative_artifact.remote
+                    )
+                    remote_artifact_bulk.append(remote_artifact)
 
-
-        for model_class in bulk_save_by_type.keys():
-            model_class.objects.bulk_create(bulk_save_by_type[model_class])
+        ContentArtifact.objects.bulk_create(content_artifact_bulk)
+        RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
 
         for declarative_content in declarative_content_list:
             if declarative_content is None:
-                break
+                continue
             await out_q.put(declarative_content.content)
+        if shutdown:
+            break
         declarative_content_list = []
     await out_q.put(None)
 
 
 def content_unit_association(new_version):
     version = new_version
+    unit_keys_by_type = defaultdict(set)
+    for unit in new_version.content.all():
+        unit = unit.cast()
+        unit_keys_by_type[type(unit)].add(unit.natural_key_fields())
     async def actual_stage(in_q, out_q):
         """For each Content Unit associate it with the repository version"""
         while True:
             content = await in_q.get()
             if content is None:
                 break
-            version.add_content(content)
+            try:
+                unit_keys_by_type[type(unit)].remove(unit.natural_key_fields())
+            except KeyError:
+                version.add_content(content)
         await out_q.put(None)
     return actual_stage
 
+
+async def content_unit_unassociate(in_q, out_q):
+    """For each Content Unit from in_q, unassociate it with the repository version"""
+    while True:
+        content = await in_q.get()
+        if content is None:
+            break
+        await out_q.put(content)
+    await out_q.put(None)
+
+
+async def end_stage(in_q, out_q):
+    """Drain in_q and do nothing with the items"""
+    while True:
+        content = await in_q.get()
+        if content is None:
+            break
 
 
 class DeclarativeVersion:
@@ -278,7 +315,7 @@ class DeclarativeVersion:
                 stages = [
                     query_existing_artifacts, artifact_downloader, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association(new_version)
+                    content_unit_association(new_version), content_unit_unassociate, end_stage
                 ]
                 pipeline = queue_run_stages(
                     stages, self.in_q

@@ -138,6 +138,15 @@ class Content(MasterModel):
         """
         return tuple(getattr(self, f) for f in self.natural_key_fields())
 
+    def natural_key_dict(self):
+        """
+        Get the model's natural key as a dictionary of keys and values
+        """
+        to_return = {}
+        for key in self.natural_key_fields():
+            to_return[key] = getattr(self, key)
+        return to_return
+
 
 class ContentArtifact(Model):
     """
