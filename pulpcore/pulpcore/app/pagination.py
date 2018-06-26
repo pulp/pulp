@@ -13,6 +13,8 @@ class UUIDPagination(pagination.CursorPagination):
 
     """
     ordering = 'id'
+    page_size_query_param = 'page_size'
+    max_page_size = 5000
 
 
 class NamePagination(pagination.CursorPagination):
@@ -24,3 +26,5 @@ class NamePagination(pagination.CursorPagination):
 
     """
     ordering = 'name'
+    page_size_query_param = 'page_size'
+    max_page_size = 5000
