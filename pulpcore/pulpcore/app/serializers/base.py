@@ -199,34 +199,6 @@ class ModelSerializer(serializers.HyperlinkedModelSerializer):
 
         return path
 
-    def to_representation(self, instance):
-        """
-        Object instance -> Dict of primitive datatypes.
-
-        This is very similar to DRF's default to_representation implementation in
-        ModelSerializer, but checks whether a 'minimal_fields' attribute is defined,
-        and uses it when many objects are being serialized at once (i.e. many=True,
-        when the viewset is performing a 'list' action).
-        """
-        ret = OrderedDict()
-        fields = self._readable_fields
-        if self.parent and self.parent.many and hasattr(self.Meta, 'minimal_fields'):
-            fields = [field for field in fields if field.field_name in self.Meta.minimal_fields]
-
-        for field in fields:
-            try:
-                attribute = field.get_attribute(instance)
-            except SkipField:
-                continue
-
-            check_for_none = attribute.pk if isinstance(attribute, PKOnlyObject) else attribute
-            if check_for_none is None:
-                ret[field.field_name] = None
-            else:
-                ret[field.field_name] = field.to_representation(attribute)
-
-        return ret
-
     def validate(self, data):
         if hasattr(self, 'initial_data'):
             validate_unknown_fields(self.initial_data, self.fields)
@@ -267,24 +239,20 @@ class MasterModelSerializer(ModelSerializer):
     def to_representation(self, instance):
         """
         Represent a cast Detail instance as a dict of primitive datatypes
-
-        This is very similar to DRF's default to_representation implementation in
-        ModelSerializer, but makes sure to cast Detail instances and use the correct
-        serializer for rendering so that all detail fields are included. If a serializer
-        defines a 'minimal_fields' attribute, it will use these fields instead of the full set
-        of detail fields when many objects are being serialized at once (i.e. many=True,
-        when the viewset is performing a 'list' action).
         """
+
+        # This is very similar to DRF's default to_representation implementation in
+        # ModelSerializer, but makes sure to cast Detail instances and use the correct
+        # serializer for rendering so that all detail fields are included.
         ret = OrderedDict()
 
         instance = instance.cast()
         viewset = viewset_for_model(instance)()
-        serializer_class = viewset.get_serializer_class()(context=self._context)
-
-        fields = serializer_class._readable_fields
-        if self.parent and self.parent.many and hasattr(serializer_class.Meta, 'minimal_fields'):
-            fields = [field for field in fields
-                      if field.field_name in serializer_class.Meta.minimal_fields]
+        if self.parent and self.parent.many:
+            viewset.action = 'list'
+        else:
+            viewset.action = 'get'
+        fields = viewset.get_serializer_class()(context=self._context)._readable_fields
 
         for field in fields:
             try:

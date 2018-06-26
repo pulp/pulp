@@ -84,6 +84,35 @@ class NamedModelViewSet(viewsets.GenericViewSet):
     parent_lookup_kwargs = {}
     schema = DefaultSchema()
 
+    def get_serializer_class(self):
+        """
+        Provides a way to customize the serializer based on the action being taken
+        (e.g. to provide a different serialization for a list view vs. a detail view)
+
+        If you do not specify a 'serializer_class', you must specify a 'serializers' dict which
+        defines a 'default' serializer, and can override that serializer on a per-action basis.
+
+        e.g. serializers = {'default': TaskSerializer, 'list': MinimalTaskSerializer}
+
+        If you define both, the 'serializer_class' attribute will be ignored and the 'serializers'
+        attribute will be used. This is because plugin viewsets may want to use multiple
+        serializers, but they inherit from basic viewsets such as Content which will have a
+        'serializer_class' attribute defined.
+        """
+        serializer_class = getattr(self, 'serializer_class', None)
+        serializers = getattr(self, 'serializers', None)
+
+        msg = _("{} must either have a 'serializer_class' attribute, or it must have a "
+                "'serializers' attribute with a 'default' key set").format(self.__class__.__name__)
+        assert serializer_class or serializers, msg
+
+        if serializers:
+            valid = isinstance(serializers, dict) and 'default' in serializers.keys()
+            assert valid, msg
+            return self.serializers.get(self.action, serializers['default'])
+
+        return serializer_class
+
     @staticmethod
     def get_resource(uri, model):
         """
