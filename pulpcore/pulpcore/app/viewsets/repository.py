@@ -183,8 +183,11 @@ class RepositoryVersionFilter(filterset.FilterSet):
 
 
 class RepositoryVersionViewSet(NamedModelViewSet,
+                               mixins.CreateModelMixin,
+                               mixins.UpdateModelMixin,
                                mixins.RetrieveModelMixin,
-                               mixins.ListModelMixin):
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin):
     endpoint_name = 'versions'
     nest_prefix = 'repositories'
     router_lookup = 'version'

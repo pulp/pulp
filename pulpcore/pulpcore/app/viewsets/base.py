@@ -86,32 +86,31 @@ class NamedModelViewSet(viewsets.GenericViewSet):
 
     def get_serializer_class(self):
         """
-        Provides a way to customize the serializer based on the action being taken
-        (e.g. to provide a different serialization for a list view vs. a detail view)
+        Fetch the serializer class to use for the request.
 
-        If you do not specify a 'serializer_class', you must specify a 'serializers' dict which
-        defines a 'default' serializer, and can override that serializer on a per-action basis.
+        The default behavior is to use the "serializer_class" attribute on the viewset.
+        We override that for the case where a "minimal_serializer_class" attribute is defined
+        and where the request contains a query parameter of "pretty=True".
 
-        e.g. serializers = {'default': TaskSerializer, 'list': MinimalTaskSerializer}
-
-        If you define both, the 'serializer_class' attribute will be ignored and the 'serializers'
-        attribute will be used. This is because plugin viewsets may want to use multiple
-        serializers, but they inherit from basic viewsets such as Content which will have a
-        'serializer_class' attribute defined.
+        The intention is that ViewSets can define a second, more minimal serializer with only
+        the most important fields.
         """
-        serializer_class = getattr(self, 'serializer_class', None)
-        serializers = getattr(self, 'serializers', None)
+        assert self.serializer_class is not None, (_(
+            "'{}' should either include a `serializer_class` attribute, or override the "
+            "`get_serializer_class()` method.".format(self.__class__.__name__)
+        ))
+        minimal_serializer_class = getattr(self, 'minimal_serializer_class', None)
 
-        msg = _("{} must either have a 'serializer_class' attribute, or it must have a "
-                "'serializers' attribute with a 'default' key set").format(self.__class__.__name__)
-        assert serializer_class or serializers, msg
+        if minimal_serializer_class:
+            # The content endpoints don't pass along the request to the internals
+            if hasattr(self, 'request'):
+                if 'pretty' in self.request.query_params:
+                    # the query param is a string, and non-empty strings evaluate True,
+                    # so we need to do an actual string comparison to 'true'
+                    if self.request.query_params['pretty'].lower() == 'true':
+                        return minimal_serializer_class
 
-        if serializers:
-            valid = isinstance(serializers, dict) and 'default' in serializers.keys()
-            assert valid, msg
-            return self.serializers.get(self.action, serializers['default'])
-
-        return serializer_class
+        return self.serializer_class
 
     @staticmethod
     def get_resource(uri, model):

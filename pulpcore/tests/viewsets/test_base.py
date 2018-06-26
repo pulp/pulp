@@ -1,7 +1,7 @@
 from uuid import uuid4
 import unittest
 
-from django.http import Http404
+from django.http import Http404, QueryDict
 from django.test import TestCase
 from rest_framework.serializers import ValidationError as DRFValidationError
 
@@ -127,9 +127,21 @@ class TestGetResource(TestCase):
 
 class TestGetSerializerClass(TestCase):
 
+    def test_must_define_serializer_class(self):
+        """
+        Test that get_serializer_class() raises an AssertionError if you don't define the
+        serializer_class attribute.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            minimal_serializer_class = serializers.MinimalTaskSerializer
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
     def test_serializer_class(self):
         """
-        Tests that get_serializer_class() returns the serializer_class attribute if it exists.
+        Tests that get_serializer_class() returns the serializer_class attribute if it exists,
+        and that it doesn't error if no minimal serializer is defined, but pretty=True.
         """
         class TestTaskViewSet(viewsets.NamedModelViewSet):
             serializer_class = serializers.TaskSerializer
@@ -137,74 +149,35 @@ class TestGetSerializerClass(TestCase):
         viewset = TestTaskViewSet()
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
 
-    def test_multiple_serializers(self):
+        request = unittest.mock.MagicMock()
+        request.query_params = QueryDict('pretty=True')
+        viewset.request = request
+
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+
+    def test_pretty_query_param(self):
         """
-        Tests that get_serializer_class() returns the correct serializer when they have been
-        specified on a per-action basis.
+        Tests that get_serializer_class() returns the correct serializer in the correct situations.
         """
         class TestTaskViewSet(viewsets.NamedModelViewSet):
-            serializers = {
-                'list': serializers.MinimalTaskSerializer,
-                'default': serializers.TaskSerializer
-            }
+            serializer_class = serializers.TaskSerializer
+            minimal_serializer_class = serializers.MinimalTaskSerializer
 
         viewset = TestTaskViewSet()
-        # Test the default serializer
-        viewset.action = 'retrieve'
+        request = unittest.mock.MagicMock()
+
+        # Test that it uses the full serializer with no query params
+        request.query_params = QueryDict()
+        viewset.request = request
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
-        # Test a specific action
-        viewset.action = 'list'
+        # Test that it uses the full serializer with pretty=False
+        request.query_params = QueryDict('pretty=False')
+        viewset.request = request
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+        # Test that it uses the minimal serializer with pretty=True
+        request.query_params = QueryDict('pretty=True')
+        viewset.request = request
         self.assertEquals(viewset.get_serializer_class(), serializers.MinimalTaskSerializer)
-
-    def test_defining_neither_fails(self):
-        """
-        Test that get_serializer_class() raises an AssertionError if you try to define neither
-        'serializer_class' nor 'serializers'.
-        """
-        class TestTaskViewSet(viewsets.NamedModelViewSet):
-            pass
-
-        with self.assertRaises(AssertionError):
-            TestTaskViewSet().get_serializer_class()
-
-    def test_defining_both_uses_dict(self):
-        """
-        Test that get_serializer_class() will use 'serializers' if both 'serializer_class' and
-        'serializers' are defined.
-        """
-        class TestTaskViewSet(viewsets.NamedModelViewSet):
-            serializer_class = serializers.MinimalTaskSerializer
-            serializers = {'default': serializers.TaskSerializer}
-
-        viewset = TestTaskViewSet()
-        viewset.action = 'list'
-        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
-
-    def test_serializers_without_default_fails(self):
-        """
-        Tests that get_serializer_class() raises an AssertionError if you defined 'serializers'
-        without providing a default serializer.
-        """
-        class TestTaskViewSet(viewsets.NamedModelViewSet):
-            serializers = {}
-
-        with self.assertRaises(AssertionError):
-            TestTaskViewSet().get_serializer_class()
-
-    def test_multiple_derived_viewsets(self):
-        """
-        Tests that get_serializer_class() works on a viewset derived from another viewset which
-        inherits from NamedModelViewSet.
-        """
-        class TestAlternateSerializer(serializers.ContentSerializer):
-            pass
-
-        class TestDerivedViewSet(viewsets.ContentViewSet):
-            serializers = {'default': TestAlternateSerializer}
-
-        viewset = TestDerivedViewSet()
-        viewset.action = 'list'
-        self.assertEquals(viewset.get_serializer_class(), TestAlternateSerializer)
 
 
 class TestGetParentFieldAndObject(TestCase):

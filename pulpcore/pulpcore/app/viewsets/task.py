@@ -38,9 +38,15 @@ class TaskViewSet(NamedModelViewSet,
                   mixins.DestroyModelMixin):
     queryset = Task.objects.all()
     endpoint_name = 'tasks'
+<<<<<<< HEAD
     serializer_class = TaskSerializer
     minimal_serializer_class = MinimalTaskSerializer
     filterset_class = TaskFilter
+=======
+    filter_class = TaskFilter
+    serializer_class = TaskSerializer
+    minimal_serializer_class = MinimalTaskSerializer
+>>>>>>> Use a query param  approach for multiple serializers
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-created')
 
