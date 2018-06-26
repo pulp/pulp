@@ -52,9 +52,17 @@ def _send_post(notifier_config, json_body):
     else:
         auth = None
 
+    # CA path
+    verify = notifier_config.get('ca_path') or True
+
     try:
-        response = post(url, data=json_body, auth=auth,
-                        headers={'Content-Type': 'application/json'}, timeout=15)
+        response = post(
+            url,
+            data=json_body,
+            auth=auth,
+            headers={'Content-Type': 'application/json'},
+            verify=verify,
+            timeout=15)
     except Exception:
         _logger.exception("HTTP Notification Failed")
         return
