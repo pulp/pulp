@@ -41,7 +41,7 @@ class UserSerializer(ModelSerializer):
                         User._meta.get_field('username').max_length,
                         message=_('The length of username must be less than {} characters').format(
                             User._meta.get_field('username').max_length)),
-                    ],
+                    ]
     )
 
     password = PasswordSerializer(
