@@ -13,7 +13,7 @@ How to File an Issue
 `New pulpcore issue <https://pulp.plan.io/projects/pulp/issues/new>`_.
 
 .. warning::
-  Is this security related? If so, please follong the :ref`security-bugs` proceedure.
+  Is this security related? If so, please follow the :ref:`security-bugs` procedure.
 
 Please set **only the fields in this table**. See :ref:`redmine-fields` for more detailed
 descriptions of all the fields and how they are used.

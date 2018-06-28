@@ -8,7 +8,7 @@ Importers -> Remotes
 ********************
 
 CLI users may not have been aware of Importer objects because they were embedded into CLI commands
-with repositories. In Pulp 3, this object is now called : term:`remote`. The scope of this object
+with repositories. In Pulp 3, this object is now called :term:`remote`. The scope of this object
 has been reduced to interactions with a single external source. They are no longer scoped to a
 repository.
 
