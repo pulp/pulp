@@ -37,7 +37,8 @@ class RepositorySerializer(ModelSerializer):
     )
     description = serializers.CharField(
         help_text=_('An optional description.'),
-        required=False
+        required=False,
+        allow_blank=True
     )
     notes = GenericKeyValueRelatedField(
         help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
@@ -58,7 +59,7 @@ class RemoteSerializer(MasterModelSerializer):
     _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A unique name for this remote.'),
-        validators=[UniqueValidator(queryset=models.Remote.objects.all())]
+        validators=[UniqueValidator(queryset=models.Remote.objects.all())],
     )
     url = serializers.CharField(
         help_text='The URL of an external content source.',
@@ -90,16 +91,19 @@ class RemoteSerializer(MasterModelSerializer):
     proxy_url = serializers.CharField(
         help_text='The proxy URL. Format: scheme://user:password@host:port',
         required=False,
+        allow_blank=True,
     )
     username = serializers.CharField(
         help_text='The username to be used for authentication when syncing.',
         write_only=True,
         required=False,
+        allow_blank=True,
     )
     password = serializers.CharField(
         help_text='The password to be used for authentication when syncing.',
         write_only=True,
         required=False,
+        allow_blank=True,
     )
     last_synced = serializers.DateTimeField(
         help_text='Timestamp of the most recent successful sync.',
@@ -256,7 +260,7 @@ class DistributionSerializer(ModelSerializer):
                 models.Distribution._meta.get_field('base_path').max_length
             )),
             UniqueValidator(queryset=models.Distribution.objects.all()),
-        ],
+        ]
     )
     publisher = DetailRelatedField(
         required=False,

@@ -10,11 +10,11 @@ class VersionSerializer(serializers.Serializer):
     """
 
     component = serializers.CharField(
-        help_text=_("Name of a versioned component of Pulp")
+        help_text=_("Name of a versioned component of Pulp"),
     )
 
     version = serializers.CharField(
-        help_text=_("Version of the component (e.g. 3.0.0)")
+        help_text=_("Version of the component (e.g. 3.0.0)"),
     )
 
 
