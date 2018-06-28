@@ -40,6 +40,11 @@ make Pulp better, please reach out!
   * `pulp-smash (test suite) <https://github.com/PulpQE/pulp-smash>`_
   * :ref:`plugins<plugin-table>`
 
+    * Ansible #pulp-ansible channel on Freenode
+    * Docker #pulp-dockerchannel on Freenode
+    * Python #pulp-python channel on Freenode
+    * RPM #pulp-rpm channel on Freenode
+
 
 Table of Contents
 -----------------
