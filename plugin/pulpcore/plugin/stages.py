@@ -315,6 +315,50 @@ class DeclarativeVersion:
 
     def __init__(self, in_q, repository, sync_mode='mirror'):
         """
+        A pipeline that creates a new RepositoryVersion from a stream of DeclarativeContent objects.
+
+        The plugin writer needs to create a `~pulpcore.plugin.stages.DeclarativeContent` object for
+        each Content unit that should exist in the new RepositoryVersion. Each
+        `~pulpcore.plugin.stages.DeclarativeContent` object is put into the pipeline via the `in_q`
+        object.
+
+        The pipeline stages perform the following steps:
+
+        1. Create the new RespositoryVersion
+        2. Query existing artifacts to determine which are already local to Pulp
+        3. Download the undownloaded Artifacts
+        4. Save the newly downloaded Artifacts
+        5. Query for content units already present in Pulp
+        6. Save new content units not yet present in Pulp
+        7. Associate all content units with the new repository version.
+        8. Unassociate any content units not declared in the stream (only when sync_mode='mirror')
+
+        To do this, the plugin writer should create a coroutine which downloads metadata, creates
+        corresponding DeclarativeContent objects, and put them into the `asyncio.Queue` to send them
+        down the pipeline. For example:
+
+        >>> async def fetch_metadata(remote, out_q):
+        >>>     downloader = remote.get_downloader(remote.url)
+        >>>     result = await downloader.run()
+        >>>     for entry in read_my_metadata_file_somehow(result.path)
+        >>>         unit = MyContent(entry)  # make the content unit in memory-only
+        >>>         artifact = Artifact(entry)  # make Artifact in memory-only
+        >>>         da = DeclarativeArtifact(artifact, url, entry.relative_path, remote)
+        >>>         dc = DeclarativeContent(content=unit, artifacts=[da])
+        >>>         await out_q.put(dc)
+        >>>     await out_q.put(None)
+
+        To use your coroutine with the pipeline you have to:
+
+        1. Create the asyncio.Queue the pipeline should listen on
+        2. Schedule your corouine using `ensure_future()`
+        3. Create the `DeclarativeVersion` and call its `create()` method
+
+        Here is example:
+
+        >>> out_q = asyncio.Queue(maxsize=100)  # restricts the number of content units in memory
+        >>> asyncio.ensure_future(fetch_metadata(remote, out_q))  # Schedule the "fetching" stage
+        >>> DeclarativeVersion(out_q, repository).create()
 
         Args:
              in_q (asyncio.Queue): The queue to get DeclarativeContent from
@@ -336,7 +380,7 @@ class DeclarativeVersion:
 
     def create(self):
         """
-        Creates a new RepositoryVersion from the stream of DeclarativeContent objects.
+        Perform the work. This is the long-blocking call where all syncing occurs.
         """
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
@@ -344,8 +388,11 @@ class DeclarativeVersion:
                 stages = [
                     query_existing_artifacts, artifact_downloader, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association(new_version), content_unit_unassociate(new_version),
-                    end_stage
+                    content_unit_association(new_version)
                 ]
+                if self.sync_mode is 'additive':
+                    stages.append(end_stage)
+                elif self.sync_mode is 'mirror':
+                    stages.extend([content_unit_unassociate(new_version), end_stage])
                 pipeline = queue_run_stages(stages, self.in_q)
                 loop.run_until_complete(pipeline)
