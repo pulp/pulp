@@ -168,10 +168,8 @@ async def query_existing_content_units(in_q, out_q):
                 shutdown = True
                 continue
 
-            unit_key = {}
-            for field in declarative_content.content.natural_key_fields():
-                unit_key[field] = getattr(declarative_content.content, field)
             model_type = type(declarative_content.content)
+            unit_key = declarative_content.content.natural_key_dict()
             content_q_by_type[model_type] = content_q_by_type[model_type] | Q(**unit_key)
 
         for model_type in content_q_by_type.keys():
@@ -263,10 +261,10 @@ def content_unit_association(new_version):
 
     1. Units already associated are not re-added. It would end up being ok, but it's not efficient.
     2. To compute the units already associated but not received from `in_q`. These units are passed
-       via `out_q` to the next stage as a queryset.
+       via `out_q` to the next stage as a `~django.db.models.query.QuerySet`.
 
     in_q data type: a saved `~pulpcore.plugin.models.Content` or subclass
-    out_q data type: # TODO document output datatype
+    out_q data type: `django.db.models.query.QuerySet`
 
     Args:
         new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
@@ -291,7 +289,13 @@ def content_unit_association(new_version):
                 version.add_content(content)
         for unit_type, ids in unit_keys_by_type.items():
             if ids:
-                await out_q.put((unit_type, unit_keys_by_type[unit_type]))
+                units_to_unassociate = Q()
+                for unit_key in unit_keys_by_type[unit_type]:
+                    query_dict = {}
+                    for i, key_name in enumerate(unit_type.natural_key_fields()):
+                        query_dict[key_name] = unit_key[i]
+                    units_to_unassociate |= Q(**query_dict)
+                await out_q.put(unit_type.objects.filter(units_to_unassociate))
         await out_q.put(None)
     return actual_stage
 
@@ -310,21 +314,14 @@ def content_unit_unassociate(new_version):
     async def actual_stage(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
         while True:
-            to_remove = await in_q.get()
-            if to_remove is None:
+            queryset_to_unassociate = await in_q.get()
+            if queryset_to_unassociate is None:
                 break
-            model = to_remove[0]
-            units_to_unassociate = Q()
-            for unit_key in to_remove[1]:
-                query_dict = {}
-                for i, key_name in enumerate(model.natural_key_fields()):
-                    query_dict[key_name] = unit_key[i]
-                units_to_unassociate |= Q(**query_dict)
 
-            for unit in model.objects.filter(units_to_unassociate):
+            for unit in queryset_to_unassociate:
                 version.remove_content(unit)
 
-            await out_q.put(to_remove)
+            await out_q.put(queryset_to_unassociate)
         await out_q.put(None)
     return actual_stage
 
