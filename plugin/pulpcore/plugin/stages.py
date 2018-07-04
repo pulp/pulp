@@ -24,7 +24,6 @@ async def queue_run_stages(stages, in_q=None):
 
 async def query_existing_artifacts(in_q, out_q):
     """Batch query for existing Artifacts, attach to Content unit in memory, and send to out_q"""
-    # await asyncio.sleep(4)  # TODO remove me. temporary to allow the queue to build up the batch
     declarative_content = []
     shutdown = False
     while True:
@@ -257,6 +256,24 @@ async def content_unit_saver(in_q, out_q):
 
 
 def content_unit_association(new_version):
+    """
+    A factory returning a Stages API stage that associates content units with `new_version`.
+
+    This stage stores all content unit types and unit keys in memory for two reasons:
+
+    1. Units already associated are not re-added. It would end up being ok, but it's not efficient.
+    2. To compute the units already associated but not received from `in_q`. These units are passed
+       via `out_q` to the next stage as a queryset.
+
+    in_q data type: a saved `~pulpcore.plugin.models.Content` or subclass
+    out_q data type: # TODO document output datatype
+
+    Args:
+        new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
+
+    Returns:
+        The configured content_unit_association stage as a coroutine to be included in a pipeline.
+    """
     version = new_version
     unit_keys_by_type = defaultdict(set)
     for unit in new_version.content.all():
@@ -280,6 +297,15 @@ def content_unit_association(new_version):
 
 
 def content_unit_unassociate(new_version):
+    """
+    A Stages API stage that unassociates content units from new_version.
+
+    Args:
+        new_version:
+
+    Returns:
+
+    """
     version = new_version
     async def actual_stage(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
@@ -304,7 +330,12 @@ def content_unit_unassociate(new_version):
 
 
 async def end_stage(in_q, out_q):
-    """Drain in_q and do nothing with the items"""
+    """
+    A Stages API stage that drains `in_q` and do nothing with the items. This is expected at the end of all pipelines.
+
+    Without this stage, the maxsize of the `out_q` from the last stage could fill up and block the
+    entire pipeline.
+    """
     while True:
         content = await in_q.get()
         if content is None:
@@ -354,7 +385,7 @@ class DeclarativeVersion:
         2. Schedule your corouine using `ensure_future()`
         3. Create the `DeclarativeVersion` and call its `create()` method
 
-        Here is example:
+        Here is an example:
 
         >>> out_q = asyncio.Queue(maxsize=100)  # restricts the number of content units in memory
         >>> asyncio.ensure_future(fetch_metadata(remote, out_q))  # Schedule the "fetching" stage
