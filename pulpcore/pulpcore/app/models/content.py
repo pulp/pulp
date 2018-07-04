@@ -140,7 +140,7 @@ class Content(MasterModel):
 
     def natural_key_dict(self):
         """
-        Get the model's natural key as a dictionary of keys and values
+        Get the model's natural key as a dictionary of keys and values.
         """
         to_return = {}
         for key in self.natural_key_fields():

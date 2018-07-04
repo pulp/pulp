@@ -1,6 +1,6 @@
 import asyncio
-
 from collections import defaultdict, namedtuple
+from gettext import gettext as _
 
 from django.db.models import Q
 
@@ -180,9 +180,13 @@ async def query_existing_content_units(in_q, out_q):
                 for i, declarative_content in enumerate(declarative_content_list):
                     if declarative_content is None:
                         continue
+                    not_same_unit = False
                     for field in result.natural_key_fields():
                         if getattr(declarative_content.content, field) != getattr(result, field):
+                            not_same_unit = True
                             break
+                    if not_same_unit:
+                        continue
                     new_dc = DeclarativeContent(
                         content=result, artifacts=declarative_content.artifacts
                     )
@@ -257,7 +261,7 @@ def content_unit_association(new_version):
     unit_keys_by_type = defaultdict(set)
     for unit in new_version.content.all():
         unit = unit.cast()
-        unit_keys_by_type[type(unit)].add(unit.natural_key_fields())
+        unit_keys_by_type[type(unit)].add(unit.natural_key())
     async def actual_stage(in_q, out_q):
         """For each Content Unit associate it with the repository version"""
         while True:
@@ -265,21 +269,38 @@ def content_unit_association(new_version):
             if content is None:
                 break
             try:
-                unit_keys_by_type[type(unit)].remove(unit.natural_key_fields())
+                unit_keys_by_type[type(content)].remove(content.natural_key())
             except KeyError:
                 version.add_content(content)
+        for unit_type, ids in unit_keys_by_type.items():
+            if ids:
+                await out_q.put((unit_type, unit_keys_by_type[unit_type]))
         await out_q.put(None)
     return actual_stage
 
 
-async def content_unit_unassociate(in_q, out_q):
-    """For each Content Unit from in_q, unassociate it with the repository version"""
-    while True:
-        content = await in_q.get()
-        if content is None:
-            break
-        await out_q.put(content)
-    await out_q.put(None)
+def content_unit_unassociate(new_version):
+    version = new_version
+    async def actual_stage(in_q, out_q):
+        """For each Content Unit from in_q, unassociate it with the repository version"""
+        while True:
+            to_remove = await in_q.get()
+            if to_remove is None:
+                break
+            model = to_remove[0]
+            units_to_unassociate = Q()
+            for unit_key in to_remove[1]:
+                query_dict = {}
+                for i, key_name in enumerate(model.natural_key_fields()):
+                    query_dict[key_name] = unit_key[i]
+                units_to_unassociate |= Q(**query_dict)
+
+            for unit in model.objects.filter(units_to_unassociate):
+                version.remove_content(unit)
+
+            await out_q.put(to_remove)
+        await out_q.put(None)
+    return actual_stage
 
 
 async def end_stage(in_q, out_q):
@@ -292,34 +313,39 @@ async def end_stage(in_q, out_q):
 
 class DeclarativeVersion:
 
-    def __init__(self, in_q, repository, remote, sync_mode='mirror'):
+    def __init__(self, in_q, repository, sync_mode='mirror'):
         """
 
         Args:
-             first_stage (coroutine): The coroutine
+             in_q (asyncio.Queue): The queue to get DeclarativeContent from
+             repository (Repository): The repository receiving the new version
+             sync_mode (str): 'mirror' removes content units from the RepositoryVersion that are not
+                 queued to DeclarativeVersion. 'additive' only adds content units queued to
+                 DeclarativeVersion, and does not remove any pre-existing units in the
+                 RepositoryVersion. 'mirror' is the default.
+
+        Raises:
+            ValueError: if 'sync_mode' is passed an invalid value.
         """
+        if sync_mode is not 'mirror' and sync_mode is not 'additive':
+            msg = _("'sync_mode' must either be 'mirror' or 'additive' not '{sync_mode}'")
+            raise ValueError(msg.format(sync_mode=sync_mode))
         self.in_q = in_q
         self.repository = repository
-        self.remote = remote
         self.sync_mode = sync_mode
 
     def create(self):
-        # import cProfile
-        # pr = cProfile.Profile()
-        # pr.enable()
-        import pydevd
-        pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
+        """
+        Creates a new RepositoryVersion from the stream of DeclarativeContent objects.
+        """
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
                 stages = [
                     query_existing_artifacts, artifact_downloader, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association(new_version), content_unit_unassociate, end_stage
+                    content_unit_association(new_version), content_unit_unassociate(new_version),
+                    end_stage
                 ]
-                pipeline = queue_run_stages(
-                    stages, self.in_q
-                )
+                pipeline = queue_run_stages(stages, self.in_q)
                 loop.run_until_complete(pipeline)
-        # pr.disable()
-        # pr.dump_stats('/home/vagrant/devel/outputdump.profile')
