@@ -257,14 +257,17 @@ def content_unit_association(new_version):
     """
     A factory returning a Stages API stage that associates content units with `new_version`.
 
-    This stage stores all content unit types and unit keys in memory for two reasons:
+    This stage stores all content unit types and unit keys in memory before running for two reasons:
 
-    1. Units already associated are not re-added. It would end up being ok, but it's not efficient.
-    2. To compute the units already associated but not received from `in_q`. These units are passed
+    1. To compute the units already associated but not received from `in_q`. These units are passed
        via `out_q` to the next stage as a `~django.db.models.query.QuerySet`.
+    2. Units already associated will not be re-added. It would be ok, but it's not efficient.
 
-    in_q data type: a saved `~pulpcore.plugin.models.Content` or subclass
-    out_q data type: `django.db.models.query.QuerySet`
+    in_q data type: A saved `~pulpcore.plugin.models.Content` or subclass to be associated
+    out_q data type: A `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
+        subclass that are already associated but not included in the stream of items from `in_q`.
+        One `django.db.models.query.QuerySet` is put for each `~pulpcore.plugin.models.Content`
+        type.
 
     Args:
         new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
@@ -300,15 +303,20 @@ def content_unit_association(new_version):
     return actual_stage
 
 
-def content_unit_unassociate(new_version):
+def content_unit_unassociation(new_version):
     """
-    A Stages API stage that unassociates content units from new_version.
+    A factory returning a Stages API stage that unassociates content units from `new_version`.
+
+    in_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
+        subclass to be unassociated from `new_version`.
+    out_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
+        subclass that were unassociated from `new_version`.
 
     Args:
-        new_version:
+        new_version (RepositoryVersion): The RespositoryVersion this stage unassociates content from
 
     Returns:
-
+        The configured content_unit_unassociation stage as a coroutine to be included in a pipeline.
     """
     version = new_version
     async def actual_stage(in_q, out_q):
@@ -421,6 +429,6 @@ class DeclarativeVersion:
                 if self.sync_mode is 'additive':
                     stages.append(end_stage)
                 elif self.sync_mode is 'mirror':
-                    stages.extend([content_unit_unassociate(new_version), end_stage])
+                    stages.extend([content_unit_unassociation(new_version), end_stage])
                 pipeline = queue_run_stages(stages, self.in_q)
                 loop.run_until_complete(pipeline)
