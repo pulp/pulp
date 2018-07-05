@@ -143,7 +143,8 @@ async def query_existing_artifacts(in_q, out_q):
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not declarative_content:
-                await asyncio.sleep(0.1)
+                content = await in_q.get()
+                declarative_content.append(content)
                 continue
         else:
             declarative_content.append(content)
@@ -214,7 +215,8 @@ async def artifact_downloader(in_q, out_q):
                 content = in_q.get_nowait()
             except asyncio.QueueEmpty:
                 if not incoming_content and not shutdown and not pending:
-                    await asyncio.sleep(0.1)
+                    content = await in_q.get()
+                    incoming_content.append(content)
                     continue
             else:
                 incoming_content.append(content)
@@ -322,7 +324,8 @@ async def query_existing_content_units(in_q, out_q):
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not declarative_content_list:
-                await asyncio.sleep(0.1)
+                content = await in_q.get()
+                declarative_content_list.append(content)
                 continue
         else:
             declarative_content_list.append(content)
@@ -390,7 +393,8 @@ async def content_unit_saver(in_q, out_q):
             declarative_content = in_q.get_nowait()
         except asyncio.QueueEmpty:
             if not declarative_content_list and not shutdown:
-                await asyncio.sleep(0.1)
+                declarative_content = await in_q.get()
+                declarative_content_list.append(declarative_content)
                 continue
         else:
             declarative_content_list.append(declarative_content)
