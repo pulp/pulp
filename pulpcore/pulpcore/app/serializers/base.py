@@ -3,6 +3,7 @@ from gettext import gettext as _
 from urllib.parse import urljoin
 
 from django.core.validators import URLValidator
+from drf_queryfields.mixins import QueryFieldsMixin
 
 from rest_framework import serializers
 from rest_framework.fields import SkipField
@@ -105,7 +106,8 @@ class GenericKeyValueRelatedField(serializers.DictField):
         return super().to_representation(value.mapping)
 
 
-class ModelSerializer(serializers.HyperlinkedModelSerializer):
+# Inheritance order matters, don't flip these
+class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
     """Base serializer for use with :class:`pulpcore.app.models.Model`
 
     This ensures that all Serializers provide values for the '_href` field, and
