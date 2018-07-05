@@ -76,17 +76,66 @@ class DeclarativeContent:
         self.content = content
 
 
-async def queue_run_stages(stages, in_q=None):
+async def create_pipeline(stages, in_q=None, maxsize=100):
+    """
+    Creates a Stages API linear pipeline from the list `stages` and return as a single coroutine.
+
+    Each stage is a coroutine and reads from an input `asyncio.Queue` and writes to an output
+    `asyncio.Queue`. When the stage is ready to shutdown it writes a `None` to the output Queue.
+    Here is an example of the simplest stage that only passes data.
+
+    >>> async def my_stage(in_q, out_q):
+    >>>     while True:
+    >>>         item = await in_q.get()
+    >>>         if item is None:  # Check if the previous stage is shutdown
+    >>>             break
+    >>>         await out_q.put(item)
+    >>>     await out_q.put(None)  # this stage is shutdown so send 'None'
+
+    Args:
+        stages (list of coroutines): A list of Stages API compatible coroutines.
+        in_q (asyncio.Queue): The queue the first stage should read from. This is how to put work
+            into the pipeline. Optional especially for cases where the first stage generates items
+            for `out_q` without needing inputs from `in_q`.
+        maxsize (int): The maximum amount of items a queue between two stages should hold. Optional
+            and defaults to 100.
+
+    Returns:
+        A single coroutine that can be used to run, wait, or cancel the entire pipeline with.
+    """
     futures = []
     for stage in stages:
-        out_q = asyncio.Queue(maxsize=100)
+        out_q = asyncio.Queue(maxsize=maxsize)
         futures.append(stage(in_q, out_q))
         in_q = out_q
     await asyncio.gather(*futures)
 
 
 async def query_existing_artifacts(in_q, out_q):
-    """Batch query for existing Artifacts, attach to Content unit in memory, and send to out_q"""
+    """
+    Stages API stage replacing DeclarativeArtifact.artifact with already-saved Artifacts.
+
+    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
+    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    `DeclarativeArtifact` object stores one Artifact.
+
+    This stage inspects any "unsaved" Artifact objects metadata and searches for existing saved
+    Artifacts inside Pulp with the same digest value(s). Any existing Artifact objects found replace
+    their "unsaved" counterpart in the `~pulpcore.plugin.stages.DeclarativeArtifact` object.
+
+    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
+    `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
+
+    This stage drains all available items from `in_q` and batches everything into one large call to
+    the db for efficiency.
+
+    Args:
+        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+
+    Returns:
+        The query_existing_artifacts stage as a coroutine to be included in a pipeline.
+    """
     declarative_content = []
     shutdown = False
     while True:
@@ -133,7 +182,29 @@ async def query_existing_artifacts(in_q, out_q):
 
 
 async def artifact_downloader(in_q, out_q):
-    """For each DeclarativeArtifact object, download and replace it with an unsaved Artifact"""
+    """
+    Stages API stage downloading Artifact files for any "unsaved" DeclarativeArtifact.artifact.
+
+    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
+    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    `DeclarativeArtifact` object stores one Artifact.
+
+    This stage downloads the file for any "unsaved" Artifact object and creates a new Artifact
+    from the downloaded file and its digest data. The new Artifact is *not* saved but associated
+    with the `~pulpcore.plugin.stages.DeclarativeArtifact` replacing the likely incomplete Artifact.
+
+    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
+    `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
+
+    This stage drains all available items from `in_q` and starts as many downloaders as possible.
+
+    Args:
+        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+
+    Returns:
+        The artifact_downloader stage as a coroutine to be included in a pipeline.
+    """
     pending = set()
     incoming_content = []
     shutdown = False
@@ -190,7 +261,26 @@ async def artifact_downloader(in_q, out_q):
 
 
 async def artifact_saver(in_q, out_q):
-    """For each Artifact ensure it is saved"""
+    """
+    Stages API stage that saves an Artifact for any "unsaved" DeclarativeArtifact.artifact objects.
+
+    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
+    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    `DeclarativeArtifact` object stores one Artifact.
+
+    Any "unsaved" Artifact objects are saved. Each `~pulpcore.plugin.stages.DeclarativeContent` is
+    sent to `out_q` after all of its `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been
+    handled.
+
+    This stage handles items one-by-one because Artifact is not compatible with bulk_create.
+
+    Args:
+        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+
+    Returns:
+        The artifact_saver stage as a coroutine to be included in a pipeline.
+    """
     while True:
         declarative_content = await in_q.get()
         if declarative_content is None:
@@ -202,7 +292,29 @@ async def artifact_saver(in_q, out_q):
 
 
 async def query_existing_content_units(in_q, out_q):
-    """Batch query for existing Content Units, to Content unit in memory, and send to out_q"""
+    """
+    Stages API stage replacing DeclarativeContent.content with already-saved Content objects.
+
+    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
+    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    `DeclarativeArtifact` object stores one Artifact.
+
+    This stage inspects any "unsaved" Content unit objects and searches for existing saved Content
+    units inside Pulp with the same unit key. Any existing Content objects found replace their
+    "unsaved" counterpart in the `~pulpcore.plugin.stages.DeclarativeContent` object.
+
+    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after it has been handled.
+
+    This stage drains all available items from `in_q` and batches everything into one large call to
+    the db for efficiency.
+
+    Args:
+        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+
+    Returns:
+        The query_existing_content_units stage as a coroutine to be included in a pipeline.
+    """
     declarative_content_list = []
     shutdown = False
     while True:
@@ -248,7 +360,29 @@ async def query_existing_content_units(in_q, out_q):
 
 
 async def content_unit_saver(in_q, out_q):
-    """For each Content Unit ensure it is saved"""
+    """
+    Stages API stage that saves DeclarativeContent.content objects and saves helper objects too.
+
+    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
+    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    `DeclarativeArtifact` object stores one Artifact.
+
+    Each "unsaved" Content objects is saved and a RemoteArtifact and ContentArtifact are created for
+    it and saved also. This allows Pulp to refetch the Artifact in the future if the local copy is
+    removed.
+
+    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to after it has been handled.
+
+    This stage drains all available items from `in_q` and batches everything into one large call to
+    the db for efficiency.
+
+    Args:
+        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        out_q: `~pulpcore.plugin.models.Content`
+
+    Returns:
+        The content_unit_saver stage as a coroutine to be included in a pipeline.
+    """
     declarative_content_list = []
     shutdown = False
     while True:
@@ -324,7 +458,7 @@ def content_unit_association(new_version):
         new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
 
     Returns:
-        The configured content_unit_association stage as a coroutine to be included in a pipeline.
+        A configured content_unit_association stage to be included in a pipeline.
     """
     version = new_version
     unit_keys_by_type = defaultdict(set)
@@ -369,7 +503,7 @@ def content_unit_unassociation(new_version):
         new_version (RepositoryVersion): The RespositoryVersion this stage unassociates content from
 
     Returns:
-        The configured content_unit_unassociation stage as a coroutine to be included in a pipeline.
+        The configured content_unit_unassociation stage to be included in a pipeline.
     """
     version = new_version
     async def actual_stage(in_q, out_q):
@@ -485,5 +619,5 @@ class DeclarativeVersion:
                     stages.append(end_stage)
                 elif self.sync_mode is 'mirror':
                     stages.extend([content_unit_unassociation(new_version), end_stage])
-                pipeline = queue_run_stages(stages, self.in_q)
+                pipeline = create_pipeline(stages, self.in_q)
                 loop.run_until_complete(pipeline)
