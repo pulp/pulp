@@ -197,6 +197,9 @@ async def artifact_downloader(in_q, out_q):
     Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
     `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
 
+    This stage creates a ProgressBar named 'Downloading Artifacts' that counts the number of
+    downloads completed. Since it's a stream the total count isn't known until it's finished.
+
     This stage drains all available items from `in_q` and starts as many downloaders as possible.
 
     Args:
@@ -458,6 +461,9 @@ def content_unit_association(new_version):
         One `django.db.models.query.QuerySet` is put for each `~pulpcore.plugin.models.Content`
         type.
 
+    This stage creates a ProgressBar named 'Associating Content' that counts the number of units
+    associated. Since it's a stream the total count isn't known until it's finished.
+
     Args:
         new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
 
@@ -503,6 +509,9 @@ def content_unit_unassociation(new_version):
     out_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
         subclass that were unassociated from `new_version`.
 
+    This stage creates a ProgressBar named 'Un-Associating Content' that counts the number of units
+    un-associated. Since it's a stream the total count isn't known until it's finished.
+
     Args:
         new_version (RepositoryVersion): The RespositoryVersion this stage unassociates content from
 
@@ -529,7 +538,8 @@ def content_unit_unassociation(new_version):
 
 async def end_stage(in_q, out_q):
     """
-    A Stages API stage that drains `in_q` and do nothing with the items. This is expected at the end of all pipelines.
+    A Stages API stage that drains `in_q` and do nothing with the items. This is expected at the end
+    of all pipelines.
 
     Without this stage, the maxsize of the `out_q` from the last stage could fill up and block the
     entire pipeline.
