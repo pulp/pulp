@@ -69,20 +69,20 @@ Configuring from a Remote
 When fetching content during a sync, the remote has settings like SSL certs, SSL validation, basic
 auth credentials, and proxy settings. Downloaders commonly want to use these settings while
 downloading. The remote can automatically configure a downloader with these settings using
-the :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` call. Here is an example:
+the :meth:`~pulpcore.plugin.models.Remote.get_downloader` call. Here is an example:
 
->>> downloader = my_remote.get_asyncio_downloader('http://example.com')
+>>> downloader = my_remote.get_downloader('http://example.com')
 >>> downloader.fetch()  # This downloader is fully configured
 
-The :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` internally calls the
+The :meth:`~pulpcore.plugin.models.Remote.get_downloader` internally calls the
 `DownloaderFactory`, so it expects a `url` that the `DownloaderFactory` can build a downloader for.
 See the :class:`~pulpcore.plugin.download.DownloaderFactory` for more information on
 supported urls.
 
 .. tip::
-    The :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` accepts kwargs that can
+    The :meth:`~pulpcore.plugin.models.Remote.get_downloader` accepts kwargs that can
     enable size or digest based validation, and specifying a file-like object for the data to be
-    written into. See :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader` for more
+    written into. See :meth:`~pulpcore.plugin.models.Remote.get_downloader` for more
     information.
 
 .. note::
@@ -143,7 +143,7 @@ code.
 
 A custom downloader can be given as the downloader to use for a given protocol using the
 ``downloader_overrides`` on the :class:`~pulpcore.plugin.download.DownloaderFactory`.
-Additionally, you can implement the :meth:`~pulpcore.plugin.models.Remote.get_asyncio_downloader`
+Additionally, you can implement the :meth:`~pulpcore.plugin.models.Remote.get_downloader`
 method to specify the ``downloader_overrides`` to the
 :class:`~pulpcore.plugin.download.DownloaderFactory`.
 
