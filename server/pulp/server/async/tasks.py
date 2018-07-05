@@ -8,6 +8,7 @@ import signal
 import time
 import traceback
 import uuid
+import platform
 
 from bson.json_util import dumps as bson_dumps
 from bson.json_util import loads as bson_loads
@@ -415,6 +416,7 @@ class ReservedTaskMixin(object):
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
                                  state=constants.CALL_WAITING_STATE, tags=tag_list,
+                                 worker_name=RESOURCE_MANAGER_WORKER_NAME + "@" + platform.node(),
                                  group_id=group_id)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
