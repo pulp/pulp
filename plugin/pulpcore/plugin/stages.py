@@ -2,10 +2,13 @@ import asyncio
 from collections import defaultdict
 from gettext import gettext as _
 
+from django.db import transaction
 from django.db.models import Q
 
 from pulpcore.plugin.tasking import WorkingDirectory
-from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact, RepositoryVersion
+from pulpcore.plugin.models import (
+    Artifact, ContentArtifact, ProgressBar, RemoteArtifact, RepositoryVersion
+)
 
 
 class DeclarativeArtifact:
@@ -134,53 +137,55 @@ async def artifact_downloader(in_q, out_q):
     pending = set()
     incoming_content = []
     shutdown = False
-    while True:
-        try:
-            content = in_q.get_nowait()
-        except asyncio.QueueEmpty:
-            if not incoming_content and not shutdown and not pending:
-                await asyncio.sleep(0.1)
+    with ProgressBar(message='Downloading Artifacts') as pb:
+        while True:
+            try:
+                content = in_q.get_nowait()
+            except asyncio.QueueEmpty:
+                if not incoming_content and not shutdown and not pending:
+                    await asyncio.sleep(0.1)
+                    continue
+            else:
+                incoming_content.append(content)
                 continue
-        else:
-            incoming_content.append(content)
-            continue
 
-        for content in incoming_content:
-            if content is None:
-                shutdown = True
-                continue
-            downloaders_for_content = []
-            for declarative_artifact in content.d_artifacts:
-                if declarative_artifact.artifact._state.adding:
-                    # this needs to be downloaded
-                    downloader = declarative_artifact.remote.get_downloader(
-                        declarative_artifact.url
-                    )
-                    next_future = asyncio.ensure_future(downloader.run())
-                    downloaders_for_content.append(next_future)
-            if not downloaders_for_content:
-                await out_q.put(content)
-                continue
-            async def return_content_for_downloader(c):
-                return c
-            downloaders_for_content.append(return_content_for_downloader(content))
-            pending.add(asyncio.gather(*downloaders_for_content))
-        incoming_content = []
-
-        if pending:
-            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-            for gathered_downloaders in done:
-                results = gathered_downloaders.result()
-                for download_result in results[:-1]:
-                    content = results[-1]
-                    for declarative_artifact in content.d_artifacts:
-                        if declarative_artifact.artifact._state.adding:
-                            new_artifact = Artifact(**download_result.artifact_attributes)
-                            declarative_artifact.artifact = new_artifact
+            for content in incoming_content:
+                if content is None:
+                    shutdown = True
+                    continue
+                downloaders_for_content = []
+                for declarative_artifact in content.d_artifacts:
+                    if declarative_artifact.artifact._state.adding:
+                        # this needs to be downloaded
+                        downloader = declarative_artifact.remote.get_downloader(
+                            declarative_artifact.url
+                        )
+                        next_future = asyncio.ensure_future(downloader.run())
+                        downloaders_for_content.append(next_future)
+                if not downloaders_for_content:
                     await out_q.put(content)
-        else:
-            if shutdown:
-                break
+                    continue
+                async def return_content_for_downloader(c):
+                    return c
+                downloaders_for_content.append(return_content_for_downloader(content))
+                pending.add(asyncio.gather(*downloaders_for_content))
+            incoming_content = []
+
+            if pending:
+                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                for gathered_downloaders in done:
+                    results = gathered_downloaders.result()
+                    for download_result in results[:-1]:
+                        content = results[-1]
+                        for declarative_artifact in content.d_artifacts:
+                            if declarative_artifact.artifact._state.adding:
+                                new_artifact = Artifact(**download_result.artifact_attributes)
+                                declarative_artifact.artifact = new_artifact
+                                pb.increment()
+                        await out_q.put(content)
+            else:
+                if shutdown:
+                    break
     await out_q.put(None)
 
 
@@ -198,7 +203,6 @@ async def artifact_saver(in_q, out_q):
 
 async def query_existing_content_units(in_q, out_q):
     """Batch query for existing Content Units, to Content unit in memory, and send to out_q"""
-    # await asyncio.sleep(10)
     declarative_content_list = []
     shutdown = False
     while True:
@@ -266,26 +270,26 @@ async def content_unit_saver(in_q, out_q):
                 shutdown = True
                 continue
             if declarative_content.content._state.adding:
-                # TODO add transaction here
-                declarative_content.content.save()
-                for declarative_artifact in declarative_content.d_artifacts:
-                    content_artifact = ContentArtifact(
-                        content=declarative_content.content, artifact=declarative_artifact.artifact,
-                        relative_path=declarative_artifact.relative_path
-                    )
-                    content_artifact_bulk.append(content_artifact)
-                    remote_artifact = RemoteArtifact(
-                        url=declarative_artifact.url, size=declarative_artifact.artifact.size,
-                        md5=declarative_artifact.artifact.md5,
-                        sha1=declarative_artifact.artifact.sha1,
-                        sha224=declarative_artifact.artifact.sha224,
-                        sha256=declarative_artifact.artifact.sha256,
-                        sha384=declarative_artifact.artifact.sha384,
-                        sha512=declarative_artifact.artifact.sha512,
-                        content_artifact=content_artifact,
-                        remote=declarative_artifact.remote
-                    )
-                    remote_artifact_bulk.append(remote_artifact)
+                with transaction.atomic():
+                    declarative_content.content.save()
+                    for declarative_artifact in declarative_content.d_artifacts:
+                        content_artifact = ContentArtifact(
+                            content=declarative_content.content, artifact=declarative_artifact.artifact,
+                            relative_path=declarative_artifact.relative_path
+                        )
+                        content_artifact_bulk.append(content_artifact)
+                        remote_artifact = RemoteArtifact(
+                            url=declarative_artifact.url, size=declarative_artifact.artifact.size,
+                            md5=declarative_artifact.artifact.md5,
+                            sha1=declarative_artifact.artifact.sha1,
+                            sha224=declarative_artifact.artifact.sha224,
+                            sha256=declarative_artifact.artifact.sha256,
+                            sha384=declarative_artifact.artifact.sha384,
+                            sha512=declarative_artifact.artifact.sha512,
+                            content_artifact=content_artifact,
+                            remote=declarative_artifact.remote
+                        )
+                        remote_artifact_bulk.append(remote_artifact)
 
         ContentArtifact.objects.bulk_create(content_artifact_bulk)
         RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
@@ -329,24 +333,26 @@ def content_unit_association(new_version):
         unit_keys_by_type[type(unit)].add(unit.natural_key())
     async def actual_stage(in_q, out_q):
         """For each Content Unit associate it with the repository version"""
-        while True:
-            content = await in_q.get()
-            if content is None:
-                break
-            try:
-                unit_keys_by_type[type(content)].remove(content.natural_key())
-            except KeyError:
-                version.add_content(content)
-        for unit_type, ids in unit_keys_by_type.items():
-            if ids:
-                units_to_unassociate = Q()
-                for unit_key in unit_keys_by_type[unit_type]:
-                    query_dict = {}
-                    for i, key_name in enumerate(unit_type.natural_key_fields()):
-                        query_dict[key_name] = unit_key[i]
-                    units_to_unassociate |= Q(**query_dict)
-                await out_q.put(unit_type.objects.filter(units_to_unassociate))
-        await out_q.put(None)
+        with ProgressBar(message='Associating Content') as pb:
+            while True:
+                content = await in_q.get()
+                if content is None:
+                    break
+                try:
+                    unit_keys_by_type[type(content)].remove(content.natural_key())
+                except KeyError:
+                    version.add_content(content)
+                    pb.increment()
+            for unit_type, ids in unit_keys_by_type.items():
+                if ids:
+                    units_to_unassociate = Q()
+                    for unit_key in unit_keys_by_type[unit_type]:
+                        query_dict = {}
+                        for i, key_name in enumerate(unit_type.natural_key_fields()):
+                            query_dict[key_name] = unit_key[i]
+                        units_to_unassociate |= Q(**query_dict)
+                    await out_q.put(unit_type.objects.filter(units_to_unassociate))
+            await out_q.put(None)
     return actual_stage
 
 
@@ -368,16 +374,18 @@ def content_unit_unassociation(new_version):
     version = new_version
     async def actual_stage(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
-        while True:
-            queryset_to_unassociate = await in_q.get()
-            if queryset_to_unassociate is None:
-                break
+        with ProgressBar(message='Un-Associating Content') as pb:
+            while True:
+                queryset_to_unassociate = await in_q.get()
+                if queryset_to_unassociate is None:
+                    break
 
-            for unit in queryset_to_unassociate:
-                version.remove_content(unit)
+                for unit in queryset_to_unassociate:
+                    version.remove_content(unit)
+                    pb.increment()
 
-            await out_q.put(queryset_to_unassociate)
-        await out_q.put(None)
+                await out_q.put(queryset_to_unassociate)
+            await out_q.put(None)
     return actual_stage
 
 

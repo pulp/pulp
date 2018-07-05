@@ -100,6 +100,8 @@ class ProgressReport(Model):
         See the context manager documentation for more info on __exit__ parameters
         """
         self._using_context_manager = False
+        if self.total is None and self.done != 0:
+            self.total = self.done
         if type is None:
             self.state = TASK_STATES.COMPLETED
             self.save()
@@ -217,8 +219,9 @@ class ProgressBar(ProgressReport):
         processing items.
         """
         self.done += 1
-        if self.done > self.total:
-            _logger.warning(_('Too many items processed for ProgressBar %s') % self.message)
+        if self.total:
+            if self.done > self.total:
+                _logger.warning(_('Too many items processed for ProgressBar %s') % self.message)
         self.save()
 
     def iter(self, iter):
