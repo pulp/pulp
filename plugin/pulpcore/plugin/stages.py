@@ -1,5 +1,5 @@
 import asyncio
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from gettext import gettext as _
 
 from django.db.models import Q
@@ -8,9 +8,69 @@ from pulpcore.plugin.tasking import WorkingDirectory
 from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact, RepositoryVersion
 
 
-DeclarativeArtifact = namedtuple('DeclarativeArtifact', ['artifact', 'url', 'relative_path', 'remote'])
+class DeclarativeArtifact:
+    """
+    Relates an Artifact, how to download it, and its relative_path for publishing.
 
-DeclarativeContent = namedtuple('DeclarativeContent', ['content', 'artifacts'])
+    This is used by the Stages API stages to determine if an Artifact is already present and ensure
+    Pulp can download it in the future. The `artifact` can be either saved or unsaved. If unsaved,
+    the `artifact` attributes may be incomplete because not all digest information can be computed
+    until the Artifact is downloaded.
+
+    Attributes:
+        artifact - An Artifact either saved or unsaved. If unsaved, it may have partial digest
+            information attached to it.
+        url - the url to fetch the Artifact from.
+        relative_path - the relative_path this Artifact should be published at for any Publication.
+        remote - The remote used to fetch this Artifact.
+
+    Raises:
+        ValueError: If `artifact`, `url`, `relative_path`, or `remote` are not specified.
+    """
+
+    __slots__ = ('artifact', 'url', 'relative_path', 'remote')
+
+    def __init__(self, artifact=None, url=None, relative_path=None, remote=None):
+        if not url:
+            raise ValueError(_("DeclarativeArtifact must have a 'url'"))
+        if not relative_path:
+            raise ValueError(_("DeclarativeArtifact must have a 'relative_path'"))
+        if not remote:
+            raise ValueError(_("DeclarativeArtifact must have a 'remote'"))
+        if not artifact:
+            raise ValueError(_("DeclarativeArtifact must have a 'artifact'"))
+        self.artifact = artifact
+        self.url = url
+        self.relative_path = relative_path
+        self.remote = remote
+
+
+class DeclarativeContent:
+    """
+    Relates a Content unit and zero or more DeclarativeArtifact objects.
+
+    This is used by the Stages API stages to determine if a Content unit is already present and
+    ensure all of its associated DeclarativeArtifact objects are related correctly. The `content`
+    can be either saved or unsaved depending on where in the Stages API pipeline this is used.
+
+    Attributes:
+        content - The in-memory, partial Artifact with any known digest information attached to it
+        d_artifacts - A list of zero or more DeclarativeArtifacts associated with `content`.
+
+    Raises:
+        ValueError: If `content` is not specified.
+    """
+
+    __slots__ = ('content', 'd_artifacts')
+
+    def __init__(self, content=None, d_artifacts=None):
+        if not content:
+            raise ValueError(_("DeclarativeContent must have a 'content'"))
+        if d_artifacts:
+            self.d_artifacts = d_artifacts
+        else:
+            self.d_artifacts = []
+        self.content = content
 
 
 async def queue_run_stages(stages, in_q=None):
@@ -43,7 +103,7 @@ async def query_existing_artifacts(in_q, out_q):
                 shutdown = True
                 continue
 
-            for declarative_artifact in content.artifacts:
+            for declarative_artifact in content.d_artifacts:
                 one_artifact_q = Q()
                 for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
                     digest_value = getattr(declarative_artifact.artifact, digest_name)
@@ -56,15 +116,11 @@ async def query_existing_artifacts(in_q, out_q):
             for content in declarative_content:
                 if content is None:
                     continue
-                for i, declarative_artifact in enumerate(content.artifacts):
+                for declarative_artifact in content.d_artifacts:
                     for digest_name in artifact.DIGEST_FIELDS:
                         digest_value = getattr(declarative_artifact.artifact, digest_name)
                         if digest_value and digest_value == getattr(artifact, digest_name):
-                            new_da = DeclarativeArtifact(
-                                artifact=artifact, relative_path=declarative_artifact.relative_path,
-                                url=declarative_artifact.url, remote=declarative_artifact.remote
-                            )
-                            content.artifacts[i] = new_da
+                            declarative_artifact.artifact = artifact
         for content in declarative_content:
             await out_q.put(content)
         declarative_content = []
@@ -75,7 +131,6 @@ async def query_existing_artifacts(in_q, out_q):
 
 async def artifact_downloader(in_q, out_q):
     """For each DeclarativeArtifact object, download and replace it with an unsaved Artifact"""
-    # await asyncio.sleep(6)
     pending = set()
     incoming_content = []
     shutdown = False
@@ -95,7 +150,7 @@ async def artifact_downloader(in_q, out_q):
                 shutdown = True
                 continue
             downloaders_for_content = []
-            for declarative_artifact in content.artifacts:
+            for declarative_artifact in content.d_artifacts:
                 if declarative_artifact.artifact._state.adding:
                     # this needs to be downloaded
                     downloader = declarative_artifact.remote.get_downloader(
@@ -118,15 +173,10 @@ async def artifact_downloader(in_q, out_q):
                 results = gathered_downloaders.result()
                 for download_result in results[:-1]:
                     content = results[-1]
-                    for i, declarative_artifact in enumerate(content.artifacts):
+                    for declarative_artifact in content.d_artifacts:
                         if declarative_artifact.artifact._state.adding:
-                            attributes = download_result.artifact_attributes
-                            new_da = DeclarativeArtifact(
-                                artifact=Artifact(**attributes), url=declarative_artifact.url,
-                                relative_path=declarative_artifact.relative_path,
-                                remote=declarative_artifact.remote
-                            )
-                            content.artifacts[i] = new_da
+                            new_artifact = Artifact(**download_result.artifact_attributes)
+                            declarative_artifact.artifact = new_artifact
                     await out_q.put(content)
         else:
             if shutdown:
@@ -140,7 +190,7 @@ async def artifact_saver(in_q, out_q):
         declarative_content = await in_q.get()
         if declarative_content is None:
             break
-        for declarative_artifact in declarative_content.artifacts:
+        for declarative_artifact in declarative_content.d_artifacts:
             declarative_artifact.artifact.save()
         await out_q.put(declarative_content)
     await out_q.put(None)
@@ -174,7 +224,7 @@ async def query_existing_content_units(in_q, out_q):
 
         for model_type in content_q_by_type.keys():
             for result in model_type.objects.filter(content_q_by_type[model_type]):
-                for i, declarative_content in enumerate(declarative_content_list):
+                for declarative_content in declarative_content_list:
                     if declarative_content is None:
                         continue
                     not_same_unit = False
@@ -184,10 +234,7 @@ async def query_existing_content_units(in_q, out_q):
                             break
                     if not_same_unit:
                         continue
-                    new_dc = DeclarativeContent(
-                        content=result, artifacts=declarative_content.artifacts
-                    )
-                    declarative_content_list[i] = new_dc
+                    declarative_content.content = result
         for declarative_content in declarative_content_list:
             await out_q.put(declarative_content)
         declarative_content_list = []
@@ -221,7 +268,7 @@ async def content_unit_saver(in_q, out_q):
             if declarative_content.content._state.adding:
                 # TODO add transaction here
                 declarative_content.content.save()
-                for declarative_artifact in declarative_content.artifacts:
+                for declarative_artifact in declarative_content.d_artifacts:
                     content_artifact = ContentArtifact(
                         content=declarative_content.content, artifact=declarative_artifact.artifact,
                         relative_path=declarative_artifact.relative_path
@@ -380,7 +427,7 @@ class DeclarativeVersion:
         >>>         unit = MyContent(entry)  # make the content unit in memory-only
         >>>         artifact = Artifact(entry)  # make Artifact in memory-only
         >>>         da = DeclarativeArtifact(artifact, url, entry.relative_path, remote)
-        >>>         dc = DeclarativeContent(content=unit, artifacts=[da])
+        >>>         dc = DeclarativeContent(content=unit, d_artifacts=[da])
         >>>         await out_q.put(dc)
         >>>     await out_q.put(None)
 
