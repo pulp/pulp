@@ -3,7 +3,6 @@ import itertools
 
 from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
 from django_filters import Filter
-
 from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import decorators, mixins, serializers
@@ -24,6 +23,7 @@ from pulpcore.app.models import (
 from pulpcore.app.pagination import UUIDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
+    AsnycOperationResponseSerializer,
     ContentSerializer,
     DistributionSerializer,
     ExporterSerializer,
@@ -59,6 +59,9 @@ class RepositoryViewSet(NamedModelViewSet,
     pagination_class = NamePagination
     filter_class = RepositoryFilter
 
+    @swagger_auto_schema(operation_description="Trigger an asynchronous task to update"
+                                               "a repository.",
+                         responses={202: AsnycOperationResponseSerializer})
     def update(self, request, pk, partial=False):
         """
         Generates a Task to update a Repository
@@ -73,6 +76,9 @@ class RepositoryViewSet(NamedModelViewSet,
         )
         return OperationPostponedResponse(async_result, request)
 
+    @swagger_auto_schema(operation_description="Trigger an asynchronous task to delete a "
+                                               "repository.",
+                         responses={202: AsnycOperationResponseSerializer})
     def destroy(self, request, pk):
         """
         Generates a Task to delete a Repository
@@ -233,6 +239,9 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         serializer = ContentSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
+    @swagger_auto_schema(operation_description="Trigger an asynchronous task to delete "
+                                               "a repositroy version.",
+                         responses={202: AsnycOperationResponseSerializer})
     def destroy(self, request, repository_pk, number):
         """
         Queues a task to handle deletion of a RepositoryVersion
@@ -244,6 +253,9 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         )
         return OperationPostponedResponse(async_result, request)
 
+    @swagger_auto_schema(operation_description="Trigger an asynchronous task to create "
+                                               "a new repository version.",
+                         responses={202: AsnycOperationResponseSerializer})
     def create(self, request, repository_pk):
         """
         Queues a task that creates a new RepositoryVersion by adding and removing content units

@@ -382,3 +382,15 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         class to get the relevant `view_name`.
         """
         return False
+
+
+class AsnycOperationResponseSerializer(serializers.Serializer):
+    """
+    Serializer for asynchronous operations.
+    """
+    _href = serializers.URLField(
+        help_text=_('URL to a task.')
+    )
+    task_id = serializers.UUIDField(
+        help_text=_('Task UUID')
+    )
