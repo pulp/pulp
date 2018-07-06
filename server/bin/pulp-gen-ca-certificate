@@ -15,7 +15,11 @@ END
 )
 
 PULP_CONF=(`python -c "$READ_PULP_CONF"`)
-FIPS_ENABLED=(`cat /proc/sys/crypto/fips_enabled`)
+if [ -e /proc/sys/crypto/fips_enabled ] ; then
+	FIPS_ENABLED=(`cat /proc/sys/crypto/fips_enabled`)
+else
+	FIPS_ENABLED=0
+fi
 
 TMP="$(mktemp -d)"
 CA_KEY=${PULP_CONF[0]}
