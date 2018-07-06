@@ -3,6 +3,9 @@ import itertools
 
 from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
 from django_filters import Filter
+
+from drf_yasg.utils import swagger_auto_schema
+
 from rest_framework import decorators, mixins, serializers
 from rest_framework.filters import OrderingFilter
 
@@ -184,10 +187,18 @@ class RepositoryVersionViewSet(NamedModelViewSet,
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-number',)
 
+    @swagger_auto_schema(
+        operation_description="List Content",
+        responses={'200': ContentSerializer}
+    )
     @decorators.detail_route()
     def content(self, request, repository_pk, number):
         return self._paginated_response(self.get_object().content, request)
 
+    @swagger_auto_schema(
+        operation_description="List added Content",
+        responses={'200': ContentSerializer}
+    )
     @decorators.detail_route()
     def added_content(self, request, repository_pk, number):
         """
@@ -195,6 +206,10 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         """
         return self._paginated_response(self.get_object().added(), request)
 
+    @swagger_auto_schema(
+        operation_description="List removed Content",
+        responses={'200': ContentSerializer}
+    )
     @decorators.detail_route()
     def removed_content(self, request, repository_pk, number):
         """
