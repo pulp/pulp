@@ -1,4 +1,4 @@
-from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
+from django_filters.rest_framework import filters, DjangoFilterBackend
 from rest_framework import status, mixins
 from rest_framework.decorators import detail_route
 from rest_framework.filters import OrderingFilter
@@ -8,13 +8,13 @@ from pulpcore.common import TASK_INCOMPLETE_STATES
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
 from pulpcore.tasking.util import cancel as cancel_task
 
 
-class TaskFilter(filterset.FilterSet):
+class TaskFilter(BaseFilterSet):
     state = filters.CharFilter()
     worker = HyperlinkRelatedFilter()
     started_at = filters.IsoDateTimeFilter(field_name='started_at')
@@ -57,7 +57,7 @@ class TaskViewSet(NamedModelViewSet,
         return super().destroy(request, pk)
 
 
-class WorkerFilter(filterset.FilterSet):
+class WorkerFilter(BaseFilterSet):
     name = filters.CharFilter()
     last_heartbeat = filters.IsoDateTimeFilter()
     online = filters.BooleanFilter(method='filter_online')

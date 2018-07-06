@@ -11,6 +11,7 @@ from pulpcore.tasking.tasks import enqueue_with_reservation
 
 from django.urls import resolve, Resolver404
 from django.core.exceptions import FieldError, ValidationError
+from django_filters.rest_framework import filterset
 
 from drf_yasg.utils import swagger_auto_schema
 
@@ -328,3 +329,66 @@ class AsyncRemoveMixin:
             args=(pk, app_label, serializer.__class__.__name__)
         )
         return OperationPostponedResponse(async_result, request)
+
+
+class BaseFilterSet(filterset.FilterSet):
+    """
+    Class to override django_filter's FilterSet and provide a way to set help text
+
+    By default, this class will use predefined text and the field name to create help text for the
+    filter. However, this can be overriden by setting a help_text dict with the the field name
+    mapped to some help text:
+
+        help_text = {'name__in': 'Lorem ipsum dolor', 'last_updated__lt': 'blah blah'}
+
+    """
+    help_text = {}
+
+    # copied and modified from django_filter.conf
+    LOOKUP_EXPR_TEXT = {
+        'exact': _('matches'),
+        'iexact': _('matches'),
+        'contains': _('contains'),
+        'icontains': _('contains'),
+        'in': _('is in a comma-separated list of'),
+        'gt': _('is greater than'),
+        'gte': _('is greater than or equal to'),
+        'lt': _('is less than'),
+        'lte': _('is less than or equal to'),
+        'startswith': _('starts with'),
+        'istartswith': _('starts with'),
+        'endswith': _('ends with'),
+        'iendswith': _('ends with'),
+        'range': _('is in range of'),
+        'isnull': _('has a null'),
+        'regex': _('matches regex'),
+        'iregex': _('matches regex'),
+        'search': _('matches'),
+    }
+
+    @classmethod
+    def filter_for_field(cls, field, name, lookup_expr):
+        """
+        Looks up and initializes a filter and returns it. Also, sets the help text on the filter.
+
+        Args:
+            field: The field class for the filter
+            name: The name of filter field
+            lookup_expr: The lookup expression that specifies how the field is matched
+        Returns:
+            django_filters.Filter: an initialized Filter object with help text
+        """
+        f = super().filter_for_field(field, name, lookup_expr)
+
+        if cls.get_filter_name(name, lookup_expr) in cls.help_text:
+            f.extra['help_text'] = cls.help_text[cls.get_filter_name(name, lookup_expr)]
+        else:
+            if lookup_expr in {'range', 'in'}:
+                val_word = _('values')
+            else:
+                val_word = _('value')
+
+            f.extra['help_text'] = _("Filter results where {field} {expr} {value}").format(
+                field=name, expr=cls.LOOKUP_EXPR_TEXT[lookup_expr], value=val_word)
+
+        return f

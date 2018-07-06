@@ -1,17 +1,16 @@
 from gettext import gettext as _
 
 from django.db import models, transaction
-from django_filters.rest_framework import filterset
 from rest_framework import status, mixins
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from pulpcore.app.models import Artifact, Content, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
 
 
-class ArtifactFilter(filterset.FilterSet):
+class ArtifactFilter(BaseFilterSet):
     """
     Artifact filter Plugin content filters should:
      - inherit from this class
@@ -48,7 +47,7 @@ class ArtifactViewSet(NamedModelViewSet,
             return Response(data, status=status.HTTP_409_CONFLICT)
 
 
-class ContentFilter(filterset.FilterSet):
+class ContentFilter(BaseFilterSet):
     """
     Plugin content filters should:
      - inherit from this class

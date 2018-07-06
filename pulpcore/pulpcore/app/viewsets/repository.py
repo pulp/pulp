@@ -1,7 +1,7 @@
 from gettext import gettext as _
 import itertools
 
-from django_filters.rest_framework import filters, filterset, DjangoFilterBackend
+from django_filters.rest_framework import filters, DjangoFilterBackend
 from django_filters import Filter
 from drf_yasg.utils import swagger_auto_schema
 
@@ -33,12 +33,17 @@ from pulpcore.app.serializers import (
     RepositorySerializer,
     RepositoryVersionSerializer
 )
-from pulpcore.app.viewsets import NamedModelViewSet, AsyncUpdateMixin, AsyncRemoveMixin
+from pulpcore.app.viewsets import (
+    AsyncRemoveMixin,
+    AsyncUpdateMixin,
+    BaseFilterSet,
+    NamedModelViewSet
+)
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 from pulpcore.tasking.tasks import enqueue_with_reservation
 
 
-class RepositoryFilter(filterset.FilterSet):
+class RepositoryFilter(BaseFilterSet):
     name = filters.CharFilter()
 
     class Meta:
@@ -162,7 +167,7 @@ class RepositoryVersionContentFilter(Filter):
         return qs.filter(number__in=versions)
 
 
-class RepositoryVersionFilter(filterset.FilterSet):
+class RepositoryVersionFilter(BaseFilterSet):
     # e.g.
     # /?number=4
     # /?number__range=4,6
@@ -292,7 +297,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
         return OperationPostponedResponse(result, request)
 
 
-class RemoteFilter(filterset.FilterSet):
+class RemoteFilter(BaseFilterSet):
     """
     Plugin remote filter should:
      - inherit from this class
@@ -324,7 +329,7 @@ class RemoteViewSet(NamedModelViewSet,
     filterset_class = RemoteFilter
 
 
-class PublisherFilter(filterset.FilterSet):
+class PublisherFilter(BaseFilterSet):
     """
     Plugin publisher filter should:
      - inherit from this class
@@ -356,7 +361,7 @@ class PublisherViewSet(NamedModelViewSet,
     filterset_class = PublisherFilter
 
 
-class ExporterFilter(filterset.FilterSet):
+class ExporterFilter(BaseFilterSet):
     """
     Plugin exporter filter should:
      - inherit from this class
@@ -399,7 +404,7 @@ class PublicationViewSet(NamedModelViewSet,
     ordering = ('-created',)
 
 
-class DistributionFilter(filterset.FilterSet):
+class DistributionFilter(BaseFilterSet):
     # e.g.
     # /?name=foo
     # /?name__in=foo,bar

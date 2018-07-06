@@ -1,13 +1,13 @@
-from django_filters.rest_framework import filters, filterset
+from django_filters.rest_framework import filters
 from rest_framework import mixins
 
 from pulpcore.app.models import User
 from pulpcore.app.serializers import UserSerializer
-from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets import NamedModelViewSet, BaseFilterSet
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS
 
 
-class UserFilter(filterset.FilterSet):
+class UserFilter(BaseFilterSet):
     username = filters.CharFilter()
 
     class Meta:
