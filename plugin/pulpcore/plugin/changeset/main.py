@@ -6,7 +6,7 @@ from logging import getLogger
 
 from django.db import transaction
 
-from ..models import ContentArtifact, RemoteArtifact, ProgressBar
+from ..models import Content, ContentArtifact, RemoteArtifact, ProgressBar
 from ..tasking import Task
 
 from .iterator import BatchIterator, DownloadIterator
@@ -101,7 +101,8 @@ class ChangeSet:
             content (PendingContent): The content to be added.
         """
         with transaction.atomic():
-            self.repository_version.add_content(content.stored_model)
+            self.repository_version.add_content(
+                Content.objects.filter(pk=content.stored_model.id))
 
     def _remove_content(self, content):
         """
