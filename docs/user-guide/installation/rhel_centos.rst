@@ -1,7 +1,7 @@
-CentOS, RHEL, and Fedora 23-
-============================
+CentOS and RHEL
+===============
 
-This page contains installation instructions for CentOS, RHEL, and Fedora 23 and below.
+This page contains installation instructions for CentOS and RHEL.
 The :ref:`platform-support-policy` defines platforms are currently supported.
 
 
@@ -13,7 +13,6 @@ Pulp
 
 Download the appropriate repo definition file from the Pulp repository:
 
- * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL 6 Server: https://repos.fedorapeople.org/repos/pulp/pulp/rhel6-pulp.repo
  * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
@@ -126,7 +125,7 @@ Server
 #. Install the Pulp server, task workers, and their dependencies. For Pulp installations that use
    Qpid, install Pulp server using::
 
-    $ sudo yum install pulp-server python-gofer-qpid python-qpid qpid-tools
+    $ sudo yum install pulp-server python-gofer-qpid python2-qpid qpid-tools
 
    .. note::
       For RabbitMQ installations, install Pulp server without any Qpid specific libraries.
