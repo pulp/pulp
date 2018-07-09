@@ -141,7 +141,7 @@ class TestGetSerializerClass(TestCase):
     def test_serializer_class(self):
         """
         Tests that get_serializer_class() returns the serializer_class attribute if it exists,
-        and that it doesn't error if no minimal serializer is defined, but pretty=True.
+        and that it doesn't error if no minimal serializer is defined, but minimal=True.
         """
         class TestTaskViewSet(viewsets.NamedModelViewSet):
             serializer_class = serializers.TaskSerializer
@@ -150,12 +150,12 @@ class TestGetSerializerClass(TestCase):
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
 
         request = unittest.mock.MagicMock()
-        request.query_params = QueryDict('pretty=True')
+        request.query_params = QueryDict('minimal=True')
         viewset.request = request
 
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
 
-    def test_pretty_query_param(self):
+    def test_minimal_query_param(self):
         """
         Tests that get_serializer_class() returns the correct serializer in the correct situations.
         """
@@ -170,12 +170,12 @@ class TestGetSerializerClass(TestCase):
         request.query_params = QueryDict()
         viewset.request = request
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
-        # Test that it uses the full serializer with pretty=False
-        request.query_params = QueryDict('pretty=False')
+        # Test that it uses the full serializer with minimal=False
+        request.query_params = QueryDict('minimal=False')
         viewset.request = request
         self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
-        # Test that it uses the minimal serializer with pretty=True
-        request.query_params = QueryDict('pretty=True')
+        # Test that it uses the minimal serializer with minimal=True
+        request.query_params = QueryDict('minimal=True')
         viewset.request = request
         self.assertEquals(viewset.get_serializer_class(), serializers.MinimalTaskSerializer)
 

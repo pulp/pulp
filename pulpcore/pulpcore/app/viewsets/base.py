@@ -90,7 +90,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
 
         The default behavior is to use the "serializer_class" attribute on the viewset.
         We override that for the case where a "minimal_serializer_class" attribute is defined
-        and where the request contains a query parameter of "pretty=True".
+        and where the request contains a query parameter of "minimal=True".
 
         The intention is that ViewSets can define a second, more minimal serializer with only
         the most important fields.
@@ -102,12 +102,11 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         minimal_serializer_class = getattr(self, 'minimal_serializer_class', None)
 
         if minimal_serializer_class:
-            # The content endpoints don't pass along the request to the internals
             if hasattr(self, 'request'):
-                if 'pretty' in self.request.query_params:
+                if 'minimal' in self.request.query_params:
                     # the query param is a string, and non-empty strings evaluate True,
                     # so we need to do an actual string comparison to 'true'
-                    if self.request.query_params['pretty'].lower() == 'true':
+                    if self.request.query_params['minimal'].lower() == 'true':
                         return minimal_serializer_class
 
         return self.serializer_class
