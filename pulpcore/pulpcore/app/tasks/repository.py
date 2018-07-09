@@ -82,9 +82,5 @@ def add_and_remove(repository_pk, add_content_units, remove_content_units):
     repository = models.Repository.objects.get(pk=repository_pk)
 
     with models.RepositoryVersion.create(repository) as new_version:
-        for pk in add_content_units:
-            content = models.Content.objects.get(pk=pk)
-            new_version.add_content(content)
-        for pk in remove_content_units:
-            content = models.Content.objects.get(pk=pk)
-            new_version.remove_content(content)
+        new_version.add_content(models.Content.objects.filter(pk__in=add_content_units))
+        new_version.remove_content(models.Content.objects.filter(pk__in=remove_content_units))

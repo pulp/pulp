@@ -190,8 +190,8 @@ class RepositoryVersion(Model):
     Examples:
         >>>
         >>> with RepositoryVersion.create(repository) as new_version:
-        >>>     new_version.add_content(content)
-        >>>     new_version.remove_content(content)
+        >>>     new_version.add_content(content_q)
+        >>>     new_version.remove_content(content_q)
         >>>     changeset = ChangeSet(remote, new_version, additions=additions,
         >>>                      removals=removals)
         >>>
@@ -339,7 +339,7 @@ class RepositoryVersion(Model):
         Add a content unit to this version.
 
         Args:
-           content (pulpcore.app.models.Content): a content model to add
+           content (django.db.models.QuerySet): Set of Content to add
 
         Raise:
             pulpcore.exception.ResourceImmutableError: if add_content is called on a
@@ -348,21 +348,24 @@ class RepositoryVersion(Model):
         if self.complete:
             raise ResourceImmutableError(self)
 
-        if self.contains(content):
-            return
+        repo_content = []
+        for content_pk in content.exclude(pk__in=self.content).values_list('pk', flat=True):
+            repo_content.append(
+                RepositoryContent(
+                    repository=self.repository,
+                    content_id=content_pk,
+                    version_added=self
+                )
+            )
 
-        association = RepositoryContent(
-            repository=self.repository,
-            content=content,
-            version_added=self)
-        association.save()
+        RepositoryContent.objects.bulk_create(repo_content)
 
     def remove_content(self, content):
         """
         Remove content from the repository.
 
         Args:
-            content (pulpcore.app.models.Content): A content model to remove
+            content (django.db.models.QuerySet): Set of Content to remove
 
         Raise:
             pulpcore.exception.ResourceImmutableError: if remove_content is called on a
@@ -372,12 +375,9 @@ class RepositoryVersion(Model):
         if self.complete:
             raise ResourceImmutableError(self)
 
-        if not self.contains(content):
-            return
-
         q_set = RepositoryContent.objects.filter(
             repository=self.repository,
-            content=content,
+            content_id__in=content,
             version_removed=None)
         q_set.update(version_removed=self)
 
