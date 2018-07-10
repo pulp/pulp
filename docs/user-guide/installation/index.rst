@@ -99,5 +99,5 @@ Please refer to the instructions below for your operating system.
 .. toctree::
    :maxdepth: 2
 
-   f23-
-   f24+
+   rhel_centos
+   fedora
