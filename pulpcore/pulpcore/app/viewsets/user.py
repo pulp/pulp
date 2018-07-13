@@ -24,4 +24,4 @@ class UserViewSet(NamedModelViewSet,
     endpoint_name = 'users'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    filter_class = UserFilter
+    filterset_class = UserFilter

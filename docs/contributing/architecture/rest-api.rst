@@ -336,10 +336,10 @@ Allowing Filters
 Filters must be explicitly specified and are not enabled by default.
 
 
-filter_fields
-*************
+filterset_fields
+****************
 
-The simplest method of adding filters is simply to define `filter_fields` on the ViewSet. Fields
+The simplest method of adding filters is simply to define `filterset_fields` on the ViewSet. Fields
 specified here will be "filterable", but only using equality.
 
 To use this request:
@@ -355,7 +355,7 @@ This is what the ViewSet should look like:
     class RepositoryViewSet(viewsets.ModelViewSet):
         queryset = models.Repository.objects.all()
         serializer_class = serializers.RepositorySerializer
-        filter_fields = ('name',)
+        filterset_fields = ('name',)
 
 
 FilterSet
@@ -381,7 +381,7 @@ that allows the same request:
     class RepositoryViewSet(viewsets.ModelViewSet):
         queryset = models.Repository.objects.all()
         serializer_class = serializers.RepositorySerializer
-        filter_class = RepositoryFilter
+        filterset_class = RepositoryFilter
 
 
 Beyond Equality
@@ -399,7 +399,7 @@ Simply define any filters in the `FilterSet` and then include them in `fields` i
 .. code-block:: python
 
     class RepositoryFilter(filters.FilterSet):
-        name_contains = django_filters.filters.CharFilter(name='name', lookup_expr='contains')
+        name_contains = django_filters.filters.CharFilter(field_name='name', lookup_expr='contains')
 
         class Meta:
             model = models.Repository
