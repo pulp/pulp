@@ -17,8 +17,8 @@ from pulpcore.tasking.util import cancel as cancel_task
 class TaskFilter(filterset.FilterSet):
     state = filters.CharFilter()
     worker = HyperlinkRelatedFilter()
-    started_at = filters.IsoDateTimeFilter(name='started_at')
-    finished_at = filters.IsoDateTimeFilter(name='finished_at')
+    started_at = filters.IsoDateTimeFilter(field_name='started_at')
+    finished_at = filters.IsoDateTimeFilter(field_name='finished_at')
     parent = HyperlinkRelatedFilter()
 
     class Meta:
@@ -39,7 +39,7 @@ class TaskViewSet(NamedModelViewSet,
     queryset = Task.objects.all()
     endpoint_name = 'tasks'
     serializer_class = TaskSerializer
-    filter_class = TaskFilter
+    filterset_class = TaskFilter
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-created')
 
@@ -96,4 +96,4 @@ class WorkerViewSet(NamedModelViewSet,
     endpoint_name = 'workers'
     http_method_names = ['get', 'options']
     lookup_value_regex = '[^/]+'
-    filter_class = WorkerFilter
+    filterset_class = WorkerFilter

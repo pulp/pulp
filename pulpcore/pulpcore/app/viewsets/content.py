@@ -33,7 +33,7 @@ class ArtifactViewSet(NamedModelViewSet,
     endpoint_name = 'artifacts'
     queryset = Artifact.objects.all()
     serializer_class = ArtifactSerializer
-    filter_class = ArtifactFilter
+    filterset_class = ArtifactFilter
     parser_classes = (MultiPartParser, FormParser)
 
     def destroy(self, request, pk):
@@ -69,7 +69,7 @@ class ContentViewSet(NamedModelViewSet,
     endpoint_name = 'content'
     queryset = Content.objects.all()
     serializer_class = ContentSerializer
-    filter_class = ContentFilter
+    filterset_class = ContentFilter
 
     @transaction.atomic
     def create(self, request):

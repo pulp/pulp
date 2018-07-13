@@ -57,7 +57,7 @@ class RepositoryViewSet(NamedModelViewSet,
     endpoint_name = 'repositories'
     router_lookup = 'repository'
     pagination_class = NamePagination
-    filter_class = RepositoryFilter
+    filterset_class = RepositoryFilter
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to update"
                                                "a repository.",
@@ -115,6 +115,10 @@ class RepositoryVersionContentFilter(Filter):
         Returns:
             Queryset of the RepositoryVersions containing the specified content
         """
+
+        if value is None:
+            # user didn't supply a value
+            return qs
 
         if not value:
             raise serializers.ValidationError(detail=_('No value supplied for content filter'))
@@ -189,7 +193,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
     parent_lookup_kwargs = {'repository_pk': 'repository__pk'}
     serializer_class = RepositoryVersionSerializer
     queryset = RepositoryVersion.objects.exclude(complete=False)
-    filter_class = RepositoryVersionFilter
+    filterset_class = RepositoryVersionFilter
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-number',)
 
@@ -314,7 +318,7 @@ class RemoteViewSet(NamedModelViewSet,
     endpoint_name = 'remotes'
     serializer_class = RemoteSerializer
     queryset = Remote.objects.all()
-    filter_class = RemoteFilter
+    filterset_class = RemoteFilter
 
 
 class PublisherFilter(filterset.FilterSet):
@@ -346,7 +350,7 @@ class PublisherViewSet(NamedModelViewSet,
     endpoint_name = 'publishers'
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
-    filter_class = PublisherFilter
+    filterset_class = PublisherFilter
 
 
 class ExporterFilter(filterset.FilterSet):
@@ -378,7 +382,7 @@ class ExporterViewSet(NamedModelViewSet,
     endpoint_name = 'exporters'
     serializer_class = ExporterSerializer
     queryset = Exporter.objects.all()
-    filter_class = ExporterFilter
+    filterset_class = ExporterFilter
 
 
 class PublicationViewSet(NamedModelViewSet,
@@ -418,4 +422,4 @@ class DistributionViewSet(NamedModelViewSet,
     endpoint_name = 'distributions'
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
-    filter_class = DistributionFilter
+    filterset_class = DistributionFilter

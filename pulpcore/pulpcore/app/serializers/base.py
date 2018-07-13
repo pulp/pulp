@@ -255,7 +255,7 @@ class MasterModelSerializer(ModelSerializer):
     This ensures that fields are represented consistently throughout the API, and Detail Model
     types are cast down before representation.
 
-    Other Meta attributes, such as `filter_fields`, should also be inherited in this way
+    Other Meta attributes, such as `filterset_fields`, should also be inherited in this way
     as-needed.
 
     """

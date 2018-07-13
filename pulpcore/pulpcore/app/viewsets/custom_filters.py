@@ -30,9 +30,13 @@ class HyperlinkRelatedFilter(Filter):
             django.db.models.query.QuerySet: Queryset filtered by the foreign key pk
         """
 
+        if value is None:
+            # value was not supplied by the user
+            return qs
+
         if not value:
             raise serializers.ValidationError(
-                detail=_('No value supplied for {name} filter.').format(name=self.name))
+                detail=_('No value supplied for {name} filter.').format(name=self.field_name))
         try:
             match = resolve(urlparse(value).path)
         except Resolver404:
@@ -44,5 +48,5 @@ class HyperlinkRelatedFilter(Filter):
         except ValueError:
             raise serializers.ValidationError(detail=_('UUID invalid: {u}').format(u=pk))
 
-        key = "{}__pk".format(self.name)
+        key = "{}__pk".format(self.field_name)
         return qs.filter(**{key: pk})
