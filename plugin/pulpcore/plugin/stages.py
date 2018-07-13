@@ -384,7 +384,7 @@ async def content_unit_saver(in_q, out_q):
 
     Args:
         in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.models.Content`
+        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
 
     Returns:
         The content_unit_saver stage as a coroutine to be included in a pipeline.
@@ -438,24 +438,23 @@ async def content_unit_saver(in_q, out_q):
         for declarative_content in declarative_content_list:
             if declarative_content is None:
                 continue
-            await out_q.put(declarative_content.content)
+            await out_q.put(declarative_content)
         if shutdown:
             break
         declarative_content_list = []
     await out_q.put(None)
 
 
-def content_unit_association(new_version):
+def content_unit_association_factory(new_version):
     """
     A factory returning a Stages API stage that associates content units with `new_version`.
 
-    This stage stores all content unit types and unit keys in memory before running for two reasons:
+    This stage stores all content unit types and unit keys in memory before running. This is done to
+    compute the units already associated but not received from `in_q`. These units are passed via
+    `out_q` to the next stage as a `~django.db.models.query.QuerySet`.
 
-    1. To compute the units already associated but not received from `in_q`. These units are passed
-       via `out_q` to the next stage as a `~django.db.models.query.QuerySet`.
-    2. Units already associated will not be re-added. It would be ok, but it's not efficient.
-
-    in_q data type: A saved `~pulpcore.plugin.models.Content` or subclass to be associated
+    in_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with saved `content` that needs
+        to be associated.
     out_q data type: A `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
         subclass that are already associated but not included in the stream of items from `in_q`.
         One `django.db.models.query.QuerySet` is put for each `~pulpcore.plugin.models.Content`
@@ -475,18 +474,47 @@ def content_unit_association(new_version):
     for unit in new_version.content.all():
         unit = unit.cast()
         unit_keys_by_type[type(unit)].add(unit.natural_key())
-    async def actual_stage(in_q, out_q):
+    async def content_unit_association(in_q, out_q):
         """For each Content Unit associate it with the repository version"""
         with ProgressBar(message='Associating Content') as pb:
+            declarative_content_list = []
+            shutdown = False
             while True:
-                content = await in_q.get()
-                if content is None:
-                    break
                 try:
-                    unit_keys_by_type[type(content)].remove(content.natural_key())
-                except KeyError:
-                    version.add_content(content)
-                    pb.increment()
+                    declarative_content = in_q.get_nowait()
+                except asyncio.QueueEmpty:
+                    if not declarative_content_list and not shutdown:
+                        declarative_content = await in_q.get()
+                        declarative_content_list.append(declarative_content)
+                        continue
+                else:
+                    declarative_content_list.append(declarative_content)
+                    continue
+
+                content_q_by_type = defaultdict(lambda: Q(pk=None))
+                for declarative_content in declarative_content_list:
+                    if declarative_content is None:
+                        shutdown = True
+                        continue
+                    try:
+                        unit_key = declarative_content.content.natural_key()
+                        unit_keys_by_type[type(declarative_content.content)].remove(unit_key)
+                    except KeyError:
+                        model_type = type(declarative_content.content)
+                        unit_key_dict = declarative_content.content.natural_key_dict()
+                        unit_q = Q(**unit_key_dict)
+                        content_q_by_type[model_type] = content_q_by_type[model_type] | unit_q
+
+                for model_type, q_object in content_q_by_type.items():
+                    queryset = model_type.objects.filter(q_object)
+                    version.add_content(queryset)
+                    pb.done = pb.done + queryset.count()
+                    pb.save()
+
+                if shutdown:
+                    break
+                declarative_content_list = []
+
             for unit_type, ids in unit_keys_by_type.items():
                 if ids:
                     units_to_unassociate = Q()
@@ -497,10 +525,10 @@ def content_unit_association(new_version):
                         units_to_unassociate |= Q(**query_dict)
                     await out_q.put(unit_type.objects.filter(units_to_unassociate))
             await out_q.put(None)
-    return actual_stage
+    return content_unit_association
 
 
-def content_unit_unassociation(new_version):
+def content_unit_unassociation_factory(new_version):
     """
     A factory returning a Stages API stage that unassociates content units from `new_version`.
 
@@ -518,8 +546,10 @@ def content_unit_unassociation(new_version):
     Returns:
         The configured content_unit_unassociation stage to be included in a pipeline.
     """
+    import pydevd
+    pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
     version = new_version
-    async def actual_stage(in_q, out_q):
+    async def content_unit_unassociation(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
         with ProgressBar(message='Un-Associating Content') as pb:
             while True:
@@ -527,13 +557,13 @@ def content_unit_unassociation(new_version):
                 if queryset_to_unassociate is None:
                     break
 
-                for unit in queryset_to_unassociate:
-                    version.remove_content(unit)
-                    pb.increment()
+                version.remove_content(queryset_to_unassociate)
+                pb.done = pb.done + queryset_to_unassociate.count()
+                pb.save()
 
                 await out_q.put(queryset_to_unassociate)
             await out_q.put(None)
-    return actual_stage
+    return content_unit_unassociation
 
 
 async def end_stage(in_q, out_q):
@@ -627,11 +657,11 @@ class DeclarativeVersion:
                 stages = [
                     query_existing_artifacts, artifact_downloader, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association(new_version)
+                    content_unit_association_factory(new_version)
                 ]
                 if self.sync_mode is 'additive':
                     stages.append(end_stage)
                 elif self.sync_mode is 'mirror':
-                    stages.extend([content_unit_unassociation(new_version), end_stage])
+                    stages.extend([content_unit_unassociation_factory(new_version), end_stage])
                 pipeline = create_pipeline(stages, self.in_q)
                 loop.run_until_complete(pipeline)
