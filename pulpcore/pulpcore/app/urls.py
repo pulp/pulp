@@ -119,6 +119,7 @@ urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view(), name='content-app'),
     url(r'^{api_root}status/'.format(api_root=API_ROOT), StatusView.as_view()),
     url(r'^{api_root}orphans/'.format(api_root=API_ROOT), OrphansView.as_view()),
+    url(r'^auth/', include('rest_framework.urls')),
 ]
 
 docs_schema_view = yasg_get_schema_view(
