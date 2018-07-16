@@ -175,6 +175,8 @@ async def query_existing_artifacts(in_q, out_q):
                         if digest_value and digest_value == getattr(artifact, digest_name):
                             declarative_artifact.artifact = artifact
         for content in declarative_content:
+            if content is None:
+                continue
             await out_q.put(content)
         declarative_content = []
         if shutdown:
@@ -182,17 +184,18 @@ async def query_existing_artifacts(in_q, out_q):
     await out_q.put(None)
 
 
-async def artifact_downloader(in_q, out_q):
+def artifact_downloader_factory(max_concurrent_downloads=1):
     """
-    Stages API stage downloading Artifact files for any "unsaved" DeclarativeArtifact.artifact.
+    A factory returning a Stages API stage to download missing Artifact files, but don't call save()
 
-    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
-    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
-    `DeclarativeArtifact` object stores one Artifact.
+    in_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with potentially files missing
+        `~pulpcore.plugin.stages.DeclarativeArtifact.artifact` objects.
+    out_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with all files downloaded for
+        all `~pulpcore.plugin.stages.DeclarativeArtifact.artifact` objects.
 
-    This stage downloads the file for any "unsaved" Artifact object and creates a new Artifact
-    from the downloaded file and its digest data. The new Artifact is *not* saved but associated
-    with the `~pulpcore.plugin.stages.DeclarativeArtifact` replacing the likely incomplete Artifact.
+    This stage downloads the file for any Artifact objects missing files and creates a new Artifact
+    from the downloaded file and its digest data. The new Artifact is *not* saved but added to the
+    `~pulpcore.plugin.stages.DeclarativeArtifact` object, replacing the likely incomplete Artifact.
 
     Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
     `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
@@ -203,66 +206,82 @@ async def artifact_downloader(in_q, out_q):
     This stage drains all available items from `in_q` and starts as many downloaders as possible.
 
     Args:
-        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        max_concurrent_downloads (int): The maximum number of concurrent downloads this stage will
+            run. Default is 100.
 
     Returns:
-        The artifact_downloader stage as a coroutine to be included in a pipeline.
+        A configured artifact_downloader stage to be included in a pipeline.
     """
-    pending = set()
-    incoming_content = []
-    shutdown = False
-    with ProgressBar(message='Downloading Artifacts') as pb:
-        while True:
-            try:
-                content = in_q.get_nowait()
-            except asyncio.QueueEmpty:
-                if not incoming_content and not shutdown and not pending:
-                    content = await in_q.get()
-                    incoming_content.append(content)
-                    continue
-            else:
-                incoming_content.append(content)
-                continue
+    max_downloads = max_concurrent_downloads
+    async def artifact_downloader(in_q, out_q):
+        pending = set()
+        incoming_content = []
+        outstanding_downloads = 0
+        shutdown = False
+        saturated = False
+        with ProgressBar(message='Downloading Artifacts') as pb:
+            while True:
+                if not saturated:
+                    try:
+                        content = in_q.get_nowait()
+                    except asyncio.QueueEmpty:
+                        if not incoming_content and not shutdown and not pending:
+                            content = await in_q.get()
+                            incoming_content.append(content)
+                            continue
+                    else:
+                        incoming_content.append(content)
+                        continue
 
-            for content in incoming_content:
-                if content is None:
-                    shutdown = True
-                    continue
-                downloaders_for_content = []
-                for declarative_artifact in content.d_artifacts:
-                    if declarative_artifact.artifact._state.adding:
-                        # this needs to be downloaded
-                        downloader = declarative_artifact.remote.get_downloader(
-                            declarative_artifact.url
-                        )
-                        next_future = asyncio.ensure_future(downloader.run())
-                        downloaders_for_content.append(next_future)
-                if not downloaders_for_content:
-                    await out_q.put(content)
-                    continue
-                async def return_content_for_downloader(c):
-                    return c
-                downloaders_for_content.append(return_content_for_downloader(content))
-                pending.add(asyncio.gather(*downloaders_for_content))
-            incoming_content = []
-
-            if pending:
-                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-                for gathered_downloaders in done:
-                    results = gathered_downloaders.result()
-                    for download_result in results[:-1]:
-                        content = results[-1]
-                        for declarative_artifact in content.d_artifacts:
-                            if declarative_artifact.artifact._state.adding:
-                                new_artifact = Artifact(**download_result.artifact_attributes)
-                                declarative_artifact.artifact = new_artifact
-                                pb.increment()
+                for i, content in enumerate(incoming_content):
+                    if content is None:
+                        shutdown = True
+                        continue
+                    downloaders_for_content = []
+                    for declarative_artifact in content.d_artifacts:
+                        if declarative_artifact.artifact._state.adding:
+                            # this needs to be downloaded
+                            downloader = declarative_artifact.remote.get_downloader(
+                                declarative_artifact.url
+                            )
+                            next_future = asyncio.ensure_future(downloader.run())
+                            downloaders_for_content.append(next_future)
+                    if not downloaders_for_content:
                         await out_q.put(content)
-            else:
-                if shutdown:
-                    break
-    await out_q.put(None)
+                        continue
+                    async def return_content_for_downloader(c):
+                        return c
+                    outstanding_downloads = outstanding_downloads + len(downloaders_for_content)
+                    downloaders_for_content.append(return_content_for_downloader(content))
+                    pending.add(asyncio.gather(*downloaders_for_content))
+                    if outstanding_downloads > max_downloads:
+                        saturated = True
+                        incoming_content = incoming_content[i+1:]  # remove already handled content
+                        break
+                else:
+                    incoming_content = []
+
+                if pending:
+                    done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                    for gathered_downloaders in done:
+                        results = gathered_downloaders.result()
+                        for download_result in results[:-1]:
+                            content = results[-1]
+                            for declarative_artifact in content.d_artifacts:
+                                if declarative_artifact.artifact._state.adding:
+                                    new_artifact = Artifact(**download_result.artifact_attributes)
+                                    declarative_artifact.artifact = new_artifact
+                            pb.done = pb.done + len(content.d_artifacts)
+                            outstanding_downloads = outstanding_downloads - len(content.d_artifacts)
+                            await out_q.put(content)
+                else:
+                    if shutdown:
+                        break
+
+                if outstanding_downloads < max_downloads:
+                    saturated = False
+        await out_q.put(None)
+    return artifact_downloader
 
 
 async def artifact_saver(in_q, out_q):
@@ -546,8 +565,6 @@ def content_unit_unassociation_factory(new_version):
     Returns:
         The configured content_unit_unassociation stage to be included in a pipeline.
     """
-    import pydevd
-    pydevd.settrace('localhost', port=29437, stdoutToServer=True, stderrToServer=True)
     version = new_version
     async def content_unit_unassociation(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
@@ -655,7 +672,7 @@ class DeclarativeVersion:
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
                 stages = [
-                    query_existing_artifacts, artifact_downloader, artifact_saver,
+                    query_existing_artifacts, artifact_downloader_factory(), artifact_saver,
                     query_existing_content_units, content_unit_saver,
                     content_unit_association_factory(new_version)
                 ]
