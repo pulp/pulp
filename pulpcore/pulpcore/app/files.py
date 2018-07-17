@@ -53,6 +53,7 @@ class TemporaryDownloadedFile(TemporaryUploadedFile):
     storage backend attempts to link the file to its final location. If the final location is on a
     different physical drive, the file is copied to its final destination.
     """
+
     def __init__(self, file, name=None):
         """
         A constructor that does not create a blank temporary file.

@@ -8,6 +8,7 @@ requirements = [
     'Django>=1.11',
     'django-filter',
     'djangorestframework',
+    'djangorestframework-queryfields',
     'drf-nested-routers',
     'drf-yasg',
     'psycopg2-binary',

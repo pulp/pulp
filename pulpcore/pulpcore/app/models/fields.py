@@ -10,6 +10,7 @@ class ArtifactFileField(FileField):
     The field can be set as either a path to the file or File object. In both cases the file is
     moved or copied to the location specified by 'upload_to' field parameter.
     """
+
     def pre_save(self, model_instance, add):
         """
         Returns path to the file to be stored in database
@@ -20,6 +21,7 @@ class ArtifactFileField(FileField):
 
         Returns:
             Field's value just before saving.
+
         """
         file = super().pre_save(model_instance, add)
         if file and file._committed and add:

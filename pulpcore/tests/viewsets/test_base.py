@@ -1,11 +1,11 @@
 from uuid import uuid4
 import unittest
 
-from django.http import Http404
+from django.http import Http404, QueryDict
 from django.test import TestCase
 from rest_framework.serializers import ValidationError as DRFValidationError
 
-from pulpcore.app import models, viewsets
+from pulpcore.app import models, viewsets, serializers
 from pulpcore.common.constants import API_ROOT
 
 
@@ -123,6 +123,61 @@ class TestGetResource(TestCase):
                 "/{api_root}repositories/{pk}/versions/1/".format(api_root=API_ROOT, pk=repo.pk),
                 models.Repository
             )
+
+
+class TestGetSerializerClass(TestCase):
+
+    def test_must_define_serializer_class(self):
+        """
+        Test that get_serializer_class() raises an AssertionError if you don't define the
+        serializer_class attribute.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            minimal_serializer_class = serializers.MinimalTaskSerializer
+
+        with self.assertRaises(AssertionError):
+            TestTaskViewSet().get_serializer_class()
+
+    def test_serializer_class(self):
+        """
+        Tests that get_serializer_class() returns the serializer_class attribute if it exists,
+        and that it doesn't error if no minimal serializer is defined, but minimal=True.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializer_class = serializers.TaskSerializer
+
+        viewset = TestTaskViewSet()
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+
+        request = unittest.mock.MagicMock()
+        request.query_params = QueryDict('minimal=True')
+        viewset.request = request
+
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+
+    def test_minimal_query_param(self):
+        """
+        Tests that get_serializer_class() returns the correct serializer in the correct situations.
+        """
+        class TestTaskViewSet(viewsets.NamedModelViewSet):
+            serializer_class = serializers.TaskSerializer
+            minimal_serializer_class = serializers.MinimalTaskSerializer
+
+        viewset = TestTaskViewSet()
+        request = unittest.mock.MagicMock()
+
+        # Test that it uses the full serializer with no query params
+        request.query_params = QueryDict()
+        viewset.request = request
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+        # Test that it uses the full serializer with minimal=False
+        request.query_params = QueryDict('minimal=False')
+        viewset.request = request
+        self.assertEquals(viewset.get_serializer_class(), serializers.TaskSerializer)
+        # Test that it uses the minimal serializer with minimal=True
+        request.query_params = QueryDict('minimal=True')
+        viewset.request = request
+        self.assertEquals(viewset.get_serializer_class(), serializers.MinimalTaskSerializer)
 
 
 class TestGetParentFieldAndObject(TestCase):

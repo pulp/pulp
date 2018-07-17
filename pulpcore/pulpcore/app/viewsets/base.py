@@ -84,6 +84,33 @@ class NamedModelViewSet(viewsets.GenericViewSet):
     parent_lookup_kwargs = {}
     schema = DefaultSchema()
 
+    def get_serializer_class(self):
+        """
+        Fetch the serializer class to use for the request.
+
+        The default behavior is to use the "serializer_class" attribute on the viewset.
+        We override that for the case where a "minimal_serializer_class" attribute is defined
+        and where the request contains a query parameter of "minimal=True".
+
+        The intention is that ViewSets can define a second, more minimal serializer with only
+        the most important fields.
+        """
+        assert self.serializer_class is not None, (_(
+            "'{}' should either include a `serializer_class` attribute, or override the "
+            "`get_serializer_class()` method.".format(self.__class__.__name__)
+        ))
+        minimal_serializer_class = getattr(self, 'minimal_serializer_class', None)
+
+        if minimal_serializer_class:
+            if hasattr(self, 'request'):
+                if 'minimal' in self.request.query_params:
+                    # the query param is a string, and non-empty strings evaluate True,
+                    # so we need to do an actual string comparison to 'true'
+                    if self.request.query_params['minimal'].lower() == 'true':
+                        return minimal_serializer_class
+
+        return self.serializer_class
+
     @staticmethod
     def get_resource(uri, model):
         """

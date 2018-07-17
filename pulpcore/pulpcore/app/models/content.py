@@ -26,6 +26,7 @@ class Artifact(Model):
         sha384 (models.CharField): The SHA-384 checksum of the file.
         sha512 (models.CharField): The SHA-512 checksum of the file.
     """
+
     def storage_path(self, name):
         """
         Callable used by FileField to determine where the uploaded file should be stored.

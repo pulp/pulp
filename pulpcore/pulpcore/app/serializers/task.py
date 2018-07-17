@@ -89,8 +89,14 @@ class TaskSerializer(ModelSerializer):
                                                 'non_fatal_errors', 'error', 'worker', 'parent',
                                                 'spawned_tasks', 'progress_reports',
                                                 'created_resources')
-        minimal_fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
-                                                        'worker', 'parent')
+
+
+class MinimalTaskSerializer(TaskSerializer):
+
+    class Meta:
+        model = models.Task
+        fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
+                                                'worker', 'parent')
 
 
 class WorkerSerializer(ModelSerializer):
