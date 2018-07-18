@@ -1,20 +1,18 @@
 {
     "pulp": {
         "auth": ["admin", "admin"],
+        "selinux enabled": false,
         "version": "3"
     },
-    "systems": [
+    "hosts": [
         {
             "hostname": "localhost",
             "roles": {
-                "amqp broker": {"service": "rabbitmq"},
-                "api": {"port": 8000, "scheme": "http"},
-                "mongod": {},
-                "pulp cli": {},
+                "api": {"port": 8000, "scheme": "http", "service": "nginx"},
                 "pulp resource manager": {},
                 "pulp workers": {},
-                "shell": {"transport": "local"},
-                "squid": {}
+                "redis": {},
+                "shell": {"transport": "local"}
             }
         }
     ]
