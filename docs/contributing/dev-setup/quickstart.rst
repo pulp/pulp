@@ -57,3 +57,21 @@ vagrant ssh
 
 
     If you are using ``pulp-from_source.yml``, connecting to Vagrant will greet you with a message of the day and some helpful tips to get started.
+
+
+Alternative: Vagrant--Docker Provision
+--------------------------------------
+
+Alternatively, one can deploy Pulp in a Docker container. Note please this
+involves (automatically) downloading a Fedora container and rebuilding it in
+order to update the ``vagrant`` user and group IDs to match the host user for the
+mounts between the host and the container to work. Also note the host user has
+to have permissions to interact with the docker daemon. See the `Docker
+post-installation instructions
+<https://docs.docker.com/install/linux/linux-postinstall/>`_ for a how-to.
+
+vagrant up --provider docker
+   Spin up Pulp in a docker container
+
+Mind please the absence of ``sudo``. Also mind Docker mounts shared folders over
+a loop-back device so no NFS/SSHFS is required.
