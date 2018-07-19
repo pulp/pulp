@@ -2,8 +2,14 @@
 
 from .auth import User  # noqa
 from .base import Model, MasterModel  # noqa
-from .generic import (GenericRelationModel, GenericKeyValueManager, GenericKeyValueRelation,  # noqa
-                      GenericKeyValueModel, Config, Notes)  # noqa
+from .generic import (  # noqa
+    GenericRelationModel,
+    GenericKeyValueManager,
+    GenericKeyValueRelation,
+    GenericKeyValueModel,
+    Config,
+    Notes
+)
 
 from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
 from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa

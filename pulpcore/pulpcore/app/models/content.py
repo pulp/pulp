@@ -133,8 +133,8 @@ class Content(MasterModel):
         """
         Get the model's natural key based on natural_key_fields.
 
-        :return: The natural key.
-        :rtype: tuple
+        Returns:
+            tuple: The natural key.
         """
         return tuple(getattr(self, f) for f in self.natural_key_fields())
 
