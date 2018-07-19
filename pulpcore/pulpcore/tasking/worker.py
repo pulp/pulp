@@ -16,6 +16,7 @@ django.setup()  # noqa otherwise E402: module level not at top of file
 
 from pulpcore.app.models import Task
 
+from pulpcore.tasking.connection import get_redis_connection
 from pulpcore.tasking.constants import TASKING_CONSTANTS
 from pulpcore.tasking.services.storage import WorkerDirectory
 from pulpcore.tasking.services.worker_watcher import (
@@ -50,6 +51,7 @@ class PulpWorker(Worker):
     def __init__(self, queues, **kwargs):
 
         kwargs['name'] = kwargs['name'].replace('%h', socket.getfqdn())
+        kwargs['connection'] = get_redis_connection()
 
         if kwargs['name'].startswith(TASKING_CONSTANTS.WORKER_PREFIX):
             queues = [Queue(kwargs['name'], connection=kwargs['connection'])]
