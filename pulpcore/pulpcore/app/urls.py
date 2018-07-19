@@ -31,6 +31,7 @@ class ViewSetNode:
         │  └─ FileRemoteViewSet
         └─ some-non-nested viewset
     """
+
     def __init__(self, viewset=None):
         """
         Create a new node.
@@ -130,13 +131,17 @@ docs_schema_view = yasg_get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-urlpatterns.append(url(r'^{api_root}docs/api(?P<format>\.json|\.yaml)'.format(api_root=API_ROOT),
-                   docs_schema_view.without_ui(cache_timeout=None),
-                   name='schema-json'))
+urlpatterns.append(url(
+    r'^{api_root}docs/api(?P<format>\.json|\.yaml)'.format(api_root=API_ROOT),
+    docs_schema_view.without_ui(cache_timeout=None),
+    name='schema-json')
+)
 
-urlpatterns.append(url(r'^{api_root}docs/'.format(api_root=API_ROOT),
-                   docs_schema_view.with_ui('redoc', cache_timeout=None),
-                   name='schema-redoc'))
+urlpatterns.append(url(
+    r'^{api_root}docs/'.format(api_root=API_ROOT),
+    docs_schema_view.with_ui('redoc', cache_timeout=None),
+    name='schema-redoc')
+)
 
 schema_view = get_schema_view(title='Pulp API')
 

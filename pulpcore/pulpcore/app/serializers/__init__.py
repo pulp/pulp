@@ -1,23 +1,31 @@
 # Load order: base, fields, all others.
 # - fields can import directly from base if needed
 # - all can import directly from base and fields if needed
-from pulpcore.app.serializers.base import (DetailRelatedField, GenericKeyValueRelatedField,  # noqa
-    ModelSerializer, MasterModelSerializer, DetailIdentityField, DetailRelatedField,
-    view_name_for_model, viewset_for_model, validate_unknown_fields,
-    AsnycOperationResponseSerializer)
-from pulpcore.app.serializers.fields import (BaseURLField, ContentRelatedField,  # noqa
-                                             LatestVersionField)
-from pulpcore.app.serializers.content import ContentSerializer, ArtifactSerializer  # noqa
-from pulpcore.app.serializers.progress import ProgressReportSerializer  # noqa
-from pulpcore.app.serializers.repository import (DistributionSerializer,  # noqa
-                                                 ExporterSerializer,
-                                                 RemoteSerializer,
-                                                 PublisherSerializer,
-                                                 PublicationSerializer,
-                                                 RepositoryPublishURLSerializer,
-                                                 RepositorySerializer,
-                                                 RepositorySyncURLSerializer,
-                                                 RepositoryVersionSerializer)
-from pulpcore.app.serializers.task import (MinimalTaskSerializer, TaskSerializer,  # noqa
-                                           WorkerSerializer)
-from pulpcore.app.serializers.user import UserSerializer  # noqa
+from .base import (  # noqa
+    DetailRelatedField,
+    GenericKeyValueRelatedField,
+    ModelSerializer,
+    MasterModelSerializer,
+    DetailIdentityField,
+    DetailRelatedField,
+    view_name_for_model,
+    viewset_for_model,
+    validate_unknown_fields,
+    AsnycOperationResponseSerializer
+)
+from .fields import BaseURLField, ContentRelatedField, LatestVersionField  # noqa
+from .content import ContentSerializer, ArtifactSerializer  # noqa
+from .progress import ProgressReportSerializer  # noqa
+from .repository import (  # noqa
+    DistributionSerializer,
+    ExporterSerializer,
+    RemoteSerializer,
+    PublisherSerializer,
+    PublicationSerializer,
+    RepositoryPublishURLSerializer,
+    RepositorySerializer,
+    RepositorySyncURLSerializer,
+    RepositoryVersionSerializer
+)
+from .task import MinimalTaskSerializer, TaskSerializer, WorkerSerializer  # noqa
+from .user import UserSerializer  # noqa

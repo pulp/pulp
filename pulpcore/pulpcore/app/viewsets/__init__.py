@@ -1,12 +1,13 @@
-from pulpcore.app.viewsets.base import (AsyncRemoveMixin, AsyncUpdateMixin,  # noqa
-                                        NamedModelViewSet)
-from pulpcore.app.viewsets.content import ArtifactViewSet, ContentViewSet  # noqa
-from pulpcore.app.viewsets.repository import (DistributionViewSet,  # noqa
-                                              ExporterViewSet,
-                                              RemoteViewSet,
-                                              PublicationViewSet,
-                                              PublisherViewSet,
-                                              RepositoryViewSet,
-                                              RepositoryVersionViewSet)
-from pulpcore.app.viewsets.task import TaskViewSet, WorkerViewSet  # noqa
-from pulpcore.app.viewsets.user import UserViewSet  # noqa
+from .base import AsyncRemoveMixin, AsyncUpdateMixin, NamedModelViewSet  # noqa
+from .content import ArtifactViewSet, ContentViewSet  # noqa
+from .repository import (  # noqa
+    DistributionViewSet,
+    ExporterViewSet,
+    RemoteViewSet,
+    PublicationViewSet,
+    PublisherViewSet,
+    RepositoryViewSet,
+    RepositoryVersionViewSet
+)
+from .task import TaskViewSet, WorkerViewSet  # noqa
+from .user import UserViewSet  # noqa
