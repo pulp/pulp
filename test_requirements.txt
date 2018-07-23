@@ -1,5 +1,6 @@
 # Test requirements
-flake8
-mock
 codecov
 coverage
+flake8
+mock
+git+https://github.com/PulpQE/pulp-smash.git#egg=pulp-smash
