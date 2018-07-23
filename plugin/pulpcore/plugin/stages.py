@@ -373,6 +373,8 @@ async def artifact_saver(in_q, out_q):
                 continue
             await out_q.put(declarative_content)
 
+        declarative_content_list = []
+
     await out_q.put(None)
 
 
