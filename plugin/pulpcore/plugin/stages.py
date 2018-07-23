@@ -239,6 +239,7 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
         A configured artifact_downloader stage to be included in a pipeline.
     """
     max_downloads = max_concurrent_downloads
+
     async def artifact_downloader(in_q, out_q):
         pending = set()
         incoming_content = []
@@ -275,6 +276,7 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
                     if not downloaders_for_content:
                         await out_q.put(content)
                         continue
+
                     async def return_content_for_downloader(c):
                         return c
                     outstanding_downloads = outstanding_downloads + len(downloaders_for_content)
@@ -282,7 +284,7 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
                     pending.add(asyncio.gather(*downloaders_for_content))
                     if outstanding_downloads > max_downloads:
                         saturated = True
-                        incoming_content = incoming_content[i+1:]  # remove already handled content
+                        incoming_content = incoming_content[i + 1:]  # remove handled content
                         break
                 else:
                     incoming_content = []
@@ -484,7 +486,8 @@ async def content_unit_saver(in_q, out_q):
                     declarative_content.content.save()
                     for declarative_artifact in declarative_content.d_artifacts:
                         content_artifact = ContentArtifact(
-                            content=declarative_content.content, artifact=declarative_artifact.artifact,
+                            content=declarative_content.content,
+                            artifact=declarative_artifact.artifact,
                             relative_path=declarative_artifact.relative_path
                         )
                         content_artifact_bulk.append(content_artifact)
@@ -543,6 +546,7 @@ def content_unit_association_factory(new_version):
     for unit in new_version.content.all():
         unit = unit.cast()
         unit_keys_by_type[type(unit)].add(unit.natural_key())
+
     async def content_unit_association(in_q, out_q):
         """For each Content Unit associate it with the repository version"""
         with ProgressBar(message='Associating Content') as pb:
@@ -616,6 +620,7 @@ def content_unit_unassociation_factory(new_version):
         The configured content_unit_unassociation stage to be included in a pipeline.
     """
     version = new_version
+
     async def content_unit_unassociation(in_q, out_q):
         """For each Content Unit from in_q, unassociate it with the repository version"""
         with ProgressBar(message='Un-Associating Content') as pb:
