@@ -1,6 +1,8 @@
 import asyncio
 from collections import defaultdict
 from gettext import gettext as _
+import os
+import shutil
 
 from django.db import transaction
 from django.db.models import Q
@@ -354,7 +356,14 @@ async def artifact_saver(in_q, out_q):
                 shutdown = True
                 break
             for declarative_artifact in declarative_content.d_artifacts:
-                pass  # TODO move the file into place
+                src_path = str(declarative_artifact.artifact.file)
+                dst_path = declarative_artifact.artifact.storage_path(None)
+                try:
+                    shutil.move(src_path, dst_path)
+                except FileNotFoundError:
+                    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                    shutil.move(src_path, dst_path)
+                declarative_artifact.artifact.file = dst_path
                 artifacts_to_save.append(declarative_artifact.artifact)
 
         Artifact.objects.bulk_create(artifacts_to_save)
