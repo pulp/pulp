@@ -356,17 +356,19 @@ async def artifact_saver(in_q, out_q):
                 shutdown = True
                 break
             for declarative_artifact in declarative_content.d_artifacts:
-                src_path = str(declarative_artifact.artifact.file)
-                dst_path = declarative_artifact.artifact.storage_path(None)
-                try:
-                    shutil.move(src_path, dst_path)
-                except FileNotFoundError:
-                    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                    shutil.move(src_path, dst_path)
-                declarative_artifact.artifact.file = dst_path
-                artifacts_to_save.append(declarative_artifact.artifact)
+                if declarative_artifact.artifact._state.adding:
+                    src_path = str(declarative_artifact.artifact.file)
+                    dst_path = declarative_artifact.artifact.storage_path(None)
+                    try:
+                        shutil.move(src_path, dst_path)
+                    except FileNotFoundError:
+                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                        shutil.move(src_path, dst_path)
+                    declarative_artifact.artifact.file = dst_path
+                    artifacts_to_save.append(declarative_artifact.artifact)
 
-        Artifact.objects.bulk_create(artifacts_to_save)
+        if artifacts_to_save:
+            Artifact.objects.bulk_create(artifacts_to_save)
 
         for declarative_content in declarative_content_list:
             if declarative_content is None:
