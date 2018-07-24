@@ -489,36 +489,43 @@ async def content_unit_saver(in_q, out_q):
 
         content_artifact_bulk = []
         remote_artifact_bulk = []
+        remote_artifact_map = {}
 
-        for declarative_content in declarative_content_list:
-            if declarative_content is None:
-                shutdown = True
-                continue
-            if declarative_content.content._state.adding:
-                with transaction.atomic():
-                    declarative_content.content.save()
-                    for declarative_artifact in declarative_content.d_artifacts:
-                        content_artifact = ContentArtifact(
-                            content=declarative_content.content,
-                            artifact=declarative_artifact.artifact,
-                            relative_path=declarative_artifact.relative_path
-                        )
-                        content_artifact_bulk.append(content_artifact)
-                        remote_artifact = RemoteArtifact(
-                            url=declarative_artifact.url, size=declarative_artifact.artifact.size,
-                            md5=declarative_artifact.artifact.md5,
-                            sha1=declarative_artifact.artifact.sha1,
-                            sha224=declarative_artifact.artifact.sha224,
-                            sha256=declarative_artifact.artifact.sha256,
-                            sha384=declarative_artifact.artifact.sha384,
-                            sha512=declarative_artifact.artifact.sha512,
-                            content_artifact=content_artifact,
-                            remote=declarative_artifact.remote
-                        )
-                        remote_artifact_bulk.append(remote_artifact)
+        with transaction.atomic():
+            for declarative_content in declarative_content_list:
+                if declarative_content is None:
+                    shutdown = True
+                    continue
+                if declarative_content.content._state.adding:
+                        declarative_content.content.save()
+                        for declarative_artifact in declarative_content.d_artifacts:
+                            content_artifact = ContentArtifact(
+                                content=declarative_content.content,
+                                artifact=declarative_artifact.artifact,
+                                relative_path=declarative_artifact.relative_path
+                            )
+                            content_artifact_bulk.append(content_artifact)
+                            remote_artifact_data = {
+                                'url': declarative_artifact.url,
+                                'size': declarative_artifact.artifact.size,
+                                'md5': declarative_artifact.artifact.md5,
+                                'sha1': declarative_artifact.artifact.sha1,
+                                'sha224': declarative_artifact.artifact.sha224,
+                                'sha256': declarative_artifact.artifact.sha256,
+                                'sha384': declarative_artifact.artifact.sha384,
+                                'sha512': declarative_artifact.artifact.sha512,
+                                'remote': declarative_artifact.remote,
+                            }
+                            remote_artifact_map[content_artifact.relative_path] = remote_artifact_data
 
-        ContentArtifact.objects.bulk_create(content_artifact_bulk)
-        RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
+            for content_artifact in ContentArtifact.objects.bulk_create(content_artifact_bulk):
+                remote_artifact_data = remote_artifact_map.pop(content_artifact.relative_path)
+                new_remote_artifact = RemoteArtifact(
+                    content_artifact=content_artifact, **remote_artifact_data
+                )
+                remote_artifact_bulk.append(new_remote_artifact)
+
+            RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
 
         for declarative_content in declarative_content_list:
             if declarative_content is None:
