@@ -89,7 +89,7 @@ Follow these steps:
 
   If Vagrant will not start due to the error message
   ``error creating bridge interface virbr0: File exists``, you can solve it by using
-  ``ifconfig virbr0 down`` and ``brctl delbr virbr``
+  ``ifconfig virbr0 down`` and ``brctl delbr virbr0``
 
 Prerequisites for docker
 ------------------------
