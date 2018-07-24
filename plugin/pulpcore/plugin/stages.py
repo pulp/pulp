@@ -516,7 +516,8 @@ async def content_unit_saver(in_q, out_q):
                                 'sha512': declarative_artifact.artifact.sha512,
                                 'remote': declarative_artifact.remote,
                             }
-                            remote_artifact_map[content_artifact.relative_path] = remote_artifact_data
+                            rel_path = content_artifact.relative_path
+                            remote_artifact_map[rel_path] = remote_artifact_data
 
             for content_artifact in ContentArtifact.objects.bulk_create(content_artifact_bulk):
                 remote_artifact_data = remote_artifact_map.pop(content_artifact.relative_path)
