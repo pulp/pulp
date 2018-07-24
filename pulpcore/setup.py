@@ -5,7 +5,7 @@ with open('README.rst') as f:
 
 requirements = [
     'coreapi',
-    'Django>=1.11',
+    'Django>=2.0',
     'django-filter',
     'djangorestframework',
     'djangorestframework-queryfields',
@@ -13,7 +13,7 @@ requirements = [
     'drf-yasg',
     'psycopg2-binary',
     'PyYAML',
-    'rq>=0.11.0',
+    'rq>=0.12.0',
     'setuptools',
     'pulpcore-common'
 ]
@@ -39,6 +39,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ),
     entry_points={
         'console_scripts': [

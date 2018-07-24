@@ -85,7 +85,7 @@ def _queue_reserved_task(func, inner_task_id, resources, inner_args, inner_kwarg
             else:
                 task_status.state = TASK_STATES.RUNNING
                 task_status.save()
-                q = Queue('resource_manager', connection=redis_conn, async=False)
+                q = Queue('resource_manager', connection=redis_conn, is_async=False)
                 q.enqueue(func, args=inner_args, kwargs=inner_kwargs, job_id=inner_task_id,
                           timeout=TASK_TIMEOUT, **options)
                 task_status.state = TASK_STATES.COMPLETED
