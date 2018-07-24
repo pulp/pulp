@@ -351,7 +351,7 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         return False
 
 
-class AsnycOperationResponseSerializer(serializers.Serializer):
+class AsyncOperationResponseSerializer(serializers.Serializer):
     """
     Serializer for asynchronous operations.
     """

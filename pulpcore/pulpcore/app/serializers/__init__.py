@@ -11,7 +11,7 @@ from .base import (  # noqa
     view_name_for_model,
     viewset_for_model,
     validate_unknown_fields,
-    AsnycOperationResponseSerializer
+    AsyncOperationResponseSerializer
 )
 from .fields import BaseURLField, ContentRelatedField, LatestVersionField  # noqa
 from .content import ContentSerializer, ArtifactSerializer  # noqa
