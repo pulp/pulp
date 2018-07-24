@@ -1,23 +1,26 @@
 sudo: required
 # https://docs.travis-ci.com/user/trusty-ci-environment/
-dist: trusty
+dist: xenial
 language: python
 python:
     # python versions used in el7 SCL & supported fedora
     - "3.5"
     - "3.6"
+    - "3.7"
 env:
   matrix:
-  - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp
-  - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-  - TEST=docs
+    - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
+    include:
+      - name: "Docs Builder"
+        python: "3.5"
+        env: TEST=docs
   global:
     secure: kzbI/DagIGIOFjVEyLyYGEi/xVwiq5M8FCEM3mOtXK9ocYs1Ky1ABkcgLrOLBb+S7SMNjy4XnUWGUxhBGWQLDw2/OimKFoHpCHGt1Cb4rXhWDSVPGgDXQzyW8pJsPKtAbemfx5a4oRP82vmpgB/htJ+8dE5CIAZWU8d9dbvQbro=
 matrix:
   fast_finish: true
 addons:
     # postgres versions provided by el7 RHSCL (lowest supportable version)
-    postgresql: "9.5"
+    postgresql: "9.6"
 services:
     - postgresql
     - redis-server
