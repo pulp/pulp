@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from pulpcore.app import tasks
 from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import AsnycOperationResponseSerializer
+from pulpcore.app.serializers import AsyncOperationResponseSerializer
 from pulpcore.tasking.tasks import enqueue_with_reservation
 
 from django.urls import resolve, Resolver404
@@ -288,7 +288,7 @@ class AsyncUpdateMixin:
     """
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous update task",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def update(self, request, pk, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -303,7 +303,7 @@ class AsyncUpdateMixin:
         return OperationPostponedResponse(async_result, request)
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous partial update task",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
@@ -315,7 +315,7 @@ class AsyncRemoveMixin:
     """
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous delete task",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def destroy(self, request, pk, **kwargs):
         """
         Delete a model instance

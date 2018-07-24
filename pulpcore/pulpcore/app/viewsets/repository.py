@@ -23,7 +23,7 @@ from pulpcore.app.models import (
 from pulpcore.app.pagination import IDPagination, NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
-    AsnycOperationResponseSerializer,
+    AsyncOperationResponseSerializer,
     ContentSerializer,
     DistributionSerializer,
     ExporterSerializer,
@@ -61,7 +61,7 @@ class RepositoryViewSet(NamedModelViewSet,
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to update"
                                                "a repository.",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def update(self, request, pk, partial=False):
         """
         Generates a Task to update a Repository
@@ -78,7 +78,7 @@ class RepositoryViewSet(NamedModelViewSet,
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to delete a "
                                                "repository.",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def destroy(self, request, pk):
         """
         Generates a Task to delete a Repository
@@ -248,7 +248,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to delete "
                                                "a repositroy version.",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def destroy(self, request, repository_pk, number):
         """
         Queues a task to handle deletion of a RepositoryVersion
@@ -262,7 +262,7 @@ class RepositoryVersionViewSet(NamedModelViewSet,
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to create "
                                                "a new repository version.",
-                         responses={202: AsnycOperationResponseSerializer})
+                         responses={202: AsyncOperationResponseSerializer})
     def create(self, request, repository_pk):
         """
         Queues a task that creates a new RepositoryVersion by adding and removing content units
