@@ -212,9 +212,13 @@ async def query_existing_artifacts(in_q, out_q):
     await out_q.put(None)
 
 
-def artifact_downloader_factory(max_concurrent_downloads=100):
+class artifact_downloader:
     """
-    A factory returning a Stages API stage to download missing Artifact files, but don't call save()
+    An object containing a Stages API stage to download missing Artifacts, but don't call save()
+
+    The actual stage is the `stage` attribute which can be used as follows:
+
+    >>> artifact_downloader(max_concurrent_downloads=42).stage  # This is the real stage
 
     in_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with potentially files missing
         `~pulpcore.plugin.stages.DeclarativeArtifact.artifact` objects.
@@ -238,11 +242,14 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
             run. Default is 100.
 
     Returns:
-        A configured artifact_downloader stage to be included in a pipeline.
+        An object containing the artifact_downloader stage to be included in a pipeline.
     """
-    max_downloads = max_concurrent_downloads
 
-    async def artifact_downloader(in_q, out_q):
+    def __init__(self, max_concurrent_downloads=100):
+        self.max_concurrent_downloads = max_concurrent_downloads
+
+    async def stage(self, in_q, out_q):
+        """Download undownloaded Artifacts, but don't save them"""
         pending = set()
         incoming_content = []
         outstanding_downloads = 0
@@ -284,7 +291,7 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
                     outstanding_downloads = outstanding_downloads + len(downloaders_for_content)
                     downloaders_for_content.append(return_content_for_downloader(content))
                     pending.add(asyncio.gather(*downloaders_for_content))
-                    if outstanding_downloads > max_downloads:
+                    if outstanding_downloads > self.max_concurrent_downloads:
                         saturated = True
                         incoming_content = incoming_content[i + 1:]  # remove handled content
                         break
@@ -311,10 +318,9 @@ def artifact_downloader_factory(max_concurrent_downloads=100):
                     if shutdown:
                         break
 
-                if outstanding_downloads < max_downloads:
+                if outstanding_downloads < self.max_concurrent_downloads:
                     saturated = False
         await out_q.put(None)
-    return artifact_downloader
 
 
 async def artifact_saver(in_q, out_q):
@@ -538,9 +544,13 @@ async def content_unit_saver(in_q, out_q):
     await out_q.put(None)
 
 
-def content_unit_association_factory(new_version):
+class content_unit_association:
     """
-    A factory returning a Stages API stage that associates content units with `new_version`.
+    An object containing a Stages API stage that associates content units with `new_version`.
+
+    The actual stage is the `stage` attribute which can be used as follows:
+
+    >>> content_unit_association(my_new_version).stage  # This is the real stage
 
     This stage stores all content unit types and unit keys in memory before running. This is done to
     compute the units already associated but not received from `in_q`. These units are passed via
@@ -560,15 +570,17 @@ def content_unit_association_factory(new_version):
         new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
 
     Returns:
-        A configured content_unit_association stage to be included in a pipeline.
+        An object containing the content_unit_association stage to be included in a pipeline.
     """
-    version = new_version
-    unit_keys_by_type = defaultdict(set)
-    for unit in new_version.content.all():
-        unit = unit.cast()
-        unit_keys_by_type[type(unit)].add(unit.natural_key())
 
-    async def content_unit_association(in_q, out_q):
+    def __init__(self, new_version):
+        self.new_version = new_version
+        self.unit_keys_by_type = defaultdict(set)
+        for unit in self.new_version.content.all():
+            unit = unit.cast()
+            self.unit_keys_by_type[type(unit)].add(unit.natural_key())
+
+    async def stage(self, in_q, out_q):
         """For each Content Unit associate it with the repository version"""
         with ProgressBar(message='Associating Content') as pb:
             declarative_content_list = []
@@ -592,7 +604,7 @@ def content_unit_association_factory(new_version):
                         continue
                     try:
                         unit_key = declarative_content.content.natural_key()
-                        unit_keys_by_type[type(declarative_content.content)].remove(unit_key)
+                        self.unit_keys_by_type[type(declarative_content.content)].remove(unit_key)
                     except KeyError:
                         model_type = type(declarative_content.content)
                         unit_key_dict = declarative_content.content.natural_key_dict()
@@ -601,7 +613,7 @@ def content_unit_association_factory(new_version):
 
                 for model_type, q_object in content_q_by_type.items():
                     queryset = model_type.objects.filter(q_object)
-                    version.add_content(queryset)
+                    self.new_version.add_content(queryset)
                     pb.done = pb.done + queryset.count()
                     pb.save()
 
@@ -609,22 +621,25 @@ def content_unit_association_factory(new_version):
                     break
                 declarative_content_list = []
 
-            for unit_type, ids in unit_keys_by_type.items():
+            for unit_type, ids in self.unit_keys_by_type.items():
                 if ids:
                     units_to_unassociate = Q()
-                    for unit_key in unit_keys_by_type[unit_type]:
+                    for unit_key in self.unit_keys_by_type[unit_type]:
                         query_dict = {}
                         for i, key_name in enumerate(unit_type.natural_key_fields()):
                             query_dict[key_name] = unit_key[i]
                         units_to_unassociate |= Q(**query_dict)
                     await out_q.put(unit_type.objects.filter(units_to_unassociate))
             await out_q.put(None)
-    return content_unit_association
 
 
-def content_unit_unassociation_factory(new_version):
+class content_unit_unassociation:
     """
-    A factory returning a Stages API stage that unassociates content units from `new_version`.
+    An object containing a Stages API stage that unassociates content units from `new_version`.
+
+    The actual stage is the `stage` attribute which can be used as follows:
+
+    >>> content_unit_unassociation(my_new_version).stage  # This is the real stage
 
     in_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
         subclass to be unassociated from `new_version`.
@@ -638,25 +653,27 @@ def content_unit_unassociation_factory(new_version):
         new_version (RepositoryVersion): The RespositoryVersion this stage unassociates content from
 
     Returns:
-        The configured content_unit_unassociation stage to be included in a pipeline.
+        An object containing the configured content_unit_unassociation stage to be included in a
+            pipeline.
     """
-    version = new_version
 
-    async def content_unit_unassociation(in_q, out_q):
-        """For each Content Unit from in_q, unassociate it with the repository version"""
-        with ProgressBar(message='Un-Associating Content') as pb:
-            while True:
-                queryset_to_unassociate = await in_q.get()
-                if queryset_to_unassociate is None:
-                    break
+    def __init__(self, new_version):
+        self.new_version = new_version
 
-                version.remove_content(queryset_to_unassociate)
-                pb.done = pb.done + queryset_to_unassociate.count()
-                pb.save()
+    async def stage(self, in_q, out_q):
+            """For each Content Unit from in_q, unassociate it with the repository version"""
+            with ProgressBar(message='Un-Associating Content') as pb:
+                while True:
+                    queryset_to_unassociate = await in_q.get()
+                    if queryset_to_unassociate is None:
+                        break
 
-                await out_q.put(queryset_to_unassociate)
-            await out_q.put(None)
-    return content_unit_unassociation
+                    self.new_version.remove_content(queryset_to_unassociate)
+                    pb.done = pb.done + queryset_to_unassociate.count()
+                    pb.save()
+
+                    await out_q.put(queryset_to_unassociate)
+                await out_q.put(None)
 
 
 async def end_stage(in_q, out_q):
@@ -754,13 +771,13 @@ class DeclarativeVersion:
                 loop = asyncio.get_event_loop()
                 stages = [
                     self.first_stage.gen_declarative_content,
-                    query_existing_artifacts, artifact_downloader_factory(), artifact_saver,
+                    query_existing_artifacts, artifact_downloader().stage, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association_factory(new_version)
+                    content_unit_association(new_version).stage
                 ]
                 if self.sync_mode is 'additive':
                     stages.append(end_stage)
                 elif self.sync_mode is 'mirror':
-                    stages.extend([content_unit_unassociation_factory(new_version), end_stage])
+                    stages.extend([content_unit_unassociation(new_version).stage, end_stage])
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)
