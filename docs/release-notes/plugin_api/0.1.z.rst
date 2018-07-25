@@ -10,6 +10,11 @@ The Plugin API currently supports version 3.y of Pulp Core.
 See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 :doc:`Plugin Development <../../plugins/plugin-writer/index>`.
 
+0.1.0b4
+=======
+
+* `Use querysets for add/remove_content methods <https://github.com/pulp/pulp/pull/3548>`_
+
 0.1.0b3
 =======
 
