@@ -14,6 +14,7 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
     viewsets
     tasking
     download
+    stages
     changeset
 
 .. automodule:: pulpcore.plugin

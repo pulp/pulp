@@ -92,7 +92,8 @@ class DeclarativeVersion:
 
         Args:
              first_stage (FirstStage): The first stage to receive `DeclarativeContent` from
-             repository (Repository): The repository receiving the new version
+             repository (pulpcore.plugin.models.Repository): The repository receiving the new
+                 version
              sync_mode (str): 'mirror' removes content units from the RepositoryVersion that are not
                  queued to DeclarativeVersion. 'additive' only adds content units queued to
                  DeclarativeVersion, and does not remove any pre-existing units in the

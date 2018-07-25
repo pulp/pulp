@@ -29,7 +29,8 @@ class content_unit_association:
     associated. Since it's a stream the total count isn't known until it's finished.
 
     Args:
-        new_version (RepositoryVersion): The RespositoryVersion this stage associates content with.
+        new_version (pulpcore.plugin.models.RepositoryVersion): The repo version this stage
+            associates content with.
 
     Returns:
         An object containing the content_unit_association stage to be included in a pipeline.
@@ -112,7 +113,8 @@ class content_unit_unassociation:
     un-associated. Since it's a stream the total count isn't known until it's finished.
 
     Args:
-        new_version (RepositoryVersion): The RespositoryVersion this stage unassociates content from
+        new_version (pulpcore.plugin.models.RepositoryVersion): The repo version this stage
+            unassociates content from
 
     Returns:
         An object containing the configured content_unit_unassociation stage to be included in a
