@@ -1,7 +1,7 @@
 import asyncio
-import os
-import shutil
 
+from django.core.files import File
+from django.core.files.storage import default_storage
 from django.db.models import Q
 
 from pulpcore.plugin.models import Artifact, ProgressBar
@@ -230,14 +230,12 @@ async def artifact_saver(in_q, out_q):
                 shutdown = True
                 break
             for declarative_artifact in declarative_content.d_artifacts:
-                if declarative_artifact.artifact._state.adding:
+                if declarative_artifact.artifact.pk is None:
                     src_path = str(declarative_artifact.artifact.file)
                     dst_path = declarative_artifact.artifact.storage_path(None)
-                    try:
-                        shutil.move(src_path, dst_path)
-                    except FileNotFoundError:
-                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                        shutil.move(src_path, dst_path)
+                    with open(src_path, mode='rb') as input_file:
+                        django_file_obj = File(input_file)
+                        default_storage.save(dst_path, django_file_obj)
                     declarative_artifact.artifact.file = dst_path
                     artifacts_to_save.append(declarative_artifact.artifact)
 

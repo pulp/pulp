@@ -123,7 +123,7 @@ async def content_unit_saver(in_q, out_q):
                 if declarative_content is None:
                     shutdown = True
                     continue
-                if declarative_content.content._state.adding:
+                if declarative_content.content.pk is None:
                         declarative_content.content.save()
                         for declarative_artifact in declarative_content.d_artifacts:
                             content_artifact = ContentArtifact(
