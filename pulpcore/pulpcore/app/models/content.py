@@ -12,7 +12,20 @@ class Artifact(Model):
     """
     A file associated with a piece of content.
 
-    When creating an Artifact, the file provided is moved into place by Pulp.
+    When calling `save()` on an Artifact, if the file is not stored in Django's storage backend, it
+    is moved into place then.
+
+    Artifact is compatible with Django's `bulk_create()` method, but you have to move the file into
+    the backend yourself before using an Artifact in a `bulk_create()` call. Here is a useful
+    snippet for saving a file into the storage backend manually:
+
+    >>> from django.core.files import File
+    >>> from django.core.files.storage import default_storage
+    >>> with open(src_path, mode='rb') as input_file:
+    >>>     django_file_obj = File(input_file)
+    >>>     default_storage.save(dst_path, django_file_obj)
+    >>> my_artifact.file = dst_path  # Now the artifact is safe to use with bulk_create()
+
 
     Fields:
 
