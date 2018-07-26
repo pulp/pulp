@@ -8,8 +8,10 @@ from drf_queryfields.mixins import QueryFieldsMixin
 from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
+from rest_framework.exceptions import ValidationError
 
 from pulpcore.app.apps import pulp_plugin_configs
+from pulpcore.exceptions.http import ConflictError
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
 _model_viewset_cache = {}
@@ -207,6 +209,38 @@ class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
         if hasattr(self, 'initial_data'):
             validate_unknown_fields(self.initial_data, self.fields)
         return data
+
+    def is_valid(self, raise_exception=False):
+        assert not hasattr(self, 'restore_object'), (
+            'Serializer `%s.%s` has old-style version 2 `.restore_object()` '
+            'that is no longer compatible with REST framework 3. '
+            'Use the new-style `.create()` and `.update()` methods instead.' %
+            (self.__class__.__module__, self.__class__.__name__)
+        )
+
+        assert hasattr(self, 'initial_data'), (
+            'Cannot call `.is_valid()` as no `data=` keyword argument was '
+            'passed when instantiating the serializer instance.'
+        )
+
+        if not hasattr(self, '_validated_data'):
+            try:
+                self._validated_data = self.run_validation(self.initial_data)
+            except ValidationError as exc:
+                self._validated_data = {}
+                self._errors = exc.detail
+                self._exception = exc
+            except ConflictError as exc:
+                self._validated_data = {}
+                self._errors = exc.detail
+                self._exception = exc
+            else:
+                self._errors = {}
+
+        if self._errors and raise_exception:
+            raise self._exception
+
+        return not bool(self._errors)
 
 
 class MasterModelSerializer(ModelSerializer):

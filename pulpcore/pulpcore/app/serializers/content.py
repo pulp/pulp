@@ -2,10 +2,10 @@ from gettext import gettext as _
 import hashlib
 
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import base, fields
+from pulpcore.app.validators import PulpUniqueValidator
 
 
 UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
@@ -111,9 +111,10 @@ class ArtifactSerializer(base.ModelSerializer):
                 else:
                     data[algorithm] = digest
                 if algorithm in UNIQUE_ALGORITHMS:
-                    validator = UniqueValidator(models.Artifact.objects.all(),
-                                                message=_("{0} checksum must be "
-                                                          "unique.").format(algorithm))
+                    validator = PulpUniqueValidator(
+                        models.Artifact.objects.all(),
+                        message=_("{0} checksum must be unique.").format(algorithm)
+                    )
                     validator.field_name = algorithm
                     validator.instance = None
                     validator(digest)
