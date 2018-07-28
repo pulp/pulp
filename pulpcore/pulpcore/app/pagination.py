@@ -1,7 +1,7 @@
 from rest_framework import pagination
 
 
-class IDPagination(pagination.CursorPagination):
+class IDPagination(pagination.PageNumberPagination):
     """
     Paginate an API view naively, based on the ID of objects being iterated over.
 
@@ -17,7 +17,7 @@ class IDPagination(pagination.CursorPagination):
     max_page_size = 5000
 
 
-class NamePagination(pagination.CursorPagination):
+class NamePagination(pagination.PageNumberPagination):
     """
     Paginate an API view based on the value of the 'name' field of objects being iterated over.
 
