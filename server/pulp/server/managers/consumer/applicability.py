@@ -164,7 +164,7 @@ class ApplicabilityRegenerationManager(object):
 
         for repo_id in repo_ids:
             profile_hashes = RepoProfileApplicability.get_collection().find(
-                {'repo_id': repo_id}, {'profile_hash': 1})
+                {'repo_id': repo_id}, {'profile_hash': 1}).batch_size(100)
             for batch in paginate(profile_hashes, 10):
                 batch_regenerate_applicability_task.apply_async((repo_id, batch),
                                                                 **{'group_id': task_group_id})
