@@ -3,19 +3,24 @@ from gettext import gettext as _
 
 class DeclarativeArtifact:
     """
-    Relates an Artifact, how to download it, and its relative_path for publishing.
+    Relates an :class:`~pulpcore.plugin.models.Artifact`, how to download it, and its
+    `relative_path` used later during publishing.
 
-    This is used by the Stages API stages to determine if an Artifact is already present and ensure
-    Pulp can download it in the future. The `artifact` can be either saved or unsaved. If unsaved,
-    the `artifact` attributes may be incomplete because not all digest information can be computed
-    until the Artifact is downloaded.
+    This is used by the Stages API stages to determine if an
+    :class:`~pulpcore.plugin.models.Artifact` is already present and ensure Pulp can download it in
+    the future. The `artifact` can be either saved or unsaved. If unsaved, the `artifact` attributes
+    may be incomplete because not all digest information can be computed until the
+    :class:`~pulpcore.plugin.models.Artifact` is downloaded.
 
     Attributes:
-        artifact - An Artifact either saved or unsaved. If unsaved, it may have partial digest
-            information attached to it.
-        url - the url to fetch the Artifact from.
-        relative_path - the relative_path this Artifact should be published at for any Publication.
-        remote - The remote used to fetch this Artifact.
+        artifact (:class:`~pulpcore.plugin.models.Artifact`): An
+            :class:`~pulpcore.plugin.models.Artifact` either saved or unsaved. If unsaved, it
+            may have partial digest information attached to it.
+        url (str): the url to fetch the :class:`~pulpcore.plugin.models.Artifact` from.
+        relative_path (str): the relative_path this :class:`~pulpcore.plugin.models.Artifact`
+            should be published at for any Publication.
+        remote (:class:`~pulpcore.plugin.models.Remote`): The remote used to fetch this
+            :class:`~pulpcore.plugin.models.Artifact`.
 
     Raises:
         ValueError: If `artifact`, `url`, `relative_path`, or `remote` are not specified.
@@ -40,15 +45,19 @@ class DeclarativeArtifact:
 
 class DeclarativeContent:
     """
-    Relates a Content unit and zero or more DeclarativeArtifact objects.
+    Relates a Content unit and zero or more :class:`~pulpcore.plugin.stages.DeclarativeArtifact`
+    objects.
 
     This is used by the Stages API stages to determine if a Content unit is already present and
-    ensure all of its associated DeclarativeArtifact objects are related correctly. The `content`
-    can be either saved or unsaved depending on where in the Stages API pipeline this is used.
+    ensure all of its associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects are
+    related correctly. The `content` can be either saved or unsaved depending on where in the Stages
+    API pipeline this is used.
 
     Attributes:
-        content - The in-memory, partial Artifact with any known digest information attached to it
-        d_artifacts - A list of zero or more DeclarativeArtifacts associated with `content`.
+        content (subclass of :class:`~pulpcore.plugin.models.Content`): A Content unit, possibly
+            unsaved
+        d_artifacts (list): A list of zero or more
+            :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects associated with `content`.
 
     Raises:
         ValueError: If `content` is not specified.

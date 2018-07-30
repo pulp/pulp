@@ -9,25 +9,31 @@ from pulpcore.plugin.models import Artifact, ProgressBar
 
 async def query_existing_artifacts(in_q, out_q):
     """
-    Stages API stage replacing DeclarativeArtifact.artifact with already-saved Artifacts.
+    Stages API stage that replaces :attr:`DeclarativeContent.content` objects with already-saved
+    :class:`~pulpcore.plugin.models.Artifact` objects.
 
-    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
-    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
-    `DeclarativeArtifact` object stores one Artifact.
+    This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
+    inspects their associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object stores one
+    :class:`~pulpcore.plugin.models.Artifact`.
 
-    This stage inspects any "unsaved" Artifact objects metadata and searches for existing saved
-    Artifacts inside Pulp with the same digest value(s). Any existing Artifact objects found replace
-    their "unsaved" counterpart in the `~pulpcore.plugin.stages.DeclarativeArtifact` object.
+    This stage inspects any unsaved :class:`~pulpcore.plugin.models.Artifact` objects and searches
+    using their metadata for existing saved :class:`~pulpcore.plugin.models.Artifact` objects inside
+    Pulp with the same digest value(s). Any existing :class:`~pulpcore.plugin.models.Artifact`
+    objects found will replace their unsaved counterpart in the
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object.
 
-    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
-    `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
+    Each :class:`~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
 
     This stage drains all available items from `in_q` and batches everything into one large call to
     the db for efficiency.
 
     Args:
-        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        in_q (:class:`asyncio.Queue`): The queue to receive
+            :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
+        out_q (:class:`asyncio.Queue`): The queue to put
+            :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
 
     Returns:
         The query_existing_artifacts stage as a coroutine to be included in a pipeline.
@@ -82,23 +88,22 @@ async def query_existing_artifacts(in_q, out_q):
 
 class artifact_downloader:
     """
-    An object containing a Stages API stage to download missing Artifacts, but don't call save()
+    An object containing a Stages API stage to download :class:`~pulpcore.plugin.models.Artifact`
+    file, but don't save the :class:`~pulpcore.plugin.models.Artifact` in the db.
 
-    The actual stage is the `stage` attribute which can be used as follows:
+    The actual stage is the :meth:`~pulpcore.plugin.stages.artifact_downloader.stage`
+    which can be used as follows:
 
     >>> artifact_downloader(max_concurrent_downloads=42).stage  # This is the real stage
 
-    in_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with potentially files missing
-        `~pulpcore.plugin.stages.DeclarativeArtifact.artifact` objects.
-    out_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with all files downloaded for
-        all `~pulpcore.plugin.stages.DeclarativeArtifact.artifact` objects.
+    This stage downloads the file for any :class:`~pulpcore.plugin.models.Artifact` objects missing
+    files and creates a new :class:`~pulpcore.plugin.models.Artifact` object from the downloaded
+    file and its digest data. The new :class:`~pulpcore.plugin.models.Artifact` is not saved but
+    added to the :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object, replacing the likely
+    incomplete :class:`~pulpcore.plugin.models.Artifact`.
 
-    This stage downloads the file for any Artifact objects missing files and creates a new Artifact
-    from the downloaded file and its digest data. The new Artifact is *not* saved but added to the
-    `~pulpcore.plugin.stages.DeclarativeArtifact` object, replacing the likely incomplete Artifact.
-
-    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
-    `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
+    Each :class:`~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
 
     This stage creates a ProgressBar named 'Downloading Artifacts' that counts the number of
     downloads completed. Since it's a stream the total count isn't known until it's finished.
@@ -117,7 +122,18 @@ class artifact_downloader:
         self.max_concurrent_downloads = max_concurrent_downloads
 
     async def stage(self, in_q, out_q):
-        """Download undownloaded Artifacts, but don't save them"""
+        """
+        Download undownloaded Artifacts, but don't save them in the db.
+
+        Args:
+            in_q (:class:`asyncio.Queue`): The queue to receive
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from that may have
+                undownloaded files.
+            out_q (:class:`asyncio.Queue`): The queue to put
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects into, all of which have
+                files downloaded.
+
+        """
         pending = set()
         incoming_content = []
         outstanding_downloads = 0
@@ -193,19 +209,25 @@ class artifact_downloader:
 
 async def artifact_saver(in_q, out_q):
     """
-    Stages API stage that saves an Artifact for any "unsaved" DeclarativeArtifact.artifact objects.
+    Stages API stage that saves any unsaved :attr:`DeclarativeArtifact.artifact` objects.
 
-    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
-    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
-    `DeclarativeArtifact` object stores one Artifact.
+    This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
+    inspects their associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object stores one
+    :class:`~pulpcore.plugin.models.Artifact`.
 
-    Any "unsaved" Artifact objects are saved. Each `~pulpcore.plugin.stages.DeclarativeContent` is
-    sent to `out_q` after all of its `~pulpcore.plugin.stages.DeclarativeArtifact` objects have been
-    handled.
+    Any unsaved :class:`~pulpcore.plugin.models.Artifact` objects are saved. Each
+    :class:`~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after all of its
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects have been handled.
+
+    This stage drains all available items from `in_q` and batches everything into one large call to
+    the db for efficiency.
 
     Args:
-        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        in_q (:class:`asyncio.Queue`): The queue to receive
+            :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
+        out_q (:class:`asyncio.Queue`): The queue to put
+            :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
 
     Returns:
         The artifact_saver stage as a coroutine to be included in a pipeline.

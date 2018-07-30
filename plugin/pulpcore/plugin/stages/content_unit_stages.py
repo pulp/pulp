@@ -9,24 +9,30 @@ from pulpcore.plugin.models import ContentArtifact, RemoteArtifact
 
 async def query_existing_content_units(in_q, out_q):
     """
-    Stages API stage replacing DeclarativeContent.content with already-saved Content objects.
+    Stages API stage that saves :attr:`DeclarativeContent.content` objects and saves its related
+    :class:`~pulpcore.plugin.models.ContentArtifact` and
+    :class:`~pulpcore.plugin.models.RemoteArtifact` objects too.
 
-    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
-    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
-    `DeclarativeArtifact` object stores one Artifact.
+    This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
+    inspects their associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object stores one
+    :class:`~pulpcore.plugin.models.Artifact`.
 
     This stage inspects any "unsaved" Content unit objects and searches for existing saved Content
-    units inside Pulp with the same unit key. Any existing Content objects found replace their
-    "unsaved" counterpart in the `~pulpcore.plugin.stages.DeclarativeContent` object.
+    units inside Pulp with the same unit key. Any existing Content objects found, replace their
+    "unsaved" counterpart in the :class:`~pulpcore.plugin.stages.DeclarativeContent` object.
 
-    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after it has been handled.
+    Each :class:`~pulpcore.plugin.stages.DeclarativeContent` is sent to `out_q` after it has been
+    handled.
 
     This stage drains all available items from `in_q` and batches everything into one large call to
     the db for efficiency.
 
     Args:
-        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        in_q (:class:`asyncio.Queue`): Each item is a
+            :class:`~pulpcore.plugin.stages.DeclarativeContent`
+        out_q (:class:`asyncio.Queue`): Each item is a
+            :class:`~pulpcore.plugin.stages.DeclarativeContent`
 
     Returns:
         The query_existing_content_units stage as a coroutine to be included in a pipeline.
@@ -78,24 +84,29 @@ async def query_existing_content_units(in_q, out_q):
 
 async def content_unit_saver(in_q, out_q):
     """
-    Stages API stage that saves DeclarativeContent.content objects and saves helper objects too.
+    Stages API stage that saves :attr:`DeclarativeContent.content` objects and saves its related
+    :class:`~pulpcore.plugin.models.ContentArtifact` and
+    :class:`~pulpcore.plugin.models.RemoteArtifact` objects too.
 
-    This stage expects `~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and inspects
-    their associated `~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
-    `DeclarativeArtifact` object stores one Artifact.
+    This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
+    inspects their associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
+    :class:`~pulpcore.plugin.stages.DeclarativeArtifact` object stores one
+    :class:`~pulpcore.plugin.models.Artifact`.
 
-    Each "unsaved" Content objects is saved and a RemoteArtifact and ContentArtifact are created for
-    it and saved also. This allows Pulp to refetch the Artifact in the future if the local copy is
-    removed.
+    Each "unsaved" Content objects is saved and a :class:`~pulpcore.plugin.models.ContentArtifact`
+    and :class:`~pulpcore.plugin.models.RemoteArtifact` objects too. This allows Pulp to refetch the
+    Artifact in the future if the local copy is removed.
 
-    Each `~pulpcore.plugin.stages.DeclarativeContent` is sent to after it has been handled.
+    Each :class:`~pulpcore.plugin.stages.DeclarativeContent` is sent to after it has been handled.
 
     This stage drains all available items from `in_q` and batches everything into one large call to
     the db for efficiency.
 
     Args:
-        in_q: `~pulpcore.plugin.stages.DeclarativeContent`
-        out_q: `~pulpcore.plugin.stages.DeclarativeContent`
+        in_q (:class:`asyncio.Queue`): Each item is a
+            :class:`~pulpcore.plugin.stages.DeclarativeContent`
+        out_q (:class:`asyncio.Queue`): Each item is a
+            :class:`~pulpcore.plugin.stages.DeclarativeContent`
 
     Returns:
         The content_unit_saver stage as a coroutine to be included in a pipeline.

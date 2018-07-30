@@ -12,26 +12,32 @@ from .content_unit_stages import content_unit_saver, query_existing_content_unit
 
 class FirstStage:
     """
-    A class plugin writers can subclass and use as the first stage for a DeclarativeVersion pipeline
+    Plugin writers subclass this to create their first stage for a
+    :class:`~pulpcore.plugin.stages.DeclarativeVersion` pipeline.
 
     To use this class, the plugin writer needs to:
 
-    1. Subclass it and implement the `gen_declarative_content()` method.
-    2. Pass the instantiated subclass to `DeclarativeVersion`.
+    1. Subclass it and implement the
+       :meth:`~pulpcore.plugin.stages.FirstStage.gen_declarative_content` method.
+    2. Pass the instantiated subclass to :class:`~pulpcore.plugin.stages.DeclarativeVersion`.
     """
 
     async def gen_declarative_content(self, in_q, out_q):
         """
-        A Stages API compatible coroutine for `DeclarativeVersion` to use as the first stage.
+        A Stages API compatible coroutine for :class:`~pulpcore.plugin.stages.DeclarativeVersion` to
+        use as the first stage.
 
         This must be implemented on the subclass.
 
         Args:
-            in_q (asyncio.Queue): Unused because the first stage doesn't read from an input queue.
-            out_q (asyncio.Queue): The queue to put `DeclarativeContent` into.
+            in_q (:class:`asyncio.Queue`): Unused because the first stage doesn't read from an input
+                queue.
+            out_q (:class:`asyncio.Queue`): The queue to put
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
 
         Returns:
-            A Stages API compatible coroutine for `DeclarativeVersion` to use as the first stage.
+            A Stages API compatible coroutine for
+            :class:`~pulpcore.plugin.stages.DeclarativeVersion` to use as the first stage.
         """
         raise NotImplementedError('A plugin writer needs to implement this')
 
@@ -40,27 +46,31 @@ class DeclarativeVersion:
 
     def __init__(self, first_stage, repository, sync_mode='mirror'):
         """
-        A pipeline that creates a new RepositoryVersion from a stream of DeclarativeContent objects.
+        A pipeline that creates a new :class:`~pulpcore.plugin.models.RepositoryVersion` from a
+        stream of :class:`~pulpcore.plugin.stages.DeclarativeContent` objects.
 
         The plugin writer needs to specify a first_stage that will create a
-        `~pulpcore.plugin.stages.DeclarativeContent` object for each Content unit that should exist
-        in the new RepositoryVersion.
+        :class:`~pulpcore.plugin.stages.DeclarativeContent` object for each Content unit that should
+        exist in the new :class:`~pulpcore.plugin.models.RepositoryVersion`.
 
         The pipeline stages perform the following steps:
 
-        1. Create the new RespositoryVersion
+        1. Create the new :class:`~pulpcore.plugin.models.RepositoryVersion`
         2. Query existing artifacts to determine which are already local to Pulp
-        3. Download the undownloaded Artifacts
-        4. Save the newly downloaded Artifacts
-        5. Query for content units already present in Pulp
-        6. Save new content units not yet present in Pulp
-        7. Associate all content units with the new repository version.
+        3. Download any undownloaded :class:`~pulpcore.plugin.models.Artifact` objects.
+        4. Save the newly downloaded :class:`~pulpcore.plugin.models.Artifact` objects
+        5. Query for Content units already present in Pulp
+        6. Save new Content units not yet present in Pulp
+        7. Associate all content units with the new
+           :class:`~pulpcore.plugin.models.RepositoryVersion`.
         8. Unassociate any content units not declared in the stream (only when sync_mode='mirror')
 
-        To do this, the plugin writer should subclass the FirstStage class and define its
-        `gen_declarative_content()` interface which return a coroutine. This coroutine should
-        download metadata, create the corresponding DeclarativeContent objects, and put them into
-        the `asyncio.Queue` to send them down the pipeline. For example:
+        To do this, the plugin writer should subclass the
+        :class:`~pulpcore.plugin.stages.FirstStage` class and define its
+        :meth:`gen_declarative_content()` interface which return a coroutine. This coroutine should
+        download metadata, create the corresponding
+        :class:`~pulpcore.plugin.stages.DeclarativeContent` objects, and put them into the
+        :class:`asyncio.Queue` to send them down the pipeline. For example:
 
         >>> class MyFirstStage(FirstStage):
         >>>
@@ -79,11 +89,13 @@ class DeclarativeVersion:
         >>>         await out_q.put(None)
 
         To use your first stage with the pipeline you have to instantiate the subclass and pass it
-        to `DeclarativeVersion`.
+        to :class:`~pulpcore.plugin.stages.DeclarativeVersion`.
 
-        1. Create the instance of the FirstStage subclass
-        2. Create the `DeclarativeVersion` instance, passing the FirstStage subclass instance to it
-        3. Call the `create()` method on your `DeclarativeVersion` instance
+        1. Create the instance of the :class:`~pulpcore.plugin.stages.FirstStage` object subclass
+        2. Create the :class:`~pulpcore.plugin.stages.DeclarativeVersion` instance, passing the
+           :class:`~pulpcore.plugin.stages.FirstStage` subclass instance to it
+        3. Call the :meth:`~pulpcore.plugin.stages.DeclarativeVersion.create` method on your
+           :class:`~pulpcore.plugin.stages.DeclarativeVersion` instance
 
         Here is an example:
 
@@ -91,13 +103,17 @@ class DeclarativeVersion:
         >>> DeclarativeVersion(first_stage, repository).create()
 
         Args:
-             first_stage (FirstStage): The first stage to receive `DeclarativeContent` from
-             repository (pulpcore.plugin.models.Repository): The repository receiving the new
-                 version
-             sync_mode (str): 'mirror' removes content units from the RepositoryVersion that are not
-                 queued to DeclarativeVersion. 'additive' only adds content units queued to
-                 DeclarativeVersion, and does not remove any pre-existing units in the
-                 RepositoryVersion. 'mirror' is the default.
+             first_stage (:class:`~pulpcore.plugin.stages.FirstStage`): The first stage to receive
+                 :class:`~pulpcore.plugin.stages.DeclarativeContent` from.
+             repository (:class:`~pulpcore.plugin.models.Repository`): The repository receiving the
+                 new version.
+             sync_mode (str): 'mirror' removes content units from the
+                 :class:`~pulpcore.plugin.models.RepositoryVersion` that are not
+                 requested in the :class:`~pulpcore.plugin.stages.DeclarativeVersion` stream.
+                 'additive' only adds content units observed in the
+                 :class:`~pulpcore.plugin.stages.DeclarativeVersion stream`, and does not remove any
+                 pre-existing units in the :class:`~pulpcore.plugin.models.RepositoryVersion`.
+                 'mirror' is the default.
 
         Raises:
             ValueError: if 'sync_mode' is passed an invalid value.

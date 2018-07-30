@@ -10,27 +10,21 @@ class content_unit_association:
     """
     An object containing a Stages API stage that associates content units with `new_version`.
 
-    The actual stage is the `stage` attribute which can be used as follows:
+    The actual stage is the :meth:`~pulpcore.plugin.stages.content_unit_association.stage`
+    which can be used as follows:
 
     >>> content_unit_association(my_new_version).stage  # This is the real stage
 
     This stage stores all content unit types and unit keys in memory before running. This is done to
     compute the units already associated but not received from `in_q`. These units are passed via
-    `out_q` to the next stage as a `~django.db.models.query.QuerySet`.
-
-    in_q data type: A `~pulpcore.plugin.stages.DeclarativeContent` with saved `content` that needs
-        to be associated.
-    out_q data type: A `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
-        subclass that are already associated but not included in the stream of items from `in_q`.
-        One `django.db.models.query.QuerySet` is put for each `~pulpcore.plugin.models.Content`
-        type.
+    `out_q` to the next stage as a :class:`django.db.models.query.QuerySet`.
 
     This stage creates a ProgressBar named 'Associating Content' that counts the number of units
     associated. Since it's a stream the total count isn't known until it's finished.
 
     Args:
-        new_version (pulpcore.plugin.models.RepositoryVersion): The repo version this stage
-            associates content with.
+        new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
+            stage associates content with.
 
     Returns:
         An object containing the content_unit_association stage to be included in a pipeline.
@@ -44,7 +38,19 @@ class content_unit_association:
             self.unit_keys_by_type[type(unit)].add(unit.natural_key())
 
     async def stage(self, in_q, out_q):
-        """For each Content Unit associate it with the repository version"""
+        """
+        For each Content Unit associate it with the repository version
+
+        Args:
+            in_q (:class:`asyncio.Queue`): Each item is a
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` with saved `content` that needs
+                to be associated.
+            out_q (:class:`asyncio.Queue`): Each item is a :class:`django.db.models.query.QuerySet`
+                of :class:`~pulpcore.plugin.models.Content` subclass that are already associated but
+                not included in the stream of items from `in_q`. One
+                :class:`django.db.models.query.QuerySet` is put for each
+                :class:`~pulpcore.plugin.models.Content` type.
+        """
         with ProgressBar(message='Associating Content') as pb:
             declarative_content_list = []
             shutdown = False
@@ -100,32 +106,44 @@ class content_unit_unassociation:
     """
     An object containing a Stages API stage that unassociates content units from `new_version`.
 
-    The actual stage is the `stage` attribute which can be used as follows:
+    The actual stage is the :meth:`~pulpcore.plugin.stages.content_unit_association.stage`
+    which can be used as follows:
 
     >>> content_unit_unassociation(my_new_version).stage  # This is the real stage
 
-    in_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
-        subclass to be unassociated from `new_version`.
-    out_q data type: `django.db.models.query.QuerySet` of `~pulpcore.plugin.models.Content` or
-        subclass that were unassociated from `new_version`.
 
     This stage creates a ProgressBar named 'Un-Associating Content' that counts the number of units
     un-associated. Since it's a stream the total count isn't known until it's finished.
 
     Args:
-        new_version (pulpcore.plugin.models.RepositoryVersion): The repo version this stage
-            unassociates content from
+        new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
+            stage unassociates content from.
 
     Returns:
         An object containing the configured content_unit_unassociation stage to be included in a
-            pipeline.
+        pipeline.
     """
 
     def __init__(self, new_version):
         self.new_version = new_version
 
     async def stage(self, in_q, out_q):
-            """For each Content Unit from in_q, unassociate it with the repository version"""
+            """
+            For each Content Unit from in_q, unassociate it with the repository version
+
+            Args:
+                in_q (:class:`asyncio.Queue`): Each item is a
+                    :class:`django.db.models.query.QuerySet` of
+                    :class:`~pulpcore.plugin.models.Content` subclass that are already associated
+                    but not included in the stream of items from `in_q`. One
+                    :class:`django.db.models.query.QuerySet` is put for each
+                    :class:`~pulpcore.plugin.models.Content` type.
+                out_q (:class:`asyncio.Queue`): Each item is a
+                    :class:`django.db.models.query.QuerySet` of
+                    :class:`~pulpcore.plugin.models.Content` subclass that were unassociated. One
+                    :class:`django.db.models.query.QuerySet` is put for each
+                    :class:`~pulpcore.plugin.models.Content` type.
+            """
             with ProgressBar(message='Un-Associating Content') as pb:
                 while True:
                     queryset_to_unassociate = await in_q.get()
