@@ -39,6 +39,7 @@ from pulpcore.app.viewsets import (
     BaseFilterSet,
     NamedModelViewSet
 )
+from pulpcore.app.viewsets.custom_filters import IsoDateTimeFilter
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
 from pulpcore.tasking.tasks import enqueue_with_reservation
 
@@ -175,7 +176,7 @@ class RepositoryVersionFilter(BaseFilterSet):
     # /?created__range=2018-04-12T19:45,2018-04-13T20:00
     # /?content=http://localhost:8000/pulp/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
     number = filters.NumberFilter()
-    created = filters.IsoDateTimeFilter()
+    created = IsoDateTimeFilter()
     content = RepositoryVersionContentFilter()
 
     class Meta:
@@ -307,7 +308,7 @@ class RemoteFilter(BaseFilterSet):
        - extend `fields` with specific ones
     """
     name = filters.CharFilter()
-    last_updated = filters.IsoDateTimeFilter()
+    last_updated = IsoDateTimeFilter()
 
     class Meta:
         model = Remote
@@ -339,7 +340,7 @@ class PublisherFilter(BaseFilterSet):
        - extend `fields` with specific ones
     """
     name = filters.CharFilter()
-    last_updated = filters.IsoDateTimeFilter()
+    last_updated = IsoDateTimeFilter()
 
     class Meta:
         model = Publisher
@@ -371,7 +372,7 @@ class ExporterFilter(BaseFilterSet):
        - extend `fields` with specific ones
     """
     name = filters.CharFilter()
-    last_export = filters.IsoDateTimeFilter()
+    last_export = IsoDateTimeFilter()
 
     class Meta:
         model = Exporter

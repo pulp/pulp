@@ -4,7 +4,8 @@ This module contains custom filters that might be used by more than one ViewSet.
 from gettext import gettext as _
 from urllib.parse import urlparse
 from django.urls import resolve, Resolver404
-from django_filters import Filter
+from django_filters import Filter, DateTimeFilter
+from django_filters.fields import IsoDateTimeField
 
 from rest_framework import serializers
 
@@ -44,3 +45,18 @@ class HyperlinkRelatedFilter(Filter):
 
         key = "{}__pk".format(self.field_name)
         return qs.filter(**{key: pk})
+
+
+class IsoDateTimeFilter(DateTimeFilter):
+    """
+    Uses IsoDateTimeField to support filtering on ISO 8601 formated datetimes.
+    For context see:
+    * https://code.djangoproject.com/ticket/23448
+    * https://github.com/tomchristie/django-rest-framework/issues/1338
+    * https://github.com/alex/django-filter/pull/264
+    """
+    field_class = IsoDateTimeField
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', _('ISO 8601 formatted dates are supported'))
+        super().__init__(*args, **kwargs)
