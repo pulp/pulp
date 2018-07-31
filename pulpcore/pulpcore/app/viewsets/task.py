@@ -10,15 +10,15 @@ from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer
 from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
 from pulpcore.app.viewsets.base import NAME_FILTER_OPTIONS, DATETIME_FILTER_OPTIONS
-from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
+from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter, IsoDateTimeFilter
 from pulpcore.tasking.util import cancel as cancel_task
 
 
 class TaskFilter(BaseFilterSet):
     state = filters.CharFilter()
     worker = HyperlinkRelatedFilter()
-    started_at = filters.IsoDateTimeFilter(field_name='started_at')
-    finished_at = filters.IsoDateTimeFilter(field_name='finished_at')
+    started_at = IsoDateTimeFilter(field_name='started_at')
+    finished_at = IsoDateTimeFilter(field_name='finished_at')
     parent = HyperlinkRelatedFilter()
 
     class Meta:
@@ -59,7 +59,7 @@ class TaskViewSet(NamedModelViewSet,
 
 class WorkerFilter(BaseFilterSet):
     name = filters.CharFilter()
-    last_heartbeat = filters.IsoDateTimeFilter()
+    last_heartbeat = IsoDateTimeFilter()
     online = filters.BooleanFilter(method='filter_online')
     missing = filters.BooleanFilter(method='filter_missing')
 
