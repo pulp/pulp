@@ -359,7 +359,7 @@ class BaseFilterSet(filterset.FilterSet):
         'istartswith': _('starts with'),
         'endswith': _('ends with'),
         'iendswith': _('ends with'),
-        'range': _('is in range of'),
+        'range': _('is between two comma separated'),
         'isnull': _('has a null'),
         'regex': _('matches regex'),
         'iregex': _('matches regex'),
