@@ -182,17 +182,12 @@ _DEFAULT_PULP_SETTINGS = {
             'console': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'simple'
-            },
-            'syslog': {
-                'address': '/dev/log',
-                'class': 'logging.handlers.SysLogHandler',
-                'formatter': 'simple'
             }
         },
         'loggers': {
             '': {
                 # The root logger
-                'handlers': ["syslog"],
+                'handlers': ["console"],
                 'level': 'INFO'
             },
         }

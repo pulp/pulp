@@ -49,9 +49,9 @@
 
 # Logging configuration
 #
-# `logging`: Logging configuration for Pulp. By default, Pulp logs to syslog. Pulp also support
-# a console logger, this can be set by changing logger handlers to "console". It is possible to
-# use additional loggers handler by providing a logging dictConfig. For more information,
+# `logging`: Logging configuration for Pulp. By default, Pulp logs to console. Pulp also supports
+# a syslog logger, this can be set by changing logger handlers to "syslog". It is possible to
+# use additional logger handlers by providing a logging dictConfig. For more information,
 # see Django's logging documentation.
 #
 # logging:
@@ -62,13 +62,9 @@
 #     console:
 #       class: logging.StreamHandler
 #       formatter: simple
-#     syslog:
-#       address: /dev/log
-#       class: logging.handlers.SysLogHandler
-#       formatter: simple
 #   loggers:
 #     '':
-#       handlers: ["syslog"]
+#       handlers: ["console"]
 #       level: INFO
 
 # Redis configuration
