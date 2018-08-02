@@ -65,7 +65,8 @@ async def query_existing_artifacts(in_q, out_q):
                     if digest_value:
                         key = {digest_name: digest_value}
                         one_artifact_q &= Q(**key)
-                all_artifacts_q |= one_artifact_q
+                if one_artifact_q:
+                    all_artifacts_q |= one_artifact_q
 
         for artifact in Artifact.objects.filter(all_artifacts_q):
             for content in batch:
@@ -86,15 +87,15 @@ async def query_existing_artifacts(in_q, out_q):
     await out_q.put(None)
 
 
-class artifact_downloader:
+class ArtifactDownloader:
     """
     An object containing a Stages API stage to download :class:`~pulpcore.plugin.models.Artifact`
     file, but don't save the :class:`~pulpcore.plugin.models.Artifact` in the db.
 
-    The actual stage is the :meth:`~pulpcore.plugin.stages.artifact_downloader.stage`
+    The actual stage is the :meth:`~pulpcore.plugin.stages.ArtifactDownloader.stage`
     which can be used as follows:
 
-    >>> artifact_downloader(max_concurrent_downloads=42).stage  # This is the real stage
+    >>> ArtifactDownloader(max_concurrent_downloads=42).stage  # This is the real stage
 
     This stage downloads the file for any :class:`~pulpcore.plugin.models.Artifact` objects missing
     files and creates a new :class:`~pulpcore.plugin.models.Artifact` object from the downloaded
@@ -115,7 +116,7 @@ class artifact_downloader:
             run. Default is 100.
 
     Returns:
-        An object containing the artifact_downloader stage to be included in a pipeline.
+        An object containing the ArtifactDownloader stage to be included in a pipeline.
     """
 
     def __init__(self, max_concurrent_downloads=100):
@@ -159,7 +160,7 @@ class artifact_downloader:
                         continue
                     downloaders_for_content = []
                     for declarative_artifact in content.d_artifacts:
-                        if declarative_artifact.artifact._state.adding:
+                        if declarative_artifact.artifact.pk is None:
                             # this needs to be downloaded
                             downloader = declarative_artifact.remote.get_downloader(
                                 declarative_artifact.url
@@ -188,15 +189,17 @@ class artifact_downloader:
                         results = gathered_downloaders.result()
                         for download_result in results[:-1]:
                             content = results[-1]
+                            to_download_count = 0
                             for declarative_artifact in content.d_artifacts:
-                                if declarative_artifact.artifact._state.adding:
+                                if declarative_artifact.artifact.pk is None:
                                     new_artifact = Artifact(
                                         **download_result.artifact_attributes,
                                         file=download_result.path
                                     )
                                     declarative_artifact.artifact = new_artifact
-                            pb.done = pb.done + len(content.d_artifacts)
-                            outstanding_downloads = outstanding_downloads - len(content.d_artifacts)
+                                    to_download_count = to_download_count + 1
+                            pb.done = pb.done + to_download_count
+                            outstanding_downloads = outstanding_downloads - to_download_count
                             await out_q.put(content)
                 else:
                     if shutdown:

@@ -6,14 +6,14 @@ from django.db.models import Q
 from pulpcore.plugin.models import ProgressBar
 
 
-class content_unit_association:
+class ContentUnitAssociation:
     """
     An object containing a Stages API stage that associates content units with `new_version`.
 
-    The actual stage is the :meth:`~pulpcore.plugin.stages.content_unit_association.stage`
+    The actual stage is the :meth:`~pulpcore.plugin.stages.ContentUnitAssociation.stage`
     which can be used as follows:
 
-    >>> content_unit_association(my_new_version).stage  # This is the real stage
+    >>> ContentUnitAssociation(my_new_version).stage  # This is the real stage
 
     This stage stores all content unit types and unit keys in memory before running. This is done to
     compute the units already associated but not received from `in_q`. These units are passed via
@@ -27,7 +27,7 @@ class content_unit_association:
             stage associates content with.
 
     Returns:
-        An object containing the content_unit_association stage to be included in a pipeline.
+        An object containing the ContentUnitAssociation stage to be included in a pipeline.
     """
 
     def __init__(self, new_version):
@@ -102,14 +102,14 @@ class content_unit_association:
             await out_q.put(None)
 
 
-class content_unit_unassociation:
+class ContentUnitUnassociation:
     """
     An object containing a Stages API stage that unassociates content units from `new_version`.
 
-    The actual stage is the :meth:`~pulpcore.plugin.stages.content_unit_association.stage`
+    The actual stage is the :meth:`~pulpcore.plugin.stages.ContentUnitUnassociation.stage`
     which can be used as follows:
 
-    >>> content_unit_unassociation(my_new_version).stage  # This is the real stage
+    >>> ContentUnitUnassociation(my_new_version).stage  # This is the real stage
 
 
     This stage creates a ProgressBar named 'Un-Associating Content' that counts the number of units
@@ -120,7 +120,7 @@ class content_unit_unassociation:
             stage unassociates content from.
 
     Returns:
-        An object containing the configured content_unit_unassociation stage to be included in a
+        An object containing the configured ContentUnitUnassociation stage to be included in a
         pipeline.
     """
 

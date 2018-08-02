@@ -43,7 +43,7 @@ Stages API
 Artifact Related Stages
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: pulpcore.plugin.stages.artifact_downloader
+.. autoclass:: pulpcore.plugin.stages.ArtifactDownloader
 
 .. autofunction:: pulpcore.plugin.stages.artifact_saver
 
@@ -65,6 +65,6 @@ Content Related Stages
 Content Association and Unassociation Stages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: pulpcore.plugin.stages.content_unit_association
+.. autoclass:: pulpcore.plugin.stages.ContentUnitAssociation
 
-.. autoclass:: pulpcore.plugin.stages.content_unit_unassociation
+.. autoclass:: pulpcore.plugin.stages.ContentUnitUnassociation

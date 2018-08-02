@@ -68,8 +68,5 @@ class DeclarativeContent:
     def __init__(self, content=None, d_artifacts=None):
         if not content:
             raise ValueError(_("DeclarativeContent must have a 'content'"))
-        if d_artifacts:
-            self.d_artifacts = d_artifacts
-        else:
-            self.d_artifacts = []
+        self.d_artifacts = d_artifacts or []
         self.content = content

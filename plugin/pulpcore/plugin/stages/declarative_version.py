@@ -5,8 +5,8 @@ from pulpcore.plugin.models import RepositoryVersion
 from pulpcore.plugin.tasking import WorkingDirectory
 
 from .api import create_pipeline, end_stage
-from .artifact_stages import artifact_downloader, artifact_saver, query_existing_artifacts
-from .association_stages import content_unit_association, content_unit_unassociation
+from .artifact_stages import ArtifactDownloader, artifact_saver, query_existing_artifacts
+from .association_stages import ContentUnitAssociation, ContentUnitUnassociation
 from .content_unit_stages import content_unit_saver, query_existing_content_units
 
 
@@ -134,13 +134,13 @@ class DeclarativeVersion:
                 loop = asyncio.get_event_loop()
                 stages = [
                     self.first_stage.gen_declarative_content,
-                    query_existing_artifacts, artifact_downloader().stage, artifact_saver,
+                    query_existing_artifacts, ArtifactDownloader().stage, artifact_saver,
                     query_existing_content_units, content_unit_saver,
-                    content_unit_association(new_version).stage
+                    ContentUnitAssociation(new_version).stage
                 ]
                 if self.sync_mode is 'additive':
                     stages.append(end_stage)
                 elif self.sync_mode is 'mirror':
-                    stages.extend([content_unit_unassociation(new_version).stage, end_stage])
+                    stages.extend([ContentUnitUnassociation(new_version).stage, end_stage])
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)
