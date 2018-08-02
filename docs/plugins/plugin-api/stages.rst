@@ -20,6 +20,7 @@ DeclarativeVersion
 .. autoclass:: pulpcore.plugin.stages.DeclarativeVersion
 
 .. autoclass:: pulpcore.plugin.stages.FirstStage
+   :special-members: __call__
 
 .. autoclass:: pulpcore.plugin.stages.DeclarativeArtifact
    :no-members:
@@ -35,7 +36,11 @@ Stages API
 
 .. autofunction:: pulpcore.plugin.stages.create_pipeline
 
-.. autofunction:: pulpcore.plugin.stages.end_stage
+.. autoclass:: pulpcore.plugin.stages.BaseStage
+   :special-members: __call__
+
+.. autoclass:: pulpcore.plugin.stages.EndStage
+   :special-members: __call__
 
 
 .. _artifact-stages:
@@ -44,10 +49,13 @@ Artifact Related Stages
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: pulpcore.plugin.stages.ArtifactDownloader
+   :special-members: __call__
 
-.. autofunction:: pulpcore.plugin.stages.artifact_saver
+.. autoclass:: pulpcore.plugin.stages.ArtifactSaver
+   :special-members: __call__
 
-.. autofunction:: pulpcore.plugin.stages.query_existing_artifacts
+.. autoclass:: pulpcore.plugin.stages.QueryExistingArtifacts
+   :special-members: __call__
 
 
 .. _content-stages:
@@ -55,9 +63,11 @@ Artifact Related Stages
 Content Related Stages
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: pulpcore.plugin.stages.content_unit_saver
+.. autoclass:: pulpcore.plugin.stages.ContentUnitSaver
+   :special-members: __call__
 
-.. autofunction:: pulpcore.plugin.stages.query_existing_content_units
+.. autoclass:: pulpcore.plugin.stages.QueryExistingContentUnits
+   :special-members: __call__
 
 
 .. _content-association-stages:
@@ -66,5 +76,7 @@ Content Association and Unassociation Stages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: pulpcore.plugin.stages.ContentUnitAssociation
+   :special-members: __call__
 
 .. autoclass:: pulpcore.plugin.stages.ContentUnitUnassociation
+   :special-members: __call__

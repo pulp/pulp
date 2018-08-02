@@ -1,4 +1,27 @@
 import asyncio
+from gettext import gettext as _
+
+
+class BaseStage:
+    """
+    The base class for all Stages API stages.
+
+    To make a stage, inherit from this class and implement :meth:`__call__` on the subclass.
+    """
+
+    async def __call__(self, in_q, out_q):
+        """
+        The coroutine that is run as part of this stage.
+
+        Args:
+            in_q (:class:`asyncio.Queue`): The queue to receive items from the previous stage.
+            out_q (:class:`asyncio.Queue`): The queue to put handled items into for the next stage.
+
+        Returns:
+            The coroutine that runs this stage.
+
+        """
+        raise NotImplementedError(_('A plugin writer must implement this method'))
 
 
 async def create_pipeline(stages, maxsize=100):
@@ -34,7 +57,7 @@ async def create_pipeline(stages, maxsize=100):
     await asyncio.gather(*futures)
 
 
-async def end_stage(in_q, out_q):
+class EndStage(BaseStage):
     """
     A Stages API stage that drains `in_q` and does nothing with the items. This is required at the
     end of all pipelines.
@@ -42,7 +65,9 @@ async def end_stage(in_q, out_q):
     Without this stage, the `maxsize` of the last stage's `out_q` could fill up and block the entire
     pipeline.
     """
-    while True:
-        content = await in_q.get()
-        if content is None:
-            break
+
+    async def __call__(self, in_q, out_q):
+        while True:
+            content = await in_q.get()
+            if content is None:
+                break

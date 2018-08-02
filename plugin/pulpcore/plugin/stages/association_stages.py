@@ -5,15 +5,12 @@ from django.db.models import Q
 
 from pulpcore.plugin.models import ProgressBar
 
+from .api import BaseStage
 
-class ContentUnitAssociation:
+
+class ContentUnitAssociation(BaseStage):
     """
-    An object containing a Stages API stage that associates content units with `new_version`.
-
-    The actual stage is the :meth:`~pulpcore.plugin.stages.ContentUnitAssociation.stage`
-    which can be used as follows:
-
-    >>> ContentUnitAssociation(my_new_version).stage  # This is the real stage
+    A Stages API stage that associates content units with `new_version`.
 
     This stage stores all content unit types and unit keys in memory before running. This is done to
     compute the units already associated but not received from `in_q`. These units are passed via
@@ -25,21 +22,19 @@ class ContentUnitAssociation:
     Args:
         new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
             stage associates content with.
-
-    Returns:
-        An object containing the ContentUnitAssociation stage to be included in a pipeline.
     """
 
-    def __init__(self, new_version):
+    def __init__(self, new_version, *args, **kwargs):
         self.new_version = new_version
         self.unit_keys_by_type = defaultdict(set)
         for unit in self.new_version.content.all():
             unit = unit.cast()
             self.unit_keys_by_type[type(unit)].add(unit.natural_key())
+        super().__init__(*args, **kwargs)
 
-    async def stage(self, in_q, out_q):
+    async def __call__(self, in_q, out_q):
         """
-        For each Content Unit associate it with the repository version
+        The coroutine for this stage.
 
         Args:
             in_q (:class:`asyncio.Queue`): Each item is a
@@ -50,6 +45,9 @@ class ContentUnitAssociation:
                 not included in the stream of items from `in_q`. One
                 :class:`django.db.models.query.QuerySet` is put for each
                 :class:`~pulpcore.plugin.models.Content` type.
+
+        Returns:
+            The coroutine for this stage.
         """
         with ProgressBar(message='Associating Content') as pb:
             batch = []
@@ -102,15 +100,9 @@ class ContentUnitAssociation:
             await out_q.put(None)
 
 
-class ContentUnitUnassociation:
+class ContentUnitUnassociation(BaseStage):
     """
-    An object containing a Stages API stage that unassociates content units from `new_version`.
-
-    The actual stage is the :meth:`~pulpcore.plugin.stages.ContentUnitUnassociation.stage`
-    which can be used as follows:
-
-    >>> ContentUnitUnassociation(my_new_version).stage  # This is the real stage
-
+    A Stages API stage that unassociates content units from `new_version`.
 
     This stage creates a ProgressBar named 'Un-Associating Content' that counts the number of units
     un-associated. Since it's a stream the total count isn't known until it's finished.
@@ -118,18 +110,15 @@ class ContentUnitUnassociation:
     Args:
         new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
             stage unassociates content from.
-
-    Returns:
-        An object containing the configured ContentUnitUnassociation stage to be included in a
-        pipeline.
     """
 
-    def __init__(self, new_version):
+    def __init__(self, new_version, *args, **kwargs):
         self.new_version = new_version
+        super().__init__(*args, **kwargs)
 
-    async def stage(self, in_q, out_q):
+    async def __call__(self, in_q, out_q):
             """
-            For each Content Unit from in_q, unassociate it with the repository version
+            The coroutine for this stage.
 
             Args:
                 in_q (:class:`asyncio.Queue`): Each item is a
@@ -143,6 +132,9 @@ class ContentUnitUnassociation:
                     :class:`~pulpcore.plugin.models.Content` subclass that were unassociated. One
                     :class:`django.db.models.query.QuerySet` is put for each
                     :class:`~pulpcore.plugin.models.Content` type.
+
+            Returns:
+                The coroutine for this stage.
             """
             with ProgressBar(message='Un-Associating Content') as pb:
                 while True:

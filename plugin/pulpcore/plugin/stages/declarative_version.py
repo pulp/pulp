@@ -4,10 +4,10 @@ from gettext import gettext as _
 from pulpcore.plugin.models import RepositoryVersion
 from pulpcore.plugin.tasking import WorkingDirectory
 
-from .api import create_pipeline, end_stage
-from .artifact_stages import ArtifactDownloader, artifact_saver, query_existing_artifacts
+from .api import create_pipeline, EndStage
+from .artifact_stages import ArtifactDownloader, ArtifactSaver, QueryExistingArtifacts
 from .association_stages import ContentUnitAssociation, ContentUnitUnassociation
-from .content_unit_stages import content_unit_saver, query_existing_content_units
+from .content_unit_stages import ContentUnitSaver, QueryExistingContentUnits
 
 
 class FirstStage:
@@ -18,11 +18,11 @@ class FirstStage:
     To use this class, the plugin writer needs to:
 
     1. Subclass it and implement the
-       :meth:`~pulpcore.plugin.stages.FirstStage.gen_declarative_content` method.
+       :meth:`~pulpcore.plugin.stages.FirstStage.__call__` method.
     2. Pass the instantiated subclass to :class:`~pulpcore.plugin.stages.DeclarativeVersion`.
     """
 
-    async def gen_declarative_content(self, in_q, out_q):
+    async def __call__(self, in_q, out_q):
         """
         A Stages API compatible coroutine for :class:`~pulpcore.plugin.stages.DeclarativeVersion` to
         use as the first stage.
@@ -67,7 +67,7 @@ class DeclarativeVersion:
 
         To do this, the plugin writer should subclass the
         :class:`~pulpcore.plugin.stages.FirstStage` class and define its
-        :meth:`gen_declarative_content()` interface which return a coroutine. This coroutine should
+        :meth:`__call__()` interface which return a coroutine. This coroutine should
         download metadata, create the corresponding
         :class:`~pulpcore.plugin.stages.DeclarativeContent` objects, and put them into the
         :class:`asyncio.Queue` to send them down the pipeline. For example:
@@ -77,7 +77,7 @@ class DeclarativeVersion:
         >>>     def __init__(remote):
         >>>         self.remote = remote
         >>>
-        >>>     async def gen_declarative_content(self, out_q):
+        >>>     async def __call__(self, out_q):
         >>>         downloader = remote.get_downloader(remote.url)
         >>>         result = await downloader.run()
         >>>         for entry in read_my_metadata_file_somehow(result.path)
@@ -133,14 +133,14 @@ class DeclarativeVersion:
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
                 stages = [
-                    self.first_stage.gen_declarative_content,
-                    query_existing_artifacts, ArtifactDownloader().stage, artifact_saver,
-                    query_existing_content_units, content_unit_saver,
-                    ContentUnitAssociation(new_version).stage
+                    self.first_stage,
+                    QueryExistingArtifacts(), ArtifactDownloader(), ArtifactSaver(),
+                    QueryExistingContentUnits(), ContentUnitSaver(),
+                    ContentUnitAssociation(new_version)
                 ]
                 if self.sync_mode is 'additive':
-                    stages.append(end_stage)
+                    stages.append(EndStage())
                 elif self.sync_mode is 'mirror':
-                    stages.extend([ContentUnitUnassociation(new_version).stage, end_stage])
+                    stages.extend([ContentUnitUnassociation(new_version), EndStage()])
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)

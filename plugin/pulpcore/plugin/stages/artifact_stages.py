@@ -6,10 +6,12 @@ from django.db.models import Q
 
 from pulpcore.plugin.models import Artifact, ProgressBar
 
+from .api import BaseStage
 
-async def query_existing_artifacts(in_q, out_q):
+
+class QueryExistingArtifacts(BaseStage):
     """
-    Stages API stage that replaces :attr:`DeclarativeContent.content` objects with already-saved
+    A Stages API stage that replaces :attr:`DeclarativeContent.content` objects with already-saved
     :class:`~pulpcore.plugin.models.Artifact` objects.
 
     This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
@@ -28,74 +30,74 @@ async def query_existing_artifacts(in_q, out_q):
 
     This stage drains all available items from `in_q` and batches everything into one large call to
     the db for efficiency.
-
-    Args:
-        in_q (:class:`asyncio.Queue`): The queue to receive
-            :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
-        out_q (:class:`asyncio.Queue`): The queue to put
-            :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
-
-    Returns:
-        The query_existing_artifacts stage as a coroutine to be included in a pipeline.
     """
-    batch = []
-    shutdown = False
-    while True:
-        try:
-            content = in_q.get_nowait()
-        except asyncio.QueueEmpty:
-            if not batch:
-                content = await in_q.get()
+
+    async def __call__(self, in_q, out_q):
+        """
+        The coroutine for this stage.
+
+        Args:
+            in_q (:class:`asyncio.Queue`): The queue to receive
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
+            out_q (:class:`asyncio.Queue`): The queue to put
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
+
+        Returns:
+            The coroutine for this stage.
+        """
+        batch = []
+        shutdown = False
+        while True:
+            try:
+                content = in_q.get_nowait()
+            except asyncio.QueueEmpty:
+                if not batch:
+                    content = await in_q.get()
+                    batch.append(content)
+                    continue
+            else:
                 batch.append(content)
                 continue
-        else:
-            batch.append(content)
-            continue
 
-        all_artifacts_q = Q(pk=None)
-        for content in batch:
-            if content is None:
-                shutdown = True
-                continue
+            all_artifacts_q = Q(pk=None)
+            for content in batch:
+                if content is None:
+                    shutdown = True
+                    continue
 
-            for declarative_artifact in content.d_artifacts:
-                one_artifact_q = Q()
-                for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
-                    digest_value = getattr(declarative_artifact.artifact, digest_name)
-                    if digest_value:
-                        key = {digest_name: digest_value}
-                        one_artifact_q &= Q(**key)
-                if one_artifact_q:
-                    all_artifacts_q |= one_artifact_q
+                for declarative_artifact in content.d_artifacts:
+                    one_artifact_q = Q()
+                    for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
+                        digest_value = getattr(declarative_artifact.artifact, digest_name)
+                        if digest_value:
+                            key = {digest_name: digest_value}
+                            one_artifact_q &= Q(**key)
+                    if one_artifact_q:
+                        all_artifacts_q |= one_artifact_q
 
-        for artifact in Artifact.objects.filter(all_artifacts_q):
+            for artifact in Artifact.objects.filter(all_artifacts_q):
+                for content in batch:
+                    if content is None:
+                        continue
+                    for declarative_artifact in content.d_artifacts:
+                        for digest_name in artifact.DIGEST_FIELDS:
+                            digest_value = getattr(declarative_artifact.artifact, digest_name)
+                            if digest_value and digest_value == getattr(artifact, digest_name):
+                                declarative_artifact.artifact = artifact
             for content in batch:
                 if content is None:
                     continue
-                for declarative_artifact in content.d_artifacts:
-                    for digest_name in artifact.DIGEST_FIELDS:
-                        digest_value = getattr(declarative_artifact.artifact, digest_name)
-                        if digest_value and digest_value == getattr(artifact, digest_name):
-                            declarative_artifact.artifact = artifact
-        for content in batch:
-            if content is None:
-                continue
-            await out_q.put(content)
-        batch = []
-        if shutdown:
-            break
-    await out_q.put(None)
+                await out_q.put(content)
+            batch = []
+            if shutdown:
+                break
+        await out_q.put(None)
 
 
-class ArtifactDownloader:
+class ArtifactDownloader(BaseStage):
     """
-    An object containing a Stages API stage to download :class:`~pulpcore.plugin.models.Artifact`
-    file, but don't save the :class:`~pulpcore.plugin.models.Artifact` in the db.
-
-    The actual stage is the :meth:`~pulpcore.plugin.stages.ArtifactDownloader.stage`
-    which can be used as follows:
-
-    >>> ArtifactDownloader(max_concurrent_downloads=42).stage  # This is the real stage
+    A Stages API stage to download :class:`~pulpcore.plugin.models.Artifact` files, but don't save
+    the :class:`~pulpcore.plugin.models.Artifact` in the db.
 
     This stage downloads the file for any :class:`~pulpcore.plugin.models.Artifact` objects missing
     files and creates a new :class:`~pulpcore.plugin.models.Artifact` object from the downloaded
@@ -114,17 +116,15 @@ class ArtifactDownloader:
     Args:
         max_concurrent_downloads (int): The maximum number of concurrent downloads this stage will
             run. Default is 100.
-
-    Returns:
-        An object containing the ArtifactDownloader stage to be included in a pipeline.
     """
 
-    def __init__(self, max_concurrent_downloads=100):
+    def __init__(self, max_concurrent_downloads=100, *args, **kwargs):
         self.max_concurrent_downloads = max_concurrent_downloads
+        super().__init__(*args, **kwargs)
 
-    async def stage(self, in_q, out_q):
+    async def __call__(self, in_q, out_q):
         """
-        Download undownloaded Artifacts, but don't save them in the db.
+        The coroutine for this stage.
 
         Args:
             in_q (:class:`asyncio.Queue`): The queue to receive
@@ -134,6 +134,8 @@ class ArtifactDownloader:
                 :class:`~pulpcore.plugin.stages.DeclarativeContent` objects into, all of which have
                 files downloaded.
 
+        Returns:
+            The coroutine for this stage.
         """
         pending = set()
         unhandled_content = []
@@ -210,9 +212,9 @@ class ArtifactDownloader:
         await out_q.put(None)
 
 
-async def artifact_saver(in_q, out_q):
+class ArtifactSaver(BaseStage):
     """
-    Stages API stage that saves any unsaved :attr:`DeclarativeArtifact.artifact` objects.
+    A Stages API stage that saves any unsaved :attr:`DeclarativeArtifact.artifact` objects.
 
     This stage expects :class:`~pulpcore.plugin.stages.DeclarativeContent` units from `in_q` and
     inspects their associated :class:`~pulpcore.plugin.stages.DeclarativeArtifact` objects. Each
@@ -225,53 +227,58 @@ async def artifact_saver(in_q, out_q):
 
     This stage drains all available items from `in_q` and batches everything into one large call to
     the db for efficiency.
-
-    Args:
-        in_q (:class:`asyncio.Queue`): The queue to receive
-            :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
-        out_q (:class:`asyncio.Queue`): The queue to put
-            :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
-
-    Returns:
-        The artifact_saver stage as a coroutine to be included in a pipeline.
     """
-    shutdown = False
-    batch = []
-    while not shutdown:
-        try:
-            content = in_q.get_nowait()
-        except asyncio.QueueEmpty:
-            if not batch:
-                content = await in_q.get()
+
+    async def __call__(self, in_q, out_q):
+        """
+        The coroutine for this stage.
+
+        Args:
+            in_q (:class:`asyncio.Queue`): The queue to receive
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
+            out_q (:class:`asyncio.Queue`): The queue to put
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
+
+        Returns:
+            The coroutine for this stage.
+        """
+        shutdown = False
+        batch = []
+        while not shutdown:
+            try:
+                content = in_q.get_nowait()
+            except asyncio.QueueEmpty:
+                if not batch:
+                    content = await in_q.get()
+                    batch.append(content)
+                    continue
+            else:
                 batch.append(content)
                 continue
-        else:
-            batch.append(content)
-            continue
 
-        artifacts_to_save = []
-        for declarative_content in batch:
-            if declarative_content is None:
-                shutdown = True
-                break
-            for declarative_artifact in declarative_content.d_artifacts:
-                if declarative_artifact.artifact.pk is None:
-                    src_path = str(declarative_artifact.artifact.file)
-                    dst_path = declarative_artifact.artifact.storage_path(None)
-                    with open(src_path, mode='rb') as input_file:
-                        django_file_obj = File(input_file)
-                        default_storage.save(dst_path, django_file_obj)
-                    declarative_artifact.artifact.file = dst_path
-                    artifacts_to_save.append(declarative_artifact.artifact)
+            artifacts_to_save = []
+            for declarative_content in batch:
+                if declarative_content is None:
+                    shutdown = True
+                    break
+                for declarative_artifact in declarative_content.d_artifacts:
+                    if declarative_artifact.artifact.pk is None:
+                        src_path = str(declarative_artifact.artifact.file)
+                        dst_path = declarative_artifact.artifact.storage_path(None)
+                        with open(src_path, mode='rb') as input_file:
+                            django_file_obj = File(input_file)
+                            default_storage.save(dst_path, django_file_obj)
+                        declarative_artifact.artifact.file = dst_path
+                        artifacts_to_save.append(declarative_artifact.artifact)
 
-        if artifacts_to_save:
-            Artifact.objects.bulk_create(artifacts_to_save)
+            if artifacts_to_save:
+                Artifact.objects.bulk_create(artifacts_to_save)
 
-        for declarative_content in batch:
-            if declarative_content is None:
-                continue
-            await out_q.put(declarative_content)
+            for declarative_content in batch:
+                if declarative_content is None:
+                    continue
+                await out_q.put(declarative_content)
 
-        batch = []
+            batch = []
 
-    await out_q.put(None)
+        await out_q.put(None)
