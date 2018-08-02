@@ -75,7 +75,8 @@ class QueryExistingContentUnits(BaseStage):
                             continue
                         not_same_unit = False
                         for field in result.natural_key_fields():
-                            if getattr(declarative_content.content, field) != getattr(result, field):
+                            in_memory_digest_value = getattr(declarative_content.content, field)
+                            if in_memory_digest_value != getattr(result, field):
                                 not_same_unit = True
                                 break
                         if not_same_unit:
