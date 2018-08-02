@@ -52,22 +52,22 @@ class content_unit_association:
                 :class:`~pulpcore.plugin.models.Content` type.
         """
         with ProgressBar(message='Associating Content') as pb:
-            declarative_content_list = []
+            batch = []
             shutdown = False
             while True:
                 try:
                     declarative_content = in_q.get_nowait()
                 except asyncio.QueueEmpty:
-                    if not declarative_content_list and not shutdown:
+                    if not batch and not shutdown:
                         declarative_content = await in_q.get()
-                        declarative_content_list.append(declarative_content)
+                        batch.append(declarative_content)
                         continue
                 else:
-                    declarative_content_list.append(declarative_content)
+                    batch.append(declarative_content)
                     continue
 
                 content_q_by_type = defaultdict(lambda: Q(pk=None))
-                for declarative_content in declarative_content_list:
+                for declarative_content in batch:
                     if declarative_content is None:
                         shutdown = True
                         continue
@@ -88,7 +88,7 @@ class content_unit_association:
 
                 if shutdown:
                     break
-                declarative_content_list = []
+                batch = []
 
             for unit_type, ids in self.unit_keys_by_type.items():
                 if ids:

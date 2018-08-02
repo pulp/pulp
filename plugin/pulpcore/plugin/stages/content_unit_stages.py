@@ -37,22 +37,22 @@ async def query_existing_content_units(in_q, out_q):
     Returns:
         The query_existing_content_units stage as a coroutine to be included in a pipeline.
     """
-    declarative_content_list = []
+    batch = []
     shutdown = False
     while True:
         try:
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content_list:
+            if not batch:
                 content = await in_q.get()
-                declarative_content_list.append(content)
+                batch.append(content)
                 continue
         else:
-            declarative_content_list.append(content)
+            batch.append(content)
             continue
 
         content_q_by_type = defaultdict(lambda: Q(pk=None))
-        for declarative_content in declarative_content_list:
+        for declarative_content in batch:
             if declarative_content is None:
                 shutdown = True
                 continue
@@ -63,7 +63,7 @@ async def query_existing_content_units(in_q, out_q):
 
         for model_type in content_q_by_type.keys():
             for result in model_type.objects.filter(content_q_by_type[model_type]):
-                for declarative_content in declarative_content_list:
+                for declarative_content in batch:
                     if declarative_content is None:
                         continue
                     not_same_unit = False
@@ -74,9 +74,9 @@ async def query_existing_content_units(in_q, out_q):
                     if not_same_unit:
                         continue
                     declarative_content.content = result
-        for declarative_content in declarative_content_list:
+        for declarative_content in batch:
             await out_q.put(declarative_content)
-        declarative_content_list = []
+        batch = []
         if shutdown:
             break
     await out_q.put(None)
@@ -111,18 +111,18 @@ async def content_unit_saver(in_q, out_q):
     Returns:
         The content_unit_saver stage as a coroutine to be included in a pipeline.
     """
-    declarative_content_list = []
+    batch = []
     shutdown = False
     while True:
         try:
             declarative_content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content_list and not shutdown:
+            if not batch and not shutdown:
                 declarative_content = await in_q.get()
-                declarative_content_list.append(declarative_content)
+                batch.append(declarative_content)
                 continue
         else:
-            declarative_content_list.append(declarative_content)
+            batch.append(declarative_content)
             continue
 
         content_artifact_bulk = []
@@ -130,7 +130,7 @@ async def content_unit_saver(in_q, out_q):
         remote_artifact_map = {}
 
         with transaction.atomic():
-            for declarative_content in declarative_content_list:
+            for declarative_content in batch:
                 if declarative_content is None:
                     shutdown = True
                     continue
@@ -166,11 +166,11 @@ async def content_unit_saver(in_q, out_q):
 
             RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
 
-        for declarative_content in declarative_content_list:
+        for declarative_content in batch:
             if declarative_content is None:
                 continue
             await out_q.put(declarative_content)
         if shutdown:
             break
-        declarative_content_list = []
+        batch = []
     await out_q.put(None)

@@ -38,22 +38,22 @@ async def query_existing_artifacts(in_q, out_q):
     Returns:
         The query_existing_artifacts stage as a coroutine to be included in a pipeline.
     """
-    declarative_content = []
+    batch = []
     shutdown = False
     while True:
         try:
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content:
+            if not batch:
                 content = await in_q.get()
-                declarative_content.append(content)
+                batch.append(content)
                 continue
         else:
-            declarative_content.append(content)
+            batch.append(content)
             continue
 
         all_artifacts_q = Q(pk=None)
-        for content in declarative_content:
+        for content in batch:
             if content is None:
                 shutdown = True
                 continue
@@ -68,7 +68,7 @@ async def query_existing_artifacts(in_q, out_q):
                 all_artifacts_q |= one_artifact_q
 
         for artifact in Artifact.objects.filter(all_artifacts_q):
-            for content in declarative_content:
+            for content in batch:
                 if content is None:
                     continue
                 for declarative_artifact in content.d_artifacts:
@@ -76,11 +76,11 @@ async def query_existing_artifacts(in_q, out_q):
                         digest_value = getattr(declarative_artifact.artifact, digest_name)
                         if digest_value and digest_value == getattr(artifact, digest_name):
                             declarative_artifact.artifact = artifact
-        for content in declarative_content:
+        for content in batch:
             if content is None:
                 continue
             await out_q.put(content)
-        declarative_content = []
+        batch = []
         if shutdown:
             break
     await out_q.put(None)
@@ -135,7 +135,7 @@ class artifact_downloader:
 
         """
         pending = set()
-        incoming_content = []
+        unhandled_content = []
         outstanding_downloads = 0
         shutdown = False
         saturated = False
@@ -145,15 +145,15 @@ class artifact_downloader:
                     try:
                         content = in_q.get_nowait()
                     except asyncio.QueueEmpty:
-                        if not incoming_content and not shutdown and not pending:
+                        if not unhandled_content and not shutdown and not pending:
                             content = await in_q.get()
-                            incoming_content.append(content)
+                            unhandled_content.append(content)
                             continue
                     else:
-                        incoming_content.append(content)
+                        unhandled_content.append(content)
                         continue
 
-                for i, content in enumerate(incoming_content):
+                for i, content in enumerate(unhandled_content):
                     if content is None:
                         shutdown = True
                         continue
@@ -177,10 +177,10 @@ class artifact_downloader:
                     pending.add(asyncio.gather(*downloaders_for_content))
                     if outstanding_downloads > self.max_concurrent_downloads:
                         saturated = True
-                        incoming_content = incoming_content[i + 1:]  # remove handled content
+                        unhandled_content = unhandled_content[i + 1:]  # remove handled content
                         break
                 else:
-                    incoming_content = []
+                    unhandled_content = []
 
                 if pending:
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -233,21 +233,21 @@ async def artifact_saver(in_q, out_q):
         The artifact_saver stage as a coroutine to be included in a pipeline.
     """
     shutdown = False
-    declarative_content_list = []
+    batch = []
     while not shutdown:
         try:
             content = in_q.get_nowait()
         except asyncio.QueueEmpty:
-            if not declarative_content_list:
+            if not batch:
                 content = await in_q.get()
-                declarative_content_list.append(content)
+                batch.append(content)
                 continue
         else:
-            declarative_content_list.append(content)
+            batch.append(content)
             continue
 
         artifacts_to_save = []
-        for declarative_content in declarative_content_list:
+        for declarative_content in batch:
             if declarative_content is None:
                 shutdown = True
                 break
@@ -264,11 +264,11 @@ async def artifact_saver(in_q, out_q):
         if artifacts_to_save:
             Artifact.objects.bulk_create(artifacts_to_save)
 
-        for declarative_content in declarative_content_list:
+        for declarative_content in batch:
             if declarative_content is None:
                 continue
             await out_q.put(declarative_content)
 
-        declarative_content_list = []
+        batch = []
 
     await out_q.put(None)
