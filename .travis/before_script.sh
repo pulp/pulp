@@ -1,16 +1,13 @@
 #!/usr/bin/env sh
 set -v
 
-if [ "$DB" = 'postgres' ]; then
-  psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'
-  psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'
-fi
+psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'
+psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'
 
 mkdir -p ~/.config/pulp_smash
 cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json
 
-sudo mkdir /var/lib/pulp
-sudo mkdir /var/lib/pulp/tmp
+sudo mkdir -p /var/lib/pulp/tmp
 sudo mkdir /etc/pulp/
 sudo chown -R travis:travis /var/lib/pulp
 
