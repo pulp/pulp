@@ -167,11 +167,14 @@ class ContentUnitSaver(Stage):
                                     'sha512': declarative_artifact.artifact.sha512,
                                     'remote': declarative_artifact.remote,
                                 }
-                                content_pk = content_artifact.content.pk
-                                remote_artifact_map[content_pk] = remote_artifact_data
+                                rel_path = declarative_artifact.relative_path
+                                content_key = str(content_artifact.content.pk) + rel_path
+                                remote_artifact_map[content_key] = remote_artifact_data
 
                 for content_artifact in ContentArtifact.objects.bulk_create(content_artifact_bulk):
-                    remote_artifact_data = remote_artifact_map.pop(content_artifact.content.pk)
+                    rel_path = content_artifact.relative_path
+                    content_key = str(content_artifact.content.pk) + rel_path
+                    remote_artifact_data = remote_artifact_map.pop(content_key)
                     new_remote_artifact = RemoteArtifact(
                         content_artifact=content_artifact, **remote_artifact_data
                     )
