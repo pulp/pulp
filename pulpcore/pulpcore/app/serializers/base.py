@@ -5,9 +5,13 @@ from urllib.parse import urljoin
 from django.core.validators import URLValidator
 from drf_queryfields.mixins import QueryFieldsMixin
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
+from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
+                                             NestedHyperlinkedRelatedField)
 
 from pulpcore.app.apps import pulp_plugin_configs
 
@@ -316,6 +320,42 @@ class _DetailFieldMixin:
         return super().get_url(obj, view_name, *args, **kwargs)
 
 
+class IdentifierFieldMixin:
+    """
+    Mixin class that allows a field to be identified with both _href and id.
+    Fields using this class are displayed as a dict, with _href, id and the
+    specified lookup_field.
+
+    Any class using this mixin should also subclass HyperlinkedIdentityField
+    """
+
+    def to_internal_value(self, data):
+        is_url = data.startswith(('http:', 'https:', '/'))
+        if not is_url:
+            try:
+                return self.get_queryset().get(pk=data)
+            except ObjectDoesNotExist:
+                self.fail('does_not_exist', pk_value=data)
+            except (TypeError, ValueError):
+                self.fail('incorrect_type', data_type=type(data).__name__)
+        else:
+            return super().to_internal_value(data)
+
+    def to_representation(self, value):
+        url = super().to_representation(value)
+
+        identifier = {'_href': url}
+
+        if hasattr(value, 'pk'):
+            identifier['pk'] = getattr(value, 'pk')
+
+        if hasattr(value, self.lookup_field):
+            lookup_value = getattr(value, self.lookup_field)
+            identifier[self.lookup_field] = lookup_value
+
+        return identifier
+
+
 class DetailIdentityField(_DetailFieldMixin, serializers.HyperlinkedIdentityField):
     """IdentityField for use in the _href field of Master/Detail Serializers
 
@@ -349,6 +389,25 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         class to get the relevant `view_name`.
         """
         return False
+
+
+class DetailIdentifierField(IdentifierFieldMixin, DetailRelatedField):
+    """RelatedField for use when relating to Master/Detail models that also needs
+    to support multiple identifiers
+    """
+    pass
+
+
+class IdentifierField(IdentifierFieldMixin, serializers.HyperlinkedRelatedField):
+    """A Hyperlinked Relational Field that also needs to support multiple identifiers
+    """
+    pass
+
+
+class NestedIdentifierField(IdentifierField, NestedHyperlinkedRelatedField):
+    """A Nested Relational Field that also needs to support multiple identifiers
+    """
+    pass
 
 
 class AsyncOperationResponseSerializer(serializers.Serializer):

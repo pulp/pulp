@@ -1,9 +1,10 @@
+from collections import OrderedDict
 from gettext import gettext as _
 
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
+from pulpcore.app.serializers import IdentifierField, ModelSerializer, ProgressReportSerializer
 
 from .base import viewset_for_model
 
@@ -22,11 +23,42 @@ class CreatedResourceSerializer(ModelSerializer):
         request = self.context['request']
         viewset = viewset_for_model(data.content_object)
         serializer = viewset.serializer_class(data.content_object, context={'request': request})
-        return serializer.data.get('_href')
+
+        created_resource = {
+            '_href': serializer.data.get('_href'),
+            'pk': serializer.data.get('id')
+        }
+        if 'number' in serializer.data:
+            created_resource['number'] = serializer.data.get('number')
+        return created_resource
 
     class Meta:
         model = models.CreatedResource
         fields = ModelSerializer.Meta.fields
+
+        swagger_schema_fields = {
+            'properties': OrderedDict([
+                ('pk', OrderedDict([
+                    ('title', 'PK'),
+                    ('type', 'integer'),
+                    ('readOnly', 'true'),
+                ])),
+                ('_href', OrderedDict([
+                    ('title', 'href'),
+                    ('type', 'string'),
+                    ('format', 'uri'),
+                    ('readOnly', 'true'),
+                ])),
+                ('created', OrderedDict([
+                    ('title', 'Created'),
+                    ('description', 'Timestamp of creation.'),
+                    ('type', 'string'),
+                    ('format', 'date-time'),
+                    ('readOnly', 'true'),
+                ]))
+            ]),
+            'additional_properties': True
+        }
 
 
 class TaskSerializer(ModelSerializer):
@@ -56,18 +88,18 @@ class TaskSerializer(ModelSerializer):
                     "task."),
         read_only=True
     )
-    worker = serializers.HyperlinkedRelatedField(
+    worker = IdentifierField(
         help_text=_("The worker associated with this task."
                     " This field is empty if a worker is not yet assigned."),
         read_only=True,
         view_name='workers-detail'
     )
-    parent = serializers.HyperlinkedRelatedField(
+    parent = IdentifierField(
         help_text=_("The parent task that spawned this task."),
         read_only=True,
         view_name='tasks-detail'
     )
-    spawned_tasks = serializers.HyperlinkedRelatedField(
+    spawned_tasks = IdentifierField(
         help_text=_("Any tasks spawned by this task."),
         many=True,
         read_only=True,

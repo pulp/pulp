@@ -6,13 +6,17 @@ from urllib.parse import urlparse
 from pulpcore.app import tasks
 from pulpcore.app.models import MasterModel
 from pulpcore.app.response import OperationPostponedResponse
-from pulpcore.app.serializers import AsyncOperationResponseSerializer
+from pulpcore.app.serializers import AsyncOperationResponseSerializer, IdentifierField
 from pulpcore.tasking.tasks import enqueue_with_reservation
 
 from django.urls import resolve, Resolver404
 from django.core.exceptions import FieldError, ValidationError
 from django_filters.rest_framework import filterset
 
+from drf_yasg.app_settings import swagger_settings
+from drf_yasg.inspectors import (RelatedFieldInspector, NotHandled,
+                                 SerializerInspector, SwaggerAutoSchema)
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import viewsets
@@ -29,6 +33,31 @@ DATETIME_FILTER_OPTIONS = ['lt', 'lte', 'gt', 'gte', 'range']
 # e.g.
 # /?created__gte=2018-04-12T19:45:52
 # /?created__range=2018-04-12T19:45:52,2018-04-13T19:45:52
+
+
+class IdentifierFieldInspector(RelatedFieldInspector):
+    """
+    Correctly Format the schema for all fields that subclasses IdentifierField
+    """
+    def field_to_swagger_object(self, field, swagger_object_type, use_references, **kwargs):
+        if isinstance(field, IdentifierField):
+            return openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    '_href': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_URI),
+                    'pk': openapi.Schema(type=openapi.TYPE_STRING)
+                },
+                additional_properties=True
+            )
+
+        return super().field_to_swagger_object(field, swagger_object_type, use_references, **kwargs)
+
+
+class OpenAPIAutoSchema(SwaggerAutoSchema):
+    """
+    AutoSchema for drf_yasg
+    """
+    field_inspectors = [IdentifierFieldInspector] + swagger_settings.DEFAULT_FIELD_INSPECTORS
 
 
 class DefaultSchema(AutoSchema):
@@ -84,6 +113,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
     parent_viewset = None
     parent_lookup_kwargs = {}
     schema = DefaultSchema()
+    swagger_schema = OpenAPIAutoSchema
 
     def get_serializer_class(self):
         """
