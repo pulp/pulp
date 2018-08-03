@@ -5,10 +5,10 @@ from django.db.models import Q
 
 from pulpcore.plugin.models import ProgressBar
 
-from .api import BaseStage
+from .api import Stage
 
 
-class ContentUnitAssociation(BaseStage):
+class ContentUnitAssociation(Stage):
     """
     A Stages API stage that associates content units with `new_version`.
 
@@ -22,15 +22,17 @@ class ContentUnitAssociation(BaseStage):
     Args:
         new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
             stage associates content with.
+        args: unused positional arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
+        kwargs: unused keyword arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
     """
 
     def __init__(self, new_version, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.new_version = new_version
         self.unit_keys_by_type = defaultdict(set)
         for unit in self.new_version.content.all():
             unit = unit.cast()
             self.unit_keys_by_type[type(unit)].add(unit.natural_key())
-        super().__init__(*args, **kwargs)
 
     async def __call__(self, in_q, out_q):
         """
@@ -100,7 +102,7 @@ class ContentUnitAssociation(BaseStage):
             await out_q.put(None)
 
 
-class ContentUnitUnassociation(BaseStage):
+class ContentUnitUnassociation(Stage):
     """
     A Stages API stage that unassociates content units from `new_version`.
 
@@ -110,11 +112,13 @@ class ContentUnitUnassociation(BaseStage):
     Args:
         new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The repo version this
             stage unassociates content from.
+        args: unused positional arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
+        kwargs: unused keyword arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
     """
 
     def __init__(self, new_version, *args, **kwargs):
-        self.new_version = new_version
         super().__init__(*args, **kwargs)
+        self.new_version = new_version
 
     async def __call__(self, in_q, out_q):
             """

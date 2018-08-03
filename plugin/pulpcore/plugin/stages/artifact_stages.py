@@ -1,15 +1,15 @@
 import asyncio
 
 from django.core.files import File
-from django.core.files.storage import default_storage
+from django.core.files.storage import DefaultStorage
 from django.db.models import Q
 
 from pulpcore.plugin.models import Artifact, ProgressBar
 
-from .api import BaseStage
+from .api import Stage
 
 
-class QueryExistingArtifacts(BaseStage):
+class QueryExistingArtifacts(Stage):
     """
     A Stages API stage that replaces :attr:`DeclarativeContent.content` objects with already-saved
     :class:`~pulpcore.plugin.models.Artifact` objects.
@@ -94,7 +94,7 @@ class QueryExistingArtifacts(BaseStage):
         await out_q.put(None)
 
 
-class ArtifactDownloader(BaseStage):
+class ArtifactDownloader(Stage):
     """
     A Stages API stage to download :class:`~pulpcore.plugin.models.Artifact` files, but don't save
     the :class:`~pulpcore.plugin.models.Artifact` in the db.
@@ -116,11 +116,13 @@ class ArtifactDownloader(BaseStage):
     Args:
         max_concurrent_downloads (int): The maximum number of concurrent downloads this stage will
             run. Default is 100.
+        args: unused positional arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
+        kwargs: unused keyword arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
     """
 
     def __init__(self, max_concurrent_downloads=100, *args, **kwargs):
-        self.max_concurrent_downloads = max_concurrent_downloads
         super().__init__(*args, **kwargs)
+        self.max_concurrent_downloads = max_concurrent_downloads
 
     async def __call__(self, in_q, out_q):
         """
@@ -212,7 +214,7 @@ class ArtifactDownloader(BaseStage):
         await out_q.put(None)
 
 
-class ArtifactSaver(BaseStage):
+class ArtifactSaver(Stage):
     """
     A Stages API stage that saves any unsaved :attr:`DeclarativeArtifact.artifact` objects.
 
@@ -242,6 +244,7 @@ class ArtifactSaver(BaseStage):
         Returns:
             The coroutine for this stage.
         """
+        storage_backend = DefaultStorage()
         shutdown = False
         batch = []
         while not shutdown:
@@ -267,7 +270,7 @@ class ArtifactSaver(BaseStage):
                         dst_path = declarative_artifact.artifact.storage_path(None)
                         with open(src_path, mode='rb') as input_file:
                             django_file_obj = File(input_file)
-                            default_storage.save(dst_path, django_file_obj)
+                            storage_backend.save(dst_path, django_file_obj)
                         declarative_artifact.artifact.file = dst_path
                         artifacts_to_save.append(declarative_artifact.artifact)
 

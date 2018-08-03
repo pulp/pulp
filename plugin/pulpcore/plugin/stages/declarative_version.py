@@ -10,38 +10,6 @@ from .association_stages import ContentUnitAssociation, ContentUnitUnassociation
 from .content_unit_stages import ContentUnitSaver, QueryExistingContentUnits
 
 
-class FirstStage:
-    """
-    Plugin writers subclass this to create their first stage for a
-    :class:`~pulpcore.plugin.stages.DeclarativeVersion` pipeline.
-
-    To use this class, the plugin writer needs to:
-
-    1. Subclass it and implement the
-       :meth:`~pulpcore.plugin.stages.FirstStage.__call__` method.
-    2. Pass the instantiated subclass to :class:`~pulpcore.plugin.stages.DeclarativeVersion`.
-    """
-
-    async def __call__(self, in_q, out_q):
-        """
-        A Stages API compatible coroutine for :class:`~pulpcore.plugin.stages.DeclarativeVersion` to
-        use as the first stage.
-
-        This must be implemented on the subclass.
-
-        Args:
-            in_q (:class:`asyncio.Queue`): Unused because the first stage doesn't read from an input
-                queue.
-            out_q (:class:`asyncio.Queue`): The queue to put
-                :class:`~pulpcore.plugin.stages.DeclarativeContent` into.
-
-        Returns:
-            A Stages API compatible coroutine for
-            :class:`~pulpcore.plugin.stages.DeclarativeVersion` to use as the first stage.
-        """
-        raise NotImplementedError('A plugin writer needs to implement this')
-
-
 class DeclarativeVersion:
 
     def __init__(self, first_stage, repository, sync_mode='mirror'):
@@ -66,13 +34,13 @@ class DeclarativeVersion:
         8. Unassociate any content units not declared in the stream (only when sync_mode='mirror')
 
         To do this, the plugin writer should subclass the
-        :class:`~pulpcore.plugin.stages.FirstStage` class and define its
-        :meth:`__call__()` interface which return a coroutine. This coroutine should
+        :class:`~pulpcore.plugin.stages.Stage` class and define its
+        :meth:`__call__()` interface which returns a coroutine. This coroutine should
         download metadata, create the corresponding
         :class:`~pulpcore.plugin.stages.DeclarativeContent` objects, and put them into the
         :class:`asyncio.Queue` to send them down the pipeline. For example:
 
-        >>> class MyFirstStage(FirstStage):
+        >>> class MyFirstStage(Stage):
         >>>
         >>>     def __init__(remote):
         >>>         self.remote = remote
@@ -91,19 +59,19 @@ class DeclarativeVersion:
         To use your first stage with the pipeline you have to instantiate the subclass and pass it
         to :class:`~pulpcore.plugin.stages.DeclarativeVersion`.
 
-        1. Create the instance of the :class:`~pulpcore.plugin.stages.FirstStage` object subclass
+        1. Create the instance of the subclassed :class:`~pulpcore.plugin.stages.Stage` object.
         2. Create the :class:`~pulpcore.plugin.stages.DeclarativeVersion` instance, passing the
-           :class:`~pulpcore.plugin.stages.FirstStage` subclass instance to it
+           :class:`~pulpcore.plugin.stages.Stage` subclass instance to it
         3. Call the :meth:`~pulpcore.plugin.stages.DeclarativeVersion.create` method on your
            :class:`~pulpcore.plugin.stages.DeclarativeVersion` instance
 
         Here is an example:
 
-        >>> first_stage = FileFirstStage(remote)
+        >>> first_stage = MyFirstStage(remote)
         >>> DeclarativeVersion(first_stage, repository).create()
 
         Args:
-             first_stage (:class:`~pulpcore.plugin.stages.FirstStage`): The first stage to receive
+             first_stage (:class:`~pulpcore.plugin.stages.Stage`): The first stage to receive
                  :class:`~pulpcore.plugin.stages.DeclarativeContent` from.
              repository (:class:`~pulpcore.plugin.models.Repository`): The repository receiving the
                  new version.

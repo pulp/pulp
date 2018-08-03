@@ -2,7 +2,7 @@ import asyncio
 from gettext import gettext as _
 
 
-class BaseStage:
+class Stage:
     """
     The base class for all Stages API stages.
 
@@ -57,7 +57,7 @@ async def create_pipeline(stages, maxsize=100):
     await asyncio.gather(*futures)
 
 
-class EndStage(BaseStage):
+class EndStage(Stage):
     """
     A Stages API stage that drains `in_q` and does nothing with the items. This is required at the
     end of all pipelines.

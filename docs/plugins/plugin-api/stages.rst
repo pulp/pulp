@@ -19,9 +19,6 @@ DeclarativeVersion
 
 .. autoclass:: pulpcore.plugin.stages.DeclarativeVersion
 
-.. autoclass:: pulpcore.plugin.stages.FirstStage
-   :special-members: __call__
-
 .. autoclass:: pulpcore.plugin.stages.DeclarativeArtifact
    :no-members:
 
@@ -36,7 +33,7 @@ Stages API
 
 .. autofunction:: pulpcore.plugin.stages.create_pipeline
 
-.. autoclass:: pulpcore.plugin.stages.BaseStage
+.. autoclass:: pulpcore.plugin.stages.Stage
    :special-members: __call__
 
 .. autoclass:: pulpcore.plugin.stages.EndStage

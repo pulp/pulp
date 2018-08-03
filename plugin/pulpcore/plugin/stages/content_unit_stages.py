@@ -6,10 +6,10 @@ from django.db.models import Q
 
 from pulpcore.plugin.models import ContentArtifact, RemoteArtifact
 
-from .api import BaseStage
+from .api import Stage
 
 
-class QueryExistingContentUnits(BaseStage):
+class QueryExistingContentUnits(Stage):
     """
     A Stages API stage that saves :attr:`DeclarativeContent.content` objects and saves its related
     :class:`~pulpcore.plugin.models.ContentArtifact` and
@@ -90,7 +90,7 @@ class QueryExistingContentUnits(BaseStage):
         await out_q.put(None)
 
 
-class ContentUnitSaver(BaseStage):
+class ContentUnitSaver(Stage):
     """
     A Stages API stage that saves :attr:`DeclarativeContent.content` objects and saves its related
     :class:`~pulpcore.plugin.models.ContentArtifact` and
@@ -167,11 +167,11 @@ class ContentUnitSaver(BaseStage):
                                     'sha512': declarative_artifact.artifact.sha512,
                                     'remote': declarative_artifact.remote,
                                 }
-                                rel_path = content_artifact.relative_path
-                                remote_artifact_map[rel_path] = remote_artifact_data
+                                content_pk = content_artifact.content.pk
+                                remote_artifact_map[content_pk] = remote_artifact_data
 
                 for content_artifact in ContentArtifact.objects.bulk_create(content_artifact_bulk):
-                    remote_artifact_data = remote_artifact_map.pop(content_artifact.relative_path)
+                    remote_artifact_data = remote_artifact_map.pop(content_artifact.content.pk)
                     new_remote_artifact = RemoteArtifact(
                         content_artifact=content_artifact, **remote_artifact_data
                     )
