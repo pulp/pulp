@@ -166,8 +166,20 @@ class ArtifactDownloader(Stage):
                     for declarative_artifact in content.d_artifacts:
                         if declarative_artifact.artifact.pk is None:
                             # this needs to be downloaded
+                            expected_digests = {}
+                            validation_kwargs = {}
+                            for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
+                                digest_value = getattr(declarative_artifact.artifact, digest_name)
+                                if digest_value:
+                                    expected_digests[digest_name] = digest_value
+                            if expected_digests:
+                                validation_kwargs['expected_digests'] = expected_digests
+                            if declarative_artifact.artifact.size:
+                                expected_size = declarative_artifact.artifact.size
+                                validation_kwargs['expected_size'] = expected_size
                             downloader = declarative_artifact.remote.get_downloader(
-                                declarative_artifact.url
+                                declarative_artifact.url,
+                                **validation_kwargs
                             )
                             next_future = asyncio.ensure_future(downloader.run())
                             downloaders_for_content.append(next_future)
