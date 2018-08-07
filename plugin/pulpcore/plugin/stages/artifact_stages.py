@@ -167,7 +167,7 @@ class ArtifactDownloader(Stage):
                         if declarative_artifact.artifact.pk is None:
                             # this needs to be downloaded
                             expected_digests = {}
-                            validation_kwargs = {}
+                            validation_kwargs = {'auto_decompress': False}
                             for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
                                 digest_value = getattr(declarative_artifact.artifact, digest_name)
                                 if digest_value:

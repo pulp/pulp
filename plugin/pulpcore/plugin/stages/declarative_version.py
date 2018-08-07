@@ -86,7 +86,6 @@ class DeclarativeVersion:
         Raises:
             ValueError: if 'sync_mode' is passed an invalid value.
         """
-
         if sync_mode != 'mirror' and sync_mode != 'additive':
             msg = _("'sync_mode' must either be 'mirror' or 'additive' not '{sync_mode}'")
             raise ValueError(msg.format(sync_mode=sync_mode))

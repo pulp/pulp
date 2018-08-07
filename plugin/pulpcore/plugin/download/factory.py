@@ -46,12 +46,18 @@ class DownloaderFactory:
                 self._download_class_map[protocol] = download_class
         self._handler_map = {'https': self._http_or_https, 'http': self._http_or_https,
                              'file': self._generic}
-        self._session = self._make_aiohttp_session_from_remote()
-        atexit.register(self._session.close)
+        self._session_auto_decompress = self._make_aiohttp_session_from_remote(auto_decompress=True)
+        self._session_no_decompress = self._make_aiohttp_session_from_remote(auto_decompress=False)
+        atexit.register(self._session_no_decompress.close)
+        atexit.register(self._session_auto_decompress.close)
 
-    def _make_aiohttp_session_from_remote(self):
+    def _make_aiohttp_session_from_remote(self, auto_decompress):
         """
         Build a :class:`aiohttp.ClientSession` from the remote settings
+
+        Args:
+            auto_decompress (bool): If True, the response will automatically be decompressed.
+                Required.
 
         Returns:
             :class:`aiohttp.ClientSession`
@@ -89,9 +95,10 @@ class DownloaderFactory:
                 password=self._remote.password
             )
 
-        return aiohttp.ClientSession(connector=conn, **auth_options)
+        return aiohttp.ClientSession(auto_decompress=auto_decompress, connector=conn,
+                                     **auth_options)
 
-    def build(self, url, **kwargs):
+    def build(self, url, auto_decompress=True, **kwargs):
         """
         Build a downloader which can optionally verify integrity using either digest or size.
 
@@ -99,6 +106,8 @@ class DownloaderFactory:
             url (str): The download URL.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
                 include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
+            auto_decompress (bool): If True, automatically decompress the response body. Defaults to
+                True.
 
         Returns:
             subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
@@ -111,9 +120,9 @@ class DownloaderFactory:
         except KeyError:
             raise ValueError(_('URL: {u} not supported.'.format(u=url)))
         else:
-            return builder(download_class, url, **kwargs)
+            return builder(download_class, url, auto_decompress, **kwargs)
 
-    def _http_or_https(self, download_class, url, **kwargs):
+    def _http_or_https(self, download_class, url, auto_decompress, **kwargs):
         """
         Build a downloader for http:// or https:// URLs.
 
@@ -121,6 +130,7 @@ class DownloaderFactory:
             download_class (:class:`~pulpcore.plugin.download.BaseDownloader`): The download
                 class to be instantiated.
             url (str): The download URL.
+            auto_decompress (bool): If True, automatically decompress the response body.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
                 include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
 
@@ -128,13 +138,16 @@ class DownloaderFactory:
             :class:`~pulpcore.plugin.download.HttpDownloader`: A downloader that
             is configured with the remote settings.
         """
-        options = {'session': self._session}
+        if auto_decompress:
+            options = {'session': self._session_auto_decompress}
+        else:
+            options = {'session': self._session_no_decompress}
         if self._remote.proxy_url:
             options['proxy'] = self._remote.proxy_url
 
         return download_class(url, **options, **kwargs)
 
-    def _generic(self, download_class, url, **kwargs):
+    def _generic(self, download_class, url, auto_decompress, **kwargs):
         """
         Build a generic downloader based on the url.
 
@@ -142,6 +155,8 @@ class DownloaderFactory:
             download_class (:class:`~pulpcore.plugin.download.BaseDownloader`): The download
                 class to be instantiated.
             url (str): The download URL.
+            auto_decompress (bool): If True, automatically decompress the response body. Defaults to
+                True.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
                 include the :class:`~pulpcore.plugin.download.BaseDownloader` parameters.
 
@@ -149,4 +164,4 @@ class DownloaderFactory:
             subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
             is configured with the remote settings.
         """
-        return download_class(url, **kwargs)
+        return download_class(url, auto_decompress, **kwargs)
