@@ -86,7 +86,8 @@ class DeclarativeVersion:
         Raises:
             ValueError: if 'sync_mode' is passed an invalid value.
         """
-        if sync_mode is not 'mirror' and sync_mode is not 'additive':
+
+        if sync_mode != 'mirror' and sync_mode != 'additive':
             msg = _("'sync_mode' must either be 'mirror' or 'additive' not '{sync_mode}'")
             raise ValueError(msg.format(sync_mode=sync_mode))
         self.first_stage = first_stage
@@ -106,9 +107,9 @@ class DeclarativeVersion:
                     QueryExistingContentUnits(), ContentUnitSaver(),
                     ContentUnitAssociation(new_version)
                 ]
-                if self.sync_mode is 'additive':
+                if self.sync_mode == 'additive':
                     stages.append(EndStage())
-                elif self.sync_mode is 'mirror':
+                elif self.sync_mode == 'mirror':
                     stages.extend([ContentUnitUnassociation(new_version), EndStage()])
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)
