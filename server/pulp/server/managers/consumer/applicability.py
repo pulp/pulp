@@ -14,7 +14,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
 from pulp.server.async.tasks import Task
-from pulp.server.db import model
+from pulp.server.db import model, connection
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers
@@ -455,19 +455,73 @@ class RepoProfileApplicabilityManager(object):
         if missing_repo_ids:
             rpa_collection.remove({'repo_id': {'$in': missing_repo_ids}})
 
-        # Next, we need to find profile_hashes that don't exist in the UnitProfile collection
-        rpa_profile_hashes = rpa_collection.distinct('profile_hash')
+        # The code below has to be compatible with MongoDB 2.6+, it has to workaround
+        # the 16MB BSON size limit, and no race conditions should be introduced.
+        # For those reasons it may look complicated or unintuitive, but it does the following:
+        #
+        #     active_profile_hashes = set(consumer_unit_profile collection)
+        #     profile_hashes_in_applicability = set(repo_profile_applicability collection)
+        #     orphaned_profile_hashes = profile_hashes_in_applicability - active_profile_hashes
+        #     for batch in paginate(orphaned_profile_hashes):
+        #          remove_from_applicability_collection(where profile_hashes in batch)
+        #
 
         # Find the profile hashes that exist in current UnitProfiles
-        profile_hashes = UnitProfile.get_collection().distinct('profile_hash')
+        active_profile_hashes = UnitProfile.get_collection().distinct('profile_hash')
 
-        # Find profile hashes that we have RepoProfileApplicability objects for, but no real
-        # UnitProfiles
-        missing_profile_hashes = list(set(rpa_profile_hashes) - set(profile_hashes))
+        # Define a group stage for aggregation to find the profile hashes
+        # that are present in RepoProfileApplicability collection
+        group_stage = {'$group':
+                       {'_id': None,
+                        'rpa_profiles': {'$addToSet': '$profile_hash'}}}
 
-        # Remove all RepoProfileApplicability objects that reference these profile hashes
-        if missing_profile_hashes:
-            rpa_collection.remove({'profile_hash': {'$in': missing_profile_hashes}})
+        # Define a project stage to find orphaned profile hashes in the RepoProfileApplicability
+        project_stage1 = {"$project":
+                          {"orphaned_profiles":
+                           {"$setDifference": ["$rpa_profiles", active_profile_hashes]}}}
+
+        # Unwind the array of results so each element becomes a document itself.
+        # It's important if results are huge (>16MB)
+        unwind_stage = {"$unwind": "$orphaned_profiles"}
+
+        # Reshape results in a wayi that no indices are violated: _id = profile_hash
+        project_stage2 = {"$project": {"_id": "$orphaned_profiles"}}
+
+        # Write results to a separate collection.
+        # If a collection exists, old data is substituted with a new one.
+        out_stage = {"$out": "orphaned_profile_hash"}
+
+        # Trigger aggregation pipeline
+        rpa_collection.aggregate([group_stage,
+                                  project_stage1,
+                                  unwind_stage,
+                                  project_stage2,
+                                  out_stage], allowDiskUse=True)
+
+        # Remove orphaned applicability profiles using profile hashes from the temporary collection.
+        # Prepare a list of profiles to remove them in batches in case there are millions of them.
+        orphaned_profiles_collection = connection.get_collection('orphaned_profile_hash')
+        profiles_batch_size = 100000
+        profiles_total = orphaned_profiles_collection.count()
+
+        _logger.info("Orphaned consumer profiles to process: %s" % profiles_total)
+
+        for skip_idx in range(0, profiles_total, profiles_batch_size):
+            skip_stage = {"$skip": skip_idx}
+            limit_stage = {"$limit": profiles_batch_size}
+            group_stage = {"$group": {"_id": None, "profile_hash": {"$push": "$_id"}}}
+            agg_result = orphaned_profiles_collection.aggregate([skip_stage,
+                                                                 limit_stage,
+                                                                 group_stage])
+            profiles_to_remove = agg_result.next()['profile_hash']
+            rpa_collection.remove({'profile_hash': {'$in': profiles_to_remove}})
+
+            # Statistics
+            if profiles_total <= profiles_batch_size + skip_idx:
+                profiles_removed = profiles_total
+            else:
+                profiles_removed = profiles_batch_size + skip_idx
+            _logger.info("Orphaned consumer profiles processed: %s" % profiles_removed)
 
 
 # Instantiate one of the managers on the object it manages for convenience
