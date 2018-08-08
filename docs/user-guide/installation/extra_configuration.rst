@@ -212,5 +212,4 @@ only runs if the process stays running longer than 30 days. In environments wher
 occur more frequently, it is recommended to configure a cron job to run the following script weekly
 or monthly::
 
-    from pulp.server.maintenance.monthly import queue_monthly_maintenance
-    queue_monthly_maintenance.apply_async()
+    celery -A pulp.server.async.app call pulp.server.maintenance.monthly.queue_monthly_maintenance
