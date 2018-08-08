@@ -200,3 +200,17 @@ Here the shortened task id is ``338bdde4``. The full task id would be
 ``338bdde4-608a-44ab-a79c-49c28b0fe037``. A statement without a task id would look like::
 
     Jan 21 23:12:02 myhost pulp[30482]: pulp.server.async.worker_watcher:INFO: New worker 'resource_manager@myhost' discovered
+
+.. _maintenance_job:
+
+Maintenance Job
+---------------
+
+Pulp has a maintenance job that deletes orphaned applicability profile data generated when using
+Pulp with consumers. This job runs monthly, but due to how Celery uses the periodic task feature, it
+only runs if the process stays running longer than 30 days. In environments where process restarts
+occur more frequently, it is recommended to configure a cron job to run the following script weekly
+or monthly::
+
+    from pulp.server.maintenance.monthly import queue_monthly_maintenance
+    queue_monthly_maintenance.apply_async()

@@ -261,3 +261,9 @@ Workers not releasing memory
 
 See the :ref:`process recycling documentation<process_recycling>` for more information on how to
 have your Pulp workers return memory back to the system.
+
+"Monthly maintenance tasks doesn't run" or "I have a lot of orphaned applicability profiles"
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The monthly maintenance tasks cleans up orphan applicability profiles. If yours are not running
+consider :ref:`configuring a maintenance job to do it <maintenance_job>`.
