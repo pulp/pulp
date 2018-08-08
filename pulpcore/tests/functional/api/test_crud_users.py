@@ -4,7 +4,7 @@ import unittest
 
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors, utils
+from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import USER_PATH
 
 from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
@@ -45,9 +45,10 @@ class UsersCRUDTestCase(unittest.TestCase):
 
     @skip_if(bool, 'user', False)
     def test_02_read_username(self):
-        """Read a user by its username."""
-        if not selectors.bug_is_fixed(3142, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3142')
+        """Read a user by its username.
+
+        See: `Pulp Issue #3142 <https://pulp.plan.io/issues/3142>`_
+        """
         page = self.client.get(USER_PATH, params={
             'username': self.user['username']
         })
@@ -71,8 +72,6 @@ class UsersCRUDTestCase(unittest.TestCase):
     def test_03_fully_update_user(self):
         """Update a user info using HTTP PUT."""
         attrs = _gen_verbose_user_attrs()
-        if not selectors.bug_is_fixed(3125, self.cfg.pulp_version):
-            attrs['username'] = self.user['username']
         self.client.put(self.user['_href'], attrs)
         user = self.client.get(self.user['_href'])
         for key, val in attrs.items():
@@ -86,8 +85,6 @@ class UsersCRUDTestCase(unittest.TestCase):
     def test_03_partially_update_user(self):
         """Update a user info using HTTP PATCH."""
         attrs = _gen_verbose_user_attrs()
-        if not selectors.bug_is_fixed(3125, self.cfg.pulp_version):
-            del attrs['username']
         self.client.patch(self.user['_href'], attrs)
         user = self.client.get(self.user['_href'])
         for key, val in attrs.items():

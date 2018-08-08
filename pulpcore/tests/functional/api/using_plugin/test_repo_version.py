@@ -7,7 +7,7 @@ from time import sleep
 
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors, utils
+from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_version,
@@ -58,8 +58,6 @@ class AddRemoveContentTestCase(unittest.TestCase):
     def setUpClass(cls):
         """Create class-wide variables."""
         cls.cfg = config.get_config()
-        if not selectors.bug_is_fixed(3502, cls.cfg.pulp_version):
-            raise unittest.SkipTest('https://pulp.plan.io/issues/3502')
         cls.client = api.Client(cls.cfg, api.json_handler)
         cls.remote = {}
         cls.repo = {}

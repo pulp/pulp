@@ -4,7 +4,7 @@ import unittest
 
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors, utils
+from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import gen_repo
 
@@ -62,17 +62,19 @@ class CRUDRepoTestCase(unittest.TestCase):
 
     @skip_if(bool, 'repo', False)
     def test_02_read_all_repos(self):
-        """Ensure name is displayed when listing repositories."""
-        if not selectors.bug_is_fixed(2824, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/2824')
+        """Ensure name is displayed when listing repositories.
+
+        See Pulp #2824 <https://pulp.plan.io/issues/2824>`_
+        """
         for repo in self.client.get(REPO_PATH)['results']:
             self.assertIsNotNone(repo['name'])
 
     @skip_if(bool, 'repo', False)
     def test_03_fully_update_name(self):
-        """Update a repository's name using HTTP PUT."""
-        if not selectors.bug_is_fixed(3101, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3101')
+        """Update a repository's name using HTTP PUT.
+
+        See: `Pulp #3101 <https://pulp.plan.io/issues/3101>`_
+        """
         self.do_fully_update_attr('name')
 
     @skip_if(bool, 'repo', False)
@@ -97,9 +99,10 @@ class CRUDRepoTestCase(unittest.TestCase):
 
     @skip_if(bool, 'repo', False)
     def test_03_partially_update_name(self):
-        """Update a repository's name using HTTP PATCH."""
-        if not selectors.bug_is_fixed(3101, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3101')
+        """Update a repository's name using HTTP PATCH.
+
+        See: `Pulp #3101 <https://pulp.plan.io/issues/3101>`_
+        """
         self.do_partially_update_attr('name')
 
     @skip_if(bool, 'repo', False)

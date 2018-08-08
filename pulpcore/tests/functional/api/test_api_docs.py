@@ -4,7 +4,7 @@ import unittest
 
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors
+from pulp_smash import api, config
 from pulp_smash.pulp3.constants import API_DOCS_PATH
 
 from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
@@ -13,17 +13,14 @@ from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 class ApiDocsTestCase(unittest.TestCase):
     """Test whether API auto generated docs are available.
 
-    This test targets the following issues:
+    This test targets the following issue:
 
-    * `Pulp #3552 <https://pulp.plan.io/issues/3552>`_
     * `Pulp Smash #893 <https://github.com/PulpQE/pulp-smash/issues/893>`_
     """
 
     def setUp(self):
         """Create an API Client."""
         cfg = config.get_config()
-        if not selectors.bug_is_fixed(3552, cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3552')
         self.client = api.Client(cfg)
 
     def test_valid_credentials(self):
