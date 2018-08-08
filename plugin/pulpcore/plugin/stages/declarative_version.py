@@ -1,5 +1,4 @@
 import asyncio
-from gettext import gettext as _
 
 from pulpcore.plugin.models import RepositoryVersion
 from pulpcore.plugin.tasking import WorkingDirectory
@@ -12,7 +11,7 @@ from .content_unit_stages import ContentUnitSaver, QueryExistingContentUnits
 
 class DeclarativeVersion:
 
-    def __init__(self, first_stage, repository, sync_mode='mirror'):
+    def __init__(self, first_stage, repository, mirror=True):
         """
         A pipeline that creates a new :class:`~pulpcore.plugin.models.RepositoryVersion` from a
         stream of :class:`~pulpcore.plugin.stages.DeclarativeContent` objects.
@@ -86,13 +85,9 @@ class DeclarativeVersion:
         Raises:
             ValueError: if 'sync_mode' is passed an invalid value.
         """
-
-        if sync_mode != 'mirror' and sync_mode != 'additive':
-            msg = _("'sync_mode' must either be 'mirror' or 'additive' not '{sync_mode}'")
-            raise ValueError(msg.format(sync_mode=sync_mode))
         self.first_stage = first_stage
         self.repository = repository
-        self.sync_mode = sync_mode
+        self.mirror = mirror
 
     def create(self):
         """
@@ -107,9 +102,9 @@ class DeclarativeVersion:
                     QueryExistingContentUnits(), ContentUnitSaver(),
                     ContentUnitAssociation(new_version)
                 ]
-                if self.sync_mode == 'additive':
-                    stages.append(EndStage())
-                elif self.sync_mode == 'mirror':
+                if self.mirror:
                     stages.extend([ContentUnitUnassociation(new_version), EndStage()])
+                else:
+                    stages.append(EndStage())
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)

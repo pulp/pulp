@@ -3,7 +3,7 @@ from gettext import gettext as _
 from django.core import validators
 from django.db.models import Q
 
-from rest_framework import serializers
+from rest_framework import serializers, fields
 from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
@@ -132,7 +132,15 @@ class RepositorySyncURLSerializer(serializers.Serializer):
         label=_('Repository'),
         error_messages={
             'required': _('The repository URI must be specified.')
-        })
+        }
+    )
+
+    mirror = fields.ChoiceField(
+        required=False,
+        choices=[True, False],
+        default=True,
+        help_text=_('The synchronization mode, True for "mirror" and False for "additive" mode.')
+    )
 
 
 class PublisherSerializer(MasterModelSerializer):
