@@ -4,7 +4,7 @@
 import unittest
 from urllib.parse import urljoin
 
-from pulp_smash import api, config, selectors
+from pulp_smash import api, config
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
     gen_remote,
@@ -47,8 +47,6 @@ class RemotesPublishersTestCase(unittest.TestCase):
            are associated with different repositories.
         """
         cfg = config.get_config()
-        if not selectors.bug_is_fixed(3502, cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3502')
 
         # Create an remote and publisher.
         client = api.Client(cfg, api.json_handler)
@@ -79,8 +77,6 @@ class RemotesPublishersTestCase(unittest.TestCase):
         publications = []
         for repo in repos:
             publications.append(publish(cfg, publisher, repo))
-            if selectors.bug_is_fixed(3354, cfg.pulp_version):
-                self.addCleanup(client.delete, publications[-1]['_href'])
         self.assertEqual(
             publications[0]['publisher'],
             publications[1]['publisher']

@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 from requests.auth import AuthBase, HTTPBasicAuth
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors, utils
+from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import BASE_PATH, JWT_PATH, USER_PATH
 
 from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
@@ -45,31 +45,27 @@ class AuthTestCase(unittest.TestCase):
                 auth=HTTPBasicAuth(*self.cfg.pulp_auth),
             )
 
+    @unittest.skip('https://pulp.plan.io/issues/3248')
     def test_jwt_success(self):
         """Perform JWT authentication with valid credentials.
 
         Assert that a response indicating success is returned.
         """
-        if not selectors.bug_is_fixed(3248, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3248')
         token = _get_token(self.cfg)
-        (
-            api
-            .Client(self.cfg, api.json_handler)
-            .get(BASE_PATH, auth=JWTAuth(token)))
+        api.Client(self.cfg, api.json_handler).get(BASE_PATH, auth=JWTAuth(token))
 
+    @unittest.skip('https://pulp.plan.io/issues/3248')
     def test_jwt_failure(self):
         """Perform JWT authentication with invalid credentials.
 
         Assert that a response indicating failure is returned.
         """
-        if not selectors.bug_is_fixed(3248, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3248')
         self.cfg.pulp_auth[1] = utils.uuid4()  # randomize password
         with self.assertRaises(HTTPError):
             _get_token(self.cfg)
 
 
+@unittest.skip('https://pulp.plan.io/issues/3248')
 class JWTResetTestCase(unittest.TestCase):
     """Perform series of tests related to JWT reset."""
 
@@ -79,8 +75,6 @@ class JWTResetTestCase(unittest.TestCase):
         Also, verify that the tokens are valid.
         """
         self.cfg = config.get_config()
-        if not selectors.bug_is_fixed(3248, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3248')
         client = api.Client(self.cfg, api.json_handler)
 
         # Create a temporary user, so that we don't have to use the Pulp admin

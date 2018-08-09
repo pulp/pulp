@@ -4,7 +4,7 @@ import unittest
 
 from requests.exceptions import HTTPError
 
-from pulp_smash import api, config, selectors, utils
+from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import DISTRIBUTION_PATH
 from pulp_smash.pulp3.utils import gen_distribution
 
@@ -52,9 +52,10 @@ class CRUDDistributionsTestCase(unittest.TestCase):
 
     @skip_if(bool, 'distribution', False)
     def test_02_read_distributions(self):
-        """Read a distribution using query parameters."""
-        if not selectors.bug_is_fixed(3082, self.cfg.pulp_version):
-            self.skipTest('https://pulp.plan.io/issues/3082')
+        """Read a distribution using query parameters.
+
+        See: `Pulp #3082 <https://pulp.plan.io/issues/3082>`_
+        """
         unique_params = (
             {'name': self.distribution['name']},
             {'base_path': self.distribution['base_path']}
