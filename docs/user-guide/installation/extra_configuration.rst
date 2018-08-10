@@ -213,3 +213,8 @@ occur more frequently, it is recommended to configure a cron job to run the foll
 or monthly::
 
     celery -A pulp.server.async.app call pulp.server.maintenance.monthly.queue_monthly_maintenance
+
+There is an rpm available that will install this command as a weekly cronjob named
+`pulp-maintenance`. Install it on one of your Pulp servers using::
+
+    sudo dnf install pulp-maintenance
