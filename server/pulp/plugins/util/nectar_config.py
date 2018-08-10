@@ -27,6 +27,9 @@ IMPORTER_DOWNLOADER_CONFIG_MAP = (
 
     (constants.KEY_MAX_DOWNLOADS, 'max_concurrent'),
     (constants.KEY_MAX_SPEED, 'max_speed'),
+
+    (constants.KEY_CONNECTION_TIMEOUT, 'connect_timeout'),
+    (constants.KEY_READ_TIMEOUT, 'read_timeout'),
 )
 
 

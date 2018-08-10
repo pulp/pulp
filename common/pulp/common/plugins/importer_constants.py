@@ -70,6 +70,18 @@ KEY_MAX_DOWNLOADS = 'max_downloads'
 # Highest throughput in kB/s the sync should use
 KEY_MAX_SPEED = 'max_speed'
 
+# -- timeouts -----------------------------------------------------------------
+
+# Number of seconds the Requests library will wait for nectar to establish a
+# connection with a remote machine. From the Requests docs: 'It’s a good
+# practice to set connect timeouts to slightly larger than a multiple of 3,
+# which is the default TCP packet retransmission window.'
+KEY_CONNECTION_TIMEOUT = 'connect_timeout'
+
+# The number of seconds the client will wait for the server to send a response
+# after an initial connection has already been made.
+KEY_READ_TIMEOUT = 'read_timeout'
+
 # -- unit policy --------------------------------------------------------------
 
 # Boolean indicating if the importer should remove units that were previously
