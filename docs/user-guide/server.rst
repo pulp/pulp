@@ -159,3 +159,11 @@ as the username
 
 ``proxy_password``: If provided, Pulp will attempt to use basic auth with the proxy server using this
 as the password
+
+``connect_timeout``: Number of seconds to wait for nectar to establish a connection with a remote
+machine. It’s a good practice to set connect timeouts to slightly larger than a multiple of 3, which
+is the default TCP packet retransmission window. Default is 6.05.
+
+``read_timeout``: The number of seconds the client will wait for the server to send a response after
+an initial connection has already been made. Defaults to 27.
+
