@@ -1,6 +1,8 @@
 import os
 import errno
 
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import FileSystemStorage
@@ -141,7 +143,7 @@ def published_metadata_path(model, name):
         settings.MEDIA_ROOT,
         'published',
         'metadata',
-        str(model.pk),
+        str(uuid4()),
         name)
 
 
