@@ -2,7 +2,6 @@
 """Tests that perform actions over orphan files."""
 import unittest
 from random import choice
-from urllib.parse import urljoin
 
 from pulp_smash import api, cli, config, utils
 from pulp_smash.exceptions import CalledProcessError
@@ -10,20 +9,19 @@ from pulp_smash.pulp3.constants import ARTIFACTS_PATH, REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_orphans,
     delete_version,
-    gen_remote,
     gen_repo,
     get_content,
     get_versions,
     sync,
 )
 
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.constants import (
+from tests.functional.api.using_plugin.constants import (
     FILE2_URL,
     FILE_CONTENT_PATH,
-    FILE_FIXTURE_URL,
     FILE_REMOTE_PATH,
 )
+from tests.functional.api.using_plugin.utils import gen_file_remote
+from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class DeleteOrphansTestCase(unittest.TestCase):
@@ -63,9 +61,11 @@ class DeleteOrphansTestCase(unittest.TestCase):
         """
         repo = self.api_client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.api_client.delete, repo['_href'])
-        body = gen_remote(urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST'))
+
+        body = gen_file_remote()
         remote = self.api_client.post(FILE_REMOTE_PATH, body)
         self.addCleanup(self.api_client.delete, remote['_href'])
+
         sync(self.cfg, remote, repo)
         repo = self.api_client.get(repo['_href'])
         content = choice(get_content(repo))
@@ -81,11 +81,11 @@ class DeleteOrphansTestCase(unittest.TestCase):
         cmd = self.sudo + ('ls', artifact_path)
         self.cli_client.run(cmd)
 
-        # Delete first repo version. The previous removed content unit will be
-        # an orphan.
+        # Delete first repo version. The previous removed content unit will be an orphan.
         delete_version(repo, get_versions(repo)[0]['_href'])
         content_units = self.api_client.get(FILE_CONTENT_PATH)['results']
         self.assertIn(content, content_units)
+
         delete_orphans()
         content_units = self.api_client.get(FILE_CONTENT_PATH)['results']
         self.assertNotIn(content, content_units)
@@ -98,10 +98,12 @@ class DeleteOrphansTestCase(unittest.TestCase):
         """Test whether orphan artifacts units can be clean up."""
         repo = self.api_client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.api_client.delete, repo['_href'])
+
         files = {'file': utils.http_get(FILE2_URL)}
         artifact = self.api_client.post(ARTIFACTS_PATH, files=files)
         cmd = self.sudo + ('ls', artifact['file'])
         self.cli_client.run(cmd)
+
         delete_orphans()
         with self.assertRaises(CalledProcessError):
             self.cli_client.run(cmd)

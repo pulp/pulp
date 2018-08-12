@@ -55,7 +55,7 @@ class RepositorySerializer(ModelSerializer):
 
 class RemoteSerializer(MasterModelSerializer):
     """
-    Every remote defined by a plugin should have an Remote serializer that inherits from this
+    Every remote defined by a plugin should have a Remote serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
     """
     _href = DetailIdentityField()

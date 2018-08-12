@@ -11,7 +11,7 @@ pushd plugin/ && pip install -e .  && popd
 export COMMIT_MSG=$(git show HEAD^2 -s)
 export PULP_FILE_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_file\/pull\/(\d+)' | awk -F'/' '{print $7}')
 
-if [ -z $PULP_FILE_PR_NUMBER ]; then
+if [ -z "$PULP_FILE_PR_NUMBER" ]; then
   pip install git+https://github.com/pulp/pulp_file.git#egg=pulp_file
 else
   cd ../

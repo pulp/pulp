@@ -38,7 +38,7 @@ class TaskViewSet(NamedModelViewSet,
                   mixins.DestroyModelMixin):
     queryset = Task.objects.all()
     endpoint_name = 'tasks'
-    filter_class = TaskFilter
+    filterset_class = TaskFilter
     serializer_class = TaskSerializer
     minimal_serializer_class = MinimalTaskSerializer
     filter_backends = (OrderingFilter, DjangoFilterBackend)

@@ -3,19 +3,18 @@
 import unittest
 from random import sample
 from threading import Lock, Thread
-from urllib.parse import urljoin
 
 from pulp_smash import api, config
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import gen_repo, get_versions
 
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.api.using_plugin.utils import populate_pulp
-from tests.functional.constants import (
+from tests.functional.api.using_plugin.constants import (
     FILE_MANY_FIXTURE_COUNT,
-    FILE_MANY_FIXTURE_URL,
+    FILE_MANY_FIXTURE_MANIFEST_URL,
     FILE_CONTENT_PATH
 )
+from tests.functional.api.using_plugin.utils import populate_pulp
+from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class PaginationTestCase(unittest.TestCase):
@@ -88,7 +87,7 @@ class PaginationTestCase(unittest.TestCase):
         # sample 21 contents, because with page_size set to 10, this produces 3
         # pages, where the three three pages have unique combinations of values
         # for the "previous" and "next" links.
-        populate_pulp(self.cfg, urljoin(FILE_MANY_FIXTURE_URL, 'PULP_MANIFEST'))
+        populate_pulp(self.cfg, url=FILE_MANY_FIXTURE_MANIFEST_URL)
         sample_size = min(FILE_MANY_FIXTURE_COUNT, 21)
         contents = sample(self.client.get(FILE_CONTENT_PATH), sample_size)
         repo = self.client.post(REPO_PATH, gen_repo())

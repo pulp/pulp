@@ -61,7 +61,7 @@ class MasterModel(Model):
     # It can also be used for filtering across a relation where a model is related to a Master
     # model. Set this to something reasonable in Master and Detail model classes, e.g. when
     # create a master model, like "Remote", its TYPE value could be "remote". Then, when
-    # creating an Remote Detail class like PackageRemote, its type value could be "package",
+    # creating a Remote Detail class like PackageRemote, its type value could be "package",
     # not "package_remote", since "package_remote" would be redundant in the context of
     # a remote Master model.
     TYPE = None
