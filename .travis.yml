@@ -27,11 +27,15 @@ script: source .travis/script.sh
 stages:
 - name: test
 - name: deploy-pulpcore
-  if: tag =~ ^pulpcore-3.0.0*
+  if: tag =~ ^pulpcore-3.0*
 - name: deploy-plugin
   if: tag =~ ^pulpcore-plugin*
 - name: deploy-common
   if: tag =~ ^pulpcore-common*
+- name: publish-beta-docs
+  if: tag =~ ^pulpcore-3.0*
+- name: publish-nightly-docs
+  if: type = cron
 jobs:
   include:
   - stage: deploy-pulpcore
@@ -55,3 +59,17 @@ jobs:
       script: bash .travis/deploy.sh common
       on:
         tags: true
+  - stage: publish-beta-docs
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/publish_docs.sh beta
+      on:
+        tags: true
+  - stage: publish-nightly-docs
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/publish_docs.sh nightly
+      on:
+        branch: master
