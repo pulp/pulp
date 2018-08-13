@@ -44,9 +44,6 @@ class HttpDownloader(BaseDownloader):
     then closed when the download is complete. A session that is passed in will not be closed when
     the download is complete.
 
-    By default, response data is automatically decompressed. If you want to save the data without
-    decompression, e.g. Artifact data, specify the `auto_decompress=False` option.
-
     `aiohttp.ClientSession` objects allows you to configure options that will apply to all
     downloaders using that session such as auth, timeouts, headers, etc. For more info on these
     options see the `aiohttp.ClientSession` docs for more information:
@@ -99,7 +96,7 @@ class HttpDownloader(BaseDownloader):
     """
 
     def __init__(self, url, session=None, auth=None, proxy=None, proxy_auth=None,
-                 headers_ready_callback=None, auto_decompress=True, **kwargs):
+                 headers_ready_callback=None, **kwargs):
         """
         Args:
             url (str): The url to download.
@@ -113,7 +110,6 @@ class HttpDownloader(BaseDownloader):
                 as its argument. The callback will be called when the response headers are
                 available. The dictionary passed has the header names as the keys and header values
                 as its values. e.g. `{'Transfer-Encoding': 'chunked'}`
-            auto_decompress (bool): Automatically decompress the response body.
             kwargs (dict): This accepts the parameters of
                 :class:`~pulpcore.plugin.download.BaseDownloader`.
         """
@@ -121,7 +117,7 @@ class HttpDownloader(BaseDownloader):
             self.session = session
             self._close_session_on_finalize = False
         else:
-            self.session = aiohttp.ClientSession(auto_decompress=auto_decompress)
+            self.session = aiohttp.ClientSession()
             self._close_session_on_finalize = True
         self.auth = auth
         self.proxy = proxy
