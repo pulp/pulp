@@ -16,17 +16,19 @@ files_tmp_file(pulp_tmp_t)
 
 require {
         type celery_t;
+        type gpg_exec_t;
         type httpd_sys_rw_content_t;
         type pstore_t;
-        type pulp_var_run_t;
+        type pulp_cert_t;
         type pulp_tmp_t;
         type pulp_var_cache_t;
-        type pulp_cert_t;
+        type pulp_var_run_t;
         type puppet_etc_t;
         type qpidd_t;
         type qpidd_var_lib_t;
         type tmp_t;
         type tmpfs_t;
+        type shell_exec_t;
         type sysfs_t;
         class sock_file { create link unlink write };
         class unix_stream_socket connectto;
@@ -57,6 +59,15 @@ allow celery_t tmpfs_t:filesystem getattr;
 allow celery_t tmpfs_t:dir { write add_name remove_name };
 allow celery_t tmpfs_t:file { create open read write link getattr unlink };
 
+# add missing rules for file map
+allow celery_t pulp_var_cache_t:file map;
+allow celery_t shell_exec_t:file map;
+allow celery_t gpg_exec_t:file map;
+allow celery_t usr_t:file map;
+
+fs_exec_tmpfs_files(celery_t)
+kernel_read_network_state(celery_t)
+unconfined_shell_domtrans(celery_t)
 
 #============= qpidd_t ==============
 #
