@@ -19,7 +19,7 @@ install:
 jobs:
   include:
     - stage: build-publish-docs
-      script: source .travis/build-docs.sh
+      script: source .travis/build-docs.sh 2-master
       if: type = cron
 before_install:
     - openssl aes-256-cbc -K $encrypted_5fa326b9da76_key -iv $encrypted_5fa326b9da76_iv

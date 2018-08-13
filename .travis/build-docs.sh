@@ -9,4 +9,4 @@ export PYTHONUNBUFFERED=1
 eval "$(ssh-agent -s)" #start the ssh agent
 ssh-add ~/.ssh/pulp-infra
 
-python3 docs-builder.py --release 2-master
+python3 docs-builder.py --release $1
