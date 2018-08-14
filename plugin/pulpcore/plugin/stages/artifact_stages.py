@@ -215,6 +215,7 @@ class ArtifactDownloader(Stage):
                                     declarative_artifact.artifact = new_artifact
                                     to_download_count = to_download_count + 1
                             pb.done = pb.done + to_download_count
+                            pb.save()
                             outstanding_downloads = outstanding_downloads - to_download_count
                             await out_q.put(content)
                 else:
