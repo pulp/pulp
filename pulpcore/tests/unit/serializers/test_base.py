@@ -99,3 +99,15 @@ class TestValidateUnknownFields(TestCase):
 
         self.assertEqual(initial_data, {'field1': 1, 'field2': 2})
         self.assertEqual(defined_fields, {'field1': 1, 'field2': 2})
+
+    def test_ignored_fields_no_side_effects(self):
+        """
+        Test ignored fields in initial data don't cause side effects
+        """
+        # there's just the `csrfmiddlewaretoken` in the ignored_fields
+        initial_data = {'field1': 1, 'csrfmiddlewaretoken': 2}
+        defined_fields = {'field1': 1}
+        try:
+            validate_unknown_fields(initial_data, defined_fields)
+        except serializers.ValidationError:
+            self.fail("validate_unknown_fields() failed improperly.")

@@ -80,8 +80,10 @@ def view_name_for_model(model_obj, view_action):
 def validate_unknown_fields(initial_data, defined_fields):
     """
     This will raise a `ValidationError` if a serializer is passed fields that are unknown.
+    The `csrfmiddlewaretoken` field is silently ignored.
     """
-    unknown_fields = set(initial_data) - set(defined_fields)
+    ignored_fields = {'csrfmiddlewaretoken'}
+    unknown_fields = set(initial_data) - set(defined_fields) - ignored_fields
     if unknown_fields:
         unknown_fields = {field: _('Unexpected field') for field in unknown_fields}
         raise serializers.ValidationError(unknown_fields)
