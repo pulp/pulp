@@ -44,6 +44,13 @@ class HttpDownloader(BaseDownloader):
     then closed when the download is complete. A session that is passed in will not be closed when
     the download is complete.
 
+    If a session is not provided, the one created by HttpDownloader uses non-default timing values.
+    Specifically, the "total" timeout is set to None and the "sock_connect" and "sock_read" are both
+    5 minutes. For more info on these settings, see the aiohttp docs:
+    http://aiohttp.readthedocs.io/en/stable/client_quickstart.html#timeouts Behaviorally, it should
+    allow for an active download to be arbitrarily long, while still detecting dead or closed
+    sessions even when TCPKeepAlive is disabled.
+
     `aiohttp.ClientSession` objects allows you to configure options that will apply to all
     downloaders using that session such as auth, timeouts, headers, etc. For more info on these
     options see the `aiohttp.ClientSession` docs for more information:
@@ -117,7 +124,8 @@ class HttpDownloader(BaseDownloader):
             self.session = session
             self._close_session_on_finalize = False
         else:
-            self.session = aiohttp.ClientSession()
+            timeout = aiohttp.ClientTimeout(total=None, sock_connect=600, sock_read=600)
+            self.session = aiohttp.ClientSession(timeout=timeout)
             self._close_session_on_finalize = True
         self.auth = auth
         self.proxy = proxy
@@ -139,7 +147,7 @@ class HttpDownloader(BaseDownloader):
         if self.headers_ready_callback:
             self.headers_ready_callback(response.headers)
         while True:
-            chunk = await response.content.read(1024 * 1024)
+            chunk = await response.content.read(1048576)  # 1 megabyte
             if not chunk:
                 self.finalize()
                 break  # the download is done

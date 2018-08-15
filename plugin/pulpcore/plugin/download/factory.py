@@ -20,14 +20,24 @@ class DownloaderFactory:
     """
     A factory for creating downloader objects that are configured from with remote settings.
 
-    It supports `http`, `https`, and `file` protocols. The ``downloader_overrides`` option allows
-    the caller to specify the download class to be used for any given protocol. This allows the user
-    to specify custom, subclassed downloaders to be built by the factory.
+    The DownloadFactory correctly handles SSL settings, basic auth settings, and proxy settings.
+
+    It supports handling urls with the `http`, `https`, and `file` protocols. The
+    ``downloader_overrides`` option allows the caller to specify the download class to be used for
+    any given protocol. This allows the user to specify custom, subclassed downloaders to be built
+    by the factory.
 
     Usage:
         >>> the_factory = DownloaderFactory(remote)
         >>> downloader = the_factory.build(url_a)
         >>> result = downloader.fetch()  # 'result' is a DownloadResult
+
+    For http and https urls, in addition to the remote settings, non-default timing values are used.
+    Specifically, the "total" timeout is set to None and the "sock_connect" and "sock_read" are both
+    5 minutes. For more info on these settings, see the aiohttp docs:
+    http://aiohttp.readthedocs.io/en/stable/client_quickstart.html#timeouts Behaviorally, it should
+    allow for an active download to be arbitrarily long, while still detecting dead or closed
+    sessions even when TCPKeepAlive is disabled.
     """
 
     def __init__(self, remote, downloader_overrides=None):
@@ -51,7 +61,7 @@ class DownloaderFactory:
 
     def _make_aiohttp_session_from_remote(self):
         """
-        Build a :class:`aiohttp.ClientSession` from the remote settings
+        Build a :class:`aiohttp.ClientSession` from the remote's settings and timing settings.
 
         Returns:
             :class:`aiohttp.ClientSession`
@@ -89,7 +99,8 @@ class DownloaderFactory:
                 password=self._remote.password
             )
 
-        return aiohttp.ClientSession(connector=conn, **auth_options)
+        timeout = aiohttp.ClientTimeout(total=None, sock_connect=600, sock_read=600)
+        return aiohttp.ClientSession(connector=conn, timeout=timeout, **auth_options)
 
     def build(self, url, **kwargs):
         """

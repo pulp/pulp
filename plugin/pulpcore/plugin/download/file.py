@@ -42,7 +42,7 @@ class FileDownloader(BaseDownloader):
         """
         async with aiofiles.open(self._path, 'rb') as f_handle:
             while True:
-                chunk = await f_handle.read(1048576)
+                chunk = await f_handle.read(1048576)  # 1 megabyte
                 if not chunk:
                     self.finalize()
                     break  # the reading is done
