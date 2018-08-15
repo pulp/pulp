@@ -5,8 +5,12 @@ from logging import getLogger, DEBUG
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import (HttpResponse, HttpResponseForbidden, HttpResponseNotFound,
-                         StreamingHttpResponse)
+from django.http import (
+    HttpResponse,
+    HttpResponseRedirect,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+    StreamingHttpResponse)
 from django.views.generic import View
 
 from wsgiref.util import FileWrapper
@@ -16,6 +20,23 @@ from pulpcore.app.models import Distribution
 
 log = getLogger(__name__)
 log.level = DEBUG
+
+
+class PathNotResolved(Exception):
+    """
+    The path could not be resolved to a published file.
+
+    This could be caused by either the distribution, the publication,
+    or the published file could not be found.
+    """
+    pass
+
+
+class ArtifactNotFound(Exception):
+    """
+    The artifact associated with a published-artifact does not exist.
+    """
+    pass
 
 
 class ContentView(View):
@@ -55,6 +76,22 @@ class ContentView(View):
             path = base
         return tree
 
+    def _published_path(self, request):
+        """
+        Get the path of the (requested) published object.
+
+        The leading and trailing '/' are stripped. Then the BASE_PATH prefix is stripped.
+
+        Args:
+            request (django.http.HttpRequest): A request for a content artifact.
+
+        Returns:
+            str: The path of the (requested) published object.
+        """
+        path = request.path.strip('/')
+        path = path[len(self.BASE_PATH):]
+        return path.lstrip('/')
+
     def _match_distribution(self, path):
         """
         Match a distribution using a list of base paths.
@@ -66,15 +103,20 @@ class ContentView(View):
             Distribution: The matched distribution.
 
         Raises:
-            ObjectDoesNotExist: when not matched.
+            PathNotResolved: when not matched.
         """
         base_paths = self._base_paths(path)
         try:
             return Distribution.objects.get(base_path__in=base_paths)
         except ObjectDoesNotExist:
-            log.debug(_('Distribution not matched for {path} using: {base_paths}').format(
-                path=path, base_paths=base_paths))
-            raise
+            log.debug(
+                _('Distribution not matched for %(p)s using: %(b)s'),
+                {
+                    'p': path,
+                    'b': base_paths
+                }
+            )
+            raise PathNotResolved(path)
 
     def _match(self, path):
         """
@@ -87,13 +129,15 @@ class ContentView(View):
             str: The storage path of the matched object.
 
         Raises:
-            ObjectDoesNotExist: The referenced object does not exist.
+            PathNotResolved: The path could not be matched to a published file.
+            ArtifactNotFound: The published-artifact was matched but the
+                associated artifact does not exist.
 
         """
         distribution = self._match_distribution(path)
         publication = distribution.publication
         if not publication:
-            raise ObjectDoesNotExist()
+            raise PathNotResolved(path)
         rel_path = path.lstrip('/')
         rel_path = rel_path[len(distribution.base_path):]
         rel_path = rel_path.lstrip('/')
@@ -104,87 +148,127 @@ class ContentView(View):
             pass
         else:
             artifact = pa.content_artifact.artifact
-            if artifact.file:
+            if artifact:
                 return artifact.file.name
             else:
-                raise ObjectDoesNotExist()
+                raise ArtifactNotFound(path)
         # metadata
-        pm = publication.published_metadata.get(relative_path=rel_path)
-        if pm.file:
-            return pm.file.name
+        try:
+            pm = publication.published_metadata.get(relative_path=rel_path)
+        except ObjectDoesNotExist:
+            raise PathNotResolved(path)
         else:
-            raise ObjectDoesNotExist()
+            return pm.file.name
 
-    def _stream(self, storage_path):
+    def _django(self, path):
         """
-        Get streaming response.
+        The content web server is Django.
+
+        Stream the bits.
 
         Args:
-            storage_path (str): The storage path of the requested object.
+            path (str): The fully qualified path to the file to be served.
 
         Returns:
             StreamingHttpResponse: Stream the requested content.
 
         """
         try:
-            file = FileWrapper(open(storage_path, 'rb'))
+            file = FileWrapper(open(path, 'rb'))
         except FileNotFoundError:
             return HttpResponseNotFound()
         except PermissionError:
             return HttpResponseForbidden()
         response = StreamingHttpResponse(file)
-        response['Content-Length'] = os.path.getsize(storage_path)
+        response['Content-Length'] = os.path.getsize(path)
         response['Content-Disposition'] = \
-            'attachment; filename={n}'.format(n=os.path.basename(storage_path))
+            'attachment; filename={n}'.format(n=os.path.basename(path))
         return response
 
-    def _redirect(self, storage_path):
-        """
-        Get redirect-to-streamer response.
-
-        Args:
-            storage_path (str): The storage path of the requested object.
-
-        Returns:
-
-        """
-        pass
-        # :TODO:
-
-    def _apache(self, storage_path):
+    def _apache(self, path):
         """
         The content web server is Apache.
 
         Args:
-            storage_path (str): The storage path of the requested object.
+            path (str): The fully qualified path to the file to be served.
 
         Returns:
             HttpResponse: A response with X-SENDFILE header.
         """
         response = HttpResponse()
-        response['X-SENDFILE'] = storage_path
+        response['X-SENDFILE'] = path
         return response
 
-    def _nginx(self, storage_path):
+    def _nginx(self, path):
         """
         The content web server is NGINX.
 
         Args:
-            storage_path (str): The storage path of the requested object.
+            path (str): The fully qualified path to the file to be served.
 
         Returns:
             HttpResponse: A response with X-Accel-Redirect header.
         """
         response = HttpResponse()
-        response['X-Accel-Redirect'] = storage_path
+        response['X-Accel-Redirect'] = path
         return response
 
-    # Mapping of responder method by web server.
-    RESPONDER = {
-        'django': _stream,
-        'apache': _apache,
-        'nginx': _nginx,
-    }
+    def _redirect(self, request):
+        """
+        Get redirect-to-streamer response.
+
+        Args:
+            request (django.http.HttpRequest): A request for a content artifact.
+
+        Returns:
+            HttpResponseRedirect: Redirect to streamer.
+        """
+        redirect = settings.CONTENT['REDIRECT']
+
+        enabled = redirect['ENABLED']
+        host = redirect['HOST'] or request.get_host().split(':')[0]
+        port = redirect['PORT'] or request.get_port()
+        prefix = redirect['PATH_PREFIX']
+
+        if not enabled:
+            return HttpResponseNotFound()
+
+        path = os.path.join(
+            prefix.strip('/'),
+            self._published_path(request)
+        )
+
+        url = '{scheme}://{host}:{port}/{path}'.format(
+            scheme=request.scheme,
+            host=host,
+            path=path,
+            port=port)
+
+        log.debug(_('Redirected: %(u)s'), {'u': url})
+        response = HttpResponseRedirect(url)
+        return response
+
+    def _dispatch(self, path):
+        """
+        Dispatch to the appropriate responder (method).
+
+        Args:
+            path (str): The fully qualified path to the file to be served.
+
+        Returns:
+            django.http.StreamingHttpResponse: on found.
+            django.http.HttpResponseNotFound: on not-found.
+            django.http.HttpResponseForbidden: on forbidden.
+            django.http.HttpResponseRedirect: on redirect to the streamer.
+        """
+        server = settings.CONTENT['WEB_SERVER']
+
+        try:
+            responder = self.RESPONDER[server]
+        except KeyError:
+            raise ValueError(_('Web server "{t}" not supported.').format(t=server))
+        else:
+            return responder(self, path)
 
     def get(self, request):
         """
@@ -197,20 +281,21 @@ class ContentView(View):
             django.http.StreamingHttpResponse: on found.
             django.http.HttpResponseNotFound: on not-found.
             django.http.HttpResponseForbidden: on forbidden.
-
+            django.http.HttpResponseRedirect: on redirect to the streamer.
         """
-        server = settings.CONTENT['WEB_SERVER']
-
         try:
-            path = request.path.strip('/')
-            path = path[len(self.BASE_PATH):]
+            path = self._published_path(request)
             storage_path = self._match(path)
-        except ObjectDoesNotExist:
+        except PathNotResolved:
             return HttpResponseNotFound()
-
-        try:
-            responder = self.RESPONDER[server]
-        except KeyError:
-            raise ValueError(_('Web server "{t}" not supported.'.format(t=server)))
+        except ArtifactNotFound:
+            return self._redirect(request)
         else:
-            return responder(self, storage_path)
+            return self._dispatch(storage_path)
+
+    # Mapping of responder-method based on the type of web server.
+    RESPONDER = {
+        'django': _django,
+        'apache': _apache,
+        'nginx': _nginx,
+    }

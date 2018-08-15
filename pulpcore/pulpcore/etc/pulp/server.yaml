@@ -101,6 +101,22 @@
 #           a host that's different from the REST API. The default value is the same as the host
 #           used to serve the REST API.
 #
+#   `REDIRECT`: The settings used to control redirect to the streamer.
+#     `HOST`: The optional FQDN or IP for the streamer.
+#             Defaults to the host specified in the original request.
+#     `PORT`: The optional port number for the steamer.
+#             Defaults to the port number specified in the original request.
+#     `PATH_PREFIX`: The optional path prefix for the stream.
+#     `ENABLED`: When true, requested content that is not found in storage will
+#                result in a redirect (403) to the streamer.  When false, the result
+#                will be a NotFound (404).
+#
 # CONTENT:
 #   WEB_SERVER: django
 #   HOST: pulp.example.com
+#   REDIRECT:
+#     HOST:
+#     PORT: 443
+#     PATH_PREFIX: /streamer/
+#     ENABLED: false
+#
