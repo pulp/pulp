@@ -67,7 +67,7 @@ def delete_version(pk):
         version.delete()
 
 
-def add_and_remove(repository_pk, add_content_units, remove_content_units):
+def add_and_remove(repository_pk, add_content_units, remove_content_units, base_version_pk=None):
     """
     Create a new repository version by adding and then removing content units.
 
@@ -78,9 +78,16 @@ def add_and_remove(repository_pk, add_content_units, remove_content_units):
             should be added to the previous Repository Version for this Repository.
         remove_content_units (list): List of PKs for:class:`~pulpcore.app.models.Content` that
             should be removed from the previous Repository Version for this Repository.
+        base_version_pk (int): the primary key for a RepositoryVersion whose content will be used
+            as the initial set of content for our new RepositoryVersion
     """
     repository = models.Repository.objects.get(pk=repository_pk)
 
-    with models.RepositoryVersion.create(repository) as new_version:
+    if base_version_pk:
+        base_version = models.RepositoryVersion.objects.get(pk=base_version_pk)
+    else:
+        base_version = None
+
+    with models.RepositoryVersion.create(repository, base_version=base_version) as new_version:
         new_version.add_content(models.Content.objects.filter(pk__in=add_content_units))
         new_version.remove_content(models.Content.objects.filter(pk__in=remove_content_units))
