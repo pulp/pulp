@@ -196,8 +196,14 @@ _DEFAULT_PULP_SETTINGS = {
         'WORKING_DIRECTORY': '/var/lib/pulp/tmp',
     },
     'CONTENT': {
-        'WEB_SERVER': 'django',
         'HOST': None,
+        'WEB_SERVER': 'django',
+        'REDIRECT': {
+            'HOST': None,
+            'PORT': 443,
+            'PATH_PREFIX': '/streamer/',
+            'ENABLED': False,
+        }
     },
     'REDIS': {
         'HOST': '127.0.0.1',
