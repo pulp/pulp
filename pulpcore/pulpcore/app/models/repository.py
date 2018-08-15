@@ -212,6 +212,8 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(db_index=True)
     complete = models.BooleanField(db_index=True, default=False)
+    base_version = models.ForeignKey('Repositoryversion', null=True,
+                                     on_delete=models.SET_NULL)
 
     class Meta:
         default_related_name = 'versions'
@@ -265,13 +267,15 @@ class RepositoryVersion(Model):
         return {c['type']: c['count'] for c in annotated}
 
     @classmethod
-    def create(cls, repository):
+    def create(cls, repository, base_version=None):
         """
         Create a new RepositoryVersion
         Creation of a RepositoryVersion should be done in a RQ Job.
 
         Args:
             repository (pulpcore.app.models.Repository): to create a new version of
+            base_version (pulpcore.app.models.RepositoryVersion): an optional repository version
+                whose content will be used as the set of content for the new version
 
         Returns:
             pulpcore.app.models.RepositoryVersion: The Created RepositoryVersion
@@ -280,10 +284,18 @@ class RepositoryVersion(Model):
         with transaction.atomic():
             version = cls(
                 repository=repository,
-                number=int(repository.last_version) + 1)
+                number=int(repository.last_version) + 1,
+                base_version=base_version)
             repository.last_version = version.number
             repository.save()
             version.save()
+
+            if base_version:
+                # first remove the content that isn't in the base version
+                version.remove_content(version.content.exclude(pk__in=base_version.content))
+                # now add any content that's in the base_version but not in version
+                version.add_content(base_version.content.exclude(pk__in=version.content))
+
             resource = CreatedResource(content_object=version)
             resource.save()
             return version

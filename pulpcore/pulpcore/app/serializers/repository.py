@@ -411,10 +411,19 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         help_text=_('A list of content units to remove from the latest repository version'),
         write_only=True
     )
+    base_version = NestedHyperlinkedRelatedField(
+        required=False,
+        help_text=_('A repository version whose content will be used as the initial set of content '
+                    'for the new repository version'),
+        queryset=models.RepositoryVersion.objects.all(),
+        view_name='versions-detail',
+        lookup_field='number',
+        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    )
 
     class Meta:
         model = models.RepositoryVersion
         fields = ModelSerializer.Meta.fields + (
             '_href', '_content_href', '_added_href', '_removed_href', 'number',
-            'content_summary', 'add_content_units', 'remove_content_units'
+            'content_summary', 'add_content_units', 'remove_content_units', 'base_version'
         )
