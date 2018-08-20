@@ -10,11 +10,17 @@ python:
 env:
   matrix:
     - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-    - TEST=docs
   global:
     secure: kzbI/DagIGIOFjVEyLyYGEi/xVwiq5M8FCEM3mOtXK9ocYs1Ky1ABkcgLrOLBb+S7SMNjy4XnUWGUxhBGWQLDw2/OimKFoHpCHGt1Cb4rXhWDSVPGgDXQzyW8pJsPKtAbemfx5a4oRP82vmpgB/htJ+8dE5CIAZWU8d9dbvQbro=
 matrix:
   fast_finish: true
+  include:
+    - name: "Test building docs"
+      env: DJANGO_MAX=2.2.100 DB=postgres TEST=docs
+      python: "3.7"
+    - name: "Apply style rules"
+      env: DJANGO_MAX=2.2.100 DB=postgres TEST=style
+      python: "3.7"
 addons:
     # postgres versions provided by el7 RHSCL (lowest supportable version)
     postgresql: "9.6"

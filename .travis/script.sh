@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # coding=utf-8
+
 if [ "$TEST" = 'docs' ]; then
   pip3 install sphinx sphinxcontrib-openapi
   cd docs
   make html
   return "$?"
-fi
+else if [ "$TEST" = 'style' ]; then
+  flake8 --config flake8.cfg
+  return "$?"
+fi;
 
 set -veuo pipefail
-
-# Lint code.
-flake8 --config flake8.cfg
 
 # Run migrations.
 export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
