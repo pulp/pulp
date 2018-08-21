@@ -1,6 +1,4 @@
-import itertools
-
-from collections.abc import Sized, Iterable
+from itertools import chain
 from gettext import gettext as _
 from logging import getLogger
 
@@ -37,8 +35,8 @@ class ChangeSet:
 
     Attributes:
         remote (pulpcore.plugin.Remote): A remote.
-        additions (SizedIterable): The content to be added to the repository.
-        removals (SizedIterable): The content IDs to be removed.
+        additions (collections.Iterable): The content to be added to the repository.
+        removals (collections.Iterable): The content IDs to be removed.
         added (int): The number of content units successfully added.
         removed (int): The number of content units successfully removed.
         failed (int): The number of changes that failed.
@@ -65,9 +63,9 @@ class ChangeSet:
         Args:
             remote (pulpcore.plugin.models.Remote): A remote.
             repository_version (pulpcore.plugin.models.RepositoryVersion): The new version to which
-                content should be added and removed
-            additions (SizedIterable): The content to be added to the repository.
-            removals (SizedIterable): The content IDs to be removed.
+                content should be added and removed.
+            additions (collections.Iterable): The content to be added to the repository.
+            removals (collections.Iterable): The content IDs to be removed.
 
         Notes:
             The content to be added may already exist but not be associated
@@ -127,36 +125,41 @@ class ChangeSet:
         Yields:
             ChangeReport: A report for each content added.
         """
+        def completed():
+            content = artifact.content
+            try:
+                download.result()
+            except Exception as error:
+                task = Task()
+                task.append_non_fatal_error(error)
+                add_bar.increment()
+                return ChangeReport(ChangeReport.ADDED, content.model, error=error)
+            else:
+                artifact.settle()
+                content.settle()
+                if not content.settled:
+                    return
+                with transaction.atomic():
+                    self._add_content(content)
+                    add_bar.increment()
+                return ChangeReport(ChangeReport.ADDED, content.model)
+
         log.info(
             _('Apply additions: repository=%(r)s.'),
             {
                 'r': self.repository.name
             })
 
-        downloads = DownloadIterator((c.bind(self) for c in self.additions))
+        add_bar = ProgressBar(message=_('Add Content'), total=0)
+        download_bar = ProgressBar(message=_('Download Artifact'), total=0)
 
-        with ProgressBar(message=_('Add Content'), total=len(self.additions)) as bar:
-            for artifact, download in downloads:
-                content = artifact.content
-                try:
-                    download.result()
-                except Exception as error:
-                    task = Task()
-                    task.append_non_fatal_error(error)
-                    bar.increment()
-                    report = ChangeReport(ChangeReport.ADDED, content.model)
-                    report.error = error
-                    yield report
-                else:
-                    artifact.settle()
-                    content.settle()
-                    if not content.settled:
-                        continue
-                    with transaction.atomic():
-                        self._add_content(content)
-                        bar.increment()
-                    report = ChangeReport(ChangeReport.ADDED, content.model)
-                yield report
+        with add_bar, download_bar:
+            additions = (c.bind(self) for c in self.additions)
+            for batch in BatchIterator(additions):
+                add_bar.total += len(batch)
+                add_bar.save()
+                for artifact, download in DownloadIterator(batch, bar=download_bar):
+                    yield completed()
 
     def _apply_removals(self):
         """
@@ -171,8 +174,11 @@ class ChangeSet:
             {
                 'r': self.repository.name
             })
-        with ProgressBar(message=_('Remove Content'), total=len(self.removals)) as bar:
-            for batch in BatchIterator(self.removals, 1000):
+
+        with ProgressBar(message=_('Remove Content'), total=0) as bar:
+            for batch in BatchIterator(self.removals):
+                bar.total += len(batch)
+                bar.save()
                 with transaction.atomic():
                     for content in batch:
                         self._remove_content(content)
@@ -194,65 +200,25 @@ class ChangeSet:
                 'r': self.repository.name
             })
 
-        for report in itertools.chain(self._apply_additions(), self._apply_removals()):
+        self.added = 0
+        self.removed = 0
+        self.failed = 0
+
+        for report in chain(self._apply_additions(), self._apply_removals()):
             if report.error:
                 self.failed += 1
-            elif report.action == ChangeReport.ADDED:
+                continue
+            if report.action == ChangeReport.ADDED:
                 self.added += 1
-            else:
+                continue
+            if report.action == ChangeReport.REMOVED:
                 self.removed += 1
             yield report
 
         log.info(
-            _('ChangeSet complete: added:%(a)d, removed:%(r)d, failed:%(f)d'),
+            _('ChangeSet applied: added:%(a)d, removed:%(r)d, failed:%(f)d'),
             {
                 'a': self.added,
                 'r': self.removed,
                 'f': self.failed
             })
-
-    def apply_and_drain(self):
-        """
-        Call apply() then iterate and discard the change reports. This is useful when the caller is
-        only interested in the added, removed and failed statistics.
-        """
-        for x in self.apply():
-            pass
-
-
-class SizedIterable(Sized, Iterable):
-    """
-    A sized iterable.
-
-    Attributes:
-        iterable (Iterable): An iterable.
-        length (int): The number of items expected to be yielded by the iterable.
-
-    Examples:
-        >>>
-        >>> generator = (n for n in [1, 2, 3])
-        >>> iterable = SizedIterable(generator, 3)
-        >>> len(iterable)
-        3
-        >>> list(iterable)
-        [1, 2, 3]
-    """
-
-    def __init__(self, iterable, length):
-        """
-        Args:
-            iterable (Iterable): An iterable.
-            length (int): The number of items expected to be yielded by the iterable.
-        """
-        self._iterable = iterable
-        self._length = length
-
-    def __len__(self):
-        """
-        Returns:
-            The number of items expected to be yielded by the iterable.
-        """
-        return self._length
-
-    def __iter__(self):
-        return iter(self._iterable)

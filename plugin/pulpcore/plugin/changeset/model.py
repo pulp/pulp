@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.utils import IntegrityError
 
-from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact
+from pulpcore.plugin.models import Artifact, ContentArtifact, RemoteArtifact, RepositoryVersion
 from pulpcore.plugin.download import BaseDownloader
 
 log = getLogger(__name__)

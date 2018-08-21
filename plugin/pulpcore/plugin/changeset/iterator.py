@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 
-from collections.abc import Iterable
+from collections import Iterable, Sized
 from logging import getLogger
 
 from django.db.models import Q
@@ -48,9 +48,36 @@ class BatchIterator(Iterable):
         while True:
             batch = tuple(itertools.islice(generator, 0, self.batch))
             if batch:
-                yield batch
+                yield Batch(batch, len(batch))
             else:
                 return
+
+
+class Batch(Iterable, Sized):
+    """
+    Batch yielded by the BatchIterator.
+
+    Provides a sized object.
+
+    Attributes:
+        _iterable (Iterable): The batch content.
+        _length (int): The batch length.
+    """
+
+    def __init__(self, iterable, length):
+        """
+        Args:
+            iterable: The batch content.
+            length: The batch length.
+        """
+        self._iterable = iterable
+        self._length = length
+
+    def __iter__(self):
+        return iter(self._iterable)
+
+    def __len__(self):
+        return self._length
 
 
 class ContentIterator(Iterable):
@@ -75,10 +102,12 @@ class ContentIterator(Iterable):
         """
         q = Q(pk=None)
         for c in content:
+            if c.stored_model:
+                continue
             q |= Q(**c.key)
         return q
 
-    def __init__(self, content):
+    def __init__(self, content, bar=None):
         """
         Args:
             content (iterable): An iterable of PendingContent.
@@ -257,14 +286,16 @@ class DownloadIterator(Iterable):
     # The (default) number of concurrent downloads.
     CONCURRENT = 10
 
-    def __init__(self, content, concurrent=CONCURRENT):
+    def __init__(self, content, bar=None, concurrent=CONCURRENT):
         """
         Args:
             content (Iterable): Pending content to be iterated.
             concurrent (int): The number of concurrent downloads.
+            bar (pulp.plugin.ProgressBar): An optional progress bar.
         """
         self.content = content
         self.concurrent = concurrent
+        self.bar = bar
 
     def _iter(self):
         """
@@ -284,10 +315,16 @@ class DownloadIterator(Iterable):
         for batch in BatchIterator(downloads, self.concurrent):
             correlation = {d: a for a, d in batch}
             pending = correlation.keys()
+            if self.bar:
+                self.bar.total += len(batch)
+                self.bar.save()
             while pending:
                 future = asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                 completed, pending = loop.run_until_complete(future)
                 for task in completed:
+                    if self.bar:
+                        self.bar.increment()
+                        self.bar.save()
                     artifact = correlation[task]
                     yield (artifact, task)
 
