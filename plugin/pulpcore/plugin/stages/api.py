@@ -52,9 +52,21 @@ async def create_pipeline(stages, maxsize=100):
     futures = []
     for stage in stages:
         out_q = asyncio.Queue(maxsize=maxsize)
-        futures.append(stage(in_q, out_q))
+        futures.append(asyncio.ensure_future(stage(in_q, out_q)))
         in_q = out_q
-    await asyncio.gather(*futures)
+    try:
+        await asyncio.gather(*futures)
+    except Exception:
+        # One of the stages raised an exception, cancel all stages...
+        pending = []
+        for task in futures:
+            if not task.done():
+                task.cancel()
+                pending.append(task)
+        # ...and run until all Exceptions show up
+        if pending:
+            await asyncio.wait(pending, timeout=60)
+        raise
 
 
 class EndStage(Stage):
