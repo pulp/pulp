@@ -2,6 +2,8 @@
 Django models related to progress reporting
 """
 from gettext import gettext as _
+
+from asyncio import CancelledError
 import logging
 import datetime
 
@@ -91,11 +93,14 @@ class ProgressReport(Model):
 
     def __exit__(self, type, value, traceback):
         """
-        Update the progress report state to COMPLETED or FAILED.
+        Update the progress report state to COMPLETED, CANCELED, or FAILED.
 
-        If an exception occurs the progress report state is saved as FAILED and the exception is
-        not suppressed. If the context manager exited without exception the progress report state
-        is saved as COMPLETED.
+        If an exception occurs the progress report state is saved as:
+        - CANCELED if the exception is `asyncio.CancelledError`
+        - FAILED otherwise.
+
+        The exception is not suppressed. If the context manager exited without
+        exception the progress report state is saved as COMPLETED.
 
         See the context manager documentation for more info on __exit__ parameters
         """
@@ -104,10 +109,11 @@ class ProgressReport(Model):
             self.total = self.done
         if type is None:
             self.state = TASK_STATES.COMPLETED
-            self.save()
+        elif type is CancelledError:
+            self.state = TASK_STATES.CANCELED
         else:
             self.state = TASK_STATES.FAILED
-            self.save()
+        self.save()
 
 
 class ProgressSpinner(ProgressReport):
@@ -128,8 +134,8 @@ class ProgressSpinner(ProgressReport):
         >>> metadata_progress.save()
 
     The ProgressSpinner() is a context manager that provides automatic state transitions and saving
-    for the RUNNING COMPLETED and FAILED states. When ProgressSpinner() is used as a context
-    manager progress reporting is rate limited to every 500 milliseconds.
+    for the RUNNING CANCELED COMPLETED and FAILED states. When ProgressSpinner() is used as a
+    context manager progress reporting is rate limited to every 500 milliseconds.
     Use it as follows:
 
         >>> spinner = ProgressSpinner(message='Publishing Metadata')
@@ -171,9 +177,9 @@ class ProgressBar(ProgressReport):
         >>> progress_bar.save()
 
     The ProgressBar() is a context manager that provides automatic state transitions and saving for
-    the RUNNING COMPLETED and FAILED states. The increment() method can be called in the loop as
-    work is completed. When ProgressBar() is used as a context manager progress reporting is rate
-    limited to every 500 milliseconds.
+    the RUNNING CANCELED COMPLETED and FAILED states. The increment() method can be called in the
+    loop as work is completed. When ProgressBar() is used as a context manager progress reporting
+    is rate limited to every 500 milliseconds.
     Use it as follows:
 
         >>> progress_bar = ProgressBar(message='Publishing files', total=len(files_iterator))
