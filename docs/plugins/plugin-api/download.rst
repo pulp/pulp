@@ -113,13 +113,6 @@ size or digest validation. There can also be protocol specific errors such as an
 ``aiohttp.ClientResponse`` being raised when a server responds with a 400+ response such as an HTTP
 403.
 
-If downloading synchronously, exceptions are raised from
-:meth:`~pulpcore.plugin.download.BaseDownloader.fetch`. If downloading in parallel,
-exceptions are raised when checking the `result()` method of a downloader. Exceptions encountered
-while downloading is done by the :class:`~pulpcore.plugin.download.GroupDownloader` are
-handled differently. See the :class:`~pulpcore.plugin.download.GroupDownloader` docs for
-more information.
-
 Any exception raised is a fatal exception and should likely be recorded with the
 :meth:`~pulpcore.plugin.tasking.Task.append_non_fatal_error` interface. A fatal exception on a
 single download likely does not cause an entire sync to fail, so a downloader's fatal exception is
@@ -155,36 +148,6 @@ Adding New Protocol Support
 To create a new protocol downloader implement a subclass of the
 :class:`~pulpcore.plugin.download.BaseDownloader`. See the docs on
 :class:`~pulpcore.plugin.download.BaseDownloader` for more information on the requirements.
-
-.. _group-downloader:
-
-Downloading Groups of Files
----------------------------
-
-Motivation
-##########
-
-A content unit that requires multiple files to be all downloaded before the content unit can be
-saved is a common problem. Consider a content unit `foo`, that requires three files, A, B, and C.
-One option is to use the :ref:`DownloaderFactory <downloader-factory>` to generate a downloader for
-each URL (A, B, C) and wait for those downloads to complete before saving the content unit `foo` and
-its associated :class:`~pulpcore.plugin.models.Artifact` objects. The issue with this approach is
-that you also want to download other content units, e.g. a unit named `bar` with files (D, E, and F)
-and while waiting on A, B, and C you are not also downloading D, E, and F in parallel.
-
-GroupDownloader Overview
-########################
-
-The GroupDownloader allows you to schedule a :class:`~pulpcore.plugin.download.Group`
-of downloads in a way that results are returned when the entire Group is ready instead of
-download-by-download. This is significant because multiple downloads from multiple groups still run
-in parallel. See the examples below.
-
-.. autoclass:: pulpcore.plugin.download.GroupDownloader
-    :members:
-
-.. autoclass:: pulpcore.plugin.download.Group
-    :members:
 
 .. _downloader-factory:
 
@@ -250,8 +213,6 @@ descendants of BaseDownloader.
 
 .. autoclass:: pulpcore.plugin.download.BaseDownloader
     :members:
-
-.. autofunction:: pulpcore.plugin.download.attach_url_to_exception
 
 
 .. _validation-exceptions:

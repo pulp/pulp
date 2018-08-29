@@ -12,7 +12,7 @@ from .exceptions import DigestValidationError, SizeValidationError
 log = logging.getLogger(__name__)
 
 
-DownloadResult = namedtuple('DownloadResult', ['url', 'artifact_attributes', 'path', 'exception'])
+DownloadResult = namedtuple('DownloadResult', ['url', 'artifact_attributes', 'path'])
 """
 Args:
     url (str): The url corresponding with the download.
@@ -20,39 +20,7 @@ Args:
     artifact_attributes (dict): Contains keys corresponding with
         :class:`~pulpcore.plugin.models.Artifact` fields. This includes the computed digest values
         along with size information.
-    exception (Exception): Any downloader exception emitted while the
-        :class:`~pulpcore.plugin.download.GroupDownloader` is downloading. Otherwise this
-        value is `None`.
 """
-
-
-def attach_url_to_exception(func):
-    """
-    A decorator that attaches the `url` to any exception emitted by a downloader's `run()` method.
-
-    >>> class MyCustomDownloader(BaseDownloader)
-    >>>     @attach_url_to_exception
-    >>>     async def run(self):
-    >>>         pass  # downloader implementation of run() goes here
-
-    The url is stored on the exception as the `_pulp_url` attribute. This is used by the
-    :class:`~pulpcore.plugin.download.GroupDownloader` to know the url a given exception
-    is for.
-
-    Args:
-        func: The method being decorated. This is expected to be the `run()` method of a subclass of
-            :class:`~pulpcore.plugin.download.BaseDownloader`
-
-    Returns:
-        A coroutine that will attach the `url` to any exception emitted by `func`
-    """
-    async def wrapper(downloader):
-        try:
-            return await func(downloader)
-        except Exception as error:
-            error._pulp_url = downloader.url
-            raise error
-    return wrapper
 
 
 class BaseDownloader:
@@ -234,11 +202,6 @@ class BaseDownloader:
         ``artifact_attributes`` value of the
         :class:`~pulpcore.plugin.download.DownloadResult` is usually set to the
         :attr:`~pulpcore.plugin.download.BaseDownloader.artifact_attributes` property value.
-
-        It is also expected that the subclass implementation be decorated with the
-        :class:`~pulpcore.plugin.download.attach_url_to_exception` decorator. This is
-        required to allow the :class:`~pulpcore.plugin.download.GroupDownloader` to properly
-        record the exceptions emitted from subclassed downloaders.
 
         Returns:
             :class:`~pulpcore.plugin.download.DownloadResult`
