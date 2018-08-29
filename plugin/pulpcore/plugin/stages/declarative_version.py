@@ -11,7 +11,8 @@ from .content_unit_stages import ContentUnitSaver, QueryExistingContentUnits
 
 class DeclarativeVersion:
 
-    def __init__(self, first_stage, repository, mirror=True):
+    def __init__(self, first_stage, repository, mirror=True, inject_before=None,
+                 inject_after=None):
         """
         A pipeline that creates a new :class:`~pulpcore.plugin.models.RepositoryVersion` from a
         stream of :class:`~pulpcore.plugin.stages.DeclarativeContent` objects.
@@ -82,6 +83,14 @@ class DeclarativeVersion:
                  pre-existing units in the :class:`~pulpcore.plugin.models.RepositoryVersion`.
                  'True' is the default.
         """
+        self.inject_before = inject_before or []
+        self.inject_after = inject_after or []
+
+        if not isinstance(self.inject_before, list):
+            self.inject_before = [inject_before]
+        if not isinstance(self.inject_after, list):
+            self.inject_after = [inject_after]
+
         self.first_stage = first_stage
         self.repository = repository
         self.mirror = mirror
@@ -99,9 +108,13 @@ class DeclarativeVersion:
                     QueryExistingContentUnits(), ContentUnitSaver(),
                     ContentUnitAssociation(new_version)
                 ]
+                for elem in self.inject_before:
+                    stages.insert(stages.index(elem[0]), elem[1])
+                for elem in self.inject_after:
+                    stages.insert(stages.index(elem[0]) + 1, elem[1])
                 if self.mirror:
-                    stages.extend([ContentUnitUnassociation(new_version), EndStage()])
-                else:
                     stages.append(EndStage())
+                else:
+                    stages.extend([ContentUnitUnassociation(new_version), EndStage()])
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)
