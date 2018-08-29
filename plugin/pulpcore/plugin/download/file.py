@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 import aiofiles
 
-from .base import attach_url_to_exception, BaseDownloader, DownloadResult
+from .base import BaseDownloader, DownloadResult
 
 
 class FileDownloader(BaseDownloader):
@@ -32,7 +32,6 @@ class FileDownloader(BaseDownloader):
         self._path = os.path.abspath(os.path.join(p.netloc, p.path))
         super().__init__(url, **kwargs)
 
-    @attach_url_to_exception
     async def run(self):
         """
         Read, validate, and compute digests on the `url`. This is a coroutine.
@@ -48,4 +47,4 @@ class FileDownloader(BaseDownloader):
                     break  # the reading is done
                 self.handle_data(chunk)
             return DownloadResult(path=self._path, artifact_attributes=self.artifact_attributes,
-                                  url=self.url, exception=None)
+                                  url=self.url)

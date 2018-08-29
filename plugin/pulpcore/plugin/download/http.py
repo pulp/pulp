@@ -3,7 +3,7 @@ import logging
 import aiohttp
 import backoff
 
-from .base import attach_url_to_exception, BaseDownloader, DownloadResult
+from .base import BaseDownloader, DownloadResult
 
 
 log = logging.getLogger(__name__)
@@ -153,9 +153,8 @@ class HttpDownloader(BaseDownloader):
                 break  # the download is done
             self.handle_data(chunk)
         return DownloadResult(path=self.path, artifact_attributes=self.artifact_attributes,
-                              url=self.url, exception=None)
+                              url=self.url)
 
-    @attach_url_to_exception
     @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError, max_tries=10, giveup=giveup)
     async def run(self):
         """
