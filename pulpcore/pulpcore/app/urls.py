@@ -7,6 +7,7 @@ from rest_framework.schemas import get_schema_view
 from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
+from pulpcore.app.openapigenerator import PulpOpenAPISchemaGenerator
 from pulpcore.app.views import ContentView, OrphansView, StatusView
 from pulpcore.common.constants import API_ROOT
 
@@ -130,6 +131,7 @@ docs_schema_view = yasg_get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    generator_class=PulpOpenAPISchemaGenerator,
 )
 urlpatterns.append(url(
     r'^{api_root}docs/api(?P<format>\.json|\.yaml)'.format(api_root=API_ROOT),
