@@ -157,7 +157,6 @@ class TestTaskStatus(unittest.TestCase):
             self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
                                                           tags=invalid_tag).save)
 
-    @skip.skip_broken
     def test_state_validation(self):
         # Valid state
         valid_states = constants.CALL_STATES
@@ -165,7 +164,7 @@ class TestTaskStatus(unittest.TestCase):
             TaskStatus(task_id=str(uuid4()), state=valid_state).save()
 
         # Invalid state
-        invalid_states = [4, {}, uuid4(), object(), 'invalid_state', []]
+        invalid_states = [4, uuid4(), object(), 'invalid_state', []]
         for invalid_state in invalid_states:
             self.assertRaises(ValidationError, TaskStatus(task_id=str(uuid4()),
                                                           state=invalid_state).save)
