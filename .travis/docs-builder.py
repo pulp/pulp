@@ -17,7 +17,7 @@ WORKING_DIR = os.path.join(os.environ['TRAVIS_BUILD_DIR'], '../working')
 VERSION_REGEX = "(\s*)(version)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
 RELEASE_REGEX = "(\s*)(release)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
 
-LATEST = '2.16'
+LATEST = '2.17'
 
 USERNAME = 'doc_builder'
 HOSTNAME = '8.43.85.236'
