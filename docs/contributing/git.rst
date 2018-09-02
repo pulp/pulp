@@ -74,9 +74,13 @@ To update the issue's state to MODIFIED and set the %done to 100, use
     fixes #123
     closes #123
 
-You can also reference multiple issues in a commit::
+To reference multiple issues in a commit use a separate line for each one::
 
-    fixes #123, #124
+    fixes #123
+    fixes #124
+
+We strongly suggest that each commit is attached to an issue in Redmine. However, if you must create
+a commit for which there is no issue, add the tag ``#noissue`` to the commit's message.
 
 Putting this all together, the following is an example of a good commit message::
 
