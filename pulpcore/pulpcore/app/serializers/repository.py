@@ -4,7 +4,6 @@ from django.core import validators
 from django.db.models import Q
 
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
@@ -17,6 +16,7 @@ from pulpcore.app.serializers import (
     ModelSerializer,
 )
 from pulpcore.app.serializers import validate_unknown_fields
+from pulpcore.app.validators import PulpUniqueValidator
 from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
                                              NestedHyperlinkedRelatedField)
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
@@ -33,7 +33,7 @@ class RepositorySerializer(ModelSerializer):
     _latest_version_href = LatestVersionField()
     name = serializers.CharField(
         help_text=_('A unique name for this repository.'),
-        validators=[UniqueValidator(queryset=models.Repository.objects.all())]
+        validators=[PulpUniqueValidator(queryset=models.Repository.objects.all())]
     )
     description = serializers.CharField(
         help_text=_('An optional description.'),
@@ -59,7 +59,7 @@ class RemoteSerializer(MasterModelSerializer):
     _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A unique name for this remote.'),
-        validators=[UniqueValidator(queryset=models.Remote.objects.all())],
+        validators=[PulpUniqueValidator(queryset=models.Remote.objects.all())],
     )
     url = serializers.CharField(
         help_text='The URL of an external content source.',
@@ -143,7 +143,7 @@ class PublisherSerializer(MasterModelSerializer):
     _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('A unique name for this publisher.'),
-        validators=[UniqueValidator(queryset=models.Publisher.objects.all())]
+        validators=[PulpUniqueValidator(queryset=models.Publisher.objects.all())]
     )
     last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
@@ -217,7 +217,7 @@ class ExporterSerializer(MasterModelSerializer):
     _href = DetailIdentityField()
     name = serializers.CharField(
         help_text=_('The exporter unique name.'),
-        validators=[UniqueValidator(queryset=models.Exporter.objects.all())]
+        validators=[PulpUniqueValidator(queryset=models.Exporter.objects.all())]
     )
     last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the last update.'),
@@ -249,7 +249,7 @@ class DistributionSerializer(ModelSerializer):
             message=_('Distribution name length must be less than {} characters').format(
                 models.Distribution._meta.get_field('name').max_length
             )),
-            UniqueValidator(queryset=models.Distribution.objects.all())]
+            PulpUniqueValidator(queryset=models.Distribution.objects.all())]
     )
     base_path = serializers.CharField(
         help_text=_('The base (relative) path component of the published url. Avoid paths that \
@@ -259,7 +259,7 @@ class DistributionSerializer(ModelSerializer):
             message=_('Distribution base_path length must be less than {} characters').format(
                 models.Distribution._meta.get_field('base_path').max_length
             )),
-            UniqueValidator(queryset=models.Distribution.objects.all()),
+            PulpUniqueValidator(queryset=models.Distribution.objects.all()),
         ]
     )
     publisher = DetailRelatedField(

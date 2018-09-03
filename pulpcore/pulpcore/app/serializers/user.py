@@ -3,10 +3,10 @@ from gettext import gettext as _
 from django.core import validators
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from pulpcore.app.models import User
 from pulpcore.app.serializers import ModelSerializer
+from pulpcore.app.validators import PulpUniqueValidator
 
 
 class PasswordSerializer(serializers.CharField):
@@ -30,7 +30,7 @@ class UserSerializer(ModelSerializer):
     username = serializers.CharField(
         help_text=_("Required. {} characters or fewer. Letters, digits and @/./+/-/_ only.").format(
             User._meta.get_field('username').max_length),
-        validators=[UniqueValidator(queryset=User.objects.all()),
+        validators=[PulpUniqueValidator(queryset=User.objects.all()),
                     validators.RegexValidator(
                         regex=r'^[\w.@+-]+$',
                         message=_(
