@@ -12,21 +12,23 @@ from pulpcore.app.serializers import (
     DetailIdentityField,
     DetailRelatedField,
     GenericKeyValueRelatedField,
+    IdentityField,
+    NestedIdentityField,
+    NestedRelatedField,
+    RelatedField,
     LatestVersionField,
     MasterModelSerializer,
     ModelSerializer,
 )
 from pulpcore.app.serializers import validate_unknown_fields
-from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
-                                             NestedHyperlinkedRelatedField)
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 
 class RepositorySerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
+    _href = IdentityField(
         view_name='repositories-detail'
     )
-    _versions_href = serializers.HyperlinkedIdentityField(
+    _versions_href = IdentityField(
         view_name='versions-list',
         lookup_url_kwarg='repository_pk',
     )
@@ -177,7 +179,7 @@ class RepositoryPublishURLSerializer(serializers.Serializer):
         view_name='repositories-detail',
     )
 
-    repository_version = NestedHyperlinkedRelatedField(
+    repository_version = NestedRelatedField(
         help_text=_('A URI of the repository version to be published.'),
         required=False,
         label=_('Repository Version'),
@@ -239,7 +241,7 @@ class ExporterSerializer(MasterModelSerializer):
 
 
 class DistributionSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
+    _href = IdentityField(
         view_name='distributions-detail'
     )
     name = serializers.CharField(
@@ -269,7 +271,7 @@ class DistributionSerializer(ModelSerializer):
         queryset=models.Publisher.objects.all(),
         allow_null=True
     )
-    publication = serializers.HyperlinkedRelatedField(
+    publication = RelatedField(
         required=False,
         help_text=_('The publication being served as defined by this distribution'),
         queryset=models.Publication.objects.exclude(complete=False),
@@ -349,7 +351,7 @@ class DistributionSerializer(ModelSerializer):
 
 
 class PublicationSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
+    _href = IdentityField(
         view_name='publications-detail'
     )
     publisher = DetailRelatedField(
@@ -363,7 +365,7 @@ class PublicationSerializer(ModelSerializer):
         read_only=True,
         view_name='distributions-detail',
     )
-    repository_version = NestedHyperlinkedRelatedField(
+    repository_version = NestedRelatedField(
         view_name='versions-detail',
         lookup_field='number',
         parent_lookup_kwargs={'repository_pk': 'repository__pk'},
@@ -380,19 +382,19 @@ class PublicationSerializer(ModelSerializer):
 
 
 class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSerializer):
-    _href = NestedHyperlinkedIdentityField(
+    _href = NestedIdentityField(
         view_name='versions-detail',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _content_href = NestedHyperlinkedIdentityField(
+    _content_href = NestedIdentityField(
         view_name='versions-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _added_href = NestedHyperlinkedIdentityField(
+    _added_href = NestedIdentityField(
         view_name='versions-added-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _removed_href = NestedHyperlinkedIdentityField(
+    _removed_href = NestedIdentityField(
         view_name='versions-removed-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
@@ -411,7 +413,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         help_text=_('A list of content units to remove from the latest repository version'),
         write_only=True
     )
-    base_version = NestedHyperlinkedRelatedField(
+    base_version = NestedRelatedField(
         required=False,
         help_text=_('A repository version whose content will be used as the initial set of content '
                     'for the new repository version'),

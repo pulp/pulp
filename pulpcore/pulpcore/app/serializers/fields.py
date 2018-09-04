@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse
 from rest_framework_nested.relations import NestedHyperlinkedRelatedField
 
 from pulpcore.app import models
-from pulpcore.app.serializers import DetailRelatedField
+from pulpcore.app.serializers import DetailRelatedField, RelatedField
 
 
 class ContentRelatedField(DetailRelatedField):
@@ -46,10 +46,9 @@ class ContentArtifactsField(serializers.DictField):
             if os.path.isabs(relative_path):
                 raise serializers.ValidationError(_("Relative path can't start with '/'. "
                                                     "{0}").format(relative_path))
-            artifactfield = \
-                serializers.HyperlinkedRelatedField(view_name='artifacts-detail',
-                                                    queryset=models.Artifact.objects.all(),
-                                                    source='*', initial=url)
+            artifactfield = RelatedField(view_name='artifacts-detail',
+                                         queryset=models.Artifact.objects.all(),
+                                         source='*', initial=url)
             try:
                 artifact = artifactfield.run_validation(data=url)
                 ret[relative_path] = artifact
@@ -95,7 +94,7 @@ class ContentArtifactsField(serializers.DictField):
         for content_artifact in value:
             if content_artifact.artifact_id:
                 url = reverse('artifacts-detail', kwargs={'pk': content_artifact.artifact_id},
-                              request=self.context['request'])
+                              request=None)
             else:
                 url = None
             ret[content_artifact.relative_path] = url
@@ -140,7 +139,7 @@ class LatestVersionField(NestedHyperlinkedRelatedField):
             'repository_pk': version.repository.pk,
             'number': version.number,
         }
-        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
+        return self.reverse(view_name, kwargs=kwargs, request=None, format=format)
 
     def get_attribute(self, instance):
         """

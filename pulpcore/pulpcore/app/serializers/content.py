@@ -22,7 +22,7 @@ class ContentSerializer(base.MasterModelSerializer):
     artifacts = fields.ContentArtifactsField(
         help_text=_("A dict mapping relative paths inside the Content to the corresponding"
                     "Artifact URLs. E.g.: {'relative/path': "
-                    "'http://localhost/full_artifact_path'}"),
+                    "'/artifacts/1/'"),
     )
 
     class Meta:
@@ -31,7 +31,7 @@ class ContentSerializer(base.MasterModelSerializer):
 
 
 class ArtifactSerializer(base.ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
+    _href = base.IdentityField(
         view_name='artifacts-detail',
     )
 

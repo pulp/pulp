@@ -9,6 +9,9 @@ from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
 
+from rest_framework_nested.relations import NestedHyperlinkedIdentityField, \
+    NestedHyperlinkedRelatedField
+
 from pulpcore.app.apps import pulp_plugin_configs
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
@@ -312,10 +315,33 @@ class _DetailFieldMixin:
             raise ValueError(msg)
         return view_name_for_model(obj, 'detail')
 
-    def get_url(self, obj, view_name, *args, **kwargs):
+    def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
+        request = None
         view_name = self._view_name(obj)
-        return super().get_url(obj, view_name, *args, **kwargs)
+        return super().get_url(obj, view_name, request, *args, **kwargs)
+
+
+class IdentityField(serializers.HyperlinkedIdentityField):
+    """IdentityField for use in the _href field of non-Master/Detail Serializers.
+
+    The get_url method is overriden so relative URLs are returned.
+    """
+    def get_url(self, obj, view_name, request, *args, **kwargs):
+        # ignore the passed in view name and return the url to the cast unit, not the generic unit
+        request = None
+        return super().get_url(obj, view_name, request, *args, **kwargs)
+
+
+class RelatedField(serializers.HyperlinkedRelatedField):
+    """RelatedField when relating to non-Master/Detail models
+
+    When using this field on a serializer, it will serialize the related resource as a relative URL.
+    """
+    def get_url(self, obj, view_name, request, *args, **kwargs):
+        # ignore the passed in view name and return the url to the cast unit, not the generic unit
+        request = None
+        return super().get_url(obj, view_name, request, *args, **kwargs)
 
 
 class DetailIdentityField(_DetailFieldMixin, serializers.HyperlinkedIdentityField):
@@ -351,6 +377,28 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         class to get the relevant `view_name`.
         """
         return False
+
+
+class NestedIdentityField(NestedHyperlinkedIdentityField):
+    """NestedIdentityField for use with nested resources.
+
+    When using this field in a serializer, it serializes the  as a relative URL.
+    """
+    def get_url(self, obj, view_name, request, *args, **kwargs):
+        # ignore the passed in view name and return the url to the cast unit, not the generic unit
+        request = None
+        return super().get_url(obj, view_name, request, *args, **kwargs)
+
+
+class NestedRelatedField(NestedHyperlinkedRelatedField):
+    """NestedRelatedField for use when relating to nested resources.
+
+    When using this field in a serializer, it serializes the related resource as a relative URL.
+    """
+    def get_url(self, obj, view_name, request, *args, **kwargs):
+        # ignore the passed in view name and return the url to the cast unit, not the generic unit
+        request = None
+        return super().get_url(obj, view_name, request, *args, **kwargs)
 
 
 class AsyncOperationResponseSerializer(serializers.Serializer):

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from pulpcore.app.models import User
-from pulpcore.app.serializers import ModelSerializer
+from pulpcore.app.serializers import IdentityField, ModelSerializer
 
 
 class PasswordSerializer(serializers.CharField):
@@ -25,7 +25,7 @@ class PasswordSerializer(serializers.CharField):
 
 
 class UserSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(view_name='users-detail')
+    _href = IdentityField(view_name='users-detail')
 
     username = serializers.CharField(
         help_text=_("Required. {} characters or fewer. Letters, digits and @/./+/-/_ only.").format(

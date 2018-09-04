@@ -3,7 +3,8 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer, ProgressReportSerializer
+from pulpcore.app.serializers import IdentityField, RelatedField, ModelSerializer, \
+    ProgressReportSerializer
 
 from .base import viewset_for_model
 
@@ -30,9 +31,7 @@ class CreatedResourceSerializer(ModelSerializer):
 
 
 class TaskSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(
-        view_name='tasks-detail',
-    )
+    _href = IdentityField(view_name='tasks-detail')
     state = serializers.CharField(
         help_text=_("The current state of the task. The possible values include:"
                     " 'waiting', 'skipped', 'running', 'completed', 'failed' and 'canceled'."),
@@ -56,7 +55,7 @@ class TaskSerializer(ModelSerializer):
                     "task."),
         read_only=True
     )
-    worker = serializers.HyperlinkedRelatedField(
+    worker = RelatedField(
         help_text=_("The worker associated with this task."
                     " This field is empty if a worker is not yet assigned."),
         read_only=True,
@@ -100,7 +99,7 @@ class MinimalTaskSerializer(TaskSerializer):
 
 
 class WorkerSerializer(ModelSerializer):
-    _href = serializers.HyperlinkedIdentityField(view_name='workers-detail')
+    _href = IdentityField(view_name='workers-detail')
 
     name = serializers.CharField(
         help_text=_('The name of the worker.'),

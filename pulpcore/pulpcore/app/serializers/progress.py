@@ -3,7 +3,7 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.app import models
-from pulpcore.app.serializers import ModelSerializer
+from pulpcore.app.serializers import ModelSerializer, RelatedField
 
 
 class ProgressReportSerializer(ModelSerializer):
@@ -30,7 +30,7 @@ class ProgressReportSerializer(ModelSerializer):
         help_text=_("The suffix to be shown with the progress report."),
         read_only=True
     )
-    task = serializers.HyperlinkedRelatedField(
+    task = RelatedField(
         help_text=_("The task associated with this progress report."),
         read_only=True,
         view_name='tasks-detail'
