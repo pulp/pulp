@@ -28,7 +28,8 @@ class ProgressReportSerializer(ModelSerializer):
     )
     suffix = serializers.CharField(
         help_text=_("The suffix to be shown with the progress report."),
-        read_only=True
+        read_only=True,
+        allow_blank=True
     )
     task = RelatedField(
         help_text=_("The task associated with this progress report."),
