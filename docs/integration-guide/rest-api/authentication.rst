@@ -26,3 +26,12 @@ Basic Authentication
 Any call to the REST API may use
 `HTTP basic authentication <http://tools.ietf.org/html/rfc1945#section-11.1>`_ to provide
 a username and password.
+
+Use the following script to easily generate the value of the 'Authorization' header.
+
+.. code-block:: python
+
+  import base64
+  # say username=foo and password=bar
+  encoded = base64.b64encode(b'foo:bar')
+  print('Basic {b64}'.format(b64=encoded))
