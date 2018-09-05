@@ -74,16 +74,13 @@ class DeclarativeVersion:
                  :class:`~pulpcore.plugin.stages.DeclarativeContent` from.
              repository (:class:`~pulpcore.plugin.models.Repository`): The repository receiving the
                  new version.
-             sync_mode (str): 'mirror' removes content units from the
+             mirror (bool): 'True' removes content units from the
                  :class:`~pulpcore.plugin.models.RepositoryVersion` that are not
                  requested in the :class:`~pulpcore.plugin.stages.DeclarativeVersion` stream.
-                 'additive' only adds content units observed in the
+                 'False' (additive) only adds content units observed in the
                  :class:`~pulpcore.plugin.stages.DeclarativeVersion stream`, and does not remove any
                  pre-existing units in the :class:`~pulpcore.plugin.models.RepositoryVersion`.
-                 'mirror' is the default.
-
-        Raises:
-            ValueError: if 'sync_mode' is passed an invalid value.
+                 'True' is the default.
         """
         self.first_stage = first_stage
         self.repository = repository
