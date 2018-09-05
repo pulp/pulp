@@ -27,7 +27,7 @@ class CreatedResourceSerializer(ModelSerializer):
 
     class Meta:
         model = models.CreatedResource
-        fields = ModelSerializer.Meta.fields
+        fields = []
 
 
 class TaskSerializer(ModelSerializer):
