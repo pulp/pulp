@@ -62,6 +62,7 @@ Content Related Stages
 
 .. autoclass:: pulpcore.plugin.stages.ContentUnitSaver
    :special-members: __call__
+   :private-members: _pre_save, _post_save
 
 .. autoclass:: pulpcore.plugin.stages.QueryExistingContentUnits
    :special-members: __call__
