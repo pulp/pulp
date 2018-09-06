@@ -143,6 +143,7 @@ class ContentUnitSaver(Stage):
             remote_artifact_map = {}
 
             with transaction.atomic():
+                await self._pre_save(batch)
                 for declarative_content in batch:
                     if declarative_content is None:
                         shutdown = True
@@ -181,6 +182,7 @@ class ContentUnitSaver(Stage):
                     remote_artifact_bulk.append(new_remote_artifact)
 
                 RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
+                await self._post_save(batch)
 
             for declarative_content in batch:
                 if declarative_content is None:
@@ -190,3 +192,31 @@ class ContentUnitSaver(Stage):
                 break
             batch = []
         await out_q.put(None)
+
+    async def _pre_save(self, batch):
+        """
+        A hook plugin-writers can override to save related objects prior to content unit saving.
+
+        This is run within the same transaction as the content unit saving. As with the Stages API
+        it's possible one item in batch is None indicating it is the end of the pipeline.
+
+        Args:
+            batch (list of :class:`~pulpcore.plugin.stages.DeclarativeContent`): The batch of
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects to be saved.
+
+        """
+        pass
+
+    async def _post_save(self, batch):
+        """
+        A hook plugin-writers can override to save related objects after content unit saving.
+
+        This is run within the same transaction as the content unit saving. As with the Stages API
+        it's possible one item in batch is None indicating it is the end of the pipeline.
+
+        Args:
+            batch (list of :class:`~pulpcore.plugin.stages.DeclarativeContent`): The batch of
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects to be saved.
+
+        """
+        pass
