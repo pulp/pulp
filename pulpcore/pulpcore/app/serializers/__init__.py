@@ -29,7 +29,8 @@ from .repository import (  # noqa
     RepositoryPublishURLSerializer,
     RepositorySerializer,
     RepositorySyncURLSerializer,
-    RepositoryVersionSerializer
+    RepositoryVersionSerializer,
+    RepositoryVersionCreateSerializer
 )
 from .task import MinimalTaskSerializer, TaskSerializer, WorkerSerializer  # noqa
 from .user import UserSerializer  # noqa

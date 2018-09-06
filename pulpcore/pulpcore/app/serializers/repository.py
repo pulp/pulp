@@ -413,6 +413,25 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         help_text=_('A list of counts of each type of content in this version.'),
         read_only=True
     )
+    base_version = NestedRelatedField(
+        required=False,
+        help_text=_('A repository version whose content was used as the initial set of content '
+                    'for this repository version'),
+        queryset=models.RepositoryVersion.objects.all(),
+        view_name='versions-detail',
+        lookup_field='number',
+        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    )
+
+    class Meta:
+        model = models.RepositoryVersion
+        fields = ModelSerializer.Meta.fields + (
+            '_href', '_content_href', '_added_href', '_removed_href', 'number',
+            'content_summary', 'base_version'
+        )
+
+
+class RepositoryVersionCreateSerializer(ModelSerializer, NestedHyperlinkedModelSerializer):
     add_content_units = serializers.ListField(
         help_text=_('A list of content units to add to a new repository version'),
         write_only=True
@@ -433,7 +452,4 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
 
     class Meta:
         model = models.RepositoryVersion
-        fields = ModelSerializer.Meta.fields + (
-            '_href', '_content_href', '_added_href', '_removed_href', 'number',
-            'content_summary', 'add_content_units', 'remove_content_units', 'base_version'
-        )
+        fields = ['add_content_units', 'remove_content_units', 'base_version']

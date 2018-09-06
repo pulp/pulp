@@ -31,7 +31,8 @@ from pulpcore.app.serializers import (
     PublicationSerializer,
     PublisherSerializer,
     RepositorySerializer,
-    RepositoryVersionSerializer
+    RepositoryVersionSerializer,
+    RepositoryVersionCreateSerializer
 )
 from pulpcore.app.viewsets import (
     AsyncRemoveMixin,
@@ -302,6 +303,11 @@ class RepositoryVersionViewSet(NamedModelViewSet,
             }
         )
         return OperationPostponedResponse(result, request)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return RepositoryVersionCreateSerializer
+        return RepositoryVersionSerializer
 
 
 class RemoteFilter(BaseFilterSet):
