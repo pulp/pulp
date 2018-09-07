@@ -10,7 +10,7 @@ python:
 env:
   matrix:
     - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-    - TEST=docs
+    - DJANGO_MAX=2.2.100 TEST=docs
   global:
     secure: kzbI/DagIGIOFjVEyLyYGEi/xVwiq5M8FCEM3mOtXK9ocYs1Ky1ABkcgLrOLBb+S7SMNjy4XnUWGUxhBGWQLDw2/OimKFoHpCHGt1Cb4rXhWDSVPGgDXQzyW8pJsPKtAbemfx5a4oRP82vmpgB/htJ+8dE5CIAZWU8d9dbvQbro=
 matrix:

@@ -8,6 +8,11 @@ pushd common/ && pip install -e . && popd
 pushd pulpcore/ && pip install -e . && popd
 pushd plugin/ && pip install -e .  && popd
 
+if [ "$TEST" = 'docs' ]; then
+  pip3 install sphinx sphinxcontrib-openapi
+  return "$?"
+fi
+
 export COMMIT_MSG=$(git show HEAD^2 -s)
 export PULP_FILE_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_file\/pull\/(\d+)' | awk -F'/' '{print $7}')
 
