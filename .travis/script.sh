@@ -1,33 +1,24 @@
 #!/usr/bin/env bash
 # coding=utf-8
-if [ "$TEST" = 'docs' ]; then
-  pip3 install sphinx sphinxcontrib-openapi
-  cd docs
-  make html
-  return "$?"
-fi
 
 set -veuo pipefail
 
+if [ "$TEST" = 'docs' ]; then
+  cd docs
+  make html
+  set +euo pipefail
+  return "$?"
+fi
+
+
+
 # Lint code.
 flake8 --config flake8.cfg
-
-# Run migrations.
-export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
-pulp-manager makemigrations pulp_file --noinput
-pulp-manager makemigrations pulp_app --noinput
-pulp-manager migrate auth --noinput
-pulp-manager migrate --noinput
 
 # Run unit tests.
 coverage run manage.py test ./pulpcore/tests/unit/
 
 # Run functional tests, and upload coverage report to codecov.
-pulp-manager reset-admin-password --password admin
-pulp-manager runserver >> ~/django_runserver.log 2>&1 &
-rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/resource_manager.log 2>&1 &
-rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' >> ~/reserved_worker-1.log 2>&1 &
-sleep 5
 show_logs_and_return_non_zero() {
     readonly local rc="$?"
     cat ~/django_runserver.log
