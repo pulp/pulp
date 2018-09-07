@@ -54,25 +54,9 @@ PyPI Installation
    $ pip install -e plugin/
 
 
-4. If the the server.yaml file isn't in the default location of `/etc/pulp/server.yaml`, set the
-   PULP_SETTINGS environment variable to tell Pulp where to find you server.yaml file::
+4. Follow the :ref:`configuration instructions <configuration>` to set the ``SECRET_KEY``.
 
-   $ export PULP_SETTINGS=pulpvenv/lib/python3.6/site-packages/pulpcore/etc/pulp/server.yaml
-
-   .. note::
-
-       The exact path will depend on the operating system, Python version, and other factors.
-
-
-5. Add a ``SECRET_KEY`` to your :ref:`server.yaml <server-conf>` file::
-
-   $ echo "SECRET_KEY: '`cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50`'"
-
-6. Tell Django which settings you're using::
-
-   $ export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
-
-7. Go through the :ref:`database-install`, :ref:`redis-install`, and :ref:`systemd-setup` sections
+5. Go through the :ref:`database-install`, :ref:`redis-install`, and :ref:`systemd-setup` sections
 
 .. note::
 
@@ -157,7 +141,7 @@ Systemd
 
 To run the Pulp services, three systemd files needs to be created in /etc/systemd/system/. Make
 sure to substitute ``Environment=PULP_SETTINGS=/path/to/pulp/server.yaml`` with the real location
-of server.yaml.
+of :ref:`configuration file <configuration>`.
 
 ``pulp_resource_manager.service``::
 
@@ -175,6 +159,7 @@ of server.yaml.
     RuntimeDirectory=pulp_resource_manager
     ExecStart=/path/to/python/bin/rq worker -n resource_manager@%%h\
               -w 'pulpcore.tasking.worker.PulpWorker'\
+              -c 'pulpcore.rqconfig'\
               --pid=/var/run/pulp_resource_manager/resource_manager.pid
 
     [Install]
@@ -197,6 +182,7 @@ of server.yaml.
     RuntimeDirectory=pulp_worker_%i
     ExecStart=/path/to/python/bin/rq worker -w 'pulpcore.tasking.worker.PulpWorker'\
               -n reserved_resource_worker_%i@%%h\
+              -c 'pulpcore.rqconfig'\
               --pid=/var/run/pulp_worker_%i/reserved_resource_worker_%i.pid
 
     [Install]
