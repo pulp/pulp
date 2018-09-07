@@ -14,8 +14,6 @@ from contextlib import suppress
 from importlib import import_module
 from pkg_resources import iter_entry_points
 
-import yaml
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -36,10 +34,61 @@ FILE_UPLOAD_HANDLERS = (
     'pulpcore.app.files.HashingFileUploadHandler',
 )
 
+# Dynaconf Configuration
+
+SECRET_KEY = True
+"""Django `check` requires the SECRET_KEY to exist before initialing
+INSTALLED_APPS this value is set to True but will be overwritten after by the
+value exported as PULP_SECRET_KEY or defined in the file PULP_SETTINGS"""
+
+GLOBAL_ENV_FOR_DYNACONF = "PULP"
+"""This defines which environment variable global prefix dynaconf will load
+That means that `export PULP_FOO=1` will be loaded to `django.conf.settings.FOO
+On command line it is possible to check it with `dynaconf list -k foo`
+"""
+
+ENVVAR_FOR_DYNACONF = "PULP_SETTINGS"
+"""This defines which path dynaconf will look to load config files
+example: `export PULP_SETTINGS=/path/to/settings.toml` and the format can be
+.ini, .json, .yaml or .toml
+
+e.g::
+
+    export PULP_SETTINGS=settings.toml
+    ```
+    [default]
+    FOO = 1
+    [development]
+    FOO = 2
+    [production]
+    FOO = 3
+    ```
+
+OR::
+
+    export PULP_SETTINGS=settings.yaml
+    ```
+    default:
+      foo: 1
+    development:
+      foo: 2
+    production:
+      foo: 3
+    ```
+
+It is also possible to pass a list of files::
+
+    export PULP_SETTINGS=settings.toml,other_settings.yaml,another.json
+
+The variables will be cascaded in the defined order (last wins the precedence)
+The environment variables wins precedence over all!
+"""
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Dynamic configuration with Dynaconf
+    'dynaconf.contrib.django_dynaconf',
     # django stuff
     'django.contrib.admin',
     'django.contrib.auth',
@@ -216,64 +265,7 @@ _DEFAULT_PULP_SETTINGS = {
     }
 }
 
-
-def merge_settings(default, override):
-    """
-    Merge override settings into a set of default settings.
-
-    If both default and override have a key that has a dictionary value, these
-    dictionaries are merged recursively. If either of the values are _not_ a
-    dictionary, the override key's value is used.
-    """
-    if not override:
-        return default
-    merged = default.copy()
-
-    for key in override:
-        if key in merged:
-            if isinstance(default[key], dict) and isinstance(override[key], dict):
-                merged[key] = merge_settings(default[key], override[key])
-            else:
-                merged[key] = override[key]
-        else:
-            merged[key] = override[key]
-
-    return merged
-
-
-def load_settings(paths=None):
-    """
-    Load one or more configuration files, merge them with the defaults, and apply them
-    to this module as module attributes.
-
-    Be aware that the order the paths are provided in matters. Settings are repeatedly
-    overridden so settings in the last file in the list win.
-
-    Args:
-        paths: A list of absolute path strings to configuration files in YAML format.
-
-    Returns:
-        dict: The merged settings. This is helpful to see what settings Pulp is contributing, but
-            is not the full set of settings Django uses, as there are a set of Django-provided
-            defaults as well.
-    """
-    settings = _DEFAULT_PULP_SETTINGS
-
-    for path in (paths or []):
-        with suppress(OSError, IOError):
-            # Consider adding logging of some kind, potentially to /var/log/pulp
-            with open(path) as config_file:
-                config = config_file.read()
-                override_settings = yaml.safe_load(config)
-                settings = merge_settings(settings, override_settings)
-
-    for setting_name, setting_value in settings.items():
-        setattr(sys.modules[__name__], setting_name.upper(), setting_value)
-
-    return settings
-
-
-# Read PULP_SETTINGS environment variable to find the location of server.yaml,
-# defaults to /etc/pulp/server.yaml
-PULP_SETTINGS = os.getenv('PULP_SETTINGS', '/etc/pulp/server.yaml')
-load_settings([PULP_SETTINGS])
+# load pulp default settings
+# maybe it is better to define it directly in this settings file?
+for setting_name, setting_value in _DEFAULT_PULP_SETTINGS.items():
+    setattr(sys.modules[__name__], setting_name.upper(), setting_value)
