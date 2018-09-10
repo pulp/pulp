@@ -1,10 +1,6 @@
 from gettext import gettext as _
-from collections import OrderedDict
 
 from django.db import models, transaction
-from drf_yasg import openapi
-from drf_yasg.inspectors.view import SwaggerAutoSchema
-from drf_yasg.utils import guess_response_status, is_list_view
 from rest_framework import status, mixins
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -12,40 +8,6 @@ from rest_framework.response import Response
 from pulpcore.app.models import Artifact, Content, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
 from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
-
-
-class ArtifactSchema(SwaggerAutoSchema):
-    """This schema inspector is to be used for the ArtifactViewset.
-
-    The default behavior of SwaggerAutoSchema skips generating a response schema if the update
-    operation requires a multipart form upload. This view inspector generates a response anyway.
-
-    """
-    def get_default_responses(self):
-        """Get the default responses determined for this view from the request serializer and
-        request method.
-
-        :type: dict[str, openapi.Schema]
-        """
-        method = self.method.lower()
-
-        default_status = guess_response_status(method)
-        default_schema = ''
-        if method in ('get', 'post', 'put', 'patch'):
-            default_schema = self.get_default_response_serializer()
-
-        default_schema = default_schema or ''
-
-        if default_schema and not isinstance(default_schema, openapi.Schema):
-            default_schema = self.serializer_to_schema(default_schema) or ''
-
-        if default_schema:
-            if is_list_view(self.path, self.method, self.view) and self.method.lower() == 'get':
-                default_schema = openapi.Schema(type=openapi.TYPE_ARRAY, items=default_schema)
-            if self.should_page():
-                default_schema = self.get_paginated_response(default_schema) or default_schema
-
-        return OrderedDict({str(default_status): default_schema})
 
 
 class ArtifactFilter(BaseFilterSet):
@@ -72,7 +34,6 @@ class ArtifactViewSet(NamedModelViewSet,
     serializer_class = ArtifactSerializer
     filterset_class = ArtifactFilter
     parser_classes = (MultiPartParser, FormParser)
-    swagger_schema = ArtifactSchema
 
     def destroy(self, request, pk):
         """
