@@ -2,25 +2,22 @@
 """Tests that perform action over remotes and publishers."""
 
 import unittest
-from urllib.parse import urljoin
 
 from pulp_smash import api, config
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
-    gen_remote,
     gen_repo,
     get_content,
     publish,
     sync,
 )
 
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.constants import (
-    FILE_FIXTURE_URL,
+from tests.functional.api.using_plugin.constants import (
     FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH
 )
-from tests.functional.api.using_plugin.utils import gen_publisher
+from tests.functional.api.using_plugin.utils import gen_file_publisher, gen_file_remote
+from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class RemotesPublishersTestCase(unittest.TestCase):
@@ -38,7 +35,7 @@ class RemotesPublishersTestCase(unittest.TestCase):
 
         Do the following:
 
-        1. Create an remote, and a publisher.
+        1. Create a remote, and a publisher.
         2. Create 2 repositories.
         3. Sync both repositories using the same remote.
         4. Assert that the two repositories have the same contents.
@@ -48,12 +45,13 @@ class RemotesPublishersTestCase(unittest.TestCase):
         """
         cfg = config.get_config()
 
-        # Create an remote and publisher.
+        # Create a remote and publisher.
         client = api.Client(cfg, api.json_handler)
-        body = gen_remote(urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST'))
+        body = gen_file_remote()
         remote = client.post(FILE_REMOTE_PATH, body)
         self.addCleanup(client.delete, remote['_href'])
-        publisher = client.post(FILE_PUBLISHER_PATH, gen_publisher())
+
+        publisher = client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
         self.addCleanup(client.delete, publisher['_href'])
 
         # Create and sync repos.

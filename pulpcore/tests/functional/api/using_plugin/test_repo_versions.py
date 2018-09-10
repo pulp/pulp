@@ -1,8 +1,8 @@
 # coding=utf-8
-"""Tests related to repository version."""
+"""Tests related to repository versions."""
 import unittest
 from random import choice, randint, sample
-from urllib.parse import urljoin
+from urllib.parse import urlsplit
 from time import sleep
 
 from requests.exceptions import HTTPError
@@ -11,7 +11,6 @@ from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_version,
-    gen_remote,
     gen_repo,
     get_added_content,
     get_artifact_paths,
@@ -22,20 +21,20 @@ from pulp_smash.pulp3.utils import (
     sync,
 )
 
-from tests.functional.utils import skip_if
-from tests.functional.constants import (
+from tests.functional.api.using_plugin.constants import (
     FILE_FIXTURE_COUNT,
-    FILE_FIXTURE_URL,
-    FILE_LARGE_FIXTURE_URL,
+    FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_CONTENT_PATH,
     FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH,
 )
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 from tests.functional.api.using_plugin.utils import (
-    gen_publisher,
+    gen_file_publisher,
+    gen_file_remote,
     populate_pulp,
+    skip_if,
 )
+from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class AddRemoveContentTestCase(unittest.TestCase):
@@ -99,7 +98,7 @@ class AddRemoveContentTestCase(unittest.TestCase):
         * The ``_latest_version_href + removed_content/`` API call is correct.
         * The ``content_summary`` attribute is correct.
         """
-        body = gen_remote(urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST'))
+        body = gen_file_remote()
         self.remote.update(self.client.post(FILE_REMOTE_PATH, body))
         sync(self.cfg, self.remote, self.repo)
         repo = self.client.get(self.repo['_href'])
@@ -194,6 +193,45 @@ class AddRemoveContentTestCase(unittest.TestCase):
         return content_summaries[0]
 
 
+class SyncChangeRepoVersionTestCase(unittest.TestCase):
+    """Verify whether sync of repository updates repository version."""
+
+    def test_all(self):
+        """Verify whether the sync of a repository updates its version.
+
+        This test explores the design choice stated in the `Pulp #3308`_ that a
+        new repository version is created even if the sync does not add or
+        remove any content units. Even without any changes to the remote if a
+        new sync occurs, a new repository version is created.
+
+        .. _Pulp #3308: https://pulp.plan.io/issues/3308
+
+        Do the following:
+
+        1. Create a repository, and a remote.
+        2. Sync the repository an arbitrary number of times.
+        3. Verify that the repository version is equal to the previous number of syncs.
+        """
+        cfg = config.get_config()
+        client = api.Client(cfg, api.json_handler)
+
+        repo = client.post(REPO_PATH, gen_repo())
+        self.addCleanup(client.delete, repo['_href'])
+
+        body = gen_file_remote()
+        remote = client.post(FILE_REMOTE_PATH, body)
+        self.addCleanup(client.delete, remote['_href'])
+
+        number_of_syncs = randint(1, 10)
+        for _ in range(number_of_syncs):
+            sync(cfg, remote, repo)
+
+        repo = client.get(repo['_href'])
+        path = urlsplit(repo['_latest_version_href']).path
+        latest_repo_version = int(path.split('/')[-2])
+        self.assertEqual(latest_repo_version, number_of_syncs)
+
+
 class AddRemoveRepoVersionTestCase(unittest.TestCase):
     """Create and delete repository versions.
 
@@ -211,7 +249,7 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         """Add content to Pulp."""
         cls.cfg = config.get_config()
         cls.client = api.Client(cls.cfg, api.json_handler)
-        populate_pulp(cls.cfg, urljoin(FILE_LARGE_FIXTURE_URL, 'PULP_MANIFEST'))
+        populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_MANIFEST_URL)
         # We need at least three content units. Choosing a relatively low
         # number is useful, to limit how many repo versions are created, and
         # thus how long the test takes.
@@ -262,6 +300,7 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         )
         self.repo = self.client.get(self.repo['_href'])
         artifact_paths = get_artifact_paths(self.repo)
+
         self.assertNotIn(self.content[-2]['artifact'], artifact_paths)
         self.assertIn(self.content[-1]['artifact'], artifact_paths)
 
@@ -269,8 +308,10 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         """Delete a middle version."""
         index = randint(1, len(self.repo_version_hrefs) - 2)
         delete_version(self.repo, self.repo_version_hrefs[index])
+
         with self.assertRaises(HTTPError):
             get_content(self.repo, self.repo_version_hrefs[index])
+
         for repo_version_href in self.repo_version_hrefs[index + 1:]:
             artifact_paths = get_artifact_paths(self.repo, repo_version_href)
             self.assertIn(self.content[index]['artifact'], artifact_paths)
@@ -281,10 +322,12 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         Delete a repository version, and verify the associated publication is
         also deleted.
         """
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
+
         publication = publish(self.cfg, publisher, self.repo)
         delete_version(self.repo)
+
         with self.assertRaises(HTTPError):
             self.client.get(publication['_href'])
 
@@ -309,12 +352,16 @@ class ContentImmutableRepoVersionTestCase(unittest.TestCase):
         """
         cfg = config.get_config()
         client = api.Client(cfg, api.json_handler)
+
         repo = client.post(REPO_PATH, gen_repo())
         self.addCleanup(client.delete, repo['_href'])
-        body = gen_remote(urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST'))
+
+        body = gen_file_remote()
         remote = client.post(FILE_REMOTE_PATH, body)
         self.addCleanup(client.delete, remote['_href'])
+
         sync(cfg, remote, repo)
+
         latest_version_href = client.get(repo['_href'])['_latest_version_href']
         with self.assertRaises(HTTPError):
             client.post(latest_version_href)
@@ -342,6 +389,7 @@ class FilterRepoVersionTestCase(unittest.TestCase):
         """
         cls.cfg = config.get_config()
         cls.client = api.Client(cls.cfg, api.json_handler)
+
         populate_pulp(cls.cfg)
         cls.contents = cls.client.get(FILE_CONTENT_PATH)['results']
 
@@ -349,6 +397,7 @@ class FilterRepoVersionTestCase(unittest.TestCase):
         """Create a repository and give it new versions."""
         self.repo = self.client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.client.delete, self.repo['_href'])
+
         for content in self.contents[:10]:  # slice is arbitrary upper bound
             self.client.post(
                 self.repo['_versions_href'],

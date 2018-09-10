@@ -19,15 +19,15 @@ from pulp_smash.pulp3.utils import (
     sync,
 )
 
-from tests.functional.constants import (
-    FILE_FIXTURE_URL,
+from tests.functional.api.using_plugin.constants import (
+    FILE_FIXTURE_MANIFEST_URL,
     FILE_URL,
     FILE_CONTENT_PATH,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
+from tests.functional.api.using_plugin.utils import gen_file_publisher, populate_pulp
 from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.api.using_plugin.utils import gen_publisher, populate_pulp
 
 
 class AutoDistributionTestCase(unittest.TestCase):
@@ -82,7 +82,7 @@ class AutoDistributionTestCase(unittest.TestCase):
         repo = self.client.get(repo['_href'])
 
         # Create publisher.
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 
         # Create a distribution
@@ -152,7 +152,7 @@ class SetupAutoDistributionTestCase(unittest.TestCase):
         # Create a repository and a publisher.
         repo = self.client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.client.delete, repo['_href'])
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 
         # Create a distribution.
@@ -178,12 +178,15 @@ class SetupAutoDistributionTestCase(unittest.TestCase):
         # the new publication (because publisher and repository are unset).
         remote = self.client.post(
             FILE_REMOTE_PATH,
-            gen_remote(urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST')),
+            gen_remote(FILE_FIXTURE_MANIFEST_URL),
         )
         self.addCleanup(self.client.delete, remote['_href'])
+
         sync(self.cfg, remote, repo)
+
         publication = publish(self.cfg, publisher, repo)
         self.addCleanup(self.client.delete, publication['_href'])
+
         distribution = self.client.get(distribution['_href'])
         self.assertNotEqual(distribution['publication'], publication['_href'])
 

@@ -1,7 +1,7 @@
 # Models are exposed selectively in the versioned plugin API.
 # Any models defined in the pulpcore.plugin namespace should probably be proxy models.
 
-from pulpcore.app.models import (  # NOQA
+from pulpcore.app.models import (  # noqa
     Artifact,
     Content,
     ContentArtifact,

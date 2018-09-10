@@ -13,7 +13,7 @@ fi
 
 
 # Lint code.
-flake8 --config flake8.cfg
+flake8 --config flake8.cfg || exit 1
 
 # Run unit tests.
 coverage run manage.py test ./pulpcore/tests/unit/

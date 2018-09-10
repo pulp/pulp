@@ -1,11 +1,12 @@
 # coding=utf-8
-"""Utilities for pulpcore API tests that require the file plugin."""
-from urllib.parse import urljoin
+"""Utilities for pulpcore API tests that require the use of a plugin."""
+from functools import partial
 from unittest import SkipTest
 
-from pulp_smash import api, utils
+from pulp_smash import api, selectors
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
+    gen_publisher,
     gen_repo,
     gen_remote,
     require_pulp_3,
@@ -13,11 +14,13 @@ from pulp_smash.pulp3.utils import (
     sync
 )
 
-from tests.functional.constants import (
-    FILE_FIXTURE_URL,
+from tests.functional.api.using_plugin.constants import (
+    FILE_FIXTURE_MANIFEST_URL,
     FILE_CONTENT_PATH,
     FILE_REMOTE_PATH
 )
+
+skip_if = partial(selectors.skip_if, exc=SkipTest)
 
 
 def set_up_module():
@@ -30,25 +33,19 @@ def set_up_module():
     require_pulp_plugins({'pulpcore', 'pulp_file'}, SkipTest)
 
 
-def gen_publisher(**kwargs):
-    """Return a semi-random dict for use in creating a publisher."""
-    data = {'name': utils.uuid4()}
-    data.update(kwargs)
-    return data
-
-
 def populate_pulp(cfg, url=None):
     """Add file contents to Pulp.
 
     :param pulp_smash.config.PulpSmashConfig: Information about a Pulp
         application.
     :param url: The URL to a file repository's ``PULP_MANIFEST`` file. Defaults
-        to :data:`pulp_smash.constants.FILE_FEED_URL` + ``PULP_MANIFEST``.
+        to :data:`pulp_smash.constants.FILE_FIXTURE_URL` + ``PULP_MANIFEST``.
     :returns: A list of dicts, where each dict describes one file content in
         Pulp.
     """
     if url is None:
-        url = urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST')
+        url = FILE_FIXTURE_MANIFEST_URL
+
     client = api.Client(cfg, api.json_handler)
     remote = {}
     repo = {}
@@ -62,3 +59,27 @@ def populate_pulp(cfg, url=None):
         if repo:
             client.delete(repo['_href'])
     return client.get(FILE_CONTENT_PATH)['results']
+
+
+def gen_file_remote(url=None, **kwargs):
+    """Return a semi-random dict for use in creating a file Remote.
+
+    :param url: The URL of an external content source.
+    """
+    if url is None:
+        url = FILE_FIXTURE_MANIFEST_URL
+
+    return gen_remote(url, **kwargs)
+
+
+def gen_file_publisher(**kwargs):
+    """Return a semi-random dict for use in creating a file Remote.
+
+    :param url: The URL of an external content source.
+    """
+    publisher = gen_publisher()
+    file_extra_fields = {
+        **kwargs
+    }
+    publisher.update(file_extra_fields)
+    return publisher
