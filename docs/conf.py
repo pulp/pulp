@@ -104,7 +104,7 @@ pygments_style = 'sphinx'
 # Set autodoc default options
 # Document all module/class/etc members, even if they have no docstring.
 # Show class inheritance, and group class members together by type (attr, method, etc)
-autodoc_default_flags = ['members', 'undoc-members']
+autodoc_default_options = {'members': None, 'undoc-members': None}
 autodoc_member_order = 'groupwise'
 autoclass_content = 'both'
 
