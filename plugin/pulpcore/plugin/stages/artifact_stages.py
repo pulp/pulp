@@ -84,6 +84,7 @@ class QueryExistingArtifacts(Stage):
                             digest_value = getattr(declarative_artifact.artifact, digest_name)
                             if digest_value and digest_value == getattr(artifact, digest_name):
                                 declarative_artifact.artifact = artifact
+                                break
             for content in batch:
                 if content is None:
                     continue
