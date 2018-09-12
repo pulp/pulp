@@ -11,7 +11,6 @@ from pulp_smash.pulp3.constants import DISTRIBUTION_PATH, REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_orphans,
     gen_distribution,
-    gen_remote,
     gen_repo,
     get_added_content,
     get_versions,
@@ -20,13 +19,17 @@ from pulp_smash.pulp3.utils import (
 )
 
 from tests.functional.api.using_plugin.constants import (
-    FILE_FIXTURE_MANIFEST_URL,
+    FILE_FIXTURE_URL,
     FILE_URL,
     FILE_CONTENT_PATH,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
-from tests.functional.api.using_plugin.utils import gen_file_publisher, populate_pulp
+from tests.functional.api.using_plugin.utils import (
+    gen_file_publisher,
+    gen_file_remote,
+    populate_pulp
+)
 from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
@@ -178,7 +181,7 @@ class SetupAutoDistributionTestCase(unittest.TestCase):
         # the new publication (because publisher and repository are unset).
         remote = self.client.post(
             FILE_REMOTE_PATH,
-            gen_remote(FILE_FIXTURE_MANIFEST_URL),
+            gen_file_remote(FILE_FIXTURE_URL),
         )
         self.addCleanup(self.client.delete, remote['_href'])
 

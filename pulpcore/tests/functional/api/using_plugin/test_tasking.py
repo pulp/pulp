@@ -11,9 +11,9 @@ from pulp_smash.pulp3.utils import (
 )
 
 from tests.functional.api.using_plugin.constants import (
-    FILE_FIXTURE_MANIFEST_URL,
+    FILE_FIXTURE_URL,
     FILE_FIXTURE_COUNT,
-    FILE_LARGE_FIXTURE_MANIFEST_URL,
+    FILE_LARGE_FIXTURE_URL,
     FILE_REMOTE_PATH,
 )
 from tests.functional.api.using_plugin.utils import gen_file_remote
@@ -48,11 +48,11 @@ class MultiResourceLockingTestCase(unittest.TestCase):
         repo = client.post(REPO_PATH, gen_repo())
         self.addCleanup(client.delete, repo['_href'])
 
-        body = gen_file_remote(url=FILE_LARGE_FIXTURE_MANIFEST_URL)
+        body = gen_file_remote(url=FILE_LARGE_FIXTURE_URL)
         remote = client.post(FILE_REMOTE_PATH, body)
         self.addCleanup(client.delete, remote['_href'])
 
-        url = {'url': FILE_FIXTURE_MANIFEST_URL}
+        url = {'url': FILE_FIXTURE_URL}
         client.patch(remote['_href'], url)
 
         sync(cfg, remote, repo)

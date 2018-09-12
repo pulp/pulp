@@ -23,7 +23,7 @@ from pulp_smash.pulp3.utils import (
 
 from tests.functional.api.using_plugin.constants import (
     FILE_FIXTURE_COUNT,
-    FILE_LARGE_FIXTURE_MANIFEST_URL,
+    FILE_LARGE_FIXTURE_URL,
     FILE_CONTENT_PATH,
     FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH,
@@ -249,7 +249,7 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         """Add content to Pulp."""
         cls.cfg = config.get_config()
         cls.client = api.Client(cls.cfg, api.json_handler)
-        populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_MANIFEST_URL)
+        populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_URL)
         # We need at least three content units. Choosing a relatively low
         # number is useful, to limit how many repo versions are created, and
         # thus how long the test takes.
