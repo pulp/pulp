@@ -10,6 +10,12 @@ The Plugin API currently supports version 3.y of Pulp Core.
 See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 :doc:`Plugin Development <../../plugins/plugin-writer/index>`.
 
+0.1.0b5
+=======
+
+* `Addition of the Stages API <https://github.com/pulp/pulp/pull/3559>`_
+* `Removal of GroupDownloader <https://github.com/pulp/pulp/pull/3606>`_
+
 0.1.0b4
 =======
 

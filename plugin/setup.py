@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    'pulpcore',
+    'pulpcore>=3.0.0b7',
     'aiohttp',
     'aiofiles',
     'backoff',
@@ -14,7 +14,7 @@ setup(
     name='pulpcore-plugin',
     description='Pulp Plugin API',
     long_description=long_description,
-    version='0.1.0b4',
+    version='0.1.0b5',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
