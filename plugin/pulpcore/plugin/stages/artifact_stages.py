@@ -202,22 +202,22 @@ class ArtifactDownloader(Stage):
                 if pending:
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     for gathered_downloaders in done:
-                        results = gathered_downloaders.result()
-                        for download_result in results[:-1]:
-                            content = results[-1]
-                            to_download_count = 0
-                            for declarative_artifact in content.d_artifacts:
-                                if declarative_artifact.artifact.pk is None:
-                                    new_artifact = Artifact(
-                                        **download_result.artifact_attributes,
-                                        file=download_result.path
-                                    )
-                                    declarative_artifact.artifact = new_artifact
-                                    to_download_count = to_download_count + 1
-                            pb.done = pb.done + to_download_count
-                            pb.save()
-                            outstanding_downloads = outstanding_downloads - to_download_count
-                            await out_q.put(content)
+                        one_units_downloads = gathered_downloaders.result()
+                        content = one_units_downloads[-1]
+                        for download_result in one_units_downloads[:-1]:
+                            def url_lookup(x):
+                                return x.url == download_result.url
+                            d_artifact = list(filter(url_lookup, content.d_artifacts))[0]
+                            if d_artifact.artifact.pk is None:
+                                new_artifact = Artifact(
+                                    **download_result.artifact_attributes,
+                                    file=download_result.path
+                                )
+                                d_artifact.artifact = new_artifact
+                                pb.done = pb.done + 1
+                                pb.save()
+                                outstanding_downloads = outstanding_downloads - 1
+                        await out_q.put(content)
                 else:
                     if shutdown:
                         break
