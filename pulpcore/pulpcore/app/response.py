@@ -23,6 +23,5 @@ class OperationPostponedResponse(Response):
                 the response.
             request (rest_framework.request.Request): Request used to generate the _href urls
         """
-        task = {"_href": reverse('tasks-detail', args=[result.id], request=None),
-                "task_id": result.id}
+        task = {"task": reverse('tasks-detail', args=[result.id], request=None)}
         super().__init__(data=task, status=202)

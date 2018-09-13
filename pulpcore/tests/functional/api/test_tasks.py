@@ -41,7 +41,7 @@ class TasksTestCase(unittest.TestCase):
         self.addCleanup(self.client.delete, repo['_href'])
         attrs = {'description': utils.uuid4()}
         response = self.client.patch(repo['_href'], attrs)
-        self.task.update(self.client.get(response['_href']))
+        self.task.update(self.client.get(response['task']))
 
     @skip_if(bool, 'task', False)
     def test_02_read_href(self):
