@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 KEYWORDS = ['fixes', 'closes', 're', 'ref']
-NO_ISSUE = '#noissue'
+NO_ISSUE = '[noissue]'
 STATUSES = ['NEW', 'ASSIGNED', 'POST']
 
 sha = sys.argv[1]

@@ -80,7 +80,7 @@ To reference multiple issues in a commit use a separate line for each one::
     fixes #124
 
 We strongly suggest that each commit is attached to an issue in Redmine. However, if you must create
-a commit for which there is no issue, add the tag ``#noissue`` to the commit's message.
+a commit for which there is no issue, add the tag ``[noissue]`` to the commit's message.
 
 Putting this all together, the following is an example of a good commit message::
 
