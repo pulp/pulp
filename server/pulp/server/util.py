@@ -34,14 +34,16 @@ TYPE_MD5 = md5().name
 TYPE_SHA = 'sha'
 TYPE_SHA1 = hashlib.sha1().name
 TYPE_SHA256 = hashlib.sha256().name
+TYPE_SHA512 = hashlib.sha512().name
 
-HASHLIB_ALGORITHMS = (TYPE_MD5, TYPE_SHA, TYPE_SHA1, TYPE_SHA256)
+HASHLIB_ALGORITHMS = (TYPE_MD5, TYPE_SHA, TYPE_SHA1, TYPE_SHA256, TYPE_SHA512)
 
 CHECKSUM_FUNCTIONS = {
     TYPE_MD5: md5,
     TYPE_SHA: hashlib.sha1,
     TYPE_SHA1: hashlib.sha1,
     TYPE_SHA256: hashlib.sha256,
+    TYPE_SHA512: hashlib.sha512,
 }
 
 
