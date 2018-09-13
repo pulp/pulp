@@ -86,6 +86,29 @@ class DeclarativeVersion:
         self.repository = repository
         self.mirror = mirror
 
+    def pipeline_stages(self, new_version):
+        """
+        Build the list of pipeline stages feeding into the
+        ContentUnitAssociation stage.
+
+        Plugin-writers may override this method to build a custom pipeline. This
+        can be achieved by returning a list with different stages or by extending
+        the list returned by this method.
+
+        Args:
+            new_version (:class:`~pulpcore.plugin.models.RepositoryVersion`): The
+                new repository version that is going to be built.
+
+        Returns:
+            list: List of :class:`~pulpcore.plugin.stages.Stage` instances
+
+        """
+        return [
+            self.first_stage,
+            QueryExistingArtifacts(), ArtifactDownloader(), ArtifactSaver(),
+            QueryExistingContentUnits(), ContentUnitSaver(),
+        ]
+
     def create(self):
         """
         Perform the work. This is the long-blocking call where all syncing occurs.
@@ -93,15 +116,10 @@ class DeclarativeVersion:
         with WorkingDirectory():
             with RepositoryVersion.create(self.repository) as new_version:
                 loop = asyncio.get_event_loop()
-                stages = [
-                    self.first_stage,
-                    QueryExistingArtifacts(), ArtifactDownloader(), ArtifactSaver(),
-                    QueryExistingContentUnits(), ContentUnitSaver(),
-                    ContentUnitAssociation(new_version)
-                ]
+                stages = self.pipeline_stages(new_version)
+                stages.append(ContentUnitAssociation(new_version))
                 if self.mirror:
-                    stages.extend([ContentUnitUnassociation(new_version), EndStage()])
-                else:
-                    stages.append(EndStage())
+                    stages.append(ContentUnitUnassociation(new_version))
+                stages.append(EndStage())
                 pipeline = create_pipeline(stages)
                 loop.run_until_complete(pipeline)
