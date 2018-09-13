@@ -2,8 +2,8 @@
 """Tests related to repository versions."""
 import unittest
 from random import choice, randint, sample
-from urllib.parse import urlsplit
 from time import sleep
+from urllib.parse import urlsplit
 
 from requests.exceptions import HTTPError
 
@@ -22,11 +22,11 @@ from pulp_smash.pulp3.utils import (
 )
 
 from tests.functional.api.using_plugin.constants import (
+    FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
     FILE_LARGE_FIXTURE_URL,
-    FILE_CONTENT_PATH,
-    FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH,
+    FILE_REMOTE_PATH,
 )
 from tests.functional.api.using_plugin.utils import (
     gen_file_publisher,
@@ -210,7 +210,8 @@ class SyncChangeRepoVersionTestCase(unittest.TestCase):
 
         1. Create a repository, and a remote.
         2. Sync the repository an arbitrary number of times.
-        3. Verify that the repository version is equal to the previous number of syncs.
+        3. Verify that the repository version is equal to the previous number
+        of syncs.
         """
         cfg = config.get_config()
         client = api.Client(cfg, api.json_handler)
@@ -504,3 +505,30 @@ class FilterRepoVersionTestCase(unittest.TestCase):
         attributes = [version[attr] for version in get_versions(self.repo)]
         attributes.sort()
         return attributes
+
+
+class CreatedResourcesTaskTestCase(unittest.TestCase):
+    """Verify whether task report shows that a repository version was created.
+
+    This test targets the following issue:
+
+    `Pulp Smash #876 <https://github.com/PulpQE/pulp-smash/issues/876>`_.
+    """
+
+    def test_all(self):
+        """Verify whether task report shows repository version was created."""
+        cfg = config.get_config()
+        client = api.Client(cfg, api.json_handler)
+        repo = client.post(REPO_PATH, gen_repo())
+        self.addCleanup(client.delete, repo['_href'])
+        body = gen_file_remote()
+        remote = client.post(FILE_REMOTE_PATH, body)
+        self.addCleanup(client.delete, remote['_href'])
+        call_report = sync(cfg, remote, repo)
+        last_task = next(api.poll_spawned_tasks(cfg, call_report))
+        for key in ('repositories', 'versions'):
+            self.assertIn(
+                key,
+                last_task['created_resources'][0],
+                last_task['created_resources']
+            )

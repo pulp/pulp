@@ -15,7 +15,6 @@ FILE_REMOTE_PATH = urljoin(BASE_REMOTE_PATH, 'file/')
 
 FILE_PUBLISHER_PATH = urljoin(BASE_PUBLISHER_PATH, 'file/')
 
-
 FILE_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, 'file/')
 """The URL to a file repository."""
 
