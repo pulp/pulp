@@ -8,7 +8,7 @@ This guide will walk you through the creation of a development environment using
 Host Requirements:
 ------------------
 
-* Python 3.5
+* Python 3.6
 * Ansible 2.2
 
 Other requirements vary depending on how you configure your Vagrantfile. If using ``Vagrantfile.example``, install vagrant, ansible, and the SSHFS plugin for vagrant. SSHFS will be used to share your local code directory with the deployed virtual machine::
