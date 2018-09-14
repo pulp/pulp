@@ -121,7 +121,7 @@ class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
     """
 
     class Meta:
-        fields = ('id', '_href', 'created')
+        fields = ('_href', 'created')
 
     created = serializers.DateTimeField(
         help_text=_('Timestamp of creation.'),
