@@ -137,9 +137,8 @@ class RepositorySyncURLSerializer(serializers.Serializer):
         }
     )
 
-    mirror = fields.ChoiceField(
+    mirror = fields.BooleanField(
         required=False,
-        choices=[True, False],
         default=True,
         help_text=_('The synchronization mode, True for "mirror" and False for "additive" mode.')
     )
