@@ -4,7 +4,6 @@ dist: xenial
 language: python
 python:
     # python versions used in el7 SCL & supported fedora
-    - "3.5"
     - "3.6"
     - "3.7"
 env:

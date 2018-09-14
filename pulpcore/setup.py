@@ -20,16 +20,17 @@ requirements = [
 
 setup(
     name='pulpcore',
+    version='3.0.0b7',
     description='Pulp Django Application and Related Modules',
     long_description=long_description,
-    version='3.0.0b7',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
+    url='http://www.pulpproject.org',
+    python_requires='>=3.6',
     install_requires=requirements,
     include_package_data=True,
-    url='http://www.pulpproject.org',
     classifiers=(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX :: Linux',
@@ -37,7 +38,6 @@ setup(
         'Framework :: Django',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ),
