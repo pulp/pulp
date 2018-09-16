@@ -23,52 +23,29 @@ services:
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
 script: source .travis/script.sh
-stages:
-- name: test
-- name: deploy-pulpcore
-  if: tag =~ ^pulpcore-3.0*
-- name: deploy-plugin
-  if: tag =~ ^pulpcore-plugin*
-- name: deploy-common
-  if: tag =~ ^pulpcore-common*
-- name: publish-beta-docs
-  if: tag =~ ^pulpcore-3.0*
-- name: publish-nightly-docs
-  if: type = cron
+
 jobs:
   include:
   - stage: deploy-pulpcore
-    script: skip
-    deploy:
-      provider: script
-      script: bash .travis/deploy.sh pulpcore
-      on:
-        tags: true
+    script: bash .travis/deploy.sh pulpcore
+    if: tag =~ ^pulpcore-3.0*
   - stage: deploy-plugin
-    script: skip
-    deploy:
-      provider: script
-      script: bash .travis/deploy.sh plugin
-      on:
-        tags: true
+    script: bash .travis/deploy.sh plugin
+    if: tag =~ ^pulpcore-plugin*
   - stage: deploy-common
-    script: skip
-    deploy:
-      provider: script
-      script: bash .travis/deploy.sh common
-      on:
-        tags: true
+    script: bash .travis/deploy.sh common
+    if: tag =~ ^pulpcore-common*
   - stage: publish-beta-docs
-    script: skip
-    deploy:
-      provider: script
-      script: bash .travis/publish_docs.sh beta
-      on:
-        tags: true
+    script: bash .travis/publish_docs.sh beta
+    env:
+      - DJANGO_MAX=2.2.100
+      - DB=postgres
+      - TEST=docs
+    if: tag =~ ^pulpcore-3.0*
   - stage: publish-nightly-docs
-    script: skip
-    deploy:
-      provider: script
-      script: bash .travis/publish_docs.sh nightly
-      on:
-        branch: master
+    script: bash .travis/publish_docs.sh nightly
+    env:
+      - DJANGO_MAX=2.2.100
+      - DB=postgres
+      - TEST=docs
+    if: type = cron

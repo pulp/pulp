@@ -6,12 +6,7 @@ sudo chmod 600 ~/.ssh/pulp-infra
 echo "docs.pulpproject.org,8.43.85.236 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGXG+8vjSQvnAkq33i0XWgpSrbco3rRqNZr0SfVeiqFI7RN/VznwXMioDDhc+hQtgVhd6TYBOrV07IMcKj+FAzg=" >> /home/travis/.ssh/known_hosts
 chmod 644 /home/travis/.ssh/known_hosts
 
-export TEST='docs'
-
 cd .travis
-
-./install.sh
-./before_script.sh
 
 export PYTHONUNBUFFERED=1
 
