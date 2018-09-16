@@ -45,26 +45,9 @@ class QueryExistingArtifacts(Stage):
         Returns:
             The coroutine for this stage.
         """
-        batch = []
-        shutdown = False
-        while True:
-            try:
-                content = in_q.get_nowait()
-            except asyncio.QueueEmpty:
-                if not batch:
-                    content = await in_q.get()
-                    batch.append(content)
-                    continue
-            else:
-                batch.append(content)
-                continue
-
+        async for batch in self.batches(in_q):
             all_artifacts_q = Q(pk=None)
             for content in batch:
-                if content is None:
-                    shutdown = True
-                    continue
-
                 for declarative_artifact in content.d_artifacts:
                     one_artifact_q = Q()
                     for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
@@ -77,8 +60,6 @@ class QueryExistingArtifacts(Stage):
 
             for artifact in Artifact.objects.filter(all_artifacts_q):
                 for content in batch:
-                    if content is None:
-                        continue
                     for declarative_artifact in content.d_artifacts:
                         for digest_name in artifact.DIGEST_FIELDS:
                             digest_value = getattr(declarative_artifact.artifact, digest_name)
@@ -86,12 +67,7 @@ class QueryExistingArtifacts(Stage):
                                 declarative_artifact.artifact = artifact
                                 break
             for content in batch:
-                if content is None:
-                    continue
                 await out_q.put(content)
-            batch = []
-            if shutdown:
-                break
         await out_q.put(None)
 
 
@@ -259,25 +235,9 @@ class ArtifactSaver(Stage):
             The coroutine for this stage.
         """
         storage_backend = DefaultStorage()
-        shutdown = False
-        batch = []
-        while not shutdown:
-            try:
-                content = in_q.get_nowait()
-            except asyncio.QueueEmpty:
-                if not batch:
-                    content = await in_q.get()
-                    batch.append(content)
-                    continue
-            else:
-                batch.append(content)
-                continue
-
+        async for batch in self.batches(in_q):
             artifacts_to_save = []
             for declarative_content in batch:
-                if declarative_content is None:
-                    shutdown = True
-                    break
                 for declarative_artifact in declarative_content.d_artifacts:
                     if declarative_artifact.artifact.pk is None:
                         src_path = str(declarative_artifact.artifact.file)
@@ -292,10 +252,6 @@ class ArtifactSaver(Stage):
                 Artifact.objects.bulk_create(artifacts_to_save)
 
             for declarative_content in batch:
-                if declarative_content is None:
-                    continue
                 await out_q.put(declarative_content)
-
-            batch = []
 
         await out_q.put(None)

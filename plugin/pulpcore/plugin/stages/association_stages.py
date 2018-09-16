@@ -1,4 +1,3 @@
-import asyncio
 from collections import defaultdict
 
 from django.db.models import Q
@@ -52,25 +51,9 @@ class ContentUnitAssociation(Stage):
             The coroutine for this stage.
         """
         with ProgressBar(message='Associating Content') as pb:
-            batch = []
-            shutdown = False
-            while True:
-                try:
-                    declarative_content = in_q.get_nowait()
-                except asyncio.QueueEmpty:
-                    if not batch and not shutdown:
-                        declarative_content = await in_q.get()
-                        batch.append(declarative_content)
-                        continue
-                else:
-                    batch.append(declarative_content)
-                    continue
-
+            async for batch in self.batches(in_q):
                 content_q_by_type = defaultdict(lambda: Q(pk=None))
                 for declarative_content in batch:
-                    if declarative_content is None:
-                        shutdown = True
-                        continue
                     try:
                         unit_key = declarative_content.content.natural_key()
                         self.unit_keys_by_type[type(declarative_content.content)].remove(unit_key)
@@ -85,10 +68,6 @@ class ContentUnitAssociation(Stage):
                     self.new_version.add_content(queryset)
                     pb.done = pb.done + queryset.count()
                     pb.save()
-
-                if shutdown:
-                    break
-                batch = []
 
             for unit_type, ids in self.unit_keys_by_type.items():
                 if ids:

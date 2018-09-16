@@ -1,4 +1,3 @@
-import asyncio
 from collections import defaultdict
 
 from django.db import transaction
@@ -44,26 +43,9 @@ class QueryExistingContentUnits(Stage):
         Returns:
             The coroutine for this stage.
         """
-        batch = []
-        shutdown = False
-        while True:
-            try:
-                content = in_q.get_nowait()
-            except asyncio.QueueEmpty:
-                if not batch:
-                    content = await in_q.get()
-                    batch.append(content)
-                    continue
-            else:
-                batch.append(content)
-                continue
-
+        async for batch in self.batches(in_q):
             content_q_by_type = defaultdict(lambda: Q(pk=None))
             for declarative_content in batch:
-                if declarative_content is None:
-                    shutdown = True
-                    continue
-
                 model_type = type(declarative_content.content)
                 unit_key = declarative_content.content.natural_key_dict()
                 content_q_by_type[model_type] = content_q_by_type[model_type] | Q(**unit_key)
@@ -71,8 +53,6 @@ class QueryExistingContentUnits(Stage):
             for model_type in content_q_by_type.keys():
                 for result in model_type.objects.filter(content_q_by_type[model_type]):
                     for declarative_content in batch:
-                        if declarative_content is None:
-                            continue
                         not_same_unit = False
                         for field in result.natural_key_fields():
                             in_memory_digest_value = getattr(declarative_content.content, field)
@@ -84,9 +64,6 @@ class QueryExistingContentUnits(Stage):
                         declarative_content.content = result
             for declarative_content in batch:
                 await out_q.put(declarative_content)
-            batch = []
-            if shutdown:
-                break
         await out_q.put(None)
 
 
@@ -124,20 +101,7 @@ class ContentUnitSaver(Stage):
         Returns:
             The coroutine for this stage.
         """
-        batch = []
-        shutdown = False
-        while True:
-            try:
-                declarative_content = in_q.get_nowait()
-            except asyncio.QueueEmpty:
-                if not batch and not shutdown:
-                    declarative_content = await in_q.get()
-                    batch.append(declarative_content)
-                    continue
-            else:
-                batch.append(declarative_content)
-                continue
-
+        async for batch in self.batches(in_q):
             content_artifact_bulk = []
             remote_artifact_bulk = []
             remote_artifact_map = {}
@@ -145,9 +109,6 @@ class ContentUnitSaver(Stage):
             with transaction.atomic():
                 await self._pre_save(batch)
                 for declarative_content in batch:
-                    if declarative_content is None:
-                        shutdown = True
-                        continue
                     if declarative_content.content.pk is None:
                             declarative_content.content.save()
                             for declarative_artifact in declarative_content.d_artifacts:
@@ -185,20 +146,14 @@ class ContentUnitSaver(Stage):
                 await self._post_save(batch)
 
             for declarative_content in batch:
-                if declarative_content is None:
-                    continue
                 await out_q.put(declarative_content)
-            if shutdown:
-                break
-            batch = []
         await out_q.put(None)
 
     async def _pre_save(self, batch):
         """
         A hook plugin-writers can override to save related objects prior to content unit saving.
 
-        This is run within the same transaction as the content unit saving. As with the Stages API
-        it's possible one item in batch is None indicating it is the end of the pipeline.
+        This is run within the same transaction as the content unit saving.
 
         Args:
             batch (list of :class:`~pulpcore.plugin.stages.DeclarativeContent`): The batch of
@@ -211,8 +166,7 @@ class ContentUnitSaver(Stage):
         """
         A hook plugin-writers can override to save related objects after content unit saving.
 
-        This is run within the same transaction as the content unit saving. As with the Stages API
-        it's possible one item in batch is None indicating it is the end of the pipeline.
+        This is run within the same transaction as the content unit saving.
 
         Args:
             batch (list of :class:`~pulpcore.plugin.stages.DeclarativeContent`): The batch of
