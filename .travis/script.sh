@@ -18,7 +18,7 @@ fi
 flake8 --config flake8.cfg || exit 1
 
 # Run unit tests.
-coverage run manage.py test ./pulpcore/tests/unit/
+coverage run manage.py test ./pulpcore/tests/unit/ ./plugin/tests/unit/
 
 # Run functional tests, and upload coverage report to codecov.
 show_logs_and_return_non_zero() {

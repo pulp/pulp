@@ -1,4 +1,5 @@
 # Test requirements
+asynctest
 codecov
 coverage
 flake8
