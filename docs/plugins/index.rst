@@ -52,6 +52,8 @@ Plugin List
 .. note::
    Are we missing a plugin? Let us know via the pulp-dev@redhat.com mailing list.
 
+Plugin Writer's Guide
+---------------------
 .. toctree::
    plugin-writer/index
    plugin-api/overview
