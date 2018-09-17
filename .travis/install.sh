@@ -9,7 +9,7 @@ pushd pulpcore/ && pip install -e . && popd
 pushd plugin/ && pip install -e .  && popd
 
 if [ "$TEST" = 'docs' ]; then
-  pip3 install sphinx sphinxcontrib-openapi
+  pip3 install sphinx sphinxcontrib-openapi sphinx_rtd_theme
   return "$?"
 fi
 
