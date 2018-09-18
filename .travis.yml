@@ -48,4 +48,4 @@ jobs:
       - DJANGO_MAX=2.2.100
       - DB=postgres
       - TEST=docs
-    if: type = cron
+    if: type != pull_request
