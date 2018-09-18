@@ -391,15 +391,8 @@ class RepoUnitAssociationManager(object):
             }
             collection.remove(spec)
 
-            unique_count = sum(
-                1 for unit_id in unit_ids if not RepoUnitAssociationManager.association_exists(
-                    repo_id, unit_id, unit_type_id))
-            if not unique_count:
-                continue
-
-            repo_controller.update_unit_count(repo_id, unit_type_id, -unique_count)
-
         repo_controller.update_last_unit_removed(repo_id)
+        repo_controller.rebuild_content_unit_counts(repo)
 
         # Match the return type/format as copy
         serializable_units = [u.to_id_dict() for u in transfer_units]
