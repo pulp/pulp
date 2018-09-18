@@ -40,6 +40,7 @@ Vagrantfile
 # Built documentation
 docs/_build
 docs/_diagrams
+docs/api.yaml
 
 # Django migrations
 # Ignored during early development to prevent accidental commits;

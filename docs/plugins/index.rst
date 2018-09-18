@@ -32,21 +32,29 @@ Plugin List
      - `File plug-in docs <https://github.com/pulp/pulp_file/blob/master/README.rst>`_
      - `File plug-in source <https://github.com/pulp/pulp_file>`_
      - `File plug-in tracker <https://pulp.plan.io/projects/pulp_file?jump=welcome>`_
-     - Yes
+     - `Yes <https://pypi.org/project/pulp-file/>`__
      - No
 
    * - Ansible plug-in
      - `Ansible plug-in docs <https://github.com/pulp/pulp_ansible/blob/master/README.rst>`_
      - `Ansible plug-in source <https://github.com/pulp/pulp_ansible>`_
      - `Ansible plug-in tracker <https://pulp.plan.io/projects/ansible_plugin?jump=welcome>`_
-     - No
+     - `Yes <https://pypi.org/project/pulp-ansible/>`__
      - No
 
    * - Python plug-in
      - `Python plug-in docs <http://pulp-python.readthedocs.io/en/latest/>`_
      - `Python plug-in source <https://github.com/pulp/pulp_python/tree/3.0-dev>`_
      - `Python plug-in tracker <https://pulp.plan.io/projects/pulp_python?jump=welcome>`_
-     - Yes
+     - `Yes <https://pypi.org/project/pulp-python/>`__
+     - No
+
+   * - | Chef cookbook
+       | plug-in
+     - `Cookbook plug-in docs <https://github.com/gmbnomis/pulp_cookbook/blob/master/README.rst>`_
+     - `Cookbook plug-in source <https://github.com/gmbnomis/pulp_cookbook>`_
+     - `Cookbook plug-in tracker <https://github.com/gmbnomis/pulp_cookbook/issues>`_
+     - `Yes <https://pypi.org/project/pulp-cookbook/>`__
      - No
 
 .. note::
