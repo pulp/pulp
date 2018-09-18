@@ -49,6 +49,14 @@ Plugin List
      - Yes
      - No
 
+   * - | Chef cookbook
+       | plug-in
+     - `Cookbook plug-in docs <https://github.com/gmbnomis/pulp_cookbook/blob/master/README.rst>`_
+     - `Cookbook plug-in source <https://github.com/gmbnomis/pulp_cookbook>`_
+     - `Cookbook plug-in tracker <https://github.com/gmbnomis/pulp_cookbook/issues>`_
+     - `Yes <https://pypi.org/project/pulp-cookbook/>`_
+     - No
+
 .. note::
    Are we missing a plugin? Let us know via the pulp-dev@redhat.com mailing list.
 
