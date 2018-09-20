@@ -1,3 +1,7 @@
+import os
+from gettext import gettext as _
+
+from django.conf import settings
 from django.db.models import FileField
 
 from pulpcore.app.files import TemporaryDownloadedFile
@@ -23,6 +27,11 @@ class ArtifactFileField(FileField):
             Field's value just before saving.
 
         """
+        file_name = str(model_instance.file)
+        if file_name.startswith(os.path.join(settings.MEDIA_ROOT, 'artifact')):
+            raise ValueError(_('The file referenced by the Artifact is already present in '
+                               'Artifact storage. Files must be stored outside this location '
+                               'prior to Artifact creation.'))
         file = super().pre_save(model_instance, add)
         if file and file._committed and add:
             file._file = TemporaryDownloadedFile(open(file.name, 'rb'))

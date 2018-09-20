@@ -1,7 +1,5 @@
 import asyncio
 
-from django.core.files import File
-from django.core.files.storage import DefaultStorage
 from django.db.models import Q
 
 from pulpcore.plugin.models import Artifact, ProgressBar
@@ -234,18 +232,12 @@ class ArtifactSaver(Stage):
         Returns:
             The coroutine for this stage.
         """
-        storage_backend = DefaultStorage()
         async for batch in self.batches(in_q):
             artifacts_to_save = []
             for declarative_content in batch:
                 for declarative_artifact in declarative_content.d_artifacts:
                     if declarative_artifact.artifact.pk is None:
-                        src_path = str(declarative_artifact.artifact.file)
-                        dst_path = declarative_artifact.artifact.storage_path(None)
-                        with open(src_path, mode='rb') as input_file:
-                            django_file_obj = File(input_file)
-                            storage_backend.save(dst_path, django_file_obj)
-                        declarative_artifact.artifact.file = dst_path
+                        declarative_artifact.artifact.file = str(declarative_artifact.artifact.file)
                         artifacts_to_save.append(declarative_artifact.artifact)
 
             if artifacts_to_save:
