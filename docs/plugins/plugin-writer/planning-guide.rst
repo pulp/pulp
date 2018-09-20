@@ -144,11 +144,11 @@ for more information.
    Is there size or digest metadata for this content type? How can the client discover that data?
 
 
-Publishing Your Content Units
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Publishing Your Content
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Pulp organizes content units into repositories, and the user publishes an entire repository. It's
-not possible to publish a content unit by itself, or a partial repository of content units.
+In order to make content files available to clients, users must publish these files. Typically,
+users will publish a repository which will make the content in the repository available.
 
 When publishing a repository, your plugin needs to mimic the layout of both data and metadata. In
 the simplest case for content types that don't have metadata, only the content unit data itself
