@@ -61,12 +61,12 @@ class TaskSerializer(ModelSerializer):
         read_only=True,
         view_name='workers-detail'
     )
-    parent = serializers.HyperlinkedRelatedField(
+    parent = RelatedField(
         help_text=_("The parent task that spawned this task."),
         read_only=True,
         view_name='tasks-detail'
     )
-    spawned_tasks = serializers.HyperlinkedRelatedField(
+    spawned_tasks = RelatedField(
         help_text=_("Any tasks spawned by this task."),
         many=True,
         read_only=True,

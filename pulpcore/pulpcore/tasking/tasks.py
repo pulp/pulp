@@ -5,7 +5,7 @@ from gettext import gettext as _
 
 from django.db import IntegrityError
 from rq import Queue
-from rq.job import Job
+from rq.job import get_current_job, Job
 
 from pulpcore.app.models import Task, ReservedResource, Worker
 from pulpcore.common import TASK_STATES
@@ -179,8 +179,13 @@ def enqueue_with_reservation(func, resources, args=None, kwargs=None, options=No
 
     resources = {util.get_url(resource) for resource in resources}
     inner_task_id = str(uuid.uuid4())
-    Task.objects.create(pk=inner_task_id, state=TASK_STATES.WAITING)
     redis_conn = connection.get_redis_connection()
+    current_job = get_current_job(connection=redis_conn)
+    parent_kwarg = {}
+    if current_job:
+        current_task = Task.objects.get(id=current_job.id)
+        parent_kwarg['parent'] = current_task
+    Task.objects.create(pk=inner_task_id, state=TASK_STATES.WAITING, **parent_kwarg)
     q = Queue('resource_manager', connection=redis_conn)
     task_args = (func, inner_task_id, list(resources), args, kwargs, options)
     q.enqueue(_queue_reserved_task, args=task_args, timeout=TASK_TIMEOUT)
