@@ -14,8 +14,7 @@ requirements = [
     'psycopg2-binary',
     'PyYAML',
     'rq>=0.12.0',
-    'setuptools',
-    'pulpcore-common'
+    'setuptools'
 ]
 
 setup(

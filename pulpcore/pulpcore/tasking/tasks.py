@@ -8,7 +8,7 @@ from rq import Queue
 from rq.job import get_current_job, Job
 
 from pulpcore.app.models import Task, ReservedResource, Worker
-from pulpcore.common import TASK_STATES
+from pulpcore.constants import TASK_STATES
 from pulpcore.tasking import connection, util
 
 

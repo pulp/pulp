@@ -11,7 +11,7 @@ from django.db import models
 from django.utils import timezone
 
 from pulpcore.app.models import Model, Task
-from pulpcore.common import TASK_STATES, TASK_CHOICES
+from pulpcore.constants import TASK_STATES, TASK_CHOICES
 
 _logger = logging.getLogger(__name__)
 

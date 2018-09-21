@@ -2,7 +2,7 @@ from gettext import gettext as _
 import logging
 
 from pulpcore.app.models import Worker
-from pulpcore.common import TASK_INCOMPLETE_STATES
+from pulpcore.constants import TASK_INCOMPLETE_STATES
 from pulpcore.tasking.constants import TASKING_CONSTANTS
 from pulpcore.tasking.util import cancel
 

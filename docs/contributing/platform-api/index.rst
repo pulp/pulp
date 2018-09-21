@@ -7,6 +7,6 @@ plugins, consult the :doc:`Plugin API <../../plugins/plugin-api/overview>`.
 .. toctree::
 
     app/index
-    common
+    constants
     exceptions
     tasking

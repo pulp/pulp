@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework.serializers import ValidationError as DRFValidationError
 
 from pulpcore.app import models, viewsets, serializers
-from pulpcore.common.constants import API_ROOT
+from pulpcore.constants import API_ROOT
 
 
 class TestGetQuerySet(TestCase):

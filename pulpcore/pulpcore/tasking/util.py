@@ -8,7 +8,7 @@ from rq.job import Job
 
 from pulpcore.app.models import Task
 from pulpcore.app.serializers import view_name_for_model
-from pulpcore.common import TASK_FINAL_STATES, TASK_STATES
+from pulpcore.constants import TASK_FINAL_STATES, TASK_STATES
 from pulpcore.exceptions import MissingResource
 from pulpcore.tasking import connection
 from pulpcore.tasking.constants import TASKING_CONSTANTS
