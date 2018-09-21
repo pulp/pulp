@@ -4,7 +4,7 @@ from rest_framework.decorators import detail_route
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from pulpcore.common import TASK_INCOMPLETE_STATES
+from pulpcore.constants import TASK_INCOMPLETE_STATES
 
 from pulpcore.app.models import Task, Worker
 from pulpcore.app.serializers import MinimalTaskSerializer, TaskSerializer, WorkerSerializer

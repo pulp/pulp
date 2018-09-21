@@ -1,6 +1,14 @@
 Pulp 3.0 Release Notes
 ======================
 
+3.0.0b9
+=======
+
+Breaking Changes
+----------------
+
+* `pulpcore-common package removed <https://github.com/pulp/pulp/pull/3662>`_
+
 3.0.0b8
 =======
 

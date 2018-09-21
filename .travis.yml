@@ -32,9 +32,6 @@ jobs:
   - stage: deploy-plugin
     script: bash .travis/deploy.sh plugin
     if: tag =~ ^pulpcore-plugin*
-  - stage: deploy-common
-    script: bash .travis/deploy.sh common
-    if: tag =~ ^pulpcore-common*
   - stage: publish-beta-docs
     script: bash .travis/publish_docs.sh beta
     env:

@@ -13,7 +13,7 @@ from rq.job import get_current_job
 
 from pulpcore.app.models import Model, GenericRelationModel
 from pulpcore.app.fields import JSONField
-from pulpcore.common import TASK_FINAL_STATES, TASK_CHOICES, TASK_STATES
+from pulpcore.constants import TASK_FINAL_STATES, TASK_CHOICES, TASK_STATES
 from pulpcore.exceptions import exception_to_dict
 from pulpcore.tasking.constants import TASKING_CONSTANTS
 

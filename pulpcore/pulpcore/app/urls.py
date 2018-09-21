@@ -9,7 +9,7 @@ from rest_framework_nested import routers
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.openapigenerator import PulpOpenAPISchemaGenerator
 from pulpcore.app.views import ContentView, OrphansView, StatusView
-from pulpcore.common.constants import API_ROOT
+from pulpcore.constants import API_ROOT
 
 import logging
 log = logging.getLogger(__name__)
