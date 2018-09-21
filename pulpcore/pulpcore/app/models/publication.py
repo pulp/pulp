@@ -16,6 +16,9 @@ class Publication(Model):
 
     Fields:
         complete (models.BooleanField): State tracking; for internal use. Indexed.
+        pass_through (models.BooleanField): Indicates that the publication is a pass-through
+            to the repository version. Enabling pass-through has the same effect as creating
+            a PublishedArtifact for all of the content (artifacts) in the repository.
 
     Relations:
         publisher (models.ForeignKey): The publisher that created the publication.
@@ -38,12 +41,13 @@ class Publication(Model):
     """
 
     complete = models.BooleanField(db_index=True, default=False)
+    pass_through = models.BooleanField(default=False)
 
     publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
 
     @classmethod
-    def create(cls, repository_version, publisher):
+    def create(cls, repository_version, publisher, pass_through=False):
         """
         Create a publication.
 
@@ -55,6 +59,10 @@ class Publication(Model):
                 version to be published.
             publisher (pulpcore.app.models.Publisher): The publisher used
                 to create the publication.
+            pass_through (bool): Indicates that the publication is a pass-through
+                to the repository version. Enabling pass-through has the same effect
+                as creating a PublishedArtifact for all of the content (artifacts)
+                in the repository.
 
         Returns:
             pulpcore.app.models.Publication: A created Publication in an incomplete state.
@@ -64,6 +72,7 @@ class Publication(Model):
         """
         with transaction.atomic():
             publication = cls(
+                pass_through=pass_through,
                 repository_version=repository_version,
                 publisher=publisher)
             publication.save()

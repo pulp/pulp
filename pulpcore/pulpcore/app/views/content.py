@@ -4,7 +4,7 @@ from gettext import gettext as _
 from logging import getLogger, DEBUG
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.http import (
     HttpResponse,
     HttpResponseRedirect,
@@ -15,7 +15,7 @@ from django.views.generic import View
 
 from wsgiref.util import FileWrapper
 
-from pulpcore.app.models import Distribution
+from pulpcore.app.models import Distribution, ContentArtifact
 
 
 log = getLogger(__name__)
@@ -47,10 +47,12 @@ class ContentView(View):
 
     http://redhat.com/content/cdn/stage/files/manifest
                               |-------------||--------|
-                                     (1)          (2)
+                                     (1)        (2-4)
 
     1. Match: Distribution.base_path
-    2. Match: PublishedFile.relative_path
+    2. Match: PublishedArtifact.relative_path
+    3. Match: PublishedMetadata.relative_path
+    4. Match: ContentArtifact.relative_path (pass-through publications only).
     """
 
     BASE_PATH = 'pulp/content'
@@ -141,7 +143,8 @@ class ContentView(View):
         rel_path = path.lstrip('/')
         rel_path = rel_path[len(distribution.base_path):]
         rel_path = rel_path.lstrip('/')
-        # artifact
+
+        # published artifact
         try:
             pa = publication.published_artifact.get(relative_path=rel_path)
         except ObjectDoesNotExist:
@@ -152,13 +155,39 @@ class ContentView(View):
                 return artifact.file.name
             else:
                 raise ArtifactNotFound(path)
-        # metadata
+
+        # published metadata
         try:
             pm = publication.published_metadata.get(relative_path=rel_path)
         except ObjectDoesNotExist:
-            raise PathNotResolved(path)
+            pass
         else:
             return pm.file.name
+
+        # pass-through
+        if publication.pass_through:
+            try:
+                ca = ContentArtifact.objects.get(
+                    content__in=publication.repository_version.content,
+                    relative_path=rel_path)
+            except MultipleObjectsReturned:
+                log.debug(
+                    _('Multiple (pass-through) matches for {b}/{p}'),
+                    {
+                        'b': distribution.base_path,
+                        'p': rel_path,
+                    }
+                )
+            except ObjectDoesNotExist:
+                pass
+            else:
+                artifact = ca.artifact
+                if artifact:
+                    return artifact.file.name
+                else:
+                    raise ArtifactNotFound(path)
+
+        raise PathNotResolved(path)
 
     def _django(self, path):
         """

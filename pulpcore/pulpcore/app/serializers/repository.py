@@ -361,6 +361,9 @@ class PublicationSerializer(ModelSerializer):
     _href = IdentityField(
         view_name='publications-detail'
     )
+    pass_through = serializers.BooleanField(
+        help_text=_('The publication is a pass-through for the repository version.')
+    )
     publisher = DetailRelatedField(
         help_text=_('The publisher that created this publication.'),
         queryset=models.Publisher.objects.all()
@@ -382,6 +385,7 @@ class PublicationSerializer(ModelSerializer):
     class Meta:
         model = models.Publication
         fields = ModelSerializer.Meta.fields + (
+            'pass_through',
             'publisher',
             'distributions',
             'repository_version',
