@@ -15,7 +15,8 @@ requirements = [
     'PyYAML',
     'rq>=0.12.0',
     'setuptools',
-    'pulpcore-common'
+    'pulpcore-common',
+    'dynaconf>=1.0.4'
 ]
 
 setup(
