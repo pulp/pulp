@@ -15,6 +15,7 @@ Plugin API reaches stability with v1.0. For the latest version of the Plugin API
     tasking
     download
     stages
+    profiling
     changeset
 
 .. automodule:: pulpcore.plugin

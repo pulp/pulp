@@ -255,7 +255,7 @@ class ArtifactDownloader(Stage):
         kwargs: unused keyword arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
     """
 
-    def __init__(self, max_concurrent_downloads=100, max_concurrent_content=200, *args, **kwargs):
+    def __init__(self, max_concurrent_downloads=200, max_concurrent_content=200, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_concurrent_downloads = max_concurrent_downloads
         self.max_concurrent_content = max_concurrent_content

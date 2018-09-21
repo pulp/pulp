@@ -105,3 +105,9 @@ CONTENT
         'ENABLED': False,
       }
    }
+
+PROFILE_STAGES_API
+^^^^^^^^^^^^^^^^^^
+
+   A debugging feature that collects profile data about the Stages API as it runs. See
+   :ref:`stages-api-profiling-docs` for more information.

@@ -215,3 +215,5 @@ CONTENT = {
         'ENABLED': False,
     }
 }
+
+PROFILE_STAGES_API = False
