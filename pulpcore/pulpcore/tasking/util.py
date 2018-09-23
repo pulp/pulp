@@ -32,7 +32,7 @@ def cancel(task_id):
     try:
         task_status = Task.objects.get(pk=task_id)
     except Task.DoesNotExist:
-        raise MissingResource(task_id)
+        raise MissingResource(task=task_id)
 
     if task_status.state in TASK_FINAL_STATES:
         # If the task is already done, just stop
