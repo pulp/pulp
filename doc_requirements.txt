@@ -5,6 +5,6 @@ django-filter
 drf-nested-routers
 pyyaml
 psycopg2
-sphinx
+sphinx<1.8.0
 sphinx-rtd-theme
 sphinxcontrib-openapi
