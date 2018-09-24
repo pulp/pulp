@@ -1,5 +1,5 @@
 from .base import AsyncRemoveMixin, AsyncUpdateMixin, BaseFilterSet, NamedModelViewSet  # noqa
-from .content import ArtifactViewSet, ContentViewSet  # noqa
+from .content import ArtifactViewSet, ContentGuardViewSet, ContentViewSet  # noqa
 from .repository import (  # noqa
     DistributionViewSet,
     ExporterViewSet,

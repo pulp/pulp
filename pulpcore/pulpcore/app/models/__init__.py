@@ -11,7 +11,7 @@ from .generic import (  # noqa
     Notes
 )
 
-from .content import Content, Artifact, ContentArtifact, RemoteArtifact  # noqa
+from .content import Artifact, Content, ContentArtifact, ContentGuard, RemoteArtifact  # noqa
 from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa
 from .repository import (  # noqa
     Exporter,

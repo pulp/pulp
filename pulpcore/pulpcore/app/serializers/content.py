@@ -123,3 +123,23 @@ class ArtifactSerializer(base.ModelSerializer):
         model = models.Artifact
         fields = base.ModelSerializer.Meta.fields + ('file', 'size', 'md5', 'sha1', 'sha224',
                                                      'sha256', 'sha384', 'sha512')
+
+
+class ContentGuardSerializer(base.MasterModelSerializer):
+    _href = base.DetailIdentityField()
+
+    name = serializers.CharField(
+        help_text=_('The unique name.')
+    )
+    description = serializers.CharField(
+        help_text=_('An optional description.'),
+        allow_blank=True,
+        required=False
+    )
+
+    class Meta:
+        model = models.ContentGuard
+        fields = base.MasterModelSerializer.Meta.fields + (
+            'name',
+            'description'
+        )
