@@ -9,12 +9,10 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-import sys
 from contextlib import suppress
 from importlib import import_module
 from pkg_resources import iter_entry_points
 
-import yaml
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,10 +34,22 @@ FILE_UPLOAD_HANDLERS = (
     'pulpcore.app.files.HashingFileUploadHandler',
 )
 
+# Dynaconf Configuration
+
+SECRET_KEY = True
+
+GLOBAL_ENV_FOR_DYNACONF = "PULP"
+
+ENVVAR_FOR_DYNACONF = "PULP_SETTINGS"
+
+SETTINGS_MODULE_FOR_DYNACONF = "/etc/pulp/settings.py"
+
 
 # Application definition
 
 INSTALLED_APPS = [
+    # Dynamic configuration with Dynaconf
+    'dynaconf.contrib.django_dynaconf',
     # django stuff
     'django.contrib.admin',
     'django.contrib.auth',
@@ -160,120 +170,48 @@ STATIC_URL = '/static/'
 
 # A set of default settings to use if the configuration file in
 # /etc/pulp/ is missing or if it does not have values for every setting
-_DEFAULT_PULP_SETTINGS = {
-    # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-    'DATABASES': {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'pulp',
-            'USER': 'pulp',
-            'CONN_MAX_AGE': 0,
-        },
+
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pulp',
+        'USER': 'pulp',
+        'CONN_MAX_AGE': 0,
     },
-    # https://docs.djangoproject.com/en/1.11/ref/settings/#logging and
-    # https://docs.python.org/3/library/logging.config.html
-    'logging': {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'simple': {'format': 'pulp: %(name)s:%(levelname)s: %(message)s'},
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'simple'
-            }
-        },
-        'loggers': {
-            '': {
-                # The root logger
-                'handlers': ["console"],
-                'level': 'INFO'
-            },
+}
+# https://docs.djangoproject.com/en/1.11/ref/settings/#logging and
+# https://docs.python.org/3/library/logging.config.html
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': 'pulp: %(name)s:%(levelname)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
         }
     },
-    'SERVER': {
-        'WORKING_DIRECTORY': '/var/lib/pulp/tmp',
-    },
-    'CONTENT': {
-        'HOST': None,
-        'WEB_SERVER': 'django',
-        'REDIRECT': {
-            'HOST': None,
-            'PORT': 443,
-            'PATH_PREFIX': '/streamer/',
-            'ENABLED': False,
-        }
-    },
-    'REDIS': {
-        'HOST': '127.0.0.1',
-        'PORT': 6379,
-        'PASSWORD': ''
-    },
-    'PROFILING': {
-        'ENABLED': False,
-        'DIRECTORY': '/var/lib/pulp/c_profiles'
+    'loggers': {
+        '': {
+            # The root logger
+            'handlers': ["console"],
+            'level': 'INFO'
+        },
     }
 }
 
+WORKING_DIRECTORY = '/var/lib/pulp/tmp'
 
-def merge_settings(default, override):
-    """
-    Merge override settings into a set of default settings.
-
-    If both default and override have a key that has a dictionary value, these
-    dictionaries are merged recursively. If either of the values are _not_ a
-    dictionary, the override key's value is used.
-    """
-    if not override:
-        return default
-    merged = default.copy()
-
-    for key in override:
-        if key in merged:
-            if isinstance(default[key], dict) and isinstance(override[key], dict):
-                merged[key] = merge_settings(default[key], override[key])
-            else:
-                merged[key] = override[key]
-        else:
-            merged[key] = override[key]
-
-    return merged
-
-
-def load_settings(paths=None):
-    """
-    Load one or more configuration files, merge them with the defaults, and apply them
-    to this module as module attributes.
-
-    Be aware that the order the paths are provided in matters. Settings are repeatedly
-    overridden so settings in the last file in the list win.
-
-    Args:
-        paths: A list of absolute path strings to configuration files in YAML format.
-
-    Returns:
-        dict: The merged settings. This is helpful to see what settings Pulp is contributing, but
-            is not the full set of settings Django uses, as there are a set of Django-provided
-            defaults as well.
-    """
-    settings = _DEFAULT_PULP_SETTINGS
-
-    for path in (paths or []):
-        with suppress(OSError, IOError):
-            # Consider adding logging of some kind, potentially to /var/log/pulp
-            with open(path) as config_file:
-                config = config_file.read()
-                override_settings = yaml.safe_load(config)
-                settings = merge_settings(settings, override_settings)
-
-    for setting_name, setting_value in settings.items():
-        setattr(sys.modules[__name__], setting_name.upper(), setting_value)
-
-    return settings
-
-
-# Read PULP_SETTINGS environment variable to find the location of server.yaml,
-# defaults to /etc/pulp/server.yaml
-PULP_SETTINGS = os.getenv('PULP_SETTINGS', '/etc/pulp/server.yaml')
-load_settings([PULP_SETTINGS])
+CONTENT = {
+    'HOST': None,
+    'WEB_SERVER': 'django',
+    'REDIRECT': {
+        'HOST': None,
+        'PORT': 443,
+        'PATH_PREFIX': '/streamer/',
+        'ENABLED': False,
+    }
+}

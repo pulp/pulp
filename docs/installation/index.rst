@@ -5,7 +5,7 @@ Installation
    :maxdepth: 2
 
    instructions
-   configuration-files
+   configuration
    distributed-installation
    migration
 

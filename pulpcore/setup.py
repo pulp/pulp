@@ -14,7 +14,8 @@ requirements = [
     'psycopg2-binary',
     'PyYAML',
     'rq>=0.12.0',
-    'setuptools'
+    'setuptools',
+    'dynaconf>=1.0.4'
 ]
 
 setup(

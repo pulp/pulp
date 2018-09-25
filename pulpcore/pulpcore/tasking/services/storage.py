@@ -33,7 +33,7 @@ class WorkerDirectory:
         Returns:
             str: The absolute path to a worker's root directory.
         """
-        root = settings.SERVER['WORKING_DIRECTORY']
+        root = settings.WORKING_DIRECTORY
         path = os.path.join(root, hostname)
         return path
 
