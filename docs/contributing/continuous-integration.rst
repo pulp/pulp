@@ -1,32 +1,56 @@
-.. _pulpcore: https://github.com/PulpQE/pulp-smash/tree/master/pulp_smash/tests/pulp3/pulpcore
-.. _file: https://github.com/PulpQE/pulp-smash/tree/master/pulp_smash/tests/pulp3/file
-.. _pulp-smash: https://github.com/PulpQE/pulp-smash/
-
-
+.. _istqb: https://www.istqb.org/downloads/syllabi/foundation-level-syllabus.html
+.. _Pulp Smash: https://github.com/PulpQE/pulp-smash/
 .. _continuous-integration:
 
 Continuous Integration
 ======================
 
-New code is highly encouraged to have basic unit tests that demonstrate its functionality. A Pull
-Request that has failing unit tests cannot be merged.
+Unit Tests
+----------
 
-The unit tests for `pulpcore` are in `pulpcore/tests <https://github.com/pulp/pulp/tree/master/pulpcore/tests>`_.
+New code is highly encouraged to have basic unit tests that demonstrate that
+units (function, method or class instance) are working correctly.
 
-Integration tests for new code should be added to a separate project called pulp-smash_. A Pull
-Request that has failing pulp-smash tests cannot be merged.
+A Pull Request that has failing unit tests cannot be merged.
 
-The integration tests for the REST API live in the pulpcore_ folder and the Plugin API is tested
-with tests in the file_ folder.
+The unit tests for `pulpcore` are in `pulpcore/tests
+<https://github.com/pulp/pulp/tree/master/pulpcore/tests/unit>`_.
 
+The unit tests for `pulpcore-plugin` are in `pulpcore-plugins/tests
+<https://github.com/pulp/pulp/tree/master/plugin/tests/unit/>`_.
 
-Requiring Other Pull Requests
+Functional Tests
+----------------
+
+Functional tests verify a specific feature.
+In general functional tests tend to answer the question "As an user can I do this?"
+
+Functional tests for Pulp are written using `Pulp Smash`_ . Pulp smash is a test
+toolkit written to ease the testing of Pulp.
+
+It is highly encouraged to accompany new features with functional
+tests in `pulpcore/functional
+<https://github.com/pulp/pulp/tree/master/pulpcore/tests/functional>`_.
+
+Only the tests for features related to `pulpcore` should live in this repository.
+
+Functional tests for features related to a specific plugin should live in the
+plugin repository itself. For example:
+
+  * `File Plugin
+    <https://github.com/pulp/pulp_file/tree/master/pulp_file/tests/functional>`_
+
+  * `RPM Plugin
+    <https://github.com/pulp/pulp_rpm/tree/master/pulp_rpm/tests/functional>`_
+
+Requiring other Pull Requests
 -----------------------------
 
-When a Pull Request breaks any pulp-smash test, it is the responsibility of the author to fix the
-failing tests. Fixing the tests may require an update of the `pulp_file` plugin in addition to
-any `pulp-smash` changes. Once additional Pull Requests for `pulp-smash` and `pulp_file` have been
-created, links to them can be specified in the commit message of the Pull Request against `pulp`::
+When a Pull Request breaks any test, it is the responsibility of the author to
+fix the failing test. Fixing the tests may require an update of the `pulp_file`
+plugin in addition to any `pulp-smash` changes. Once additional Pull Requests
+for `pulp-smash` and `pulp_file` have been created, links to them can be
+specified in the commit message of the Pull Request against `pulp`::
 
     Required PR: https://github.com/PulpQE/pulp-smash/pull/1234
     Required PR: https://github.com/pulp/pulp_file/pull/2345
@@ -37,3 +61,11 @@ Attention and care must be given to merging PRs that require other Pull Requests
 all required PRs should be ready to merge--meaning that all tests/checks should be passing, the code
 review requirements should be met, etc. When merging, the PR along with its required PRs should all
 be merged at the same time. This is necessary to ensure that test breakages don't block other PRs.
+
+Contributing to tests
+----------------------
+A new version of Pulp will only be released when all unit and functional are
+passing.
+
+Contributing test is a great way to ensure that your workflows never regress.
+

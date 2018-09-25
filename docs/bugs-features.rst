@@ -46,6 +46,7 @@ descriptions of all the fields and how they are used.
 
    * - Tags
      - For searching. Select 0 or many, best judgement.
+       If an issue requires a functional test. Add the tag `Functional test`.
 
 .. _issue-description:
 
