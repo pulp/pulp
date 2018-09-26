@@ -5,8 +5,8 @@ from rest_framework import status, mixins
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
-from pulpcore.app.models import Artifact, Content, ContentArtifact
-from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
+from pulpcore.app.models import Artifact, Content, ContentGuard, ContentArtifact
+from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer, ContentGuardSerializer
 from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
 
 
@@ -86,3 +86,12 @@ class ContentViewSet(NamedModelViewSet,
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class ContentGuardViewSet(NamedModelViewSet,
+                          mixins.CreateModelMixin,
+                          mixins.RetrieveModelMixin,
+                          mixins.ListModelMixin):
+    endpoint_name = 'content-guards'
+    queryset = ContentGuard.objects.all()
+    serializer_class = ContentGuardSerializer

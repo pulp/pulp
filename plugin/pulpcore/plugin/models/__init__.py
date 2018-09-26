@@ -5,6 +5,7 @@ from pulpcore.app.models import (  # noqa
     Artifact,
     Content,
     ContentArtifact,
+    ContentGuard,
     CreatedResource,
     Distribution,
     MasterModel,
