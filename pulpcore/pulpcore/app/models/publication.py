@@ -202,6 +202,7 @@ class BaseDistribution(Model):
         publication (models.ForeignKey): The current publication associated with
             the distribution.  This is the publication being served by Pulp through
             this relative URL path and settings.
+        content_guard ((models.ForeignKey): An optional content-guard.
     """
 
     name = models.CharField(max_length=255, db_index=True, unique=True)
@@ -210,6 +211,7 @@ class BaseDistribution(Model):
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
     publisher = models.ForeignKey(Publisher, null=True, on_delete=models.SET_NULL)
     repository = models.ForeignKey(Repository, null=True, on_delete=models.SET_NULL)
+    content_guard = models.ForeignKey('ContentGuard', null=True, on_delete=models.SET_NULL)
 
     class Meta:
         abstract = True
