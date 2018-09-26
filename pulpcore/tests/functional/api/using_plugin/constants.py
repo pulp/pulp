@@ -33,7 +33,10 @@ FILE2_FIXTURE_MANIFEST_URL = urljoin(FILE2_FIXTURE_URL, 'PULP_MANIFEST')
 FILE_MANY_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, 'file-many/')
 """The URL to a file repository containing many files."""
 
-FILE_MANY_FIXTURE_MANIFEST_URL = urljoin(FILE_MANY_FIXTURE_URL, 'PULP_MANIFEST')
+FILE_MANY_FIXTURE_MANIFEST_URL = urljoin(
+    FILE_MANY_FIXTURE_URL,
+    'PULP_MANIFEST'
+)
 """The URL to a file repository manifest"""
 
 FILE_MANY_FIXTURE_COUNT = 250
@@ -42,7 +45,13 @@ FILE_MANY_FIXTURE_COUNT = 250
 FILE_LARGE_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, 'file-large/')
 """The URL to a file repository containing a large number of files."""
 
-FILE_LARGE_FIXTURE_MANIFEST_URL = urljoin(FILE_LARGE_FIXTURE_URL, 'PULP_MANIFEST')
+FILE_LARGE_FIXTURE_COUNT = 10
+"""The number of packages available at :data:`FILE_LARGE_FIXTURE_URL`."""
+
+FILE_LARGE_FIXTURE_MANIFEST_URL = urljoin(
+    FILE_LARGE_FIXTURE_URL,
+    'PULP_MANIFEST'
+)
 """The URL to a file repository manifest."""
 
 FILE_URL = urljoin(FILE_FIXTURE_URL, '1.iso')
