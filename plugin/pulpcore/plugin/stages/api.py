@@ -1,6 +1,10 @@
 import asyncio
 from gettext import gettext as _
 
+from django.conf import settings
+
+from .profiler import ProfilingQueue
+
 
 class Stage:
     """
@@ -79,7 +83,7 @@ class Stage:
 
 async def create_pipeline(stages, maxsize=100):
     """
-    Creates a Stages API linear pipeline from the list `stages` and return as a single coroutine.
+    A coroutine that builds a Stages API linear pipeline from the list `stages` and runs it.
 
     Each stage is a coroutine and reads from an input :class:`asyncio.Queue` and writes to an output
     :class:`asyncio.Queue`. When the stage is ready to shutdown it writes a `None` to the output
@@ -101,12 +105,25 @@ async def create_pipeline(stages, maxsize=100):
     Returns:
         A single coroutine that can be used to run, wait, or cancel the entire pipeline with.
     """
-    in_q = None
     futures = []
-    for stage in stages:
-        out_q = asyncio.Queue(maxsize=maxsize)
-        futures.append(asyncio.ensure_future(stage(in_q, out_q)))
-        in_q = out_q
+    if settings.PROFILE_STAGES_API:
+        in_q = ProfilingQueue.make_and_record_queue(stages[0], 0, maxsize)
+        for i, stage in enumerate(stages):
+            next_stage_num = i + 1
+            if next_stage_num == len(stages):
+                out_q = None
+            else:
+                next_stage = stages[next_stage_num]
+                out_q = ProfilingQueue.make_and_record_queue(next_stage, next_stage_num, maxsize)
+            futures.append(asyncio.ensure_future(stage(in_q, out_q)))
+            in_q = out_q
+    else:
+        in_q = None
+        for stage in stages:
+            out_q = asyncio.Queue(maxsize=maxsize)
+            futures.append(asyncio.ensure_future(stage(in_q, out_q)))
+            in_q = out_q
+
     try:
         await asyncio.gather(*futures)
     except Exception:
