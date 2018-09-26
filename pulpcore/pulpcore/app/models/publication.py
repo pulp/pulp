@@ -43,7 +43,7 @@ class Publication(Model):
     complete = models.BooleanField(db_index=True, default=False)
     pass_through = models.BooleanField(default=False)
 
-    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE)
+    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE, null=True)
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
 
     @classmethod
