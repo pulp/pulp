@@ -10,6 +10,14 @@ The Plugin API currently supports version 3.y of Pulp Core.
 See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 :doc:`Plugin Development <../../plugins/plugin-writer/index>`.
 
+0.1.0b7
+=======
+
+* `Add ContentGuard model, serializer and viewset <https://github.com/pulp/pulp/pull/3666>`_
+* `Allow simpler pipeline customization in DeclarativeVersion <https://github.com/pulp/pulp/pull/3664>`_
+* `Artifact is compatible with bulk_create() <https://github.com/pulp/pulp/pull/3660>`_
+* `Add async batches iterator <https://github.com/pulp/pulp/pull/3643>`_
+
 0.1.0b6
 =======
 
