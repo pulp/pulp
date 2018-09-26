@@ -24,6 +24,7 @@ from pulp_smash.pulp3.utils import (
 from tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
+    FILE_FIXTURE_MANIFEST_URL,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH,
@@ -532,3 +533,139 @@ class CreatedResourcesTaskTestCase(unittest.TestCase):
                 last_task['created_resources'][0],
                 last_task['created_resources']
             )
+
+
+class CreateRepoBaseVersionTestCase(unittest.TestCase):
+    """Test whether one can create a repository version from any version.
+
+    This test targets the following issues:
+
+    `Pulp #3360 <https://pulp.plan.io/issues/3360>`_
+    `Pulp #4035 <https://pulp.plan.io/issues/4035>`_
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """Create class-wide variables."""
+        cls.cfg = config.get_config()
+        cls.client = api.Client(cls.cfg, api.json_handler)
+        populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_MANIFEST_URL)
+        cls.content = sample(cls.client.get(FILE_CONTENT_PATH)['results'], 10)
+
+    def test_same_repository(self):
+        """Test ``base_version`` for the same repository.
+
+        Do the following:
+
+        1. Create a repository.
+        2. Sync the repository (this creates repository version 1).
+        3. Add a new content unit a new repository version (this create
+           repository version 2).
+        4. Create a new repository version using version 1 as ``base_version``
+           (this creates version 3).
+        5. Check that version 1 and version 3 have the same content.
+        """
+        # create repo version 1
+        repo = self.create_sync_repo()
+        version_content = []
+        version_content.append(get_content(repo))
+        self.assertIsNone(get_versions(repo)[0]['base_version'])
+
+        content = self.content.pop()
+
+        # create repo version 2
+        self.client.post(
+            repo['_versions_href'],
+            {'add_content_units': [content['_href']]}
+        )
+        repo = self.client.get(repo['_href'])
+
+        # create repo version 3 from version 1
+        base_version = get_versions(repo)[0]['_href']
+        self.client.post(
+            repo['_versions_href'],
+            {'base_version': base_version}
+        )
+        repo = self.client.get(repo['_href'])
+
+        # assert that base_version of the version 3 points to version 1
+        self.assertEqual(get_versions(repo)[2]['base_version'], base_version)
+
+        # assert that content on version 1 is equal to content on version 3
+        version_content.append(get_content(repo))
+        self.assertEqual(
+            version_content[0],
+            version_content[1],
+            version_content
+        )
+
+    def test_different_repository(self):
+        """Test ``base_version for different repositories.
+
+        Do the following:
+
+        1. Create a new repository A and sync it.
+        2. Create a new repository B and a new version for this repository
+           specify repository A version 1 as the ``base_version``.
+        3. Check that repository A version 1 and repository B version 1 have
+           the same content.
+        """
+        # create repo A
+        repo = self.create_sync_repo()
+        version_content = []
+        version_content.append(get_content(repo))
+        self.assertIsNone(get_versions(repo)[0]['base_version'])
+
+        # get repo A version 1 to be used as base_version
+        base_version = get_versions(repo)[0]['_href']
+
+        # create repo B
+        repo = self.client.post(REPO_PATH, gen_repo())
+        self.addCleanup(self.client.delete, repo['_href'])
+
+        # create a version for repo B using repo A version 1 as base_version
+        self.client.post(
+            repo['_versions_href'],
+            {'base_version': base_version}
+        )
+        repo = self.client.get(repo['_href'])
+
+        # assert that base_version of repo B points to version 1 of repo A
+        self.assertEqual(get_versions(repo)[0]['base_version'], base_version)
+
+        # assert that content on version 1 of repo A is equal to content on
+        # version 1 repo B
+        version_content.append(get_content(repo))
+        self.assertEqual(
+            version_content[0],
+            version_content[1],
+            version_content
+        )
+
+    def test_base_version_exception(self):
+        """Exception is raised when non-existent ``base_version`` is used.
+
+        Do the following:
+
+        1. Create a repository B and an attempt to specify a non-existent
+           ``base_version``.
+        3. Assert that an HTTP exception is raised.
+        """
+        repo = self.client.post(REPO_PATH, gen_repo())
+        self.addCleanup(self.client.delete, repo['_href'])
+
+        with self.assertRaises(HTTPError):
+            self.client.post(
+                repo['_versions_href'],
+                {'base_version': utils.uuid4()}
+            )
+
+    def create_sync_repo(self):
+        """Create, and sync a repo."""
+        repo = self.client.post(REPO_PATH, gen_repo())
+        self.addCleanup(self.client.delete, repo['_href'])
+        body = gen_file_remote(url=FILE_FIXTURE_MANIFEST_URL)
+        remote = self.client.post(FILE_REMOTE_PATH, body)
+        self.addCleanup(self.client.delete, remote['_href'])
+        sync(self.cfg, remote, repo)
+        return self.client.get(repo['_href'])

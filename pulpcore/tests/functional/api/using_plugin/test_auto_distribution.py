@@ -26,7 +26,10 @@ from tests.functional.api.using_plugin.constants import (
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
-from tests.functional.api.using_plugin.utils import gen_file_publisher, populate_pulp
+from tests.functional.api.using_plugin.utils import (
+    gen_file_publisher,
+    populate_pulp,
+)
 from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
