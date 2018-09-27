@@ -12,7 +12,13 @@ from .generic import (  # noqa
 )
 
 from .content import Artifact, Content, ContentArtifact, ContentGuard, RemoteArtifact  # noqa
-from .publication import Distribution, Publication, PublishedArtifact, PublishedMetadata  # noqa
+from .publication import (  # noqa
+    BaseDistribution,
+    Distribution,
+    Publication,
+    PublishedArtifact,
+    PublishedMetadata
+)
 from .repository import (  # noqa
     Exporter,
     Remote,

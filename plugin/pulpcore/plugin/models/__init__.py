@@ -3,6 +3,7 @@
 
 from pulpcore.app.models import (  # noqa
     Artifact,
+    BaseDistribution,
     Content,
     ContentArtifact,
     ContentGuard,

@@ -2,6 +2,7 @@ from django.db import models, transaction
 
 from . import storage
 from .base import Model
+from .repository import Publisher, Repository
 from .task import CreatedResource
 
 
@@ -180,9 +181,12 @@ class PublishedMetadata(PublishedFile):
         )
 
 
-class Distribution(Model):
+class BaseDistribution(Model):
     """
-    A distribution defines how a publication is distributed by pulp.
+    A distribution defines how a publication is distributed by Pulp's webserver.
+
+    This abstract model can be used by plugin writers to create concrete distributions that are
+    stored in separate tables from the Distributions provided by pulpcore.
 
     Fields:
         name (models.CharField): The name of the distribution.
@@ -203,8 +207,30 @@ class Distribution(Model):
     base_path = models.CharField(max_length=255, unique=True)
 
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
-    publisher = models.ForeignKey('Publisher', null=True, on_delete=models.SET_NULL)
-    repository = models.ForeignKey('Repository', null=True, on_delete=models.SET_NULL)
+    publisher = models.ForeignKey(Publisher, null=True, on_delete=models.SET_NULL)
+    repository = models.ForeignKey(Repository, null=True, on_delete=models.SET_NULL)
 
+    class Meta:
+        abstract = True
+
+
+class Distribution(BaseDistribution):
+    """
+    A distribution defines how a publication is distributed by Pulp's webserver.
+
+    Fields:
+        name (models.CharField): The name of the distribution.
+            Examples: "rawhide" and "stable".
+        base_path (models.CharField): The base (relative) path component of the published url.
+
+    Relations:
+        publisher (models.ForeignKey): The associated publisher.
+            All publications of the repository that are created by the publisher will be
+            automatically associated.
+        repository (models.ForeignKey): The associated repository.
+        publication (models.ForeignKey): The current publication associated with
+            the distribution.  This is the publication being served by Pulp through
+            this relative URL path and settings.
+    """
     class Meta:
         default_related_name = 'distributions'
