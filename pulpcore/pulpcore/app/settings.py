@@ -49,7 +49,8 @@ SETTINGS_MODULE_FOR_DYNACONF = "/etc/pulp/settings.py"
 
 INSTALLED_APPS = [
     # Dynamic configuration with Dynaconf
-    'dynaconf.contrib.django_dynaconf',
+    # https://github.com/rochacbruno/dynaconf/issues/89
+    # 'dynaconf.contrib.django_dynaconf',
     # django stuff
     'django.contrib.admin',
     'django.contrib.auth',
