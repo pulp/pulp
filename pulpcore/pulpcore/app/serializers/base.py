@@ -13,6 +13,7 @@ from rest_framework_nested.relations import NestedHyperlinkedIdentityField, \
     NestedHyperlinkedRelatedField
 
 from pulpcore.app.apps import pulp_plugin_configs
+from pulpcore.app.models import Task
 
 # a little cache so viewset_for_model doesn't have iterate over every app every time
 _model_viewset_cache = {}
@@ -405,9 +406,10 @@ class AsyncOperationResponseSerializer(serializers.Serializer):
     """
     Serializer for asynchronous operations.
     """
-    _href = serializers.URLField(
-        help_text=_('URL to a task.')
-    )
-    task_id = serializers.UUIDField(
-        help_text=_('Task UUID')
+    task = RelatedField(
+        required=True,
+        help_text=_('The href of the task.'),
+        queryset=Task.objects,
+        view_name='tasks-detail',
+        allow_null=False
     )
