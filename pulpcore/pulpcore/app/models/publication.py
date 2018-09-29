@@ -47,7 +47,7 @@ class Publication(Model):
     repository_version = models.ForeignKey('RepositoryVersion', on_delete=models.CASCADE)
 
     @classmethod
-    def create(cls, repository_version, publisher, pass_through=False):
+    def create(cls, repository_version, publisher=None, pass_through=False):
         """
         Create a publication.
 
@@ -73,8 +73,9 @@ class Publication(Model):
         with transaction.atomic():
             publication = cls(
                 pass_through=pass_through,
-                repository_version=repository_version,
-                publisher=publisher)
+                repository_version=repository_version)
+            if publisher:
+                publication.publisher = publisher
             publication.save()
             resource = CreatedResource(content_object=publication)
             resource.save()
