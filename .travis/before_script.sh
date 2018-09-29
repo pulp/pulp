@@ -2,7 +2,7 @@
 set -v
 
 psql -U postgres -c 'CREATE USER pulp WITH SUPERUSER LOGIN;'
-psql -U postgres -c 'CREATE DATABASE pulp OWNER pulp;'
+psql -U postgres -c 'CREATE DATABASE pulp3 OWNER pulp;'
 
 mkdir -p ~/.config/pulp_smash
 cp .travis/pulp-smash-config.json ~/.config/pulp_smash/settings.json
@@ -13,7 +13,16 @@ sudo chown -R travis:travis /var/lib/pulp
 
 sudo cp .travis/server.yaml /etc/pulp/server.yaml
 
-echo "SECRET_KEY: \"$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50)\"" | sudo tee -a /etc/pulp/server.yaml
+echo "SECRET_KEY: \"$(cat /dev/urandom | tr -dc 'a-z0-9!@#$%^&*(\-_=+)' | head -c 50)\"" | sudo tee -a /etc/pulp/settings.py
+
+echo "DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pulp3',
+        'USER': 'pulp',
+        'CONN_MAX_AGE': 0,
+    },
+}" | sudo tee -a /etc/pulp/settings.py
 
 # Run migrations.
 export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
