@@ -1,6 +1,10 @@
 Pulp 3.0 Release Notes
 ======================
 
+3.0.0b11
+========
+
+`Make publisher optional <https://github.com/pulp/pulp/pull/3680>`_
 
 3.0.0b10
 ========
