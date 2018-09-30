@@ -38,8 +38,8 @@ class ViewSetNode:
         Create a new node.
 
         Args:
-            viewset (NamedModelViewSet): If provided, represent this viewset. If not provided, this
-                                         is the root node.
+            viewset (pulpcore.app.viewsets.base.NamedModelViewSet): If provided, represent this
+                viewset. If not provided, this is the root node.
         """
         self.viewset = viewset
         self.children = []
