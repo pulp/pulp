@@ -25,7 +25,9 @@ class CRUDDistributionsTestCase(unittest.TestCase):
     def test_01_create_distribution(self):
         """Create a distribution."""
         body = gen_distribution()
-        type(self).distribution = self.client.post(DISTRIBUTION_PATH, body)
+        type(self).distribution = self.client.post(
+            DISTRIBUTION_PATH, body
+        )
         for key, val in body.items():
             with self.subTest(key=key):
                 self.assertEqual(self.distribution[key], val)
@@ -94,6 +96,17 @@ class CRUDDistributionsTestCase(unittest.TestCase):
         self.client.delete(self.distribution['_href'])
         with self.assertRaises(HTTPError):
             self.client.get(self.distribution['_href'])
+
+    def test_negative_create_distribution_with_invalid_parameter(self):
+        """Attempt to create distribution passing invalid parameter.
+
+        Assert response returns an error 400 including ["Unexpected field"].
+        """
+        response = api.Client(self.cfg, api.echo_handler).post(
+            DISTRIBUTION_PATH, gen_distribution(foo='bar')
+        )
+        assert response.status_code == 400
+        assert response.json()['foo'] == ['Unexpected field']
 
 
 class DistributionBasePathTestCase(unittest.TestCase):
