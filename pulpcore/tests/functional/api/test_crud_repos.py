@@ -36,10 +36,8 @@ class CRUDRepoTestCase(unittest.TestCase):
         See: `Pulp Smash #1055
         <https://github.com/PulpQE/pulp-smash/issues/1055>`_.
         """
-        body = gen_repo()
-        body['name'] = self.repo['name']
         with self.assertRaises(HTTPError):
-            self.client.post(REPO_PATH, body)
+            self.client.post(REPO_PATH, gen_repo(name=self.repo['name']))
 
     @skip_if(bool, 'repo', False)
     def test_02_read_repo(self):
@@ -131,3 +129,14 @@ class CRUDRepoTestCase(unittest.TestCase):
         # verify the delete
         with self.assertRaises(HTTPError):
             self.client.get(self.repo['_href'])
+
+    def test_negative_create_repo_with_invalid_parameter(self):
+        """Attempt to create repository passing extraneous invalid parameter.
+
+        Assert response returns an error 400 including ["Unexpected field"].
+        """
+        response = api.Client(self.cfg, api.echo_handler).post(
+            REPO_PATH, gen_repo(foo='bar')
+        )
+        assert response.status_code == 400
+        assert response.json()['foo'] == ['Unexpected field']

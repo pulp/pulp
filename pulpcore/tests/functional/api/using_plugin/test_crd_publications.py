@@ -126,3 +126,25 @@ class PublicationsTestCase(unittest.TestCase):
         self.client.delete(self.publication['_href'])
         with self.assertRaises(HTTPError):
             self.client.get(self.publication['_href'])
+
+    def test_negative_create_file_remote_with_invalid_parameter(self):
+        """Attempt to create file remote passing invalid parameter.
+
+        Assert response returns an error 400 including ["Unexpected field"].
+        """
+        response = api.Client(self.cfg, api.echo_handler).post(
+            FILE_REMOTE_PATH, gen_file_remote(foo='bar')
+        )
+        assert response.status_code == 400
+        assert response.json()['foo'] == ['Unexpected field']
+
+    def test_negative_create_file_publisher_with_invalid_parameter(self):
+        """Attempt to create file publisher passing invalid parameter.
+
+        Assert response returns an error 400 including ["Unexpected field"].
+        """
+        response = api.Client(self.cfg, api.echo_handler).post(
+            FILE_PUBLISHER_PATH, gen_file_publisher(foo='bar')
+        )
+        assert response.status_code == 400
+        assert response.json()['foo'] == ['Unexpected field']

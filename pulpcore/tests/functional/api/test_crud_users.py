@@ -101,6 +101,19 @@ class UsersCRUDTestCase(unittest.TestCase):
         with self.assertRaises(HTTPError):
             self.client.get(self.user['_href'])
 
+    def test_negative_create_user_with_invalid_parameter(self):
+        """Attempt to create user passing invalid parameter.
+
+        Assert response returns an error 400 including ["Unexpected field"].
+        """
+        attrs = _gen_verbose_user_attrs()
+        attrs['foo'] = 'bar'
+        response = api.Client(self.cfg, api.echo_handler).post(
+            USER_PATH, attrs
+        )
+        assert response.status_code == 400
+        assert response.json()['foo'] == ['Unexpected field']
+
 
 def _gen_verbose_user_attrs():
     """Generate a dict with lots of user attributes.
