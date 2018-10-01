@@ -34,11 +34,17 @@ class CRUDRepoTestCase(unittest.TestCase):
     def test_02_create_same_name(self):
         """Try to create a second repository with an identical name.
 
-        See: `Pulp Smash #1055
+        * `Pulp Smash #882 <https://github.com/PulpQE/pulp-smash/issues/882>`_.
+        * `Pulp Smash #1055
         <https://github.com/PulpQE/pulp-smash/issues/1055>`_.
         """
-        with self.assertRaises(HTTPError):
-            self.client.post(REPO_PATH, gen_repo(name=self.repo['name']))
+        self.client.response_handler = api.echo_handler
+        response = self.client.post(
+            REPO_PATH,
+            gen_repo(name=self.repo['name'])
+        )
+        self.assertIn('unique', response.json()['name'][0])
+        self.assertEqual(response.status_code, 400)
 
     @skip_if(bool, 'repo', False)
     def test_02_read_repo(self):
