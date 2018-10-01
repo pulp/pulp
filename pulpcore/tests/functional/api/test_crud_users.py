@@ -7,6 +7,7 @@ from requests.exceptions import HTTPError
 from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import USER_PATH
 
+from tests.functional.api.utils import gen_username
 from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 from tests.functional.utils import skip_if
 
@@ -132,6 +133,42 @@ class UsersCRUDTestCase(unittest.TestCase):
         )
         assert response.status_code == 400
         assert response.json()['foo'] == ['Unexpected field']
+
+
+class InvalidUserCreateTestCase(unittest.TestCase):
+    """Invalid user test creation.
+
+    This test targets the followig issues:
+
+    * `Pulp Smash #882 <https://github.com/PulpQE/pulp-smash/issues/882>`_
+    * `Pulp Issue #2984 <https://pulp.plan.io/issues/2984>`_
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """Create class-wide variables."""
+        cls.cfg = config.get_config()
+        cls.client = api.Client(cls.cfg, api.echo_handler)
+
+    def test_long_username(self):
+        """Create a user with long username."""
+        attrs = _gen_verbose_user_attrs()
+        attrs['username'] = gen_username(151)
+        response = self.client.post(USER_PATH, json=attrs)
+        error_message = response.json()['username'][0]
+        for key in ('150', 'length', 'username', 'less'):
+            self.assertIn(key, error_message)
+        self.assertEqual(response.status_code, 400)
+
+    def test_invalid_characters(self):
+        """Create a user with an username with invalid characters."""
+        attrs = _gen_verbose_user_attrs()
+        attrs['username'] = gen_username(150, False)
+        response = self.client.post(USER_PATH, json=attrs)
+        error_message = response.json()['username'][0]
+        for key in ('valid', 'username', 'letters', 'numbers', 'characters'):
+            self.assertIn(key, error_message)
+        self.assertEqual(response.status_code, 400)
 
 
 def _gen_verbose_user_attrs():
