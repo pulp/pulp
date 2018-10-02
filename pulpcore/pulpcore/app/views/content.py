@@ -112,8 +112,8 @@ class ContentView(View):
             return Distribution.objects.get(base_path__in=base_paths)
         except ObjectDoesNotExist:
             log.debug(_('Distribution not matched for {path} using: {base_paths}').format(
-                path=path, base_paths=base_paths)
-            )
+                path=path, base_paths=base_paths
+            ))
             raise PathNotResolved(path)
 
     def _match(self, path):
