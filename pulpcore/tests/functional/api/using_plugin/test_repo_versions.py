@@ -10,6 +10,7 @@ from requests.exceptions import HTTPError
 from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
+    delete_orphans,
     delete_version,
     gen_repo,
     get_added_content,
@@ -25,6 +26,7 @@ from tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
     FILE_FIXTURE_MANIFEST_URL,
+    FILE_LARGE_FIXTURE_COUNT,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH,
@@ -548,9 +550,11 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
     def setUpClass(cls):
         """Create class-wide variables."""
         cls.cfg = config.get_config()
-        cls.client = api.Client(cls.cfg, api.json_handler)
+        delete_orphans(cls.cfg)
         populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_MANIFEST_URL)
-        cls.content = sample(cls.client.get(FILE_CONTENT_PATH)['results'], 10)
+        cls.client = api.Client(cls.cfg, api.page_handler)
+        cls.content = cls.client.get(FILE_CONTENT_PATH)
+        assert len(cls.content), FILE_LARGE_FIXTURE_COUNT
 
     def test_same_repository(self):
         """Test ``base_version`` for the same repository.
@@ -600,7 +604,7 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         )
 
     def test_different_repository(self):
-        """Test ``base_version for different repositories.
+        """Test ``base_version`` for different repositories.
 
         Do the following:
 
@@ -641,6 +645,43 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
             version_content[1],
             version_content
         )
+
+    def test_base_version_other_parameters(self):
+        """Test ``base_version`` can be used together with other parameters.
+
+        ``add_content_units`` and ``remove_content_units``.
+        """
+        # create repo version 1
+        repo = self.create_sync_repo()
+        version_1_content = get_content(repo)
+        self.assertIsNone(get_versions(repo)[0]['base_version'])
+
+        # create repo version 2 from version 1
+        base_version = get_versions(repo)[0]['_href']
+        added_content = self.content.pop()
+        removed_content = choice(version_1_content)
+        self.client.post(
+            repo['_versions_href'],
+            {
+                'base_version': base_version,
+                'add_content_units': [added_content['_href']],
+                'remove_content_units': [removed_content['_href']]
+            }
+        )
+        repo = self.client.get(repo['_href'])
+        version_2_content = get_content(repo)
+
+        # assert that base_version of the version 2 points to version 1
+        self.assertEqual(get_versions(repo)[1]['base_version'], base_version)
+
+        # assert that the removed content is not present on repo version 2
+        self.assertNotIn(removed_content, version_2_content)
+
+        # assert that the added content is present on repo version 2
+        self.assertIn(added_content, version_2_content)
+
+        # assert that the same amount of units are present in both versions
+        self.assertEqual(len(version_1_content), len(version_2_content))
 
     def test_base_version_exception(self):
         """Exception is raised when non-existent ``base_version`` is used.
