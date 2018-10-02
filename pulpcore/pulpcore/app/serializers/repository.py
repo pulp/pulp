@@ -278,6 +278,12 @@ class DistributionSerializer(ModelSerializer):
         queryset=models.Publisher.objects.all(),
         allow_null=True
     )
+    content_guard = DetailRelatedField(
+        required=False,
+        help_text=_('An optional content-guard.'),
+        queryset=models.ContentGuard.objects.all(),
+        allow_null=True
+    )
     publication = RelatedField(
         required=False,
         help_text=_('The publication being served as defined by this distribution'),
@@ -301,7 +307,13 @@ class DistributionSerializer(ModelSerializer):
     class Meta:
         model = models.Distribution
         fields = ModelSerializer.Meta.fields + (
-            'name', 'base_path', 'publisher', 'publication', 'base_url', 'repository',
+            'name',
+            'base_path',
+            'publisher',
+            'publication',
+            'base_url',
+            'repository',
+            'content_guard',
         )
 
     def _validate_path_overlap(self, path):
