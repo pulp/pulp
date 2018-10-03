@@ -44,6 +44,25 @@ class UsersCRUDTestCase(unittest.TestCase):
                 self.assertEqual(val, self.user[key])
 
     @skip_if(bool, 'user', False)
+    def test_02_read_user_with_specific_fields(self):
+        """Read a user byt its _href providing specific field name."""
+        for field in ('_href', 'username'):
+            user = self.client.get(
+                self.user['_href'],
+                params={'fields': field}
+            )
+            with self.subTest(key=field):
+                self.assertEqual((field,), tuple(user.keys()))
+
+    @skip_if(bool, 'user', False)
+    def test_02_read_user_without_specific_fields(self):
+        """Read a user by its href excluding specific fields."""
+        # requests doesn't allow the use of != in parameters.
+        url = '{}?fields!=username'.format(self.user['_href'])
+        user = self.client.get(url)
+        self.assertNotIn('username', user.keys())
+
+    @skip_if(bool, 'user', False)
     def test_02_read_username(self):
         """Read a user by its username.
 

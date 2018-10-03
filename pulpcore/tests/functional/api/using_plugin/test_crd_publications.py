@@ -2,15 +2,20 @@
 """Tests that perform actions over publications."""
 import unittest
 
+from itertools import permutations
 from requests.exceptions import HTTPError
 
 from pulp_smash import api, config
-from pulp_smash.pulp3.constants import DISTRIBUTION_PATH, PUBLICATIONS_PATH, REPO_PATH
+from pulp_smash.pulp3.constants import (
+    DISTRIBUTION_PATH,
+    PUBLICATIONS_PATH,
+    REPO_PATH
+)
 from pulp_smash.pulp3.utils import (
     gen_distribution,
     gen_repo,
     publish,
-    sync,
+    sync
 )
 
 from tests.functional.api.using_plugin.constants import (
@@ -69,6 +74,32 @@ class PublicationsTestCase(unittest.TestCase):
         for key, val in self.publication.items():
             with self.subTest(key=key):
                 self.assertEqual(publication[key], val)
+
+    @skip_if(bool, 'publication', False)
+    def test_02_read_publication_with_specific_fields(self):
+        """Read a publication by its href providing specific field list.
+
+        Permutate field list to ensure different combinations on result.
+        """
+        fields = ('_href', 'created', 'distributions', 'publisher')
+        for field_pair in permutations(fields, 2):
+            # ex: field_pair = ('_href', 'created)
+            with self.subTest(field_pair=field_pair):
+                publication = self.client.get(
+                    self.publication['_href'],
+                    params={'fields': ','.join(field_pair)}
+                )
+                self.assertEqual(
+                    sorted(field_pair), sorted(publication.keys())
+                )
+
+    @skip_if(bool, 'publication', False)
+    def test_02_read_publication_without_specific_fields(self):
+        """Read a publication by its href excluding specific fields."""
+        # requests doesn't allow the use of != in parameters.
+        url = '{}?fields!=distributions'.format(self.publication['_href'])
+        publication = self.client.get(url)
+        self.assertNotIn('distributions', publication.keys())
 
     @skip_if(bool, 'publication', False)
     def test_02_read_publications(self):
