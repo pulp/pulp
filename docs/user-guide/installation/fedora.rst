@@ -3,7 +3,7 @@ Fedora 24+
 
 Beginning with Fedora 24, Pulp is included in the Fedora project, however we
 recommend to install the upstream repository anyway, which is usually more
-updated.
+up to date.
 
 ::
 
