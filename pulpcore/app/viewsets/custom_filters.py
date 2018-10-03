@@ -9,6 +9,9 @@ from django_filters.fields import IsoDateTimeField
 
 from rest_framework import serializers
 
+from pulpcore.app.models import RepositoryVersion
+from pulpcore.app.viewsets import NamedModelViewSet
+
 
 class HyperlinkRelatedFilter(Filter):
     """
@@ -60,3 +63,101 @@ class IsoDateTimeFilter(DateTimeFilter):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('help_text', _('ISO 8601 formatted dates are supported'))
         super().__init__(*args, **kwargs)
+
+
+class RepoVersionHrefFilter(Filter):
+    """
+    Filter Content by a Repository Version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', _('Repository Version referenced by HREF'))
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def get_repository_version(value):
+        """
+        Get the repository version from the HREF value provided by the user.
+
+        Args:
+            value (string): The RepositoryVersion href to filter by
+        """
+        if not value:
+            raise serializers.ValidationError(
+                detail=_('No value supplied for repository version filter'))
+
+        return NamedModelViewSet.get_resource(value, RepositoryVersion)
+
+    def filter(self, qs, value):
+        """
+        Args:
+            qs (django.db.models.query.QuerySet): The Content Queryset
+            value (string): The RepositoryVersion href to filter by
+        """
+        raise NotImplementedError()
+
+
+class ContentRepositoryVersionFilter(RepoVersionHrefFilter):
+    """
+    Filter used to get the content of this type found in a repository version.
+    """
+
+    def filter(self, qs, value):
+        """
+        Args:
+            qs (django.db.models.query.QuerySet): The Content Queryset
+            value (string): The RepositoryVersion href to filter by
+
+        Returns:
+            Queryset of the content contained within the specified repository version
+        """
+        if value is None:
+            # user didn't supply a value
+            return qs
+
+        repo_version = self.get_repository_version(value)
+        return qs.filter(pk__in=repo_version.content)
+
+
+class ContentAddedRepositoryVersionFilter(RepoVersionHrefFilter):
+    """
+    Filter used to get the content of this type found in a repository version.
+    """
+
+    def filter(self, qs, value):
+        """
+        Args:
+            qs (django.db.models.query.QuerySet): The Content Queryset
+            value (string): The RepositoryVersion href to filter by
+
+        Returns:
+            Queryset of the content added by the specified repository version
+        """
+        if value is None:
+            # user didn't supply a value
+            return qs
+
+        repo_version = self.get_repository_version(value)
+        return qs.filter(pk__in=repo_version.added())
+
+
+class ContentRemovedRepositoryVersionFilter(RepoVersionHrefFilter):
+    """
+    Filter used to get the content of this type found in a repository version.
+    """
+
+    def filter(self, qs, value):
+        """
+        Args:
+            qs (django.db.models.query.QuerySet): The Content Queryset
+            value (string): The RepositoryVersion href to filter by
+
+        Returns:
+            Queryset of the content removed by the specified repository version
+        """
+        if value is None:
+            # user didn't supply a value
+            return qs
+
+        repo_version = self.get_repository_version(value)
+        return qs.filter(pk__in=repo_version.removed())

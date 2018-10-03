@@ -7,7 +7,13 @@ from rest_framework.response import Response
 
 from pulpcore.app.models import Artifact, Content, ContentGuard, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer, ContentGuardSerializer
-from pulpcore.app.viewsets import BaseFilterSet, NamedModelViewSet
+from pulpcore.app.viewsets import (
+    BaseFilterSet,
+    NamedModelViewSet,
+    ContentRepositoryVersionFilter,
+    ContentAddedRepositoryVersionFilter,
+    ContentRemovedRepositoryVersionFilter,
+)
 
 
 class ArtifactFilter(BaseFilterSet):
@@ -55,10 +61,30 @@ class ContentFilter(BaseFilterSet):
      - define its own `Meta` class which should:
        - specify plugin content model
        - extend `fields` with plugin-specific ones
+
+    Allows you to filter the content app by repository version.
+
+    Fields:
+
+        repository_version:
+            Return Content which is contained within this repository version.
+        repository_version_added:
+            Return Content which was added in this repository version.
+        repository_version_removed:
+            Return Content which was removed from this repository version.
     """
+    repository_version = ContentRepositoryVersionFilter()
+    repository_version_added = ContentAddedRepositoryVersionFilter()
+    repository_version_removed = ContentRemovedRepositoryVersionFilter()
+
     class Meta:
         model = Content
-        fields = {'type': ['exact', 'in']}
+        fields = {
+            'type': ['exact', 'in'],
+            'repository_version': ['exact'],
+            'repository_version_added': ['exact'],
+            'repository_version_removed': ['exact'],
+        }
 
 
 class ContentViewSet(NamedModelViewSet,

@@ -221,7 +221,7 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(db_index=True)
     complete = models.BooleanField(db_index=True, default=False)
-    base_version = models.ForeignKey('Repositoryversion', null=True,
+    base_version = models.ForeignKey('RepositoryVersion', null=True,
                                      on_delete=models.SET_NULL)
 
     class Meta:

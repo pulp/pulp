@@ -9,8 +9,10 @@ from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import PKOnlyObject
 
-from rest_framework_nested.relations import NestedHyperlinkedIdentityField, \
+from rest_framework_nested.relations import (
+    NestedHyperlinkedIdentityField,
     NestedHyperlinkedRelatedField
+)
 
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.models import Task
