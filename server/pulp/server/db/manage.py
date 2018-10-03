@@ -64,9 +64,15 @@ def parse_args():
 def migrate_database(options):
     """
     Perform the migrations for each migration package found in pulp.server.db.migrations.
+    Create indexes before running any migration to avoid duplicates, e.g. in case a new collection
+    is created.
 
     :param options: The command line parameters from the user
     """
+
+    if not options.dry_run:
+        ensure_database_indexes()
+
     migration_packages = models.get_migration_packages()
     unperformed_migrations = False
     for migration_package in migration_packages:
@@ -143,9 +149,6 @@ def migrate_database(options):
             error_message = error_message % {'m': migration.name}
             _logger.critical(error_message)
             raise
-
-    if not options.dry_run:
-        ensure_database_indexes()
 
     if options.dry_run and unperformed_migrations:
         raise UnperformedMigrationException
