@@ -206,8 +206,6 @@ class ContentView(View):
             return HttpResponseForbidden()
         response = StreamingHttpResponse(file)
         response['Content-Length'] = os.path.getsize(path)
-        response['Content-Disposition'] = \
-            'attachment; filename={n}'.format(n=os.path.basename(path))
         return response
 
     def _apache(self, path):
@@ -243,7 +241,7 @@ class ContentView(View):
         Get redirect-to-streamer response.
 
         Args:
-            request (django.http.HttpRequest): A request for a content artifact.
+            request (django.http.HttpRequest): A request for a published file.
 
         Returns:
             HttpResponseRedirect: Redirect to streamer.
@@ -273,11 +271,12 @@ class ContentView(View):
         response = HttpResponseRedirect(url)
         return response
 
-    def _dispatch(self, path):
+    def _dispatch(self, request, path):
         """
         Dispatch to the appropriate responder (method).
 
         Args:
+            request (django.http.HttpRequest): A request for a published file.
             path (str): The fully qualified path to the file to be served.
 
         Returns:
@@ -293,14 +292,17 @@ class ContentView(View):
         except KeyError:
             raise ValueError(_('Web server "{t}" not supported.').format(t=server))
         else:
-            return responder(self, path)
+            disposition = os.path.basename(request.path)
+            response = responder(self, path)
+            response['Content-Disposition'] = 'attachment; filename={n}'.format(n=disposition)
+            return response
 
     def get(self, request):
         """
         Get content artifact (bits).
 
         Args:
-            request (django.http.HttpRequest): A request for a content artifact.
+            request (django.http.HttpRequest): A request for a published file.
 
         Returns:
             django.http.StreamingHttpResponse: on found.
@@ -316,7 +318,7 @@ class ContentView(View):
         except ArtifactNotFound:
             return self._redirect(request)
         else:
-            return self._dispatch(storage_path)
+            return self._dispatch(request, storage_path)
 
     # Mapping of responder-method based on the type of web server.
     RESPONDER = {
