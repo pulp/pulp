@@ -2,6 +2,7 @@
 """Tests that CRUD distributions."""
 import unittest
 
+from itertools import permutations
 from requests.exceptions import HTTPError
 
 from pulp_smash import api, config, utils
@@ -51,6 +52,36 @@ class CRUDDistributionsTestCase(unittest.TestCase):
         for key, val in self.distribution.items():
             with self.subTest(key=key):
                 self.assertEqual(distribution[key], val)
+
+    @skip_if(bool, 'distribution', False)
+    def test_02_read_distribution_with_specific_fields(self):
+        """Read a distribution by its href providing specific field list.
+
+        Permutate field list to ensure different combinations on result.
+        """
+        fields = ('_href', 'base_path', 'base_url', 'created')
+        for field_pair in permutations(fields, 2):
+            # ex: field_pair = ('_href', 'base_url)
+            with self.subTest(field_pair=field_pair):
+                distribution = self.client.get(
+                    self.distribution['_href'],
+                    params={'fields': ','.join(field_pair)}
+                )
+                self.assertEqual(
+                    sorted(field_pair), sorted(distribution.keys())
+                )
+
+    @skip_if(bool, 'distribution', False)
+    def test_02_read_distribution_without_specific_fields(self):
+        """Read a distribution by its href excluding specific fields."""
+        # requests doesn't allow the use of != in parameters.
+        url = '{}?fields!=base_path,base_url'.format(
+            self.distribution['_href']
+        )
+        distribution = self.client.get(url)
+        response_fields = distribution.keys()
+        self.assertNotIn('base_path', response_fields)
+        self.assertNotIn('base_url', response_fields)
 
     @skip_if(bool, 'distribution', False)
     def test_02_read_distributions(self):

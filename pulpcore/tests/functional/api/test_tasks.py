@@ -54,6 +54,37 @@ class TasksTestCase(unittest.TestCase):
                 self.assertEqual(task[key], val, task)
 
     @skip_if(bool, 'task', False)
+    def test_02_read_href_with_specific_fields(self):
+        """Read a task by its _href providing specific fields."""
+        fields = ('_href', 'state', 'worker')
+        task = self.client.get(
+            self.task['_href'],
+            params={'fields': ','.join(fields)}
+        )
+        self.assertEqual(sorted(fields), sorted(task.keys()))
+
+    @skip_if(bool, 'task', False)
+    def test_02_read_task_without_specific_fields(self):
+        """Read a task by its href excluding specific fields."""
+        # requests doesn't allow the use of != in parameters.
+        url = '{}?fields!=state'.format(self.task['_href'])
+        task = self.client.get(url)
+        self.assertNotIn('state', task.keys())
+
+    @skip_if(bool, 'task', False)
+    def test_02_read_task_with_minimal_fields(self):
+        """Read a task by its href filtering minimal fields."""
+        task = self.client.get(
+            self.task['_href'],
+            params={'minimal': True}
+        )
+        response_fields = task.keys()
+        self.assertNotIn('progress_reports', response_fields)
+        self.assertNotIn('spawned_tasks', response_fields)
+        self.assertNotIn('error', response_fields)
+        self.assertNotIn('non_fatal_errors', response_fields)
+
+    @skip_if(bool, 'task', False)
     def test_02_read_invalid_worker(self):
         """Read a task using an invalid worker name."""
         with self.assertRaises(HTTPError):

@@ -2,6 +2,7 @@
 """Tests that CRUD repositories."""
 import unittest
 
+from itertools import permutations
 from requests.exceptions import HTTPError
 
 from pulp_smash import api, config, utils
@@ -46,6 +47,35 @@ class CRUDRepoTestCase(unittest.TestCase):
         for key, val in self.repo.items():
             with self.subTest(key=key):
                 self.assertEqual(repo[key], val)
+
+    @skip_if(bool, 'repo', False)
+    def test_02_read_repo_with_specific_fields(self):
+        """Read a repository by its href providing specific field list.
+
+        Permutate field list to ensure different combinations on result.
+        """
+        fields = (
+            '_href', 'created', '_versions_href', '_latest_version_href',
+            'name', 'description', 'notes'
+        )
+        for field_pair in permutations(fields, 2):
+            # ex: field_pair = ('_href', 'notes)
+            with self.subTest(field_pair=field_pair):
+                repo = self.client.get(
+                    self.repo['_href'],
+                    params={'fields': ','.join(field_pair)}
+                )
+                self.assertEqual(sorted(field_pair), sorted(repo.keys()))
+
+    @skip_if(bool, 'repo', False)
+    def test_02_read_repo_without_specific_fields(self):
+        """Read a repo by its href excluding specific fields."""
+        # requests doesn't allow the use of != in parameters.
+        url = '{}?fields!=created,name'.format(self.repo['_href'])
+        repo = self.client.get(url)
+        response_fields = repo.keys()
+        self.assertNotIn('created', response_fields)
+        self.assertNotIn('name', response_fields)
 
     @skip_if(bool, 'repo', False)
     def test_02_read_repos(self):
