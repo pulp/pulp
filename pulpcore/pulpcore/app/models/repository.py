@@ -72,6 +72,7 @@ class Remote(MasterModel):
         username (models.TextField): The username to be used for authentication when syncing.
         password (models.TextField): The password to be used for authentication when syncing.
         last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
+        connection_limit (models.PositiveIntegerField): Total number of simultaneous connections.
 
     Relations:
 
@@ -103,6 +104,7 @@ class Remote(MasterModel):
     username = models.TextField(blank=True)
     password = models.TextField(blank=True)
     last_synced = models.DateTimeField(blank=True, null=True)
+    connection_limit = models.PositiveIntegerField(default=5)
 
     class Meta:
         default_related_name = 'remotes'

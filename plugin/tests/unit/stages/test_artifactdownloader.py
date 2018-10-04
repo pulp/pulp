@@ -80,8 +80,7 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
         dc = DeclarativeContent(content=mock.Mock(), d_artifacts=das)
         in_q.put_nowait(dc)
 
-    async def download_task(self, in_q, out_q,
-                            max_concurrent_downloads=2, max_concurrent_content=4):
+    async def download_task(self, in_q, out_q, max_concurrent_content=3):
         """
         A coroutine running the downloader stage with a mocked ProgressBar.
 
@@ -90,8 +89,7 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
         """
         with mock.patch('pulpcore.plugin.stages.artifact_stages.ProgressBar') as pb:
             pb.return_value.__enter__.return_value.done = 0
-            ad = ArtifactDownloader(max_concurrent_downloads=max_concurrent_downloads,
-                                    max_concurrent_content=max_concurrent_content)
+            ad = ArtifactDownloader(max_concurrent_content=max_concurrent_content)
             await ad(in_q, out_q)
         return pb.return_value.__enter__.return_value.done
 
@@ -100,38 +98,38 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
         out_q = asyncio.Queue()
         download_task = self.loop.create_task(self.download_task(in_q, out_q))
 
-        # Create 12 content units, every second one must be downloaded.
-        # The downloads take 1, 3, 5, 7, 9, 11 seconds; content units
-        # 0, 2, ..., 10 do not need downloads.
-        for i in range(12):
-            self.queue_dc(in_q, delays=[i if i % 2 else None])
+        # Create 28 content units, every third one must be downloaded.
+        # The downloads take 0, 3, 6,..., 27 seconds; content units
+        # 1, 2, 4, 5, ..., 26 do not need downloads.
+        for i in range(28):
+            self.queue_dc(in_q, delays=[i if not i % 3 else None])
         in_q.put_nowait(None)
 
         # At 0.5 seconds
         await self.advance_to(0.5)
-        # 1 and 3 are running
-        # 1, 3, 5, and 7 are "in_flight"
-        self.assertEqual(DownloaderMock.running, 2)
-        # non-downloads 0, 2, ..., 6 forwarded
-        self.assertEqual(out_q.qsize(), 4)
-        # 8 - 11 + None are waiting to be picked up
-        self.assertEqual(in_q.qsize(), 5)
+        # 3, 6 and 9 are running. 0 is finished
+        self.assertEqual(DownloaderMock.running, 3)
+        # non-downloads 1, 2, 4, 5, 7, 8 are forwarded
+        self.assertEqual(out_q.qsize(), 7)
+        # 9 - 26 + None are waiting to be picked up
+        self.assertEqual(in_q.qsize(), 19)
 
         # Two downloads run in parallel. The most asymmetric way
         # to schedule the remaining downloads is:
-        # 1 + 5 + 7: finished after 13 seconds
-        # 3 + 9 + 11: finished after 23 seconds
-        for t in range(1, 13):  # until 12.5 seconds two downloads must run
+        # 3 + 12 + 21: finished after 36 seconds
+        # 6 + 15 + 24: finished after 45 seconds
+        # 9 + 18 + 27: finished after 54 seconds
+        for t in range(1, 36):  # until 35.5 seconds three downloads must run
             await self.advance_to(t + 0.5)
-            self.assertEqual(DownloaderMock.running, 2)
+            self.assertEqual(DownloaderMock.running, 3)
 
-        # At 23.5 seconds, the stage is done at the latest
-        await self.advance_to(23.5)
+        # At 54.5 seconds, the stage is done at the latest
+        await self.advance_to(54.5)
         self.assertEqual(DownloaderMock.running, 0)
-        self.assertEqual(DownloaderMock.downloads, 6)
+        self.assertEqual(DownloaderMock.downloads, 10)
         self.assertEqual(download_task.result(), DownloaderMock.downloads)
         self.assertEqual(in_q.qsize(), 0)
-        self.assertEqual(out_q.qsize(), 13)
+        self.assertEqual(out_q.qsize(), 29)
 
     async def test_multi_artifact_downloads(self):
         in_q = asyncio.Queue()
@@ -140,78 +138,32 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
         self.queue_dc(in_q, delays=[])  # must be forwarded to next stage immediately
         self.queue_dc(in_q, delays=[1])
         self.queue_dc(in_q, delays=[2, 2])
+        self.queue_dc(in_q, delays=[2])
         self.queue_dc(in_q, delays=[2, None])  # schedules only one download
         in_q.put_nowait(None)
-        # At 0.5 seconds, two content units are downloading with two
+        # At 0.5 seconds, three content units are downloading with four
         # downloads overall
         await self.advance_to(0.5)
-        self.assertEqual(DownloaderMock.running, 2)
+        self.assertEqual(DownloaderMock.running, 4)
         self.assertEqual(out_q.qsize(), 1)
-        # At 1.5 seconds, the download for the first content unit has completed
+        # At 1.5 seconds, the download for the first content unit has completed.
+        # At 1 second, the download of the forth content unit is started
         await self.advance_to(1.5)
-        self.assertEqual(DownloaderMock.running, 2)
+        self.assertEqual(DownloaderMock.running, 4)
         self.assertEqual(out_q.qsize(), 2)
-        # At 2.5 seconds, the first download for the second content unit has
-        # completed. At 1 second, either the second download of the second content unit, or the
-        # first download of the third unit is started
+        # At 2.5 seconds, the downloads for the second and the third content unit
+        # have completed
         await self.advance_to(2.5)
-        self.assertEqual(DownloaderMock.running, 2)
-        self.assertEqual(out_q.qsize(), 2)
-        # At 3.5 seconds, only one of the artifacts is left
-        await self.advance_to(3.5)
         self.assertEqual(DownloaderMock.running, 1)
-        self.assertEqual(out_q.qsize(), 3)
-
-        # At 4.5 seconds, stage must de done
-        await self.advance_to(4.5)
-        self.assertEqual(DownloaderMock.running, 0)
-        self.assertEqual(DownloaderMock.downloads, 4)
-        self.assertEqual(download_task.result(), DownloaderMock.downloads)
-        self.assertEqual(in_q.qsize(), 0)
-        self.assertEqual(out_q.qsize(), 5)
-
-    async def test_download_stall(self):
-        in_q = asyncio.Queue()
-        out_q = asyncio.Queue()
-        download_task = self.loop.create_task(self.download_task(in_q, out_q))
-
-        self.queue_dc(in_q, delays=[1, 1])
-        self.queue_dc(in_q, delays=[1, 1])
-
-        # At 0.5 seconds, the first content unit is downloading with two
-        # downloads overall
-        await self.advance_to(0.5)
-        self.assertEqual(DownloaderMock.running, 2)
-
-        # At 1.5 seconds, the downloads for the second content are running
-        await self.advance_to(1.5)
-        self.assertEqual(DownloaderMock.running, 2)
-        self.assertEqual(out_q.qsize(), 1)
-
-        # At 2.5 second all content units are completed and the stage is waiting
-        # for input
-        await self.advance_to(2.5)
-        self.assertEqual(DownloaderMock.running, 0)
-        self.assertEqual(out_q.qsize(), 2)
-
-        # A new content unit arrives
-        self.queue_dc(in_q, delays=[1, 1])
-
-        # At 3 seconds, download must be running for it
-        await self.advance_to(3)
-        self.assertEqual(DownloaderMock.running, 2)
-        self.assertEqual(out_q.qsize(), 2)
-
-        # Upstream stage completes
-        in_q.put_nowait(None)
-
-        await self.advance_to(4)
-
-        self.assertEqual(DownloaderMock.running, 0)
-        self.assertEqual(DownloaderMock.downloads, 6)
-        self.assertEqual(download_task.result(), DownloaderMock.downloads)
-        self.assertEqual(in_q.qsize(), 0)
         self.assertEqual(out_q.qsize(), 4)
+
+        # At 3.5 seconds, stage must de done
+        await self.advance_to(3.5)
+        self.assertEqual(DownloaderMock.running, 0)
+        self.assertEqual(DownloaderMock.downloads, 5)
+        self.assertEqual(download_task.result(), DownloaderMock.downloads)
+        self.assertEqual(in_q.qsize(), 0)
+        self.assertEqual(out_q.qsize(), 6)
 
     async def test_sparse_batches_dont_block_stage(self):
         """Regression test for issue https://pulp.plan.io/issues/4018."""
@@ -262,9 +214,9 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
             self.queue_dc(in_q, delays=[100])
         in_q.put_nowait(None)
 
-        # After 0.5 seconds, the first two downloads must have started
+        # After 0.5 seconds, the three downloads must have started
         await self.advance_to(0.5)
-        self.assertEqual(DownloaderMock.running, 2)
+        self.assertEqual(DownloaderMock.running, 3)
 
         download_task.cancel()
 
@@ -273,4 +225,4 @@ class TestArtifactDownloader(asynctest.ClockedTestCase):
         with self.assertRaises(asyncio.CancelledError):
             download_task.result()
         self.assertEqual(DownloaderMock.running, 0)
-        self.assertEqual(DownloaderMock.canceled, 2)
+        self.assertEqual(DownloaderMock.canceled, 3)
