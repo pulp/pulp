@@ -2,6 +2,7 @@ from django.db import models, transaction
 
 from . import storage
 from .base import Model
+from .content import ContentGuard
 from .repository import Publisher, Repository
 from .task import CreatedResource
 
@@ -211,7 +212,7 @@ class BaseDistribution(Model):
     publication = models.ForeignKey(Publication, null=True, on_delete=models.SET_NULL)
     publisher = models.ForeignKey(Publisher, null=True, on_delete=models.SET_NULL)
     repository = models.ForeignKey(Repository, null=True, on_delete=models.SET_NULL)
-    content_guard = models.ForeignKey('ContentGuard', null=True, on_delete=models.SET_NULL)
+    content_guard = models.ForeignKey(ContentGuard, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         abstract = True
