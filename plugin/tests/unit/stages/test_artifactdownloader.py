@@ -27,7 +27,7 @@ class DownloaderMock:
         cls.downloads = 0
         cls.canceled = 0
 
-    async def run(self):
+    async def run(self, extra_data=None):
         DownloaderMock.running += 1
         try:
             await asyncio.sleep(int(self.url))
