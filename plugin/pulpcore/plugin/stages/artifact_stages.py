@@ -87,16 +87,13 @@ class ArtifactDownloaderRunner():
                 :class:`~pulpcore.plugin.stages.DeclarativeContent` objects from.
         out_q (:class:`asyncio.Queue`): The queue to put
                 :class:`~pulpcore.plugin.stages.DeclarativeContent` objects into.
-        max_concurrent_downloads (int): The maximum number of concurrent downloads this stage will
-            run.
         max_concurrent_content (int): The maximum number of
             :class:`~pulpcore.plugin.stages.DeclarativeContent` instances to handle simultaneously.
     """
 
-    def __init__(self, in_q, out_q, max_concurrent_downloads, max_concurrent_content):
+    def __init__(self, in_q, out_q, max_concurrent_content):
         self.in_q = in_q
         self.out_q = out_q
-        self.max_concurrent_downloads = max_concurrent_downloads
         self.max_concurrent_content = max_concurrent_content
 
     @property
@@ -118,9 +115,6 @@ class ArtifactDownloaderRunner():
         #: (:class:`asyncio.Task`): The task that gets new content from `in_q`.
         #    Set to None if stage is shutdown.
         self._content_get_task = self._add_to_pending(self.in_q.get())
-
-        #: (:class:`asyncio.Semaphore`): Semaphore controlling the number of concurrent downloads
-        self._download_semaphore = asyncio.Semaphore(value=self.max_concurrent_downloads)
 
         with ProgressBar(message='Downloading Artifacts') as pb:
             try:
@@ -174,18 +168,9 @@ class ArtifactDownloaderRunner():
         """
         Compute a list of downloader coroutines, one for each artifact to download for `content`.
 
-        When run, the downloader coroutine needs to get the download semaphore before downloading.
-
         Returns:
             List of downloader coroutines (may be empty)
         """
-        async def download_with_limit(semaphore, downloader):
-            async with semaphore:
-                log.debug("ArtifactDownloader: Start download of '%s'", declarative_artifact.url)
-                result = await downloader.run()
-                log.debug("ArtifactDownloader: Downloaded: '%s'", declarative_artifact.url)
-                return result
-
         downloaders_for_content = []
         for declarative_artifact in content.d_artifacts:
             if declarative_artifact.artifact.pk is None:
@@ -205,9 +190,8 @@ class ArtifactDownloaderRunner():
                     declarative_artifact.url,
                     **validation_kwargs
                 )
-                downloaders_for_content.append(
-                    download_with_limit(self._download_semaphore, downloader)
-                )
+                downloaders_for_content.append(downloader.run())
+
         return downloaders_for_content
 
     def _update_content(self, content, downloads):
@@ -243,11 +227,9 @@ class ArtifactDownloader(Stage):
     downloads completed. Since it's a stream the total count isn't known until it's finished.
 
     This stage drains all available items from `in_q` and starts as many downloaders as possible
-    (up to `max_concurrent_downloads`)
+    (up to `connection_limit` set on a Remote)
 
     Args:
-        max_concurrent_downloads (int): The maximum number of concurrent downloads this stage will
-            run. Default is 100.
         max_concurrent_content (int): The maximum number of
             :class:`~pulpcore.plugin.stages.DeclarativeContent` instances to handle simultaneously.
             Default is 200.
@@ -255,9 +237,8 @@ class ArtifactDownloader(Stage):
         kwargs: unused keyword arguments passed along to :class:`~pulpcore.plugin.stages.Stage`.
     """
 
-    def __init__(self, max_concurrent_downloads=200, max_concurrent_content=200, *args, **kwargs):
+    def __init__(self, max_concurrent_content=200, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.max_concurrent_downloads = max_concurrent_downloads
         self.max_concurrent_content = max_concurrent_content
 
     async def __call__(self, in_q, out_q):
@@ -275,8 +256,7 @@ class ArtifactDownloader(Stage):
         Returns:
             The coroutine for this stage.
         """
-        runner = ArtifactDownloaderRunner(in_q, out_q, self.max_concurrent_downloads,
-                                          self.max_concurrent_content)
+        runner = ArtifactDownloaderRunner(in_q, out_q, self.max_concurrent_content)
         await runner.run()
 
 

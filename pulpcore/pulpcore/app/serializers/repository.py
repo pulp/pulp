@@ -115,6 +115,11 @@ class RemoteSerializer(MasterModelSerializer):
         help_text='Timestamp of the most recent update of the remote.',
         read_only=True
     )
+    connection_limit = serializers.IntegerField(
+        help_text='Total number of simultaneous connections.',
+        required=False,
+        min_value=1
+    )
 
     class Meta:
         abstract = True
@@ -122,7 +127,7 @@ class RemoteSerializer(MasterModelSerializer):
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'url', 'validate', 'ssl_ca_certificate', 'ssl_client_certificate',
             'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_synced',
-            'last_updated',)
+            'last_updated', 'connection_limit')
 
 
 class RepositorySyncURLSerializer(serializers.Serializer):

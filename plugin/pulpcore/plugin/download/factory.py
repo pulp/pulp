@@ -90,6 +90,9 @@ class DownloaderFactory:
         if self._remote.ssl_validation:
             tcp_conn_opts['verify_ssl'] = self._remote.ssl_validation
 
+        if self._remote.connection_limit:
+            tcp_conn_opts['limit'] = self._remote.connection_limit
+
         conn = aiohttp.TCPConnector(**tcp_conn_opts)
 
         auth_options = {}
