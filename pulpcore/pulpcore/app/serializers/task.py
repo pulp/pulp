@@ -9,7 +9,7 @@ from pulpcore.app.serializers import IdentityField, RelatedField, ModelSerialize
 from .base import viewset_for_model
 
 
-class CreatedResourceSerializer(ModelSerializer):
+class CreatedResourceSerializer(RelatedField):
 
     def to_representation(self, data):
         # If the content object was deleted
@@ -79,7 +79,8 @@ class TaskSerializer(ModelSerializer):
     created_resources = CreatedResourceSerializer(
         help_text=_('Resources created by this task.'),
         many=True,
-        read_only=True
+        read_only=True,
+        view_name='None'  # This is a polymorphic field. The serializer does not need a view name.
     )
 
     class Meta:
