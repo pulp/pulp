@@ -11,7 +11,8 @@ from pulp_smash.exceptions import CalledProcessError
 from pulp_smash.pulp3.constants import ARTIFACTS_PATH
 from pulp_smash.pulp3.utils import delete_orphans
 
-# This import is an exception, we use a file url but we are not actually using any plugin
+# This import is an exception, we use a file url but we are not actually using
+# any plugin
 from tests.functional.api.using_plugin.constants import FILE_URL
 from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 
@@ -135,11 +136,10 @@ class ArtifactsDeleteFileSystemTestCase(unittest.TestCase):
         files = {'file': utils.http_get(FILE_URL)}
         artifact = api_client.post(ARTIFACTS_PATH, files=files)
         self.addCleanup(api_client.delete, artifact['_href'])
-        sudo = () if cli.is_root(cfg) else ('sudo',)
-        cmd = sudo + ('ls', artifact['file'])
-        cli_client.run(cmd)
+        cmd = ('ls', artifact['file'])
+        cli_client.run(cmd, sudo=True)
 
         # delete
         self.doCleanups()
         with self.assertRaises(CalledProcessError):
-            cli_client.run(cmd)
+            cli_client.run(cmd, sudo=True)
