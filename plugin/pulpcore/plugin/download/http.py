@@ -19,6 +19,9 @@ def giveup(exc):
     Do not give up when the status code is one of the following:
 
         429 - Too Many Requests
+        502 - Bad Gateway
+        503 - Service Unavailable
+        504 - Gateway Timeout
 
     Args:
         exc (aiohttp.ClientResponseException): The exception to inspect
@@ -26,7 +29,7 @@ def giveup(exc):
     Returns:
         True if the download should give up, False otherwise
     """
-    return not exc.code == 429
+    return exc.code not in [429, 502, 503, 504]
 
 
 class HttpDownloader(BaseDownloader):
@@ -160,8 +163,9 @@ class HttpDownloader(BaseDownloader):
         """
         Download, validate, and compute digests on the `url`. This is a coroutine.
 
-        This method is decorated with a backoff-and-retry behavior to retry HTTP 429 errors. It
-        retries with exponential backoff 10 times before allowing a final exception to be raised.
+        This method is decorated with a backoff-and-retry behavior to retry HTTP 429 and
+        some 5XX errors. It retries with exponential backoff 10 times before allowing
+        a final exception to be raised.
 
         This method provides the same return object type and documented in
         :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
