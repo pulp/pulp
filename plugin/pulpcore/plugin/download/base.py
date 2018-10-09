@@ -6,7 +6,7 @@ import os
 import tempfile
 
 from pulpcore.app.models import Artifact
-from .exceptions import DigestValidationError, SizeValidationError
+from pulpcore.exceptions import DigestValidationError, SizeValidationError
 
 
 log = logging.getLogger(__name__)
@@ -109,11 +109,11 @@ class BaseDownloader:
         :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
         Raises:
-            :class:`~pulpcore.plugin.download.DigestValidationError`: When any of the
-                ``expected_digest`` values don't match the digest of the data passed to
+            :class:`~pulpcore.exceptions.DigestValidationError`: When any of the ``expected_digest``
+                values don't match the digest of the data passed to
                 :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
-            :class:`~pulpcore.plugin.download.SizeValidationError`: When the
-                ``expected_size`` value doesn't match the size of the data passed to
+            :class:`~pulpcore.exceptions.SizeValidationError`: When the ``expected_size`` value
+                doesn't match the size of the data passed to
                 :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         self._writer.flush()
@@ -162,8 +162,8 @@ class BaseDownloader:
         Validate all digests validate if ``expected_digests`` is set
 
         Raises:
-            :class:`~pulpcore.plugin.download.DigestValidationError`: When any of the
-                ``expected_digest`` values don't match the digest of the data passed to
+            :class:`~pulpcore.exceptions.DigestValidationError`: When any of the ``expected_digest``
+                values don't match the digest of the data passed to
                 :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         if self.expected_digests:
@@ -176,8 +176,8 @@ class BaseDownloader:
         Validate the size if ``expected_size`` is set
 
         Raises:
-            :class:`~pulpcore.plugin.download.SizeValidationError`: When the
-                ``expected_size`` value doesn't match the size of the data passed to
+            :class:`~pulpcore.exceptions.SizeValidationError`: When the ``expected_size`` value
+                doesn't match the size of the data passed to
                 :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
         """
         if self.expected_size:

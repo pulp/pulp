@@ -3,14 +3,14 @@ from gettext import gettext as _
 from pulpcore.exceptions import PulpException
 
 
-class DownloaderValidationError(PulpException):
+class ValidationError(PulpException):
     """
-    A base class for all Download Validation Errors.
+    A base class for all Validation Errors.
     """
     pass
 
 
-class DigestValidationError(DownloaderValidationError):
+class DigestValidationError(ValidationError):
     """
     Raised when a file fails to validate a digest checksum.
     """
@@ -22,7 +22,7 @@ class DigestValidationError(DownloaderValidationError):
         return _("A file failed validation due to checksum.")
 
 
-class SizeValidationError(DownloaderValidationError):
+class SizeValidationError(ValidationError):
     """
     Raised when a file fails to validate a size checksum.
     """
