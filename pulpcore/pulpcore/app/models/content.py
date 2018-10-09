@@ -6,6 +6,7 @@ from django.db import models
 from itertools import chain
 
 from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation, storage, fields
+from pulpcore.exceptions import DigestValidationError, SizeValidationError
 
 
 class Artifact(Model):
@@ -106,6 +107,44 @@ class Artifact(Model):
         """
         super().delete(*args, **kwargs)
         self.file.delete(save=False)
+
+    @staticmethod
+    def init_and_validate(file, expected_digests=None, expected_size=None):
+        """
+        Initialize an in-memory Artifact from an uploaded file, and validate digest and size info.
+
+        Args:
+            file (:class:`~pulpcore.app.files.PulpTemporaryUploadedFile`): The
+                PulpTemporaryUploadedFile to create the Artifact from.
+            expected_digests (dict): Keyed on the algorithm name provided by hashlib and stores the
+                value of the expected digest. e.g. {'md5': '912ec803b2ce49e4a541068d495ab570'}
+            expected_size (int): The number of bytes the download is expected to have.
+
+        Raises:
+            :class:`~pulpcore.exceptions.DigestValidationError`: When any of the ``expected_digest``
+                values don't match the digest of the data passed to
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+            :class:`~pulpcore.exceptions.SizeValidationError`: When the ``expected_size`` value
+                doesn't match the size of the data passed to
+                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+
+        Returns:
+            An in-memory, unsaved :class:`~pulpcore.plugin.models.Artifact`
+        """
+        if expected_size:
+            if file.size != expected_size:
+                raise SizeValidationError()
+
+        if expected_digests:
+            for algorithm, expected_digest in expected_digests.items():
+                if expected_digest != file.hashers[algorithm].hexdigest():
+                    raise DigestValidationError()
+
+        attributes = {'size': file.size, 'file': file}
+        for algorithm in Artifact.DIGEST_FIELDS:
+            attributes[algorithm] = file.hashers[algorithm].hexdigest()
+
+        return Artifact(**attributes)
 
 
 class Content(MasterModel):

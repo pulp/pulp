@@ -220,6 +220,6 @@ descendants of BaseDownloader.
 Validation Exceptions
 ---------------------
 
-.. autoclass:: pulpcore.plugin.download.DigestValidationError
-.. autoclass:: pulpcore.plugin.download.SizeValidationError
-.. autoclass:: pulpcore.plugin.download.DownloaderValidationError
+.. autoclass:: pulpcore.exceptions.DigestValidationError
+.. autoclass:: pulpcore.exceptions.SizeValidationError
+.. autoclass:: pulpcore.exceptions.ValidationError
