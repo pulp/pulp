@@ -190,7 +190,10 @@ class ArtifactDownloaderRunner():
                     declarative_artifact.url,
                     **validation_kwargs
                 )
-                downloaders_for_content.append(downloader.run())
+                # Custom downloaders may need extra information to complete the request.
+                downloaders_for_content.append(
+                    downloader.run(extra_data=declarative_artifact.extra_data)
+                )
 
         return downloaders_for_content
 

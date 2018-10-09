@@ -32,12 +32,15 @@ class FileDownloader(BaseDownloader):
         self._path = os.path.abspath(os.path.join(p.netloc, p.path))
         super().__init__(url, **kwargs)
 
-    async def run(self):
+    async def run(self, extra_data=None):
         """
         Read, validate, and compute digests on the `url`. This is a coroutine.
 
         This method provides the same return object type and documented in
         :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
+
+        Args:
+            extra_data (dict): Extra data passed to the downloader.
         """
         async with aiofiles.open(self._path, 'rb') as f_handle:
             while True:

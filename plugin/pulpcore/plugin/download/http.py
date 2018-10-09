@@ -159,7 +159,7 @@ class HttpDownloader(BaseDownloader):
                               url=self.url)
 
     @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError, max_tries=10, giveup=giveup)
-    async def run(self):
+    async def run(self, extra_data=None):
         """
         Download, validate, and compute digests on the `url`. This is a coroutine.
 
@@ -169,6 +169,9 @@ class HttpDownloader(BaseDownloader):
 
         This method provides the same return object type and documented in
         :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
+
+        Args:
+            extra_data (dict): Extra data passed by the downloader.
         """
         async with self.session.get(self.url) as response:
             response.raise_for_status()
