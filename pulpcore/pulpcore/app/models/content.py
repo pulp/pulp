@@ -1,6 +1,8 @@
 """
 Content related Django models.
 """
+import hashlib
+
 from django.core import validators
 from django.db import models
 from itertools import chain
@@ -111,38 +113,55 @@ class Artifact(Model):
     @staticmethod
     def init_and_validate(file, expected_digests=None, expected_size=None):
         """
-        Initialize an in-memory Artifact from an uploaded file, and validate digest and size info.
+        Initialize an in-memory Artifact from a file, and validate digest and size info.
+
+        This accepts both a path to a file on-disk or a
+        :class:`~pulpcore.app.files.PulpTemporaryUploadedFile`.
 
         Args:
-            file (:class:`~pulpcore.app.files.PulpTemporaryUploadedFile`): The
-                PulpTemporaryUploadedFile to create the Artifact from.
+            file (:class:`~pulpcore.app.files.PulpTemporaryUploadedFile` or str): The
+                PulpTemporaryUploadedFile to create the Artifact from or a string with the full path
+                to the file on disk.
             expected_digests (dict): Keyed on the algorithm name provided by hashlib and stores the
                 value of the expected digest. e.g. {'md5': '912ec803b2ce49e4a541068d495ab570'}
             expected_size (int): The number of bytes the download is expected to have.
 
         Raises:
             :class:`~pulpcore.exceptions.DigestValidationError`: When any of the ``expected_digest``
-                values don't match the digest of the data passed to
-                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+                values don't match the digest of the data
             :class:`~pulpcore.exceptions.SizeValidationError`: When the ``expected_size`` value
-                doesn't match the size of the data passed to
-                :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+                doesn't match the size of the data
 
         Returns:
             An in-memory, unsaved :class:`~pulpcore.plugin.models.Artifact`
         """
+        if isinstance(file, str):
+            with open(file, 'rb') as f:
+                hashers = {n: hashlib.new(n) for n in Artifact.DIGEST_FIELDS}
+                size = 0
+                while True:
+                    chunk = f.read(1048576)  # 1 megabyte
+                    if not chunk:
+                        break
+                    for algorithm in hashers.values():
+                        algorithm.update(chunk)
+                    size = size + len(chunk)
+        else:
+            size = file.size
+            hashers = file.hashers
+
         if expected_size:
-            if file.size != expected_size:
+            if size != expected_size:
                 raise SizeValidationError()
 
         if expected_digests:
             for algorithm, expected_digest in expected_digests.items():
-                if expected_digest != file.hashers[algorithm].hexdigest():
+                if expected_digest != hashers[algorithm].hexdigest():
                     raise DigestValidationError()
 
-        attributes = {'size': file.size, 'file': file}
+        attributes = {'size': size, 'file': file}
         for algorithm in Artifact.DIGEST_FIELDS:
-            attributes[algorithm] = file.hashers[algorithm].hexdigest()
+            attributes[algorithm] = hashers[algorithm].hexdigest()
 
         return Artifact(**attributes)
 
