@@ -15,7 +15,8 @@ from django.views.generic import View
 
 from wsgiref.util import FileWrapper
 
-from pulpcore.app.models import Distribution, ContentArtifact
+from ..contentguard import contentguard
+from ..models import Distribution, ContentArtifact
 
 
 log = getLogger(__name__)
@@ -116,11 +117,12 @@ class ContentView(View):
             )
             raise PathNotResolved(path)
 
-    def _match(self, path):
+    def _match_file(self, distribution, path):
         """
         Match either a PublishedArtifact or PublishedMetadata.
 
         Args:
+            distribution (Distribution): A matched distribution.
             path (str): The path component of the URL.
 
         Returns:
@@ -132,7 +134,6 @@ class ContentView(View):
                 associated artifact does not exist.
 
         """
-        distribution = self._match_distribution(path)
         publication = distribution.publication
         if not publication:
             raise PathNotResolved(path)
@@ -285,15 +286,21 @@ class ContentView(View):
             django.http.HttpResponseForbidden: on forbidden.
             django.http.HttpResponseRedirect: on redirect to the streamer.
         """
+        methods = {
+            'django': self._django,
+            'apache': self._apache,
+            'nginx': self._nginx,
+        }
+
         server = settings.CONTENT['WEB_SERVER']
 
         try:
-            responder = self.RESPONDER[server]
+            responder = methods[server]
         except KeyError:
             raise ValueError(_('Web server "{t}" not supported.').format(t=server))
         else:
             disposition = os.path.basename(request.path)
-            response = responder(self, path)
+            response = responder(path)
             response['Content-Disposition'] = 'attachment; filename={n}'.format(n=disposition)
             return response
 
@@ -312,17 +319,14 @@ class ContentView(View):
         """
         try:
             path = self._published_path(request)
-            storage_path = self._match(path)
+            distribution = self._match_distribution(path)
+            storage_path = self._match_file(distribution, path)
+            contentguard.permit(request, distribution)
         except PathNotResolved:
             return HttpResponseNotFound()
+        except PermissionError:
+            return HttpResponseForbidden()
         except ArtifactNotFound:
             return self._redirect(request)
         else:
             return self._dispatch(request, storage_path)
-
-    # Mapping of responder-method based on the type of web server.
-    RESPONDER = {
-        'django': _django,
-        'apache': _apache,
-        'nginx': _nginx,
-    }

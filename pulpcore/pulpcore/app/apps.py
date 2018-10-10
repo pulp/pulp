@@ -71,9 +71,19 @@ class PulpPluginAppConfig(apps.AppConfig):
         self.named_serializers = None
 
     def ready(self):
+        self.import_contentguards()
         self.import_viewsets()
         self.import_serializers()
         self.import_urls()
+
+    def import_contentguards(self):
+        module = 'contentguards'
+        if module_has_submodule(self.module, module):
+            import_module(
+                '{name}.{module}'.format(
+                    name=self.name,
+                    module=module)
+            )
 
     def import_serializers(self):
         # circular import avoidance
