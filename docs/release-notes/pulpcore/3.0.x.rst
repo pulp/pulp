@@ -2,6 +2,11 @@ Pulp 3.0 Release Notes
 ======================
 
 
+3.0.0b13
+========
+
+`Comprehensive list of changes and bugfixes for beta 13 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-10-05T13%3A30%3A00-06%3A00..2018-10-11T15%3A00%3A00-04%3A00+>`_
+
 3.0.0b12
 ========
 
