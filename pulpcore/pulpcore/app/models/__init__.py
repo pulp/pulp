@@ -1,6 +1,5 @@
-# https://docs.djangoproject.com/en/1.10/topics/db/models/#organizing-models-in-a-package
+# https://docs.djangoproject.com/en/dev/topics/db/models/#organizing-models-in-a-package
 
-from .auth import User  # noqa
 from .base import Model, MasterModel  # noqa
 from .generic import (  # noqa
     GenericRelationModel,

@@ -1,9 +1,8 @@
 from gettext import gettext as _
 from getpass import getpass
 
+from django.contrib.auth.models import User
 from django.core.management import BaseCommand, CommandError
-
-from pulpcore.app.models import User
 
 
 class Command(BaseCommand):

@@ -129,10 +129,9 @@ REST_FRAMEWORK = {
     'UPLOADED_FILES_USE_URL': False,
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
 }
-AUTH_USER_MODEL = 'pulp_app.User'
 
 # Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
