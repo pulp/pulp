@@ -2,10 +2,10 @@ from gettext import gettext as _
 
 from django.core import validators
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from pulpcore.app.models import User
 from pulpcore.app.serializers import IdentityField, ModelSerializer
 
 
