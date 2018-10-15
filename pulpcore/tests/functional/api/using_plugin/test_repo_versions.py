@@ -26,7 +26,6 @@ from tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
     FILE_FIXTURE_MANIFEST_URL,
-    FILE_LARGE_FIXTURE_COUNT,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH,
@@ -214,7 +213,7 @@ class SyncChangeRepoVersionTestCase(unittest.TestCase):
         1. Create a repository, and a remote.
         2. Sync the repository an arbitrary number of times.
         3. Verify that the repository version is equal to the previous number
-        of syncs.
+           of syncs.
         """
         cfg = config.get_config()
         client = api.Client(cfg, api.json_handler)
@@ -554,7 +553,6 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         populate_pulp(cls.cfg, url=FILE_LARGE_FIXTURE_MANIFEST_URL)
         cls.client = api.Client(cls.cfg, api.page_handler)
         cls.content = cls.client.get(FILE_CONTENT_PATH)
-        assert len(cls.content), FILE_LARGE_FIXTURE_COUNT
 
     def test_same_repository(self):
         """Test ``base_version`` for the same repository.
@@ -572,7 +570,9 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         # create repo version 1
         repo = self.create_sync_repo()
         version_content = []
-        version_content.append(get_content(repo))
+        version_content.append([
+            self.remove_created_key(item) for item in get_content(repo)
+        ])
         self.assertIsNone(get_versions(repo)[0]['base_version'])
 
         content = self.content.pop()
@@ -596,7 +596,9 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         self.assertEqual(get_versions(repo)[2]['base_version'], base_version)
 
         # assert that content on version 1 is equal to content on version 3
-        version_content.append(get_content(repo))
+        version_content.append([
+            self.remove_created_key(item) for item in get_content(repo)
+        ])
         self.assertEqual(
             version_content[0],
             version_content[1],
@@ -617,7 +619,9 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         # create repo A
         repo = self.create_sync_repo()
         version_content = []
-        version_content.append(get_content(repo))
+        version_content.append([
+            self.remove_created_key(item) for item in get_content(repo)
+        ])
         self.assertIsNone(get_versions(repo)[0]['base_version'])
 
         # get repo A version 1 to be used as base_version
@@ -639,7 +643,10 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
 
         # assert that content on version 1 of repo A is equal to content on
         # version 1 repo B
-        version_content.append(get_content(repo))
+        version_content.append([
+            self.remove_created_key(item) for item in get_content(repo)
+        ])
+
         self.assertEqual(
             version_content[0],
             version_content[1],
@@ -653,12 +660,14 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         """
         # create repo version 1
         repo = self.create_sync_repo()
-        version_1_content = get_content(repo)
+        version_1_content = [
+            self.remove_created_key(item) for item in get_content(repo)
+        ]
         self.assertIsNone(get_versions(repo)[0]['base_version'])
 
         # create repo version 2 from version 1
         base_version = get_versions(repo)[0]['_href']
-        added_content = self.content.pop()
+        added_content = self.remove_created_key(self.content.pop())
         removed_content = choice(version_1_content)
         self.client.post(
             repo['_versions_href'],
@@ -669,7 +678,9 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
             }
         )
         repo = self.client.get(repo['_href'])
-        version_2_content = get_content(repo)
+        version_2_content = [
+            self.remove_created_key(item) for item in get_content(repo)
+        ]
 
         # assert that base_version of the version 2 points to version 1
         self.assertEqual(get_versions(repo)[1]['base_version'], base_version)
@@ -710,3 +721,8 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         self.addCleanup(self.client.delete, remote['_href'])
         sync(self.cfg, remote, repo)
         return self.client.get(repo['_href'])
+
+    @staticmethod
+    def remove_created_key(dic):
+        """Given a dict remove the key `created`."""
+        return {k: v for k, v in dic.items() if k != 'created'}
