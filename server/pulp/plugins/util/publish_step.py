@@ -1304,8 +1304,22 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         :param unit: Content type unit
         :type unit: ContentUnit
         """
-        storage_dir = os.path.join(pulp_config.get('server', 'storage_dir'), 'content', 'units')
-        relative_content_unit_path = os.path.relpath(item.storage_path, storage_dir)
+        cdn_path = item.pulp_user_metadata.get('cdn_path')
+        if cdn_path:
+            relative_content_unit_path = cdn_path
+            # create symlink with the value provided in cdn_path which would point to the actual
+            # storage_path location
+            # rsync will follow the symlink and rsync the storage_path with value of the previously
+            # created symlink
+            cdn_symlink = os.path.join(self.parent.temp_dir_symlink, cdn_path.lstrip("/"))
+            os.makedirs(os.path.dirname(cdn_symlink))
+            _logger.debug("LN %s -> %s " % (cdn_symlink, item.storage_path))
+            if os.path.islink(cdn_symlink):
+                os.remove(cdn_symlink)
+            os.symlink(item.storage_path, cdn_symlink)
+        else:
+            storage_dir = os.path.join(pulp_config.get('server', 'storage_dir'), 'content', 'units')
+            relative_content_unit_path = os.path.relpath(item.storage_path, storage_dir)
         self.parent.content_unit_file_list.append(relative_content_unit_path)
         if self.published_unit_path:
             filename = item.get_symlink_name()
@@ -1372,9 +1386,12 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
         """
 
         storage_dir = pulp_config.get('server', 'storage_dir')
-        content_base = os.path.join(storage_dir, "content", "units", unit.type_id)
-        rel_unit_path = unit.storage_path.replace(content_base, '').lstrip("/")
+        content_base = os.path.join(storage_dir, "content", "units")
+        cdn_path = unit.pulp_user_metadata.get('cdn_path')
+        if cdn_path:
+            rel_unit_path = cdn_path.lstrip("/")
+        else:
+            rel_unit_path = unit.storage_path.replace(content_base, '').lstrip("/")
         remote_content_base = self.parent.get_units_directory_dest_path()
-        remote_content_type_dir = unit.type_id
 
-        return os.path.join(remote_content_base, remote_content_type_dir, rel_unit_path)
+        return os.path.join(remote_content_base, rel_unit_path)

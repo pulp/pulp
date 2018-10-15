@@ -315,6 +315,7 @@ class Publisher(PublishStep):
         :ivar symlink_list: list of symlinks to rsync
         :ivar content_unit_file_list: list of content units to rsync
         :ivar symlink_src: path to directory containing all symlinks
+        :ivar temp_dir_symlink: path to the temp dir containing symlinks to the units storage_path
         """
 
         super(Publisher, self).__init__("Repository publish", repo,
@@ -367,6 +368,7 @@ class Publisher(PublishStep):
         self.symlink_list = []
         self.content_unit_file_list = []
         self.symlink_src = os.path.join(self.get_working_dir(), '.relative/')
+        self.temp_dir_symlink = os.path.join(self.get_working_dir(), 'tmp_publish')
 
         self._add_necesary_steps(date_filter=date_filter, config=config)
 
