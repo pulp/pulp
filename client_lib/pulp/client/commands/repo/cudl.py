@@ -517,7 +517,11 @@ def _default_summary_view(repo_list, prompt):
     # left for the name (sort of; they have a status column that isn't relevant
     # here).
 
-    terminal_width = prompt.terminal_size()[0]
+    # cron does not have tty
+    try:
+        terminal_width = prompt.terminal_size()[0]
+    except:
+        terminal_width = 8
     line_template = '%s  %s'
 
     if isinstance(repo_list, dict) and repo_list != {}:
