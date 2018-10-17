@@ -17,6 +17,12 @@ Content
   through its web application. To serve this content,  have a WSGI compatible webserver route urls
   matching ``/pulp/content/`` to the Pulp WSGI application.
 
+  If you wish to serve content over both http and https, you can use a prefix when setting
+  base_paths for your Distributions to indicate whether the content will be served via http or
+  https. For example, you might prefix all your distribution paths with ``/https/.../`` or
+  ``/http/.../`` and then proxy your webserver's https requests to ``/pulp/content/https/`` and http
+  requests to ``/pulp/content/http/``.
+
 Plugin Views
   Plugins can contribute views anywhere in the url namespace are are not restricted to ``/pulp/``.
   Refer to your plugin documentation to understand the url needs of any given plugin. Another option
