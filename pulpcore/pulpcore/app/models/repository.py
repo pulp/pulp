@@ -194,8 +194,6 @@ class RepositoryVersion(Model):
         >>> with RepositoryVersion.create(repository) as new_version:
         >>>     new_version.add_content(content_q)
         >>>     new_version.remove_content(content_q)
-        >>>     changeset = ChangeSet(remote, new_version, additions=additions,
-        >>>                      removals=removals)
         >>>
 
     Fields:

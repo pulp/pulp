@@ -125,17 +125,6 @@ in the :ref:`understanding-models` section:
 
 The remote implementation suggestion above allows plugin writer to have an understanding and
 control at a low level.
-The plugin API has a higher level, more simplified, API which introduces the concept of
-:class:`~pulpcore.plugin.changeset.ChangeSet`.
-It allows plugin writer:
-
-* to specify a set of changes (which :class:`~pulpcore.plugin.models.Content` to add or to remove)
-  to be made to a repository
-* apply those changes (add to a repository, remove from a repository, download files if needed)
-
-Check :ref:`documentation and detailed examples <changeset-docs>` for the
-:class:`~pulpcore.plugin.changeset.ChangeSet` as well as `the implementation of File plugin remote
-<https://github.com/pulp/pulp_file/blob/master/pulp_file/app/models.py>`_ which uses it.
 
 .. _define-publisher:
 
