@@ -2,11 +2,14 @@ from gettext import gettext as _
 
 from django.core import validators
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from pulpcore.app.serializers import IdentityField, ModelSerializer
+
+
+User = get_user_model()
 
 
 class PasswordSerializer(serializers.CharField):
