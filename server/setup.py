@@ -7,6 +7,8 @@ PYTHON_MAJOR_MINOR = '%s.%s' % (sys.version_info[0], sys.version_info[1])
 # Django 1.8.0 requires Python >= 2.7
 if PYTHON_MAJOR_MINOR < '2.7':
     DJANGO_REQUIRES = 'django >=1.4.0, <1.8.0'
+elif PYTHON_MAJOR_MINOR < '3.0':
+    DJANGO_REQUIRES = 'django>=1.4.0, <2.0.0'
 else:
     DJANGO_REQUIRES = 'django>=1.4.0'
 
