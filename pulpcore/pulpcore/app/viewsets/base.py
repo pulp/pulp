@@ -248,8 +248,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         """Return the depth that this ViewSet is nested."""
         if not cls.parent_lookup_kwargs:
             return 1
-        else:
-            return max([len(v.split("__")) for k, v in cls.parent_lookup_kwargs.items()])
+        return max([len(v.split("__")) for k, v in cls.parent_lookup_kwargs.items()])
 
     def get_parent_field_and_object(self):
         """
@@ -266,7 +265,7 @@ class NamedModelViewSet(viewsets.GenericViewSet):
         if self.parent_lookup_kwargs:
             # Use the parent_lookup_kwargs and the url kwargs (self.kwargs) to retrieve the object
             for key, lookup in self.parent_lookup_kwargs.items():
-                parent_field, unused, parent_lookup = lookup.partition('__')
+                parent_field, _, parent_lookup = lookup.partition('__')
                 filters[parent_lookup] = self.kwargs[key]
             return parent_field, get_object_or_404(self.parent_viewset.queryset, **filters)
 

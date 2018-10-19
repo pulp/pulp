@@ -241,7 +241,8 @@ class RepositoryVersion(Model):
             >>>
         """
         relationships = RepositoryContent.objects.filter(
-            repository=self.repository, version_added__number__lte=self.number).exclude(
+            repository=self.repository, version_added__number__lte=self.number
+        ).exclude(
             version_removed__number__lte=self.number
         )
         return Content.objects.filter(version_memberships__in=relationships)
