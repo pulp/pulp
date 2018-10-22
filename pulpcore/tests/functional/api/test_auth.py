@@ -19,13 +19,15 @@ class AuthTestCase(unittest.TestCase):
     """Test Pulp3 Authentication."""
 
     def setUp(self):
-        """Create class-wide variables."""
+        """Set common variable."""
         self.cfg = config.get_config()
 
     def test_base_auth_success(self):
         """Perform HTTP basic authentication with valid credentials.
 
         Assert that a response indicating success is returned.
+
+        Assertion is made by the response_handler.
         """
         api.Client(self.cfg, api.json_handler).get(
             USER_PATH,
@@ -38,8 +40,15 @@ class AuthTestCase(unittest.TestCase):
         Assert that a response indicating failure is returned.
         """
         self.cfg.pulp_auth[1] = utils.uuid4()  # randomize password
+        response = api.Client(self.cfg, api.echo_handler).get(
+            USER_PATH,
+            auth=HTTPBasicAuth(*self.cfg.pulp_auth),
+        )
         with self.assertRaises(HTTPError):
-            api.Client(self.cfg, api.json_handler).get(
-                USER_PATH,
-                auth=HTTPBasicAuth(*self.cfg.pulp_auth),
+            response.raise_for_status()
+        for key in ('invalid', 'username', 'password'):
+            self.assertIn(
+                key,
+                response.json()['detail'].lower(),
+                response.json()
             )
