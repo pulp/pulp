@@ -114,11 +114,51 @@ class TestContentView(TestCase):
     @patch(MODULE + '.URL')
     @patch(MODULE + '.pulp_conf')
     @patch(MODULE + '.HttpResponseRedirect')
-    def test_redirect(self, redirect, pulp_conf, url):
+    def test_redirect_default_host(self, redirect, pulp_conf, url):
         remote_ip = '172.10.08.20'
         scheme = 'https'
-        host = 'localhost'
-        port = 443
+        host = self.environ['SERVER_NAME']
+        port = self.environ['SERVER_PORT']
+        path = '/var/pulp/content/zoo/lion'
+        redirect_path = '/streamer'
+        query = 'arch=x86'
+        # this is in sync with server/pulp/server/config.py
+        # as the actual server config is not used here
+        conf = {
+            'authentication': {
+                'rsa_key': '/tmp/key'
+            },
+            'lazy': {
+                'enabled': 'true',
+                'redirect_host': '',
+                'redirect_port': '',
+                'redirect_path': redirect_path,
+            }
+        }
+        pulp_conf.get.side_effect = lambda s, p: conf.get(s).get(p)
+        self.environ['QUERY_STRING'] = query
+        self.environ['REMOTE_ADDR'] = remote_ip
+        request = Mock(environ=self.environ, path_info=path)
+        key = Mock()
+
+        # test
+        reply = ContentView.redirect(request, key)
+
+        # validation
+        url.assert_called_once_with(ContentView.urljoin(
+            scheme, host, port, redirect_path, path, query))
+        url.return_value.sign.assert_called_once_with(key, remote_ip=remote_ip)
+        redirect.assert_called_once_with(str(url.return_value.sign.return_value))
+        self.assertEqual(reply, redirect.return_value)
+
+    @patch(MODULE + '.URL')
+    @patch(MODULE + '.pulp_conf')
+    @patch(MODULE + '.HttpResponseRedirect')
+    def test_redirect_configured_host_port(self, redirect, pulp_conf, url):
+        remote_ip = '172.10.08.20'
+        scheme = 'https'
+        host = 'pulptest.example.com'
+        port = 8443
         path = '/var/pulp/content/zoo/lion'
         redirect_path = '/streamer'
         query = 'arch=x86'
