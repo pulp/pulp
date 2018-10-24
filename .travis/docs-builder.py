@@ -10,8 +10,8 @@ import yaml
 
 WORKING_DIR = os.environ['TRAVIS_BUILD_DIR']
 
-VERSION_REGEX = "(\s*)(version)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
-RELEASE_REGEX = "(\s*)(release)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
+VERSION_REGEX = r"(\s*)(version)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
+RELEASE_REGEX = r"(\s*)(release)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
 
 LATEST = '2.16'
 

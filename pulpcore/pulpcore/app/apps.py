@@ -90,8 +90,7 @@ class PulpPluginAppConfig(apps.AppConfig):
                 try:
                     # Any subclass of ModelSerializer that isn't itself ModelSerializer
                     # gets registered in the named_serializers registry.
-                    if (obj is not ModelSerializer and
-                            issubclass(obj, ModelSerializer)):
+                    if obj is not ModelSerializer and issubclass(obj, ModelSerializer):
                         self.named_serializers[objname] = obj
                 except TypeError:
                     # obj isn't a class, issubclass exploded but obj can be safely filtered out
