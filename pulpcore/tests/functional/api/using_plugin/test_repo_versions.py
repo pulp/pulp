@@ -570,9 +570,12 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         # create repo version 1
         repo = self.create_sync_repo()
         version_content = []
-        version_content.append([
-            self.remove_created_key(item) for item in get_content(repo)
-        ])
+        version_content.append(
+            sorted(
+                [self.remove_created_key(item) for item in get_content(repo)],
+                key=lambda item: item['_href'],
+            )
+        )
         self.assertIsNone(get_versions(repo)[0]['base_version'])
 
         content = self.content.pop()
@@ -596,9 +599,12 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         self.assertEqual(get_versions(repo)[2]['base_version'], base_version)
 
         # assert that content on version 1 is equal to content on version 3
-        version_content.append([
-            self.remove_created_key(item) for item in get_content(repo)
-        ])
+        version_content.append(
+            sorted(
+                [self.remove_created_key(item) for item in get_content(repo)],
+                key=lambda item: item['_href'],
+            )
+        )
         self.assertEqual(
             version_content[0],
             version_content[1],
@@ -619,9 +625,12 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
         # create repo A
         repo = self.create_sync_repo()
         version_content = []
-        version_content.append([
-            self.remove_created_key(item) for item in get_content(repo)
-        ])
+        version_content.append(
+            sorted(
+                [self.remove_created_key(item) for item in get_content(repo)],
+                key=lambda item: item['_href'],
+            )
+        )
         self.assertIsNone(get_versions(repo)[0]['base_version'])
 
         # get repo A version 1 to be used as base_version
@@ -643,9 +652,12 @@ class CreateRepoBaseVersionTestCase(unittest.TestCase):
 
         # assert that content on version 1 of repo A is equal to content on
         # version 1 repo B
-        version_content.append([
-            self.remove_created_key(item) for item in get_content(repo)
-        ])
+        version_content.append(
+            sorted(
+                [self.remove_created_key(item) for item in get_content(repo)],
+                key=lambda item: item['_href'],
+            )
+        )
 
         self.assertEqual(
             version_content[0],
