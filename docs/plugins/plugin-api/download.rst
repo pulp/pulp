@@ -20,7 +20,7 @@ Basic Downloading
 
 The most basic downloading from a url can be done like this:
 
->>> downloader = HttpDownload('http://example.com/')
+>>> downloader = HttpDownloader('http://example.com/')
 >>> result = downloader.fetch()
 
 The example above downloads the data synchronously. The
@@ -37,8 +37,8 @@ Any downloader in the ``pulpcore.plugin.download`` package can be run in paralle
 that ``asyncio`` can schedule in parallel. Consider this example:
 
 >>> download_coroutines = [
->>>     HttpDownload('http://example.com/').run(),
->>>     HttpDownload('http://pulpproject.org/').run(),
+>>>     HttpDownloader('http://example.com/').run(),
+>>>     HttpDownloader('http://pulpproject.org/').run(),
 >>> ]
 >>>
 >>> loop = asyncio.get_event_loop()
@@ -86,7 +86,7 @@ supported urls.
     information.
 
 .. note::
-    All :class:`~pulpcore.plugin.download.HttpDownload` downloaders produced by the same
+    All :class:`~pulpcore.plugin.download.HttpDownloader` downloaders produced by the same
     remote instance share an `aiohttp` session, which provides a connection pool, connection
     reusage and keep-alives shared across all downloaders produced by a single remote.
 
