@@ -73,12 +73,12 @@ class HttpDownloader(BaseDownloader):
 
     Parallel Download:
         >>> download_coroutines = [
-        >>>     HttpDownload('http://example.com/').run(),
-        >>>     HttpDownload('http://pulpproject.org/').run(),
+        >>>     HttpDownloader('http://example.com/').run(),
+        >>>     HttpDownloader('http://pulpproject.org/').run(),
         >>> ]
         >>>
         >>> loop = asyncio.get_event_loop()
-        >>> done, not_done = loop.run_until_complete(asyncio.wait([download_coroutines]))
+        >>> done, not_done = loop.run_until_complete(asyncio.wait(download_coroutines))
         >>>
         >>> for task in done:
         >>>     try:
@@ -178,5 +178,5 @@ class HttpDownloader(BaseDownloader):
             to_return = await self._handle_response(response)
             await response.release()
         if self._close_session_on_finalize:
-            self.session.close()
+            await self.session.close()
         return to_return
