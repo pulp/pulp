@@ -116,6 +116,7 @@ Redmine Fields
 |             | - ``Story`` New feature or functionality.                                         |
 |             | - ``Refactor`` Improvement that will not be visible to the user in any way.       |
 |             | - ``Task`` Work that will not be a part of released code.                         |
+|             | - ``Test`` Requested functional test.                                             |
 +-------------+-----------------------------------------------------------------------------------+
 | Subject     | - For an ``Issue``, summary of the situation and the unexpected result.           |
 |             | - For a ``Story``, takes the form "As a [user/dev/etc] I can ..."                 |
