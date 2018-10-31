@@ -104,7 +104,7 @@ class Remote(MasterModel):
     username = models.TextField(blank=True)
     password = models.TextField(blank=True)
     last_synced = models.DateTimeField(blank=True, null=True)
-    connection_limit = models.PositiveIntegerField(default=5)
+    connection_limit = models.PositiveIntegerField(default=20)
 
     class Meta:
         default_related_name = 'remotes'
