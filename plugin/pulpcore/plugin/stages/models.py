@@ -27,7 +27,7 @@ class DeclarativeArtifact:
         ValueError: If `artifact`, `url`, `relative_path`, or `remote` are not specified.
     """
 
-    __slots__ = ('artifact', 'url', 'relative_path', 'remote', 'extra_data')
+    __slots__ = ('artifact', 'url', 'relative_path', 'remote', 'extra_data', 'digest_present')
 
     def __init__(self, artifact=None, url=None, relative_path=None, remote=None, extra_data=None):
         if not url:
@@ -43,6 +43,8 @@ class DeclarativeArtifact:
         self.relative_path = relative_path
         self.remote = remote
         self.extra_data = extra_data or {}
+        # If no digest is present, we need to check the presence after downloading
+        self.digest_present = False
 
 
 class DeclarativeContent:

@@ -56,6 +56,7 @@ class QueryExistingArtifacts(Stage):
                         if digest_value:
                             key = {digest_name: digest_value}
                             one_artifact_q &= Q(**key)
+                            declarative_artifact.digest_present = True
                     if one_artifact_q:
                         all_artifacts_q |= one_artifact_q
 
@@ -297,6 +298,16 @@ class ArtifactSaver(Stage):
             artifacts_to_save = []
             for declarative_content in batch:
                 for declarative_artifact in declarative_content.d_artifacts:
+                    if not declarative_artifact.digest_present:
+                        # Artifact may exist in the database,
+                        # but we did not know the digest before downloading
+                        digest_name = declarative_artifact.artifact.DIGEST_FIELDS[0]
+                        digest_value = getattr(declarative_artifact.artifact, digest_name)
+                        if digest_value:
+                            existing_artifact = Artifact.objects.filter(
+                                Q(**{digest_name: digest_value}))
+                            if existing_artifact:
+                                declarative_artifact.artifact = existing_artifact[0]
                     if declarative_artifact.artifact.pk is None:
                         declarative_artifact.artifact.file = str(declarative_artifact.artifact.file)
                         artifacts_to_save.append(declarative_artifact.artifact)
