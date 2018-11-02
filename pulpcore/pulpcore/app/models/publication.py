@@ -107,21 +107,54 @@ class Publication(Model):
             CreatedResource.objects.filter(object_id=self.pk).delete()
             super().delete(**kwargs)
 
+    def update_distributions(self, model=None):
+        """
+        Update distributions with this publication.
+
+        This supports the auto-distribution feature by updating the publication on
+        distributions with matching repository and publisher. By doing this, this
+        publication will be distributed.  This method may only be called after
+        setting complete=True and saved.
+
+        Args:
+            model (pulpcore.app.models.BaseDistribution): A distribution model used.
+                The Distribution model is used when not specified.
+
+        """
+        model = model or Distribution
+        distributions = model.objects.filter(
+            publisher=self.publisher,
+            repository=self.repository)
+        for distribution in distributions:
+            distribution.publication = self
+            distribution.save()
+
     def __enter__(self):
+        """
+        Enter context.
+
+        Returns:
+            Publication: self
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not exc_val:
-            with transaction.atomic():
-                self.complete = True
-                self.save()
+        """
+        Exit the context.
 
-                # Auto-Distribution
-                distributions = Distribution.objects.filter(publisher=self.publisher,
-                                                            repository=self.repository)
-                for distribution in distributions:
-                    distribution.publication = self
-                    distribution.save()
+        Set the complete=True, create the publication, and update distributions
+        configured for auto-distribution (as needed).
+
+        Args:
+            exc_type (Type): (optional) Type of exception raised.
+            exc_val (Exception): (optional) Instance of exception raised.
+            exc_tb (types.TracebackType): (optional) stack trace.
+        """
+        if not exc_val:
+            self.complete = True
+            with transaction.atomic():
+                self.save()
+                self.update_distributions()
         else:
             self.delete()
 
