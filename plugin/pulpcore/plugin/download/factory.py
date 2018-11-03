@@ -1,9 +1,11 @@
-import aiohttp
+import asyncio
 import atexit
 import copy
 from gettext import gettext as _
 import ssl
 from urllib.parse import urlparse
+
+import aiohttp
 
 from .http import HttpDownloader
 from .file import FileDownloader
@@ -20,7 +22,8 @@ class DownloaderFactory:
     """
     A factory for creating downloader objects that are configured from with remote settings.
 
-    The DownloadFactory correctly handles SSL settings, basic auth settings, and proxy settings.
+    The DownloadFactory correctly handles SSL settings, basic auth settings, proxy settings, and
+    connection limit settings.
 
     It supports handling urls with the `http`, `https`, and `file` protocols. The
     ``downloader_overrides`` option allows the caller to specify the download class to be used for
@@ -38,6 +41,10 @@ class DownloaderFactory:
     http://aiohttp.readthedocs.io/en/stable/client_quickstart.html#timeouts Behaviorally, it should
     allow for an active download to be arbitrarily long, while still detecting dead or closed
     sessions even when TCPKeepAlive is disabled.
+
+    Also for http and https urls, even though HTTP 1.1 is used, the TCP connection is setup and
+    closed with each request. This is done for compatibility reasons due to various issues related
+    to session continuation implementation in various servers.
     """
 
     def __init__(self, remote, downloader_overrides=None):
@@ -57,16 +64,19 @@ class DownloaderFactory:
         self._handler_map = {'https': self._http_or_https, 'http': self._http_or_https,
                              'file': self._generic}
         self._session = self._make_aiohttp_session_from_remote()
+        self._semaphore = asyncio.Semaphore(value=remote.connection_limit)
         atexit.register(self._session.close)
 
     def _make_aiohttp_session_from_remote(self):
         """
         Build a :class:`aiohttp.ClientSession` from the remote's settings and timing settings.
 
+        This method is what provides the force_close of the TCP connection with each request.
+
         Returns:
             :class:`aiohttp.ClientSession`
         """
-        tcp_conn_opts = {}
+        tcp_conn_opts = {'force_close': True}
 
         sslcontext = None
         if self._remote.ssl_ca_certificate.name:
@@ -90,9 +100,6 @@ class DownloaderFactory:
         if self._remote.ssl_validation:
             tcp_conn_opts['verify_ssl'] = self._remote.ssl_validation
 
-        if self._remote.connection_limit:
-            tcp_conn_opts['limit'] = self._remote.connection_limit
-
         conn = aiohttp.TCPConnector(**tcp_conn_opts)
 
         auth_options = {}
@@ -109,6 +116,8 @@ class DownloaderFactory:
         """
         Build a downloader which can optionally verify integrity using either digest or size.
 
+        The built downloader also provides concurrency restriction if specified by the remote.
+
         Args:
             url (str): The download URL.
             kwargs (dict): All kwargs are passed along to the downloader. At a minimum, these
@@ -118,6 +127,7 @@ class DownloaderFactory:
             subclass of :class:`~pulpcore.plugin.download.BaseDownloader`: A downloader that
             is configured with the remote settings.
         """
+        kwargs['semaphore'] = self._semaphore
         scheme = urlparse(url).scheme.lower()
         try:
             builder = self._handler_map[scheme]

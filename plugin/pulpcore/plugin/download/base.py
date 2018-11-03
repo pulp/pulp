@@ -61,7 +61,8 @@ class BaseDownloader:
             ``custom_file_object`` option was specified, otherwise None.
     """
 
-    def __init__(self, url, custom_file_object=None, expected_digests=None, expected_size=None):
+    def __init__(self, url, custom_file_object=None, expected_digests=None, expected_size=None,
+                 semaphore=None):
         """
         Create a BaseDownloader object. This is expected to be called by all subclasses.
 
@@ -73,6 +74,8 @@ class BaseDownloader:
             expected_digests (dict): Keyed on the algorithm name provided by hashlib and stores the
                 value of the expected digest. e.g. {'md5': '912ec803b2ce49e4a541068d495ab570'}
             expected_size (int): The number of bytes the download is expected to have.
+            semaphore (asyncio.Semaphore): A semaphore the downloader must acquire before running.
+                Useful for limiting the number of outstanding downloaders in various ways.
         """
         self.url = url
         if custom_file_object:
@@ -83,6 +86,10 @@ class BaseDownloader:
             self.path = self._writer.name
         self.expected_digests = expected_digests
         self.expected_size = expected_size
+        if semaphore:
+            self.semaphore = semaphore
+        else:
+            self.semaphore = asyncio.Semaphore()  # This will always be acquired
         self._digests = {n: hashlib.new(n) for n in Artifact.DIGEST_FIELDS}
         self._size = 0
 
@@ -184,7 +191,25 @@ class BaseDownloader:
             if self._size != self.expected_size:
                 raise SizeValidationError()
 
-    async def run(self):
+    async def run(self, extra_data=None):
+        """
+        Run the downloader with concurrency restriction.
+
+        This method acquires `self.semaphore` before calling the actual download implementation
+        contained in `_run()`. This ensures that the semaphore stays acquired even as the `backoff`
+        decorator on `_run()`, handles backoff-and-retry logic.
+
+        Args:
+            extra_data (dict): Extra data passed to the downloader.
+
+        Returns:
+            :class:`~pulpcore.plugin.download.DownloadResult` from `_run()`.
+
+        """
+        async with self.semaphore:
+            return await self._run(extra_data)
+
+    async def _run(self, extra_data=None):
         """
         Run the downloader.
 
@@ -202,6 +227,13 @@ class BaseDownloader:
         ``artifact_attributes`` value of the
         :class:`~pulpcore.plugin.download.DownloadResult` is usually set to the
         :attr:`~pulpcore.plugin.download.BaseDownloader.artifact_attributes` property value.
+
+        This method is called from :meth:`~pulpcore.plugin.download.BaseDownloader.run` which
+        handles concurrency restriction. Thus, by the time this method is called, the download can
+        occur without violating the concurrency restriction.
+
+        Args:
+            extra_data (dict): Extra data passed to the downloader.
 
         Returns:
             :class:`~pulpcore.plugin.download.DownloadResult`

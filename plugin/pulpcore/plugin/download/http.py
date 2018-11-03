@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 logging.getLogger('backoff').addHandler(logging.StreamHandler())
 
 
-def giveup(exc):
+def http_giveup(exc):
     """
     Inspect a raised exception and determine if we should give up.
 
@@ -53,6 +53,10 @@ class HttpDownloader(BaseDownloader):
     http://aiohttp.readthedocs.io/en/stable/client_quickstart.html#timeouts Behaviorally, it should
     allow for an active download to be arbitrarily long, while still detecting dead or closed
     sessions even when TCPKeepAlive is disabled.
+
+    If a session is not provided, the one created will force TCP connection closure after each
+    request. This is done for compatibility reasons due to various issues related to session
+    continuation implementation in various servers.
 
     `aiohttp.ClientSession` objects allows you to configure options that will apply to all
     downloaders using that session such as auth, timeouts, headers, etc. For more info on these
@@ -128,7 +132,8 @@ class HttpDownloader(BaseDownloader):
             self._close_session_on_finalize = False
         else:
             timeout = aiohttp.ClientTimeout(total=None, sock_connect=600, sock_read=600)
-            self.session = aiohttp.ClientSession(timeout=timeout)
+            conn = aiohttp.TCPConnector({'force_close': True})
+            self.session = aiohttp.ClientSession(connector=conn, timeout=timeout)
             self._close_session_on_finalize = True
         self.auth = auth
         self.proxy = proxy
@@ -158,8 +163,9 @@ class HttpDownloader(BaseDownloader):
         return DownloadResult(path=self.path, artifact_attributes=self.artifact_attributes,
                               url=self.url)
 
-    @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError, max_tries=10, giveup=giveup)
-    async def run(self, extra_data=None):
+    @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError,
+                          max_tries=10, giveup=http_giveup)
+    async def _run(self, extra_data=None):
         """
         Download, validate, and compute digests on the `url`. This is a coroutine.
 
@@ -168,7 +174,7 @@ class HttpDownloader(BaseDownloader):
         a final exception to be raised.
 
         This method provides the same return object type and documented in
-        :meth:`~pulpcore.plugin.download.BaseDownloader.run`.
+        :meth:`~pulpcore.plugin.download.BaseDownloader._run`.
 
         Args:
             extra_data (dict): Extra data passed by the downloader.
