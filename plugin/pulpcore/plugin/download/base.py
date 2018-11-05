@@ -12,7 +12,7 @@ from pulpcore.exceptions import DigestValidationError, SizeValidationError
 log = logging.getLogger(__name__)
 
 
-DownloadResult = namedtuple('DownloadResult', ['url', 'artifact_attributes', 'path'])
+DownloadResult = namedtuple('DownloadResult', ['url', 'artifact_attributes', 'path', 'headers'])
 """
 Args:
     url (str): The url corresponding with the download.
@@ -20,6 +20,8 @@ Args:
     artifact_attributes (dict): Contains keys corresponding with
         :class:`~pulpcore.plugin.models.Artifact` fields. This includes the computed digest values
         along with size information.
+    headers (dict): HTTP response headers. The keys are header names. The values are header
+        content.
 """
 
 

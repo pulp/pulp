@@ -156,7 +156,7 @@ class HttpDownloader(BaseDownloader):
                 break  # the download is done
             self.handle_data(chunk)
         return DownloadResult(path=self.path, artifact_attributes=self.artifact_attributes,
-                              url=self.url)
+                              url=self.url, headers=response.headers)
 
     @backoff.on_exception(backoff.expo, aiohttp.ClientResponseError, max_tries=10, giveup=giveup)
     async def run(self, extra_data=None):
