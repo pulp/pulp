@@ -55,7 +55,7 @@ class Repository(Model):
 
 class Remote(MasterModel):
     """
-    A content remote.
+    A remote source for content.
 
     Fields:
 
@@ -73,12 +73,28 @@ class Remote(MasterModel):
         password (models.TextField): The password to be used for authentication when syncing.
         last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
         connection_limit (models.PositiveIntegerField): Total number of simultaneous connections.
+        policy (models.TextField): The policy to use when downloading content.
 
     Relations:
 
         repository (models.ForeignKey): The repository that owns this Remote
     """
     TYPE = 'remote'
+
+    # Constants for the ChoiceField 'policy'
+    IMMEDIATE = 'immediate'
+    ON_DEMAND = 'on_demand'
+    CACHE_ONLY = 'cache_only'
+
+    POLICY_CHOICES = (
+        (IMMEDIATE, 'When syncing, download all metadata and content now.'),
+        (ON_DEMAND, 'When syncing, download metadata now, but download content on demand as '
+                    'requested by clients. On demand downloaded content is saved to be served to '
+                    'future clients.'),
+        (CACHE_ONLY, 'When syncing, download metadata now, but download content on demand as '
+                     'requested by clients. On demand downloaded content is *not* saved to be '
+                     'served to future clients.')
+    )
 
     def tls_storage_path(self, name):
         """
@@ -105,6 +121,7 @@ class Remote(MasterModel):
     password = models.TextField(blank=True)
     last_synced = models.DateTimeField(blank=True, null=True)
     connection_limit = models.PositiveIntegerField(default=20)
+    policy = models.TextField(choices=POLICY_CHOICES, default=IMMEDIATE)
 
     class Meta:
         default_related_name = 'remotes'

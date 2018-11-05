@@ -27,6 +27,7 @@ TASK_FINAL_STATES = (TASK_STATES.SKIPPED, TASK_STATES.COMPLETED, TASK_STATES.FAI
 #: Tasks in an incomplete state have not finished their work yet.
 TASK_INCOMPLETE_STATES = (TASK_STATES.WAITING, TASK_STATES.RUNNING)
 
+
 SYNC_MODES = SimpleNamespace(
     ADDITIVE='additive',
     MIRROR='mirror'
@@ -35,5 +36,6 @@ SYNC_CHOICES = (
     (SYNC_MODES.ADDITIVE, 'Add new content from the remote repository.'),
     (SYNC_MODES.MIRROR, 'Add new content and remove content is no longer in the remote repository.')
 )
+
 
 API_ROOT = 'pulp/api/v3/'

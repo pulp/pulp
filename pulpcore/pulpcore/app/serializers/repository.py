@@ -120,6 +120,12 @@ class RemoteSerializer(MasterModelSerializer):
         required=False,
         min_value=1
     )
+    policy = serializers.ChoiceField(
+        help_text="The policy to use when downloading content. The possible values include: "
+                  "'immediate', 'on_demand', and 'cache_only'. 'immediate' is the default.",
+        choices=models.Remote.POLICY_CHOICES,
+        default=models.Remote.IMMEDIATE
+    )
 
     class Meta:
         abstract = True
@@ -127,7 +133,7 @@ class RemoteSerializer(MasterModelSerializer):
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'url', 'validate', 'ssl_ca_certificate', 'ssl_client_certificate',
             'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_synced',
-            'last_updated', 'connection_limit')
+            'last_updated', 'connection_limit', 'policy')
 
 
 class RepositorySyncURLSerializer(serializers.Serializer):
