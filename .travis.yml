@@ -47,3 +47,5 @@ jobs:
         - DB=postgres
         - TEST=docs
       if: type != pull_request
+    - stage: publish-container
+      script: bash .travis/deploy-container.sh $TRAVIS_TAG
