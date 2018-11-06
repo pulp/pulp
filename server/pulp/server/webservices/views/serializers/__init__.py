@@ -5,6 +5,9 @@ from django.core.urlresolvers import reverse
 
 from pulp.server import exceptions
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BaseSerializer(object):
     """
@@ -346,7 +349,17 @@ class ModelSerializer(BaseSerializer):
             sort = [(self.translate_field(model, field), direc) for field, direc in crit.sort]
             crit_dict['sort'] = sort
         if crit.fields:
-            crit_dict['fields'] = [self.translate_field(model, field) for field in crit.fields]
+            fds = []
+            for field in crit.fields:
+                try:
+                    f = self.translate_field(model, field)
+                    fds.append(f)
+                except exceptions.InvalidValue:
+                    logger.warn('Requested field %s provided in the criteria %s is not valid', field, crit)
+            if fds:
+                crit_dict['fields'] = fds
+            else:
+                crit_dict['fields'] = None
         return Criteria.from_dict(crit_dict)
 
     def serialize(self, instance):
