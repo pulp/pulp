@@ -9,7 +9,10 @@ from pulp.plugins.types import database as types_db
 from pulp.server.controllers import units
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
+from pulp.server import exceptions
 
+import logging
+logger = logging.getLogger(__name__)
 
 # Valid sort strings
 SORT_TYPE_ID = 'type_id'
@@ -374,7 +377,11 @@ class RepoUnitAssociationQueryManager(object):
             # translate incoming fields (e.g. id -> foo_id)
             if serializer:
                 for index, field in enumerate(fields):
-                    fields[index] = serializer.translate_field(serializer.model, field)
+                    try:
+                        fields[index] = serializer.translate_field(serializer.model, field)
+                    except exceptions.InvalidValue:
+                        logger.warn('Invalid field [ %s ] provided in the criteria %s', field,
+                                    criteria.unit_fields)
 
         cursor = collection.find(spec, projection=fields)
 

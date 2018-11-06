@@ -38,6 +38,19 @@ class ContentQueryManager(object):
         @return:    list of content unit instances
         @rtype:     list
         """
+        serializer = units_controller.get_model_serializer_for_type(type_id)
+        fields = criteria.fields
+        fds = []
+        if fields:
+            for f in fields:
+                try:
+                    field = serializer.translate_field(serializer.model, f)
+                    fds.append(field)
+                except InvalidValue:
+                    logger.warn('Requested field [ %s ] provided in the criteria %s is not valid',
+                                f, fields)
+            criteria.fields = fds
+
         return cls.get_content_unit_collection(type_id).query(criteria)
 
     def list_content_units(self,
