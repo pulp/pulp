@@ -83,22 +83,22 @@ class DownloaderFactory:
             sslcontext = ssl.create_default_context(cafile=self._remote.ssl_ca_certificate.name)
             if self._remote.ssl_client_key.name and self._remote.ssl_client_certificate.name:
                 sslcontext.load_cert_chain(
-                    self._remote.ssl_client_key.name,
-                    self._remote.ssl_client_certificate.name
+                    self._remote.ssl_client_certificate.name,
+                    self._remote.ssl_client_key.name
                 )
         else:
             if self._remote.ssl_client_key.name and self._remote.ssl_client_certificate.name:
                 sslcontext = ssl.create_default_context()
                 sslcontext.load_cert_chain(
-                    self._remote.ssl_client_key.name,
-                    self._remote.ssl_client_certificate.name
+                    self._remote.ssl_client_certificate.name,
+                    self._remote.ssl_client_key.name
                 )
 
         if sslcontext:
             tcp_conn_opts['ssl_context'] = sslcontext
-
-        if self._remote.ssl_validation:
-            tcp_conn_opts['verify_ssl'] = self._remote.ssl_validation
+            if not self._remote.ssl_validation:
+                sslcontext.check_hostname = False
+                sslcontext.verify_mode = ssl.CERT_NONE
 
         conn = aiohttp.TCPConnector(**tcp_conn_opts)
 
