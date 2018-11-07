@@ -15,7 +15,7 @@ class Model(models.Model):
 
     """
     created = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True, blank=True, null=True)
+    last_updated = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         abstract = True
