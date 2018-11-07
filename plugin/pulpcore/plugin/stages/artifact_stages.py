@@ -50,12 +50,7 @@ class QueryExistingArtifacts(Stage):
             all_artifacts_q = Q(pk=None)
             for content in batch:
                 for declarative_artifact in content.d_artifacts:
-                    one_artifact_q = Q()
-                    for digest_name in declarative_artifact.artifact.DIGEST_FIELDS:
-                        digest_value = getattr(declarative_artifact.artifact, digest_name)
-                        if digest_value:
-                            key = {digest_name: digest_value}
-                            one_artifact_q &= Q(**key)
+                    one_artifact_q = declarative_artifact.artifact.q()
                     if one_artifact_q:
                         all_artifacts_q |= one_artifact_q
 
@@ -302,7 +297,7 @@ class ArtifactSaver(Stage):
                         artifacts_to_save.append(declarative_artifact.artifact)
 
             if artifacts_to_save:
-                Artifact.objects.bulk_create(artifacts_to_save)
+                Artifact.objects.bulk_get_or_create(artifacts_to_save)
 
             for declarative_content in batch:
                 await out_q.put(declarative_content)

@@ -47,8 +47,8 @@ class QueryExistingContentUnits(Stage):
             content_q_by_type = defaultdict(lambda: Q(pk=None))
             for declarative_content in batch:
                 model_type = type(declarative_content.content)
-                unit_key = declarative_content.content.natural_key_dict()
-                content_q_by_type[model_type] = content_q_by_type[model_type] | Q(**unit_key)
+                unit_q = declarative_content.content.q()
+                content_q_by_type[model_type] = content_q_by_type[model_type] | unit_q
 
             for model_type in content_q_by_type.keys():
                 for result in model_type.objects.filter(content_q_by_type[model_type]):
@@ -133,7 +133,8 @@ class ContentUnitSaver(Stage):
                                 content_key = str(content_artifact.content.pk) + rel_path
                                 remote_artifact_map[content_key] = remote_artifact_data
 
-                for content_artifact in ContentArtifact.objects.bulk_create(content_artifact_bulk):
+                for content_artifact in ContentArtifact.objects.bulk_get_or_create(
+                        content_artifact_bulk):
                     rel_path = content_artifact.relative_path
                     content_key = str(content_artifact.content.pk) + rel_path
                     remote_artifact_data = remote_artifact_map.pop(content_key)
@@ -142,7 +143,7 @@ class ContentUnitSaver(Stage):
                     )
                     remote_artifact_bulk.append(new_remote_artifact)
 
-                RemoteArtifact.objects.bulk_create(remote_artifact_bulk)
+                RemoteArtifact.objects.bulk_get_or_create(remote_artifact_bulk)
                 await self._post_save(batch)
 
             for declarative_content in batch:
