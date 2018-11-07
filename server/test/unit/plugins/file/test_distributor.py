@@ -195,7 +195,9 @@ class FileDistributorTest(unittest.TestCase):
         distributor._rmtree_if_exists(a_directory)
         self.assertFalse(os.path.exists(a_directory))
 
-    def test__symlink_units(self):
+    @patch('pulp.plugins.file.distributor.FileDistributor._target_symlink_path',
+           side_effect=FileDistributor._target_symlink_path)
+    def test__symlink_units(self, mock__target_symlink_path):
         """
         Make sure that the _symlink_units creates all the correct symlinks.
         """
@@ -215,6 +217,7 @@ class FileDistributorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(expected_symlink_path))
         expected_symlink_destination = os.path.join(DATA_DIR, self.unit.unit_key['name'])
         self.assertEqual(os.path.realpath(expected_symlink_path), expected_symlink_destination)
+        mock__target_symlink_path.assert_called_once_with(build_dir, self.unit.unit_key['name'])
 
     @patch('os.path.exists', return_value=False)
     @patch('os.makedirs')
@@ -345,3 +348,103 @@ class FileDistributorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(original_link))
         created_link = readlink(original_link)
         self.assertNotEqual(old_target, created_link)
+
+    @patch('os.path.join')
+    @patch('os.path.isabs')
+    @patch('os.path.normpath')
+    def test__target_symlink_path_gears_wheel(self, mock_normpath, mock_isabs, mock_join):
+        """
+        Check the gears wheel as expected in _target_symlink_path.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+        # not substantial for the test
+        build_dir = '/foo/bar'
+        target_path = 'baz'
+        # set up mock return values according to an OK pass thru the gears
+        norm_mock = mock_normpath.return_value
+        mock_isabs.return_value = False
+        norm_mock.startswith.return_value = False
+        norm_mock.__eq__.return_value = False
+
+        ret = distributor._target_symlink_path(build_dir, target_path)
+
+        mock_normpath.assert_called_once_with(target_path)
+        mock_isabs.assert_called_once_with(norm_mock)
+        norm_mock.startswith.assert_called_once_with('../')
+        norm_mock.__eq__.assert_called_once_with('..')
+        mock_join.assert_called_once_with(build_dir, norm_mock)
+        self.assertIs(mock_join.return_value, ret)
+
+    @patch('os.path.join', side_effect=os.path.join)
+    @patch('os.path.isabs', side_effect=os.path.isabs)
+    @patch('os.path.normpath', side_effect=os.path.normpath)
+    def test__target_symlink_path_with_OK_path(self, mock_normpath, mock_isabs, mock_join):
+        """
+        Check an OK target path returns an expected target symlink path.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+        build_dir = '/foo/bar'
+        target_path = 'foo/.././..baz/.bar'
+        expected_normpath = '..baz/.bar'
+        expected_symlink_path = '/foo/bar/..baz/.bar'
+
+        self.assertEqual(expected_symlink_path, distributor._target_symlink_path(build_dir,
+                                                                                 target_path))
+        mock_normpath.assert_called_once_with(target_path)
+        mock_isabs.assert_called_once_with(expected_normpath)
+        mock_join.assert_called_once_with(build_dir, expected_normpath)
+
+    @patch('os.path.join')
+    @patch('os.path.isabs', side_effect=os.path.isabs)
+    @patch('os.path.normpath', side_effect=os.path.normpath)
+    def test__target_symlink_path_with_absolute_path(self, mock_normpath, mock_isabs, mock_join):
+        """
+        Check an absolute target path fails the symlink validation.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+        build_dir = '/foo/bar'
+        target_path = '/baz'
+
+        self.assertRaisesRegexp(ValueError, '.*absolute: %s' % target_path,
+                                distributor._target_symlink_path,
+                                build_dir, target_path)
+        mock_normpath.assert_called_once_with(target_path)
+        mock_isabs.assert_called_once_with(os.path.normpath(target_path))
+        mock_join.assert_not_called()
+
+    @patch('os.path.join')
+    @patch('os.path.isabs', side_effect=os.path.isabs)
+    @patch('os.path.normpath', side_effect=os.path.normpath)
+    def test__target_symlink_path_outside_build_dir_as_parent_dir(self, mock_normpath, mock_isabs,
+                                                                  mock_join):
+        """
+        Check the target path `..` fails the symlink validation.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+        build_dir = '/foo/bar'
+        target_path = 'baz/../../'
+
+        self.assertRaisesRegexp(ValueError, '.*outside.*%s' % target_path,
+                                distributor._target_symlink_path,
+                                build_dir, target_path)
+        mock_normpath.assert_called_once_with(target_path)
+        mock_isabs.assert_called_once_with('..')
+        mock_join.assert_not_called()
+
+    @patch('os.path.join')
+    @patch('os.path.isabs', side_effect=os.path.isabs)
+    @patch('os.path.normpath', side_effect=os.path.normpath)
+    def test__target_symlink_path_outside_build_dir(self, mock_normpath, mock_isabs, mock_join):
+        """
+        Check a target path outside of build dir fails the symlink validation.
+        """
+        distributor = self.create_distributor_with_mocked_api_calls()
+        build_dir = '/foo/bar'
+        target_path = 'baz/../../../fizz'
+
+        self.assertRaisesRegexp(ValueError, '.*outside.*%s' % target_path,
+                                distributor._target_symlink_path,
+                                build_dir, target_path)
+        mock_normpath.assert_called_once_with(target_path)
+        mock_isabs.assert_called_once_with('../../fizz')
+        mock_join.assert_not_called()
