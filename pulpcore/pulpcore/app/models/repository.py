@@ -32,7 +32,7 @@ class Repository(Model):
         content (models.ManyToManyField): Associated content.
     """
     name = models.TextField(db_index=True, unique=True)
-    description = models.TextField(blank=True)
+    description = models.TextField()
     last_version = models.PositiveIntegerField(default=0)
 
     notes = GenericKeyValueRelation(Notes)
@@ -94,16 +94,16 @@ class Remote(MasterModel):
     url = models.TextField()
     validate = models.BooleanField(default=True)
 
-    ssl_ca_certificate = models.FileField(blank=True, upload_to=tls_storage_path, max_length=255)
-    ssl_client_certificate = models.FileField(blank=True, upload_to=tls_storage_path,
+    ssl_ca_certificate = models.FileField(upload_to=tls_storage_path, max_length=255)
+    ssl_client_certificate = models.FileField(upload_to=tls_storage_path,
                                               max_length=255)
-    ssl_client_key = models.FileField(blank=True, upload_to=tls_storage_path, max_length=255)
+    ssl_client_key = models.FileField(upload_to=tls_storage_path, max_length=255)
     ssl_validation = models.BooleanField(default=True)
 
-    proxy_url = models.TextField(blank=True)
-    username = models.TextField(blank=True)
-    password = models.TextField(blank=True)
-    last_synced = models.DateTimeField(blank=True, null=True)
+    proxy_url = models.TextField()
+    username = models.TextField()
+    password = models.TextField()
+    last_synced = models.DateTimeField(null=True)
     connection_limit = models.PositiveIntegerField(default=20)
 
     class Meta:
@@ -124,7 +124,7 @@ class Publisher(MasterModel):
     TYPE = 'publisher'
 
     name = models.TextField(db_index=True, unique=True)
-    last_published = models.DateTimeField(blank=True, null=True)
+    last_published = models.DateTimeField(null=True)
 
     class Meta:
         default_related_name = 'publishers'
@@ -145,7 +145,7 @@ class Exporter(MasterModel):
     TYPE = 'exporter'
 
     name = models.TextField(db_index=True, unique=True)
-    last_export = models.DateTimeField(blank=True, null=True)
+    last_export = models.DateTimeField(null=True)
 
     class Meta:
         default_related_name = 'exporters'

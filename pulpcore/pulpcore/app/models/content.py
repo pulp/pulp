@@ -44,14 +44,14 @@ class Artifact(Model):
         """
         return storage.get_artifact_path(self.sha256)
 
-    file = fields.ArtifactFileField(blank=False, null=False, upload_to=storage_path, max_length=255)
-    size = models.IntegerField(blank=False, null=False)
-    md5 = models.CharField(max_length=32, blank=False, null=False, unique=False, db_index=True)
-    sha1 = models.CharField(max_length=40, blank=False, null=False, unique=False, db_index=True)
-    sha224 = models.CharField(max_length=56, blank=False, null=False, unique=False, db_index=True)
-    sha256 = models.CharField(max_length=64, blank=False, null=False, unique=True, db_index=True)
-    sha384 = models.CharField(max_length=96, blank=False, null=False, unique=True, db_index=True)
-    sha512 = models.CharField(max_length=128, blank=False, null=False, unique=True, db_index=True)
+    file = fields.ArtifactFileField(null=False, upload_to=storage_path, max_length=255)
+    size = models.IntegerField(null=False)
+    md5 = models.CharField(max_length=32, null=False, unique=False, db_index=True)
+    sha1 = models.CharField(max_length=40, null=False, unique=False, db_index=True)
+    sha224 = models.CharField(max_length=56, null=False, unique=False, db_index=True)
+    sha256 = models.CharField(max_length=64, null=False, unique=True, db_index=True)
+    sha384 = models.CharField(max_length=96, null=False, unique=True, db_index=True)
+    sha512 = models.CharField(max_length=128, null=False, unique=True, db_index=True)
 
     # All digest fields ordered by algorithm strength.
     DIGEST_FIELDS = (
@@ -252,14 +252,14 @@ class RemoteArtifact(Model):
         remote (:class:`django.db.models.ForeignKey`): Remote that created the
             RemoteArtifact.
     """
-    url = models.TextField(blank=True, validators=[validators.URLValidator])
-    size = models.IntegerField(blank=True, null=True)
-    md5 = models.CharField(max_length=32, blank=True, null=True)
-    sha1 = models.CharField(max_length=40, blank=True, null=True)
-    sha224 = models.CharField(max_length=56, blank=True, null=True)
-    sha256 = models.CharField(max_length=64, blank=True, null=True)
-    sha384 = models.CharField(max_length=96, blank=True, null=True)
-    sha512 = models.CharField(max_length=128, blank=True, null=True)
+    url = models.TextField(validators=[validators.URLValidator])
+    size = models.IntegerField(null=True)
+    md5 = models.CharField(max_length=32, null=True)
+    sha1 = models.CharField(max_length=40, null=True)
+    sha224 = models.CharField(max_length=56, null=True)
+    sha256 = models.CharField(max_length=64, null=True)
+    sha384 = models.CharField(max_length=96, null=True)
+    sha512 = models.CharField(max_length=128, null=True)
 
     content_artifact = models.ForeignKey(ContentArtifact, on_delete=models.CASCADE)
     remote = models.ForeignKey('Remote', on_delete=models.CASCADE)
@@ -278,4 +278,4 @@ class ContentGuard(MasterModel):
 
     """
     name = models.CharField(max_length=256, db_index=True, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(null=True)
