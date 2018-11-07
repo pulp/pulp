@@ -28,7 +28,7 @@ class Stage:
         raise NotImplementedError(_('A plugin writer must implement this method'))
 
     @staticmethod
-    async def batches(in_q, minsize=1):
+    async def batches(in_q, minsize=50):
         """
         Asynchronous iterator yielding batches of :class:`DeclarativeContent` from `in_q`.
 
@@ -76,6 +76,7 @@ class Stage:
                     break
                 else:
                     shutdown = add_to_batch(batch, content)
+
             if batch and (len(batch) >= minsize or shutdown):
                 yield batch
                 batch = []
