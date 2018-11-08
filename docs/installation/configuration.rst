@@ -22,7 +22,7 @@ SECRET_KEY
 ^^^^^^^^^^
 
     In order to get a pulp server up and running a `Django SECRET_KEY
-    <https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-secret_key>`_ *must* be
+    <https://docs.djangoproject.com/en/2.1/ref/settings/#secret-key>`_ *must* be
     provided.
 
     The following code snippet can be used to generate a random SECRET_KEY.
