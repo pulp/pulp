@@ -3,6 +3,7 @@ from itertools import chain
 import copy
 import logging
 import os
+import socket
 import sys
 import time
 from urlparse import urlunsplit
@@ -1531,7 +1532,7 @@ def _get_streamer_url(catalog_entry, signing_key):
         raise PulpCodedTaskException(error_codes.PLP1014, section='lazy', key='https_retrieval',
                                      reason=_('The value is not boolean'))
     retrieval_scheme = 'https' if https_retrieval else 'http'
-    host = pulp_conf.get('lazy', 'redirect_host')
+    host = (pulp_conf.get('lazy', 'redirect_host') or socket.getfqdn())
     port = pulp_conf.get('lazy', 'redirect_port')
     path_prefix = pulp_conf.get('lazy', 'redirect_path')
     netloc = (host + ':' + port) if port else host
