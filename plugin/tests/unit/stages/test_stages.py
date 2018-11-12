@@ -10,7 +10,7 @@ class TestStage(asynctest.TestCase):
     async def test_none_only(self):
         in_q = asyncio.Queue()
         in_q.put_nowait(None)
-        batch_it = Stage.batches(in_q)
+        batch_it = Stage.batches(in_q, minsize=1)
         with self.assertRaises(StopAsyncIteration):
             await batch_it.__anext__()
 
@@ -19,7 +19,7 @@ class TestStage(asynctest.TestCase):
         in_q.put_nowait(1)
         in_q.put_nowait(2)
         in_q.put_nowait(None)
-        batch_it = Stage.batches(in_q)
+        batch_it = Stage.batches(in_q, minsize=1)
         self.assertEqual([1, 2], await batch_it.__anext__())
         with self.assertRaises(StopAsyncIteration):
             await batch_it.__anext__()
@@ -28,7 +28,7 @@ class TestStage(asynctest.TestCase):
         in_q = asyncio.Queue()
         in_q.put_nowait(1)
         in_q.put_nowait(2)
-        batch_it = Stage.batches(in_q)
+        batch_it = Stage.batches(in_q, minsize=1)
         self.assertEqual([1, 2], await batch_it.__anext__())
         in_q.put_nowait(None)
         with self.assertRaises(StopAsyncIteration):
@@ -38,7 +38,7 @@ class TestStage(asynctest.TestCase):
         in_q = asyncio.Queue()
         in_q.put_nowait(1)
         in_q.put_nowait(2)
-        batch_it = Stage.batches(in_q)
+        batch_it = Stage.batches(in_q, minsize=1)
         self.assertEqual([1, 2], await batch_it.__anext__())
         in_q.put_nowait(3)
         in_q.put_nowait(4)
@@ -77,6 +77,8 @@ class TestStage(asynctest.TestCase):
                 for qsize in range(1, num + 1):
                     q1 = asyncio.Queue(maxsize=qsize)
                     q2 = asyncio.Queue(maxsize=qsize)
-                    await asyncio.gather(self.last_stage(q2, num, minsize),
-                                         self.middle_stage(q1, q2, num, minsize),
-                                         self.first_stage(q1, num, minsize))
+                    await asyncio.gather(
+                        self.last_stage(q2, num, minsize),
+                        self.middle_stage(q1, q2, num, minsize),
+                        self.first_stage(q1, num, minsize)
+                    )
