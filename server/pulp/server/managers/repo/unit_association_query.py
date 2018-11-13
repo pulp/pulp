@@ -378,11 +378,11 @@ class RepoUnitAssociationQueryManager(object):
             if serializer:
                 for index, field in enumerate(fields):
                     try:
-                        fields[index] = serializer.translate_field(serializer.model, field)
+                        field_r = serializer.rewrite_field(serializer.model, field)
+                        fields[index] = serializer.translate_field(serializer.model, field_r)
                     except exceptions.InvalidValue:
-                        logger.warn('Requested field %s provided in the criteria %s is not valid', field, criteria)
-                        #or
-                        logger.warn('Requested field %s provided in the criteria %s is not valid', field, criteria.unit_fields)
+                        logger.warn('Invalid field [ %s ] provided in the criteria %s', field,
+                                    criteria.unit_fields)
 
         cursor = collection.find(spec, projection=fields)
 

@@ -39,6 +39,7 @@ def _process_content_unit(content_unit, content_type):
     :return: serialized unit
     :rtype:  dict
     """
+    content_unit['_content_type_id'] = content_type
     unit = serial_content.content_unit_obj(content_unit)
     unit['_href'] = reverse(
         'content_unit_resource',

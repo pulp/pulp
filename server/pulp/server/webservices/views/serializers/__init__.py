@@ -31,6 +31,7 @@ class BaseSerializer(object):
         self._mask_fields = []
         self._multiple = multiple
         self._remapped_fields = {}
+        self.rewrite_fields = {}
         if hasattr(self, 'Meta'):
             meta = self.Meta
             if hasattr(meta, 'exclude_fields'):
@@ -39,6 +40,8 @@ class BaseSerializer(object):
                 self._mask_fields = meta.mask_fields
             if hasattr(meta, 'remapped_fields'):
                 self._remapped_fields = meta.remapped_fields
+            if hasattr(meta, 'rewrite_fields'):
+                self._rewrite_fields = meta.rewrite_fields
 
     def to_representation(self, instance):
         """
@@ -301,11 +304,38 @@ class ModelSerializer(BaseSerializer):
                 if external == field:
                     return getattr(model, internal).db_field
             else:
+                #if field in self._rewrite_fields.keys():
+                #    return field
+                #else:
+                #    return getattr(model, field).db_field
                 return getattr(model, field).db_field
         except AttributeError:
             raise exceptions.InvalidValue(
                 "Field: <{0}> does not exist on objects in the <{1}> collection".format(
                     field, model._meta['collection']))
+
+    def rewrite_field(self, model, field):
+        """
+        Rewrites an external representation of a field to the Mongoengine db_field.
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param field: field name (external representation)
+        :type  field: basestring
+
+        :return: the key that mongoengine uses to store this field in the database
+        :rtype:  basestring
+        """
+        for internal, external in self._rewrite_fields.iteritems():
+            #if external == field and "." in internal:
+            #    return internal
+            #elif external == field:
+            #    return getattr(model, internal).db_field
+            if external == field:
+                return getattr(model, internal[0]).db_field
+        else:
+            return field
+
 
     def translate_field_reverse(self, field):
         """
@@ -352,10 +382,11 @@ class ModelSerializer(BaseSerializer):
             fds = []
             for field in crit.fields:
                 try:
-                    f = self.translate_field(model, field)
+                    field_r = self.rewrite_field(model, field)
+                    f = self.translate_field(model, field_r)
                     fds.append(f)
                 except exceptions.InvalidValue:
-                    logger.warn('Requested field %s provided in the criteria %s is not valid', field, crit)
+                    logger.warn('Invalid field [ %s ] provided in the criteria %s', field, crit)
             if fds:
                 crit_dict['fields'] = fds
             else:

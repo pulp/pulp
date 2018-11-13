@@ -9,6 +9,9 @@ from pulp.server import config as pulp_config
 from pulp.server.controllers import units as units_controller
 from pulp.server.exceptions import InvalidValue, MissingResource
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ContentQueryManager(object):
     """
@@ -38,6 +41,18 @@ class ContentQueryManager(object):
         @return:    list of content unit instances
         @rtype:     list
         """
+        serializer = units_controller.get_model_serializer_for_type(type_id)
+        fields = criteria.fields
+        fds=[]
+        if fields:
+            for f in fields:
+                try:
+                    field_r = serializer.rewrite_field(serializer.model, f)
+                    field = serializer.translate_field(serializer.model, field_r)
+                    fds.append(field)
+                except InvalidValue:
+                    logger.warn('Invalid field [ %s ] provided in the criteria %s', f, fields)
+            criteria.fields = fds
         return cls.get_content_unit_collection(type_id).query(criteria)
 
     def list_content_units(self,
