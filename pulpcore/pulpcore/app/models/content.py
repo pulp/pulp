@@ -4,14 +4,66 @@ Content related Django models.
 import hashlib
 
 from django.core import validators
-from django.db import models
+from django.db import IntegrityError, models
+from django.forms.models import model_to_dict
+
 from itertools import chain
 
 from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation, storage, fields
 from pulpcore.exceptions import DigestValidationError, SizeValidationError
 
 
-class Artifact(Model):
+class BulkCreateManager(models.Manager):
+    """
+    A manager that provides a bulk_get_or_create()
+    """
+
+    def bulk_get_or_create(self, objs, batch_size=None):
+        """
+        Insert the list of objects into the database and get existing objects from the database.
+
+        Do *not* call save() on each of the instances, do not send any pre/post_save signals,
+        and do not set the primary key attribute if it is an autoincrement field (except if
+        features.can_return_ids_from_bulk_insert=True). Multi-table models are not supported.
+
+        If an IntegrityError is raised while performing a bulk insert, this method falls back to
+        inserting each instance individually. The already-existing instances are retrieved from
+        the database and returned with the other newly created instances.
+
+        Args:
+            objs (iterable of models.Model): an iterable of Django Model instances
+            batch_size (int): how many are created in a single query
+
+        Returns:
+            List of instances that were inserted into the database.
+        """
+        try:
+            return super().bulk_create(objs, batch_size=batch_size)
+        except IntegrityError:
+            objs = list(objs)
+            for i in range(len(objs)):
+                try:
+                    objs[i].save()
+                except ValueError or IntegrityError:
+                    objs[i] = objs[i].__class__.objects.get(objs[i].q())
+        return objs
+
+
+class QueryMixin():
+    """
+    A mixin that provides models with querying utilities
+    """
+
+    def q(self):
+        """
+        Returns a Q object that represents the model
+        """
+        all_kwargs = model_to_dict(self)
+        kwargs = {k: v for k, v in all_kwargs.items() if v}
+        return models.Q(**kwargs)
+
+
+class Artifact(Model, QueryMixin):
     """
     A file associated with a piece of content.
 
@@ -52,6 +104,8 @@ class Artifact(Model):
     sha256 = models.CharField(max_length=64, null=False, unique=True, db_index=True)
     sha384 = models.CharField(max_length=96, null=False, unique=True, db_index=True)
     sha512 = models.CharField(max_length=128, null=False, unique=True, db_index=True)
+
+    objects = BulkCreateManager()
 
     # All digest fields ordered by algorithm strength.
     DIGEST_FIELDS = (
@@ -166,7 +220,7 @@ class Artifact(Model):
         return Artifact(**attributes)
 
 
-class Content(MasterModel):
+class Content(MasterModel, QueryMixin):
     """
     A piece of managed content.
 
@@ -179,6 +233,8 @@ class Content(MasterModel):
 
     notes = GenericKeyValueRelation(Notes)
     artifacts = models.ManyToManyField(Artifact, through='ContentArtifact')
+
+    objects = BulkCreateManager()
 
     class Meta:
         verbose_name_plural = 'content'
@@ -210,7 +266,7 @@ class Content(MasterModel):
         return to_return
 
 
-class ContentArtifact(Model):
+class ContentArtifact(Model, QueryMixin):
     """
     A relationship between a Content and an Artifact.
 
@@ -221,11 +277,13 @@ class ContentArtifact(Model):
     content = models.ForeignKey(Content, on_delete=models.CASCADE)
     relative_path = models.CharField(max_length=256)
 
+    objects = BulkCreateManager()
+
     class Meta:
         unique_together = ('content', 'relative_path')
 
 
-class RemoteArtifact(Model):
+class RemoteArtifact(Model, QueryMixin):
     """
     Represents a content artifact that is provided by a remote (external) repository.
 
@@ -263,6 +321,8 @@ class RemoteArtifact(Model):
 
     content_artifact = models.ForeignKey(ContentArtifact, on_delete=models.CASCADE)
     remote = models.ForeignKey('Remote', on_delete=models.CASCADE)
+
+    objects = BulkCreateManager()
 
     class Meta:
         unique_together = ('content_artifact', 'remote')
