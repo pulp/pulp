@@ -21,6 +21,12 @@ Fedora, CentOS, and Mac OSX.
 
     $ sudo setenforce 0
 
+Ansible Installation
+--------------------
+
+To use ansible roles to install Pulp 3 instead of manual setup refer to
+`Pulp 3 Ansible installer <https://github.com/pulp/ansible-pulp3/>`_.
+
 PyPI Installation
 -----------------
 
