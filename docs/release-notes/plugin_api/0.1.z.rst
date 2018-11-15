@@ -13,7 +13,7 @@ See :doc:`Plugin API <../../plugins/plugin-api/overview>` and
 0.1.0b12
 ========
 
-* `List of plugin API related changes in beta 12 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+label%3Aplugin-writer+is%3Aclosed+merged%3A2018-10-11T15%3A00%3A00-04%3A00..2018-11-15T16%3A00%3A00-06%3A00+>`_
+* `List of plugin API related changes in beta 12 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+label%3Aplugin-writer+is%3Aclosed+merged%3A2018-10-11T15%3A00%3A00-04%3A00..2018-11-15T16%3A30%3A00-06%3A00+>`_
 
 0.1.0b11
 ========
