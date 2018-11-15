@@ -244,4 +244,4 @@ class BaseDownloader:
             Validation errors could be emitted when subclassed implementations call
             :meth:`~pulpcore.plugin.download.BaseDownloader.finalize`.
         """
-        raise NotImplementedError('Subclasses must define a run() method that returns a coroutine')
+        raise NotImplementedError('Subclasses must define a _run() method that returns a coroutine')
