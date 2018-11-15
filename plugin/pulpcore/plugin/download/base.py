@@ -209,7 +209,7 @@ class BaseDownloader:
 
         """
         async with self.semaphore:
-            return await self._run(extra_data)
+            return await self._run(extra_data=extra_data)
 
     async def _run(self, extra_data=None):
         """
