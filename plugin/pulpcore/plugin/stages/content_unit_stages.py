@@ -53,6 +53,8 @@ class QueryExistingContentUnits(Stage):
             for model_type in content_q_by_type.keys():
                 for result in model_type.objects.filter(content_q_by_type[model_type]):
                     for declarative_content in batch:
+                        if type(declarative_content.content) is not model_type:
+                            continue
                         not_same_unit = False
                         for field in result.natural_key_fields():
                             in_memory_digest_value = getattr(declarative_content.content, field)
