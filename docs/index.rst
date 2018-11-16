@@ -12,8 +12,7 @@ A good place for new users to start is the :doc:`overview/index`, which gives a 
 introduction to Pulp concepts, terminology, and components. After :doc:`installing
 pulp<installation/index>`, the simplest way to get concrete experience is to install one of the
 :ref:`plugins<plugin-table>` and use its quickstart guide. Next it is recommended that users read
-through our :doc:`workflows/index` to find best practices for common use cases. From there, users
-should explore the :doc:`cli-guide/index` and our reference documentation.
+through our :doc:`workflows/index` to find best practices for common use cases.
 
 .. _community:
 
@@ -57,7 +56,6 @@ Table of Contents
    plugins/index
    workflows/index
    release-notes/index
-   cli-guide/index
    integration-guide/index
    contributing/index
    troubleshooting
