@@ -6,7 +6,6 @@ from pulpcore.app.models import (  # noqa
     BaseDistribution,
     Content,
     ContentArtifact,
-    ContentGuard,
     CreatedResource,
     Distribution,
     MasterModel,
@@ -22,5 +21,6 @@ from pulpcore.app.models import (  # noqa
     RepositoryVersion
 )
 
+from .content import ContentGuard  # noqa
 from .publisher import Publisher  # noqa
 from .remote import Remote  # noqa
