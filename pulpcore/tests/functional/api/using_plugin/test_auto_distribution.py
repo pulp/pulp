@@ -11,6 +11,7 @@ from pulp_smash.pulp3.constants import DISTRIBUTION_PATH, REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_orphans,
     gen_distribution,
+    gen_publisher,
     gen_remote,
     gen_repo,
     get_added_content,
@@ -26,10 +27,7 @@ from tests.functional.api.using_plugin.constants import (
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
-from tests.functional.api.using_plugin.utils import (
-    gen_file_publisher,
-    populate_pulp,
-)
+from tests.functional.api.using_plugin.utils import populate_pulp
 from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
@@ -85,7 +83,7 @@ class AutoDistributionTestCase(unittest.TestCase):
         repo = self.client.get(repo['_href'])
 
         # Create publisher.
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 
         # Create a distribution
@@ -155,7 +153,7 @@ class SetupAutoDistributionTestCase(unittest.TestCase):
         # Create a repository and a publisher.
         repo = self.client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.client.delete, repo['_href'])
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 
         # Create a distribution.
