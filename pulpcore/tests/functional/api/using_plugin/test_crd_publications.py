@@ -18,6 +18,7 @@ from pulp_smash.pulp3.utils import (
     sync
 )
 
+from tests.functional.api.utils import parse_date_from_string
 from tests.functional.api.using_plugin.constants import (
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
@@ -152,7 +153,34 @@ class PublicationsTestCase(unittest.TestCase):
                 self.assertEqual(publications[0][key], val)
 
     @skip_if(bool, 'publication', False)
-    def test_06_delete(self):
+    def test_06_publication_create_order(self):
+        """Assert that publications are ordered by created time.
+
+        This test targets the following issues:
+
+        * `Pulp Smash #954 <https://github.com/PulpQE/pulp-smash/issues/954>`_
+        * `Pulp #3576 <https://pulp.plan.io/issues/3576>`_
+        """
+        # Create more 2 publications for the same repo
+        for _ in range(2):
+            publish(self.cfg, self.publisher, self.repo)
+
+        # Read publications
+        publications = self.client.get(
+            PUBLICATIONS_PATH,
+            params={'publisher': self.publisher['_href']}
+        )
+        self.assertEqual(len(publications), 3)
+
+        # Assert publications are ordered by created field in descending order
+        for i, publication in enumerate(publications[:-1]):
+            self.assertGreater(
+                parse_date_from_string(publication['created']),  # Current
+                parse_date_from_string(publications[i + 1]['created'])  # Prev
+            )
+
+    @skip_if(bool, 'publication', False)
+    def test_07_delete(self):
         """Delete a publication."""
         self.client.delete(self.publication['_href'])
         with self.assertRaises(HTTPError):
