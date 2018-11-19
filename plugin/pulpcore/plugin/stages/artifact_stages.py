@@ -289,15 +289,17 @@ class ArtifactSaver(Stage):
             The coroutine for this stage.
         """
         async for batch in self.batches(in_q):
-            artifacts_to_save = []
+            da_to_save = []
             for declarative_content in batch:
                 for declarative_artifact in declarative_content.d_artifacts:
                     if declarative_artifact.artifact.pk is None:
                         declarative_artifact.artifact.file = str(declarative_artifact.artifact.file)
-                        artifacts_to_save.append(declarative_artifact.artifact)
+                        da_to_save.append(declarative_artifact)
 
-            if artifacts_to_save:
-                Artifact.objects.bulk_get_or_create(artifacts_to_save)
+            if da_to_save:
+                for da, artifact in zip(da_to_save, Artifact.objects.bulk_get_or_create(
+                        da.artifact for da in da_to_save)):
+                    da.artifact = artifact
 
             for declarative_content in batch:
                 await out_q.put(declarative_content)

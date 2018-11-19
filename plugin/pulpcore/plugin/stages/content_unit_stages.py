@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 
 from pulpcore.plugin.models import ContentArtifact, RemoteArtifact
@@ -112,7 +112,13 @@ class ContentUnitSaver(Stage):
                 await self._pre_save(batch)
                 for declarative_content in batch:
                     if declarative_content.content.pk is None:
-                            declarative_content.content.save()
+                            try:
+                                declarative_content.content.save()
+                            except IntegrityError:
+                                declarative_content.content = \
+                                    declarative_content.content.__class__.objects.get(
+                                        declarative_content.content.q())
+                                continue
                             for declarative_artifact in declarative_content.d_artifacts:
                                 content_artifact = ContentArtifact(
                                     content=declarative_content.content,
