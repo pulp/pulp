@@ -2,7 +2,7 @@ Contributing
 ============
 
 Contribution documentation generally assumes that the reader is familiar with
-:doc:`Pulp basics</overview/index>`. If you have problems, you can :ref:`contact us<community>`
+:doc:`Pulp basics</concepts>`. If you have problems, you can :ref:`contact us<community>`
 or :doc:`file an issue</bugs-features>`.
 
 Fundamentals

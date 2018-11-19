@@ -8,7 +8,7 @@ content type is provided by the corresponding plugin, which can be found in our
 Self-Guided Tour for New Users
 ------------------------------
 
-A good place for new users to start is the :doc:`overview/index`, which gives a high level
+A good place for new users to start is the :doc:`concepts`, which gives a high level
 introduction to Pulp concepts, terminology, and components. After :doc:`installing
 pulp<installation/index>`, the simplest way to get concrete experience is to install one of the
 :ref:`plugins<plugin-table>` and use its quickstart guide. Next it is recommended that users read
@@ -51,7 +51,9 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
-   overview/index
+   concepts
+   from-pulp-2
+   components/index
    installation/index
    plugins/index
    workflows/index
