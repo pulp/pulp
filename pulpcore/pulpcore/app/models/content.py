@@ -58,6 +58,8 @@ class QueryMixin():
         """
         Returns a Q object that represents the model
         """
+        if self.pk:
+            return models.Q(pk=self.pk)
         try:
             kwargs = self.natural_key_dict()
         except AttributeError:
@@ -66,7 +68,7 @@ class QueryMixin():
         return models.Q(**kwargs)
 
 
-class Artifact(Model, QueryMixin):
+class Artifact(Model):
     """
     A file associated with a piece of content.
 
@@ -122,6 +124,15 @@ class Artifact(Model, QueryMixin):
 
     # Reliable digest fields ordered by algorithm strength.
     RELIABLE_DIGEST_FIELDS = DIGEST_FIELDS[:-3]
+
+    def q(self):
+        if self.pk:
+            return models.Q(pk=self.pk)
+        for digest_name in self.DIGEST_FIELDS:
+            digest_value = getattr(self, digest_name)
+            if digest_value:
+                return models.Q(**{digest_name: digest_value})
+        return models.Q()
 
     def is_equal(self, other):
         """
