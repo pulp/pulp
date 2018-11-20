@@ -20,8 +20,8 @@ Args:
     artifact_attributes (dict): Contains keys corresponding with
         :class:`~pulpcore.plugin.models.Artifact` fields. This includes the computed digest values
         along with size information.
-    headers (dict): HTTP response headers. The keys are header names. The values are header
-        content.
+    headers (aiohttp.multidict.MultiDict): HTTP response headers. The keys are header names. The
+        values are header content. None when not using the HttpDownloader or sublclass.
 """
 
 
