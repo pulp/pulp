@@ -12,6 +12,7 @@ from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
     delete_orphans,
     delete_version,
+    gen_publisher,
     gen_repo,
     get_added_content,
     get_artifact_paths,
@@ -31,7 +32,6 @@ from tests.functional.api.using_plugin.constants import (
     FILE_REMOTE_PATH,
 )
 from tests.functional.api.using_plugin.utils import (
-    gen_file_publisher,
     gen_file_remote,
     populate_pulp,
     skip_if,
@@ -325,7 +325,7 @@ class AddRemoveRepoVersionTestCase(unittest.TestCase):
         Delete a repository version, and verify the associated publication is
         also deleted.
         """
-        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
+        publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 
         publication = publish(self.cfg, publisher, self.repo)

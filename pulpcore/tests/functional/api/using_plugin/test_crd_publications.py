@@ -13,6 +13,7 @@ from pulp_smash.pulp3.constants import (
 )
 from pulp_smash.pulp3.utils import (
     gen_distribution,
+    gen_publisher,
     gen_repo,
     publish,
     sync
@@ -23,7 +24,6 @@ from tests.functional.api.using_plugin.constants import (
     FILE_REMOTE_PATH
 )
 from tests.functional.api.using_plugin.utils import (
-    gen_file_publisher,
     gen_file_remote,
     skip_if
 )
@@ -47,7 +47,7 @@ class PublicationsTestCase(unittest.TestCase):
             body = gen_file_remote()
             cls.remote.update(cls.client.post(FILE_REMOTE_PATH, body))
             cls.publisher.update(
-                cls.client.post(FILE_PUBLISHER_PATH, gen_file_publisher())
+                cls.client.post(FILE_PUBLISHER_PATH, gen_publisher())
             )
             sync(cls.cfg, cls.remote, cls.repo)
         except Exception:
@@ -175,7 +175,7 @@ class PublicationsTestCase(unittest.TestCase):
         Assert response returns an error 400 including ["Unexpected field"].
         """
         response = api.Client(self.cfg, api.echo_handler).post(
-            FILE_PUBLISHER_PATH, gen_file_publisher(foo='bar')
+            FILE_PUBLISHER_PATH, gen_publisher(foo='bar')
         )
         assert response.status_code == 400
         assert response.json()['foo'] == ['Unexpected field']

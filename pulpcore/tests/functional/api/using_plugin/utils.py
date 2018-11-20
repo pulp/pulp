@@ -6,7 +6,6 @@ from unittest import SkipTest
 from pulp_smash import api, selectors
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
-    gen_publisher,
     gen_repo,
     gen_remote,
     require_pulp_3,
@@ -70,16 +69,3 @@ def gen_file_remote(url=None, **kwargs):
         url = FILE_FIXTURE_MANIFEST_URL
 
     return gen_remote(url, **kwargs)
-
-
-def gen_file_publisher(**kwargs):
-    """Return a semi-random dict for use in creating a file Remote.
-
-    :param url: The URL of an external content source.
-    """
-    publisher = gen_publisher()
-    file_extra_fields = {
-        **kwargs
-    }
-    publisher.update(file_extra_fields)
-    return publisher
