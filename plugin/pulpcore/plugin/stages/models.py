@@ -66,11 +66,12 @@ class DeclarativeContent:
         ValueError: If `content` is not specified.
     """
 
-    __slots__ = ('content', 'd_artifacts', 'extra_data')
+    __slots__ = ('content', 'd_artifacts', 'extra_data', 'priority')
 
-    def __init__(self, content=None, d_artifacts=None, extra_data=None):
+    def __init__(self, content=None, d_artifacts=None, extra_data=None, priority=False):
         if not content:
             raise ValueError(_("DeclarativeContent must have a 'content'"))
         self.content = content
         self.d_artifacts = d_artifacts or []
         self.extra_data = extra_data or {}
+        self.priority = priority

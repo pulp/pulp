@@ -68,10 +68,16 @@ class Stage:
 
         while not shutdown:
             content = await in_q.get()
+            if getattr(content, 'priority', False):
+                yield [content]
+                continue
             shutdown = add_to_batch(batch, content)
             while not shutdown:
                 try:
                     content = in_q.get_nowait()
+                    if getattr(content, 'priority', False):
+                        yield [content]
+                        continue
                 except asyncio.QueueEmpty:
                     break
                 else:
