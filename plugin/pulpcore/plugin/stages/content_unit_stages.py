@@ -113,7 +113,8 @@ class ContentUnitSaver(Stage):
                 for declarative_content in batch:
                     if declarative_content.content.pk is None:
                             try:
-                                declarative_content.content.save()
+                                with transaction.atomic():
+                                    declarative_content.content.save()
                             except IntegrityError:
                                 declarative_content.content = \
                                     declarative_content.content.__class__.objects.get(
