@@ -58,8 +58,11 @@ class QueryMixin():
         """
         Returns a Q object that represents the model
         """
-        all_kwargs = model_to_dict(self)
-        kwargs = {k: v for k, v in all_kwargs.items() if v}
+        try:
+            kwargs = self.natural_key_dict()
+        except AttributeError:
+            all_kwargs = model_to_dict(self)
+            kwargs = {k: v for k, v in all_kwargs.items() if v}
         return models.Q(**kwargs)
 
 
