@@ -12,10 +12,9 @@ from django.http import (
     HttpResponseNotFound,
     StreamingHttpResponse)
 from django.views.generic import View
-
 from wsgiref.util import FileWrapper
 
-from pulpcore.app.models import Distribution, ContentArtifact
+from ..models import Distribution, ContentArtifact
 
 
 log = getLogger(__name__)
@@ -111,16 +110,21 @@ class ContentView(View):
         try:
             return Distribution.objects.get(base_path__in=base_paths)
         except ObjectDoesNotExist:
-            log.debug(_('Distribution not matched for {path} using: {base_paths}').format(
-                path=path, base_paths=base_paths
-            ))
+            log.debug(
+                _('Distribution not matched for %(p)s using: %s(b)s'),
+                {
+                    'p': path,
+                    'b': base_paths
+                }
+            )
             raise PathNotResolved(path)
 
-    def _match(self, path):
+    def _match_file(self, distribution, path):
         """
         Match either a PublishedArtifact or PublishedMetadata.
 
         Args:
+            distribution (Distribution): The matched distribution.
             path (str): The path component of the URL.
 
         Returns:
@@ -132,7 +136,6 @@ class ContentView(View):
                 associated artifact does not exist.
 
         """
-        distribution = self._match_distribution(path)
         publication = distribution.publication
         if not publication:
             raise PathNotResolved(path)
@@ -168,7 +171,7 @@ class ContentView(View):
                     relative_path=rel_path)
             except MultipleObjectsReturned:
                 log.debug(
-                    _('Multiple (pass-through) matches for {b}/{p}'),
+                    _('Multiple (pass-through) matches for %(b)s/%(p)s'),
                     {
                         'b': distribution.base_path,
                         'p': rel_path,
@@ -285,17 +288,55 @@ class ContentView(View):
             django.http.HttpResponseForbidden: on forbidden.
             django.http.HttpResponseRedirect: on redirect to the streamer.
         """
+        methods = {
+            'django': self._django,
+            'apache': self._apache,
+            'nginx': self._nginx,
+        }
+
         server = settings.CONTENT['WEB_SERVER']
 
         try:
-            responder = self.RESPONDER[server]
+            responder = methods[server]
         except KeyError:
             raise ValueError(_('Web server "{t}" not supported.').format(t=server))
         else:
             disposition = os.path.basename(request.path)
-            response = responder(self, path)
+            response = responder(path)
             response['Content-Disposition'] = 'attachment; filename={n}'.format(n=disposition)
             return response
+
+    def _permit(self, request, distribution):
+        """
+        Permit the request.
+
+        Authorization is delegated to the optional content-guard associated with the distribution.
+
+        Args:
+            request (django.http.HttpRequest): A request for a published file.
+            distribution (Distribution): The matched distribution.
+
+        Raises:
+            PermissionError: When not permitted.
+        """
+        guard = distribution.content_guard
+        if not guard:
+            return
+        try:
+            guard.cast().permit(request)
+        except PermissionError as pe:
+            log.debug(
+                _('Path: %(p)s not permitted by guard: "%(g)s" reason: %(r)s'),
+                {
+                    'p': request.path,
+                    'g': guard.name,
+                    'r': str(pe)
+                })
+            raise
+        except Exception:
+            reason = _('Guard "{g}" failed:').format(g=guard.name)
+            log.debug(reason, exc_info=True)
+            raise PermissionError(reason)
 
     def get(self, request):
         """
@@ -312,17 +353,14 @@ class ContentView(View):
         """
         try:
             path = self._published_path(request)
-            storage_path = self._match(path)
+            distribution = self._match_distribution(path)
+            storage_path = self._match_file(distribution, path)
+            self._permit(request, distribution)
         except PathNotResolved:
             return HttpResponseNotFound()
+        except PermissionError:
+            return HttpResponseForbidden()
         except ArtifactNotFound:
             return self._redirect(request)
         else:
             return self._dispatch(request, storage_path)
-
-    # Mapping of responder-method based on the type of web server.
-    RESPONDER = {
-        'django': _django,
-        'apache': _apache,
-        'nginx': _nginx,
-    }
