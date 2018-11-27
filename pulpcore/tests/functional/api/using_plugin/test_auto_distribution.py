@@ -21,14 +21,17 @@ from pulp_smash.pulp3.utils import (
 )
 
 from pulpcore.tests.functional.api.using_plugin.constants import (
-    FILE_FIXTURE_MANIFEST_URL,
-    FILE_URL,
+    FILE_CONTENT_NAME,
     FILE_CONTENT_PATH,
+    FILE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
-    FILE_REMOTE_PATH
+    FILE_REMOTE_PATH,
+    FILE_URL
 )
 from pulpcore.tests.functional.api.using_plugin.utils import populate_pulp
-from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import (  # noqa:F401
+    set_up_module as setUpModule
+)
 
 
 class AutoDistributionTestCase(unittest.TestCase):
@@ -113,7 +116,9 @@ class AutoDistributionTestCase(unittest.TestCase):
 
         # Assert that distribution was updated as per step 8.
         self.assertEqual(distribution['publication'], publication['_href'])
-        unit_path = get_added_content(repo, last_version_href)[0]['relative_path']
+        unit_path = get_added_content(
+            repo, last_version_href
+        )[FILE_CONTENT_NAME][0]['relative_path']
         unit_url = self.cfg.get_hosts('api')[0].roles['api']['scheme']
         unit_url += '://' + distribution['base_url'] + '/'
         unit_url = urljoin(unit_url, unit_path)
@@ -153,6 +158,7 @@ class SetupAutoDistributionTestCase(unittest.TestCase):
         # Create a repository and a publisher.
         repo = self.client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.client.delete, repo['_href'])
+
         publisher = self.client.post(FILE_PUBLISHER_PATH, gen_publisher())
         self.addCleanup(self.client.delete, publisher['_href'])
 

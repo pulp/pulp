@@ -488,7 +488,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         RepositoryVersion.
 
         Args:
-            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
             dict: {<type>: <url>}
@@ -516,7 +516,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         RepositoryVersion.
 
         Args:
-            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
             dict: {<type>: <url>}
@@ -544,7 +544,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         RepositoryVersion.
 
         Args:
-            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
             dict: {<type>: <url>}
