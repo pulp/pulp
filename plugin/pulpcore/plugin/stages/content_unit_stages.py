@@ -112,35 +112,35 @@ class ContentUnitSaver(Stage):
                 await self._pre_save(batch)
                 for declarative_content in batch:
                     if declarative_content.content.pk is None:
-                            try:
-                                with transaction.atomic():
-                                    declarative_content.content.save()
-                            except IntegrityError:
-                                declarative_content.content = \
-                                    declarative_content.content.__class__.objects.get(
-                                        declarative_content.content.q())
-                                continue
-                            for declarative_artifact in declarative_content.d_artifacts:
-                                content_artifact = ContentArtifact(
-                                    content=declarative_content.content,
-                                    artifact=declarative_artifact.artifact,
-                                    relative_path=declarative_artifact.relative_path
-                                )
-                                content_artifact_bulk.append(content_artifact)
-                                remote_artifact_data = {
-                                    'url': declarative_artifact.url,
-                                    'size': declarative_artifact.artifact.size,
-                                    'md5': declarative_artifact.artifact.md5,
-                                    'sha1': declarative_artifact.artifact.sha1,
-                                    'sha224': declarative_artifact.artifact.sha224,
-                                    'sha256': declarative_artifact.artifact.sha256,
-                                    'sha384': declarative_artifact.artifact.sha384,
-                                    'sha512': declarative_artifact.artifact.sha512,
-                                    'remote': declarative_artifact.remote,
-                                }
-                                rel_path = declarative_artifact.relative_path
-                                content_key = str(content_artifact.content.pk) + rel_path
-                                remote_artifact_map[content_key] = remote_artifact_data
+                        try:
+                            with transaction.atomic():
+                                declarative_content.content.save()
+                        except IntegrityError:
+                            declarative_content.content = \
+                                declarative_content.content.__class__.objects.get(
+                                    declarative_content.content.q())
+                            continue
+                        for declarative_artifact in declarative_content.d_artifacts:
+                            content_artifact = ContentArtifact(
+                                content=declarative_content.content,
+                                artifact=declarative_artifact.artifact,
+                                relative_path=declarative_artifact.relative_path
+                            )
+                            content_artifact_bulk.append(content_artifact)
+                            remote_artifact_data = {
+                                'url': declarative_artifact.url,
+                                'size': declarative_artifact.artifact.size,
+                                'md5': declarative_artifact.artifact.md5,
+                                'sha1': declarative_artifact.artifact.sha1,
+                                'sha224': declarative_artifact.artifact.sha224,
+                                'sha256': declarative_artifact.artifact.sha256,
+                                'sha384': declarative_artifact.artifact.sha384,
+                                'sha512': declarative_artifact.artifact.sha512,
+                                'remote': declarative_artifact.remote,
+                            }
+                            rel_path = declarative_artifact.relative_path
+                            content_key = str(content_artifact.content.pk) + rel_path
+                            remote_artifact_map[content_key] = remote_artifact_data
 
                 for content_artifact in ContentArtifact.objects.bulk_get_or_create(
                         content_artifact_bulk):
