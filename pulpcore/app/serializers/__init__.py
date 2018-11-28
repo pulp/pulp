@@ -10,8 +10,6 @@ from .base import (  # noqa
     NestedIdentityField,
     NestedRelatedField,
     RelatedField,
-    view_name_for_model,
-    viewset_for_model,
     validate_unknown_fields,
     AsyncOperationResponseSerializer
 )

@@ -2,9 +2,11 @@ from gettext import gettext as _
 
 from django.core import validators
 from django.db.models import Q
+from django.urls import reverse
 
 from rest_framework import serializers, fields
 from rest_framework.validators import UniqueValidator
+from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
@@ -20,7 +22,7 @@ from pulpcore.app.serializers import (
     ModelSerializer,
 )
 from pulpcore.app.serializers import validate_unknown_fields
-from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
+from pulpcore.app.util import get_view_name_for_model
 
 
 class RepositorySerializer(ModelSerializer):
@@ -407,17 +409,23 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         view_name='versions-detail',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _content_href = NestedIdentityField(
-        view_name='versions-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    _content = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content in this version, and the HREF to view '
+                    'them.'),
+        read_only=True,
+        method_name='get_content'
     )
-    _added_href = NestedIdentityField(
-        view_name='versions-added-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    _content_added = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content added in this version, and the HREF to '
+                    'view them.'),
+        read_only=True,
+        method_name='get_content_added'
     )
-    _removed_href = NestedIdentityField(
-        view_name='versions-removed-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+    _content_removed = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content removed from this version, and the HREF '
+                    'to view them.'),
+        read_only=True,
+        method_name='get_content_removed'
     )
     number = serializers.IntegerField(
         read_only=True
@@ -436,11 +444,95 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
 
+    def get_content(self, obj):
+        """
+        Generate URLs for the content types present in the RepositoryVersion.
+
+        For each content type present in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by presence in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.content.values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
+
+    def get_content_added(self, obj):
+        """
+        Generate URLs for the content types added in the RepositoryVersion.
+
+        For each content type added in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by addition in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.added().values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version_added={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
+
+    def get_content_removed(self, obj):
+        """
+        Generate URLs for the content types removed in the RepositoryVersion.
+
+        For each content type removed in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by removal in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion object being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.removed().values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version_removed={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
+
     class Meta:
         model = models.RepositoryVersion
         fields = ModelSerializer.Meta.fields + (
-            '_href', '_content_href', '_added_href', '_removed_href', 'number',
-            'content_summary', 'base_version'
+            '_href', '_content', '_content_added', '_content_removed',
+            'number', 'base_version', 'content_summary',
         )
 
 

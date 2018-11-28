@@ -5,7 +5,7 @@ from django_filters.rest_framework import filters, DjangoFilterBackend
 from django_filters import Filter
 from drf_yasg.utils import swagger_auto_schema
 
-from rest_framework import decorators, mixins, serializers
+from rest_framework import mixins, serializers
 from rest_framework.filters import OrderingFilter
 
 from pulpcore.app import tasks
@@ -21,11 +21,10 @@ from pulpcore.app.models import (
     RepositoryContent,
     RepositoryVersion
 )
-from pulpcore.app.pagination import IDPagination, NamePagination
+from pulpcore.app.pagination import NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
     AsyncOperationResponseSerializer,
-    ContentSerializer,
     ContentGuardSerializer,
     DistributionSerializer,
     ExporterSerializer,
@@ -208,52 +207,6 @@ class RepositoryVersionViewSet(NamedModelViewSet,
     filterset_class = RepositoryVersionFilter
     filter_backends = (OrderingFilter, DjangoFilterBackend)
     ordering = ('-number',)
-
-    @swagger_auto_schema(
-        operation_description="List Content",
-        responses={'200': ContentSerializer}
-    )
-    @decorators.detail_route()
-    def content(self, request, repository_pk, number):
-        return self._paginated_response(self.get_object().content, request)
-
-    @swagger_auto_schema(
-        operation_description="List added Content",
-        responses={'200': ContentSerializer}
-    )
-    @decorators.detail_route()
-    def added_content(self, request, repository_pk, number):
-        """
-        Display content added since the previous Repository Version.
-        """
-        return self._paginated_response(self.get_object().added(), request)
-
-    @swagger_auto_schema(
-        operation_description="List removed Content",
-        responses={'200': ContentSerializer}
-    )
-    @decorators.detail_route()
-    def removed_content(self, request, repository_pk, number):
-        """
-        Display content removed since the previous Repository Version.
-        """
-        return self._paginated_response(self.get_object().removed(), request)
-
-    def _paginated_response(self, content, request):
-        """
-        a helper method to make a paginated response for content list views.
-
-        Args:
-            content (django.db.models.QuerySet): the Content to render
-            request (rest_framework.request.Request): the current HTTP request being handled
-
-        Returns:
-            rest_framework.response.Response: a paginated response for the corresponding content
-        """
-        paginator = IDPagination()
-        page = paginator.paginate_queryset(content, request)
-        serializer = ContentSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(operation_description="Trigger an asynchronous task to delete "
                                                "a repositroy version.",

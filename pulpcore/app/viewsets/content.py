@@ -7,9 +7,9 @@ from rest_framework.response import Response
 
 from pulpcore.app.models import Artifact, Content, ContentGuard, ContentArtifact
 from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer, ContentGuardSerializer
-from pulpcore.app.viewsets import (
-    BaseFilterSet,
-    NamedModelViewSet,
+from pulpcore.app.viewsets.base import BaseFilterSet, NamedModelViewSet
+
+from .custom_filters import (
     ContentRepositoryVersionFilter,
     ContentAddedRepositoryVersionFilter,
     ContentRemovedRepositoryVersionFilter,

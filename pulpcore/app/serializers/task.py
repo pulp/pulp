@@ -5,8 +5,7 @@ from rest_framework import serializers
 from pulpcore.app import models
 from pulpcore.app.serializers import IdentityField, RelatedField, ModelSerializer, \
     ProgressReportSerializer
-
-from .base import viewset_for_model
+from pulpcore.app.util import get_viewset_for_model
 
 
 class CreatedResourceSerializer(RelatedField):
@@ -21,7 +20,7 @@ class CreatedResourceSerializer(RelatedField):
         except AttributeError:
             pass
         request = self.context['request']
-        viewset = viewset_for_model(data.content_object)
+        viewset = get_viewset_for_model(data.content_object)
         serializer = viewset.serializer_class(data.content_object, context={'request': request})
         return serializer.data.get('_href')
 
