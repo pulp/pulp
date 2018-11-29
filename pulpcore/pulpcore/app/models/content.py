@@ -37,10 +37,10 @@ class BulkCreateManager(models.Manager):
         Returns:
             List of instances that were inserted into the database.
         """
+        objs = list(objs)
         try:
             return super().bulk_create(objs, batch_size=batch_size)
         except IntegrityError:
-            objs = list(objs)
             for i in range(len(objs)):
                 try:
                     objs[i].save()
