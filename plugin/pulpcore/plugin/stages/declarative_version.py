@@ -11,7 +11,7 @@ from .content_unit_stages import ContentUnitSaver, QueryExistingContentUnits
 
 class DeclarativeVersion:
 
-    def __init__(self, first_stage, repository, mirror=True):
+    def __init__(self, first_stage, repository, mirror=True, download_artifacts=True):
         """
         A pipeline that creates a new :class:`~pulpcore.plugin.models.RepositoryVersion` from a
         stream of :class:`~pulpcore.plugin.stages.DeclarativeContent` objects.
@@ -20,7 +20,7 @@ class DeclarativeVersion:
         :class:`~pulpcore.plugin.stages.DeclarativeContent` object for each Content unit that should
         exist in the new :class:`~pulpcore.plugin.models.RepositoryVersion`.
 
-        The pipeline stages perform the following steps:
+        The pipeline stages perform the following steps by default:
 
         1. Create the new :class:`~pulpcore.plugin.models.RepositoryVersion`
         2. Query existing artifacts to determine which are already local to Pulp
@@ -45,7 +45,7 @@ class DeclarativeVersion:
         >>>         self.remote = remote
         >>>
         >>>     async def __call__(self, out_q):
-        >>>         downloader = remote.get_downloader(remote.url)
+        >>>         downloader = remote.get_downloader(url=remote.url)
         >>>         result = await downloader.run()
         >>>         for entry in read_my_metadata_file_somehow(result.path)
         >>>             unit = MyContent(entry)  # make the content unit in memory-only
@@ -81,15 +81,22 @@ class DeclarativeVersion:
                  :class:`~pulpcore.plugin.stages.DeclarativeVersion stream`, and does not remove any
                  pre-existing units in the :class:`~pulpcore.plugin.models.RepositoryVersion`.
                  'True' is the default.
+             download_artifacts (bool): 'True' includes Artifact downloading and saving along with
+                 content unit query and saving. 'False' will only handle content units and will not
+                 perform Artifact downloading and saving as part of the pipeline. 'False' is the
+                 default.
         """
         self.first_stage = first_stage
         self.repository = repository
         self.mirror = mirror
+        self.download_artifacts = download_artifacts
 
     def pipeline_stages(self, new_version):
         """
-        Build the list of pipeline stages feeding into the
-        ContentUnitAssociation stage.
+        Build the list of pipeline stages feeding into the ContentUnitAssociation stage.
+
+        If the `self.download_artifacts` is False the pipeline will not include Artifact downloading
+        and saving stages.
 
         Plugin-writers may override this method to build a custom pipeline. This
         can be achieved by returning a list with different stages or by extending
@@ -103,11 +110,11 @@ class DeclarativeVersion:
             list: List of :class:`~pulpcore.plugin.stages.Stage` instances
 
         """
-        return [
-            self.first_stage,
-            QueryExistingArtifacts(), ArtifactDownloader(), ArtifactSaver(),
-            QueryExistingContentUnits(), ContentUnitSaver(),
-        ]
+        pipeline = [self.first_stage]
+        if self.download_artifacts:
+            pipeline.extend([QueryExistingArtifacts(), ArtifactDownloader(), ArtifactSaver()])
+        pipeline.extend([QueryExistingContentUnits(), ContentUnitSaver()])
+        return pipeline
 
     def create(self):
         """

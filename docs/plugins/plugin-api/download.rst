@@ -68,11 +68,19 @@ Configuring from a Remote
 
 When fetching content during a sync, the remote has settings like SSL certs, SSL validation, basic
 auth credentials, and proxy settings. Downloaders commonly want to use these settings while
-downloading. The remote can automatically configure a downloader with these settings using
-the :meth:`~pulpcore.plugin.models.Remote.get_downloader` call. Here is an example:
+downloading. The Remote's settings can automatically configure a downloader either to download a
+`url` or a :class:`pulpcore.plugin.models.RemoteArtifact` using the
+:meth:`~pulpcore.plugin.models.Remote.get_downloader` call. Here is an example download from a URL:
 
->>> downloader = my_remote.get_downloader('http://example.com')
->>> downloader.fetch()  # This downloader is fully configured
+>>> downloader = my_remote.get_downloader(url='http://example.com')
+>>> downloader.fetch()  # This downloader is configured with the remote's settings
+
+Here is an example of a download configured from a RemoteArtifact, which also configures the
+downloader with digest and size validation:
+
+>>> remote_artifact = RemoteArtifact.objects.get(...)
+>>> downloader = my_remote.get_downloader(remote_artifact=ra)
+>>> downloader.fetch()  # This downloader has the remote's settings and digest+validation checking
 
 The :meth:`~pulpcore.plugin.models.Remote.get_downloader` internally calls the
 `DownloaderFactory`, so it expects a `url` that the `DownloaderFactory` can build a downloader for.

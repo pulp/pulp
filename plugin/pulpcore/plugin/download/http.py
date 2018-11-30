@@ -153,13 +153,13 @@ class HttpDownloader(BaseDownloader):
                  more information.
         """
         if self.headers_ready_callback:
-            self.headers_ready_callback(response.headers)
+            await self.headers_ready_callback(response.headers)
         while True:
             chunk = await response.content.read(1048576)  # 1 megabyte
             if not chunk:
-                self.finalize()
+                await self.finalize()
                 break  # the download is done
-            self.handle_data(chunk)
+            await self.handle_data(chunk)
         return DownloadResult(path=self.path, artifact_attributes=self.artifact_attributes,
                               url=self.url, headers=response.headers)
 

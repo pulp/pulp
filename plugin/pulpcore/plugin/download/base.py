@@ -33,9 +33,9 @@ class BaseDownloader:
     the :meth:`~pulpcore.plugin.download.BaseDownloader.run` method and do two things:
 
         1. Pass all downloaded data to
-           :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
+           :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data` and schedule it.
 
-        2. Call :meth:`~pulpcore.plugin.download.BaseDownloader.finalize` after all data has
+        2. Schedule :meth:`~pulpcore.plugin.download.BaseDownloader.finalize` after all data has
            been delivered to :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.
 
     Passing all downloaded data the into
@@ -95,9 +95,9 @@ class BaseDownloader:
         self._digests = {n: hashlib.new(n) for n in Artifact.DIGEST_FIELDS}
         self._size = 0
 
-    def handle_data(self, data):
+    async def handle_data(self, data):
         """
-        Write data to the file object and compute its digests.
+        A coroutine that writes data to the file object and compute its digests.
 
         All subclassed downloaders are expected to pass all data downloaded to this method. Similar
         to the hashlib docstring, repeated calls are equivalent to a single call with
@@ -110,9 +110,9 @@ class BaseDownloader:
         self._writer.write(data)
         self._record_size_and_digests_for_data(data)
 
-    def finalize(self):
+    async def finalize(self):
         """
-        Flush downloaded data, close the file writer, and validate the data.
+        A coroutine to flush downloaded data, close the file writer, and validate the data.
 
         All subclasses are required to call this method after all data has been passed to
         :meth:`~pulpcore.plugin.download.BaseDownloader.handle_data`.

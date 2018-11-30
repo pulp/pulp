@@ -46,8 +46,8 @@ class FileDownloader(BaseDownloader):
             while True:
                 chunk = await f_handle.read(1048576)  # 1 megabyte
                 if not chunk:
-                    self.finalize()
+                    await self.finalize()
                     break  # the reading is done
-                self.handle_data(chunk)
+                await self.handle_data(chunk)
             return DownloadResult(path=self._path, artifact_attributes=self.artifact_attributes,
                                   url=self.url, headers=None)

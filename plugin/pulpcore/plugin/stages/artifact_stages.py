@@ -182,7 +182,7 @@ class ArtifactDownloaderRunner():
                     expected_size = declarative_artifact.artifact.size
                     validation_kwargs['expected_size'] = expected_size
                 downloader = declarative_artifact.remote.get_downloader(
-                    declarative_artifact.url,
+                    url=declarative_artifact.url,
                     **validation_kwargs
                 )
                 # Custom downloaders may need extra information to complete the request.
