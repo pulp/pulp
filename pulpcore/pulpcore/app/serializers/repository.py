@@ -107,10 +107,6 @@ class RemoteSerializer(MasterModelSerializer):
         required=False,
         allow_blank=True,
     )
-    last_synced = serializers.DateTimeField(
-        help_text='Timestamp of the most recent successful sync.',
-        read_only=True
-    )
     last_updated = serializers.DateTimeField(
         help_text='Timestamp of the most recent update of the remote.',
         read_only=True
@@ -132,8 +128,8 @@ class RemoteSerializer(MasterModelSerializer):
         model = models.Remote
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'url', 'validate', 'ssl_ca_certificate', 'ssl_client_certificate',
-            'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_synced',
-            'last_updated', 'connection_limit', 'policy')
+            'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_updated',
+            'connection_limit', 'policy')
 
 
 class RepositorySyncURLSerializer(serializers.Serializer):
@@ -169,10 +165,6 @@ class PublisherSerializer(MasterModelSerializer):
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
-    last_published = serializers.DateTimeField(
-        help_text=_('Timestamp of the most recent successful publish.'),
-        read_only=True
-    )
     distributions = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
@@ -183,7 +175,7 @@ class PublisherSerializer(MasterModelSerializer):
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'last_published', 'distributions',
+            'name', 'last_updated', 'distributions',
         )
 
 

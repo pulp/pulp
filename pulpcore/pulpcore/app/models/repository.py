@@ -71,7 +71,6 @@ class Remote(MasterModel):
             Format: scheme://user:password@host:port
         username (models.TextField): The username to be used for authentication when syncing.
         password (models.TextField): The password to be used for authentication when syncing.
-        last_synced (models.DatetimeField): Timestamp of the most recent successful sync.
         connection_limit (models.PositiveIntegerField): Total number of simultaneous connections.
         policy (models.TextField): The policy to use when downloading content.
 
@@ -119,7 +118,6 @@ class Remote(MasterModel):
     proxy_url = models.TextField()
     username = models.TextField()
     password = models.TextField()
-    last_synced = models.DateTimeField(null=True)
     connection_limit = models.PositiveIntegerField(default=20)
     policy = models.TextField(choices=POLICY_CHOICES, default=IMMEDIATE)
 
@@ -133,7 +131,7 @@ class Publisher(MasterModel):
 
     Fields:
 
-        last_published (models.DatetimeField): When the last successful publish occurred.
+        name (models.TextField): The publisher unique name.
 
     Relations:
 
@@ -141,7 +139,6 @@ class Publisher(MasterModel):
     TYPE = 'publisher'
 
     name = models.TextField(db_index=True, unique=True)
-    last_published = models.DateTimeField(null=True)
 
     class Meta:
         default_related_name = 'publishers'
