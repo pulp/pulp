@@ -62,10 +62,10 @@ class CRUDRepoTestCase(unittest.TestCase):
         """
         fields = (
             '_href', 'created', '_versions_href', '_latest_version_href',
-            'name', 'description', 'notes'
+            'name', 'description'
         )
         for field_pair in permutations(fields, 2):
-            # ex: field_pair = ('_href', 'notes)
+            # ex: field_pair = ('_href', 'created')
             with self.subTest(field_pair=field_pair):
                 repo = self.client.get(
                     self.repo['_href'],

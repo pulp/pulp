@@ -72,7 +72,7 @@ Serializer Notes
 
 * All Serializers representing Pulp Models should subclass
   :class:`pulpcore.app.serializers.base.ModelSerializer`, as it provides useful behaviors to handle some
-  of the conventions used when building Pulp Models, such as ``GenericKeyValueMapping`` fields.
+  of the conventions used when building Pulp Models.
 
 * Whether serializer fields are explicitly declared on the serializer class or not, the field names
   to expose via the API must be declared by specifying 'fields' in the serializer's ``Meta`` class,
@@ -134,50 +134,6 @@ case.
 An example of where this *might not* be useful is including complete Detail representations
 of Content related to a Repository when viewing a Repository instance, since those instances
 would have to be `cast()`, and there could literally be millions of them.
-
-Generic Relations
-^^^^^^^^^^^^^^^^^
-
-When serializing a Generic Relation, such as the Tag or Bookmark models outlined in the
-Django generic relations docs, DRF supports this and provides good guidance for creating a
-custom field type to represent the generically related model:
-
-http://www.django-rest-framework.org/api-guide/relations/#generic-relationships
-
-If implementing a generic relations in a nested way, the same issues arise as with other nested
-serializers: The serializer nesting the generic related field must have custom create/update
-methods to handle adding/updating generically related objects.
-
-Note that the Generic Key/Value store used by various models will *not* work with this method.
-For those, see the "Generic Key/Value Relationships" section below.
-
-Generic Key/Value Relationships
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The Generic Key/Value mapping interface can be used to easily nest the key/value pairs of this
-relationship in its containing serializer by using a
-:class:``pulpcore.app.serializers.GenericKeyValueRelatedField`` in the serializer to represent this
-field.
-
-This field type is supported by :class:`pulpcore.app.serializers.base.ModelSerializer`, and exposes the
-mapping form in the representation of the object being serialized with read and write capabilities.
-
-For example:
-
-.. code-block:: json
-
-	{
-		"_href": "http://apihost/pulp/api/v3/repository/reponame/",
-		"name": "reponame",
-		"notes": {
-			"foo": "bar"
-		}
-	}
-
-In this basic example of a Repository, the ``notes`` field is being represented by a
-``GenericKeyValueRelatedField``, which aggregates the generically-related key/value pairs
-into a read-write nested serializer field, hiding the rather complicated underlying
-relational database magic from API users.
 
 Master/Detail
 ^^^^^^^^^^^^^

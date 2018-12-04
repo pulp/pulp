@@ -189,32 +189,6 @@ additional fields or behaviors to the model as-needed for their use cases.
 In the Pulp Platform, models requiring this sort of behavior should subclass
 :class:`pulpcore.app.models.MasterModel`.
 
-Generic Key/Value Stores
-************************
-
-In Pulp 2, we regularly stored arbitrary data in various fields on our models.
-This data was schemaless, which creates an interesting situation for Pulp 3,
-which has a well-defined schema and enforced relational constraints. The three
-Generic K/V Fields, importable from ``pulpcore.app.models`` are :class:`pulpcore.app.models.Config`
-and :class:`pulpcore.app.models.Notes`. They all share the same API, and all store pairs of keys and
-values, where the keys and values are always strings.
-
-These fields serve different purposes:
-
-Config
-    Used by both Pulp and Users to configure a given object.
-Notes
-    Used by Users to store arbitrary notes on a given object.
-
-Keys and values associated with a model instance using these fields can be accessed using
-the normal Django model querying API, but also expose the keys and values in a
-dict-like object as a ``mapping`` attribute on these fields. For example, given
-a model instance that has a ``config`` field, exposing an instance of the ``Config``
-field mentioned above, the keys and values stored in that related field can be
-seen as a Python mapping by accessing ``model_instance.config.mapping``. The ``mapping``
-attribute is read-write, so any values written to the dictionary will be coerced to the
-``str`` type and saved to the database.
-
 
 Serializers, ViewSets, and other Model-Related Classes
 ------------------------------------------------------

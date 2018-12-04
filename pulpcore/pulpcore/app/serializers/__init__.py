@@ -3,7 +3,6 @@
 # - all can import directly from base and fields if needed
 from .base import (  # noqa
     DetailRelatedField,
-    GenericKeyValueRelatedField,
     ModelSerializer,
     MasterModelSerializer,
     DetailIdentityField,

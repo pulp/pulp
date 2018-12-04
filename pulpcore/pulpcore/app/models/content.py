@@ -9,7 +9,7 @@ from django.forms.models import model_to_dict
 
 from itertools import chain
 
-from pulpcore.app.models import Model, MasterModel, Notes, GenericKeyValueRelation, storage, fields
+from pulpcore.app.models import Model, MasterModel, storage, fields
 from pulpcore.exceptions import DigestValidationError, SizeValidationError
 
 
@@ -240,12 +240,10 @@ class Content(MasterModel, QueryMixin):
 
     Relations:
 
-        notes (GenericKeyValueRelation): Arbitrary information stored with the content.
         artifacts (models.ManyToManyField): Artifacts related to Content through ContentArtifact
     """
     TYPE = 'content'
 
-    notes = GenericKeyValueRelation(Notes)
     artifacts = models.ManyToManyField(Artifact, through='ContentArtifact')
 
     objects = BulkCreateManager()
@@ -319,8 +317,8 @@ class RemoteArtifact(Model, QueryMixin):
 
     Relations:
 
-        content_artifact (:class:`pulpcore.app.models.GenericKeyValueRelation`): Arbitrary
-            information stored with the content.
+        content_artifact (:class:`pulpcore.app.models.ForeignKey`):
+            ContentArtifact associated with this RemoteArtifact.
         remote (:class:`django.db.models.ForeignKey`): Remote that created the
             RemoteArtifact.
     """
