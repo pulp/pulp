@@ -24,3 +24,4 @@ repository <https://github.com/pulp/devel/>`_ and on the `wiki
    quickstart
    source
    ansible
+   runtests
