@@ -7,7 +7,6 @@ from django.db import transaction
 
 from .base import Model, MasterModel
 from .content import Content
-from .generic import Notes, GenericKeyValueRelation
 from .task import CreatedResource
 
 from pulpcore.app.models.storage import get_tls_path
@@ -28,15 +27,11 @@ class Repository(Model):
 
     Relations:
 
-        notes (GenericKeyValueRelation): Arbitrary repository properties.
         content (models.ManyToManyField): Associated content.
     """
     name = models.TextField(db_index=True, unique=True)
     description = models.TextField()
     last_version = models.PositiveIntegerField(default=0)
-
-    notes = GenericKeyValueRelation(Notes)
-
     content = models.ManyToManyField('Content', through='RepositoryContent',
                                      related_name='repositories')
 

@@ -12,8 +12,7 @@ class TaskTestCase(TestCase):
         """
         task = Task.objects.create()
         worker = Worker.objects.create(name="test_worker")
-        resource = ReservedResource.objects.create(resource="test",
-                                                   worker=worker)
+        resource = ReservedResource.objects.create(resource="test", worker=worker)
         TaskReservedResource.objects.create(task=task, resource=resource)
         with self.assertRaises(ProtectedError):
             task.delete()

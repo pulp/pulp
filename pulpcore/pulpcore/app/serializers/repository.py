@@ -11,7 +11,6 @@ from pulpcore.app.serializers import (
     BaseURLField,
     DetailIdentityField,
     DetailRelatedField,
-    GenericKeyValueRelatedField,
     IdentityField,
     NestedIdentityField,
     NestedRelatedField,
@@ -42,15 +41,11 @@ class RepositorySerializer(ModelSerializer):
         required=False,
         allow_blank=True
     )
-    notes = GenericKeyValueRelatedField(
-        help_text=_('A mapping of string keys to string values, for storing notes on this object.'),
-        required=False
-    )
 
     class Meta:
         model = models.Repository
         fields = ModelSerializer.Meta.fields + ('_versions_href', '_latest_version_href', 'name',
-                                                'description', 'notes')
+                                                'description')
 
 
 class RemoteSerializer(MasterModelSerializer):

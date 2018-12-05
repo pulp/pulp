@@ -93,32 +93,10 @@ def validate_unknown_fields(initial_data, defined_fields):
         raise serializers.ValidationError(unknown_fields)
 
 
-# Defined here instead of generic.py to avoid potential circular imports issues,
-# since this is used by ModelSerializer
-class GenericKeyValueRelatedField(serializers.DictField):
-    """
-    Base class for GenericKeyValueMutableMapping model implementations.
-
-    These work by representing the "mapping" attribute of these fields using DRF's DictField,
-    with all values to be stored as text.
-
-    You can store anything you want in here, as long as it's a string.
-    """
-    child = serializers.CharField()
-
-    def to_representation(self, value):
-        # The field being represented isn't a dict, but the mapping attr is,
-        # so value.mapping is the actual value that needs to be represented.
-        return super().to_representation(value.mapping)
-
-
-# Inheritance order matters, don't flip these
 class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
     """Base serializer for use with :class:`pulpcore.app.models.Model`
 
-    This ensures that all Serializers provide values for the '_href` field, and
-    adds read/write support for :class:`pulpcore.app.serializers.GenericKeyValueRelatedField`
-    nested fields.
+    This ensures that all Serializers provide values for the '_href` field.
     """
 
     class Meta:
@@ -128,54 +106,6 @@ class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
         help_text=_('Timestamp of creation.'),
         read_only=True
     )
-
-    def create(self, validated_data):
-        """
-        Handles the creation of a Model with generic related fields.
-
-        Args:
-            validated_data (dict): of data needed to create a Model
-
-        Returns:
-            django.db.model: Meta.model created from the validated_data
-        """
-
-        # pop related fields out of validated data
-        generic_field_mappings = self._generic_field_mappings(validated_data)
-
-        instance = super().create(validated_data)
-
-        # populate related fields
-        self._populate_generic_fields(instance, generic_field_mappings)
-
-        return instance
-
-    def update(self, instance, validated_data):
-        # pop related fields out of validated data
-        generic_field_mappings = self._generic_field_mappings(validated_data)
-
-        instance = super().update(instance, validated_data)
-
-        # populate related fields
-        self._populate_generic_fields(instance, generic_field_mappings)
-
-        return instance
-
-    def _generic_field_mappings(self, validated_data):
-        # Strip generic k/v pairs out of validated data and return them.
-        generic_mappings = {}
-        for field_name, field in self.get_fields().items():
-            if isinstance(field, GenericKeyValueRelatedField):
-                try:
-                    generic_mappings[field_name] = validated_data.pop(field_name)
-                except KeyError:
-                    pass
-        return generic_mappings
-
-    def _populate_generic_fields(self, instance, field_mappings):
-        for field_name, mapping in field_mappings.items():
-            field = getattr(instance, field_name)
-            field.mapping.replace(mapping)
 
     def _validate_relative_path(self, path):
         """

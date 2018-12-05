@@ -1,16 +1,8 @@
 # https://docs.djangoproject.com/en/dev/topics/db/models/#organizing-models-in-a-package
 
 from .base import Model, MasterModel  # noqa
-from .generic import (  # noqa
-    GenericRelationModel,
-    GenericKeyValueManager,
-    GenericKeyValueRelation,
-    GenericKeyValueModel,
-    Config,
-    Notes
-)
-
 from .content import Artifact, Content, ContentArtifact, ContentGuard, RemoteArtifact  # noqa
+from .generic import GenericRelationModel  # noqa
 from .publication import (  # noqa
     BaseDistribution,
     Distribution,
