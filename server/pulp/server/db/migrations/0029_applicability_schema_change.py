@@ -51,7 +51,7 @@ def migrate(*args, **kwargs):
     try:
         rpa_collection.drop_index("profile_hash_-1_repo_id_-1")
     except pymongo.errors.OperationFailure as e:
-        if e.code == 27:
+        if not e.code or e.code == 27:
             # index not found - good, it's been removed before
             pass
         else:
