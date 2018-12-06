@@ -2,6 +2,9 @@ import os
 
 from pulpcore.app.apps import get_plugin_config
 
+# Include in the API
+from pulpcore.app.models.storage import get_tls_path  # noqa
+
 
 def get_plugin_storage_path(plugin_app_label):
     """

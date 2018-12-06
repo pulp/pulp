@@ -7,6 +7,8 @@ from .content import (  # noqa
     ContentFilter
 )
 from .repository import (  # noqa
+    ContentGuardFilter,
+    ContentGuardViewSet,
     DistributionViewSet,
     ExporterViewSet,
     RemoteViewSet,

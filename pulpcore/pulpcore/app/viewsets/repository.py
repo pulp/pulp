@@ -11,6 +11,7 @@ from rest_framework.filters import OrderingFilter
 from pulpcore.app import tasks
 from pulpcore.app.models import (
     Content,
+    ContentGuard,
     Distribution,
     Exporter,
     Remote,
@@ -25,6 +26,7 @@ from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
     AsyncOperationResponseSerializer,
     ContentSerializer,
+    ContentGuardSerializer,
     DistributionSerializer,
     ExporterSerializer,
     RemoteSerializer,
@@ -444,3 +446,22 @@ class DistributionViewSet(NamedModelViewSet,
     queryset = Distribution.objects.all()
     serializer_class = DistributionSerializer
     filterset_class = DistributionFilter
+
+
+class ContentGuardFilter(BaseFilterSet):
+    name = filters.CharFilter()
+
+    class Meta:
+        model = ContentGuard
+        fields = {
+            'name': NAME_FILTER_OPTIONS,
+        }
+
+
+class ContentGuardViewSet(NamedModelViewSet,
+                          mixins.RetrieveModelMixin,
+                          mixins.ListModelMixin):
+    endpoint_name = 'contentguards'
+    serializer_class = ContentGuardSerializer
+    queryset = ContentGuard.objects.all()
+    filterset_class = ContentGuardFilter

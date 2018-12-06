@@ -471,3 +471,20 @@ class RepositoryVersionCreateSerializer(ModelSerializer, NestedHyperlinkedModelS
     class Meta:
         model = models.RepositoryVersion
         fields = ['add_content_units', 'remove_content_units', 'base_version']
+
+
+class ContentGuardSerializer(MasterModelSerializer):
+    _href = DetailIdentityField()
+    name = serializers.CharField(
+        help_text=_('The unique name.'),
+        validators=[
+            UniqueValidator(queryset=models.ContentGuard.objects.all())
+        ],
+    )
+
+    class Meta:
+        abstract = True
+        model = models.ContentGuard
+        fields = MasterModelSerializer.Meta.fields + (
+            'name',
+        )
