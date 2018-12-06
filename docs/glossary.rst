@@ -34,7 +34,7 @@ Glossary
         :term:`content unit<content>`.
 
     pulpcore
-        A generalized backend with a :doc:`plugins/plugin-api/overview` and a :doc:`REST
+        A generalized backend with a Plugin API and a :doc:`REST
         API<integration-guide/rest-api/index>`. It uses :term:`plugins<plugin>` to manage
         :term:`content`.
 
