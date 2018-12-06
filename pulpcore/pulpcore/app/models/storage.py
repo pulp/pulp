@@ -162,5 +162,5 @@ def get_tls_path(model, name):
         settings.MEDIA_ROOT,
         'tls',
         type(model).__name__,
-        str(model.id),
+        str(uuid4()),
         name)

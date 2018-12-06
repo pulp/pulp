@@ -5,6 +5,7 @@ from pulpcore.app.response import OperationPostponedResponse  # noqa
 from pulpcore.app.viewsets import (  # NOQA
     BaseFilterSet,
     ContentFilter,
+    ContentGuardFilter,
     ContentGuardViewSet,
     ContentViewSet,
     NamedModelViewSet,
