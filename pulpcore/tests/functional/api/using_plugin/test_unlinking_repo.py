@@ -13,12 +13,12 @@ from pulp_smash.pulp3.utils import (
     sync,
 )
 
-from tests.functional.api.using_plugin.constants import (
+from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH
 )
-from tests.functional.api.using_plugin.utils import gen_file_remote
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import gen_file_remote
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class RemotesPublishersTestCase(unittest.TestCase):

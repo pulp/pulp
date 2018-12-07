@@ -8,7 +8,7 @@ from requests.exceptions import HTTPError
 from pulp_smash import api, config
 from pulp_smash.pulp3.constants import STATUS_PATH
 
-from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 
 STATUS = {
     '$schema': 'http://json-schema.org/schema#',

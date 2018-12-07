@@ -7,9 +7,9 @@ from requests.exceptions import HTTPError
 from pulp_smash import api, config, utils
 from pulp_smash.pulp3.constants import USER_PATH
 
-from tests.functional.api.utils import gen_username
-from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.utils import skip_if
+from pulpcore.tests.functional.api.utils import gen_username
+from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.utils import skip_if
 
 
 class UsersCRUDTestCase(unittest.TestCase):

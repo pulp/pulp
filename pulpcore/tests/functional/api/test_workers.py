@@ -10,8 +10,8 @@ from requests.exceptions import HTTPError
 from pulp_smash import api, cli, config
 from pulp_smash.pulp3.constants import STATUS_PATH, WORKER_PATH
 
-from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
-from tests.functional.utils import skip_if
+from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.utils import skip_if
 
 _DYNAMIC_WORKER_ATTRS = ('last_heartbeat',)
 """Worker attributes that are dynamically set by Pulp, not set by a user."""

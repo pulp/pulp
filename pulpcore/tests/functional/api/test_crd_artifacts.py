@@ -13,8 +13,8 @@ from pulp_smash.pulp3.utils import delete_orphans
 
 # This import is an exception, we use a file url but we are not actually using
 # any plugin
-from tests.functional.api.using_plugin.constants import FILE_URL
-from tests.functional.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.constants import FILE_URL
+from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class ArtifactTestCase(unittest.TestCase):

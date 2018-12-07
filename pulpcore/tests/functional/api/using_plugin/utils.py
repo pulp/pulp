@@ -13,7 +13,7 @@ from pulp_smash.pulp3.utils import (
     sync
 )
 
-from tests.functional.api.using_plugin.constants import (
+from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_FIXTURE_MANIFEST_URL,
     FILE_CONTENT_PATH,
     FILE_REMOTE_PATH
