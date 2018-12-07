@@ -20,15 +20,15 @@ from pulp_smash.pulp3.utils import (
     sync,
 )
 
-from tests.functional.api.using_plugin.constants import (
+from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_FIXTURE_MANIFEST_URL,
     FILE_URL,
     FILE_CONTENT_PATH,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
-from tests.functional.api.using_plugin.utils import populate_pulp
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import populate_pulp
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class AutoDistributionTestCase(unittest.TestCase):

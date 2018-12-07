@@ -8,13 +8,13 @@ from pulp_smash import api, config
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import gen_repo, get_versions
 
-from tests.functional.api.using_plugin.constants import (
+from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_MANY_FIXTURE_COUNT,
     FILE_MANY_FIXTURE_MANIFEST_URL,
     FILE_CONTENT_PATH
 )
-from tests.functional.api.using_plugin.utils import populate_pulp
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import populate_pulp
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class PaginationTestCase(unittest.TestCase):

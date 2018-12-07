@@ -4,7 +4,7 @@ set -v
 # dev_requirements should not be needed for testing; don't install them to make sure
 pip install "Django<=$DJANGO_MAX"
 pip install -r test_requirements.txt
-pushd pulpcore/ && pip install -e . && popd
+pip install -e .
 
 if [ "$TEST" = 'docs' ]; then
   pip3 install 'sphinx<1.8.0' sphinxcontrib-openapi sphinx_rtd_theme

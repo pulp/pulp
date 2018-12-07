@@ -16,12 +16,12 @@ from pulp_smash.pulp3.utils import (
     sync,
 )
 
-from tests.functional.api.using_plugin.constants import (
+from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH
 )
-from tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
 
 
 class ContentPromotionTestCase(unittest.TestCase):

@@ -28,7 +28,7 @@ show_logs_and_return_non_zero() {
     cat ~/reserved_worker-1.log
     return "${rc}"
 }
-pytest -v -r sx --color=yes --pyargs tests.functional || show_logs_and_return_non_zero
+pytest -v -r sx --color=yes --pyargs pulpcore.tests.functional || show_logs_and_return_non_zero
 pytest -v -r sx --color=yes --pyargs pulp_file.tests.functional || show_logs_and_return_non_zero
 codecov
 
