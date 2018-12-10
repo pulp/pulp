@@ -8,7 +8,7 @@ from rest_framework_nested import routers
 
 from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.openapigenerator import PulpOpenAPISchemaGenerator
-from pulpcore.app.views import ContentView, OrphansView, StatusView
+from pulpcore.app.views import OrphansView, StatusView
 from pulpcore.constants import API_ROOT
 
 import logging
@@ -118,7 +118,6 @@ for viewset in sorted_by_depth:
 root_router = routers.DefaultRouter()
 
 urlpatterns = [
-    url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view(), name='content-app'),
     url(r'^{api_root}status/'.format(api_root=API_ROOT), StatusView.as_view()),
     url(r'^{api_root}orphans/'.format(api_root=API_ROOT), OrphansView.as_view()),
     url(r'^auth/', include('rest_framework.urls')),

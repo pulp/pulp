@@ -78,16 +78,16 @@ class Remote(MasterModel):
     # Constants for the ChoiceField 'policy'
     IMMEDIATE = 'immediate'
     ON_DEMAND = 'on_demand'
-    CACHE_ONLY = 'cache_only'
+    STREAMED = 'streamed'
 
     POLICY_CHOICES = (
         (IMMEDIATE, 'When syncing, download all metadata and content now.'),
-        (ON_DEMAND, 'When syncing, download metadata now, but download content on demand as '
-                    'requested by clients. On demand downloaded content is saved to be served to '
-                    'future clients.'),
-        (CACHE_ONLY, 'When syncing, download metadata now, but download content on demand as '
-                     'requested by clients. On demand downloaded content is *not* saved to be '
-                     'served to future clients.')
+        (ON_DEMAND, 'When syncing, download metadata, but do not download content now. Instead, '
+                    'download content as clients request it, and save it in Pulp to be served for '
+                    'future client requests.'),
+        (STREAMED, 'When syncing, download metadata, but do not download content now. Instead,'
+                   'download content as clients request it, but never save it in Pulp. This causes '
+                   'future requests for that same content to have to be downloaded again.')
     )
 
     def tls_storage_path(self, name):

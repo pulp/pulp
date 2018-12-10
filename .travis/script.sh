@@ -24,6 +24,7 @@ coverage run manage.py test ./pulpcore/tests/unit/
 show_logs_and_return_non_zero() {
     readonly local rc="$?"
     cat ~/django_runserver.log
+    cat ~/content_app.log
     cat ~/resource_manager.log
     cat ~/reserved_worker-1.log
     return "${rc}"
