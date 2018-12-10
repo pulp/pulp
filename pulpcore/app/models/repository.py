@@ -256,6 +256,20 @@ class RepositoryVersion(Model):
         )
         return Content.objects.filter(version_memberships__in=relationships)
 
+    def added(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were added by this version.
+        """
+        return Content.objects.filter(version_memberships__version_added=self)
+
+    def removed(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were removed by this version.
+        """
+        return Content.objects.filter(version_memberships__version_removed=self)
+
     def contains(self, content):
         """
         Check whether a content exists in this repository version's set of content
@@ -314,20 +328,6 @@ class RepositoryVersion(Model):
         with suppress(RepositoryVersion.DoesNotExist):
             model = repository.versions.exclude(complete=False).latest()
             return model
-
-    def added(self):
-        """
-        Returns:
-            QuerySet: The Content objects that were added by this version.
-        """
-        return Content.objects.filter(version_memberships__version_added=self)
-
-    def removed(self):
-        """
-        Returns:
-            QuerySet: The Content objects that were removed by this version.
-        """
-        return Content.objects.filter(version_memberships__version_removed=self)
 
     def next(self):
         """
