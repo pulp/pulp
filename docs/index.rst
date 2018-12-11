@@ -3,7 +3,10 @@ Pulp Documentation
 
 The documentation presented here is generalized to all content types. Information for managing each
 content type is provided by the corresponding plugin, which can be found in our
-:ref:`list of plugins<plugin-table>`.
+`list of plugins <https://pulpproject.org/pulp-3-plugins/>`_.
+
+Developers interested in writing plugins should reference the `Pulp Plugin API
+<../../pulpcore-plugin/nightly/>`_ documentation.
 
 Self-Guided Tour for New Users
 ------------------------------
@@ -11,8 +14,9 @@ Self-Guided Tour for New Users
 A good place for new users to start is the :doc:`concepts`, which gives a high level
 introduction to Pulp concepts, terminology, and components. After :doc:`installing
 pulp<installation/index>`, the simplest way to get concrete experience is to install one of the
-:ref:`plugins<plugin-table>` and use its quickstart guide. Next it is recommended that users read
-through our :doc:`workflows/index` to find best practices for common use cases.
+`plugins <https://pulpproject.org/pulp-3-plugins/>`_ and use its quickstart guide. Next it is
+recommended that users read through our :doc:`workflows/index` to find best practices for common
+use cases.
 
 .. _community:
 
@@ -37,7 +41,7 @@ make Pulp better, please reach out!
 
   * `pulpcore <https://github.com/pulp/pulp/>`_
   * `pulp-smash (test suite) <https://github.com/PulpQE/pulp-smash>`_
-  * :ref:`plugins<plugin-table>`
+  * `plugin table <https://pulpproject.org/pulp-3-plugins/>`_
 
     * Ansible #pulp-ansible channel on Freenode
     * Docker #pulp-dockerchannel on Freenode
