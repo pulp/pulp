@@ -11,6 +11,7 @@ from .repository import (  # noqa
     ContentGuardViewSet,
     DistributionViewSet,
     ExporterViewSet,
+    RemoteFilter,
     RemoteViewSet,
     PublicationViewSet,
     PublisherViewSet,
