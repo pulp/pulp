@@ -45,4 +45,6 @@ docs/api.yaml
 # Django migrations
 # Ignored during early development to prevent accidental commits;
 # we'll want these to not be ignored when releasing pulp 3.0
-pulpcore/app/migrations
+pulpcore/app/migrations/*
+
+!*pulpcore/app/migrations/__init__.py
