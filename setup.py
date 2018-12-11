@@ -13,7 +13,7 @@ requirements = [
     'drf-yasg',
     'psycopg2-binary',
     'PyYAML',
-    'redis >= 2.7.0, <3.0',
+    'redis',
     'rq>=0.12.0',
     'setuptools',
     'dynaconf>=1.0.4'
