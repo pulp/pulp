@@ -16,6 +16,13 @@ Fundamentals
    pull-request-walkthrough
 
 
+Plugin Development
+------------------
+
+Developers interested in writing plugins should reference the `Pulp Plugin API
+<../../pulpcore-plugin/nightly/>`_ documentation.
+
+
 Reference
 ---------
 

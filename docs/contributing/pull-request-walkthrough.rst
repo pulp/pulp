@@ -3,8 +3,8 @@ Pull Request Walkthrough
 
 Changes to pulpcore are submitted via `GitHub Pull Requests (PR)
 <https://help.github.com/articles/about-pull-requests/>`_ to the `pulp git repository
-<https://github.com/pulp/pulp>`_ . Plugin git repositories are listed in the :ref:`plugin
-table<plugin-table>`.
+<https://github.com/pulp/pulp>`_ . Plugin git repositories are listed in the `plugin table
+<https://pulpproject.org/pulp-3-plugins/>`_.
 
 Boilerplate
 -----------
