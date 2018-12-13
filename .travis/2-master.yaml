@@ -1,0 +1,23 @@
+repositories:
+  - name: pulp
+    git_url: https://github.com/pulp/pulp.git
+    git_branch: 2-master
+    version: 2.19.0-0.1.alpha
+  - name: pulp_puppet
+    git_url: https://github.com/pulp/pulp_puppet.git
+    git_branch: 2-master
+  - name: pulp_rpm
+    git_url: https://github.com/pulp/pulp_rpm.git
+    git_branch: 2-master
+  - name: pulp_docker
+    git_url: https://github.com/pulp/pulp_docker.git
+    git_branch: 2-master
+  - name: pulp_ostree
+    git_url: https://github.com/pulp/pulp_ostree.git
+    git_branch: 2-master
+  - name: pulp_python
+    git_url: https://github.com/pulp/pulp_python.git
+    git_branch: 2-master
+  - name: crane
+    git_url: https://github.com/pulp/crane.git
+    git_branch: master

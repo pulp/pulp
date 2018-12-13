@@ -1,4 +1,0 @@
-[globalconfig]
-lib_dir = rel-eng/lib
-default_builder = tito.builder.Builder
-default_tagger = tito.tagger.VersionTagger

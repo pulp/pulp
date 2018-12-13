@@ -360,7 +360,10 @@ class Importer(AutoRetryDocument):
                 misc.mkdir(os.path.dirname(self._pki_path))
                 os.mkdir(self._pki_path, 0700)
             with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT, 0600), 'w') as pem_file:
-                pem_file.write(self.config[config_key].encode('utf-8'))
+                if type(self.config[config_key]) is unicode:
+                    pem_file.write(self.config[config_key].encode('utf-8'))
+                else:
+                    pem_file.write(self.config[config_key])
 
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
@@ -550,7 +553,13 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
         set_on_insert = {}
         for field in fields_to_set_on_insert:
             set_on_insert[field] = stuff_to_update.pop(field)
+
         task_id = stuff_to_update.pop('task_id')
+
+        # Don't try to set Mongoengine internal values.
+        # Can cause silent failures if you accidentally overwrite 'id'.
+        for internal_field in ('id', '_ns'):
+            stuff_to_update.pop(internal_field, None)
 
         update = {'$set': stuff_to_update,
                   '$setOnInsert': set_on_insert}
@@ -1074,6 +1083,13 @@ class LazyCatalogEntry(AutoRetryDocument):
                     '-revision',
                 ],
                 'unique': True
+            },
+            {
+                'fields': [
+                    'unit_id',
+                    'unit_type_id',
+                ],
+                'unique': False
             },
         ],
     }

@@ -13,7 +13,7 @@ else:
 
 setup(
     name='pulp-client-lib',
-    version='2.16a1',
+    version='2.19a1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',

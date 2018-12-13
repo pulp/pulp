@@ -152,12 +152,17 @@ class RestApiSection(GenericSection):
               'the HTTP call is invoked.')
         password_option = PulpCliOption('--password', m, required=False)
 
+        m = _('optional CA file used instead of the system CA when '
+              'the HTTP call is invoked.')
+        ca_option = PulpCliOption('--ca-path', m, required=False)
+
         create_command = PulpCliCommand('create', _('create a listener'),
                                         self.create)
         create_command.add_option(self.event_types_option)
         create_command.add_option(url_option)
         create_command.add_option(username_option)
         create_command.add_option(password_option)
+        create_command.add_option(ca_option)
         self.add_command(create_command)
 
         update_command = PulpCliCommand('update', _('update a listener'),
@@ -167,6 +172,7 @@ class RestApiSection(GenericSection):
         update_command.add_option(self._copy_flip_required(url_option))
         update_command.add_option(username_option)
         update_command.add_option(password_option)
+        update_command.add_option(ca_option)
         self.add_command(update_command)
 
     def create(self, **kwargs):
@@ -182,9 +188,9 @@ class RestApiSection(GenericSection):
         else:
             config['url'] = kwargs['url']
 
-        for attr in ('username', 'password'):
+        for attr in ('username', 'password', 'ca-path'):
             if kwargs.get(attr) is not None:
-                config[attr] = kwargs[attr]
+                config[attr.replace('-', '_')] = kwargs[attr]
         self._create('http', config, kwargs['event-type'])
 
     def update(self, **kwargs):
@@ -195,9 +201,9 @@ class RestApiSection(GenericSection):
                        "url", "username", "password", and "event-type"
         """
         config = {}
-        for attr in ('url', 'username', 'password'):
+        for attr in ('url', 'username', 'password', 'ca-path'):
             if kwargs.get(attr) is not None:
-                config[attr] = kwargs[attr]
+                config[attr.replace('-', '_')] = kwargs[attr]
 
         delta = {}
         if config:

@@ -17,6 +17,7 @@ import mock
 
 from .... import base
 from pulp.common import constants, dateutils
+from pulp.devel import mock_plugins, skip
 from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
 from pulp.server.db.model.criteria import Criteria
@@ -163,7 +164,7 @@ class TestTaskStatus(unittest.TestCase):
             TaskStatus(task_id=str(uuid4()), state=valid_state).save()
 
         # Invalid state
-        invalid_states = [4, {}, uuid4(), object(), 'invalid_state', []]
+        invalid_states = [4, uuid4(), object(), 'invalid_state', []]
         for invalid_state in invalid_states:
             self.assertRaises(ValidationError, TaskStatus(task_id=str(uuid4()),
                                                           state=invalid_state).save)

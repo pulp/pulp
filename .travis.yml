@@ -1,7 +1,27 @@
 language: python
 python:
-    - "2.7"
+    - '3.6'
+addons:
+  apt:
+    packages:
+      - graphviz
+      - python-virtualenv
+      - gcc
 install:
-    - "pip install flake8"
-script:
-    - "flake8 --config flake8.cfg"
+    - pip3 install flake8 sphinx sphinxcontrib-swaggerdoc celery sphinxcontrib-swaggerdoc
+      'django<2' sphinx_rtd_theme pyyaml
+    - wget "https://fossies.org/linux/dmelt/lib/graph/plantuml.jar" -O plantuml.jar
+    - sudo mkdir -p /opt/plantuml
+    - sudo cp plantuml.jar /opt/plantuml
+    - echo "#! /bin/sh" > plantuml
+    - echo 'exec java -jar /opt/plantuml/plantuml.jar "$@"' >> plantuml
+    - sudo install -m 755 -D plantuml /usr/bin/plantuml
+jobs:
+  include:
+    - stage: build-publish-docs
+      script: source .travis/build-docs.sh 2-master
+      if: type = cron
+before_install:
+    - openssl aes-256-cbc -K $encrypted_5fa326b9da76_key -iv $encrypted_5fa326b9da76_iv
+      -in .travis/pulp-infra.enc -out ~/.ssh/pulp-infra -d
+    - sudo chmod 600 ~/.ssh/pulp-infra

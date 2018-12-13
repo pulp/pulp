@@ -259,11 +259,12 @@ class TestSanitizeChecksumType(unittest.TestCase):
 
 class TestGlobal(unittest.TestCase):
     def test_checksum_algorithm_mappings(self):
-        self.assertEqual(4, len(util.CHECKSUM_FUNCTIONS))
-        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_MD5], hashlib.md5)
+        self.assertEqual(5, len(util.CHECKSUM_FUNCTIONS))
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_MD5]().name, 'md5')
         self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA1], hashlib.sha1)
         self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA], hashlib.sha1)
         self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA256], hashlib.sha256)
+        self.assertEqual(util.CHECKSUM_FUNCTIONS[util.TYPE_SHA512], hashlib.sha512)
 
 
 class TestCalculateChecksums(unittest.TestCase):

@@ -1,0 +1,20 @@
+=======================
+Pulp 2.18 Release Notes
+=======================
+
+
+Pulp 2.18.0
+===========
+
+New Features
+------------
+
+* Connection and read timeouts for downloader are configurable now
+* Added support for sha512 checksums during sync
+* Applicability is now calculated for multiple profiles per consumer
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.18.0`
+

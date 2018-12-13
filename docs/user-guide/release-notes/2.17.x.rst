@@ -1,0 +1,23 @@
+=======================
+Pulp 2.17 Release Notes
+=======================
+
+
+Pulp 2.17.1
+===========
+
+Bug Fixes
+---------
+
+See the list of :fixedbugs_pulp:`2.17.1`
+
+
+Pulp 2.17.0
+===========
+
+New Features
+------------
+
+* Added support for the user to optionally specify a CA file in the HTTP notifier
+  configuration. When specified, the CA is used for HTTP requests instead of the
+  system CA.

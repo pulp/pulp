@@ -210,6 +210,20 @@ class TestRESTAPISection(unittest.TestCase):
             'repo-sync-finished'
         )
 
+    def test_create_with_ca(self):
+        kwargs = {
+            'url': 'http://redhat.com',
+            'event-type': 'repo-sync-finished',
+            'ca-path': '/tmp/CA',
+        }
+        self.section.create(**kwargs)
+
+        self.section.context.server.event_listener.create.assert_called_once_with(
+            'http',
+            {'url': 'http://redhat.com', 'ca_path': '/tmp/CA'},
+            'repo-sync-finished'
+        )
+
     def test_create_with_username_password(self):
         kwargs = {
             'event-type': 'repo-sync-finished',
@@ -266,6 +280,18 @@ class TestRESTAPISection(unittest.TestCase):
         self.section.update(**kwargs)
         self.section.context.server.event_listener.update.assert_called_once_with(
             'listener1', notifier_config={'password': 'letmein'})
+
+    def test_update_ca(self):
+        kwargs = {
+            'listener-id': 'listener1',
+            'url': None,
+            'ca-path': '/tmp/CA',
+            'event-type': None,
+        }
+
+        self.section.update(**kwargs)
+        self.section.context.server.event_listener.update.assert_called_once_with(
+            'listener1', notifier_config={'ca_path': '/tmp/CA'})
 
     def test_update_event_types(self):
         kwargs = {
