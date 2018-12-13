@@ -1,7 +1,7 @@
 from gettext import gettext as _
 
 from django.core import validators
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.urls import reverse
 
 from rest_framework import serializers, fields
@@ -409,29 +409,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         view_name='versions-detail',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _content = serializers.SerializerMethodField(
-        help_text=_('A mapping of the types of content in this version, and the HREF to view '
-                    'them.'),
-        read_only=True,
-        method_name='get_content'
-    )
-    _content_added = serializers.SerializerMethodField(
-        help_text=_('A mapping of the types of content added in this version, and the HREF to '
-                    'view them.'),
-        read_only=True,
-        method_name='get_content_added'
-    )
-    _content_removed = serializers.SerializerMethodField(
-        help_text=_('A mapping of the types of content removed from this version, and the HREF '
-                    'to view them.'),
-        read_only=True,
-        method_name='get_content_removed'
-    )
     number = serializers.IntegerField(
-        read_only=True
-    )
-    content_summary = serializers.DictField(
-        help_text=_('A list of counts of each type of content in this version.'),
         read_only=True
     )
     base_version = NestedRelatedField(
@@ -443,8 +421,65 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         lookup_field='number',
         parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
+    content_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content in this version, and the HREF to view '
+                    'them.'),
+        read_only=True,
+    )
+    content_added_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content added in this version, and the HREF to '
+                    'view them.'),
+        read_only=True,
+    )
+    content_removed_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content removed from this version, and the HREF '
+                    'to view them.'),
+        read_only=True,
+    )
+    content_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content in this version.'),
+        read_only=True,
+    )
+    content_added_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content added in this version.'),
+        read_only=True,
+    )
+    content_removed_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content removed in this version.'),
+        read_only=True,
+    )
 
-    def get_content(self, obj):
+    def get_content_summary(self, obj):
+        """
+        The summary of contained content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.content.values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_added_summary(self, obj):
+        """
+        The summary of added content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.added().values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_removed_summary(self, obj):
+        """
+        The summary of removed content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.removed().values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_hrefs(self, obj):
         """
         Generate URLs for the content types present in the RepositoryVersion.
 
@@ -472,7 +507,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
 
         return content_urls
 
-    def get_content_added(self, obj):
+    def get_content_added_hrefs(self, obj):
         """
         Generate URLs for the content types added in the RepositoryVersion.
 
@@ -500,7 +535,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
 
         return content_urls
 
-    def get_content_removed(self, obj):
+    def get_content_removed_hrefs(self, obj):
         """
         Generate URLs for the content types removed in the RepositoryVersion.
 
@@ -531,8 +566,9 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
     class Meta:
         model = models.RepositoryVersion
         fields = ModelSerializer.Meta.fields + (
-            '_href', '_content', '_content_added', '_content_removed',
-            'number', 'base_version', 'content_summary',
+            '_href', 'number', 'base_version',
+            'content_hrefs', 'content_added_hrefs', 'content_removed_hrefs',
+            'content_summary', 'content_added_summary', 'content_removed_summary',
         )
 
 

@@ -265,17 +265,6 @@ class RepositoryVersion(Model):
         """
         return self.content.filter(pk=content.pk).exists()
 
-    @property
-    def content_summary(self):
-        """
-        The contained content summary.
-
-        Returns:
-            dict: of {<type>: <count>}
-        """
-        annotated = self.content.values('type').annotate(count=models.Count('type'))
-        return {c['type']: c['count'] for c in annotated}
-
     @classmethod
     def create(cls, repository, base_version=None):
         """
