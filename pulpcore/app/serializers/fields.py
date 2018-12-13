@@ -160,8 +160,8 @@ class BaseURLField(serializers.CharField):
     """
 
     def to_representation(self, value):
-        if settings.CONTENT['HOST']:
-            host = settings.CONTENT['HOST']
+        if settings.CONTENT_HOST:
+            host = settings.CONTENT_HOST
         else:
             host = self.context['request'].get_host()
-        return ''.join([host, reverse('content-app'), value])
+        return ''.join([host, settings.CONTENT_PATH_PREFIX, value])
