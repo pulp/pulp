@@ -79,7 +79,7 @@ class RepositoryViewSet(NamedModelViewSet,
         serializer.is_valid(raise_exception=True)
         async_result = enqueue_with_reservation(
             tasks.repository.update, [instance],
-            args=(instance.id, ),
+            args=(instance.pk, ),
             kwargs={'data': request.data, 'partial': partial}
         )
         return OperationPostponedResponse(async_result, request)
@@ -94,7 +94,7 @@ class RepositoryViewSet(NamedModelViewSet,
         repo = self.get_object()
         async_result = enqueue_with_reservation(
             tasks.repository.delete, [repo],
-            kwargs={'repo_id': repo.id}
+            kwargs={'repo_id': repo.pk}
         )
         return OperationPostponedResponse(async_result, request)
 
@@ -174,18 +174,18 @@ class RepositoryVersionFilter(BaseFilterSet):
     # e.g.
     # /?number=4
     # /?number__range=4,6
-    # /?created__gte=2018-04-12T19:45
-    # /?created__range=2018-04-12T19:45,2018-04-13T20:00
+    # /?_created__gte=2018-04-12T19:45
+    # /?_created__range=2018-04-12T19:45,2018-04-13T20:00
     # /?content=http://localhost:8000/pulp/api/v3/content/file/fb8ad2d0-03a8-4e36-a209-77763d4ed16c/
     number = filters.NumberFilter()
-    created = IsoDateTimeFilter()
+    _created = IsoDateTimeFilter()
     content = RepositoryVersionContentFilter()
 
     class Meta:
         model = RepositoryVersion
         fields = {
             'number': ['exact', 'lt', 'lte', 'gt', 'gte', 'range'],
-            'created': DATETIME_FILTER_OPTIONS,
+            '_created': DATETIME_FILTER_OPTIONS,
             'content': ['exact', 'in']
         }
 
@@ -275,13 +275,13 @@ class RemoteFilter(BaseFilterSet):
        - extend `fields` with specific ones
     """
     name = filters.CharFilter()
-    last_updated = IsoDateTimeFilter()
+    _last_updated = IsoDateTimeFilter()
 
     class Meta:
         model = Remote
         fields = {
             'name': NAME_FILTER_OPTIONS,
-            'last_updated': DATETIME_FILTER_OPTIONS
+            '_last_updated': DATETIME_FILTER_OPTIONS
         }
 
 
@@ -307,13 +307,13 @@ class PublisherFilter(BaseFilterSet):
        - extend `fields` with specific ones
     """
     name = filters.CharFilter()
-    last_updated = IsoDateTimeFilter()
+    _last_updated = IsoDateTimeFilter()
 
     class Meta:
         model = Publisher
         fields = {
             'name': NAME_FILTER_OPTIONS,
-            'last_updated': DATETIME_FILTER_OPTIONS
+            '_last_updated': DATETIME_FILTER_OPTIONS
         }
 
 
@@ -369,7 +369,7 @@ class PublicationViewSet(NamedModelViewSet,
     queryset = Publication.objects.exclude(complete=False)
     serializer_class = PublicationSerializer
     filter_backends = (OrderingFilter, DjangoFilterBackend)
-    ordering = ('-created',)
+    ordering = ('-_created',)
 
 
 class DistributionFilter(BaseFilterSet):

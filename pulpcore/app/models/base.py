@@ -6,16 +6,17 @@ class Model(models.Model):
     """Base model class for all Pulp models.
 
     Fields:
-        created (models.DateTimeField): Created timestamp UTC.
-        last_updated (models.DateTimeField): Last updated timestamp UTC.
+        _created (models.DateTimeField): Created timestamp UTC.
+        _last_updated (models.DateTimeField): Last updated timestamp UTC.
 
     References:
 
         * https://docs.djangoproject.com/en/1.8/topics/db/models/#automatic-primary-key-fields
 
     """
-    created = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True, null=True)
+    _id = models.AutoField(primary_key=True)
+    _created = models.DateTimeField(auto_now_add=True)
+    _last_updated = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         abstract = True
@@ -40,12 +41,12 @@ class MasterModel(Model):
 
     Attributes:
 
-        TYPE (str): Default constant value saved into the ``type``
+        TYPE (str): Default constant value saved into the ``_type``
             field of Model instances
 
     Fields:
 
-        type: The user-facing string identifying the detail type of this model
+        _type: The user-facing string identifying the detail type of this model
 
     Warning:
         Subclasses of this class rely on there being no other parent/child Model
@@ -61,14 +62,14 @@ class MasterModel(Model):
     # It can also be used for filtering across a relation where a model is related to a Master
     # model. Set this to something reasonable in Master and Detail model classes, e.g. when
     # create a master model, like "Remote", its TYPE value could be "remote". Then, when
-    # creating a Remote Detail class like PackageRemote, its type value could be "package",
+    # creating a Remote Detail class like PackageRemote, its _type value could be "package",
     # not "package_remote", since "package_remote" would be redundant in the context of
     # a remote Master model.
     TYPE = None
 
     # This field must have a value when models are saved, and defaults to the value of
     # the TYPE attribute on the Model being saved (seen above).
-    type = models.TextField(null=False, default=None)
+    _type = models.TextField(null=False, default=None)
 
     class Meta:
         abstract = True
@@ -76,10 +77,10 @@ class MasterModel(Model):
     def save(self, *args, **kwargs):
         # instances of "detail" models that subclass MasterModel are exposed
         # on instances of MasterModel by the string stored in that model's TYPE attr.
-        # Storing this type in a column on the MasterModel next to makes it trivial
+        # Storing this _type in a column on the MasterModel next to makes it trivial
         # to filter for specific detail model types across master's relations.
-        if not self.type:
-            self.type = self.TYPE
+        if not self._type:
+            self._type = self.TYPE
         return super().save(*args, **kwargs)
 
     def cast(self):
@@ -122,9 +123,9 @@ class MasterModel(Model):
             return super().__str__()
 
         try:
-            return '<{} (type={}): {}>'.format(self._meta.object_name, cast.TYPE, cast.name)
+            return '<{} (_type={}): {}>'.format(self._meta.object_name, cast.TYPE, cast.name)
         except AttributeError:
-            return '<{} (type={}): pk={}>'.format(self._meta.object_name, cast.TYPE, cast.pk)
+            return '<{} (_type={}): pk={}>'.format(self._meta.object_name, cast.TYPE, cast.pk)
 
 
 # Add properties to model _meta info to support master/detail models

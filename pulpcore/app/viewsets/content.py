@@ -80,7 +80,7 @@ class ContentFilter(BaseFilterSet):
     class Meta:
         model = Content
         fields = {
-            'type': ['exact', 'in'],
+            '_type': ['exact', 'in'],
             'repository_version': ['exact'],
             'repository_version_added': ['exact'],
             'repository_version_removed': ['exact'],
@@ -103,10 +103,10 @@ class ContentViewSet(NamedModelViewSet,
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        artifacts = serializer.validated_data.pop('artifacts')
+        _artifacts = serializer.validated_data.pop('_artifacts')
         content = serializer.save()
 
-        for relative_path, artifact in artifacts.items():
+        for relative_path, artifact in _artifacts.items():
             ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
             ca.save()
 

@@ -240,11 +240,11 @@ class Content(MasterModel, QueryMixin):
 
     Relations:
 
-        artifacts (models.ManyToManyField): Artifacts related to Content through ContentArtifact
+        _artifacts (models.ManyToManyField): Artifacts related to Content through ContentArtifact
     """
     TYPE = 'content'
 
-    artifacts = models.ManyToManyField(Artifact, through='ContentArtifact')
+    _artifacts = models.ManyToManyField(Artifact, through='ContentArtifact')
 
     objects = BulkCreateManager()
 
@@ -282,7 +282,7 @@ class ContentArtifact(Model, QueryMixin):
     """
     A relationship between a Content and an Artifact.
 
-    Serves as a through model for the 'artifacts' ManyToManyField in Content.
+    Serves as a through model for the '_artifacts' ManyToManyField in Content.
     Artifact is protected from deletion if it's present in a ContentArtifact relationship.
     """
     artifact = models.ForeignKey(Artifact, on_delete=models.PROTECT, null=True)

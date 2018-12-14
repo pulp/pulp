@@ -105,7 +105,7 @@ class RemoteSerializer(MasterModelSerializer):
         required=False,
         allow_blank=True,
     )
-    last_updated = serializers.DateTimeField(
+    _last_updated = serializers.DateTimeField(
         help_text='Timestamp of the most recent update of the remote.',
         read_only=True
     )
@@ -126,8 +126,8 @@ class RemoteSerializer(MasterModelSerializer):
         model = models.Remote
         fields = MasterModelSerializer.Meta.fields + (
             'name', 'url', 'validate', 'ssl_ca_certificate', 'ssl_client_certificate',
-            'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password', 'last_updated',
-            'connection_limit', 'policy')
+            'ssl_client_key', 'ssl_validation', 'proxy_url', 'username', 'password',
+            '_last_updated', 'connection_limit', 'policy')
 
 
 class RepositorySyncURLSerializer(serializers.Serializer):
@@ -159,7 +159,7 @@ class PublisherSerializer(MasterModelSerializer):
         help_text=_('A unique name for this publisher.'),
         validators=[UniqueValidator(queryset=models.Publisher.objects.all())]
     )
-    last_updated = serializers.DateTimeField(
+    _last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the most recent update of the publisher configuration.'),
         read_only=True
     )
@@ -173,7 +173,7 @@ class PublisherSerializer(MasterModelSerializer):
         abstract = True
         model = models.Publisher
         fields = MasterModelSerializer.Meta.fields + (
-            'name', 'last_updated', 'distributions',
+            'name', '_last_updated', 'distributions',
         )
 
 
@@ -229,7 +229,7 @@ class ExporterSerializer(MasterModelSerializer):
         help_text=_('The exporter unique name.'),
         validators=[UniqueValidator(queryset=models.Exporter.objects.all())]
     )
-    last_updated = serializers.DateTimeField(
+    _last_updated = serializers.DateTimeField(
         help_text=_('Timestamp of the last update.'),
         read_only=True
     )
@@ -243,7 +243,7 @@ class ExporterSerializer(MasterModelSerializer):
         model = models.Exporter
         fields = MasterModelSerializer.Meta.fields + (
             'name',
-            'last_updated',
+            '_last_updated',
             'last_export',
         )
 
@@ -455,30 +455,30 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         The summary of contained content.
 
         Returns:
-            dict: of {<type>: <count>}
+            dict: of {<_type>: <count>}
         """
-        annotated = obj.content.values('type').annotate(count=Count('type'))
-        return {c['type']: c['count'] for c in annotated}
+        annotated = obj.content.values('_type').annotate(count=Count('_type'))
+        return {c['_type']: c['count'] for c in annotated}
 
     def get_content_added_summary(self, obj):
         """
         The summary of added content.
 
         Returns:
-            dict: of {<type>: <count>}
+            dict: of {<_type>: <count>}
         """
-        annotated = obj.added().values('type').annotate(count=Count('type'))
-        return {c['type']: c['count'] for c in annotated}
+        annotated = obj.added().values('_type').annotate(count=Count('_type'))
+        return {c['_type']: c['count'] for c in annotated}
 
     def get_content_removed_summary(self, obj):
         """
         The summary of removed content.
 
         Returns:
-            dict: of {<type>: <count>}
+            dict: of {<_type>: <count>}
         """
-        annotated = obj.removed().values('type').annotate(count=Count('type'))
-        return {c['type']: c['count'] for c in annotated}
+        annotated = obj.removed().values('_type').annotate(count=Count('_type'))
+        return {c['_type']: c['count'] for c in annotated}
 
     def get_content_hrefs(self, obj):
         """
@@ -492,12 +492,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
             obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
-            dict: {<type>: <url>}
+            dict: {<_type>: <url>}
         """
         content_urls = {}
 
-        for ctype in obj.content.values_list('type', flat=True):
-            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+        for ctype in obj.content.values_list('_type', flat=True):
+            ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
                 ctype_url = reverse(ctype_view)
@@ -525,12 +525,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
             obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
-            dict: {<type>: <url>}
+            dict: {<_type>: <url>}
         """
         content_urls = {}
 
-        for ctype in obj.added().values_list('type', flat=True):
-            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+        for ctype in obj.added().values_list('_type', flat=True):
+            ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
                 ctype_url = reverse(ctype_view)
@@ -558,12 +558,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
             obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
 
         Returns:
-            dict: {<type>: <url>}
+            dict: {<_type>: <url>}
         """
         content_urls = {}
 
-        for ctype in obj.removed().values_list('type', flat=True):
-            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+        for ctype in obj.removed().values_list('_type', flat=True):
+            ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
                 ctype_url = reverse(ctype_view)

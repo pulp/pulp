@@ -18,4 +18,4 @@ class TaskTestCase(TestCase):
             task.delete()
         task.release_resources()
         task.delete()
-        self.assertFalse(Task.objects.filter(id=task.pk).exists())
+        self.assertFalse(Task.objects.filter(pk=task.pk).exists())

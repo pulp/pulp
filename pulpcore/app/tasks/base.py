@@ -26,7 +26,7 @@ def general_update(instance_id, app_label, serializer_name, *args, **kwargs):
     data = kwargs.pop('data', None)
     partial = kwargs.pop('partial', False)
     serializer_class = get_plugin_config(app_label).named_serializers[serializer_name]
-    instance = serializer_class.Meta.model.objects.get(id=instance_id).cast()
+    instance = serializer_class.Meta.model.objects.get(pk=instance_id).cast()
     serializer = serializer_class(instance, data=data, partial=partial)
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -44,5 +44,5 @@ def general_delete(instance_id, app_label, serializer_name):
         serializer_name (str): name of the serializer class for the model
     """
     serializer_class = get_plugin_config(app_label).named_serializers[serializer_name]
-    instance = serializer_class.Meta.model.objects.get(id=instance_id).cast()
+    instance = serializer_class.Meta.model.objects.get(pk=instance_id).cast()
     instance.delete()

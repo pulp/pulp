@@ -455,25 +455,25 @@ class FilterRepoVersionTestCase(unittest.TestCase):
         """Filter repository version by invalid date."""
         criteria = utils.uuid4()
         for params in (
-                {'created': criteria},
-                {'created__gt': criteria, 'created__lt': criteria},
-                {'created__gte': criteria, 'created__lte': criteria},
-                {'created__range': ','.join((criteria, criteria))}):
+                {'_created': criteria},
+                {'_created__gt': criteria, '_created__lt': criteria},
+                {'_created__gte': criteria, '_created__lte': criteria},
+                {'_created__range': ','.join((criteria, criteria))}):
             with self.subTest(params=params):
                 with self.assertRaises(HTTPError):
                     get_versions(self.repo, params)
 
     def test_filter_valid_date(self):
         """Filter repository version by a valid date."""
-        dates = self.get_repo_versions_attr('created')
+        dates = self.get_repo_versions_attr('_created')
         for params, num_results in (
-                ({'created': dates[0]},
+                ({'_created': dates[0]},
                  1),
-                ({'created__gt': dates[0], 'created__lt': dates[-1]},
+                ({'_created__gt': dates[0], '_created__lt': dates[-1]},
                  len(dates) - 2),
-                ({'created__gte': dates[0], 'created__lte': dates[-1]},
+                ({'_created__gte': dates[0], '_created__lte': dates[-1]},
                  len(dates)),
-                ({'created__range': ','.join((dates[0], dates[1]))},
+                ({'_created__range': ','.join((dates[0], dates[1]))},
                  2)):
             with self.subTest(params=params):
                 results = get_versions(self.repo, params)
