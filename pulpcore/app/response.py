@@ -1,6 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
+from .models import Task
+
 
 class OperationPostponedResponse(Response):
     """
@@ -23,5 +25,6 @@ class OperationPostponedResponse(Response):
                 the response.
             request (rest_framework.request.Request): Request used to generate the _href urls
         """
-        task = {"task": reverse('tasks-detail', args=[result.id], request=None)}
-        super().__init__(data=task, status=202)
+        task = Task.objects.get(job_id=result.id)
+        resp = {"task": reverse('tasks-detail', args=[task.pk], request=None)}
+        super().__init__(data=resp, status=202)
