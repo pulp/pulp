@@ -79,8 +79,11 @@ class MasterModel(Model):
         # on instances of MasterModel by the string stored in that model's TYPE attr.
         # Storing this _type in a column on the MasterModel next to makes it trivial
         # to filter for specific detail model types across master's relations.
+        # Prepend the TYPE defined on a detail model with a django app label.
+        # If a plugin sets the type field themselves, it's used as-is.
         if not self._type:
-            self._type = self.TYPE
+            self._type = '{app_label}.{type}'.format(app_label=self._meta.app_label,
+                                                     type=self.TYPE)
         return super().save(*args, **kwargs)
 
     def cast(self):
