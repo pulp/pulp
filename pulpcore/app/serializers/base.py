@@ -33,9 +33,9 @@ class ModelSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
     """
 
     class Meta:
-        fields = ('_href', 'created')
+        fields = ('_href', '_created')
 
-    created = serializers.DateTimeField(
+    _created = serializers.DateTimeField(
         help_text=_('Timestamp of creation.'),
         read_only=True
     )
@@ -102,10 +102,10 @@ class MasterModelSerializer(ModelSerializer):
     as-needed.
 
     """
-    type = serializers.CharField(read_only=True)
+    _type = serializers.CharField(read_only=True)
 
     class Meta:
-        fields = ModelSerializer.Meta.fields + ('type',)
+        fields = ModelSerializer.Meta.fields + ('_type',)
 
 
 class MatchingNullViewName(object):

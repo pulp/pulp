@@ -14,7 +14,7 @@ UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 class ContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
 
-    artifacts = fields.ContentArtifactsField(
+    _artifacts = fields.ContentArtifactsField(
         help_text=_("A dict mapping relative paths inside the Content to the corresponding"
                     "Artifact URLs. E.g.: {'relative/path': "
                     "'/artifacts/1/'"),
@@ -22,7 +22,7 @@ class ContentSerializer(base.MasterModelSerializer):
 
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields + ('artifacts',)
+        fields = base.MasterModelSerializer.Meta.fields + ('_artifacts',)
 
 
 class ArtifactSerializer(base.ModelSerializer):
