@@ -266,7 +266,7 @@ class Task(Model):
         parent (models.ForeignKey): Task that spawned this task (if any)
         worker (models.ForeignKey): The worker that this task is in
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     state = models.TextField(choices=TASK_CHOICES)
 
     started_at = models.DateTimeField(null=True)
@@ -287,11 +287,11 @@ class Task(Model):
             pulpcore.app.models.Task: The current task.
         """
         try:
-            task_id = get_current_job().id
+            job_id = get_current_job().id
         except AttributeError:
             task = None
         else:
-            task = Task.objects.get(pk=task_id)
+            task = Task.objects.get(job_id=job_id)
         return task
 
     def set_running(self):

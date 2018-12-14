@@ -32,6 +32,10 @@ class CreatedResourceSerializer(RelatedField):
 
 class TaskSerializer(ModelSerializer):
     _href = IdentityField(view_name='tasks-detail')
+    job_id = serializers.UUIDField(
+        help_text=_("ID of the job in rq."),
+        read_only=True
+    )
     state = serializers.CharField(
         help_text=_("The current state of the task. The possible values include:"
                     " 'waiting', 'skipped', 'running', 'completed', 'failed' and 'canceled'."),
@@ -85,7 +89,7 @@ class TaskSerializer(ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ModelSerializer.Meta.fields + ('state', 'started_at', 'finished_at',
+        fields = ModelSerializer.Meta.fields + ('job_id', 'state', 'started_at', 'finished_at',
                                                 'non_fatal_errors', 'error', 'worker', 'parent',
                                                 'spawned_tasks', 'progress_reports',
                                                 'created_resources')
