@@ -1,2 +1,0 @@
-Deferred Download
-=================
