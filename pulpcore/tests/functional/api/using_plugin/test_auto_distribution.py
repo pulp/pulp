@@ -93,10 +93,13 @@ class AutoDistributionTestCase(unittest.TestCase):
         body = gen_distribution()
         body['repository'] = repo['_href']
         body['publisher'] = publisher['_href']
+
         distribution = self.client.post(DISTRIBUTION_PATH, body)
         self.addCleanup(self.client.delete, distribution['_href'])
+
         last_version_href = get_versions(repo)[-1]['_href']
         publication = publish(self.cfg, publisher, repo, last_version_href)
+
         self.addCleanup(self.client.delete, publication['_href'])
         distribution = self.client.get(distribution['_href'])
 
@@ -111,6 +114,7 @@ class AutoDistributionTestCase(unittest.TestCase):
         repo = self.client.get(repo['_href'])
         last_version_href = get_versions(repo)[-1]['_href']
         publication = publish(self.cfg, publisher, repo, last_version_href)
+
         self.addCleanup(self.client.delete, publication['_href'])
         distribution = self.client.get(distribution['_href'])
 

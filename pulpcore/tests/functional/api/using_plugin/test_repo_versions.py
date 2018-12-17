@@ -18,6 +18,9 @@ from pulp_smash.pulp3.utils import (
     get_content,
     get_added_content,
     get_removed_content,
+    get_content_summary,
+    get_added_content_summary,
+    get_removed_content_summary,
     get_versions,
     publish,
     sync,
@@ -27,6 +30,7 @@ from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_NAME,
     FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
+    FILE_FIXTURE_SUMMARY,
     FILE_FIXTURE_MANIFEST_URL,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
@@ -96,10 +100,12 @@ class AddRemoveContentTestCase(unittest.TestCase):
 
         * The ``_versions_href`` API call is correct.
         * The ``_latest_version_href`` API call is correct.
-        * The ``_latest_version_href + content/`` API call is correct.
-        * The ``_latest_version_href + added_content/`` API call is correct.
-        * The ``_latest_version_href + removed_content/`` API call is correct.
+        * The ``content_hrefs`` attribute is correct.
+        * The ``content_added_hrefs`` attribute is correct.
+        * The ``content_removed_hrefs`` attribute is correct.
         * The ``content_summary`` attribute is correct.
+        * The ``content_added_summary`` attribute is correct.
+        * The ``content_removed_summary`` attribute is correct.
         """
         body = gen_file_remote()
         self.remote.update(self.client.post(FILE_REMOTE_PATH, body))
@@ -114,14 +120,20 @@ class AddRemoveContentTestCase(unittest.TestCase):
         content = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(len(content), FILE_FIXTURE_COUNT)
 
-        added_content = get_added_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(added_content), FILE_FIXTURE_COUNT, added_content)
+        content_added = get_added_content(repo)[FILE_CONTENT_NAME]
+        self.assertEqual(len(content_added), FILE_FIXTURE_COUNT)
 
-        removed_content = get_removed_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(removed_content), 0, removed_content)
+        content_removed = get_removed_content(repo)[FILE_CONTENT_NAME]
+        self.assertEqual(len(content_removed), 0)
 
-        content_summary = self.get_content_summary(repo)
-        self.assertEqual(content_summary, {'file': FILE_FIXTURE_COUNT})
+        content_summary = get_content_summary(repo)
+        self.assertDictEqual(content_summary, FILE_FIXTURE_SUMMARY)
+
+        content_added_summary = get_added_content_summary(repo)
+        self.assertDictEqual(content_added_summary, FILE_FIXTURE_SUMMARY)
+
+        content_removed_summary = get_removed_content_summary(repo)
+        self.assertDictEqual(content_removed_summary, {})
 
     @skip_if(bool, 'repo', False)
     def test_03_remove_content(self):
@@ -146,13 +158,21 @@ class AddRemoveContentTestCase(unittest.TestCase):
         self.assertEqual(len(content), FILE_FIXTURE_COUNT - 1)
 
         added_content = get_added_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(added_content), 0, added_content)
+        self.assertListEqual(added_content, [], added_content)
 
         removed_content = get_removed_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(removed_content), 1, removed_content)
+        self.assertListEqual(removed_content, [self.content], removed_content)
 
-        content_summary = self.get_content_summary(repo)
-        self.assertEqual(content_summary, {'file': FILE_FIXTURE_COUNT - 1})
+        content_summary = get_content_summary(repo)
+        self.assertDictEqual(
+            content_summary, {FILE_CONTENT_NAME: FILE_FIXTURE_COUNT - 1}
+        )
+
+        content_added_summary = get_added_content_summary(repo)
+        self.assertDictEqual(content_added_summary, {})
+
+        content_removed_summary = get_removed_content_summary(repo)
+        self.assertDictEqual(content_removed_summary, {FILE_CONTENT_NAME: 1})
 
     @skip_if(bool, 'repo', False)
     def test_04_add_content(self):
@@ -176,13 +196,19 @@ class AddRemoveContentTestCase(unittest.TestCase):
         self.assertEqual(len(content), FILE_FIXTURE_COUNT)
 
         added_content = get_added_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(added_content), 1, added_content)
+        self.assertListEqual(added_content, [self.content], added_content)
 
         removed_content = get_removed_content(repo)[FILE_CONTENT_NAME]
-        self.assertEqual(len(removed_content), 0, removed_content)
+        self.assertListEqual(removed_content, [], removed_content)
 
-        content_summary = self.get_content_summary(repo)
-        self.assertEqual(content_summary, {'file': FILE_FIXTURE_COUNT})
+        content_summary = get_content_summary(repo)
+        self.assertDictEqual(content_summary, FILE_FIXTURE_SUMMARY)
+
+        content_added_summary = get_added_content_summary(repo)
+        self.assertDictEqual(content_added_summary, {FILE_CONTENT_NAME: 1})
+
+        content_removed_summary = get_removed_content_summary(repo)
+        self.assertDictEqual(content_removed_summary, {})
 
     def get_content_summary(self, repo):
         """Get the ``content_summary`` for the given repository."""

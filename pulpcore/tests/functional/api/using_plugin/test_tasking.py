@@ -6,14 +6,13 @@ from pulp_smash import api, config
 from pulp_smash.pulp3.constants import REPO_PATH
 from pulp_smash.pulp3.utils import (
     gen_repo,
-    get_content,
+    get_content_summary,
     sync,
 )
 
 from pulpcore.tests.functional.api.using_plugin.constants import (
-    FILE_CONTENT_NAME,
+    FILE_FIXTURE_SUMMARY,
     FILE_FIXTURE_MANIFEST_URL,
-    FILE_FIXTURE_COUNT,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_REMOTE_PATH,
 )
@@ -61,4 +60,4 @@ class MultiResourceLockingTestCase(unittest.TestCase):
         repo = client.get(repo['_href'])
         remote = client.get(remote['_href'])
         self.assertEqual(remote['url'], url['url'])
-        self.assertEqual(len(get_content(repo)[FILE_CONTENT_NAME]), FILE_FIXTURE_COUNT)
+        self.assertDictEqual(get_content_summary(repo), FILE_FIXTURE_SUMMARY)
