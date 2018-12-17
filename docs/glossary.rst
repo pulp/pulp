@@ -7,10 +7,10 @@ Glossary
         A file that belongs to a :term:`content unit<content>`.
 
     :class:`~pulpcore.app.models.Content`
-        The smallest unit of data that can be added and removed from :term:`repositories<repository>`.
-        When singular, "content unit" should be used. Content units can have multiple
-        :term:`artifacts<artifact>`. Each content unit has a :term:`type` (like .rpm or .deb) which
-        that is defined by a :term:`plugin`
+        The smallest unit of data that can be added and removed from
+        :term:`repositories<repository>`. When singular, "content unit" should be used. Content
+        units can have multiple :term:`artifacts<artifact>`. Each content unit has a :term:`type`
+        (like .rpm or .deb) which that is defined by a :term:`plugin`.
 
     content app
         A `Django <https://docs.djangoproject.com>`_ app provided by :term:`pulpcore` that serves
@@ -20,9 +20,14 @@ Glossary
         User facing settings that specify how and where associated
         :term:`publications<publication>` are served.
 
+    lazy content
+        A :term:`content unit<content>` that was synchronized into Pulp but is missing one or more
+        :term:`Artifacts<artifact>`. Lazy content is associated with a :term:`Remote` that knows how
+        to download those :term:`Artifacts<artifact>`.
+
     plugin
-        A `Django <https://docs.djangoproject.com>`_ app that exends :term:`pulpcore` to manage one or more
-        :term:`types<type>` of :term:`content`.
+        A `Django <https://docs.djangoproject.com>`_ app that exends :term:`pulpcore` to manage one
+        or more :term:`types<type>` of :term:`content`.
 
     :class:`~pulpcore.app.models.Publication`
         The metadata and :term:`artifacts<Artifact>` of the :term:`content units<content>` in a
@@ -30,8 +35,8 @@ Glossary
         :term:`content app` when they are assigned to a :term:`distribution`.
 
     :class:`~pulpcore.app.models.Publisher`
-        A :term:`plugin` defined object that contains settings required to publish a specific :term:`type` of
-        :term:`content unit<content>`.
+        A :term:`plugin` defined object that contains settings required to publish a specific
+        :term:`type` of :term:`content unit<content>`.
 
     pulpcore
         A generalized backend with a Plugin API and a :doc:`REST
@@ -50,7 +55,8 @@ Glossary
         A versioned set of :term:`content units<content>`.
 
     :class:`~pulpcore.app.models.RepositoryVersion`
-        An immutable snapshot of the set of :term:`content units<content>` that are in a :term:`repository`.
+        An immutable snapshot of the set of :term:`content units<content>` that are in a
+        :term:`repository`.
 
     sync
         A :term:`plugin` defined task that fetches :term:`content` from an external source using a
