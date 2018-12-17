@@ -1,5 +1,6 @@
 from gettext import gettext as _
 
+import django
 from django.core import validators
 from django.db.models import Q, Count
 from django.urls import reverse
@@ -498,7 +499,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         for ctype in obj.content.values_list('type', flat=True):
             ctype_model = obj.content.filter(type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
-            ctype_url = reverse(ctype_view)
+            try:
+                ctype_url = reverse(ctype_view)
+            except django.urls.exceptions.NoReverseMatch:
+                # We've hit a content type for which there is no viewset.
+                # There's nothing we can do here, except to skip it.
+                continue
             rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
                 repo=obj.repository.pk, version=obj.number)
             full_url = "{base}?repository_version={rv_href}".format(
@@ -526,7 +532,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         for ctype in obj.added().values_list('type', flat=True):
             ctype_model = obj.content.filter(type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
-            ctype_url = reverse(ctype_view)
+            try:
+                ctype_url = reverse(ctype_view)
+            except django.urls.exceptions.NoReverseMatch:
+                # We've hit a content type for which there is no viewset.
+                # There's nothing we can do here, except to skip it.
+                continue
             rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
                 repo=obj.repository.pk, version=obj.number)
             full_url = "{base}?repository_version_added={rv_href}".format(
@@ -554,7 +565,12 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         for ctype in obj.removed().values_list('type', flat=True):
             ctype_model = obj.content.filter(type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
-            ctype_url = reverse(ctype_view)
+            try:
+                ctype_url = reverse(ctype_view)
+            except django.urls.exceptions.NoReverseMatch:
+                # We've hit a content type for which there is no viewset.
+                # There's nothing we can do here, except to skip it.
+                continue
             rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
                 repo=obj.repository.pk, version=obj.number)
             full_url = "{base}?repository_version_removed={rv_href}".format(
