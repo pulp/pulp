@@ -132,13 +132,5 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 #
 # WORKING_DIRECTORY = '/var/lib/pulp/tmp'
 #
-# CONTENT = {
-#     'HOST': None,
-#     'WEB_SERVER': 'django',
-#     'REDIRECT': {
-#         'HOST': None,
-#         'PORT': 443,
-#         'PATH_PREFIX': '/streamer/',
-#         'ENABLED': False,
-#     }
-# }
+# CONTENT_HOST = None
+# CONTENT_PATH_PREFIX = '/pulp/content/'
