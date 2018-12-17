@@ -44,7 +44,7 @@ class BulkCreateManager(models.Manager):
             for i in range(len(objs)):
                 try:
                     objs[i].save()
-                except ValueError or IntegrityError:
+                except IntegrityError:
                     objs[i] = objs[i].__class__.objects.get(objs[i].q())
         return objs
 
