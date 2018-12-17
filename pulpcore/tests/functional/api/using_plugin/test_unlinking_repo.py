@@ -14,6 +14,7 @@ from pulp_smash.pulp3.utils import (
 )
 
 from pulpcore.tests.functional.api.using_plugin.constants import (
+    FILE_CONTENT_NAME,
     FILE_REMOTE_PATH,
     FILE_PUBLISHER_PATH
 )
@@ -66,7 +67,7 @@ class RemotesPublishersTestCase(unittest.TestCase):
         # Compare contents of repositories.
         contents = []
         for repo in repos:
-            contents.append(get_content(repo))
+            contents.append(get_content(repo)[FILE_CONTENT_NAME])
         self.assertEqual(
             {content['_href'] for content in contents[0]},
             {content['_href'] for content in contents[1]},

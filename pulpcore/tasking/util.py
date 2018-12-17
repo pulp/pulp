@@ -7,7 +7,7 @@ from django.urls import reverse
 from rq.job import Job
 
 from pulpcore.app.models import Task
-from pulpcore.app.serializers import view_name_for_model
+from pulpcore.app.util import get_view_name_for_model
 from pulpcore.constants import TASK_FINAL_STATES, TASK_STATES
 from pulpcore.exceptions import MissingResource
 from pulpcore.tasking import connection
@@ -91,4 +91,4 @@ def get_url(model):
     Returns:
         str: The path component of the resource url
     """
-    return reverse(view_name_for_model(model, 'detail'), args=[model.pk])
+    return reverse(get_view_name_for_model(model, 'detail'), args=[model.pk])

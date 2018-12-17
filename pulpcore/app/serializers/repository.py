@@ -1,10 +1,12 @@
 from gettext import gettext as _
 
 from django.core import validators
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.urls import reverse
 
 from rest_framework import serializers, fields
 from rest_framework.validators import UniqueValidator
+from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (
@@ -20,7 +22,7 @@ from pulpcore.app.serializers import (
     ModelSerializer,
 )
 from pulpcore.app.serializers import validate_unknown_fields
-from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
+from pulpcore.app.util import get_view_name_for_model
 
 
 class RepositorySerializer(ModelSerializer):
@@ -407,23 +409,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         view_name='versions-detail',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
-    _content_href = NestedIdentityField(
-        view_name='versions-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
-    )
-    _added_href = NestedIdentityField(
-        view_name='versions-added-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
-    )
-    _removed_href = NestedIdentityField(
-        view_name='versions-removed-content',
-        lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
-    )
     number = serializers.IntegerField(
-        read_only=True
-    )
-    content_summary = serializers.DictField(
-        help_text=_('A list of counts of each type of content in this version.'),
         read_only=True
     )
     base_version = NestedRelatedField(
@@ -435,12 +421,154 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         lookup_field='number',
         parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
+    content_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content in this version, and the HREF to view '
+                    'them.'),
+        read_only=True,
+    )
+    content_added_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content added in this version, and the HREF to '
+                    'view them.'),
+        read_only=True,
+    )
+    content_removed_hrefs = serializers.SerializerMethodField(
+        help_text=_('A mapping of the types of content removed from this version, and the HREF '
+                    'to view them.'),
+        read_only=True,
+    )
+    content_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content in this version.'),
+        read_only=True,
+    )
+    content_added_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content added in this version.'),
+        read_only=True,
+    )
+    content_removed_summary = serializers.SerializerMethodField(
+        help_text=_('A list of counts of each type of content removed in this version.'),
+        read_only=True,
+    )
+
+    def get_content_summary(self, obj):
+        """
+        The summary of contained content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.content.values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_added_summary(self, obj):
+        """
+        The summary of added content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.added().values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_removed_summary(self, obj):
+        """
+        The summary of removed content.
+
+        Returns:
+            dict: of {<type>: <count>}
+        """
+        annotated = obj.removed().values('type').annotate(count=Count('type'))
+        return {c['type']: c['count'] for c in annotated}
+
+    def get_content_hrefs(self, obj):
+        """
+        Generate URLs for the content types present in the RepositoryVersion.
+
+        For each content type present in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by presence in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.content.values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
+
+    def get_content_added_hrefs(self, obj):
+        """
+        Generate URLs for the content types added in the RepositoryVersion.
+
+        For each content type added in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by addition in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.added().values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version_added={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
+
+    def get_content_removed_hrefs(self, obj):
+        """
+        Generate URLs for the content types removed in the RepositoryVersion.
+
+        For each content type removed in the RepositoryVersion, create the URL of the viewset of
+        that variety of content along with a query parameter which filters it by removal in this
+        RepositoryVersion.
+
+        Args:
+            obj (pulpcore.app.models.RepositoryVersion): The RepositoryVersion being serialized.
+
+        Returns:
+            dict: {<type>: <url>}
+        """
+        content_urls = {}
+
+        for ctype in obj.removed().values_list('type', flat=True):
+            ctype_model = obj.content.filter(type=ctype).first().cast().__class__
+            ctype_view = get_view_name_for_model(ctype_model, 'list')
+            ctype_url = reverse(ctype_view)
+            rv_href = "/pulp/api/v3/repositories/{repo}/versions/{version}/".format(
+                repo=obj.repository.pk, version=obj.number)
+            full_url = "{base}?repository_version_removed={rv_href}".format(
+                base=ctype_url, rv_href=rv_href)
+            content_urls[ctype] = full_url
+
+        return content_urls
 
     class Meta:
         model = models.RepositoryVersion
         fields = ModelSerializer.Meta.fields + (
-            '_href', '_content_href', '_added_href', '_removed_href', 'number',
-            'content_summary', 'base_version'
+            '_href', 'number', 'base_version',
+            'content_hrefs', 'content_added_hrefs', 'content_removed_hrefs',
+            'content_summary', 'content_added_summary', 'content_removed_summary',
         )
 
 

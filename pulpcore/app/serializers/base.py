@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from gettext import gettext as _
 from urllib.parse import urljoin
 
@@ -6,79 +5,13 @@ from django.core.validators import URLValidator
 from drf_queryfields.mixins import QueryFieldsMixin
 
 from rest_framework import serializers
-from rest_framework.fields import SkipField
-from rest_framework.relations import PKOnlyObject
 
-from rest_framework_nested.relations import NestedHyperlinkedIdentityField, \
+from rest_framework_nested.relations import (
+    NestedHyperlinkedIdentityField,
     NestedHyperlinkedRelatedField
-
-from pulpcore.app.apps import pulp_plugin_configs
+)
 from pulpcore.app.models import Task
-
-# a little cache so viewset_for_model doesn't have iterate over every app every time
-_model_viewset_cache = {}
-
-
-# based on their name, viewset_for_model and view_name_for_model look like they should
-# live over in the viewsets namespace, but these tools exist for serializers, which are
-# depended on by viewsets. They're defined here because they're used here, and to avoid
-# odd import dependencies.
-def viewset_for_model(model_obj):
-    """
-    Given a Model instance or class, return the registered ViewSet for that Model
-    """
-    # model_obj can be an instance or class, force it to class
-    model_class = model_obj._meta.model
-    if model_class in _model_viewset_cache:
-        return _model_viewset_cache[model_class]
-
-    # cache miss, fill in the cache while we look for our matching viewset
-    model_viewset = None
-    # go through the viewset registry to find the viewset for the passed-in model
-    for app in pulp_plugin_configs():
-        for model, viewset in app.named_viewsets.items():
-            _model_viewset_cache.setdefault(model, viewset)
-            if model is model_class:
-                model_viewset = viewset
-                break
-        if model_viewset is not None:
-            break
-
-    if model_viewset is None:
-        raise LookupError('Could not determine ViewSet base name for model {}'.format(
-            model_class))
-
-    return viewset
-
-
-def view_name_for_model(model_obj, view_action):
-    """
-    Given a Model instance or class, return the correct view name for that ViewSet view.
-
-    This is the "glue" that generates view names dynamically based on a model object.
-
-    Args:
-        model_obj (pulpcore.app.models.Model): a Model that should have a ViewSet
-        view_action (str): name of the view action as expected by DRF. See their docs for details.
-
-    Returns:
-        str: view name for the correct ViewSet
-
-    Raises:
-        LookupError: if no ViewSet is found for the Model
-    """
-    # Import this here to prevent out-of-order plugin discovery
-    from pulpcore.app.urls import all_routers
-
-    viewset = viewset_for_model(model_obj)
-
-    # return the complete view name, joining the registered viewset base name with
-    # the requested view method.
-    for router in all_routers:
-        for pattern, registered_viewset, base_name in router.registry:
-            if registered_viewset is viewset:
-                return '-'.join((base_name, view_action))
-    raise LookupError('view not found')
+from pulpcore.app.util import get_view_name_for_model
 
 
 def validate_unknown_fields(initial_data, defined_fields):
@@ -174,35 +107,6 @@ class MasterModelSerializer(ModelSerializer):
     class Meta:
         fields = ModelSerializer.Meta.fields + ('type',)
 
-    def to_representation(self, instance):
-        """
-        Represent a cast Detail instance as a dict of primitive datatypes
-        """
-
-        # This is very similar to DRF's default to_representation implementation in
-        # ModelSerializer, but makes sure to cast Detail instances and use the correct
-        # serializer for rendering so that all detail fields are included.
-        ret = OrderedDict()
-
-        instance = instance.cast()
-        viewset = viewset_for_model(instance)()
-        viewset.request = self._context['request']
-        fields = viewset.get_serializer_class()(context=self._context)._readable_fields
-
-        for field in fields:
-            try:
-                attribute = field.get_attribute(instance)
-            except SkipField:
-                continue
-
-            check_for_none = attribute.pk if isinstance(attribute, PKOnlyObject) else attribute
-            if check_for_none is None:
-                ret[field.field_name] = None
-            else:
-                ret[field.field_name] = field.to_representation(attribute)
-
-        return ret
-
 
 class MatchingNullViewName(object):
     """Object that can be used as the default view name for detail fields
@@ -244,7 +148,7 @@ class _DetailFieldMixin:
             msg = ('Expected a detail model instance, not {}. Do you need to add "many=True" to '
                    'this field definition in its serializer?').format(type(obj))
             raise ValueError(msg)
-        return view_name_for_model(obj, 'detail')
+        return get_view_name_for_model(obj, 'detail')
 
     def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
@@ -258,6 +162,7 @@ class IdentityField(serializers.HyperlinkedIdentityField):
 
     The get_url method is overriden so relative URLs are returned.
     """
+
     def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         request = None
@@ -269,6 +174,7 @@ class RelatedField(serializers.HyperlinkedRelatedField):
 
     When using this field on a serializer, it will serialize the related resource as a relative URL.
     """
+
     def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         request = None
@@ -315,6 +221,7 @@ class NestedIdentityField(NestedHyperlinkedIdentityField):
 
     When using this field in a serializer, it serializes the  as a relative URL.
     """
+
     def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         request = None
@@ -326,6 +233,7 @@ class NestedRelatedField(NestedHyperlinkedRelatedField):
 
     When using this field in a serializer, it serializes the related resource as a relative URL.
     """
+
     def get_url(self, obj, view_name, request, *args, **kwargs):
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         request = None

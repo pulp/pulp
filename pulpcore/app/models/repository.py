@@ -221,7 +221,7 @@ class RepositoryVersion(Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     number = models.PositiveIntegerField(db_index=True)
     complete = models.BooleanField(db_index=True, default=False)
-    base_version = models.ForeignKey('Repositoryversion', null=True,
+    base_version = models.ForeignKey('RepositoryVersion', null=True,
                                      on_delete=models.SET_NULL)
 
     class Meta:
@@ -256,6 +256,20 @@ class RepositoryVersion(Model):
         )
         return Content.objects.filter(version_memberships__in=relationships)
 
+    def added(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were added by this version.
+        """
+        return Content.objects.filter(version_memberships__version_added=self)
+
+    def removed(self):
+        """
+        Returns:
+            QuerySet: The Content objects that were removed by this version.
+        """
+        return Content.objects.filter(version_memberships__version_removed=self)
+
     def contains(self, content):
         """
         Check whether a content exists in this repository version's set of content
@@ -264,17 +278,6 @@ class RepositoryVersion(Model):
             bool: True if the repository version contains the content, False otherwise
         """
         return self.content.filter(pk=content.pk).exists()
-
-    @property
-    def content_summary(self):
-        """
-        The contained content summary.
-
-        Returns:
-            dict: of {<type>: <count>}
-        """
-        annotated = self.content.values('type').annotate(count=models.Count('type'))
-        return {c['type']: c['count'] for c in annotated}
 
     @classmethod
     def create(cls, repository, base_version=None):
@@ -325,20 +328,6 @@ class RepositoryVersion(Model):
         with suppress(RepositoryVersion.DoesNotExist):
             model = repository.versions.exclude(complete=False).latest()
             return model
-
-    def added(self):
-        """
-        Returns:
-            QuerySet: The Content objects that were added by this version.
-        """
-        return Content.objects.filter(version_memberships__version_added=self)
-
-    def removed(self):
-        """
-        Returns:
-            QuerySet: The Content objects that were removed by this version.
-        """
-        return Content.objects.filter(version_memberships__version_removed=self)
 
     def next(self):
         """

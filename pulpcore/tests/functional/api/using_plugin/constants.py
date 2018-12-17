@@ -9,6 +9,8 @@ from pulp_smash.pulp3.constants import (
     CONTENT_PATH
 )
 
+FILE_CONTENT_NAME = 'file'
+
 FILE_CONTENT_PATH = urljoin(CONTENT_PATH, 'file/files/')
 
 FILE_REMOTE_PATH = urljoin(BASE_REMOTE_PATH, 'file/')
@@ -23,6 +25,9 @@ FILE_FIXTURE_MANIFEST_URL = urljoin(FILE_FIXTURE_URL, 'PULP_MANIFEST')
 
 FILE_FIXTURE_COUNT = 3
 """The number of packages available at :data:`FILE_FIXTURE_URL`."""
+
+FILE_FIXTURE_SUMMARY = {FILE_CONTENT_NAME: FILE_FIXTURE_COUNT}
+"""The desired content summary after syncing :data:`FILE_FIXTURE_URL`."""
 
 FILE2_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, 'file2/')
 """The URL to a file repository."""

@@ -2,9 +2,13 @@ from .base import AsyncRemoveMixin, AsyncUpdateMixin, BaseFilterSet, NamedModelV
 from .content import (  # noqa
     ArtifactFilter,
     ArtifactViewSet,
-    ContentGuardViewSet,
+    ContentFilter,
     ContentViewSet,
-    ContentFilter
+    ContentGuardViewSet,
+)
+from .custom_filters import (  # noqa
+    IsoDateTimeFilter,
+    RepoVersionHrefFilter
 )
 from .repository import (  # noqa
     ContentGuardFilter,
