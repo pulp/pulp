@@ -30,6 +30,8 @@ jobs:
         user: pulp
         password:
           secure: "ej2lekfOr8S3Du6D6HPlB20+g5jwgZz75ouHlqIpc+IAgdAxmpn5vkspsAevMtchLw7sNgDAAbl0bQVacMDnn+zbo21s93OXcOmYzgy4IlTgopc+xi1XaKFdLMLiEiZ+KOGVJgg7yQwS3yeS28FARZGNDYTF/+N7eITteDThcG4="
+        on:
+          tags: true
       if: tag IS present
     - stage: publish-beta-docs
       script: bash .travis/publish_docs.sh beta
