@@ -66,7 +66,8 @@ class Remote(MasterModel):
             Format: scheme://user:password@host:port
         username (models.TextField): The username to be used for authentication when syncing.
         password (models.TextField): The password to be used for authentication when syncing.
-        connection_limit (models.PositiveIntegerField): Total number of simultaneous connections.
+        download_concurrency (models.PositiveIntegerField): Total number of
+            simultaneous connections.
         policy (models.TextField): The policy to use when downloading content.
 
     Relations:
@@ -113,7 +114,7 @@ class Remote(MasterModel):
     proxy_url = models.TextField()
     username = models.TextField()
     password = models.TextField()
-    connection_limit = models.PositiveIntegerField(default=20)
+    download_concurrency = models.PositiveIntegerField(default=20)
     policy = models.TextField(choices=POLICY_CHOICES, default=IMMEDIATE)
 
     class Meta:
