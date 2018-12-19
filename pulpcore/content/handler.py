@@ -165,10 +165,14 @@ class Handler:
         # published artifact
         try:
             pa = publication.published_artifact.get(relative_path=rel_path)
+            ca = pa.content_artifact
         except ObjectDoesNotExist:
             pass
         else:
-            return web.FileResponse(pa.content_artifact.artifact.file.name)
+            if ca.artifact:
+                return web.FileResponse(ca.artifact.file.name)
+            else:
+                return await self._stream_content_artifact(request, web.StreamResponse(), ca)
 
         # published metadata
         try:
