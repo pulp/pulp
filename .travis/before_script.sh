@@ -33,8 +33,3 @@ if [ "$TEST" != 'docs' ]; then
 fi
 
 pulp-manager reset-admin-password --password admin
-pulp-manager runserver >> ~/django_runserver.log 2>&1 &
-gunicorn pulpcore.content:server --bind 'localhost:8080' --worker-class 'aiohttp.GunicornWebWorker' -w 2 >> ~/content_app.log 2>&1 &
-rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/resource_manager.log 2>&1 &
-rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/reserved_worker-1.log 2>&1 &
-sleep 5

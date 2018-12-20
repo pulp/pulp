@@ -1,7 +1,7 @@
 [run]
-cover_pylib = 0
-branch = False
 source = pulpcore
+concurrency = multiprocessing
+parallel = true
 
 omit =
   /*/tests/*
