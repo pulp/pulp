@@ -1,6 +1,19 @@
 Pulp 3.0 Release Notes
 ======================
 
+3.0.0b18
+========
+
+`Comprehensive list of changes and bugfixes for beta 18 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-12-18T10%3A00%3A00-04%3A00..2018-12-20T13%3A00%3A00-06%3A00+>`_
+
+Breaking Changes
+----------------
+
+* `Prepend pulpcore Content model fields with _ <https://github.com/pulp/pulp/pull/3798>`_
+* `Rename connection_limit to download_concurrency <https://github.com/pulp/pulp/pull/3808>`_
+* `Prepend type for master/detail models with a plugin app label <https://github.com/pulp/pulp/pull/3801>`_
+* `Checking in migrations <https://github.com/pulp/pulp/pull/3810>`_
+
 3.0.0b17
 ========
 
