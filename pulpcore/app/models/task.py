@@ -301,7 +301,7 @@ class Task(Model):
         This updates the :attr:`started_at` and sets the :attr:`state` to :attr:`RUNNING`.
         """
         if self.state != TASK_STATES.WAITING:
-            _logger.warning(_('Task __call__() occurred but Task %s is not at WAITING') % self.id)
+            _logger.warning(_('Task __call__() occurred but Task %s is not at WAITING') % self.pk)
         self.state = TASK_STATES.RUNNING
         self.started_at = timezone.now()
         self.save()
@@ -321,7 +321,7 @@ class Task(Model):
             self.state = TASK_STATES.COMPLETED
         else:
             msg = _('Task set_completed() occurred but Task %s is already in final state')
-            _logger.warning(msg % self.id)
+            _logger.warning(msg % self.pk)
 
         self.save()
 
@@ -348,7 +348,7 @@ class Task(Model):
         longer has any tasks reserving it, delete it.
         """
         for reservation in self.reserved_resources.all():
-            TaskReservedResource.objects.filter(task=self.id).delete()
+            TaskReservedResource.objects.filter(task=self.pk).delete()
             if not reservation.tasks.exists():
                 reservation.delete()
 

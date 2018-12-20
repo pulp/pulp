@@ -19,7 +19,7 @@ class ContentRelatedField(DetailRelatedField):
 
 class ContentArtifactsField(serializers.DictField):
     """
-    A serializer field for the 'artifacts' ManyToManyField on the Content model.
+    A serializer field for the '_artifacts' ManyToManyField on the Content model.
     """
 
     def run_validation(self, data):

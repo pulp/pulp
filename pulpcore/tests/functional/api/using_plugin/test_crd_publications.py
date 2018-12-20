@@ -82,9 +82,9 @@ class PublicationsTestCase(unittest.TestCase):
 
         Permutate field list to ensure different combinations on result.
         """
-        fields = ('_href', 'created', 'distributions', 'publisher')
+        fields = ('_href', '_created', 'distributions', 'publisher')
         for field_pair in permutations(fields, 2):
-            # ex: field_pair = ('_href', 'created)
+            # ex: field_pair = ('_href', '_created)
             with self.subTest(field_pair=field_pair):
                 publication = self.client.get(
                     self.publication['_href'],
@@ -128,7 +128,7 @@ class PublicationsTestCase(unittest.TestCase):
     def test_04_read_publications(self):
         """Read a publication by its created time."""
         publications = self.client.get(PUBLICATIONS_PATH, params={
-            'created': self.publication['created']
+            '_created': self.publication['_created']
         })
         self.assertEqual(len(publications), 1, publications)
         for key, val in self.publication.items():
@@ -172,11 +172,11 @@ class PublicationsTestCase(unittest.TestCase):
         )
         self.assertEqual(len(publications), 3)
 
-        # Assert publications are ordered by created field in descending order
+        # Assert publications are ordered by _created field in descending order
         for i, publication in enumerate(publications[:-1]):
             self.assertGreater(
-                parse_date_from_string(publication['created']),  # Current
-                parse_date_from_string(publications[i + 1]['created'])  # Prev
+                parse_date_from_string(publication['_created']),  # Current
+                parse_date_from_string(publications[i + 1]['_created'])  # Prev
             )
 
     @skip_if(bool, 'publication', False)

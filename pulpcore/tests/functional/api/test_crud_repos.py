@@ -61,7 +61,7 @@ class CRUDRepoTestCase(unittest.TestCase):
         Permutate field list to ensure different combinations on result.
         """
         fields = (
-            '_href', 'created', '_versions_href', '_latest_version_href',
+            '_href', '_created', '_versions_href', '_latest_version_href',
             'name', 'description'
         )
         for field_pair in permutations(fields, 2):

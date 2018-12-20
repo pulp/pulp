@@ -42,7 +42,7 @@ class TaskViewSet(NamedModelViewSet,
     serializer_class = TaskSerializer
     minimal_serializer_class = MinimalTaskSerializer
     filter_backends = (OrderingFilter, DjangoFilterBackend)
-    ordering = ('-created')
+    ordering = ('-_created')
 
     @detail_route(methods=('post',))
     def cancel(self, request, pk=None):

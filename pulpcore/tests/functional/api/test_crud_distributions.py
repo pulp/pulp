@@ -59,7 +59,7 @@ class CRUDDistributionsTestCase(unittest.TestCase):
 
         Permutate field list to ensure different combinations on result.
         """
-        fields = ('_href', 'base_path', 'base_url', 'created')
+        fields = ('_href', 'base_path', 'base_url', '_created')
         for field_pair in permutations(fields, 2):
             # ex: field_pair = ('_href', 'base_url)
             with self.subTest(field_pair=field_pair):
