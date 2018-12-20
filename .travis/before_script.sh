@@ -25,8 +25,6 @@ echo "DATABASES = {
 # Run migrations.
 export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
 export PULP_CONTENT_HOST=localhost:8080
-pulp-manager makemigrations pulp_app --noinput
-pulp-manager migrate auth --noinput
 pulp-manager migrate --noinput
 
 if [ "$TEST" != 'docs' ]; then
