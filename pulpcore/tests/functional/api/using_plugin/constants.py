@@ -9,7 +9,7 @@ from pulp_smash.pulp3.constants import (
     CONTENT_PATH
 )
 
-FILE_CONTENT_NAME = 'file'
+FILE_CONTENT_NAME = 'pulp_file.file'
 
 FILE_CONTENT_PATH = urljoin(CONTENT_PATH, 'file/files/')
 
