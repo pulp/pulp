@@ -10,7 +10,7 @@ django.setup()  # noqa otherwise E402: module level not at top of file
 
 from aiohttp import web
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
 
 
@@ -240,13 +240,41 @@ class Handler:
         downloader.finalize = finalize
         download_result = await downloader.run()
         if remote.policy != Remote.STREAMED:
-            with transaction.atomic():
-                new_artifact = Artifact(
-                    **download_result.artifact_attributes,
-                    file=download_result.path
-                )
-                new_artifact.save()
-                content_artifact.artifact = new_artifact
-                content_artifact.save()
+            self._save_content_artifact(download_result, content_artifact)
         await response.write_eof()
         return response
+
+    def _save_content_artifact(self, download_result, content_artifact):
+        """
+        Create/Get an Artifact and associate it to a ContentArtifact.
+
+        Create (or get if already existing) an :class:`~pulpcore.plugin.models.Artifact`
+        based on the `download_result` and associate it to the given `content_artifact`. Both
+        the created artifact and the updated content_artifact are saved to the DB.
+
+        Plugin-writers may overide this method if their content module requires
+        additional/different steps for saving.
+
+        Args:
+            download_result (:class:`~pulpcore.plugin.download.DownloadResult`: The
+                DownloadResult for the downloaded artifact.
+
+            content_artifact (:class:`~pulpcore.plugin.models.ContentArtifact`): The
+                ContentArtifact to associate the Artifact with.
+
+        Returns:
+            The associated :class:`~pulpcore.plugin.models.Artifact`.
+        """
+        artifact = Artifact(
+            **download_result.artifact_attributes,
+            file=download_result.path
+        )
+        with transaction.atomic():
+            try:
+                with transaction.atomic():
+                    artifact.save()
+            except IntegrityError:
+                artifact = Artifact.objects.get(artifact.q())
+            content_artifact.artifact = artifact
+            content_artifact.save()
+        return artifact
