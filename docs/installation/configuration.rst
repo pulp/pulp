@@ -74,37 +74,25 @@ REDIS_PASSWORD
    The password for Redis.
 
 
-CONTENT
-^^^^^^^
+CONTENT_HOST
+^^^^^^^^^^^^
 
-   Configuration for the content app. Pulp defaults to using the Django web server to serve
-   content.
+   A string containing the protocol, fqdn, and port where the content app is deployed. This is used
+   when Pulp needs to refer the client to the content serving app from within the REST API, such as
+   the ``base_path`` attribute for a :term:`distribution`.
 
-   WEB_SERVER
-     Defines the type of web server that is running the content application.
-     When set to `django`, the content is streamed.
-     When set to `apache`, the `X-SENDFILE` header is injected which delegates
-     streaming the content to Apache.  This requires
-     `mod_xsendfile <https://tn123.org/mod_xsendfile/>`_ to be installed.
+   This defaults to ``None`` which returns relative urls.
 
-     When set to `nginx`, the `X-Accel-Redirect` header is injected which delegates
-     streaming the content to NGINX.
 
-     Below is the default configuration written in Python.
+CONTENT_PATH_PREFIX
+^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: python
-   :linenos:
+   A string containing the path prefix for the content app. This is used by the REST API when
+   forming URLs to refer clients to the content serving app, and by the content serving application
+   to match incoming URLs.
 
-   CONTENT = {
-      'HOST': None,
-      'WEB_SERVER': 'django',
-      'REDIRECT': {
-         'HOST': None,
-         'PORT': 443,
-          'PATH_PREFIX': '/streamer/',
-        'ENABLED': False,
-      }
-   }
+   Defaults to ``'/pulp/content/'``.
+
 
 PROFILE_STAGES_API
 ^^^^^^^^^^^^^^^^^^

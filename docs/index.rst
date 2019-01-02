@@ -57,7 +57,7 @@ Table of Contents
 
    concepts
    from-pulp-2
-   components/index
+   components
    installation/index
    plugins/index
    workflows/index
