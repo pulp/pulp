@@ -19,7 +19,7 @@ class Repository(Model):
 
     Fields:
 
-        name (models.TextField): The repository name.
+        name (models.CharField): The repository name.
         description (models.TextField): An optional description.
         last_version (models.PositiveIntegerField): A record of the last created version number.
             Used when a repository version is deleted so as not to create a new vesrion with the
@@ -29,7 +29,7 @@ class Repository(Model):
 
         content (models.ManyToManyField): Associated content.
     """
-    name = models.TextField(db_index=True, unique=True)
+    name = models.CharField(db_index=True, unique=True, max_length=255)
     description = models.TextField()
     last_version = models.PositiveIntegerField(default=0)
     content = models.ManyToManyField('Content', through='RepositoryContent',
@@ -54,6 +54,7 @@ class Remote(MasterModel):
 
     Fields:
 
+        name (models.CharField): The remote name.
         url (models.TextField): The URL of an external content source.
         validate (models.BooleanField): If True, the plugin will validate imported files.
         ssl_ca_certificate (models.FileField): A PEM encoded CA certificate used to validate the
@@ -100,7 +101,7 @@ class Remote(MasterModel):
         """
         return get_tls_path(self, name)
 
-    name = models.TextField(db_index=True, unique=True)
+    name = models.CharField(db_index=True, unique=True, max_length=255)
 
     url = models.TextField()
     validate = models.BooleanField(default=True)
@@ -127,14 +128,14 @@ class Publisher(MasterModel):
 
     Fields:
 
-        name (models.TextField): The publisher unique name.
+        name (models.CharField): The publisher unique name.
 
     Relations:
 
     """
     TYPE = 'publisher'
 
-    name = models.TextField(db_index=True, unique=True)
+    name = models.CharField(db_index=True, unique=True, max_length=255)
 
     class Meta:
         default_related_name = 'publishers'
@@ -146,7 +147,7 @@ class Exporter(MasterModel):
 
     Fields:
 
-        name (models.TextField): The exporter unique name.
+        name (models.CharField): The exporter unique name.
         last_export (models.DatetimeField): When the last successful export occurred.
 
     Relations:
@@ -154,7 +155,7 @@ class Exporter(MasterModel):
     """
     TYPE = 'exporter'
 
-    name = models.TextField(db_index=True, unique=True)
+    name = models.CharField(db_index=True, unique=True, max_length=255)
     last_export = models.DateTimeField(null=True)
 
     class Meta:
