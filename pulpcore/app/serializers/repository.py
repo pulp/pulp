@@ -496,7 +496,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         """
         content_urls = {}
 
-        for ctype in obj.content.values_list('_type', flat=True):
+        for ctype in obj.content.values_list('_type', flat=True).distinct():
             ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
@@ -529,7 +529,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         """
         content_urls = {}
 
-        for ctype in obj.added().values_list('_type', flat=True):
+        for ctype in obj.added().values_list('_type', flat=True).distinct():
             ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
@@ -562,7 +562,7 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         """
         content_urls = {}
 
-        for ctype in obj.removed().values_list('_type', flat=True):
+        for ctype in obj.removed().values_list('_type', flat=True).distinct():
             ctype_model = obj.content.filter(_type=ctype).first().cast().__class__
             ctype_view = get_view_name_for_model(ctype_model, 'list')
             try:
