@@ -169,7 +169,7 @@ class Worker(Model):
 
     Fields:
 
-        name (models.TextField): The name of the worker, in the format "worker_type@hostname"
+        name (models.CharField): The name of the worker, in the format "worker_type@hostname"
         last_heartbeat (models.DateTimeField): A timestamp of this worker's last heartbeat
         gracefully_stopped (models.BooleanField): True if the worker has gracefully stopped. Default
             is False.
@@ -177,7 +177,7 @@ class Worker(Model):
     """
     objects = WorkerManager()
 
-    name = models.TextField(db_index=True, unique=True)
+    name = models.CharField(db_index=True, unique=True, max_length=255)
     last_heartbeat = models.DateTimeField(auto_now=True)
     gracefully_stopped = models.BooleanField(default=False)
     cleaned_up = models.BooleanField(default=False)
