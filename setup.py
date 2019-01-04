@@ -24,6 +24,7 @@ setup(
     version='3.0.0b18',
     description='Pulp Django Application and Related Modules',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
