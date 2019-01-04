@@ -38,6 +38,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=None,
+            verify=True,
             timeout=15
         )
 
@@ -57,9 +58,28 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=mock_basic_auth.return_value,
+            verify=True,
             timeout=15
         )
         mock_basic_auth.assert_called_once_with('jcline', 'hunter2')
+
+    @mock.patch(MODULE_PATH + 'post')
+    def test_send_post_with_ca(self, post):
+        notifier_config = {
+            'url': 'https://localhost/api/',
+            'ca_path': '/tmp/CA',
+        }
+        data = {'head': 'feet'}
+
+        http._send_post(notifier_config, data)
+        post.assert_called_once_with(
+            'https://localhost/api/',
+            data=data,
+            headers={'Content-Type': 'application/json'},
+            auth=None,
+            verify=notifier_config['ca_path'],
+            timeout=15
+        )
 
     @mock.patch(MODULE_PATH + '_logger')
     @mock.patch(MODULE_PATH + 'HTTPBasicAuth')
@@ -91,6 +111,7 @@ class TestHTTPNotifierTests(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'},
             auth=mock_basic_auth.return_value,
+            verify=True,
             timeout=15
         )
         mock_log.error.assert_called_once_with(expected_log)

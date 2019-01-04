@@ -31,6 +31,10 @@ notifier:
   If specified, this value will be passed as basic authentication
   credentials when the HTTP request is made.
 
+``ca_path``
+  If specified, this value must be the absolute path to an SSL CA file used
+  instead of the system CA when the HTTP request is made.
+
 Body
 ----
 

@@ -1,7 +1,7 @@
-CentOS, RHEL, and Fedora 23-
-============================
+CentOS and RHEL
+===============
 
-This page contains installation instructions for CentOS, RHEL, and Fedora 23 and below.
+This page contains installation instructions for CentOS and RHEL.
 The :ref:`platform-support-policy` defines platforms are currently supported.
 
 
@@ -13,7 +13,6 @@ Pulp
 
 Download the appropriate repo definition file from the Pulp repository:
 
- * Fedora: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL 6 Server: https://repos.fedorapeople.org/repos/pulp/pulp/rhel6-pulp.repo
  * RHEL: https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
@@ -70,10 +69,15 @@ Server
 
     $ sudo yum install mongodb-server
 
-   You need mongodb-server with version >= 2.4 installed for Pulp server. It is highly recommended
-   that you `configure MongoDB to use SSL`_. If you are using Mongo's authorization feature, you
-   will need to grant the ``readWrite`` and ``dbAdmin`` roles to the user you provision for Pulp to
-   use. The ``dbAdmin`` role allows Pulp to create collections and install indices on them.
+   You need mongodb-server with version >= 2.4 installed for Pulp server. MongoDB 2.x reached its EOL.
+   It is encouraged to use MongoDB 3.x for performance reasons, the recommended version is >= 3.4.
+   `Installation instructions <https://docs.mongodb.com/v3.6/tutorial/install-mongodb-on-red-hat/>`_
+   can be found in the MongoDB documentation.
+
+   It is highly recommended that you `configure MongoDB to use SSL`_. If you are using
+   Mongo's authorization feature, you  will need to grant the ``readWrite`` and ``dbAdmin`` roles
+   to the user you provision for Pulp to use. The ``dbAdmin`` role allows Pulp to create collections
+   and install indices on them.
 
    After installing MongoDB, you should configure it to start at boot and start it. For Upstart
    based systems::
@@ -126,7 +130,7 @@ Server
 #. Install the Pulp server, task workers, and their dependencies. For Pulp installations that use
    Qpid, install Pulp server using::
 
-    $ sudo yum install pulp-server python-gofer-qpid python-qpid qpid-tools
+    $ sudo yum install pulp-server python-gofer-qpid python2-qpid qpid-tools
 
    .. note::
       For RabbitMQ installations, install Pulp server without any Qpid specific libraries.

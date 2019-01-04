@@ -42,12 +42,17 @@ class MigrationProgressLog(object):
 
         return self
 
-    def progress(self, msg=MIGRATION_PROGRESS_MSG):
+    def progress(self, msg=MIGRATION_PROGRESS_MSG, migrated_units=1):
         """
         Count migrated units and logs progress every 10%.
         Expected to be called for every migrated unit.
+
+        :param msg: user-facing message to report progress
+        :type  msg: str
+        :param migrated_units: number of units migrated on that iteration
+        :type  migrated_units: int
         """
-        self.migrated_units += 1
+        self.migrated_units += migrated_units
         another_ten_percent_completed = self.total_units >= 10 and \
             not self.migrated_units % (self.total_units // 10)
         all_units_migrated = self.migrated_units == self.total_units

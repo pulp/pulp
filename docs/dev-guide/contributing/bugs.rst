@@ -32,7 +32,7 @@ and any *Tags* based on your best judgement.
 
 Use the *Version* field to indicate which Pulp version you are using. It has an entry
 for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
-from source instead of a released version, the value ``master`` should be selected.
+from source instead of a released version, the value ``2-master`` should be selected.
 
 Use the *OS* field to indicate which Operating System the bug was discovered on.
 
@@ -115,7 +115,7 @@ Developer
    state to ``ASSIGNED``.
 #. The developer creates a new remote branch for the bug on their GitHub fork.
 #. When the fix is complete, the developer submits a pull request for the bug into the appropriate
-   branch (master, release branch, etc.). A link to the bug should be included in the merge request,
+   branch (2-master, release branch, etc.). A link to the bug should be included in the merge request,
    as well as a brief description of what the change is. It is not required to find and assign
    someone to do the review.
 #. When the pull request is submitted, the developer changes the status of the bug to ``POST`` and

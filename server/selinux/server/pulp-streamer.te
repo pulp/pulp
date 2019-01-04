@@ -21,6 +21,9 @@ require {
 }
 
 
+unconfined_shell_domtrans(streamer_t)
+
+
 #============= streamer_t ==============
 # Required permissions on Fedora 26+
 allow streamer_t self:process { execmem };

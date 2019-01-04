@@ -277,7 +277,7 @@ the changelog forward, you should update the yaml file that Jenkins uses and bum
 all the projects that were included in this build. You can use the ``update-version.py`` script in
 the pulp-ci repo to update the versions. This script updates the version in all of the setup.py files.
 
-This script should be run on the master branch after the first prerelease (beta and rc releases)
+This script should be run on the 2-master branch after the first prerelease (beta and rc releases)
 of a given x.y version to ensure that the nightly builds for that branch are clearly newer than the
 current release in progress.
 

@@ -200,6 +200,16 @@ class FileDistributor(Distributor):
         """
         pass
 
+    @staticmethod
+    def _target_symlink_path(build_dir, target_path):
+        norm_path = os.path.normpath(target_path)
+        if os.path.isabs(norm_path):
+            raise ValueError('Symlink target path must not be absolute: %s' % target_path)
+        if norm_path == '..' or norm_path.startswith('../'):
+            raise ValueError(
+                'Symlink target path must not be outside of the build directory: %s' % target_path)
+        return os.path.join(build_dir, norm_path)
+
     def _symlink_unit(self, build_dir, unit, target_paths):
         """
         For each unit, put a symlink in the build dir that points to its canonical location on disk.
@@ -213,8 +223,7 @@ class FileDistributor(Distributor):
         :type  target_paths: list of L{str}
         """
         for target_path in target_paths:
-            # symlink_filename = os.path.join(build_dir, unit.unit_key['name'])
-            symlink_filename = os.path.join(build_dir, target_path)
+            symlink_filename = self._target_symlink_path(build_dir, target_path)
             if os.path.exists(symlink_filename) or os.path.islink(symlink_filename):
                 # There's already something there with the desired symlink filename. Let's try and
                 # see if it points at the right thing. If it does, we don't need to do anything. If

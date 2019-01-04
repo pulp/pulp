@@ -6,7 +6,7 @@ the platform, and then each supported content family (like "rpm" and "puppet")
 has its own repository.
 
 Pulp uses a version scheme ``x.y.z``. Pulp's branching strategy is designed for
-bugfix development on the ``master`` branch with cherry-picking fixes into
+bugfix development on the ``2-master`` branch with cherry-picking fixes into
 ``x.y`` streams as necessary. This version scheme is based
 on the `Semantic Versioning <http://semver.org/>`_ strategy.
 
@@ -17,8 +17,8 @@ on the `Semantic Versioning <http://semver.org/>`_ strategy.
 
 .. _PUP-0003: https://github.com/pulp/pups/blob/master/pup-0003.md
 
-master
-------
+2-master
+--------
 
 This is the latest bleeding-edge code. All work should be done out of this branch.
 
@@ -40,7 +40,7 @@ on GitHub. The basic protection that disallows force-push and deletion is the
 only option that should be enabled. There should be no restrictions on required
 status checks or who can push. There is a script at
 `devel/scripts/protected-branches.py
-<https://github.com/pulp/devel/blob/master/scripts/protect-branches.py>`_
+<https://github.com/pulp/devel/blob/2-master/scripts/protect-branches.py>`_
 that will mark all appropriate branches as protected. Any time new branches are
 created that should be protected, that script can be run to do the work.
 
@@ -59,7 +59,7 @@ Build Lifecycle
 ---------------
 
 Alpha and Beta releases will be built from the tip of an ``x.y-release`` branch. If
-the beta fails testing, blocking issues will have fixes merged to the master branch
+the beta fails testing, blocking issues will have fixes merged to the 2-master branch
 and picked back to the ``x.y-release`` branch like any other bug fix, and then a new
 build will be made.
 
@@ -72,7 +72,7 @@ Hotfix
 
 When a hotfix needs to be made. The fix will be made (via pull request from a personal
 fork to the ``x.y-release`` branch), a new tag will be built from the tip of the
-branch, and the fix can be cherry-picked forward with a pull request to ``master``.
+branch, and the fix can be cherry-picked forward with a pull request to ``2-master``.
 
 .. _bug_fix_branches:
 
@@ -82,7 +82,7 @@ Bug Fix Branches
 When creating a Pull Request (PR) that fixes a specific bug, title the PR as
 you would a :ref:`git commit message <commit_messages>` with a short,
 human-readable description. Bug fixes should always be made against
-the ``master`` branch.
+the ``2-master`` branch.
 
 
 .. _feature_branches:
@@ -93,7 +93,7 @@ Feature Branches
 Similar to bug fix branches, the name of a feature branch and its associated
 Pull Request should be a short, human-readable description of the feature being added.
 For example, a branch to add persistent named searches might be named
-``feature/named-searches``. New features should go into the ``master`` branch.
+``feature/named-searches``. New features should go into the ``2-master`` branch.
 
 
 .. _choosing-upstream-branch:
@@ -102,7 +102,7 @@ Choosing an Upstream Branch
 ---------------------------
 
 When creating a bug fix or feature branch, it is very important to choose the
-right upstream branch. The general rule is to always choose the ``master`` branch.
+right upstream branch. The general rule is to always choose the ``2-master`` branch.
 For more info see above :ref:`Feature Branches <feature_branches>` or
 :ref:`Bug Fix Branches <bug_fix_branches>`.
 

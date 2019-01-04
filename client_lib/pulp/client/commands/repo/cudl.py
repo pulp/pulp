@@ -517,7 +517,10 @@ def _default_summary_view(repo_list, prompt):
     # left for the name (sort of; they have a status column that isn't relevant
     # here).
 
-    terminal_width = prompt.terminal_size()[0]
+    try:
+        terminal_width = prompt.terminal_size()[0]
+    except IOError:
+        terminal_width = 80
     line_template = '%s  %s'
 
     if isinstance(repo_list, dict) and repo_list != {}:

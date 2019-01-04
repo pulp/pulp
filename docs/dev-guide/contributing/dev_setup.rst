@@ -89,7 +89,7 @@ Follow these steps:
 
   If Vagrant will not start due to the error message
   ``error creating bridge interface virbr0: File exists``, you can solve it by using
-  ``ifconfig virbr0 down`` and ``brctl delbr virbr``
+  ``ifconfig virbr0 down`` and ``brctl delbr virbr0``
 
 Prerequisites for docker
 ------------------------
@@ -350,7 +350,7 @@ disable SELinux and install items as root outside of the system package manager.
   sudo access. If you are using a Fedora cloud image, the "fedora" user is
   sufficient.
 
-* As that user, ``curl -O https://raw.githubusercontent.com/pulp/devel/master/scripts/dev-setup.sh && bash -e dev-setup.sh``.
+* As that user, ``curl -O https://raw.githubusercontent.com/pulp/devel/2-master/scripts/dev-setup.sh && bash -e dev-setup.sh``.
 
    .. warning:: Note that this installs RPMs and makes system modifications that you wouldn't
                 want to apply on a VM that was not dedicated to Pulp development.

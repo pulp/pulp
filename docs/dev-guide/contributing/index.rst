@@ -62,10 +62,6 @@ Contribution Checklist
 
    :ref:`rebasing-and-squashing`
 
-#. Make sure your name is in our AUTHORS file found at the root of each of our
-   repositories. That way you can prove to all your friends that you
-   contributed to Pulp!
-
 #. Make a PR!
 
     :ref:`Pull Requests <pull-requests>`

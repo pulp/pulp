@@ -415,10 +415,14 @@ class ImporterSerializer(ModelSerializer):
 
     def to_representation(self, *args):
         """
-        `id` field has been removed from the db, but we add it back in for backwards compatibility.
+        Modify serializer in two ways:
+
+        - `id` field has been removed from the db, but we add it back in for backwards compatibility
+        - Redact data from `last_override_config` for security reasons.
         """
         representation = super(ImporterSerializer, self).to_representation(*args)
         representation['id'] = representation['importer_type_id']
+        representation['last_override_config'] = {}  # CVE https://pulp.plan.io/issues/3521
         return representation
 
 
@@ -443,6 +447,14 @@ class Distributor(ModelSerializer):
                     'distributor_id': instance['distributor_id']}
         )
         return href
+
+    def to_representation(self, *args):
+        """
+        Redacts data from `last_override_config` for security reasons.
+        """
+        representation = super(Distributor, self).to_representation(*args)
+        representation['last_override_config'] = {}  # CVE https://pulp.plan.io/issues/3521
+        return representation
 
 
 class User(ModelSerializer):

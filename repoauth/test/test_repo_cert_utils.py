@@ -388,6 +388,7 @@ class TestCertVerify(unittest.TestCase):
         # Test
         self.assertTrue(not self.utils.validate_certificate_pem(cert, ca))
 
+    @unittest.skip("Skip until https://gitlab.com/m2crypto/m2crypto/issues/217 is resolved.")
     def test_get_certs_from_string_empty(self):
         certs = self.utils.get_certs_from_string("")
         self.assertEquals(len(certs), 0)
