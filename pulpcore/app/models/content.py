@@ -4,7 +4,7 @@ Content related Django models.
 import hashlib
 
 from django.core import validators
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.forms.models import model_to_dict
 
 from itertools import chain
@@ -39,19 +39,21 @@ class BulkCreateManager(models.Manager):
         """
         objs = list(objs)
         try:
-            return super().bulk_create(objs, batch_size=batch_size)
+            with transaction.atomic():
+                return super().bulk_create(objs, batch_size=batch_size)
         except IntegrityError:
             for i in range(len(objs)):
                 try:
-                    objs[i].save()
+                    with transaction.atomic():
+                        objs[i].save()
                 except IntegrityError:
                     objs[i] = objs[i].__class__.objects.get(objs[i].q())
         return objs
 
 
-class QueryMixin():
+class QueryMixin:
     """
-    A mixin that provides models with querying utilities
+    A mixin that provides models with querying utilities.
     """
 
     def q(self):
