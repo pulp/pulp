@@ -8,6 +8,7 @@ from dynaconf.contrib import django_dynaconf  # noqa
 import django  # noqa otherwise E402: module level not at top of file
 django.setup()  # noqa otherwise E402: module level not at top of file
 
+from aiohttp.client_exceptions import ClientResponseError
 from aiohttp.web import FileResponse, StreamResponse
 from aiohttp.web_exceptions import HTTPForbidden, HTTPNotFound
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
@@ -215,42 +216,58 @@ class Handler:
         """
         Stream and optionally save a ContentArtifact by requesting it using the associated remote.
 
+        If a fatal download failure occurs while downloading and there are additional
+        :class:`~pulpcore.plugin.models.RemoteArtifact` objects associated with the
+        :class:`~pulpcore.plugin.models.ContentArtifact` they will also be tried. If all
+        :class:`~pulpcore.plugin.models.RemoteArtifact` downloads raise exceptions, an HTTP 502
+        error is returned to the client.
+
         Args:
             request(:class:`~aiohttp.web.Request`): The request to prepare a response for.
             response (:class:`~aiohttp.web.StreamResponse`): The response to stream data to.
             content_artifact (:class:`~pulpcore.plugin.models.ContentArtifact`): The ContentArtifact
                 to fetch and then stream back to the client
+
+        Raises:
+            :class:`~aiohttp.web.HTTPNotFound` when no
+                :class:`~pulpcore.plugin.models.RemoteArtifact` objects associated with the
+                :class:`~pulpcore.plugin.models.ContentArtifact` returned the binary data needed for
+                the client.
         """
-        remote_artifact = content_artifact.remoteartifact_set.get()
-        remote = remote_artifact.remote.cast()
+        for remote_artifact in content_artifact.remoteartifact_set.all():
+            remote = remote_artifact.remote.cast()
 
-        async def handle_headers(headers):
-            for name, value in headers.items():
-                if name.lower() in HOP_BY_HOP_HEADERS:
-                    continue
-                response.headers[name] = value
-            await response.prepare(request)
+            async def handle_headers(headers):
+                for name, value in headers.items():
+                    if name.lower() in HOP_BY_HOP_HEADERS:
+                        continue
+                    response.headers[name] = value
+                await response.prepare(request)
 
-        async def handle_data(data):
-            await response.write(data)
+            async def handle_data(data):
+                await response.write(data)
+                if remote.policy != Remote.STREAMED:
+                    await original_handle_data(data)
+
+            async def finalize():
+                if remote.policy != Remote.STREAMED:
+                    await original_finalize()
+
+            downloader = remote.get_downloader(remote_artifact=remote_artifact,
+                                               headers_ready_callback=handle_headers)
+            original_handle_data = downloader.handle_data
+            downloader.handle_data = handle_data
+            original_finalize = downloader.finalize
+            downloader.finalize = finalize
+            try:
+                download_result = await downloader.run()
+            except ClientResponseError:
+                continue
             if remote.policy != Remote.STREAMED:
-                await original_handle_data(data)
-
-        async def finalize():
-            if remote.policy != Remote.STREAMED:
-                await original_finalize()
-
-        downloader = remote.get_downloader(remote_artifact=remote_artifact,
-                                           headers_ready_callback=handle_headers)
-        original_handle_data = downloader.handle_data
-        downloader.handle_data = handle_data
-        original_finalize = downloader.finalize
-        downloader.finalize = finalize
-        download_result = await downloader.run()
-        if remote.policy != Remote.STREAMED:
-            self._save_content_artifact(download_result, content_artifact)
-        await response.write_eof()
-        return response
+                self._save_content_artifact(download_result, content_artifact)
+            await response.write_eof()
+            return response
+        raise HTTPNotFound()
 
     def _save_content_artifact(self, download_result, content_artifact):
         """
