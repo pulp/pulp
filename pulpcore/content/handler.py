@@ -8,7 +8,7 @@ from dynaconf.contrib import django_dynaconf  # noqa
 import django  # noqa otherwise E402: module level not at top of file
 django.setup()  # noqa otherwise E402: module level not at top of file
 
-from aiohttp import web
+from aiohttp import web, web_exceptions
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
@@ -17,14 +17,18 @@ from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
 log = logging.getLogger(__name__)
 
 
-class PathNotResolved(Exception):
+class PathNotResolved(web_exceptions.HTTPNotFound):
     """
     The path could not be resolved to a published file.
 
     This could be caused by either the distribution, the publication,
     or the published file could not be found.
     """
-    pass
+
+    def __init__(self, path, *args, **kwargs):
+        """Initialize the Exception."""
+        self.path = path
+        super().__init__(*args, **kwargs)
 
 
 class ArtifactNotFound(Exception):
@@ -165,10 +169,14 @@ class Handler:
         # published artifact
         try:
             pa = publication.published_artifact.get(relative_path=rel_path)
+            ca = pa.content_artifact
         except ObjectDoesNotExist:
             pass
         else:
-            return web.FileResponse(pa.content_artifact.artifact.file.name)
+            if ca.artifact:
+                return web.FileResponse(ca.artifact.file.name)
+            else:
+                return await self._stream_content_artifact(request, web.StreamResponse(), ca)
 
         # published metadata
         try:
@@ -200,8 +208,7 @@ class Handler:
                     return web.FileResponse(ca.artifact.file.name)
                 else:
                     return await self._stream_content_artifact(request, web.StreamResponse(), ca)
-        else:
-            raise PathNotResolved(path)
+        raise PathNotResolved(path)
 
     async def _stream_content_artifact(self, request, response, content_artifact):
         """

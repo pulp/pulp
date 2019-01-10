@@ -60,7 +60,7 @@ class AutoDistributionTestCase(unittest.TestCase):
 
         1. Create a repository that has at least one repository version.
         2. Create a publisher.
-        3. Create a distribution and set the repository and publishera to the
+        3. Create a distribution and set the repository and publisher to the
            previous created ones.
         4. Create a publication using the latest repository version.
         5. Assert that the previous distribution has a  ``publication`` set as
