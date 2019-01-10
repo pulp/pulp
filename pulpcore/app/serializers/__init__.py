@@ -14,14 +14,17 @@ from .base import (  # noqa
     AsyncOperationResponseSerializer
 )
 from .fields import BaseURLField, ContentRelatedField, LatestVersionField  # noqa
-from .content import ArtifactSerializer, ContentGuardSerializer, ContentSerializer  # noqa
+from .content import ArtifactSerializer, ContentSerializer  # noqa
 from .progress import ProgressReportSerializer  # noqa
-from .repository import (  # noqa
+from .publication import (  # noqa
+    ContentGuardSerializer,
     DistributionSerializer,
+    PublicationSerializer,
+)
+from .repository import (  # noqa
     ExporterSerializer,
     RemoteSerializer,
     PublisherSerializer,
-    PublicationSerializer,
     RepositoryPublishURLSerializer,
     RepositorySerializer,
     RepositorySyncURLSerializer,
