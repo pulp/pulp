@@ -1,9 +1,10 @@
 # https://docs.djangoproject.com/en/dev/topics/db/models/#organizing-models-in-a-package
 
 from .base import Model, MasterModel  # noqa
-from .content import Artifact, Content, ContentArtifact, ContentGuard, RemoteArtifact  # noqa
+from .content import Artifact, Content, ContentArtifact, RemoteArtifact  # noqa
 from .generic import GenericRelationModel  # noqa
 from .publication import (  # noqa
+    ContentGuard,
     BaseDistribution,
     Distribution,
     Publication,

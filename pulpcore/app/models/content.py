@@ -340,16 +340,3 @@ class RemoteArtifact(Model, QueryMixin):
 
     class Meta:
         unique_together = ('content_artifact', 'remote')
-
-
-class ContentGuard(MasterModel):
-    """
-    Defines a named content guard.
-
-    Fields:
-        name (models.CharField): Unique guard name.
-        description (models.TextField): An optional description.
-
-    """
-    name = models.CharField(max_length=256, db_index=True, unique=True)
-    description = models.TextField(null=True)

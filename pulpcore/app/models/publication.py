@@ -1,8 +1,7 @@
 from django.db import models, transaction
 
 from . import storage
-from .base import Model
-from .content import ContentGuard
+from .base import MasterModel, Model
 from .repository import Publisher, Repository
 from .task import CreatedResource
 
@@ -214,6 +213,19 @@ class PublishedMetadata(PublishedFile):
             ('publication', 'file'),
             ('publication', 'relative_path')
         )
+
+
+class ContentGuard(MasterModel):
+    """
+    Defines a named content guard.
+
+    Fields:
+        name (models.CharField): Unique guard name.
+        description (models.TextField): An optional description.
+
+    """
+    name = models.CharField(max_length=256, db_index=True, unique=True)
+    description = models.TextField(null=True)
 
 
 class BaseDistribution(Model):

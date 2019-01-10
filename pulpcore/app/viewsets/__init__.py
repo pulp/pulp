@@ -4,20 +4,21 @@ from .content import (  # noqa
     ArtifactViewSet,
     ContentFilter,
     ContentViewSet,
-    ContentGuardViewSet,
 )
 from .custom_filters import (  # noqa
     IsoDateTimeFilter,
     RepoVersionHrefFilter
 )
-from .repository import (  # noqa
+from .publication import (  # noqa
     ContentGuardFilter,
     ContentGuardViewSet,
     DistributionViewSet,
+    PublicationViewSet,
+)
+from .repository import (  # noqa
     ExporterViewSet,
     RemoteFilter,
     RemoteViewSet,
-    PublicationViewSet,
     PublisherViewSet,
     RepositoryViewSet,
     RepositoryVersionViewSet

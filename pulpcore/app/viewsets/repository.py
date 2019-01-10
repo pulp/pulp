@@ -11,11 +11,8 @@ from rest_framework.filters import OrderingFilter
 from pulpcore.app import tasks
 from pulpcore.app.models import (
     Content,
-    ContentGuard,
-    Distribution,
     Exporter,
     Remote,
-    Publication,
     Publisher,
     Repository,
     RepositoryContent,
@@ -25,11 +22,8 @@ from pulpcore.app.pagination import NamePagination
 from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (
     AsyncOperationResponseSerializer,
-    ContentGuardSerializer,
-    DistributionSerializer,
     ExporterSerializer,
     RemoteSerializer,
-    PublicationSerializer,
     PublisherSerializer,
     RepositorySerializer,
     RepositoryVersionSerializer,
@@ -359,62 +353,3 @@ class ExporterViewSet(NamedModelViewSet,
     serializer_class = ExporterSerializer
     queryset = Exporter.objects.all()
     filterset_class = ExporterFilter
-
-
-class PublicationViewSet(NamedModelViewSet,
-                         mixins.RetrieveModelMixin,
-                         mixins.ListModelMixin,
-                         mixins.DestroyModelMixin):
-    endpoint_name = 'publications'
-    queryset = Publication.objects.exclude(complete=False)
-    serializer_class = PublicationSerializer
-    filter_backends = (OrderingFilter, DjangoFilterBackend)
-    ordering = ('-_created',)
-
-
-class DistributionFilter(BaseFilterSet):
-    # e.g.
-    # /?name=foo
-    # /?name__in=foo,bar
-    # /?base_path__contains=foo
-    # /?base_path__icontains=foo
-    name = filters.CharFilter()
-    base_path = filters.CharFilter()
-
-    class Meta:
-        model = Distribution
-        fields = {
-            'name': NAME_FILTER_OPTIONS,
-            'base_path': ['exact', 'contains', 'icontains', 'in']
-        }
-
-
-class DistributionViewSet(NamedModelViewSet,
-                          mixins.CreateModelMixin,
-                          mixins.UpdateModelMixin,
-                          mixins.RetrieveModelMixin,
-                          mixins.ListModelMixin,
-                          mixins.DestroyModelMixin):
-    endpoint_name = 'distributions'
-    queryset = Distribution.objects.all()
-    serializer_class = DistributionSerializer
-    filterset_class = DistributionFilter
-
-
-class ContentGuardFilter(BaseFilterSet):
-    name = filters.CharFilter()
-
-    class Meta:
-        model = ContentGuard
-        fields = {
-            'name': NAME_FILTER_OPTIONS,
-        }
-
-
-class ContentGuardViewSet(NamedModelViewSet,
-                          mixins.RetrieveModelMixin,
-                          mixins.ListModelMixin):
-    endpoint_name = 'contentguards'
-    serializer_class = ContentGuardSerializer
-    queryset = ContentGuard.objects.all()
-    filterset_class = ContentGuardFilter
