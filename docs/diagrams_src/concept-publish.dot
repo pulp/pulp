@@ -1,0 +1,9 @@
+@startuml
+(Repository Version) -right-> (Publisher)
+(Publisher) --> (Publication) : Publisher adds required metada\n due to content type
+(Publication) --> (Distribution)
+
+note left of Distribution
+  How and where to publish
+end note
+@enduml
