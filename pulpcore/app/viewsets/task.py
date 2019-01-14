@@ -17,6 +17,7 @@ from pulpcore.tasking.util import cancel as cancel_task
 class TaskFilter(BaseFilterSet):
     state = filters.CharFilter()
     worker = HyperlinkRelatedFilter()
+    name = filters.CharFilter()
     started_at = IsoDateTimeFilter(field_name='started_at')
     finished_at = IsoDateTimeFilter(field_name='finished_at')
     parent = HyperlinkRelatedFilter()
@@ -26,6 +27,7 @@ class TaskFilter(BaseFilterSet):
         fields = {
             'state': ['exact', 'in'],
             'worker': ['exact', 'in'],
+            'name': ['contains'],
             'started_at': DATETIME_FILTER_OPTIONS,
             'finished_at': DATETIME_FILTER_OPTIONS,
             'parent': ['exact']

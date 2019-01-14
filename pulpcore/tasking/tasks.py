@@ -185,7 +185,8 @@ def enqueue_with_reservation(func, resources, args=None, kwargs=None, options=No
     if current_job:
         current_task = Task.objects.get(job_id=current_job.id)
         parent_kwarg['parent'] = current_task
-    Task.objects.create(job_id=inner_job_id, state=TASK_STATES.WAITING, **parent_kwarg)
+    Task.objects.create(job_id=inner_job_id, state=TASK_STATES.WAITING,
+                        name=f'{func.__module__}.{func.__name__}', **parent_kwarg)
     q = Queue('resource_manager', connection=redis_conn)
     task_args = (func, inner_job_id, list(resources), args, kwargs, options)
     q.enqueue(_queue_reserved_task, args=task_args, timeout=TASK_TIMEOUT)
