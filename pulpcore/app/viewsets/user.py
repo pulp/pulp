@@ -19,8 +19,6 @@ class UserFilter(BaseFilterSet):
 
 
 class UserViewSet(NamedModelViewSet,
-                  mixins.CreateModelMixin,
-                  mixins.UpdateModelMixin,
                   mixins.RetrieveModelMixin,
                   mixins.ListModelMixin,
                   mixins.DestroyModelMixin):

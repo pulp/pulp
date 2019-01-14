@@ -12,6 +12,7 @@ from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa
 from pulpcore.tests.functional.utils import skip_if
 
 
+@unittest.skip("User creation via API is not allowed until Pulp has proper user management")
 class UsersCRUDTestCase(unittest.TestCase):
     """CRUD users."""
 
@@ -135,6 +136,7 @@ class UsersCRUDTestCase(unittest.TestCase):
         assert response.json()['foo'] == ['Unexpected field']
 
 
+@unittest.skip("User creation via API is not allowed until Pulp has proper user management")
 class InvalidUserCreateTestCase(unittest.TestCase):
     """Invalid user test creation.
 
