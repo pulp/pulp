@@ -78,11 +78,9 @@ PyPI Installation
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
 
-9. Collect and Serve Static Media
+9. Collect Static Media for live docs and browsable API
 
-   Pulp will operate correctly without static media being served, but if browsing the Pulp API with
-   a web browser you probably want to configure it. See :ref:`static-content` for more info on
-   collecting and serving static content.
+   $ pulp-manager collectstatic --noinput
 
 10. Run Pulp:
 ::

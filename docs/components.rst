@@ -90,17 +90,7 @@ In Production
 
 For production environments, configure static content as follows:
 
-1. Pick the URL static content is served at, e.g. ``/static/`` and set that as the STATIC_URL in the
-settings.yaml file. Then select the path on the local filesystem where static content will be
-stored, and set that as STATIC_ROOT.
-
-2. Configure your webserver to serve the STATIC_ROOT directory's contents at the STATIC_URL url.
-
-3. Once configured, collect all of the static content into place using the ``collectstatic`` command
+Collect all of the static content into place using the ``collectstatic`` command
 as follows::
 
     $ pulp-manager collectstatic
-
-For more information on scaling your static content, configuring object storage to serve your static
-media, and other topics refer to the
-`Django Static Media docs <https://docs.djangoproject.com/en/2.0/howto/static-files/deployment/>`_
