@@ -16,7 +16,8 @@ requirements = [
     'PyYAML',
     'rq>=0.12.0',
     'setuptools',
-    'dynaconf>=1.0.4'
+    'dynaconf>=1.0.4',
+    'whitenoise'
 ]
 
 setup(
