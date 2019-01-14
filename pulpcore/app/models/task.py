@@ -255,6 +255,7 @@ class Task(Model):
     Fields:
 
         state (models.TextField): The state of the task
+        name (models.CharField): The name of the task
         started_at (models.DateTimeField): The time the task started executing
         finished_at (models.DateTimeField): The time the task finished executing
         non_fatal_errors (pulpcore.app.fields.JSONField): Dictionary of non-fatal errors that
@@ -268,6 +269,7 @@ class Task(Model):
     """
     job_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     state = models.TextField(choices=TASK_CHOICES)
+    name = models.CharField(max_length=255)
 
     started_at = models.DateTimeField(null=True)
     finished_at = models.DateTimeField(null=True)

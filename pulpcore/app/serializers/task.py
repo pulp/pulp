@@ -40,6 +40,9 @@ class TaskSerializer(ModelSerializer):
                     " 'waiting', 'skipped', 'running', 'completed', 'failed' and 'canceled'."),
         read_only=True
     )
+    name = serializers.CharField(
+        help_text=_("The name of task.")
+    )
     started_at = serializers.DateTimeField(
         help_text=_("Timestamp of the when this task started execution."),
         read_only=True
@@ -88,10 +91,10 @@ class TaskSerializer(ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ModelSerializer.Meta.fields + ('job_id', 'state', 'started_at', 'finished_at',
-                                                'non_fatal_errors', 'error', 'worker', 'parent',
-                                                'spawned_tasks', 'progress_reports',
-                                                'created_resources')
+        fields = ModelSerializer.Meta.fields + ('job_id', 'state', 'name', 'started_at',
+                                                'finished_at', 'non_fatal_errors', 'error',
+                                                'worker', 'parent', 'spawned_tasks',
+                                                'progress_reports', 'created_resources')
 
 
 class MinimalTaskSerializer(TaskSerializer):
