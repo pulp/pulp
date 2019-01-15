@@ -369,6 +369,8 @@ class PulpPrompt(Prompt):
                 line = line_template % (formatted_k + ':', encode_unicode(v))
                 long_value_indent = max_key_length + spaces_between_cols + indent
                 line = self.wrap(line, remaining_line_indent=long_value_indent)
+                # get rid of anything that isn't an ascii character
+                line = line.decode('ascii', errors='ignore')
                 self.write(line, tag=TAG_DOCUMENT, skip_wrap=True)
 
             # Only add a space if we're at the highest level of the rendering
