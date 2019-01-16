@@ -8,7 +8,8 @@ from dynaconf.contrib import django_dynaconf  # noqa
 import django  # noqa otherwise E402: module level not at top of file
 django.setup()  # noqa otherwise E402: module level not at top of file
 
-from aiohttp import web, web_exceptions
+from aiohttp.web import FileResponse, StreamResponse
+from aiohttp.web_exceptions import HTTPForbidden, HTTPNotFound
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
@@ -17,7 +18,7 @@ from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
 log = logging.getLogger(__name__)
 
 
-class PathNotResolved(web_exceptions.HTTPNotFound):
+class PathNotResolved(HTTPNotFound):
     """
     The path could not be resolved to a published file.
 
@@ -116,11 +117,11 @@ class Handler:
         Authorization is delegated to the optional content-guard associated with the distribution.
 
         Args:
-            request (:class:`django.http.HttpRequest`): A request for a published file.
+            request (:class:`aiohttp.web.Request`): A request for a published file.
             distribution (:class:`pulpcore.plugin.models.Distribution`): The matched distribution.
 
         Raises:
-            PermissionError: When not permitted.
+            :class:`aiohttp.web_exceptions.HTTPForbidden`: When not permitted.
         """
         guard = distribution.content_guard
         if not guard:
@@ -135,11 +136,11 @@ class Handler:
                     'g': guard.name,
                     'r': str(pe)
                 })
-            raise
+            raise HTTPForbidden(reason=str(pe))
         except Exception:
             reason = _('Guard "{g}" failed:').format(g=guard.name)
             log.debug(reason, exc_info=True)
-            raise PermissionError(reason)
+            raise HTTPForbidden(reason=reason)
 
     async def _match_and_stream(self, path, request):
         """
@@ -158,7 +159,7 @@ class Handler:
                 streamed back to the client.
         """
         distribution = Handler._match_distribution(path)
-        Handler._permit(request, distribution)
+        self._permit(request, distribution)
         publication = distribution.publication
         if not publication:
             raise PathNotResolved(path)
@@ -174,9 +175,9 @@ class Handler:
             pass
         else:
             if ca.artifact:
-                return web.FileResponse(ca.artifact.file.name)
+                return FileResponse(ca.artifact.file.name)
             else:
-                return await self._stream_content_artifact(request, web.StreamResponse(), ca)
+                return await self._stream_content_artifact(request, StreamResponse(), ca)
 
         # published metadata
         try:
@@ -184,7 +185,7 @@ class Handler:
         except ObjectDoesNotExist:
             pass
         else:
-            return web.FileResponse(pm.file.name)
+            return FileResponse(pm.file.name)
 
         # pass-through
         if publication.pass_through:
@@ -205,9 +206,9 @@ class Handler:
                 pass
             else:
                 if ca.artifact:
-                    return web.FileResponse(ca.artifact.file.name)
+                    return FileResponse(ca.artifact.file.name)
                 else:
-                    return await self._stream_content_artifact(request, web.StreamResponse(), ca)
+                    return await self._stream_content_artifact(request, StreamResponse(), ca)
         raise PathNotResolved(path)
 
     async def _stream_content_artifact(self, request, response, content_artifact):
