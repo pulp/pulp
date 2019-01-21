@@ -14,12 +14,12 @@ from pulp_smash.pulp3.utils import (
     delete_version,
     gen_publisher,
     gen_repo,
+    get_added_content,
+    get_added_content_summary,
     get_artifact_paths,
     get_content,
-    get_added_content,
-    get_removed_content,
     get_content_summary,
-    get_added_content_summary,
+    get_removed_content,
     get_removed_content_summary,
     get_versions,
     publish,
@@ -30,8 +30,8 @@ from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_NAME,
     FILE_CONTENT_PATH,
     FILE_FIXTURE_COUNT,
-    FILE_FIXTURE_SUMMARY,
     FILE_FIXTURE_MANIFEST_URL,
+    FILE_FIXTURE_SUMMARY,
     FILE_LARGE_FIXTURE_MANIFEST_URL,
     FILE_PUBLISHER_PATH,
     FILE_REMOTE_PATH,
@@ -64,7 +64,7 @@ class AddRemoveContentTestCase(unittest.TestCase):
     def setUpClass(cls):
         """Create class-wide variables."""
         cls.cfg = config.get_config()
-        cls.client = api.Client(cls.cfg, api.json_handler)
+        cls.client = api.Client(cls.cfg, api.page_handler)
         cls.remote = {}
         cls.repo = {}
         cls.content = {}
@@ -117,6 +117,11 @@ class AddRemoveContentTestCase(unittest.TestCase):
 
         self.assertIsNotNone(repo['_latest_version_href'])
 
+        content_hrefs = get_content(repo)['pulp_file.file']
+        self.assertEqual(
+            len(content_hrefs), FILE_FIXTURE_COUNT, content_hrefs
+        )
+
         content = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(len(content), FILE_FIXTURE_COUNT)
 
@@ -153,6 +158,11 @@ class AddRemoveContentTestCase(unittest.TestCase):
         self.assertEqual(len(repo_versions), 2, repo_versions)
 
         self.assertIsNotNone(repo['_latest_version_href'])
+
+        content_hrefs = get_content(repo)['pulp_file.file']
+        self.assertEqual(
+            len(content_hrefs), FILE_FIXTURE_COUNT - 1, content_hrefs
+        )
 
         content = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(len(content), FILE_FIXTURE_COUNT - 1)
@@ -191,6 +201,11 @@ class AddRemoveContentTestCase(unittest.TestCase):
         self.assertEqual(len(repo_versions), 3, repo_versions)
 
         self.assertIsNotNone(repo['_latest_version_href'])
+
+        content_hrefs = get_content(repo)['pulp_file.file']
+        self.assertEqual(
+            len(content_hrefs), FILE_FIXTURE_COUNT, content_hrefs
+        )
 
         content = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(len(content), FILE_FIXTURE_COUNT)
