@@ -49,4 +49,5 @@ setup(
             'pulp-manager=pulpcore.app.entry_points:pulp_manager_entry_point'
         ]
     },
+    scripts=['bin/pulp-content'],
 )
