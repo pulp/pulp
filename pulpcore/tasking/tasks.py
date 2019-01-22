@@ -4,6 +4,7 @@ import uuid
 from gettext import gettext as _
 
 from django.db import IntegrityError
+from django.db.models import Model
 from rq import Queue
 from rq.job import get_current_job, Job
 
@@ -163,12 +164,16 @@ def enqueue_with_reservation(func, resources, args=None, kwargs=None, options=No
     Args:
         func (callable): The function to be run by RQ when the necessary locks are acquired.
         resources (list): A list of resources to reserve guaranteeing that only one task
-            reserves these resources
+            reserves these resources. Each resource can be either a (str) resource URL
+             or a (django.models.Model) resource instance.
         args (tuple): The positional arguments to pass on to the task.
         kwargs (dict): The keyword arguments to pass on to the task.
         options (dict): The options to be passed on to the task.
 
     Returns (rq.job.job): An RQ Job instance as returned by RQ's enqueue function
+
+    Raises:
+        ValueError: When `resources` is an unsupported type.
     """
     if not args:
         args = tuple()
@@ -177,7 +182,14 @@ def enqueue_with_reservation(func, resources, args=None, kwargs=None, options=No
     if not options:
         options = dict()
 
-    resources = {util.get_url(resource) for resource in resources}
+    def as_url(r):
+        if isinstance(r,  str):
+            return r
+        if isinstance(r, Model):
+            return util.get_url(r)
+        raise ValueError(_('Must be (str|Model)'))
+
+    resources = {as_url(r) for r in resources}
     inner_job_id = str(uuid.uuid4())
     redis_conn = connection.get_redis_connection()
     current_job = get_current_job(connection=redis_conn)
