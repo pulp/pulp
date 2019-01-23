@@ -13,4 +13,6 @@ export PYTHONUNBUFFERED=1
 eval "$(ssh-agent -s)" #start the ssh agent
 ssh-add ~/.ssh/pulp-infra
 
+pip3 install -r doc_requirements.txt
+
 python3 docs-builder.py --build-type $1

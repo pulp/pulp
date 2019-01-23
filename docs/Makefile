@@ -46,7 +46,7 @@ clean:
 
 diagrams:
 	mkdir -p $(DIAGRAM_BUILD_DIR)
-	python -m plantuml diagrams_src/*.dot
+	python3 -m plantuml diagrams_src/*.dot
 	mv diagrams_src/*.png $(DIAGRAM_BUILD_DIR)/
 
 html:
