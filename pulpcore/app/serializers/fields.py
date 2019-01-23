@@ -3,6 +3,7 @@ import os
 
 from django.conf import settings
 from rest_framework import serializers
+from rest_framework.fields import empty
 from rest_framework.reverse import reverse
 from rest_framework_nested.relations import NestedHyperlinkedRelatedField
 
@@ -72,9 +73,11 @@ class ContentArtifactsField(serializers.DictField):
 
         Raises:
             :class:`rest_framework.exceptions.ValidationError`: When one of the Artifacts does not
-                exist or one of the paths is not a relative path.
+                exist or one of the paths is not a relative path or the field is missing.
         """
         ret = {}
+        if data is empty:
+            raise serializers.ValidationError(_('_artifacts field must be specified.'))
         for relative_path, url in data.items():
             if os.path.isabs(relative_path):
                 raise serializers.ValidationError(_("Relative path can't start with '/'. "
