@@ -15,13 +15,24 @@ deb) is defined by a plugin.  Files that belong to a content unit are called
 :term:`artifacts<artifact>`. Each content unit can have 0 or many artifacts and artifacts can be
 shared by multiple content units.
 
+.. image:: ./_diagrams/concept-content.png
+    :align: center
+
 Content units in Pulp are organized by their membership in :term:`repositories<repository>` over
 time. Plugin users can add or remove content units to a repository. Each time the content set of a
 repository is changed, a new :term:`repository version<RepositoryVersion>` is created.
 
+.. image:: ./_diagrams/concept-repository.png
+    :align: center
+.. image:: ./_diagrams/concept-add-repo.png
+    :align: center
+
 Users can inform Pulp about external sources of content units, called :term:`remotes<remote>`.
 Plugins can define actions to interact with those sources. For example, most or all plugins define
 :term:`sync` to fetch content units from a remote and add them to a repository.
+
+.. image:: ./_diagrams/concept-remote.png
+    :align: center
 
 All content that is managed by Pulp can be hosted by the :term:`content app`. Users create
 type-specific :term:`publishers<publisher>` that provide the settings necessary to generate
@@ -29,3 +40,6 @@ a :term:`publication` for a content set in a repository version. A publication c
 metadata of the content set and the artifacts of each content unit in the content set. To host a
 publication, it must be assigned to a :term:`distribution`, which determines how and where a
 publication is served.
+
+.. image:: ./_diagrams/concept-publish.png
+    :align: center
