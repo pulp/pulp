@@ -3,6 +3,7 @@ django
 djangorestframework
 django-filter
 drf-nested-routers
+plantuml
 pyyaml
 psycopg2
 sphinx<1.8.0
