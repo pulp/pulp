@@ -6,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from pulpcore.app.models import Artifact, Content, ContentArtifact
-from pulpcore.app.serializers import ArtifactSerializer, ContentSerializer
+from pulpcore.app.serializers import ArtifactSerializer, MultipleArtifactContentSerializer
 from pulpcore.app.viewsets.base import BaseFilterSet, NamedModelViewSet
 
 from .custom_filters import (
@@ -80,7 +80,6 @@ class ContentFilter(BaseFilterSet):
     class Meta:
         model = Content
         fields = {
-            '_type': ['exact', 'in'],
             'repository_version': ['exact'],
             'repository_version_added': ['exact'],
             'repository_version_removed': ['exact'],
@@ -92,9 +91,10 @@ class ContentViewSet(NamedModelViewSet,
                      mixins.RetrieveModelMixin,
                      mixins.ListModelMixin):
     endpoint_name = 'content'
-    queryset = Content.objects.all()
-    serializer_class = ContentSerializer
     filterset_class = ContentFilter
+    # These are just placeholders, the plugin writer would replace them with the actual
+    queryset = Content.objects.all()
+    serializer_class = MultipleArtifactContentSerializer
 
     @transaction.atomic
     def create(self, request):

@@ -11,9 +11,32 @@ from pulpcore.app.serializers import base, fields
 UNIQUE_ALGORITHMS = ['sha256', 'sha384', 'sha512']
 
 
-class ContentSerializer(base.MasterModelSerializer):
+class BaseContentSerializer(base.MasterModelSerializer):
     _href = base.DetailIdentityField()
 
+    class Meta:
+        model = models.Content
+        fields = base.MasterModelSerializer.Meta.fields
+
+
+class NoArtifactContentSerializer(BaseContentSerializer):
+
+    class Meta:
+        model = models.Content
+        fields = base.MasterModelSerializer.Meta.fields
+
+
+class SingleArtifactContentSerializer(BaseContentSerializer):
+    _artifact = fields.SingleContentArtifactField(
+        help_text=_("Artifact file representing the physical content"),
+    )
+
+    class Meta:
+        model = models.Content
+        fields = base.MasterModelSerializer.Meta.fields + ('_artifact',)
+
+
+class MultipleArtifactContentSerializer(BaseContentSerializer):
     _artifacts = fields.ContentArtifactsField(
         help_text=_("A dict mapping relative paths inside the Content to the corresponding"
                     "Artifact URLs. E.g.: {'relative/path': "
