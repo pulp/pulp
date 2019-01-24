@@ -22,8 +22,6 @@ except ImportError:
 sys.path.insert(0, os.path.abspath('./extensions'))
 
 sys.path.insert(0, os.path.abspath('../pulpcore'))
-sys.path.insert(0, os.path.abspath('../plugin'))
-sys.path.insert(0, os.path.abspath('../common'))
 
 # Set environment variable so Sphinx can bootstrap the Django app
 os.environ["DJANGO_SETTINGS_MODULE"] = "pulpcore.app.settings"

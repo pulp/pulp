@@ -7,7 +7,7 @@ pip install -r test_requirements.txt
 pip install -e .
 
 if [ "$TEST" = 'docs' ]; then
-  pip3 install 'sphinx<1.8.0' sphinxcontrib-openapi sphinx_rtd_theme
+  pip3 install -r doc_requirements.txt
   return "$?"
 fi
 
