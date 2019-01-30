@@ -17,7 +17,7 @@ from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_REMOTE_PATH,
 )
 from pulpcore.tests.functional.api.using_plugin.utils import gen_file_remote
-from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa
 
 
 class MultiResourceLockingTestCase(unittest.TestCase):
