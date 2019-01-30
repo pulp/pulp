@@ -14,7 +14,7 @@ from pulpcore.tests.functional.api.using_plugin.constants import (
     FILE_CONTENT_PATH
 )
 from pulpcore.tests.functional.api.using_plugin.utils import populate_pulp
-from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa
 
 
 class PaginationTestCase(unittest.TestCase):

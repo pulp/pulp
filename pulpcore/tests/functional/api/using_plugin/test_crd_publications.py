@@ -28,7 +28,7 @@ from pulpcore.tests.functional.api.using_plugin.utils import (
     gen_file_remote,
     skip_if
 )
-from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa:F401
+from pulpcore.tests.functional.api.using_plugin.utils import set_up_module as setUpModule  # noqa
 
 
 class PublicationsTestCase(unittest.TestCase):
