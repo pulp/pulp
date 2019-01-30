@@ -24,7 +24,8 @@ class TestCreateBindings(unittest.TestCase):
         self.ca_path = '/some/path'
         self.config['filesystem'] = {'id_cert_dir': '/dir/', 'id_cert_filename': 'file'}
         self.config['server'] = {'host': 'awesome_host', 'port': 1234, 'verify_ssl': 'true',
-                                 'ca_path': self.ca_path, 'api_prefix': '/mock/prefix'}
+                                 'ca_path': self.ca_path, 'api_prefix': '/mock/prefix',
+                                 'proxy_host': '', 'proxy_port': 3128}
 
     def test_verify_ssl_false(self):
         """
