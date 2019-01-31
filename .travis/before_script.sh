@@ -28,7 +28,7 @@ export PULP_CONTENT_HOST=localhost:8080
 pulp-manager migrate --noinput
 
 if [ "$TEST" != 'docs' ]; then
-  pulp-manager makemigrations pulp_file --noinput
+  pulp-manager makemigrations file --noinput
   pulp-manager migrate --noinput
 fi
 

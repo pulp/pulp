@@ -8,7 +8,7 @@ the `Forklift <https://github.com/theforeman/forklift>`_ project and utilizes
 `Ansible <https://docs.ansible.com/ansible/index.html>`_ roles and playbooks to provide supported
 `Vagrant <https://docs.vagrantup.com/>`_ boxes that are more consistent with the user experience.
 
-Clone the 'pulplift', 'pulp', and 'pulp-file' (or any plugins that you'll be working on) repos into
+Clone the 'pulplift', 'pulp', and 'pulp_file' (or any plugins that you'll be working on) repos into
 the same directory so that they are peers.
 
 Navigate into the pulplift directory. Run the setup.sh script which will clone the 'forklift' and
@@ -23,10 +23,10 @@ start with /home/vagrant/devel/. For example::
 
     pulp_install_plugins:
       pulp-python:
-        app_label: "pulp_python"
+        app_label: "python"
         source_dir: "/home/vagrant/devel/pulp_python"
       pulp-file:
-        app_label: "pulp_file"
+        app_label: "file"
         source_dir: "/home/vagrant/devel/pulp_file"
 
 Once this is complete, take a look at available boxes with 'vagrant status' and then spin up your

@@ -165,8 +165,8 @@ class NamedModelViewSet(viewsets.GenericViewSet):
 
         # ViewSet is related to a MasterModel subclass that doesn't have its own related
         # master model, which makes this viewset a master viewset.
-        if (issubclass(cls.queryset.model, MasterModel) and
-                cls.queryset.model._meta.master_model is None):
+        if issubclass(cls.queryset.model, MasterModel) and \
+                cls.queryset.model._meta.master_model is None:
             return True
 
         return False
@@ -199,7 +199,13 @@ class NamedModelViewSet(viewsets.GenericViewSet):
                     # no endpoint_name defined, need to get more specific in the MRO
                     continue
 
-            pieces = [master_endpoint_name, cls.endpoint_name]
+            # prepend endpoint of a plugin model with its Django app label
+            app_label = cls.queryset.model._meta.app_label
+            detail_endpoint_name = '{app_label}/{plugin_endpoint_name}'.format(
+                app_label=app_label,
+                plugin_endpoint_name=cls.endpoint_name)
+
+            pieces = [master_endpoint_name, detail_endpoint_name]
 
             # ensure that neither piece is None/empty and that they are not equal.
             if not all(pieces) or pieces[0] == pieces[1]:

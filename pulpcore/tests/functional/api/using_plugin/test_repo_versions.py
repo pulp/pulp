@@ -117,7 +117,7 @@ class AddRemoveContentTestCase(unittest.TestCase):
 
         self.assertIsNotNone(repo['_latest_version_href'])
 
-        content_hrefs = get_content(repo)['pulp_file.file']
+        content_hrefs = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(
             len(content_hrefs), FILE_FIXTURE_COUNT, content_hrefs
         )
@@ -159,7 +159,7 @@ class AddRemoveContentTestCase(unittest.TestCase):
 
         self.assertIsNotNone(repo['_latest_version_href'])
 
-        content_hrefs = get_content(repo)['pulp_file.file']
+        content_hrefs = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(
             len(content_hrefs), FILE_FIXTURE_COUNT - 1, content_hrefs
         )
@@ -202,7 +202,7 @@ class AddRemoveContentTestCase(unittest.TestCase):
 
         self.assertIsNotNone(repo['_latest_version_href'])
 
-        content_hrefs = get_content(repo)['pulp_file.file']
+        content_hrefs = get_content(repo)[FILE_CONTENT_NAME]
         self.assertEqual(
             len(content_hrefs), FILE_FIXTURE_COUNT, content_hrefs
         )
