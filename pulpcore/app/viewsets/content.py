@@ -1,11 +1,11 @@
 from gettext import gettext as _
 
-from django.db import models, transaction
+from django.db import models
 from rest_framework import status, mixins
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
-from pulpcore.app.models import Artifact, Content, ContentArtifact
+from pulpcore.app.models import Artifact, Content
 from pulpcore.app.serializers import ArtifactSerializer, MultipleArtifactContentSerializer
 from pulpcore.app.viewsets.base import BaseFilterSet, NamedModelViewSet
 
@@ -95,20 +95,3 @@ class ContentViewSet(NamedModelViewSet,
     # These are just placeholders, the plugin writer would replace them with the actual
     queryset = Content.objects.all()
     serializer_class = MultipleArtifactContentSerializer
-
-    @transaction.atomic
-    def create(self, request):
-        """
-        Create a Content Artifact
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        _artifacts = serializer.validated_data.pop('_artifacts')
-        content = serializer.save()
-
-        for relative_path, artifact in _artifacts.items():
-            ca = ContentArtifact(artifact=artifact, content=content, relative_path=relative_path)
-            ca.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
