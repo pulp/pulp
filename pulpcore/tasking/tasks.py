@@ -163,9 +163,9 @@ def enqueue_with_reservation(func, resources, args=None, kwargs=None, options=No
 
     Args:
         func (callable): The function to be run by RQ when the necessary locks are acquired.
-        resources (list): A list of resources to reserve guaranteeing that only one task
-            reserves these resources. Each resource can be either a (str) resource URL
-            or a (django.models.Model) resource instance.
+        resources (list): A list of resources to reserve guaranteeing that only one task reserves
+                          these resources. Each resource can be either a (str) resource URL or a
+                          (django.models.Model) resource instance.
         args (tuple): The positional arguments to pass on to the task.
         kwargs (dict): The keyword arguments to pass on to the task.
         options (dict): The options to be passed on to the task.
