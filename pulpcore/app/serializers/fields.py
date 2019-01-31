@@ -17,6 +17,39 @@ class ContentRelatedField(DetailRelatedField):
     queryset = models.Content.objects.all()
 
 
+class SingleContentArtifactField(RelatedField):
+    """
+    A serializer field for the '_artifacts' ManyToManyField on the Content model (single-artifact).
+    """
+    lookup_field = 'pk'
+    view_name = 'artifacts-detail'
+    queryset = models.Artifact.objects.all()
+    allow_null = True
+
+    def get_attribute(self, instance):
+        """
+        Returns the field from the instance that should be serialized using this serializer field.
+
+        This serializer looks up the list of artifacts and returns only one, if any exist. If more
+        than one exist, it throws and exception because this serializer is being used in an
+        improper context.
+
+        Args:
+            instance (:class:`pulpcore.app.models.Content`): An instance of Content being
+                serialized.
+
+        Returns:
+            A single Artifact model related to the instance of Content.
+        """
+        try:
+            return instance._artifacts.get()
+        except models.Artifact.DoesNotExist:
+            return None
+        except models.Artifact.MultipleObjectsReturned:
+            raise ValueError(_("SingleContentArtifactField should not be used in a context where "
+                               "multiple artifacts for one content is possible."))
+
+
 class ContentArtifactsField(serializers.DictField):
     """
     A serializer field for the '_artifacts' ManyToManyField on the Content model.

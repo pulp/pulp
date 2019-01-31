@@ -13,9 +13,9 @@ class HandlerSaveContentTestCase(TestCase):
 
     def setUp(self):
         self.f1 = FileContent.objects.create(relative_path='f1', digest='1')
-        self.f1.artifact = None
+        ContentArtifact.objects.create(artifact=None, content=self.f1, relative_path='f1')
         self.f2 = FileContent.objects.create(relative_path='f2', digest='1')
-        self.f2.artifact = None
+        ContentArtifact.objects.create(artifact=None, content=self.f2, relative_path='f2')
 
     def download_result_mock(self, path):
         dr = Mock()

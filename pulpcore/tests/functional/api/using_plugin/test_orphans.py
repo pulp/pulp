@@ -79,7 +79,7 @@ class DeleteOrphansTestCase(unittest.TestCase):
         )
 
         # Verify that the artifact is present on disk.
-        artifact_path = self.api_client.get(content['artifact'])['file']
+        artifact_path = self.api_client.get(content['_artifact'])['file']
         cmd = ('ls', artifact_path)
         self.cli_client.run(cmd, sudo=True)
 
