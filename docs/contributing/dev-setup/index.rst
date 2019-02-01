@@ -3,7 +3,7 @@
 Developer Setup
 ===============
 
-To ease developer setup, we have `Pulplift <https://github.com/ehelms/pulplift>`_ which is based on
+To ease developer setup, we have `Pulplift <https://github.com/pulp/pulplift>`_ which is based on
 the `Forklift <https://github.com/theforeman/forklift>`_ project and utilizes
 `Ansible <https://docs.ansible.com/ansible/index.html>`_ roles and playbooks to provide supported
 `Vagrant <https://docs.vagrantup.com/>`_ boxes that are more consistent with the user experience.
@@ -11,10 +11,9 @@ the `Forklift <https://github.com/theforeman/forklift>`_ project and utilizes
 Clone the 'pulplift', 'pulp', and 'pulp_file' (or any plugins that you'll be working on) repos into
 the same directory so that they are peers.
 
-Navigate into the pulplift directory. Run the setup.sh script which will clone the 'forklift' and
-`'ansible-pulp3' <https://github.com/pulp/ansible-pulp3>`_ repos::
-
-    ./setup.sh
+Navigate into the pulplift directory. Follow the installation instructions in the
+`README.md <https://github.com/pulp/pulplift#setup>`_ which will clone the required forklift and
+`'ansible-pulp3' <https://github.com/pulp/ansible-pulp3>`_ repos.
 
 The parent directory of 'pulplift' is going to be mounted into the vagrant box at
 /home/vagrant/devel. Any plugins that need to be installed should be added to the
