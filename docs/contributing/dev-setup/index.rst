@@ -8,8 +8,8 @@ the `Forklift <https://github.com/theforeman/forklift>`_ project and utilizes
 `Ansible <https://docs.ansible.com/ansible/index.html>`_ roles and playbooks to provide supported
 `Vagrant <https://docs.vagrantup.com/>`_ boxes that are more consistent with the user experience.
 
-Clone the 'pulplift', 'pulp', and 'pulp_file' (or any plugins that you'll be working on) repos into
-the same directory so that they are peers.
+Clone the 'pulplift', 'pulp', 'pulpcore-plugin' and 'pulp_file' (or any plugins that you'll be working on)
+repos into the same directory so that they are peers.
 
 Navigate into the pulplift directory. Follow the installation instructions in the
 `README.md <https://github.com/pulp/pulplift#setup>`_ which will clone the required forklift and
