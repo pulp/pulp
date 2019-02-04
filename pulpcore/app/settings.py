@@ -78,7 +78,8 @@ for entry_point in iter_entry_points('pulpcore.plugin'):
 # Optional apps that help with development, or augment Pulp in some non-critical way
 OPTIONAL_APPS = [
     'crispy_forms',
-    'django_extensions'
+    'django_extensions',
+    'storages',
 ]
 
 for app in OPTIONAL_APPS:

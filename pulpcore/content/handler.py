@@ -9,7 +9,8 @@ import django  # noqa otherwise E402: module level not at top of file
 django.setup()  # noqa otherwise E402: module level not at top of file
 
 from aiohttp.web import FileResponse, StreamResponse
-from aiohttp.web_exceptions import HTTPForbidden, HTTPNotFound
+from aiohttp.web_exceptions import HTTPForbidden, HTTPFound, HTTPNotFound
+from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from pulpcore.app.models import Artifact, ContentArtifact, Distribution, Remote
@@ -175,7 +176,7 @@ class Handler:
             pass
         else:
             if ca.artifact:
-                return FileResponse(ca.artifact.file.name)
+                return self._handle_file_response(ca.artifact.file)
             else:
                 return await self._stream_content_artifact(request, StreamResponse(), ca)
 
@@ -185,7 +186,7 @@ class Handler:
         except ObjectDoesNotExist:
             pass
         else:
-            return FileResponse(pm.file.name)
+            return self.handle_file_response(pm.file)
 
         # pass-through
         if publication.pass_through:
@@ -206,7 +207,7 @@ class Handler:
                 pass
             else:
                 if ca.artifact:
-                    return FileResponse(ca.artifact.file.name)
+                    return self._handle_file_response(ca.artifact.file)
                 else:
                     return await self._stream_content_artifact(request, StreamResponse(), ca)
         raise PathNotResolved(path)
@@ -286,3 +287,27 @@ class Handler:
             content_artifact.artifact = artifact
             content_artifact.save()
         return artifact
+
+    def _handle_file_response(self, file):
+        """
+        Handle response for file.
+
+        Depending on where the file storage (e.g. filesystem, S3, etc) this could be responding with
+        the file (filesystem) or a redirect (S3).
+
+        Args:
+            file (:class:`django.db.models.fields.files.FieldFile`): File to respond with
+
+        Raises:
+            :class:`aiohttp.web_exceptions.HTTPFound`: When we need to redirect to the file
+            NotImplementedError: If file is stored in a file storage we can't handle
+
+        Returns:
+            The :class:`aiohttp.web.FileResponse` for the file.
+        """
+        if settings.DEFAULT_FILE_STORAGE == 'pulpcore.app.models.storage.FileSystem':
+            return FileResponse(file.name)
+        elif settings.DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage':
+            raise HTTPFound(file.url)
+        else:
+            raise NotImplementedError()
