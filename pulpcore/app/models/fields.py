@@ -35,7 +35,11 @@ class ArtifactFileField(FileField):
                                'Artifact storage. Files must be stored outside this location '
                                'prior to Artifact creation.'))
         file = super().pre_save(model_instance, add)
-        if file and file._committed and add:
+        if file and file._committed and add and str(file) != upload_to:
+            # the file needs to be moved into place
             file._file = TemporaryDownloadedFile(open(file.name, 'rb'))
             file._committed = False
-        return super().pre_save(model_instance, add)
+            return super().pre_save(model_instance, add)
+        else:
+            # the file is already in place so just return it
+            return file

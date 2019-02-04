@@ -42,6 +42,24 @@ DATABASES
    `Django documentation on databases <https://docs.djangoproject.com/en/2
    .1/ref/settings/#databases>`_
 
+DEFAULT_FILE_STORAGE
+^^^^^^^^^^^^^^^^^^^^
+
+   By default, Pulp uses the local filesystem to store files. The default option which
+   uses the local filesystem is ``pulpcore.app.models.storage.FileSystem``.
+
+   This can be configured though to alternatively use `Amazon S3 <https://aws.amazon.com/s3/>`_. To
+   use S3, set ``DEFAULT_FILE_STORAGE`` to ``storages.backends.s3boto3.S3Boto3Storage``. For more
+   information about different Pulp storage options, see the `storage documentation <storage>`_.
+
+MEDIA_ROOT
+^^^^^^^^^^
+
+   The location where Pulp will store files. By default this is `/var/lib/pulp/`.
+
+   If you're using S3, point this to the path in your bucket you want to save files. See the
+   `storage documentation <storage>`_ for more info.
+
 LOGGING
 ^^^^^^^
 

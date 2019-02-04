@@ -6,6 +6,7 @@ Installation
 
    instructions
    configuration
+   storage
    distributed-installation
    migration
 
