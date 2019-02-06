@@ -1,6 +1,7 @@
 from gettext import gettext as _
 import hashlib
 
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -23,7 +24,7 @@ class NoArtifactContentSerializer(BaseContentSerializer):
 
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields
+        fields = BaseContentSerializer.Meta.fields
 
 
 class SingleArtifactContentSerializer(BaseContentSerializer):
@@ -31,9 +32,33 @@ class SingleArtifactContentSerializer(BaseContentSerializer):
         help_text=_("Artifact file representing the physical content"),
     )
 
+    _relative_path = serializers.CharField(
+        help_text=_("Path where the artifact is located relative to distributions base_path"),
+        validators=[fields.relative_path_validator],
+        write_only=True,
+    )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Create the content and associate it with its Artifact.
+
+        Args:
+            validated_data (dict): Data to save to the database
+        """
+        artifact = validated_data.pop('_artifact')
+        relative_path = validated_data.pop('_relative_path')
+        content = self.Meta.model.objects.create(**validated_data)
+        models.ContentArtifact.objects.create(
+            artifact=artifact,
+            content=content,
+            relative_path=relative_path,
+        )
+        return content
+
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields + ('_artifact',)
+        fields = BaseContentSerializer.Meta.fields + ('_artifact', '_relative_path')
 
 
 class MultipleArtifactContentSerializer(BaseContentSerializer):
@@ -43,9 +68,27 @@ class MultipleArtifactContentSerializer(BaseContentSerializer):
                     "'/artifacts/1/'"),
     )
 
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Create the content and associate it with all its Artifacts.
+
+        Args:
+            validated_data (dict): Data to save to the database
+        """
+        _artifacts = validated_data.pop('_artifacts')
+        content = self.Meta.model.objects.create(**validated_data)
+        for relative_path, artifact in _artifacts.items():
+            models.ContentArtifact.objects.create(
+                artifact=artifact,
+                content=content,
+                relative_path=relative_path,
+            )
+        return content
+
     class Meta:
         model = models.Content
-        fields = base.MasterModelSerializer.Meta.fields + ('_artifacts',)
+        fields = BaseContentSerializer.Meta.fields + ('_artifacts',)
 
 
 class ArtifactSerializer(base.ModelSerializer):
