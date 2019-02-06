@@ -10,6 +10,12 @@ from pulpcore.app import models
 from pulpcore.app.serializers import DetailRelatedField, RelatedField
 
 
+def relative_path_validator(relative_path):
+    if os.path.isabs(relative_path):
+        raise serializers.ValidationError(_("Relative path can't start with '/'. "
+                                            "{0}").format(relative_path))
+
+
 class ContentRelatedField(DetailRelatedField):
     """
     Serializer Field for use when relating to Content Detail Models
@@ -76,9 +82,7 @@ class ContentArtifactsField(serializers.DictField):
         """
         ret = {}
         for relative_path, url in data.items():
-            if os.path.isabs(relative_path):
-                raise serializers.ValidationError(_("Relative path can't start with '/'. "
-                                                    "{0}").format(relative_path))
+            relative_path_validator(relative_path)
             artifactfield = RelatedField(view_name='artifacts-detail',
                                          queryset=models.Artifact.objects.all(),
                                          source='*', initial=url)
