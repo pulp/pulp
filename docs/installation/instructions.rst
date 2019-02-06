@@ -10,16 +10,15 @@ Fedora, CentOS, and Mac OSX.
 
 .. note::
 
-    As Pulp 3 currently does not have an SELinux Policy, it currently requires the target
-    machine to have SELinux set to permissive mode or disabled. If you are not sure if the system is
-    capable or is currently running SELinux run the following command::
+    Pulp 3 currently does not have an SELinux Policy or AppArmor Profile. Until then, any
+    environment you run Pulp3 in needs have have SELinux or AppArmor either permissive or disabled.
+    There are risks associated with this decision. See your distribution's docs for more details
 
-    $ getenforce
+    To help resolve this situation see these tickets to get involved:
 
-    If the command is not found or the return status is "Permissive" or "Disabled" then skip to step
-    1. If the return of the command is "Enforcing" then this next command should be applied::
+    `Run Pulp3 with SELinux Enforcing <https://pulp.plan.io/issues/3809>`_.
+    `Enabling SELinux in pulplift <https://pulp.plan.io/issues/97>`_.
 
-    $ sudo setenforce 0
 
 Ansible Installation
 --------------------
