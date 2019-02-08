@@ -4,18 +4,18 @@ Pulp 3.0 Release Notes
 3.0.0b21
 ========
 
-`Comprehensive list of changes and bugfixes for beta 21 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2019-02-05T14%3A45%3A00-06%3A00..2019-02-07T12%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 21 <https://github.com/pulp/pulp/compare/3.0.0b20...3.0.0b21>`_.
 
 
 3.0.0b20
 ========
 
-`Comprehensive list of changes and bugfixes for beta 20 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2019-01-15T13%3A00%3A00-06%3A00..2019-02-05T14%3A45%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 20 <https://github.com/pulp/pulp/compare/3.0.0b19...3.0.0b20>`_.
 
 3.0.0b19
 ========
 
-`Comprehensive list of changes and bugfixes for beta 19 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-12-20T15%3A00%3A00-04%3A00..2019-01-15T13%3A00%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 19 <https://github.com/pulp/pulp/compare/3.0.0b18...3.0.0b19>`_.
 
 Breaking Changes
 ----------------
@@ -26,7 +26,7 @@ Breaking Changes
 3.0.0b18
 ========
 
-`Comprehensive list of changes and bugfixes for beta 18 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-12-18T10%3A00%3A00-04%3A00..2018-12-20T13%3A00%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 18 <https://github.com/pulp/pulp/compare/3.0.0b17...3.0.0b18>`_.
 
 Breaking Changes
 ----------------
@@ -39,7 +39,7 @@ Breaking Changes
 3.0.0b17
 ========
 
-`Comprehensive list of changes and bugfixes for beta 17 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-11-29T14%3A00%3A00-04%3A00..2018-12-18T10%3A00%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 17 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b16...3.0.0b17>`_.
 
 Breaking Changes
 ----------------
@@ -53,43 +53,43 @@ Breaking Changes
 3.0.0b16
 ========
 
-`Comprehensive list of changes and bugfixes for beta 16 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-11-21T13%3A00%3A00-04%3A00..2018-11-29T14%3A10%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 16 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b15...pulpcore-3.0.0b16>`_.
 
 3.0.0b15
 ========
 
-`Comprehensive list of changes and bugfixes for beta 15 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-11-15T16%3A30%3A00-06%3A00..2018-11-21T13%3A00%3A00-04%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 15 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b14...pulpcore-3.0.0b15>`_.
 
 3.0.0b14
 ========
 
-`Comprehensive list of changes and bugfixes for beta 14 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-10-11T15%3A00%3A00-04%3A00..2018-11-15T16%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 14 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b13...pulpcore-3.0.0b14>`_.
 
 
 3.0.0b13
 ========
 
-`Comprehensive list of changes and bugfixes for beta 13 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-10-05T13%3A30%3A00-06%3A00..2018-10-11T15%3A00%3A00-04%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 13 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b12...pulpcore-3.0.0b13>`_.
 
 3.0.0b12
 ========
 
-`Comprehensive list of changes and bugfixes for beta 12 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-10-01T01%3A30%3A00-06%3A00..2018-10-05T13%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 12 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b11...pulpcore-3.0.0b12>`_.
 
 3.0.0b11
 ========
 
-`Comprehensive list of changes and bugfixes for beta 11 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=is%3Aclosed+merged%3A2018-09-29T17%3A30%3A00-06%3A00..2018-10-01T01%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 11 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b10...pulpcore-3.0.0b11>`_.
 
 3.0.0b10
 ========
 
-`Comprehensive list of changes and bugfixes for beta 10 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-09-26T17%3A30%3A00-06%3A00..2018-09-29T17%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 10 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b9...pulpcore-3.0.0b10>`_.
 
 3.0.0b9
 =======
 
-`Comprehensive list of changes and bugfixes for beta 9 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-09-19T15%3A59%3A00-06%3A00..2018-09-26T17%3A30%3A00-06%3A00+>`_
+`Comprehensive list of changes and bugfixes for beta 9 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b8...pulpcore-3.0.0b9>`_.
 
 Breaking Changes
 ----------------
@@ -101,7 +101,7 @@ Breaking Changes
 3.0.0b8
 =======
 
-* `Comprehensive list of changes and bugfixes for beta 8 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-09-12T15%3A40%3A00-06%3A00..2018-09-19T15%3A59%3A00-06%3A00+>`_
+* `Comprehensive list of changes and bugfixes for beta 8 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b7...pulpcore-3.0.0b8>`_.
 
 Breaking Changes
 ----------------
@@ -112,12 +112,12 @@ Breaking Changes
 3.0.0b7
 =======
 
-* `Comprehensive list of changes and bugfixes for beta 7 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-07-25T17%3A30%3A00-06%3A00..2018-09-12T15%3A30%3A00-06%3A00+>`_
+* `Comprehensive list of changes and bugfixes for beta 7 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b6...pulpcore-3.0.0b7>`_.
 
 3.0.0b6
 =======
 
-* `Comprehensive list of changes and bugfixes for beta 6 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-06-06T17%3A30%3A00-06%3A00..2018-07-25T17%3A30%3A00-06%3A00+>`_.
+* `Comprehensive list of changes and bugfixes for beta 6 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b5...pulpcore-3.0.0b6>`_.
 
 Breaking Changes
 ----------------
@@ -128,12 +128,12 @@ Breaking Changes
 3.0.0b5
 =======
 
-* `Comprehensive list of changes and bugfixes for beta 5 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-05-30T17%3A30%3A00-06%3A00..2018-06-06T17%3A30%3A00-06%3A00+>`_.
+* `Comprehensive list of changes and bugfixes for beta 5 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b4...pulpcore-3.0.0b5>`_.
 
 3.0.0b4
 =======
 
-* `Comprehensive list of changes and bugfixes for beta 4 <https://github.com/pulp/pulp/pulls?utf8=%E2%9C%93&q=label%3A3.0+is%3Aclosed+merged%3A2018-05-16T17%3A30%3A00-06%3A00..2018-05-30T17%3A30%3A00-06%3A00+>`_.
+* `Comprehensive list of changes and bugfixes for beta 4 <https://github.com/pulp/pulp/compare/pulpcore-3.0.0b3...pulpcore-3.0.0b4>`_.
 
 3.0.0b3
 =======
