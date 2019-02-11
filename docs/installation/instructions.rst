@@ -43,20 +43,19 @@ PyPI Installation
 
    $ sudo apt-get install python3-venv
 
-3. Install Pulp::
+3. Install Pulp (install ``pulpcore-plugin``, and ``pulpcore`` itself will be installed as
+a dependency)::
 
-   $ pip install pulpcore
+   $ pip install pulpcore-plugin
 
 .. note::
 
-   To install from source, clone the git repository, navigate to the directory containing the
-   ``setup.py`` file, and do a local, editable pip installation::
+   To install from source, clone git repositories and do a local, editable pip installation::
 
    $ git clone https://github.com/pulp/pulp.git
-   $ cd pulp/
-   $ pip install -e pulpcore/
-   $ pip install -e common/
-   $ pip install -e plugin/
+   $ pip install -e ./pulp
+   $ git clone https://github.com/pulp/pulpcore-plugin.git
+   $ pip install -e ./pulpcore-plugin
 
 
 4. Follow the :ref:`configuration instructions <configuration>` to set the ``SECRET_KEY``.
@@ -77,15 +76,13 @@ PyPI Installation
    $ pulp-manager migrate --noinput
    $ pulp-manager reset-admin-password --password admin
 
-9. Collect Static Media for live docs and browsable API
+9. Collect Static Media for live docs and browsable API::
 
    $ pulp-manager collectstatic --noinput
 
-10. Run Pulp:
-::
+10. Run Pulp::
 
-   $ django-admin runserver
-
+    $ pulp-manager runserver
 
 .. _database-install:
 
