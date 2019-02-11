@@ -187,7 +187,7 @@ class Handler:
         except ObjectDoesNotExist:
             pass
         else:
-            return self.handle_file_response(pm.file)
+            return self._handle_file_response(pm.file)
 
         # pass-through
         if publication.pass_through:
