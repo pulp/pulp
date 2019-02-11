@@ -10,6 +10,7 @@ from logging import getLogger
 from uuid import uuid4
 
 from celery import task
+from mongoengine import errors as mongo_errors
 from pymongo.errors import DuplicateKeyError
 
 from pulp.plugins.conduits.profiler import ProfilerConduit
@@ -277,8 +278,9 @@ class ApplicabilityRegenerationManager(object):
         :return:        A list of content type ids that have unit counts greater than 0
         :rtype:         list
         """
-        repo_obj = model.Repository.objects.get(repo_id=repo_id)
-        if not repo_obj:
+        try:
+            repo_obj = model.Repository.objects.get(repo_id=repo_id)
+        except mongo_errors.DoesNotExist:
             return []
 
         repo_content_types_with_non_zero_unit_count = []
