@@ -45,7 +45,7 @@ def populate_pulp(cfg, url=None):
     if url is None:
         url = FILE_FIXTURE_MANIFEST_URL
 
-    client = api.Client(cfg, api.json_handler)
+    client = api.Client(cfg, api.page_handler)
     remote = {}
     repo = {}
     try:
