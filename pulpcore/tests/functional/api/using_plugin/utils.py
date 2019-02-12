@@ -45,7 +45,7 @@ def populate_pulp(cfg, url=None):
     if url is None:
         url = FILE_FIXTURE_MANIFEST_URL
 
-    client = api.Client(cfg, api.json_handler)
+    client = api.Client(cfg, api.page_handler)
     remote = {}
     repo = {}
     try:
@@ -57,7 +57,7 @@ def populate_pulp(cfg, url=None):
             client.delete(remote['_href'])
         if repo:
             client.delete(repo['_href'])
-    return client.get(FILE_CONTENT_PATH)['results']
+    return client.get(FILE_CONTENT_PATH)
 
 
 def gen_file_remote(url=None, **kwargs):
