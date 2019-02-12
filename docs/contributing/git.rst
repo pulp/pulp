@@ -79,8 +79,10 @@ To reference multiple issues in a commit use a separate line for each one::
     fixes #123
     fixes #124
 
-We strongly suggest that each commit is attached to an issue in Redmine. However, if you must create
-a commit for which there is no issue, add the tag ``[noissue]`` to the commit's message.
+We strongly suggest that each commit is attached to an issue in Redmine tracker. Our tracker is
+a centralized point of reference, that keeps track of design decisions and discussions and is used
+by the release process. However, if you must create a commit for which there is no issue,
+add the tag ``[noissue]`` to the commit's message.
 
 Putting this all together, the following is an example of a good commit message::
 
@@ -94,3 +96,8 @@ Putting this all together, the following is an example of a good commit message:
 
 You can also reference additional Pull Requests that should be used by Travis
 when testing your Pull Request. See :ref:`continuous-integration` for details.
+
+.. hint::
+
+   A good candidate for a ``noissue`` tag is a one line fix or a typo, otherwise we encourage
+   you to open an issue.
