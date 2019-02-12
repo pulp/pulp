@@ -93,23 +93,11 @@ class PaginationTestCase(unittest.TestCase):
         repo = self.client.post(REPO_PATH, gen_repo())
         self.addCleanup(self.client.delete, repo['_href'])
 
-        def add_content():
-            """Repeatedly pop an item from ``contents``, and add to repo."""
-            while True:
-                try:
-                    content = contents.pop()
-                    self.client.post(
-                        repo['_versions_href'],
-                        {'add_content_units': [content['_href']]}
-                    )
-                except IndexError:
-                    break
-
-        threads = tuple(Thread(target=add_content) for _ in range(8))
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+        for content in contents:
+            self.client.post(
+                repo['_versions_href'],
+                {'add_content_units': [content['_href']]}
+            )
 
         # Verify pagination works for getting repo versions.
         repo = self.client.get(repo['_href'])
