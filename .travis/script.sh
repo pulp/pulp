@@ -51,7 +51,7 @@ show_logs_and_return_non_zero() {
 rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/resource_manager.log 2>&1 &
 rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/reserved_worker-1.log 2>&1 &
 gunicorn pulpcore.tests.functional.content_with_coverage:server --bind 'localhost:8080' --worker-class 'aiohttp.GunicornWebWorker' -w 2 >> ~/content_app.log 2>&1 &
-pulp-manager runserver --noreload >> ~/django_runserver.log 2>&1 &
+coverage run $(which pulp-manager) runserver --noreload >> ~/django_runserver.log 2>&1 &
 wait_for_pulp 20
 
 # Run functional tests
