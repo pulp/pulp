@@ -12,6 +12,10 @@ env:
 matrix:
   fast_finish: true
 addons:
+  apt:
+    packages:
+      - httpie
+      - jq
   # postgres versions provided by el7 RHSCL (lowest supportable version)
   postgresql: '9.6'
 services:
@@ -19,7 +23,7 @@ services:
   - redis-server
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
-script: source .travis/script.sh
+script: .travis/script.sh
 jobs:
   include:
     - stage: deploy

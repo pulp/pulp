@@ -1,21 +1,38 @@
 #!/usr/bin/env bash
 # coding=utf-8
 
-set -veuo pipefail
+set -mveuo pipefail
+
+wait_for_pulp() {
+  TIMEOUT=${1:-5}
+  while [ "$TIMEOUT" -gt 0 ]
+  do
+    echo -n .
+    sleep 1
+    TIMEOUT=$(($TIMEOUT - 1))
+    if [ $(http :8000/pulp/api/v3/status/ | jq '.database_connection.connected and .redis_connection.connected') = 'true' ]
+    then
+      echo
+      return
+    fi
+  done
+  echo
+  return 1
+}
 
 if [ "$TEST" = 'docs' ]; then
+  pulp-manager runserver >> ~/django_runserver.log 2>&1 &
+  sleep 5
   cd docs
   make html
-  set +euo pipefail
-  return "$?"
+  exit
 fi
-
 
 # check the commit message
 ./.travis/check_commit.sh
 
 # Lint code.
-flake8 --config flake8.cfg || exit 1
+flake8 --config flake8.cfg
 
 # Run unit tests.
 coverage run manage.py test ./pulpcore/tests/unit/
@@ -29,16 +46,24 @@ show_logs_and_return_non_zero() {
     cat ~/reserved_worker-1.log
     return "${rc}"
 }
+
+# Start services
+rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/resource_manager.log 2>&1 &
+rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/reserved_worker-1.log 2>&1 &
+gunicorn pulpcore.tests.functional.content_with_coverage:server --bind 'localhost:8080' --worker-class 'aiohttp.GunicornWebWorker' -w 2 >> ~/content_app.log 2>&1 &
+pulp-manager runserver --noreload >> ~/django_runserver.log 2>&1 &
+wait_for_pulp 20
+
+# Run functional tests
 pytest -v -r sx --color=yes --pyargs pulpcore.tests.functional || show_logs_and_return_non_zero
 pytest -v -r sx --color=yes --pyargs pulp_file.tests.functional || show_logs_and_return_non_zero
-codecov
 
-# Travis' scripts use unbound variables. This is problematic, because the
-# changes made to this script's environment appear to persist when Travis'
-# scripts execute. Perhaps this script is sourced by Travis? Regardless of why,
-# we need to reset the environment when this script finishes.
-#
-# We can't use `trap cleanup_function EXIT` or similar, because this script is
-# apparently sourced, and such a trap won't execute until the (buggy!) calling
-# script finishes.
-set +euo pipefail
+# Stop services to write coverage
+kill -SIGINT %?runserver
+kill -SIGINT %?content_with_coverage
+kill -SIGINT %?reserved_resource_worker
+kill -SIGINT %?resource_manager
+wait || true
+
+coverage combine
+codecov
