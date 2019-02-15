@@ -1,5 +1,8 @@
 #!/bin/bash
 
+pulp-manager runserver >> ~/django_runserver.log 2>&1 &
+sleep 5
+
 openssl aes-256-cbc -K $encrypted_5fa326b9da76_key -iv $encrypted_5fa326b9da76_iv -in .travis/pulp-infra.enc -out ~/.ssh/pulp-infra -d
 sudo chmod 600 ~/.ssh/pulp-infra
 
