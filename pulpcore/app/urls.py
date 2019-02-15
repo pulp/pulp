@@ -144,7 +144,10 @@ urlpatterns.append(url(
     name='schema-redoc')
 )
 
-schema_view = get_schema_view(title='Pulp API')
+schema_view = get_schema_view(
+    title='Pulp API',
+    permission_classes=[permissions.AllowAny],
+)
 
 urlpatterns.append(url(r'^{api_root}$'.format(api_root=API_ROOT), schema_view))
 
