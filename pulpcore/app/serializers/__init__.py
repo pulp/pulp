@@ -37,4 +37,3 @@ from .repository import (  # noqa
     RepositoryVersionCreateSerializer
 )
 from .task import MinimalTaskSerializer, TaskSerializer, WorkerSerializer  # noqa
-from .user import UserSerializer  # noqa
