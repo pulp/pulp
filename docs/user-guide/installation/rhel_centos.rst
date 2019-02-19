@@ -27,8 +27,9 @@ Download the appropriate repo definition file from the Pulp repository:
 EPEL for RHEL & CentOS
 ^^^^^^^^^^^^^^^^^^^^^^
 
-For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
-appropriate repositories for RHEL/CentOS 6 and 7 respectively:
+In addition to the Pulp repo file, the EPEL repositories are required to install dependencies for
+RHEL and CentOS systems. Following commands will add the appropriate repositories for RHEL/CentOS 6
+and 7 respectively:
 
 EPEL 6::
 
