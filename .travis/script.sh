@@ -48,8 +48,8 @@ show_logs_and_return_non_zero() {
 }
 
 # Start services
-rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/resource_manager.log 2>&1 &
-rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/reserved_worker-1.log 2>&1 &
+rq worker -n 'resource-manager@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/resource_manager.log 2>&1 &
+rq worker -n 'reserved-resource-worker-1@%h' -w 'pulpcore.tasking.worker.PulpWorker' -c 'pulpcore.rqconfig' >> ~/reserved_worker-1.log 2>&1 &
 gunicorn pulpcore.tests.functional.content_with_coverage:server --bind 'localhost:8080' --worker-class 'aiohttp.GunicornWebWorker' -w 2 >> ~/content_app.log 2>&1 &
 coverage run $(which pulp-manager) runserver --noreload >> ~/django_runserver.log 2>&1 &
 wait_for_pulp 20
@@ -61,8 +61,8 @@ pytest -v -r sx --color=yes --pyargs pulp_file.tests.functional || show_logs_and
 # Stop services to write coverage
 kill -SIGINT %?runserver
 kill -SIGINT %?content_with_coverage
-kill -SIGINT %?reserved_resource_worker
-kill -SIGINT %?resource_manager
+kill -SIGINT %?reserved-resource-worker
+kill -SIGINT %?resource-manager
 wait || true
 
 coverage combine

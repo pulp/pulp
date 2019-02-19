@@ -38,10 +38,10 @@ class PulpWorker(Worker):
     This worker is customized in the following ways:
 
         * Replaces the string '%h' in the worker name with the fqdn
-        * If the name starts with 'reserved_resource_worker' the worker ignores any other Queue
+        * If the name starts with 'reserved-resource-worker' the worker ignores any other Queue
           configuration and only subscribes to a queue of the same name as the worker name
-        * If the name starts with 'resource_manager' the worker ignores any other Queue
-          configuration and only subscribes to the 'resource_manager' queue
+        * If the name starts with 'resource-manager' the worker ignores any other Queue
+          configuration and only subscribes to the 'resource-manager' queue
         * Sets the worker TTL
         * Supports the killing of a job that is already running
         * Closes the database connection before forking so it is not process shared
@@ -57,7 +57,7 @@ class PulpWorker(Worker):
         if kwargs['name'].startswith(TASKING_CONSTANTS.WORKER_PREFIX):
             queues = [Queue(kwargs['name'], connection=kwargs['connection'])]
         if kwargs['name'].startswith(TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME):
-            queues = [Queue('resource_manager', connection=kwargs['connection'])]
+            queues = [Queue('resource-manager', connection=kwargs['connection'])]
 
         kwargs['default_worker_ttl'] = TASKING_CONSTANTS.WORKER_TTL
         kwargs['job_monitoring_interval'] = TASKING_CONSTANTS.JOB_MONITORING_INTERVAL

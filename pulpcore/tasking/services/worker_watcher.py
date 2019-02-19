@@ -61,11 +61,11 @@ def check_worker_processes():
     a comparable datetime. For each missing worker found, call mark_worker_offline()
     synchronously for cleanup.
 
-    This method also checks that at least one resource_manager and one worker process is
+    This method also checks that at least one resource-manager and one worker process is
     present. If there are zero of either, log at the error level that Pulp will not operate
     correctly.
     """
-    msg = _('Checking if pulp_workers or pulp_resource_manager processes are '
+    msg = _('Checking if pulp-workers or pulp-resource-manager processes are '
             'missing for more than %d seconds') % TASKING_CONSTANTS.WORKER_TTL
     _logger.debug(msg)
 
@@ -82,8 +82,8 @@ def check_worker_processes():
         name__startswith=TASKING_CONSTANTS.RESOURCE_MANAGER_WORKER_NAME).count()
 
     if resource_manager_count == 0:
-        msg = _("There are 0 pulp_resource_manager processes running. Pulp will not operate "
-                "correctly without at least one pulp_resource_mananger process running.")
+        msg = _("There are 0 pulp-resource-manager processes running. Pulp will not operate "
+                "correctly without at least one pulp-resource-mananger process running.")
         _logger.error(msg)
 
     if worker_count == 0:
@@ -91,9 +91,9 @@ def check_worker_processes():
                 "correctly without at least one worker process running.")
         _logger.error(msg)
 
-    output_dict = {'workers': worker_count, 'resource_manager': resource_manager_count}
-    msg = _("%(workers)d pulp_worker processes and %(resource_manager)d "
-            "pulp_resource_manager processes") % output_dict
+    output_dict = {'workers': worker_count, 'resource-manager': resource_manager_count}
+    msg = _("%(workers)d pulp-worker processes and %(resource-manager)d "
+            "pulp-resource-manager processes") % output_dict
     _logger.debug(msg)
 
 

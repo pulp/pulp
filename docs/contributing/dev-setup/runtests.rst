@@ -36,7 +36,7 @@ using `py.test <path_to_plugin>/<plugin_name>/tests/functional`.
 .. note::
 
     Make sure, the task runners are actually running. In doubt, run `prestart` or
-    `systemctl restart pulp_worker@*`.
+    `systemctl restart pulp-worker@*`.
 
 .. note::
 
