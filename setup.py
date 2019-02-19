@@ -15,6 +15,7 @@ requirements = [
     'psycopg2-binary',
     'PyYAML',
     'rq>=0.12.0',
+    'redis<3.2.0',
     'setuptools',
     'dynaconf>=1.0.4',
     'whitenoise'
