@@ -10,7 +10,7 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
 from pulp_smash import api, config, utils
-from pulp_smash.pulp3.constants import USER_PATH
+from pulp_smash.pulp3.constants import ARTIFACTS_PATH
 
 from pulpcore.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 
@@ -30,7 +30,7 @@ class AuthTestCase(unittest.TestCase):
         Assertion is made by the response_handler.
         """
         api.Client(self.cfg, api.json_handler).get(
-            USER_PATH,
+            ARTIFACTS_PATH,
             auth=HTTPBasicAuth(*self.cfg.pulp_auth),
         )
 
@@ -41,7 +41,7 @@ class AuthTestCase(unittest.TestCase):
         """
         self.cfg.pulp_auth[1] = utils.uuid4()  # randomize password
         response = api.Client(self.cfg, api.echo_handler).get(
-            USER_PATH,
+            ARTIFACTS_PATH,
             auth=HTTPBasicAuth(*self.cfg.pulp_auth),
         )
         with self.assertRaises(HTTPError):
