@@ -2,9 +2,9 @@ from types import SimpleNamespace
 
 TASKING_CONSTANTS = SimpleNamespace(
     # The prefix provided to normal worker entries in the workers table
-    WORKER_PREFIX='reserved_resource_worker',
+    WORKER_PREFIX='reserved-resource-worker',
     # The name of resource manager entries in the workers table
-    RESOURCE_MANAGER_WORKER_NAME='resource_manager',
+    RESOURCE_MANAGER_WORKER_NAME='resource-manager',
     # The amount of time (in seconds) after which a worker process is considered missing.
     WORKER_TTL=30,
     # The amount of time (in seconds) between checks

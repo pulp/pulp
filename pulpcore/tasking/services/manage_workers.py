@@ -9,9 +9,9 @@ import subprocess
 import sys
 
 
-_ENVIRONMENT_FILE = os.path.join('/', 'etc', 'default', 'pulp_workers')
+_ENVIRONMENT_FILE = os.path.join('/', 'etc', 'default', 'pulp-workers')
 _SYSTEMD_UNIT_PATH = os.path.join('/', 'run', 'systemd', 'system')
-_UNIT_FILENAME_TEMPLATE = 'pulp_worker-%s.service'
+_UNIT_FILENAME_TEMPLATE = 'pulp-worker-%s.service'
 _WORKER_TEMPLATE = """[Unit]
 Description=Pulp Worker #%(num)s
 After=network.target
@@ -20,9 +20,9 @@ After=network.target
 EnvironmentFile=%(environment_file)s
 User=apache
 WorkingDirectory=/var/run/pulp/
-ExecStart=rq worker -n reserved_resource_worker-%(num)s@%%%%h\
+ExecStart=rq worker -n reserved-resource-worker-%(num)s@%%%%h\
           -w pulpcore.tasking.worker.PulpWorker
-          --pid=/var/run/pulp/reserved_resource_worker-%(num)s.pid
+          --pid=/var/run/pulp/reserved-resource-worker-%(num)s.pid
 KillSignal=SIGQUIT
 """
 

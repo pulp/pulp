@@ -67,9 +67,9 @@ a dependency)::
     In place of using the systemd unit files provided in the `systemd-setup` section, you can run
     the commands yourself inside of a shell. This is fine for development but not recommended in production::
 
-    $ /path/to/python/bin/rq worker -n 'resource_manager@%h' -w 'pulpcore.tasking.worker.PulpWorker'
-    $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_1@%h' -w 'pulpcore.tasking.worker.PulpWorker'
-    $ /path/to/python/bin/rq worker -n 'reserved_resource_worker_2@%h' -w 'pulpcore.tasking.worker.PulpWorker'
+    $ /path/to/python/bin/rq worker -n 'resource-manager@%h' -w 'pulpcore.tasking.worker.PulpWorker'
+    $ /path/to/python/bin/rq worker -n 'reserved-resource-worker-1@%h' -w 'pulpcore.tasking.worker.PulpWorker'
+    $ /path/to/python/bin/rq worker -n 'reserved-resource-worker-2@%h' -w 'pulpcore.tasking.worker.PulpWorker'
 
 8. Run Django Migrations::
 
@@ -141,7 +141,7 @@ To run the Pulp services, three systemd files needs to be created in /etc/system
 sure to substitute ``Environment=PULP_SETTINGS=/path/to/pulp/server.yaml`` with the real location
 of :ref:`configuration file <configuration>`.
 
-``pulp_resource_manager.service``::
+``pulp-resource-manager.service``::
 
     [Unit]
     Description=Pulp Resource Manager
@@ -153,18 +153,18 @@ of :ref:`configuration file <configuration>`.
     Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
     Environment="DJANGO_SETTINGS_MODULE=pulpcore.app.settings"
     User=pulp
-    WorkingDirectory=/var/run/pulp_resource_manager/
-    RuntimeDirectory=pulp_resource_manager
-    ExecStart=/path/to/python/bin/rq worker -n resource_manager@%%h\
+    WorkingDirectory=/var/run/pulp-resource-manager/
+    RuntimeDirectory=pulp-resource-manager
+    ExecStart=/path/to/python/bin/rq worker -n resource-manager@%%h\
               -w 'pulpcore.tasking.worker.PulpWorker'\
               -c 'pulpcore.rqconfig'\
-              --pid=/var/run/pulp_resource_manager/resource_manager.pid
+              --pid=/var/run/pulp-resource-manager/resource-manager.pid
 
     [Install]
     WantedBy=multi-user.target
 
 
-``pulp_worker@.service``::
+``pulp-worker@.service``::
 
     [Unit]
     Description=Pulp Worker
@@ -176,19 +176,19 @@ of :ref:`configuration file <configuration>`.
     Environment=PULP_SETTINGS=/path/to/pulp/server.yaml
     Environment="DJANGO_SETTINGS_MODULE=pulpcore.app.settings"
     User=pulp
-    WorkingDirectory=/var/run/pulp_worker_%i/
-    RuntimeDirectory=pulp_worker_%i
+    WorkingDirectory=/var/run/pulp-worker-%i/
+    RuntimeDirectory=pulp-worker-%i
     ExecStart=/path/to/python/bin/rq worker -w 'pulpcore.tasking.worker.PulpWorker'\
-              -n reserved_resource_worker_%i@%%h\
+              -n reserved-resource-worker-%i@%%h\
               -c 'pulpcore.rqconfig'\
-              --pid=/var/run/pulp_worker_%i/reserved_resource_worker_%i.pid
+              --pid=/var/run/pulp-worker-%i/reserved-resource-worker-%i.pid
 
     [Install]
     WantedBy=multi-user.target
 
 These services can then be started by running::
 
-    sudo systemctl start pulp_resource_manager
-    sudo systemctl start pulp_worker@1
-    sudo systemctl start pulp_worker@2
+    sudo systemctl start pulp-resource-manager
+    sudo systemctl start pulp-worker@1
+    sudo systemctl start pulp-worker@2
 
