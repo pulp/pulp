@@ -137,7 +137,7 @@ class OfflineWorkerTestCase(unittest.TestCase):
             WORKER_PATH, params={'online': True}
         )['results']
         for worker in workers:
-            if 'worker_99' in worker['name']:
+            if 'worker-99' in worker['name']:
                 self.worker.update(worker)
                 break
         self.assertNotEqual({}, self.worker)
