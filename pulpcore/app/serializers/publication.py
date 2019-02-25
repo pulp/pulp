@@ -126,6 +126,12 @@ class DistributionSerializer(ModelSerializer):
         source='base_path', read_only=True,
         help_text=_('The URL for accessing the publication as defined by this distribution.')
     )
+    remote = DetailRelatedField(
+        required=False,
+        help_text=_('FIX THIS TEXT'),
+        queryset=models.Remote.objects.all(),
+        allow_null=True
+    )
 
     class Meta:
         model = models.Distribution
@@ -137,6 +143,7 @@ class DistributionSerializer(ModelSerializer):
             'base_url',
             'repository',
             'content_guard',
+            'remote',
         )
 
     def _validate_path_overlap(self, path):
