@@ -23,6 +23,7 @@ class CRUDDistributionsTestCase(unittest.TestCase):
         cls.client = api.Client(cls.cfg, api.json_handler)
         cls.distribution = {}
 
+    # trigger travis
     def test_01_create_distribution(self):
         """Create a distribution."""
         body = gen_distribution()
