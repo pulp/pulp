@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.db.models import options
 
@@ -14,7 +16,7 @@ class Model(models.Model):
         * https://docs.djangoproject.com/en/1.8/topics/db/models/#automatic-primary-key-fields
 
     """
-    _id = models.AutoField(primary_key=True)
+    _id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     _created = models.DateTimeField(auto_now_add=True)
     _last_updated = models.DateTimeField(auto_now=True, null=True)
 
