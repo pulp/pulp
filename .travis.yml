@@ -5,49 +5,52 @@ language: python
 python:
   - '3.6'
   - '3.7'
-env:
-  matrix:
-    - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-    - DJANGO_MAX=2.2.100 TEST=docs
-matrix:
-  fast_finish: true
+# env:
+  # matrix:
+    # TODO should this just use ansible role?
+    # - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
+    # - DJANGO_MAX=2.2.100 TEST=docs
+# matrix:
+#   fast_finish: true
 addons:
   apt:
     packages:
       - httpie
       - jq
   # postgres versions provided by el7 RHSCL (lowest supportable version)
-  postgresql: '9.6'
-services:
-  - postgresql
-  - redis-server
+  # TODO should this just use ansible role?
+  # postgresql: '9.6'
+# services:
+  # TODO
+  # - postgresql
+  # - redis-server
 install: source .travis/install.sh
-before_script: source .travis/before_script.sh
-script: .travis/script.sh
-jobs:
-  include:
-    - stage: deploy
-      script: skip
-      deploy:
-        provider: pypi
-        distributions: sdist bdist_wheel
-        user: pulp
-        password:
-          secure: "ej2lekfOr8S3Du6D6HPlB20+g5jwgZz75ouHlqIpc+IAgdAxmpn5vkspsAevMtchLw7sNgDAAbl0bQVacMDnn+zbo21s93OXcOmYzgy4IlTgopc+xi1XaKFdLMLiEiZ+KOGVJgg7yQwS3yeS28FARZGNDYTF/+N7eITteDThcG4="
-        on:
-          tags: true
-      if: tag IS present
-    - stage: publish-beta-docs
-      script: bash .travis/publish_docs.sh beta
-      env:
-        - DJANGO_MAX=2.2.100
-        - DB=postgres
-        - TEST=docs
-      if: tag IS present
-    - stage: publish-nightly-docs
-      script: bash .travis/publish_docs.sh nightly
-      env:
-        - DJANGO_MAX=2.2.100
-        - DB=postgres
-        - TEST=docs
-      if: type != pull_request
+# before_script: source .travis/before_script.sh
+# script: .travis/script.sh
+# jobs:
+#   include:
+#     - stage: deploy
+#       script: skip
+#       deploy:
+#         provider: pypi
+#         distributions: sdist bdist_wheel
+#         user: pulp
+#         password:
+#           secure: "ej2lekfOr8S3Du6D6HPlB20+g5jwgZz75ouHlqIpc+IAgdAxmpn5vkspsAevMtchLw7sNgDAAbl0bQVacMDnn+zbo21s93OXcOmYzgy4IlTgopc+xi1XaKFdLMLiEiZ+KOGVJgg7yQwS3yeS28FARZGNDYTF/+N7eITteDThcG4="
+#         on:
+#           tags: true
+#       if: tag IS present
+#     - stage: publish-beta-docs
+#       script: bash .travis/publish_docs.sh beta
+#       env:
+#         - DJANGO_MAX=2.2.100
+#         - DB=postgres
+#         - TEST=docs
+#       if: tag IS present
+#     - stage: publish-nightly-docs
+#       script: bash .travis/publish_docs.sh nightly
+#       env:
+#         - DJANGO_MAX=2.2.100
+#         - DB=postgres
+#         - TEST=docs
+#       if: type != pull_request
