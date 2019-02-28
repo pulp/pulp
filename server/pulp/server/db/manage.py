@@ -172,6 +172,7 @@ def ensure_database_indexes():
     model.LazyCatalogEntry.ensure_indexes()
     model.DeferredDownload.ensure_indexes()
     model.Distributor.ensure_indexes()
+    model.User.ensure_indexes()
 
     # Load all the model classes that the server knows about and ensure their indexes as well
     plugin_manager = PluginManager()
