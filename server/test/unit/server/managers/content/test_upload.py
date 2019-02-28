@@ -239,6 +239,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         with self.assertRaises(PulpCodedException) as cm:
             self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', {}, {}, upload_id)
         self.assertEqual('PLP0047', cm.exception.error_code.code)
+        self.assertEqual(importer_return_report['summary'], cm.exception.error_data['summary'])
+        self.assertEqual(importer_return_report['details'], cm.exception.error_data['details'])
 
     def test_upload_dir_auto_created(self):
         # Setup

@@ -27,8 +27,9 @@ Download the appropriate repo definition file from the Pulp repository:
 EPEL for RHEL & CentOS
 ^^^^^^^^^^^^^^^^^^^^^^
 
-For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
-appropriate repositories for RHEL/CentOS 6 and 7 respectively:
+In addition to the Pulp repo file, the EPEL repositories are required to install dependencies for
+RHEL and CentOS systems. Following commands will add the appropriate repositories for RHEL/CentOS 6
+and 7 respectively:
 
 EPEL 6::
 
@@ -69,10 +70,15 @@ Server
 
     $ sudo yum install mongodb-server
 
-   You need mongodb-server with version >= 2.4 installed for Pulp server. It is highly recommended
-   that you `configure MongoDB to use SSL`_. If you are using Mongo's authorization feature, you
-   will need to grant the ``readWrite`` and ``dbAdmin`` roles to the user you provision for Pulp to
-   use. The ``dbAdmin`` role allows Pulp to create collections and install indices on them.
+   You need mongodb-server with version >= 2.4 installed for Pulp server. MongoDB 2.x reached its EOL.
+   It is encouraged to use MongoDB 3.x for performance reasons, the recommended version is >= 3.4.
+   `Installation instructions <https://docs.mongodb.com/v3.6/tutorial/install-mongodb-on-red-hat/>`_
+   can be found in the MongoDB documentation.
+
+   It is highly recommended that you `configure MongoDB to use SSL`_. If you are using
+   Mongo's authorization feature, you  will need to grant the ``readWrite`` and ``dbAdmin`` roles
+   to the user you provision for Pulp to use. The ``dbAdmin`` role allows Pulp to create collections
+   and install indices on them.
 
    After installing MongoDB, you should configure it to start at boot and start it. For Upstart
    based systems::

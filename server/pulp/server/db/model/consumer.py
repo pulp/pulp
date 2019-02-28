@@ -168,29 +168,30 @@ class Bind(Model):
 class RepoProfileApplicability(Model):
     """
     This class models a Mongo collection that is used to store pre-calculated applicability results
-    for a given consumer profile_hash and repository ID. The applicability data is a dictionary
-    structure that represents the applicable units for the given profile and repository.
-
-    The profile itself is included here for ease of recalculating the applicability when a
-    repository's contents change.
+    for a given consumer set of profiles and repository ID. Set of profiles is identified by
+    all_profiles_hash, each individual profile is identified by profile_hash and can be found in
+    the consumer_unit_profiles collection.
+    The applicability data is a dictionary structure that represents the applicable units for
+    the given set of profiles and repository.
 
     The RepoProfileApplicabilityManager can be accessed through the classlevel "objects" attribute.
     """
     collection_name = 'repo_profile_applicability'
 
     unique_indices = (
-        ('profile_hash', 'repo_id'),
+        ('all_profiles_hash', 'profile_hash', 'repo_id'),
     )
     search_indices = (
         ('repo_id',),
     )
 
-    def __init__(self, profile_hash, repo_id, profile, applicability, _id=None, **kwargs):
+    def __init__(self, profile_hash, repo_id, profile, applicability, _id=None,
+                 all_profiles_hash=None, **kwargs):
         """
         Construct a RepoProfileApplicability object.
 
-        :param profile_hash:  The hash of the profile that this object contains applicability data
-                              for
+        :param profile_hash:  The hash of the profile that is a part of the profile set of a
+                              consumer
         :type  profile_hash:  basestring
         :param repo_id:       The repo ID that this applicability data is for
         :type  repo_id:       basestring
@@ -200,6 +201,9 @@ class RepoProfileApplicability(Model):
         :type  applicability: dict
         :param _id:           The MongoDB ID for this object, if it exists in the database
         :type  _id:           bson.objectid.ObjectId
+        :param all_profiles_hash: The hash of the set of the profiles that this applicability
+                                  data is for
+        :type  all_profiles_hash: basestring
         :param kwargs:        unused, but collected to allow instantiation from Mongo query results
         :type  kwargs:        dict
         """
@@ -210,6 +214,7 @@ class RepoProfileApplicability(Model):
         self.profile = profile
         self.applicability = applicability
         self._id = _id
+        self.all_profiles_hash = all_profiles_hash
 
         # The superclass puts an unnecessary (and confusingly named) id attribute on this model.
         # Let's remove it.
@@ -229,7 +234,8 @@ class RepoProfileApplicability(Model):
         # If this object's _id attribute is not None, then it represents an existing DB object.
         # Else, we need to create an object with this object's attributes
         new_document = {'profile_hash': self.profile_hash, 'repo_id': self.repo_id,
-                        'profile': self.profile, 'applicability': self.applicability}
+                        'profile': self.profile, 'applicability': self.applicability,
+                        'all_profiles_hash': self.all_profiles_hash}
         if self._id is not None:
             self.get_collection().update({'_id': self._id}, new_document)
         else:

@@ -118,7 +118,8 @@ PLP0045 = Error("PLP0045", _("The repository cannot be exported because some uni
 PLP0046 = Error("PLP0046", _("The repository group cannot be exported because these repos have "
                              "units that are not downloaded: %(repos)s"), ['repos'])
 PLP0047 = Error("PLP0047", _("The importer %(importer_id)s indicated a failed response when "
-                             "uploading %(unit_type)s unit to repository %(repo_id)s."),
+                             "uploading %(unit_type)s unit to repository %(repo_id)s."
+                             " Summary: '%(summary)s'. Details: '%(details)s' "),
                 ['importer_id', 'unit_type', 'repo_id'])
 PLP0048 = Error("PLP0048", _("The file is expected to be present, but is not, for unit %(unit)s"),
                 ['unit'])

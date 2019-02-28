@@ -133,7 +133,7 @@ _default_values = {
         'worker_timeout': '30',
     },
     'lazy': {
-        'redirect_host': socket.getfqdn(),
+        'redirect_host': '',
         'redirect_port': '',
         'redirect_path': '/streamer/',
         'https_retrieval': 'true',
