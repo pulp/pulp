@@ -1,0 +1,19 @@
+=======================
+Pulp 2.19 Release Notes
+=======================
+
+
+Pulp 2.19.0
+===========
+
+New Features
+------------
+
+See plugins' release notes for the new features being introduced.
+
+Bug Fixes
+---------
+
+* Documentation on how to install MongoDB 3.x is added. It is recommended to use MongoDB >= 3.2.
+
+See the full list of :fixedbugs_pulp:`2.19.0`
