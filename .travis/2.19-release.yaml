@@ -1,14 +1,14 @@
 repositories:
   - name: pulp
     git_url: https://github.com/pulp/pulp.git
-    git_branch: 2.17-release
-    version: 2.17.1-1
+    git_branch: 2.19-release
+    version: 2.19.0-0.1.rc
   - name: pulp_puppet
     git_url: https://github.com/pulp/pulp_puppet.git
-    git_branch: 2.17-release
+    git_branch: 2.19-release
   - name: pulp_rpm
     git_url: https://github.com/pulp/pulp_rpm.git
-    git_branch: 2.17-release
+    git_branch: 2.19-release
   - name: pulp_docker
     git_url: https://github.com/pulp/pulp_docker.git
     git_branch: 3.2-release
@@ -20,4 +20,4 @@ repositories:
     git_branch: 2.0-release
   - name: crane
     git_url: https://github.com/pulp/crane.git
-    git_branch: 3.2-release
+    git_branch: 3.3-release
