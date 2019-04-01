@@ -21,3 +21,15 @@ New Features
 * Added support for the user to optionally specify a CA file in the HTTP notifier
   configuration. When specified, the CA is used for HTTP requests instead of the
   system CA.
+
+Upgrade instructions
+--------------------
+
+Upgrade using the normal process::
+
+    $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo yum upgrade
+    $ sudo -u apache pulp-manage-db
+    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+
+``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.
