@@ -33,7 +33,7 @@ IMPORTER_DOWNLOADER_CONFIG_MAP = (
 )
 
 
-def importer_to_nectar_config(importer, working_dir=None):
+def importer_to_nectar_config(importer, working_dir=None, stream=False):
     """
     Translates a Pulp Importer into a DownloaderConfig instance.
 
@@ -48,6 +48,9 @@ def importer_to_nectar_config(importer, working_dir=None):
     :type  importer:    pulp.server.db.model.Importer
     :param working_dir: Allow the caller to override the working directory used
     :type  working_dir: str
+    :param stream:      If true, the raw response is returned. If false, a decoded
+                        response is returned.
+    :type stream:       bool
 
     :rtype: nectar.config.DownloaderConfig
     """
@@ -65,6 +68,7 @@ def importer_to_nectar_config(importer, working_dir=None):
     if constants.KEY_SSL_CLIENT_KEY in config:
         del config[constants.KEY_SSL_CLIENT_KEY]
         download_config_kwargs['ssl_client_key_path'] = importer.tls_client_key_path
+    download_config_kwargs['stream'] = stream
 
     return importer_config_to_nectar_config(config, working_dir, download_config_kwargs)
 
