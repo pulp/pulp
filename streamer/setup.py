@@ -19,7 +19,7 @@ setup(
     install_requires=[
         'iniparse',
         'mongoengine >= 0.7.10',
-        'nectar >= 1.4.0',
+        'nectar >= 1.6.0',
         'setuptools',
     ] + twisted,
     entry_points={

@@ -62,7 +62,7 @@ class Importer(object):
         return Importer.build_downloader(url, nectar_config)
 
     @staticmethod
-    def get_downloader_for_db_importer(importer, url, working_dir=None, **options):
+    def get_downloader_for_db_importer(importer, url, working_dir=None, stream=False, **options):
         """
         Get a configured downloader for the given DB model of an Importer.
 
@@ -75,11 +75,14 @@ class Importer(object):
         :type  working_dir: str
         :param options:     Extended configuration.
         :type options:      dict
+        :param stream:      If true, the raw response is returned. If false, a decoded
+                            response is returned.
+        :type stream:       bool
         :return:            A configured downloader.
         :rtype:             nectar.downloaders.base.Downloader
         :raise ValueError:  When the URL scheme is not supported.
         """
-        nectar_config = importer_to_nectar_config(importer, working_dir=working_dir)
+        nectar_config = importer_to_nectar_config(importer, working_dir=working_dir, stream=stream)
         return Importer.build_downloader(url, nectar_config)
 
     # -- plugin lifecycle -----------------------------------------------------
