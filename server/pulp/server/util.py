@@ -254,7 +254,8 @@ def copytree(src, dst, symlinks=False, ignore=None):
     else:
         ignored_names = set()
 
-    os.makedirs(dst)
+    if not os.path.exists(dst):
+        os.makedirs(dst)
     errors = []
     for name in names:
         if name in ignored_names:

@@ -11,6 +11,7 @@ from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import copytree
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 BUILD_DIRNAME = 'build'
 
@@ -69,6 +70,9 @@ class FileDistributor(Distributor):
         :return:                report describing the publish operation
         :rtype:                 pulp.plugins.model.PublishReport
         """
+        if not config.get("skip_fast_forward", True):
+            return self.publish_repo_fast_forward(repo, publish_conduit, config)
+
         progress_report = FilePublishProgressReport(publish_conduit)
         _logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
 
@@ -99,6 +103,99 @@ class FileDistributor(Distributor):
             hosting_locations = self.get_hosting_locations(repo, config)
             for location in hosting_locations:
                 copytree(build_dir, location, symlinks=True)
+
+            self.post_repo_publish(repo, config)
+
+            # Clean up our build_dir
+            self._rmtree_if_exists(build_dir)
+
+            # Report that we are done
+            progress_report.state = progress_report.STATE_COMPLETE
+            return progress_report.build_final_report()
+        except Exception, e:
+            _logger.exception(e)
+            # Something failed. Let's put an error message on the report
+            progress_report.error_message = str(e)
+            progress_report.traceback = traceback.format_exc()
+            progress_report.state = progress_report.STATE_FAILED
+            report = progress_report.build_final_report()
+            return report
+
+    def publish_repo_fast_forward(self, repo, publish_conduit, config):
+        """
+        Publish the repository.
+
+        :param repo:            metadata describing the repo
+        :type  repo:            pulp.plugins.model.Repository
+        :param publish_conduit: The conduit for publishing a repo
+        :type  publish_conduit: pulp.plugins.conduits.repo_publish.RepoPublishConduit
+        :param config:          plugin configuration
+        :type  config:          pulp.plugins.config.PluginConfiguration
+        :return:                report describing the publish operation
+        :rtype:                 pulp.plugins.model.PublishReport
+        """
+        progress_report = FilePublishProgressReport(publish_conduit)
+
+        try:
+            progress_report.state = progress_report.STATE_IN_PROGRESS
+            units = publish_conduit.get_units()
+
+            # Set up an empty build_dir
+            working_dir = common_utils.get_working_directory()
+            build_dir = os.path.join(working_dir, BUILD_DIRNAME)
+
+            self._rmtree_if_exists(build_dir)
+            os.makedirs(build_dir)
+
+            self.initialize_metadata(build_dir)
+            unit_checksum_set = set()
+
+            try:
+                # process each unit
+                for unit in units:
+                    unit_checksum_set.add(unit.unit_key['checksum'])
+                    self.publish_metadata_for_unit(unit)
+            finally:
+                # Finalize the processing
+                self.finalize_metadata()
+
+            # Just generate increased files and copy them to publishing directories
+            hosting_locations = self.get_hosting_locations(repo, config)
+            for location in hosting_locations:
+                unit_checksum_old_set = set()
+                unit_over_path_map = {}
+                metadata_filename = os.path.join(location, MANIFEST_FILENAME)
+                if os.path.exists(metadata_filename):
+                    with open(metadata_filename, 'r') as metadata_file:
+                        for line in metadata_file:
+                            fields = line.split(',')
+                            checksum = fields[1]
+                            unit_checksum_old_set.add(checksum)
+                            if checksum not in unit_checksum_set:
+                                unit_over_path_map[checksum] = fields[0]
+
+                # Copy incremental files into publishing directories
+                checksum_absent_set = unit_checksum_set - unit_checksum_old_set
+                criteria = UnitAssociationCriteria(
+                    unit_filters={'checksum': {"$in": list(checksum_absent_set)}})
+                unit_absent_set = publish_conduit.get_units(criteria=criteria)
+                for unit in unit_absent_set:
+                    links_to_create = self.get_paths_for_unit(unit)
+                    self._symlink_unit(build_dir, unit, links_to_create)
+
+                if len(unit_absent_set) > 0:
+                    if os.path.exists(metadata_filename):
+                        os.remove(metadata_filename)
+                    copytree(build_dir, location, symlinks=True)
+
+                # Remove modified and deleted files from publishing directories
+                for checksum, unit_path in unit_over_path_map.items():
+                    unit_path = os.path.join(location, unit_path)
+                    if os.path.exists(unit_path):
+                        os.remove(unit_path)
+                        dir_name = os.path.dirname(unit_path)
+                        if not os.listdir(dir_name):
+                            os.removedirs(dir_name)
 
             self.post_repo_publish(repo, config)
 

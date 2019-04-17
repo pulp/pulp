@@ -11,6 +11,7 @@ from pulp.server.exceptions import PulpCodedException
 
 class TestCopyTree(unittest.TestCase):
 
+    @patch('pulp.server.util.os.path.exists')
     @patch('os.utime', autospec=True)
     @patch('os.stat', autospec=True)
     @patch('pulp.server.util.copy')
@@ -19,7 +20,7 @@ class TestCopyTree(unittest.TestCase):
     @patch('pulp.server.util.os.makedirs')
     @patch('pulp.server.util.os.listdir')
     def test_recursion(self, mock_list_dir, mock_makedirs, mock_islink, mock_isdir, mock_copy,
-                       mock_stat, mock_utime):
+                       mock_stat, mock_utime, mock_exists):
         """
         Check that copytree is called recursively on all directories within a tree
 
@@ -31,8 +32,11 @@ class TestCopyTree(unittest.TestCase):
                   - file2
                - file3
         """
-        mock_list_dir.side_effect = [['dir1', 'dir2', 'file3'], ['file1'], ['file2']]
-        mock_isdir.side_effect = [True, False, True, False, False]
+        mock_list_dir.side_effect = [['dir1', 'dir2', 'file3'], ['file1'], ['file2'],
+                                     ['dir1', 'dir2', 'file3'], ['file1'], ['file2']]
+        mock_isdir.side_effect = [True, False, True, False, False, True, False, True, False, False]
+        mock_exists.side_effect = [True, True, True, False, False, False]
+
         util.copytree('src', 'dst')
         mock_list_dir.assert_has_calls([call('src'), call('src/dir1'), call('src/dir2')])
         mock_isdir.assert_has_calls([call('src/dir1'), call('src/dir1/file1'), call('src/dir2'),
@@ -41,7 +45,11 @@ class TestCopyTree(unittest.TestCase):
         mock_copy.assert_has_calls([call('src/dir1/file1', 'dst/dir1/file1'),
                                     call('src/dir2/file2', 'dst/dir2/file2'),
                                     call('src/file3', 'dst/file3')])
-        # Assert that directories are created using makedirs()
+        # Assert that directories are not created using makedirs() if they exist
+        mock_makedirs.assert_has_calls([])
+
+        util.copytree('src', 'dst')
+        # Assert that directories are created using makedirs() if they do not exist
         mock_makedirs.assert_has_calls([call('dst'), call('dst/dir1'), call('dst/dir2')])
 
     @patch('os.utime', autospec=True)
