@@ -354,7 +354,7 @@ class TestStreamer(unittest.TestCase):
         controller.get_importer_by_id.assert_called_once_with(entry.importer_id)
         config.flatten.assert_called_once_with()
         importer.get_downloader_for_db_importer.assert_called_once_with(
-            model, entry.url, working_dir='/tmp')
+            model, entry.url, working_dir='/tmp', stream=True)
         listener.assert_called_once_with(streamer, request)
         self.assertEqual(downloader, importer.get_downloader_for_db_importer.return_value)
         self.assertEqual(downloader.event_listener, listener.return_value)
