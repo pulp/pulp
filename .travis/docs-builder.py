@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-import fnmatch
 import subprocess
 import os
 import sys
 from shutil import copyfile, rmtree
 import tempfile
-import urllib.request
-import re
-from io import StringIO
 import yaml
 
 WORKING_DIR = os.path.join(os.environ['TRAVIS_BUILD_DIR'], '../working')

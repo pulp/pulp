@@ -26,7 +26,7 @@ def migrate(*args, **kwargs):
             try:
                 importer[updated_key] = isodate.parse_datetime(importer['last_sync'])
             # The attribute doesn't exist, or parsing failed. It's safe to set a newer timestamp.
-            except: # noqa: 722
+            except:  # noqa: 722
                 importer[updated_key] = datetime.datetime.now(tz=isodate.UTC)
             modified = True
 

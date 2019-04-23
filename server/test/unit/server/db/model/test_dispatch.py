@@ -17,7 +17,6 @@ import mock
 
 from .... import base
 from pulp.common import constants, dateutils
-from pulp.devel import mock_plugins, skip
 from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
 from pulp.server.db.model.criteria import Criteria
