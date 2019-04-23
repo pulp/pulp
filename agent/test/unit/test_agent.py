@@ -418,6 +418,8 @@ class TestBindings(PluginTest):
                 'port': '443',
                 'verify_ssl': 'True',
                 'ca_path': '/some/path/',
+                'proxy_host': 'proxy',
+                'proxy_port': '3128',
             },
             'filesystem': {
                 'id_cert_dir': TEST_ID_CERT_DIR,
@@ -433,7 +435,8 @@ class TestBindings(PluginTest):
             host='test-host',
             port=443,
             cert_filename=CERT_PATH,
-            verify_ssl=True, ca_path='/some/path/')
+            verify_ssl=True, ca_path='/some/path/',
+            proxy_host='proxy', proxy_port=3128)
         mock_bindings.assert_called_with(bindings, mock_conn())
 
 

@@ -2,7 +2,7 @@ from gettext import gettext as _
 import os
 import socket
 
-from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL
+from pulp.common.config import Config, OPTIONAL, REQUIRED, ANY, NUMBER, BOOL
 from pulp.common.constants import DEFAULT_CA_PATH
 
 DEFAULT = {
@@ -13,6 +13,8 @@ DEFAULT = {
         'verify_ssl': 'true',
         'ca_path': DEFAULT_CA_PATH,
         'upload_chunk_size': '1048576',
+        'proxy_host': None,
+        'proxy_port': '3128',
     },
     'client': {
         'role': 'admin'
@@ -41,6 +43,8 @@ SCHEMA = (
             ('verify_ssl', REQUIRED, BOOL),
             ('ca_path', REQUIRED, ANY),
             ('upload_chunk_size', REQUIRED, NUMBER),
+            ('proxy_host', OPTIONAL, ANY),
+            ('proxy_port', OPTIONAL, NUMBER),
         )
      ),
     ('client', REQUIRED,
