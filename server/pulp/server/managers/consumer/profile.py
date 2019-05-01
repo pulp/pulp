@@ -80,7 +80,7 @@ class ProfileManager(object):
         """
         profile = ProfileManager.get_profile(consumer_id, content_type)
         collection = UnitProfile.get_collection()
-        collection.remove(profile)
+        collection.remove({'id': profile['id']})
 
     def consumer_deleted(self, id):
         """
@@ -91,7 +91,7 @@ class ProfileManager(object):
         """
         collection = UnitProfile.get_collection()
         for p in self.get_profiles(id):
-            collection.remove(p)
+            collection.remove({'id': p['id']})
 
     @staticmethod
     def get_profile(consumer_id, content_type):
