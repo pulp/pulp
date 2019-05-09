@@ -70,7 +70,7 @@ class FileDistributor(Distributor):
         :return:                report describing the publish operation
         :rtype:                 pulp.plugins.model.PublishReport
         """
-        if not config.get("skip_fast_forward", True):
+        if config.get("force_full", False):
             return self.publish_repo_fast_forward(repo, publish_conduit, config)
 
         progress_report = FilePublishProgressReport(publish_conduit)
