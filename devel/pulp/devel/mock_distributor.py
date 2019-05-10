@@ -30,6 +30,11 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
                                 end_date = criteria.unit_filters['issued']['$lte']
                                 if start_date <= u.metadata['issued'] <= end_date:
                                     ret_val.append(u)
+                            if 'checksum' in criteria.unit_filters:
+                                checksums = criteria.unit_filters['checksum']
+                                if '$in' in checksums:
+                                    if u.unit_key['checksum'] in checksums['$in']:
+                                        ret_val.append(u)
                 else:
                     ret_val.append(u)
         return ret_val

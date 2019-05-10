@@ -63,10 +63,11 @@ class FileDistributorTest(unittest.TestCase):
         distributor.post_repo_publish(None, None)
 
     @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
-    def test_repo_publish_api_calls(self, mock_get_working):
+    def test_repo_publish_api_calls(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        result = distributor.publish_repo(self.repo, self.publish_conduit, {})
+        result = distributor.publish_repo(self.repo, self.publish_conduit,
+                                          {'force_full': force_full})
         self.assertTrue(result.success_flag)
         self.assertTrue(distributor.get_hosting_locations.called)
         self.assertTrue(distributor.post_repo_publish.called)
@@ -80,10 +81,10 @@ class FileDistributorTest(unittest.TestCase):
                          FilePublishProgressReport.STATE_COMPLETE)
 
     @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
-    def test_repo_publish_files_placed_properly(self, mock_get_working):
+    def test_repo_publish_files_placed_properly(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {})
+        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
         target_file = os.path.join(self.target_dir, SAMPLE_RPM)
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
@@ -92,10 +93,10 @@ class FileDistributorTest(unittest.TestCase):
         self.assertEquals(link_target, os.path.join(DATA_DIR, SAMPLE_RPM))
 
     @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
-    def test_repo_publish_metadata_writing(self, mock_get_working):
+    def test_repo_publish_metadata_writing(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {})
+        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
         with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'rb') as f:
             reader = csv.reader(f)
             row = reader.next()
@@ -105,7 +106,7 @@ class FileDistributorTest(unittest.TestCase):
 
     @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
     @patch('pulp.plugins.file.distributor._logger')
-    def test_repo_publish_handles_errors(self, mock_logger, mock_get_working):
+    def test_repo_publish_handles_errors(self, mock_logger, mock_get_working, force_full=True):
         """
         Make sure that publish() does the right thing with the report when there is an error.
         """
@@ -113,7 +114,8 @@ class FileDistributorTest(unittest.TestCase):
         distributor = self.create_distributor_with_mocked_api_calls()
 
         distributor.post_repo_publish.side_effect = Exception('Rawr!')
-        report = distributor.publish_repo(self.repo, self.publish_conduit, {})
+        report = distributor.publish_repo(self.repo, self.publish_conduit,
+                                          {'force_full': force_full})
 
         self.assertTrue(mock_logger.exception.called)
 
@@ -131,7 +133,7 @@ class FileDistributorTest(unittest.TestCase):
                          FilePublishProgressReport.STATE_FAILED)
 
     @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
-    def test_republish_after_unit_removal(self, mock_get_working):
+    def test_republish_after_unit_removal(self, mock_get_working, force_full=True):
         """
         This test checks for an issue[0] we had where publishing an ISO repository, removing an ISO,
         and then republishing would leave that removed ISO's symlink in the repository even though
@@ -146,7 +148,7 @@ class FileDistributorTest(unittest.TestCase):
         mock_get_working.return_value = self.temp_dir
         # Publish a repository
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {})
+        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
         target_file = os.path.join(self.target_dir, SAMPLE_RPM)
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
@@ -154,12 +156,28 @@ class FileDistributorTest(unittest.TestCase):
         # publish a new repo with a different unit in it
         cloned_unit = copy.deepcopy(self.unit)
         cloned_unit.unit_key['name'] = 'foo.rpm'
+        cloned_unit.unit_key['checksum'] = 'sum2'
         new_conduit = get_publish_conduit(existing_units=[cloned_unit, ])
         distributor.publish_repo(self.repo, new_conduit, {})
         # Make sure the new rpm is linked
         self.assertTrue(os.path.islink(os.path.join(self.target_dir, 'foo.rpm')))
         # Ensure the old rpm is no longer included
         self.assertFalse(os.path.islink(target_file))
+
+    def test_repo_publish_api_calls_fast_forward(self):
+        self.test_repo_publish_api_calls(force_full=False)
+
+    def test_repo_publish_files_placed_properly_fast_forward(self):
+        self.test_repo_publish_files_placed_properly(force_full=False)
+
+    def test_repo_publish_metadata_writing_fast_forward(self):
+        self.test_repo_publish_metadata_writing(force_full=False)
+
+    def test_repo_publish_handles_errors_fast_forward(self):
+        self.test_repo_publish_handles_errors(force_full=False)
+
+    def test_republish_after_unit_removal_fast_forward(self):
+        self.test_republish_after_unit_removal(force_full=False)
 
     def test_distributor_removed_calls_unpublish(self):
         distributor = self.create_distributor_with_mocked_api_calls()
