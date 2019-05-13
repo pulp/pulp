@@ -67,11 +67,18 @@ def migrate_database(options):
     Create indexes before running any migration to avoid duplicates, e.g. in case a new collection
     is created.
 
+    WARNING: If any unapplied migrations include a "prepare_reindex_migration" function, these
+    functions will be run before indexes are applied. This is before ANY additional regular
+    migrations are applied, irrespective of what migration version the DB is currently in.
+    In addition, execution of these functions is not tracked independently of the regular migration
+    they are associated with. This means they may be reapplied (even if successfull) until the
+    associated regular migration has been successfully applied.
+
+    prepare_reindex_migration functions should only be used, to prepare database fields and indexes
+    that would otherwise prevent a successfull index change.
+
     :param options: The command line parameters from the user
     """
-
-    if not options.dry_run:
-        ensure_database_indexes()
 
     migration_packages = models.get_migration_packages()
     unperformed_migrations = False
@@ -119,6 +126,39 @@ def migrate_database(options):
                 migration_package._migration_tracker.version = 0
                 migration_package._migration_tracker.save()
 
+        try:
+            for migration in migration_package.unapplied_migrations:
+                if hasattr(migration, 'prepare_reindex_migration'):
+                    message = _('Applying prepare part of %(p)s version %(v)s')
+                    message = message % {'p': migration_package.name, 'v': migration.version}
+                    _logger.info(message)
+                    if options.dry_run:
+                        unperformed_migrations = True
+                        message = _('Would have applied prepare part of migration to %(p)s version %(v)s')
+                        message = message % {'p': migration_package.name, 'v': migration.version}
+                    else:
+                        migration_package.apply_prepare_reindex_migration(migration)
+                        message = _('Prepare part of migration to %(p)s version %(v)s complete in %(t).3f seconds.')  # noqa
+                        message = message % {'p': migration_package.name,
+                                             't': migration_package.duration,
+                                             'v': migration_package.current_version}
+                    _logger.info(message)
+        except models.MigrationRemovedError as e:
+            # keep the log message simpler than the generic message below.
+            _logger.critical(str(e))
+            raise
+        except Exception:
+            # Log the error and what migration failed before allowing main() to handle the exception
+            error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a '
+                              'migration failure.')
+            error_message = error_message % {'m': migration.name}
+            _logger.critical(error_message)
+            raise
+
+    if not options.dry_run:
+        ensure_database_indexes()
+
+    for migration_package in migration_packages:
         try:
             for migration in migration_package.unapplied_migrations:
                 message = _('Applying %(p)s version %(v)s')
