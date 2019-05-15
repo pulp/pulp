@@ -70,7 +70,7 @@ class FileDistributor(Distributor):
         :return:                report describing the publish operation
         :rtype:                 pulp.plugins.model.PublishReport
         """
-        if config.get("force_full", False):
+        if not config.get("force_full", False):
             return self.publish_repo_fast_forward(repo, publish_conduit, config)
 
         progress_report = FilePublishProgressReport(publish_conduit)
@@ -196,6 +196,8 @@ class FileDistributor(Distributor):
                         dir_name = os.path.dirname(unit_path)
                         if not os.listdir(dir_name):
                             os.removedirs(dir_name)
+                    elif os.path.islink(unit_path):
+                        os.unlink(unit_path)
 
             self.post_repo_publish(repo, config)
 
