@@ -250,7 +250,7 @@ class Streamer(Resource):
                 repo_controller.get_importer_by_id(entry.importer_id)
             model.config = config.flatten()
             downloader = importer.get_downloader_for_db_importer(
-                model, entry.url, working_dir='/tmp')
+                model, entry.url, working_dir='/tmp', stream=True)
             listener = DownloadListener(self, request)
             downloader.event_listener = listener
             downloader.session = self.session_cache.get_or_create(request.uri, downloader)

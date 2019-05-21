@@ -11,7 +11,7 @@ else:
 
 setup(
     name='pulp-streamer',
-    version='2.19c1',
+    version='2.19.1b1',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
@@ -19,7 +19,7 @@ setup(
     install_requires=[
         'iniparse',
         'mongoengine >= 0.7.10',
-        'nectar >= 1.4.0',
+        'nectar >= 1.6.0',
         'setuptools',
     ] + twisted,
     entry_points={

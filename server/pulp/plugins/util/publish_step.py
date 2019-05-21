@@ -1,6 +1,7 @@
 from gettext import gettext as _
 from itertools import chain, imap
 import copy
+import hashlib
 import itertools
 import logging
 import os
@@ -931,9 +932,14 @@ class AtomicDirectoryPublishStep(PluginStep):
             if not os.path.exists(publish_dir_parent):
                 misc.mkdir(publish_dir_parent, 0750)
 
+            # Use timestamp and repo_id in the directory name to avoid race condition when
+            # multiple different repositories are published at the same time.
+            repo_id = self.get_repo().id
+            sha256_dir = hashlib.sha256('%s%s' % (self.parent.timestamp, repo_id)).hexdigest()
+
             if not self.only_publish_directory_contents:
                 # Create a temporary symlink in the parent of the published directory tree
-                tmp_link_name = os.path.join(publish_dir_parent, self.parent.timestamp)
+                tmp_link_name = os.path.join(publish_dir_parent, sha256_dir)
                 os.symlink(timestamp_master_location, tmp_link_name)
 
                 # Rename the symlink to the official published location name.
@@ -946,7 +952,7 @@ class AtomicDirectoryPublishStep(PluginStep):
                 if not os.path.exists(publish_location):
                     misc.mkdir(publish_location, 0750)
                 for file_name in os.listdir(timestamp_master_location):
-                    tmp_link_name = os.path.join(publish_location, self.parent.timestamp)
+                    tmp_link_name = os.path.join(publish_location, sha256_dir)
                     master_source_file = os.path.join(timestamp_master_location, file_name)
                     os.symlink(master_source_file, tmp_link_name)
                     final_name = os.path.join(publish_location, file_name)
