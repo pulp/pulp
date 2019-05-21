@@ -11,6 +11,7 @@ New Features
 
 * Added `proxy_port` and `proxy_host` config settings for client tools to
   facilitate the use of anonymous proxy.
+* Set an appropriate `User-Agent` header for http downloads.
 
 Bug Fixes
 ---------

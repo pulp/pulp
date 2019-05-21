@@ -6,6 +6,7 @@ from functools import partial
 
 from nectar.config import DownloaderConfig
 
+from pulp.common.constants import PULP_VERSION
 from pulp.common.plugins import importer_constants as constants
 from pulp.server.managers.repo import _common as common_utils
 
@@ -93,6 +94,12 @@ def importer_config_to_nectar_config(importer_config, working_dir=None,
     """
     if download_config_kwargs is None:
         download_config_kwargs = {}
+
+    if 'headers' not in download_config_kwargs:
+        download_config_kwargs['headers'] = {}
+
+    if 'User-Agent' not in download_config_kwargs['headers']:
+        download_config_kwargs['headers']['User-Agent'] = 'pulp/{}'.format(PULP_VERSION)
 
     if working_dir is None:
         working_dir = common_utils.get_working_directory()
