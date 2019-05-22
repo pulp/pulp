@@ -183,11 +183,6 @@ class FileDistributor(Distributor):
                     links_to_create = self.get_paths_for_unit(unit)
                     self._symlink_unit(build_dir, unit, links_to_create)
 
-                if len(unit_absent_set) > 0:
-                    if os.path.exists(metadata_filename):
-                        os.remove(metadata_filename)
-                    copytree(build_dir, location, symlinks=True)
-
                 # Remove modified and deleted files from publishing directories
                 for checksum, unit_path in unit_over_path_map.items():
                     unit_path = os.path.join(location, unit_path)
@@ -198,6 +193,11 @@ class FileDistributor(Distributor):
                             os.removedirs(dir_name)
                     elif os.path.islink(unit_path):
                         os.unlink(unit_path)
+
+                if len(unit_absent_set) > 0 or len(unit_over_path_map) > 0:
+                    if os.path.exists(metadata_filename):
+                        os.remove(metadata_filename)
+                    copytree(build_dir, location, symlinks=True)
 
             self.post_repo_publish(repo, config)
 

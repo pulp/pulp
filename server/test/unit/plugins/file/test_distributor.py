@@ -163,6 +163,35 @@ class FileDistributorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(self.target_dir, 'foo.rpm')))
         # Ensure the old rpm is no longer included
         self.assertFalse(os.path.islink(target_file))
+        # Ensure PULP_MANIFEST is updated correctly
+        with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'r') as f:
+            self.assertEqual(len(f.readlines()), 1)
+        with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'r') as f:
+            reader = csv.reader(f)
+            row = reader.next()
+            self.assertEquals(row[0], cloned_unit.unit_key['name'])
+            self.assertEquals(row[1], cloned_unit.unit_key['checksum'])
+            self.assertEquals(row[2], str(cloned_unit.unit_key['size']))
+
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_publish_repo_unit_removal(self, mock_get_working, force_full=True):
+        mock_get_working.return_value = self.temp_dir
+        # Publish a repository
+        distributor = self.create_distributor_with_mocked_api_calls()
+        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
+        target_file = os.path.join(self.target_dir, SAMPLE_RPM)
+        # test if the link was created
+        self.assertTrue(os.path.islink(target_file))
+        with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'r') as f:
+            self.assertEqual(len(f.readlines()), 1)
+
+        # Remove the unit
+        new_conduit = get_publish_conduit(existing_units=[])
+        distributor.publish_repo(self.repo, new_conduit, {'force_full': force_full})
+        # Ensure PULP_MANIFEST is updated correctly
+        with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'r') as f:
+            self.assertEqual(len(f.readlines()), 0)
+        self.assertFalse(os.path.islink(target_file))
 
     def test_repo_publish_api_calls_fast_forward(self):
         self.test_repo_publish_api_calls(force_full=False)
@@ -178,6 +207,9 @@ class FileDistributorTest(unittest.TestCase):
 
     def test_republish_after_unit_removal_fast_forward(self):
         self.test_republish_after_unit_removal(force_full=False)
+
+    def test_publish_repo_unit_removal_fast_forward(self):
+        self.test_publish_repo_unit_removal(force_full=False)
 
     def test_distributor_removed_calls_unpublish(self):
         distributor = self.create_distributor_with_mocked_api_calls()
