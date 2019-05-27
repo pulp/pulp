@@ -90,6 +90,8 @@ class MigrationModule(object):
         """
         self._module = _import_all_the_way(python_module_name)
         self.version = self._get_version()
+        if hasattr(self._module, 'prepare_reindex_migration'):
+            self.prepare_reindex_migration = self._module.prepare_reindex_migration
         if not hasattr(self._module, 'migrate'):
             raise self.__class__.MissingMigrate()
         self.migrate = self._module.migrate
@@ -172,6 +174,21 @@ class MigrationPackage(object):
             self.latest_available_version = available_versions[-1]
         else:
             self.latest_available_version = 0
+
+    def apply_prepare_reindex_migration(self, migration):
+        """
+        Apply the preparation part of the migration that is passed in.
+
+        WARNING: This application is not tracked independently of the apply_migration function
+        below. As such, it may happen multiple times (even if successfull) until the
+        apply_migration function below is successfully called for the same migration.
+
+        :param migration:              The migration to apply
+        :type  migration:              pulp.server.db.migrate.utils.MigrationModule
+        """
+        start = time.time()
+        migration.prepare_reindex_migration()
+        self.duration = time.time() - start
 
     def apply_migration(self, migration, update_current_version=True):
         """
