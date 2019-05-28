@@ -4,6 +4,7 @@ Contains content applicability management classes
 import hashlib
 import itertools
 import json
+import time
 
 from gettext import gettext as _
 from logging import getLogger
@@ -176,6 +177,9 @@ class ApplicabilityRegenerationManager(object):
             # Regenerate applicability data for given profiles and repo id
             ApplicabilityRegenerationManager.regenerate_applicability(all_profiles_hash,
                                                                       profiles, repo_id)
+
+        # ugly hack to prevent task collisons. see #4428
+        time.sleep(0.5)
 
     @staticmethod
     def regenerate_applicability(all_profiles_hash, profiles, bound_repo_id):
