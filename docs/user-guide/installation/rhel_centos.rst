@@ -88,8 +88,7 @@ Server
 
    For systemd based systems::
 
-    $ sudo systemctl enable mongod
-    $ sudo systemctl start mongod
+    $ sudo systemctl enable --now mongod
 
    .. warning::
       On new MongoDB installations, MongoDB takes some time to preallocate large files and will not
@@ -125,8 +124,7 @@ Server
 
    For systemd based systems::
 
-    $ sudo systemctl enable qpidd
-    $ sudo systemctl start qpidd
+    $ sudo systemctl enable --now qpidd
 
 #. Install the Pulp server, task workers, and their dependencies. For Pulp installations that use
    Qpid, install Pulp server using::
@@ -188,8 +186,7 @@ Server
 
    For systemd based systems::
 
-    $ sudo systemctl enable httpd
-    $ sudo systemctl start httpd
+    $ sudo systemctl enable --now httpd
 
    .. _distributed_workers_installation:
 
@@ -204,8 +201,7 @@ Server
 
    For systemd systems::
 
-      $ sudo systemctl enable pulp_workers
-      $ sudo systemctl start pulp_workers
+      $ sudo systemctl enable --now pulp_workers
 
    .. note::
 
@@ -229,8 +225,7 @@ Server
 
    For systemd::
 
-      $ sudo systemctl enable pulp_celerybeat
-      $ sudo systemctl start pulp_celerybeat
+      $ sudo systemctl enable --now pulp_celerybeat
 
    Lastly, a ``pulp_resource_manager`` process must be running in the installation. This process
    acts as a task router, deciding which worker should perform certain types of tasks. As with
@@ -246,8 +241,7 @@ Server
 
    For systemd::
 
-      $ sudo systemctl enable pulp_resource_manager
-      $ sudo systemctl start pulp_resource_manager
+      $ sudo systemctl enable --now pulp_resource_manager
 
 
 Admin Client
@@ -337,8 +331,7 @@ specific consumer dependencies with one command by running:
 
    For systemd::
 
-      $sudo systemctl enable goferd
-      $sudo systemctl start goferd
+      $sudo systemctl enable --now goferd
 
 
 Extra Configuration
