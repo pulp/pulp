@@ -235,7 +235,7 @@ def get_resource_manager_lock(name):
         except mongoengine.NotUniqueError:
             # Only log the message the first time
             if _first_check:
-                _logger.info(_("Hot spare pulp_resource_manager instance '%(name)s' detected.")
+                _logger.info(_("Hot spare pulp2_resource_manager instance '%(name)s' detected.")
                              % {'name': name})
                 _first_check = False
 

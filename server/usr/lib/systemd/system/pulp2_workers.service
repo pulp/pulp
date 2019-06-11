@@ -1,5 +1,5 @@
 [Unit]
-Description=Pulp Celery Workers
+Description=Pulp 2 Celery Workers
 After=network-online.target
 Wants=network-online.target
 

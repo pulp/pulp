@@ -30,7 +30,7 @@ class TestGetConcurrency(unittest.TestCase):
     @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
     def test_concurrency_not_set(self, Popen, cpu_count):
         """
-        Test for the case where PULP_CONCURRENCY is not set in /etc/default/pulp_workers.
+        Test for the case where PULP_CONCURRENCY is not set in /etc/default/pulp2_workers.
         """
         class MockPipe(object):
             def communicate(self):
@@ -56,7 +56,7 @@ class TestGetConcurrency(unittest.TestCase):
     @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
     def test_concurrency_set(self, Popen, cpu_count):
         """
-        Test for the case where PULP_CONCURRENCY is set in /etc/default/pulp_workers.
+        Test for the case where PULP_CONCURRENCY is set in /etc/default/pulp2_workers.
         """
         class MockPipe(object):
             def communicate(self):

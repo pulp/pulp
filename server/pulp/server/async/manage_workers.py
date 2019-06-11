@@ -9,9 +9,9 @@ import subprocess
 import sys
 
 
-_ENVIRONMENT_FILE = os.path.join('/', 'etc', 'default', 'pulp_workers')
+_ENVIRONMENT_FILE = os.path.join('/', 'etc', 'default', 'pulp2_workers')
 _SYSTEMD_UNIT_PATH = os.path.join('/', 'run', 'systemd', 'system')
-_UNIT_FILENAME_TEMPLATE = 'pulp_worker-%s.service'
+_UNIT_FILENAME_TEMPLATE = 'pulp2_worker-%s.service'
 _WORKER_TEMPLATE = """[Unit]
 Description=Pulp Worker #%(num)s
 After=network.target

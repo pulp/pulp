@@ -243,21 +243,21 @@ def get_paths_to_copy():
         paths.append({'source': 'server/etc/default/upstart_pulp_celerybeat',
                       'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/upstart_pulp_workers',
-                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+        paths.append({'source': 'server/etc/default/upstart_pulp2_workers',
+                      'destination': '/etc/default/pulp2_workers', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/upstart_pulp_resource_manager',
-                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+        paths.append({'source': 'server/etc/default/upstart_pulp2_resource_manager',
+                      'destination': '/etc/default/pulp2_resource_manager', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
     elif LSB_VERSION >= 7.0:
         paths.append({'source': 'server/etc/default/systemd_pulp_celerybeat',
                       'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/systemd_pulp_workers',
-                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+        paths.append({'source': 'server/etc/default/systemd_pulp2_workers',
+                      'destination': '/etc/default/pulp2_workers', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
-        paths.append({'source': 'server/etc/default/systemd_pulp_resource_manager',
-                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+        paths.append({'source': 'server/etc/default/systemd_pulp2_resource_manager',
+                      'destination': '/etc/default/pulp2_resource_manager', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': False})
         paths.append({'source': 'server/usr/lib/tmpfiles.d/pulp.conf',
                       'destination': '/etc/tmpfiles.d/pulp.conf', 'owner': 'root',
@@ -325,17 +325,17 @@ def getlinks():
 
     if LSB_VERSION >= 6.0 and LSB_VERSION < 7.0:
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
-        links.append(('server/etc/rc.d/init.d/pulp_workers',
-                      '/etc/rc.d/init.d/pulp_workers'))
-        links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
-                      '/etc/rc.d/init.d/pulp_resource_manager'))
+        links.append(('server/etc/rc.d/init.d/pulp2_workers',
+                      '/etc/rc.d/init.d/pulp2_workers'))
+        links.append(('server/etc/rc.d/init.d/pulp2_resource_manager',
+                      '/etc/rc.d/init.d/pulp2_resource_manager'))
     elif LSB_VERSION >= 7.0:
         links.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
                       '/etc/systemd/system/pulp_celerybeat.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
-                      '/etc/systemd/system/pulp_resource_manager.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_workers.service',
-                      '/etc/systemd/system/pulp_workers.service'))
+        links.append(('server/usr/lib/systemd/system/pulp2_resource_manager.service',
+                      '/etc/systemd/system/pulp2_resource_manager.service'))
+        links.append(('server/usr/lib/systemd/system/pulp2_workers.service',
+                      '/etc/systemd/system/pulp2_workers.service'))
         links.append(('streamer/usr/lib/systemd/system/pulp_streamer.service',
                       '/etc/systemd/system/pulp_streamer.service'))
 
@@ -367,8 +367,8 @@ def install(opts):
 
         # The Celery init script will get angry if /etc/default things aren't root owned
         os.system('chown root:root /etc/default/pulp_celerybeat')
-        os.system('chown root:root /etc/default/pulp_workers')
-        os.system('chown root:root /etc/default/pulp_resource_manager')
+        os.system('chown root:root /etc/default/pulp2_workers')
+        os.system('chown root:root /etc/default/pulp2_resource_manager')
 
         # Guarantee apache always has write permissions
         os.system('chmod 3775 /var/log/pulp')

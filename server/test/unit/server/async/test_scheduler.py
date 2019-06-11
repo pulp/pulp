@@ -412,8 +412,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
         scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
 
         mock__logger.error.assert_called_once_with(
-            'There are 0 pulp_resource_manager processes running. Pulp will not operate '
-            'correctly without at least one pulp_resource_manager process running.')
+            'There are 0 pulp2_resource_manager processes running. Pulp will not operate '
+            'correctly without at least one pulp2_resource_manager process running.')
 
     @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
     @mock.patch('pulp.server.async.scheduler.Worker', spec_set=True)
@@ -433,12 +433,12 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
         scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
         mock__logger.debug.assert_has_calls([
             mock.call(
-                'Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes are '
-                'missing for more than %d seconds' % PULP_PROCESS_TIMEOUT_INTERVAL
+                'Checking if pulp2_workers, pulp_celerybeat, or pulp2_resource_manager processes '
+                'are missing for more than %d seconds' % PULP_PROCESS_TIMEOUT_INTERVAL
             ),
             mock.call(
-                '1 pulp_worker processes, 1 pulp_celerybeat processes, '
-                'and 1 pulp_resource_manager processes'
+                '1 pulp2_worker processes, 1 pulp_celerybeat processes, '
+                'and 1 pulp2_resource_manager processes'
             )
         ])
 

@@ -67,7 +67,7 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
         present. If there are zero of either, log at the error level that Pulp will not operate
         correctly.
         """
-        msg = _('Checking if pulp_workers, pulp_celerybeat, or pulp_resource_manager processes '
+        msg = _('Checking if pulp2_workers, pulp_celerybeat, or pulp2_resource_manager processes '
                 'are missing for more than %d seconds') % PULP_PROCESS_TIMEOUT_INTERVAL
         _logger.debug(msg)
         now = ensure_tz(datetime.utcnow())
@@ -101,8 +101,8 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
                 worker_count = worker_count + 1
 
         if resource_manager_count == 0:
-            msg = _("There are 0 pulp_resource_manager processes running. Pulp will not operate "
-                    "correctly without at least one pulp_resource_manager process running.")
+            msg = _("There are 0 pulp2_resource_manager processes running. Pulp will not operate "
+                    "correctly without at least one pulp2_resource_manager process running.")
             _logger.error(msg)
 
         if scheduler_count == 0:
@@ -111,9 +111,9 @@ class CeleryProcessTimeoutMonitor(threading.Thread):
             _logger.error(msg)
         output_dict = {'workers': worker_count, 'celerybeat': scheduler_count,
                        'resource_manager': resource_manager_count}
-        msg = _("%(workers)d pulp_worker processes, %(celerybeat)d "
+        msg = _("%(workers)d pulp2_worker processes, %(celerybeat)d "
                 "pulp_celerybeat processes, and %(resource_manager)d "
-                "pulp_resource_manager processes") % output_dict
+                "pulp2_resource_manager processes") % output_dict
         _logger.debug(msg)
 
 

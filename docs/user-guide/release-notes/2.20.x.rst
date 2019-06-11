@@ -12,6 +12,12 @@ New Features
 * Added `proxy_port` and `proxy_host` config settings for client tools to
   facilitate the use of anonymous proxy.
 
+Breaking Changes
+----------------
+
+* `pulp_workers` and `pulp_resource_manager` services have been renamed to `pulp2_workers` and
+  `pulp2_resource_manager`.
+
 Bug Fixes
 ---------
 
@@ -25,6 +31,6 @@ Upgrade using the normal process::
     $ sudo systemctl stop httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
     $ sudo yum upgrade
     $ sudo -u apache pulp-manage-db
-    $ sudo systemctl start httpd pulp_workers pulp_resource_manager pulp_celerybeat pulp_streamer goferd
+    $ sudo systemctl start httpd pulp2_workers pulp2_resource_manager pulp_celerybeat pulp_streamer goferd
 
 ``pulp_streamer`` and ``goferd`` should be omitted if those services are not installed.

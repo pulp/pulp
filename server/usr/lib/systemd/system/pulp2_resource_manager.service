@@ -1,10 +1,10 @@
 [Unit]
-Description=Pulp Resource Manager
+Description=Pulp 2 Resource Manager
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-EnvironmentFile=/etc/default/pulp_resource_manager
+EnvironmentFile=/etc/default/pulp2_resource_manager
 User=apache
 WorkingDirectory=/var/run/pulp/
 ExecStart=/usr/bin/celery worker -A pulp.server.async.app -n resource_manager@%%h\
