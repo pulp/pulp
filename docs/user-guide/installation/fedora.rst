@@ -1,13 +1,18 @@
-Fedora 24+
-==========
+Fedora 24 - 29
+==============
 
-Beginning with Fedora 24, Pulp is included in the Fedora project, however we
-recommend to install the upstream repository anyway, which is usually more
-up to date.
+For Fedora 24 through Fedora 29, Pulp is included in the Fedora project.
+
+For Fedora 27 & 28, we recommend to install the upstream repository anyway,
+which is usually more up to date.
 
 ::
 
  $ sudo dnf config-manager --add-repo https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+
+Pulp is no longer included in Fedora 30, or available in an upstream repository for it.
+This is because
+`MongoDB was removed from Fedora 30. <https://fedoraproject.org/wiki/Changes/MongoDB_Removal>`_
 
 Database Server
 ---------------
