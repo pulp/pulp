@@ -9,9 +9,11 @@ Pulp 2.20.0
 New Features
 ------------
 
+* Permission change for /var/lib/pulp to be able to run Pulp 3, see `4948 <https://pulp.plan.io/issues/4948>`_, `4949 <https://pulp.plan.io/issues/4949>`_
+* Performance improvement for publication of ISO content.
+* Set an appropriate `User-Agent` header for http downloads.
 * Added `proxy_port` and `proxy_host` config settings for client tools to
   facilitate the use of anonymous proxy.
-* Set an appropriate `User-Agent` header for http downloads.
 
 Bug Fixes
 ---------
