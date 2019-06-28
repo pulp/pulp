@@ -21,6 +21,9 @@ docstring for more information.
 # Location of the external source to sync
 KEY_FEED = 'feed'
 
+# Boolean indicating if external feed-url has changed since the last sync
+KEY_FEED_UPDATED = 'feed-updated'
+
 # Boolean indicating if the synchronized units should be verified by size and checksum
 KEY_VALIDATE = 'validate'
 

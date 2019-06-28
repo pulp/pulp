@@ -276,6 +276,8 @@ def update_importer_config(repo_id, importer_config):
     for k, v in importer_config.iteritems():
         if v is not None:
             repo_importer.config[k] = v
+            if k == importer_constants.KEY_FEED:
+                repo_importer.config[importer_constants.KEY_FEED_UPDATED] = True
 
     validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
     try:
