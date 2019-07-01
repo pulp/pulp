@@ -13,6 +13,7 @@ from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.devel.mock_distributor import get_publish_conduit
 from pulp.plugins.file.distributor import FileDistributor, FilePublishProgressReport, BUILD_DIRNAME
 from pulp.plugins.model import Repository, Unit
+from pulp.plugins.config import PluginCallConfiguration
 
 
 DATA_DIR = os.path.realpath("../../../data/")
@@ -66,8 +67,8 @@ class FileDistributorTest(unittest.TestCase):
     def test_repo_publish_api_calls(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        result = distributor.publish_repo(self.repo, self.publish_conduit,
-                                          {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        result = distributor.publish_repo(self.repo, self.publish_conduit, config)
         self.assertTrue(result.success_flag)
         self.assertTrue(distributor.get_hosting_locations.called)
         self.assertTrue(distributor.post_repo_publish.called)
@@ -84,7 +85,8 @@ class FileDistributorTest(unittest.TestCase):
     def test_repo_publish_files_placed_properly(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        distributor.publish_repo(self.repo, self.publish_conduit, config)
         target_file = os.path.join(self.target_dir, SAMPLE_RPM)
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
@@ -96,7 +98,8 @@ class FileDistributorTest(unittest.TestCase):
     def test_repo_publish_metadata_writing(self, mock_get_working, force_full=True):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        distributor.publish_repo(self.repo, self.publish_conduit, config)
         with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'rb') as f:
             reader = csv.reader(f)
             row = reader.next()
@@ -114,8 +117,8 @@ class FileDistributorTest(unittest.TestCase):
         distributor = self.create_distributor_with_mocked_api_calls()
 
         distributor.post_repo_publish.side_effect = Exception('Rawr!')
-        report = distributor.publish_repo(self.repo, self.publish_conduit,
-                                          {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        report = distributor.publish_repo(self.repo, self.publish_conduit, config)
 
         self.assertTrue(mock_logger.exception.called)
 
@@ -148,7 +151,8 @@ class FileDistributorTest(unittest.TestCase):
         mock_get_working.return_value = self.temp_dir
         # Publish a repository
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        distributor.publish_repo(self.repo, self.publish_conduit, config)
         target_file = os.path.join(self.target_dir, SAMPLE_RPM)
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
@@ -158,7 +162,7 @@ class FileDistributorTest(unittest.TestCase):
         cloned_unit.unit_key['name'] = 'foo.rpm'
         cloned_unit.unit_key['checksum'] = 'sum2'
         new_conduit = get_publish_conduit(existing_units=[cloned_unit, ])
-        distributor.publish_repo(self.repo, new_conduit, {})
+        distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
         # Make sure the new rpm is linked
         self.assertTrue(os.path.islink(os.path.join(self.target_dir, 'foo.rpm')))
         # Ensure the old rpm is no longer included
@@ -178,7 +182,8 @@ class FileDistributorTest(unittest.TestCase):
         mock_get_working.return_value = self.temp_dir
         # Publish a repository
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {'force_full': force_full})
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        distributor.publish_repo(self.repo, self.publish_conduit, config)
         target_file = os.path.join(self.target_dir, SAMPLE_RPM)
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
@@ -187,7 +192,7 @@ class FileDistributorTest(unittest.TestCase):
 
         # Remove the unit
         new_conduit = get_publish_conduit(existing_units=[])
-        distributor.publish_repo(self.repo, new_conduit, {'force_full': force_full})
+        distributor.publish_repo(self.repo, new_conduit, config)
         # Ensure PULP_MANIFEST is updated correctly
         with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'r') as f:
             self.assertEqual(len(f.readlines()), 0)
@@ -211,6 +216,72 @@ class FileDistributorTest(unittest.TestCase):
     def test_publish_repo_unit_removal_fast_forward(self):
         self.test_publish_repo_unit_removal(force_full=False)
 
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_publish_repo_bson_doc_too_large(self, mock_get_working, force_full=False):
+        """
+        It verifies if too many (>50k+) files will publish with force full to avoid the
+        exception[0] "BSON document too large (20946918 bytes) - the connected serversupports
+        BSON document sizes up to 16777216 bytes.
+
+        [0] https://pulp.plan.io/issues/5058
+        """
+        mock_get_working.return_value = self.temp_dir
+        distributor = self.create_distributor_with_mocked_api_calls()
+        # publish a new repo with  units in it
+        units = []
+        for i in range(50001):
+            cloned_unit = copy.deepcopy(self.unit)
+            cloned_unit.unit_key['name'] = "foo%d.rpm" % (i)
+            cloned_unit.unit_key['checksum'] = "sum%s" % (1000000000 + i)
+            units.append(cloned_unit)
+        new_conduit = get_publish_conduit(existing_units=units)
+        distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
+        # Verify if do publish with force full after trying with fast forward
+        self.assertEqual(distributor.get_hosting_locations.call_count, 3)
+
+        units = []
+        for i in range(5):
+            cloned_unit = copy.deepcopy(self.unit)
+            cloned_unit.unit_key['name'] = "fooa%d.rpm" % (i)
+            cloned_unit.unit_key['checksum'] = "suma%s" % (1000000000 + i)
+            units.append(cloned_unit)
+        new_conduit = get_publish_conduit(existing_units=units)
+        distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
+        # Verify if do publish with fast forward
+        self.assertEqual(distributor.get_hosting_locations.call_count, 4)
+
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_publish_repo_way_by_conditions(self, mock_get_working):
+        """
+        Test conditions decides to do publish with fast_forward or force_full
+        """
+        mock_get_working.return_value = self.temp_dir
+        distributor = self.create_distributor_with_mocked_api_calls()
+        target2 = os.path.join(self.temp_dir, "target2")
+        distributor.get_hosting_locations.return_value.append(target2)
+        # Publish a new repo with units with force full finally after trying fast forward
+        units = []
+        for i in range(4):
+            cloned_unit = copy.deepcopy(self.unit)
+            cloned_unit.unit_key['name'] = "foo%d.rpm" % (i)
+            cloned_unit.unit_key['checksum'] = "sum%s" % (1000000000 + i)
+            units.append(cloned_unit)
+        new_conduit = get_publish_conduit(existing_units=units)
+        distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
+        # Verify if do publish with force full finally after trying with fast forward
+        self.assertEqual(distributor.get_hosting_locations.call_count, 3)
+
+        # Publish the repo with units with fast forward
+        for i in range(2):
+            cloned_unit = copy.deepcopy(self.unit)
+            cloned_unit.unit_key['name'] = "food%d.rpm" % (i)
+            cloned_unit.unit_key['checksum'] = "sumd%s" % (1000000000 + i)
+            units.append(cloned_unit)
+        new_conduit = get_publish_conduit(existing_units=units)
+        distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
+        # Verify if do publish with fast forward
+        self.assertEqual(distributor.get_hosting_locations.call_count, 4)
+
     def test_distributor_removed_calls_unpublish(self):
         distributor = self.create_distributor_with_mocked_api_calls()
         distributor.unpublish_repo = Mock()
@@ -221,7 +292,8 @@ class FileDistributorTest(unittest.TestCase):
     def test_unpublish_repo(self, mock_get_working):
         mock_get_working.return_value = self.temp_dir
         distributor = self.create_distributor_with_mocked_api_calls()
-        distributor.publish_repo(self.repo, self.publish_conduit, {})
+        distributor.publish_repo(self.repo, self.publish_conduit, PluginCallConfiguration({}, {},
+                                                                                          {}))
         self.assertTrue(os.path.exists(self.target_dir))
         distributor.unpublish_repo(self.repo, {})
         self.assertFalse(os.path.exists(self.target_dir))
