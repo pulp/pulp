@@ -1401,9 +1401,6 @@ def download_deferred():
     )
     download_step.start()
 
-    # ugly hack to prevent task collisons. see #4428
-    time.sleep(0.5)
-
 
 @celery.task(base=Task)
 def download_repo(repo_id, verify_all_units=False):
