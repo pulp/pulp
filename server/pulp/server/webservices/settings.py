@@ -80,3 +80,6 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
     }
 ]
+
+# Handle large amounts of data on API requests
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
