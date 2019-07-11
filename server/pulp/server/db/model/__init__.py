@@ -13,6 +13,7 @@ from hmac import HMAC
 from mongoengine import (BooleanField, DictField, Document, DynamicField, IntField,
                          ListField, StringField, UUIDField, ValidationError, QuerySetNoCache)
 from mongoengine import signals
+from pymongo.errors import DuplicateKeyError
 
 from pulp.common import constants, dateutils, error_codes
 from pulp.common.plugins import importer_constants
@@ -563,7 +564,12 @@ class TaskStatus(AutoRetryDocument, ReaperMixin):
 
         update = {'$set': stuff_to_update,
                   '$setOnInsert': set_on_insert}
-        TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
+
+        try:
+            TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
+        except DuplicateKeyError:
+            # manually retry the upsert. see https://jira.mongodb.org/browse/SERVER-14322
+            TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

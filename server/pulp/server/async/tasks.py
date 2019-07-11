@@ -16,6 +16,7 @@ from celery import task, Task as CeleryTask, current_task, __version__ as celery
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from mongoengine.queryset import DoesNotExist
+from mongoengine.errors import NotUniqueError
 
 from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
 from pulp.common import constants, dateutils, tags
@@ -514,11 +515,20 @@ class Task(PulpTask, ReservedTaskMixin):
             worker_name = self.request.hostname
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
-            TaskStatus.objects(task_id=self.request.id).update_one(
-                set__state=constants.CALL_RUNNING_STATE,
-                set__start_time=start_time,
-                set__worker_name=worker_name,
-                upsert=True)
+            try:
+                TaskStatus.objects(task_id=self.request.id).update_one(
+                    set__state=constants.CALL_RUNNING_STATE,
+                    set__start_time=start_time,
+                    set__worker_name=worker_name,
+                    upsert=True)
+            except NotUniqueError:
+                # manually retry the upsert. see https://jira.mongodb.org/browse/SERVER-14322
+                TaskStatus.objects(task_id=self.request.id).update_one(
+                    set__state=constants.CALL_RUNNING_STATE,
+                    set__start_time=start_time,
+                    set__worker_name=worker_name,
+                    upsert=True)
+
         # Run the actual task
         _logger.debug("Running task : [%s]" % self.request.id)
 
