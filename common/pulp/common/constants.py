@@ -2,7 +2,7 @@
 import os.path
 import pkg_resources
 
-PULP_VERSION = pkg_resources.require('pulp-server')[0].version
+PULP_VERSION = pkg_resources.require('pulp-common')[0].version
 
 # key used in a repository's "notes" field with a value describing what type
 # of content is in the repository.
