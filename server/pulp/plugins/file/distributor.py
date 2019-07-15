@@ -70,11 +70,14 @@ class FileDistributor(Distributor):
         :return:                report describing the publish operation
         :rtype:                 pulp.plugins.model.PublishReport
         """
+        _logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
         if not config.get("force_full", False):
-            return self.publish_repo_fast_forward(repo, publish_conduit, config)
+            try:
+                return self.publish_repo_fast_forward(repo, publish_conduit, config)
+            except FastForwardUnavailable:
+                _logger.debug("Fast-forward publish bailed out, continuing normally")
 
         progress_report = FilePublishProgressReport(publish_conduit)
-        _logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
 
         try:
             progress_report.state = progress_report.STATE_IN_PROGRESS
@@ -173,11 +176,23 @@ class FileDistributor(Distributor):
                             unit_checksum_old_set.add(checksum)
                             if checksum not in unit_checksum_set:
                                 unit_over_path_map[checksum] = fields[0]
+                _logger.debug("%d items were in MANIFEST %s, which exists? %s." % (
+                              len(unit_checksum_old_set), metadata_filename,
+                              os.path.exists(metadata_filename)))
 
                 # Copy incremental files into publishing directories
                 checksum_absent_set = unit_checksum_set - unit_checksum_old_set
+                _logger.debug("Increasing %d units" % len(checksum_absent_set))
+
+                # If added too many units, then publish repo with force_full
+                max_increase_units = min(50000, len(units) / len(hosting_locations))
+                if len(checksum_absent_set) > max_increase_units:
+                    self._rmtree_if_exists(build_dir)
+                    raise FastForwardUnavailable
+
                 criteria = UnitAssociationCriteria(
-                    unit_filters={'checksum': {"$in": list(checksum_absent_set)}})
+                    unit_filters={'checksum': {"$in": list(checksum_absent_set)}},
+                    unit_fields={'name', 'checksum', '_storage_path', 'size'})
                 unit_absent_set = publish_conduit.get_units(criteria=criteria)
                 for unit in unit_absent_set:
                     links_to_create = self.get_paths_for_unit(unit)
@@ -382,3 +397,11 @@ class FilePublishProgressReport(ProgressReport):
         ProgressReport.STATE_NOT_STARTED: (STATE_IN_PROGRESS, ProgressReport.STATE_FAILED),
         STATE_IN_PROGRESS: (ProgressReport.STATE_FAILED, ProgressReport.STATE_COMPLETE),
     }
+
+
+class FastForwardUnavailable():
+    """
+    The excetopn will be raised once publish with fast forward failed, then go back to
+    publish with force full.
+    """
+    pass
