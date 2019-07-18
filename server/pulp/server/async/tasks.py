@@ -108,6 +108,46 @@ class PulpTask(CeleryTask):
 
 
 @task(base=PulpTask, acks_late=True)
+def _queue_reserved_task_list(name, task_id, resource_id_list, inner_args, inner_kwargs):
+    """
+    A task that allows multiple resources to be reserved before dispatching a second, "inner", task.
+    See _queue_reserved_task for details on the inner workings.
+
+    :param name:                The name of the task to be called
+    :type name:                 basestring
+    :param inner_task_id:       The UUID to be set on the task being called. By providing
+                                the UUID, the caller can have an asynchronous reference to the inner
+                                task that will be dispatched.
+    :type inner_task_id:        basestring
+    :param resource_id_list:    A list of names of the resources you wish to reserve for your task.
+                                The system will ensure that no other tasks that want any of the same
+                                reservations will run concurrently with yours.
+    :type  resource_id_list:    list
+
+    :return: None
+    """
+    _logger.debug('_queue_reserved_task_list for task %s and ids [%s]' %
+                  (task_id, resource_id_list))
+    # Find a/the available Worker for processing our list of resources
+    worker = get_worker_for_reservation_list(resource_id_list)
+    # Reserve each resource, associating them with that Worker
+    for rid in resource_id_list:
+        _logger.debug('...saving RR for RID %s' % rid)
+        ReservedResource(task_id=task_id, worker_name=worker['name'], resource_id=rid).save()
+
+    # Dispatch the Worker
+    inner_kwargs['routing_key'] = worker.name
+    inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
+    inner_kwargs['task_id'] = task_id
+    try:
+        celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
+    finally:
+        # Arrange to release all held reserved-resources
+        _release_resource.apply_async((task_id, ), routing_key=worker.name,
+                                      exchange=DEDICATED_QUEUE_EXCHANGE)
+
+
+@task(base=PulpTask, acks_late=True)
 def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
@@ -196,6 +236,45 @@ def get_worker_for_reservation(resource_id):
         return Worker.objects(name=reservation['worker_name']).first()
     else:
         raise NoWorkers()
+
+
+def get_worker_for_reservation_list(resources):
+    """
+    Return the Worker instance that is associated with the reservations described by the 'resources'
+    list. This will be either an existing Worker that is dealing with at least one of the specified
+    resources, or an available idle Worker. We sleep and retry the request until it can be
+    fulfilled.
+
+    :param resources:   A list of the names of the resources you wish to reserve for your task.
+
+    :type resources:    list
+    :returns:           The Worker instance that has a reserved_resource entry associated with it
+                        for each resource in 'resources'
+    :rtype:             pulp.server.db.model.resources.Worker
+    """
+
+    _logger.debug('get_worker_for_reservation_list [%s]' % resources)
+    # We leave this loop once we find a Worker to return - otherwise, sleep and try again
+    while True:
+        reservation_workers = set(
+            [reservation['worker_name'] for reservation in
+                ReservedResource.objects(resource_id__in=resources)])
+        _logger.debug('...num-RR is %d' % len(reservation_workers))
+        if len(reservation_workers) == 1:  # Exactly one worker holds any of the desired resources
+            _logger.debug('...one-holds')
+            return Worker.objects(name=list(reservation_workers)[0]).first()
+        elif len(reservation_workers) == 0:  # No worker holds any of the desired resources
+            _logger.debug('...zero-holds')
+            try:
+                worker = _get_unreserved_worker()
+                return worker
+            except NoWorkers:
+                _logger.debug('...unresolved NoWorkers - WAIT')
+                pass
+        else:
+            _logger.debug('...multiple-holds - WAIT')
+
+        time.sleep(0.25)
 
 
 def _get_unreserved_worker():
@@ -373,20 +452,110 @@ class TaskResult(object):
 
 
 class ReservedTaskMixin(object):
+    def _apply_async_inner(self, reservation, *args, **kwargs):
+        """
+         This method allows the caller to schedule the ReservedTask to run asynchronously just like
+         Celery's apply_async(), while also locking named resource(s). No two tasks that claim the
+         same named-resource(s) can execute concurrently.
+
+         It can accept a list-of-strings, of the form 'resource-type:resource-id'. If only
+         asked for one resource (ie, list-len == 1), then call _queue_reserved_task, otherwise
+         let _queue_reserved_task_list do the deed.
+
+         This does not dispatch the task directly, but instead promises to dispatch it later. If the
+         agument 'is_list' is True, the desired task is encapsualted by a call to
+         _queue_reserved_task_list; otherwise, by a call to _queue_reserved_task.
+
+         See the docblock on _queue_reserved_task and _queue_reserved_task_list for more
+         information.
+
+         This method creates a TaskStatus as a placeholder for later updates. Pulp expects to poll
+         on a task just after calling this method, so a TaskStatus entry needs to exist for it
+         before it returns.
+
+         For a list of parameters accepted by the *args and **kwargs parameters, please see the
+         docblock for the apply_async() method.
+
+         :param reservation:    A list-of-strings that identify a set of named resources,
+                                guaranteeing that only one task reserving any resource-ids in this
+                                list can happen at a time.
+         :type  reservation:    list
+         :param tags:           A list of tags (strings) to place onto the task, used for searching
+                                for tasks by tag
+         :type  tags:           list
+         :param group_id:       The id to identify which group of tasks a task belongs to
+         :type  group_id:       uuid.UUID
+         :return:               An AsyncResult instance as returned by Celery's apply_async
+         :rtype:                celery.result.AsyncResult
+         """
+        inner_task_id = str(uuid.uuid4())
+        task_name = self.name
+        tag_list = kwargs.get('tags', [])
+        group_id = kwargs.get('group_id', None)
+
+        # Create a new task status with the task id and tags.
+        task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=tag_list,
+                                 group_id=group_id)
+        # To avoid the race condition where __call__ method below is called before
+        # this change is propagated to all db nodes, using an 'upsert' here and setting
+        # the task state to 'waiting' only on an insert.
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
+        try:
+            # Decide what to call based on how many reservation(s) we are being asked to make
+            if len(reservation) == 1:
+                _queue_reserved_task.apply_async(
+                    args=[task_name, inner_task_id, reservation[0], args, kwargs],
+                    queue=RESOURCE_MANAGER_QUEUE
+                )
+            else:
+                _queue_reserved_task_list.apply_async(
+                    args=[task_name, inner_task_id, reservation, args, kwargs],
+                    queue=RESOURCE_MANAGER_QUEUE
+                )
+        except Exception:
+            TaskStatus.objects(task_id=task_status.task_id).update(state=constants.CALL_ERROR_STATE)
+            raise
+
+        return AsyncResult(inner_task_id)
+
+    def apply_async_with_reservation_list(self, resource_tuples, *args, **kwargs):
+        """
+         This method allows the caller to schedule the ReservedTask to run asynchronously just like
+         Celery's apply_async(), while also locking the list of named resources. It accepts a
+         list of tuples of the form (resource-type,resource-id), and combines them to form a list
+         of resource-ids namespaced by their resource-type.
+
+         See _apply_async_inner for details.
+
+         For a list of parameters accepted by the *args and **kwargs parameters, please see the
+         docblock for the apply_async() method.
+
+         :param resource_tuples:    A list of strings that identify a set of named resources,
+                                    guaranteeing that only one task reserving any resource-ids in
+                                    this list can happen at a time. Elements are expected to be
+                                    of the form (resource-type, resource-id)
+         :type  resource_tuples:    list
+         :param tags:               A list of tags (strings) to place onto the task, used for
+                                    searching for tasks by tag
+         :type  tags:               list
+         :param group_id:           The id to identify which group of tasks a task belongs to
+         :type  group_id:           uuid.UUID
+         :return:                   An AsyncResult instance as returned by Celery's apply_async
+         :rtype:                    celery.result.AsyncResult
+         """
+        # Build the list of real-resource-ids by concatentating resource-type
+        # with each resource-id incoming
+        resource_id_list = [":".join((rtype, rid)) for (rtype, rid) in resource_tuples]
+        return self._apply_async_inner(resource_id_list, *args, **kwargs)
+
     def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
-        Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently. It accepts type and id of a resource
-        and combines them to form a resource id.
+        Celery's apply_async(), while also locking a named resource. It accepts a resource-type and
+        the id of a resource of that type, and combines them to form a resource-id.
 
-        This does not dispatch the task directly, but instead promises to dispatch it later by
-        encapsulating the desired task through a call to a _queue_reserved_task task. See the
-        docblock on _queue_reserved_task for more information on this.
-
-        This method creates a TaskStatus as a placeholder for later updates. Pulp expects to poll
-        on a task just after calling this method, so a TaskStatus entry needs to exist for it
-        before it returns.
+        See _apply_async_inner for details.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
         docblock for the apply_async() method.
@@ -406,30 +575,8 @@ class ReservedTaskMixin(object):
         """
         # Form a resource_id for reservation by combining given resource type and id. This way,
         # two different resources having the same id will not block each other.
-        resource_id = ":".join((resource_type, resource_id))
-        inner_task_id = str(uuid.uuid4())
-        task_name = self.name
-        tag_list = kwargs.get('tags', [])
-        group_id = kwargs.get('group_id', None)
-
-        # Create a new task status with the task id and tags.
-        task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
-                                 state=constants.CALL_WAITING_STATE, tags=tag_list,
-                                 group_id=group_id)
-        # To avoid the race condition where __call__ method below is called before
-        # this change is propagated to all db nodes, using an 'upsert' here and setting
-        # the task state to 'waiting' only on an insert.
-        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
-        try:
-            _queue_reserved_task.apply_async(
-                args=[task_name, inner_task_id, resource_id, args, kwargs],
-                queue=RESOURCE_MANAGER_QUEUE
-            )
-        except Exception:
-            TaskStatus.objects(task_id=task_status.task_id).update(state=constants.CALL_ERROR_STATE)
-            raise
-
-        return AsyncResult(inner_task_id)
+        rsrc = [":".join((resource_type, resource_id))]
+        return self._apply_async_inner(rsrc, *args, **kwargs)
 
 
 class Task(PulpTask, ReservedTaskMixin):
