@@ -365,6 +365,34 @@ class Importer(AutoRetryDocument):
                 else:
                     pem_file.write(self.config[config_key])
 
+    def _set_scratchpad_entry(self, key, value):
+        """
+        Add the specified key/value pair to the scratchpad, making sure the scratchpad exists
+        first if necessary.
+
+        :param key:     The key to be added to the scratchpad
+        :type  key:     basestring
+        :param value:   The value to assign to 'key', in the scratchpad
+        :type  value:   object
+        """
+        if not self.scratchpad:
+            self.scratchpad = {}
+        self.scratchpad[key] = value
+
+    def _get_scratchpad_entry(self, key):
+        """
+        Return the value of 'key' in the Importer's scratchpad.
+        Return None, if scratchpad doesn't exist or 'key' is not in scratchpad.
+
+        :param key:     The key to be queried
+        :type  key:     basestring
+        :rtype object
+        """
+        if self.scratchpad and key in self.scratchpad:
+            return self.scratchpad[importer_constants.KEY_FEED_UPDATED]
+        else:
+            return None
+
 
 signals.pre_delete.connect(Importer.pre_delete, sender=Importer)
 signals.pre_save.connect(Importer.pre_save, sender=Importer)

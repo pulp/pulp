@@ -272,12 +272,11 @@ def update_importer_config(repo_id, importer_config):
     # e.g. basic_auth_username and basic_auth_password should be either both present or both absent.
     validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
     repo_importer.save()
-
     for k, v in importer_config.iteritems():
         if v is not None:
             repo_importer.config[k] = v
             if k == importer_constants.KEY_FEED:
-                repo_importer.config[importer_constants.KEY_FEED_UPDATED] = True
+                repo_importer._set_scratchpad_entry(importer_constants.KEY_FEED_UPDATED, True)
 
     validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
     try:
