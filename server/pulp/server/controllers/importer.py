@@ -8,6 +8,7 @@ from mongoengine import ValidationError
 
 from pulp.common import error_codes, tags
 from pulp.common.plugins import importer_constants
+from pulp.plugins.conduits.mixins import ImporterScratchPadMixin
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server import exceptions
@@ -276,7 +277,9 @@ def update_importer_config(repo_id, importer_config):
         if v is not None:
             repo_importer.config[k] = v
             if k == importer_constants.KEY_FEED:
-                repo_importer._set_scratchpad_entry(importer_constants.KEY_FEED_UPDATED, True)
+                if not repo_importer.scratchpad:
+                    repo_importer.scratchpad = {}
+                repo_importer.scratchpad[importer_constants.KEY_FEED_UPDATED] = True
 
     validate_importer_config(repo_obj, repo_importer.importer_type_id, repo_importer.config)
     try:

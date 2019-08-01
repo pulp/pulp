@@ -294,6 +294,38 @@ class ImporterScratchPadMixin(object):
             _logger.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r': self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
+    def set_scratchpad_entry(self, key, value):
+        """
+        Add the specified key/value pair to the scratchpad, making sure the scratchpad exists
+        first if necessary.
+
+        :param key:     The key to be added to the scratchpad
+        :type  key:     basestring
+        :param value:   The value to assign to 'key', in the scratchpad
+        :type  value:   object
+        """
+        spad = self.get_scratchpad()
+        if not spad:
+            spad = {}
+        spad[key] = value
+        self.set_scratchpad(spad)
+
+    def get_scratchpad_entry(self, key):
+        """
+        Return the value of 'key' in the Importer's scratchpad.
+        Return None, if scratchpad doesn't exist or 'key' is not in scratchpad.
+
+        :param key:     The key to be queried
+        :type  key:     basestring
+        :rtype object
+        """
+        spad = self.get_scratchpad()
+        if spad:
+            return spad.get(key, None)
+        else:
+            return None
+
+
 
 class DistributorScratchPadMixin(object):
 
