@@ -1162,11 +1162,36 @@ class RepoAssociate(View):
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
-        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
-                     tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, source_repo_id),
-                     tags.action_tag('associate')]
-        async_result = associate_from_repo.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id, [source_repo_id, dest_repo_id],
+        total_repos = set([source_repo_id, dest_repo_id])
+
+        # Only the RPM plugin uses this
+        if overrides and overrides.get("additional_repos"):
+            additional_repos = overrides.get("additional_repos", {})
+            # iterate through the source repository keys, verify that they exist and add
+            # them to the repos to lock
+            for repo_id in additional_repos.keys():
+                try:
+                    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+                    total_repos.add(repo_id)
+                except exceptions.MissingResource:
+                    raise exceptions.InvalidValue([repo_id])
+            # iterate through the destination repository keys, verify that they exist and
+            # add them to the repos to lock
+            for repo_id in additional_repos.values():
+                try:
+                    model.Repository.objects.get_repo_or_missing_resource(repo_id)
+                    total_repos.add(repo_id)
+                except exceptions.MissingResource:
+                    raise exceptions.InvalidValue([repo_id])
+
+        task_tags = [
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id) for repo_id in total_repos
+        ]
+        task_tags.append(tags.action_tag('associate'))
+
+        resource_tuples = [(tags.RESOURCE_REPOSITORY_TYPE, repo_id) for repo_id in total_repos]
+        async_result = associate_from_repo.apply_async_with_reservation_list(
+            resource_tuples, [source_repo_id, dest_repo_id],
             {'criteria': criteria.to_dict(), 'import_config_override': overrides}, tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
