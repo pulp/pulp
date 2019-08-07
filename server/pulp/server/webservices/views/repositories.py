@@ -1162,34 +1162,36 @@ class RepoAssociate(View):
             invalid_criteria.add_child_exception(e)
             raise invalid_criteria
 
-        total_repos = set([source_repo_id, dest_repo_id])
+        source_repos = set([source_repo_id])
+        dest_repos = set([dest_repo_id])
 
         # Only the RPM plugin uses this
         if overrides and overrides.get("additional_repos"):
             additional_repos = overrides.get("additional_repos", {})
             # iterate through the source repository keys, verify that they exist and add
-            # them to the repos to lock
+            # them to the set of source repos
             for repo_id in additional_repos.keys():
                 try:
                     model.Repository.objects.get_repo_or_missing_resource(repo_id)
-                    total_repos.add(repo_id)
+                    source_repos.add(repo_id)
                 except exceptions.MissingResource:
                     raise exceptions.InvalidValue([repo_id])
             # iterate through the destination repository keys, verify that they exist and
-            # add them to the repos to lock
+            # add them to the set of destination repos
             for repo_id in additional_repos.values():
                 try:
                     model.Repository.objects.get_repo_or_missing_resource(repo_id)
-                    total_repos.add(repo_id)
+                    dest_repos.add(repo_id)
                 except exceptions.MissingResource:
                     raise exceptions.InvalidValue([repo_id])
 
         task_tags = [
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id) for repo_id in total_repos
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
+            for repo_id in source_repos | dest_repos
         ]
         task_tags.append(tags.action_tag('associate'))
 
-        resource_tuples = [(tags.RESOURCE_REPOSITORY_TYPE, repo_id) for repo_id in total_repos]
+        resource_tuples = [(tags.RESOURCE_REPOSITORY_TYPE, repo_id) for repo_id in dest_repos]
         async_result = associate_from_repo.apply_async_with_reservation_list(
             resource_tuples, [source_repo_id, dest_repo_id],
             {'criteria': criteria.to_dict(), 'import_config_override': overrides}, tags=task_tags)
