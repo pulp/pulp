@@ -49,7 +49,7 @@ def get_log_type():
 
     if log_type == 'syslog':
         if not os.path.exists(LOG_PATH):
-            print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+            print >> sys.stderr, "Unable to access log, {log_path}.".format(log_path=LOG_PATH)
             sys.exit(os.EX_UNAVAILABLE)
 
     return log_type
