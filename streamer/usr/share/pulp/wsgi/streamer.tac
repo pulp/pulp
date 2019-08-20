@@ -36,7 +36,7 @@ def start_logging(config):
 
     # Set up our handler and add it to the root logger
     if not os.path.exists(LOG_PATH):
-        print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+        print >> sys.stderr, "Unable to access log, {log_path}.".format(log_path=LOG_PATH)
         sys.exit(os.EX_UNAVAILABLE)
 
     handler = CompliantSysLogHandler(address=LOG_PATH,
