@@ -1760,35 +1760,46 @@ class TestCreateDownloadRequests(unittest.TestCase):
     @patch(MODULE + 'model.LazyCatalogEntry')
     def test_create_download_requests(self, mock_catalog, mock_get_url, mock_mkdir):
         # Setup
-        content_units = [Mock(id='123', type_id='abc', list_files=lambda: ['/file/path'])]
+        content_units = [Mock(id='123', type_id='abc',
+                              files=[{'relativepath': '/topdir/filename'},
+                                     {'relativepath': '/topdir/filename2'}])]
         filtered_qs = mock_catalog.objects.filter.return_value
         catalog_entry = filtered_qs.order_by.return_value.first.return_value
-        catalog_entry.path = '/storage/123/path'
+        catalog_entry.path = '/storage/123/ce_path'
         expected_data_dict = {
             repo_controller.TYPE_ID: 'abc',
-            repo_controller.UNIT_ID: '123',
             repo_controller.UNIT_FILES: {
-                '/working/123/path': {
+                '/topdir/filename': {
+                    repo_controller.CATALOG_ENTRY: catalog_entry,
+                    repo_controller.PATH_DOWNLOADED: None
+                },
+                '/topdir/filename2': {
                     repo_controller.CATALOG_ENTRY: catalog_entry,
                     repo_controller.PATH_DOWNLOADED: None
                 }
-            }
+            },
+            repo_controller.UNIT_ID: '123'
         }
 
         # Test
         requests = repo_controller._create_download_requests(content_units)
         expected_data_dict[repo_controller.REQUEST] = requests[0]
-        mock_catalog.objects.filter.assert_called_once_with(
+        mock_catalog.objects.filter.assert_any_call(
             unit_id='123',
             unit_type_id='abc',
-            path='/file/path'
+            path='/topdir/filename'
         )
-        filtered_qs.order_by.assert_called_once_with('revision')
-        filtered_qs.order_by.return_value.first.assert_called_once_with()
-        mock_mkdir.assert_called_once_with('/working/123')
-        self.assertEqual(1, len(requests))
+        mock_catalog.objects.filter.assert_any_call(
+            unit_id='123',
+            unit_type_id='abc',
+            path='/topdir/filename2'
+        )
+        filtered_qs.order_by.assert_any_call('revision')
+        self.assertEqual(2, filtered_qs.order_by.call_count)
+        mock_mkdir.assert_any_call('/working/123')
+        self.assertEqual(2, len(requests))
         self.assertEqual(mock_get_url.return_value, requests[0].url)
-        self.assertEqual('/working/123/path', requests[0].destination)
+        self.assertEqual('/topdir/filename', requests[0].destination)
         self.assertEqual(expected_data_dict, requests[0].data)
 
 

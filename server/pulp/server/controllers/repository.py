@@ -1478,7 +1478,12 @@ def _create_download_requests(content_units):
         # All files in the unit; every request for a unit has a reference to this dict.
         unit_files = {}
         unit_working_dir = os.path.join(working_dir, content_unit.id)
-        for file_path in content_unit.list_files():
+        # make the working-dir once per CU
+        mkdir(unit_working_dir)
+        # For every file in this content-unit:
+        for a_file in content_unit.files:
+            # Where should this file end up?
+            file_path = os.path.join(content_unit.storage_path, a_file['relativepath'])
             qs = model.LazyCatalogEntry.objects.filter(
                 unit_id=content_unit.id,
                 unit_type_id=content_unit.type_id,
@@ -1488,12 +1493,10 @@ def _create_download_requests(content_units):
             if catalog_entry is None:
                 continue
             signed_url = _get_streamer_url(catalog_entry, signing_key)
-
-            temporary_destination = os.path.join(
-                unit_working_dir,
-                os.path.basename(catalog_entry.path)
-            )
-            mkdir(unit_working_dir)
+            # plan to stick the file in our working-dir temporarily
+            temporary_destination = os.path.join(unit_working_dir, a_file['relativepath'])
+            # make needed dirs for it
+            mkdir(os.path.dirname(temporary_destination))
             unit_files[temporary_destination] = {
                 CATALOG_ENTRY: catalog_entry,
                 PATH_DOWNLOADED: None,
