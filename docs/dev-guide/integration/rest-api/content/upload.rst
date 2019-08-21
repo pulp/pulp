@@ -53,7 +53,7 @@ entire file cannot be sent in a single call, the caller may divide up the file
 and provide offset information for Pulp to use when assembling it.
 
 | :method:`put`
-| :path:`/v2/content/uploads/<upload_id>/<offset/`
+| :path:`/v2/content/uploads/<upload_id>/<offset>/`
 | :permission:`update`
 | :param_list:`post` The body of the request is the content to store in the file
   starting at the offset specified in the URL.
