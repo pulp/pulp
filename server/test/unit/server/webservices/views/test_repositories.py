@@ -1817,8 +1817,8 @@ class TestRepoAssociate(unittest.TestCase):
             raise AssertionError('OperationPostponed should be raise for an associate task')
 
         task_tags = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
-        mock_associate.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_dest_repo',
+        mock_associate.apply_async_with_reservation_list.assert_called_once_with(
+            [(mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_dest_repo')],
             ['mock_source_repo', 'mock_dest_repo'],
             {'criteria': mock_crit.return_value.to_dict.return_value,
              'import_config_override': None}, tags=task_tags
