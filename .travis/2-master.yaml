@@ -2,7 +2,7 @@ repositories:
   - name: pulp
     git_url: https://github.com/pulp/pulp.git
     git_branch: 2-master
-    version: 2.21.0-0.1.alpha
+    version: 2.22.0-0.1.alpha
   - name: pulp_puppet
     git_url: https://github.com/pulp/pulp_puppet.git
     git_branch: 2-master
