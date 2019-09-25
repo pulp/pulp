@@ -3,6 +3,17 @@ Pulp 2.20 Release Notes
 =======================
 
 
+Pulp 2.20.1
+===========
+
+Bug Fixes
+---------
+
+* Fixed upgrade taking a long time due to recursively changes ownership of /var/lib/pulp/ during upgrade
+
+See the list of :fixedbugs_pulp:`2.20.1`
+
+
 Pulp 2.20.0
 ===========
 
