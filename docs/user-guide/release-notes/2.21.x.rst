@@ -1,20 +1,25 @@
 =======================
-Pulp 2.15 Release Notes
+Pulp 2.21 Release Notes
 =======================
 
-Pulp 2.15.0
+
+Pulp 2.21.0
 ===========
 
 New Features
 ------------
 
-* Logging of `force_full` being enabled
-  `force_full` is useful for debugging, but it has known performance issues long term.
+See plugins' release notes for the new features being introduced.
 
 Bug Fixes
 ---------
 
-See the list of :fixedbugs_pulp:`2.15.0`
+* Fixed large requests failing due to "request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE"
+* Upsert query raises NotUniqueError
+* Pulp 3 can't sync when installed along side Pulp 2
+
+
+See the full list of :fixedbugs_pulp:`2.21.0`
 
 Upgrade instructions
 --------------------
