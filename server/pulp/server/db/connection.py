@@ -166,6 +166,16 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
+        # Now that we have a cnx and a db, we can attempt X509 authentication if that's what
+        # the server wants to do. This is only possible if we're set up for an SSL connection,
+        # and a client-cert has been specified.
+        if config.config.getboolean('database', 'x509_auth'):
+            if not config.config.getboolean('database', 'ssl') or not ssl_certfile:
+                raise Exception(_('Requiring X509 authentication to the database is valid only if '
+                                  'both ssl: true and ssl_certfile: <client-cert-full-path> are '
+                                  'set in the server config.'))
+            _DATABASE.authenticate(username, mechanism='MONGODB-X509')
+
         # Query the collection names to ensure that we are authenticated properly
         _logger.debug(_('Querying the database to validate the connection.'))
         _DATABASE.collection_names()
