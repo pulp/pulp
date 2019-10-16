@@ -554,7 +554,8 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
                                             checksum_type=TYPE_SHA1)
         context._open_metadata_file_handle()
         context._close_metadata_file_handle()
-        self.assertEquals(1, len(os.listdir(self.working_dir)))
+        # 5573: preserve the old metadata files
+        self.assertEquals(2, len(os.listdir(self.working_dir)))
 
     def test_close_metadata_file_handle_cleans_up_file_gz(self):
         shutil.copy(os.path.join(self.metadata_dir, 'test.xml.gz'),
@@ -573,7 +574,8 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
                                             checksum_type=TYPE_SHA1)
         context._open_metadata_file_handle()
         context._close_metadata_file_handle()
-        self.assertEquals(1, len(os.listdir(self.working_dir)))
+        # 5573: preserve the old metadata files
+        self.assertEquals(2, len(os.listdir(self.working_dir)))
 
     def test_close_metadata_file_handle_no_fast_forward(self):
         context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
