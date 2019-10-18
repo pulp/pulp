@@ -341,7 +341,7 @@ class FastForwardXmlFileContext(XmlFileContext):
             # move the file so that we can still process it if the name is the same
             if self.existing_file:
                 new_file_name = 'original.%s' % self.existing_file
-                shutil.move(os.path.join(working_dir, self.existing_file),
+                shutil.copy(os.path.join(working_dir, self.existing_file),
                             os.path.join(working_dir, new_file_name))
                 self.existing_file = new_file_name
 
