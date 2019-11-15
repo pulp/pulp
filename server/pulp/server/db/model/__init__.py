@@ -883,7 +883,15 @@ class FileContentUnit(ContentUnit):
         path = FileStorage.get_path(self)
         if filename:
             if not os.path.isabs(filename):
-                path = os.path.join(path, filename)
+                if not os.path.exists(path) or os.path.isdir(path):
+                    # If place-to-store doesn't exist yet, or is a directory, just append filename
+                    path = os.path.join(path, filename)
+                else:
+                    # If we're here, place-to-store exists and is a *file*. This can happen
+                    # if, for example, we're dealing with modulemd_defaults. This is something
+                    # of a hack on top of the already 'total hack' that is this method.
+                    # See https://pulp.plan.io/issues/5658
+                    path = os.path.join(os.path.dirname(path), filename)
             else:
                 raise ValueError(_('must be relative path'))
         self._storage_path = path
