@@ -23,6 +23,8 @@ SORT_DESCENDING = pymongo.DESCENDING
 
 _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
+UNITS_BATCH_SIZE = 100000
+
 
 class RepoUnitAssociationQueryManager(object):
 
@@ -115,9 +117,28 @@ class RepoUnitAssociationQueryManager(object):
         # Use a generator expression here to keep from going back to the types
         # collections once we've returned our limit of results.
         # Be sure to skip cursors that would otherwise return an empty result set.
-        units_cursors = (self._associated_units_by_type_cursor(t, criteria,
-                                                               associations_lookup[t].keys())
-                         for t in association_unit_types if t in associations_lookup)
+        #
+        # If the repo contains too many units (>345K) of same type, the number of associated
+        # units will be too large and cause that the length of corresponding query exceeds the
+        # limit (16M), so split it into batches. But the way does not help if the criteria
+        # contains sorting.
+        if criteria.unit_sort:
+            units_cursors = (self._associated_units_by_type_cursor(t, criteria,
+                                                                   associations_lookup[t].keys())
+                             for t in association_unit_types if t in associations_lookup)
+        else:
+            units_cursors_list = []
+            for t in association_unit_types:
+                if t in associations_lookup:
+                    associations_unit_keys = associations_lookup[t].keys()
+                    unit_keys_list = [associations_unit_keys[i:i + UNITS_BATCH_SIZE]
+                                      for i in xrange(0, len(associations_unit_keys),
+                                                      UNITS_BATCH_SIZE)]
+                    for sub_unit_keys in unit_keys_list:
+                        units_cursors_list.append(
+                            self._associated_units_by_type_cursor(
+                                t, criteria, sub_unit_keys))
+            units_cursors = (units_cursor for units_cursor in units_cursors_list)
 
         if not criteria.association_sort:
             # If we're not sorting based on association fields, then set the
