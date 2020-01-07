@@ -580,23 +580,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for u in units:
             self.assertTrue(u['metadata']['key_1'] != 'aardvark')
 
-    def test_criteria_str(self):
-        # Setup
-        c1 = UnitAssociationCriteria()
-        c2 = UnitAssociationCriteria(
-            type_ids=['a'], association_filters={'a': 'a'}, unit_filters={'b': 'b'},
-            association_sort=['c'], unit_sort=['d'], limit=1, skip=2, association_fields=['e'],
-            unit_fields=['f'], remove_duplicates=True)
-
-        # Test no exceptions are raised
-        str(c1)
-        str(c2)
-
-    def test_criteria_init(self):
-        # Test
-        c = UnitAssociationCriteria(type_ids='single')
-        self.assertEqual(['single'], c.type_ids)
-
     def _assert_unit_integrity(self, unit):
         """
         Makes sure all of the expected fields are present in the unit and that
@@ -618,3 +601,90 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         self.assertTrue(unit['metadata']['md_1'] is not None)
         self.assertTrue(unit['metadata']['md_2'] is not None)
         self.assertTrue(unit['metadata']['md_3'] is not None)
+
+    def test_get_units_by_type_batches(self):
+        # Check if units are found as expectation by different batch size
+        association_query_manager.UNITS_BATCH_SIZE = 100000
+        units_1 = self.manager.get_units_by_type('repo-1', 'alpha')
+
+        association_query_manager.UNITS_BATCH_SIZE = 2
+        units_2 = self.manager.get_units_by_type('repo-1', 'alpha')
+
+        for item in units_1:
+            found = False
+            for item2 in units_2:
+                if item2['unit_id'] == item['unit_id'] and item['unit_id'] in self.units['alpha']:
+                    found = True
+                    continue
+            self.assertTrue(found)
+
+        self.assertEqual(len(self.units['alpha']), len(units_1))
+
+        # Revert
+        association_query_manager.UNITS_BATCH_SIZE = 100000
+
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.\
+_associated_units_by_type_cursor')
+    def test_get_units_by_type_batch_size(self, _associated_units_by_type_cursor_mock):
+        # Test
+        cursor_obj = mock.MagicMock()
+        cursor_obj.__iter__ = mock.MagicMock(return_value=iter([]))
+        _associated_units_by_type_cursor_mock.return_value = cursor_obj
+
+        association_query_manager.UNITS_BATCH_SIZE = 2
+        self.manager.get_units_by_type('repo-1', 'alpha')
+
+        # Verify if 3 units are split to 2 batches
+        batch_num = math.ceil(
+            float(len(self.units['alpha'])) / association_query_manager.UNITS_BATCH_SIZE)
+        self.assertEqual(
+            _associated_units_by_type_cursor_mock.call_count, batch_num)
+
+        association_query_manager.UNITS_BATCH_SIZE = 3
+        self.manager.get_units_by_type('repo-1', 'alpha')
+
+        # Verify if units is not split when size of units is less than batch size
+        self.assertEqual(
+            _associated_units_by_type_cursor_mock.call_count, batch_num + 1)
+
+        # Revert
+        association_query_manager.UNITS_BATCH_SIZE = 100000
+
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.\
+_associated_units_by_type_cursor')
+    def test_get_units_by_type_condition(self, _associated_units_by_type_cursor_mock):
+        # Test
+        association_query_manager.UNITS_BATCH_SIZE = 2
+        criteria = UnitAssociationCriteria(
+            unit_sort=[('created', association_manager.SORT_DESCENDING)])
+        self.manager.get_units_by_type('repo-1', 'alpha', criteria)
+
+        # Verify if finding unit without batches
+        self.assertEqual(_associated_units_by_type_cursor_mock.call_count, 1)
+
+        self.manager.get_units_by_type('repo-1', 'alpha')
+        # Verify if finding unit by batches
+        batch_num = math.ceil(
+            float(len(self.units['alpha'])) / association_query_manager.UNITS_BATCH_SIZE)
+        self.assertEqual(
+            _associated_units_by_type_cursor_mock.call_count, batch_num + 1)
+
+        # Revert
+        association_query_manager.UNITS_BATCH_SIZE = 100000
+
+    def test_criteria_str(self):
+        # Setup
+        c1 = UnitAssociationCriteria()
+        c2 = UnitAssociationCriteria(
+            type_ids=['a'], association_filters={'a': 'a'}, unit_filters={'b': 'b'},
+            association_sort=['c'], unit_sort=['d'], limit=1, skip=2, association_fields=['e'],
+            unit_fields=['f'], remove_duplicates=True)
+
+        # Test no exceptions are raised
+        str(c1)
+        str(c2)
+
+    def test_criteria_init(self):
+        # Test
+        c = UnitAssociationCriteria(type_ids='single')
+        self.assertEqual(['single'], c.type_ids)
