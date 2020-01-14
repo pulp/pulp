@@ -71,7 +71,7 @@ class FileDistributor(Distributor):
         :rtype:                 pulp.plugins.model.PublishReport
         """
         _logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
-        if not config.get("force_full", False) and publish_conduit.last_published:
+        if not config.get("force_full", False) and publish_conduit.last_publish:
             try:
                 return self.publish_repo_fast_forward(repo, publish_conduit, config)
             except FastForwardUnavailable:
