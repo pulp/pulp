@@ -689,6 +689,29 @@ def update_last_unit_removed(repo_id):
     repo_obj.save()
 
 
+def update_last_unit_added_for_unit(unit_id, unit_type_id):
+    """
+    Updates the UTC date record for the time the last unit was added on all
+    repositories containing a given unit.
+
+    This method is intended for use when a unit has been mutated in such
+    a way that the unit should be considered as re-added to all containing
+    repos (e.g. publish of repos should not be skipped).
+    It's safe to call the method without holding a lock on the repos.
+
+    :param unit_id: ID of a unit
+    :type  unit_id: str
+    :param unit_type_id: type ID of a unit
+    :type  unit_type_id: str
+    """
+    now = dateutils.now_utc_datetime_with_tzinfo()
+    repo_units = model.RepositoryContentUnit.objects(
+        unit_id=unit_id,
+        unit_type_id=unit_type_id)
+    repo_ids = [assoc.repo_id for assoc in repo_units]
+    model.Repository.objects(repo_id__in=repo_ids).update(last_unit_added=now)
+
+
 @celery.task(base=PulpTask, name='pulp.server.tasks.repository.sync_with_auto_publish')
 def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
     """

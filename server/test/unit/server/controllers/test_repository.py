@@ -797,6 +797,35 @@ class TestUpdateLastUnitAdded(unittest.TestCase):
         m_repo.save.assert_called_once_with()
 
 
+class TestUpdateLastUnitAddedForUnit(unittest.TestCase):
+    """
+    Tests for multi-repo update last unit added.
+    """
+
+    @mock.patch('pulp.server.controllers.repository.model.RepositoryContentUnit.objects')
+    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    @mock.patch('pulp.server.controllers.repository.dateutils')
+    def test_update_last_unit_added_for_unit(self, mock_date, m_repo_qs, m_repo_units_qs):
+        """
+        Ensure that the last_unit_added field is correctly updated on all repos
+        containing the specified unit.
+        """
+        m_repo_units_qs.return_value = [Mock(repo_id='repo1'), Mock(repo_id='repo2')]
+
+        # Call should complete without raising
+        repo_controller.update_last_unit_added_for_unit('abc123', 'some_type')
+
+        # It should have searched for repo units
+        m_repo_units_qs.assert_called_once_with(unit_id='abc123', unit_type_id='some_type')
+
+        # It should have queried the relevant repos...
+        m_repo_qs.assert_called_once_with(repo_id__in=['repo1', 'repo2'])
+
+        # ...and then updated them
+        m_repo_qs.return_value.update.assert_called_once_with(
+            last_unit_added=mock_date.now_utc_datetime_with_tzinfo())
+
+
 class TestUpdateLastUnitRemoved(unittest.TestCase):
     """
     Tests for update last unit removed.
