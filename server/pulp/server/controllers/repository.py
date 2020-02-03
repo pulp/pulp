@@ -1166,6 +1166,11 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         the_timestamp = dateutils.format_iso8601_datetime(last_published)
         last_updated = model.RepositoryContentUnit.objects(repo_id=repo_obj.repo_id,
                                                            updated__gte=the_timestamp).count()
+        if not last_updated:
+            # There is no newer RepositoryContentUnit than last publish;
+            # however, a unit shared between multiple repos could still have been mutated,
+            # in which case it will be reflected in last_unit_added.
+            last_updated = repo_obj.last_unit_added and repo_obj.last_unit_added > last_published
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
 
