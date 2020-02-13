@@ -1326,6 +1326,34 @@ class TestCheckPublish(unittest.TestCase):
             m_repo_pub_result.skipped_result())
         self.assertTrue(result is m_repo_pub_result.skipped_result.return_value)
 
+    def test_publish_via_added(self, m_dist_qs, m_repo_pub_result, mock_call_conf, mock_conduit,
+                               mock_objects, mock_do_pub, mock_date, mock_now, mock_log):
+        """
+        Test that publish occurs if repo last_unit_added is newer than last publish.
+        """
+        dist_updated = dateutils.ensure_tz(dateutils.parse_iso8601_datetime('2020-12-23T01:00'))
+        published = dateutils.ensure_tz(dateutils.parse_iso8601_datetime('2020-12-24T01:00'))
+        unit_added = dateutils.ensure_tz(dateutils.parse_iso8601_datetime('2020-12-25T01:00'))
+
+        mock_call_conf.get.return_value = False
+        mock_call_conf.override_config = {}
+        fake_repo = model.Repository(repo_id='repo1', last_unit_added=unit_added)
+        mock_transfer = fake_repo.to_transfer_repo()
+        mock_conduit.last_publish.return_value = published
+        mock_objects.return_value.count.return_value = 0
+        mock_inst = mock.MagicMock()
+        m_dist = m_dist_qs.get_or_404.return_value
+        m_dist.last_updated = dist_updated
+        m_dist.last_override_config = {}
+
+        result = repo_controller.check_publish(fake_repo, 'dist', mock_inst,
+                                               mock_transfer, mock_conduit,
+                                               mock_call_conf)
+        self.assertFalse(m_repo_pub_result.skipped_result.called)
+        self.assertTrue(mock_do_pub.called)
+        mock_do_pub.assert_called_once_with(fake_repo, 'dist', mock_inst, mock_transfer,
+                                            mock_conduit, mock_call_conf)
+
     def test_force_publish(self, m_dist_qs, m_repo_pub_result, mock_call_conf, mock_conduit,
                            mock_objects, mock_do_pub, mock_date, mock_now, mock_log):
         """
