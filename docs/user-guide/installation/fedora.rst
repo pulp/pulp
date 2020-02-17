@@ -37,8 +37,7 @@ and install indices on them.
 
 After installing MongoDB, you should configure it to start at boot and start it::
 
- $ sudo systemctl enable mongod
- $ sudo systemctl start mongod
+ $ sudo systemctl enable --now mongod
 
 .. warning::
    On new MongoDB installations, MongoDB takes some time to preallocate large files and will not
@@ -82,8 +81,7 @@ After installing and configuring Qpid, you should configure it to start at boot 
 
 ::
 
-   $ sudo systemctl enable qpidd
-   $ sudo systemctl start qpidd
+   $ sudo systemctl enable --now qpidd
 
 
 RabbitMQ
@@ -95,8 +93,7 @@ On the host you wish to use as your message broker, run this command To install 
 
 After installing and configuring RabbitMQ, you should configure it to start at boot and start it::
 
-   $ sudo systemctl enable rabbitmq-server
-   $ sudo systemctl start rabbitmq-server
+   $ sudo systemctl enable --now rabbitmq-server
 
 
 Pulp Server
@@ -164,16 +161,14 @@ Now we are ready to install and configure the Pulp server!
 
 #. Start Apache httpd and set it to start on boot.::
 
-    $ sudo systemctl enable httpd
-    $ sudo systemctl start httpd
+    $ sudo systemctl enable --now httpd
 
 #. Pulp has a distributed task system that uses `Celery <http://www.celeryproject.org/>`_.
    Begin by configuring, enabling and starting the Pulp workers. To configure the workers, edit
    ``/etc/default/pulp_workers``. That file has inline comments that explain how to use each
    setting. After you've configured the workers, it's time to enable and start them::
 
-      $ sudo systemctl enable pulp_workers
-      $ sudo systemctl start pulp_workers
+      $ sudo systemctl enable --now pulp_workers
 
    .. note::
 
@@ -194,8 +189,7 @@ Now we are ready to install and configure the Pulp server!
 
    ::
 
-      $ sudo systemctl enable pulp_celerybeat
-      $ sudo systemctl start pulp_celerybeat
+      $ sudo systemctl enable --now pulp_celerybeat
 
    Lastly, a ``pulp_resource_manager`` process must be running in the installation. This process
    acts as a task router, deciding which worker should perform certain types of tasks. As with
@@ -206,8 +200,7 @@ Now we are ready to install and configure the Pulp server!
 
    Edit ``/etc/default/pulp_resource_manager`` to your liking. Then::
 
-      $ sudo systemctl enable pulp_resource_manager
-      $ sudo systemctl start pulp_resource_manager
+      $ sudo systemctl enable --now pulp_resource_manager
 
 
 Admin Client
@@ -290,8 +283,7 @@ repositories.
 
 #. Set the agent to start at boot::
 
-      $ sudo systemctl enable goferd
-      $ sudo systemctl start goferd
+      $ sudo systemctl enable --now goferd
 
 
 Extra Configuration

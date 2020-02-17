@@ -76,7 +76,7 @@ Follow these steps:
 
 #. Start and enable the nfs-server service::
 
-      $ sudo systemctl enable nfs-server && sudo systemctl start nfs-server
+      $ sudo systemctl enable --now nfs-server
 
 #. You will need to allow NFS services through your firewall::
 
@@ -102,8 +102,7 @@ Follow these steps:
 
 #. Enable and start the docker service::
 
-      $ sudo systemctl enable docker
-      $ sudo systemctl start docker
+      $ sudo systemctl enable --now docker
 
 Creating the Vagrant environment
 --------------------------------

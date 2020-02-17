@@ -17,9 +17,7 @@ order to get up and running.
 
         NODE_PORT=<insert port you want here>
 
-    $ sudo systemctl enable rabbitmq-server
-
-    $ sudo systemctl start rabbitmq-server
+    $ sudo systemctl enable --now rabbitmq-server
 
     Add a rabbit user. You will need to remember the username and password you set here for the
     broker_url in step 3.
