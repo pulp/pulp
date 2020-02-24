@@ -3,6 +3,20 @@ Pulp 2.21 Release Notes
 =======================
 
 
+Pulp 2.21.1
+===========
+
+Bug Fixes
+---------
+
+* Allow for MONGODB-X509 authentication to Mongo.
+* Split filter items to avoid BSON document too large during copy.
+* Preserve older copies of metadata files.
+* Pulp 3 can't sync when installed alongside Pulp 2.
+
+See the list of :fixedbugs_pulp:`2.21.1`
+
+
 Pulp 2.21.0
 ===========
 
@@ -16,7 +30,6 @@ Bug Fixes
 
 * Fixed large requests failing due to "request body exceeded settings.DATA_UPLOAD_MAX_MEMORY_SIZE".
 * Upsert query raises NotUniqueError.
-* Pulp 3 can't sync when installed alongside Pulp 2.
 
 See the full list of :fixedbugs_pulp:`2.21.0`
 
