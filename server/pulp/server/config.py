@@ -76,6 +76,7 @@ _default_values = {
         'ca_path': DEFAULT_CA_PATH,
         'unsafe_autoretry': 'false',
         'write_concern': 'majority',
+        'x509_auth': 'false',
     },
     'email': {
         'host': 'localhost',

@@ -6,7 +6,7 @@ from pulp.plugins.model import PublishReport
 
 
 def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha",
-                        repodata=None):
+                        repodata=None, last_published=None):
     def build_success_report(summary, details):
         return PublishReport(True, summary, details)
 
@@ -58,6 +58,7 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
     publish_conduit.build_success_report = build_success_report
     publish_conduit.get_repo_scratchpad.side_effect = get_repo_scratchpad
     publish_conduit.get_scratchpad.side_effect = get_scratchpad
+    publish_conduit.last_published = last_published
     return publish_conduit
 
 

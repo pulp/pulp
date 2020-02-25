@@ -689,6 +689,29 @@ def update_last_unit_removed(repo_id):
     repo_obj.save()
 
 
+def update_last_unit_added_for_unit(unit_id, unit_type_id):
+    """
+    Updates the UTC date record for the time the last unit was added on all
+    repositories containing a given unit.
+
+    This method is intended for use when a unit has been mutated in such
+    a way that the unit should be considered as re-added to all containing
+    repos (e.g. publish of repos should not be skipped).
+    It's safe to call the method without holding a lock on the repos.
+
+    :param unit_id: ID of a unit
+    :type  unit_id: str
+    :param unit_type_id: type ID of a unit
+    :type  unit_type_id: str
+    """
+    now = dateutils.now_utc_datetime_with_tzinfo()
+    repo_units = model.RepositoryContentUnit.objects(
+        unit_id=unit_id,
+        unit_type_id=unit_type_id)
+    repo_ids = [assoc.repo_id for assoc in repo_units]
+    model.Repository.objects(repo_id__in=repo_ids).update(last_unit_added=now)
+
+
 @celery.task(base=PulpTask, name='pulp.server.tasks.repository.sync_with_auto_publish')
 def queue_sync_with_auto_publish(repo_id, overrides=None, scheduled_call_id=None):
     """
@@ -1143,6 +1166,11 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         the_timestamp = dateutils.format_iso8601_datetime(last_published)
         last_updated = model.RepositoryContentUnit.objects(repo_id=repo_obj.repo_id,
                                                            updated__gte=the_timestamp).count()
+        if not last_updated:
+            # There is no newer RepositoryContentUnit than last publish;
+            # however, a unit shared between multiple repos could still have been mutated,
+            # in which case it will be reflected in last_unit_added.
+            last_updated = repo_obj.last_unit_added and repo_obj.last_unit_added > last_published
         units_removed = last_unit_removed is not None and last_unit_removed > last_published
         dist_updated = dist.last_updated > last_published
 

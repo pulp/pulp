@@ -1217,7 +1217,14 @@ class GetLocalUnitsStep(SaveUnitsStep):
     available_units attribute, but can be overridden in the constructor.
     """
 
-    def __init__(self, importer_type, unit_pagination_size=50, available_units=None, **kwargs):
+    def __init__(
+        self,
+        importer_type,
+        unit_pagination_size=50,
+        available_units=None,
+        verify_unit=None,
+        **kwargs
+    ):
         """
         :param importer_type:        unique identifier for the type of importer
         :type  importer_type:        basestring
@@ -1226,6 +1233,8 @@ class GetLocalUnitsStep(SaveUnitsStep):
         :param available_units:      An iterable of Units available for retrieval. This defaults to
                                      this step's parent's available_units attribute if not provided.
         :type  available_units:      iterable
+        :param verify_unit:          A callback to verify existing units
+        :type  verify_unit:          callable
         """
         super(GetLocalUnitsStep, self).__init__(step_type=reporting_constants.SYNC_STEP_GET_LOCAL,
                                                 plugin_type=importer_type,
@@ -1236,6 +1245,7 @@ class GetLocalUnitsStep(SaveUnitsStep):
         self.units_to_download = []
         self.unit_pagination_size = unit_pagination_size
         self.available_units = available_units
+        self.verify_unit = verify_unit
 
     def process_main(self, item=None):
         """
@@ -1245,9 +1255,6 @@ class GetLocalUnitsStep(SaveUnitsStep):
         :param item: The item to process or none if get_iterator is not defined
         :param item: object or None
         """
-        # any units that are already in pulp
-        units_we_already_had = set()
-
         # If available_units was defined in the constructor, let's use it. Otherwise let's use the
         # default of self.parent.available_units
         if self.available_units is not None:
@@ -1256,12 +1263,18 @@ class GetLocalUnitsStep(SaveUnitsStep):
             available_units = self.parent.available_units
 
         for units_group in misc.paginate(available_units, self.unit_pagination_size):
+            # any units that are already in pulp
+            units_we_already_had = set()
+
             # Get this group of units
             query = units_controller.find_units(units_group)
 
             for found_unit in query:
-                units_we_already_had.add(hash(found_unit))
-                repo_controller.associate_single_unit(self.get_repo().repo_obj, found_unit)
+                if self.verify_unit and not self.verify_unit(found_unit):
+                    self.parent.conduit.remove_unit(found_unit)
+                else:
+                    units_we_already_had.add(hash(found_unit))
+                    repo_controller.associate_single_unit(self.get_repo().repo_obj, found_unit)
 
             for unit in units_group:
                 if hash(unit) not in units_we_already_had:
