@@ -34,7 +34,8 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
 
-    def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=None):
+    def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=None,
+                       only_unit_fields=None):
         """
         Searches for units in the given repository with given content type
         and returns a plugin unit containing unit id, unit key and any additional
@@ -55,7 +56,10 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         """
         additional_unit_fields = additional_unit_fields or []
         try:
-            unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
+            if only_unit_fields is None:
+                unit_key_fields = units_controller.get_unit_key_fields_for_type(content_type_id)
+            else:
+                unit_key_fields = only_unit_fields
             serializer = units_controller.get_model_serializer_for_type(content_type_id)
 
             # Query repo association manager to get all units of given type
