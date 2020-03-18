@@ -6,7 +6,7 @@ from pulp.plugins.model import PublishReport
 
 
 def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksum_type="sha",
-                        repodata=None, last_published=None):
+                        repodata=None, last_published="2019-12-05 19:40:26.284627"):
     def build_success_report(summary, details):
         return PublishReport(True, summary, details)
 
@@ -52,13 +52,16 @@ def get_publish_conduit(type_id=None, existing_units=None, pkg_dir=None, checksu
             scratchpad = {"checksum_type": checksum_type, 'published_distributions': {}}
         return scratchpad
 
+    def last_publish():
+        return last_published
+
     publish_conduit = mock.Mock(spec=RepoPublishConduit)
     publish_conduit.get_units.side_effect = get_units
     publish_conduit.build_failure_report = build_failure_report
     publish_conduit.build_success_report = build_success_report
     publish_conduit.get_repo_scratchpad.side_effect = get_repo_scratchpad
     publish_conduit.get_scratchpad.side_effect = get_scratchpad
-    publish_conduit.last_published = last_published
+    publish_conduit.last_publish.side_effect = last_publish
     return publish_conduit
 
 

@@ -234,10 +234,7 @@ class FileDistributorTest(unittest.TestCase):
             cloned_unit.unit_key['name'] = "foo%d.rpm" % (i)
             cloned_unit.unit_key['checksum'] = "sum%s" % (1000000000 + i)
             units.append(cloned_unit)
-        new_conduit = get_publish_conduit(
-            existing_units=units,
-            last_published="2019-12-05 19:40:26.284627"
-        )
+        new_conduit = get_publish_conduit(existing_units=units)
         distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
         # Verify if do publish with force full after trying with fast forward
         self.assertEqual(distributor.get_hosting_locations.call_count, 3)
@@ -248,10 +245,7 @@ class FileDistributorTest(unittest.TestCase):
             cloned_unit.unit_key['name'] = "fooa%d.rpm" % (i)
             cloned_unit.unit_key['checksum'] = "suma%s" % (1000000000 + i)
             units.append(cloned_unit)
-        new_conduit = get_publish_conduit(
-            existing_units=units,
-            last_published="2019-12-05 19:40:26.284627"
-        )
+        new_conduit = get_publish_conduit(existing_units=units)
         distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
         # Verify if do publish with fast forward
         self.assertEqual(distributor.get_hosting_locations.call_count, 4)
@@ -272,10 +266,7 @@ class FileDistributorTest(unittest.TestCase):
             cloned_unit.unit_key['name'] = "foo%d.rpm" % (i)
             cloned_unit.unit_key['checksum'] = "sum%s" % (1000000000 + i)
             units.append(cloned_unit)
-        new_conduit = get_publish_conduit(
-            existing_units=units,
-            last_published="2019-12-05 19:40:26.284627"
-        )
+        new_conduit = get_publish_conduit(existing_units=units)
         distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
         # Verify if do publish with force full finally after trying with fast forward
         self.assertEqual(distributor.get_hosting_locations.call_count, 3)
@@ -286,10 +277,7 @@ class FileDistributorTest(unittest.TestCase):
             cloned_unit.unit_key['name'] = "food%d.rpm" % (i)
             cloned_unit.unit_key['checksum'] = "sumd%s" % (1000000000 + i)
             units.append(cloned_unit)
-        new_conduit = get_publish_conduit(
-            existing_units=units,
-            last_published="2019-12-05 19:40:26.284627"
-        )
+        new_conduit = get_publish_conduit(existing_units=units)
         distributor.publish_repo(self.repo, new_conduit, PluginCallConfiguration({}, {}, {}))
         # Verify if do publish with fast forward
         self.assertEqual(distributor.get_hosting_locations.call_count, 4)
@@ -582,3 +570,16 @@ class FileDistributorTest(unittest.TestCase):
         mock_normpath.assert_called_once_with(target_path)
         mock_isabs.assert_called_once_with('../../fizz')
         mock_join.assert_not_called()
+
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_first_publish_empty_repo(self, mock_get_working, force_full=False):
+        mock_get_working.return_value = self.temp_dir
+        # Publish an empty repository for the first time
+        distributor = self.create_distributor_with_mocked_api_calls()
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        new_conduit = get_publish_conduit(existing_units=[], last_published=None)
+        distributor.publish_repo(self.repo, new_conduit, config)
+        manifest_file = os.path.join(self.target_dir, MANIFEST_FILENAME)
+
+        # Ensure PULP_MANIFEST is created
+        self.assertTrue(os.path.exists(manifest_file))
