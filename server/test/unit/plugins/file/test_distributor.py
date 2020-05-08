@@ -570,3 +570,16 @@ class FileDistributorTest(unittest.TestCase):
         mock_normpath.assert_called_once_with(target_path)
         mock_isabs.assert_called_once_with('../../fizz')
         mock_join.assert_not_called()
+
+    @patch('pulp.server.managers.repo._common.get_working_directory', spec_set=True)
+    def test_first_publish_empty_repo(self, mock_get_working, force_full=False):
+        mock_get_working.return_value = self.temp_dir
+        # Publish an empty repository for the first time
+        distributor = self.create_distributor_with_mocked_api_calls()
+        config = PluginCallConfiguration({}, {}, {'force_full': force_full})
+        new_conduit = get_publish_conduit(existing_units=[], last_published=None)
+        distributor.publish_repo(self.repo, new_conduit, config)
+        manifest_file = os.path.join(self.target_dir, MANIFEST_FILENAME)
+
+        # Ensure PULP_MANIFEST is created
+        self.assertTrue(os.path.exists(manifest_file))

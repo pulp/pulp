@@ -344,7 +344,7 @@ class ApplicabilityRegenerationManager(object):
 
         # Get all unit profiles associated with given consumers
         unit_profile_criteria = Criteria(
-            filters={'consumer_id': {'$in': consumer_ids}},
+            filters={'consumer_id': {'$in': consumer_ids}, 'profile': {'$ne': []}},
             fields=['consumer_id', 'profile_hash', 'content_type', 'id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
 
@@ -505,14 +505,6 @@ class RepoProfileApplicabilityManager(object):
         The RepoProfileApplicability objects can become orphaned over time, as repositories are
         deleted, or as consumer profiles change. This method searches for RepoProfileApplicability
         objects that reference either repositories or profile hashes that no longer exist in Pulp.
-
-        There is a rare case when some orphaned applicability profiles are not removed:
-         - a consumer can have multiple profiles and applicability is calculated for a
-         combination of them
-         - if only one of the profiles changed, then the applicability for the unchnaged one is
-         not removed.
-         - there is no harm, no consequences to the applicability results when requested,
-         just useless records in the DB
         """
         # Find all of the repo_ids that are referenced by RepoProfileApplicability objects
         rpa_collection = RepoProfileApplicability.get_collection()
@@ -540,7 +532,16 @@ class RepoProfileApplicabilityManager(object):
         #
 
         # Find the profile hashes that exist in current UnitProfiles
-        active_profile_hashes = UnitProfile.get_collection().distinct('profile_hash')
+        unit_profile_coll = UnitProfile.get_collection()
+        active_profile_hashes = unit_profile_coll.distinct('profile_hash')
+
+        # Find if there are any empty consumer profiles, remove them from the active ones because
+        # applicability for those is not needed. Max is one profile per content type.
+        empty_profile_hashes = unit_profile_coll.find({'profile': []}, projection=['profile_hash'])
+        for empty_profile in empty_profile_hashes:
+            empty_profile_hash = empty_profile['profile_hash']
+            if empty_profile_hash in active_profile_hashes:
+                active_profile_hashes.remove(empty_profile_hash)
 
         # Define a group stage for aggregation to find the profile hashes
         # that are present in RepoProfileApplicability collection
@@ -557,7 +558,7 @@ class RepoProfileApplicabilityManager(object):
         # It's important if results are huge (>16MB)
         unwind_stage = {"$unwind": "$orphaned_profiles"}
 
-        # Reshape results in a wayi that no indices are violated: _id = profile_hash
+        # Reshape results in a way that no indices are violated: _id = profile_hash
         project_stage2 = {"$project": {"_id": "$orphaned_profiles"}}
 
         # Write results to a separate collection.
