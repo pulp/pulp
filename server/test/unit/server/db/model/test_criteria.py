@@ -348,6 +348,21 @@ class TestDateOperator(unittest.TestCase):
         criteria.DateOperator.apply(query)
         self.assertTrue(isinstance(query['created']['$gt'], datetime))
 
+    def test_apply_multiple_conditions(self):
+        query = {
+            '$and': [
+                {'created': {
+                    '$gt': {'$date': '2013-12-01T14:35:00Z'}
+                }},
+                {'updated': {
+                    '$lt': {'$date': '2020-05-15T14:35:00Z'}
+                }},
+            ]
+        }
+        criteria.DateOperator.apply(query)
+        self.assertTrue(isinstance(query['$and'][0]['created']['$gt'], datetime))
+        self.assertTrue(isinstance(query['$and'][1]['updated']['$lt'], datetime))
+
     def test_translate(self):
         value = {'$date': '2013-12-01T14:35:00Z'}
         matched, translated = criteria.DateOperator.translate(value)
