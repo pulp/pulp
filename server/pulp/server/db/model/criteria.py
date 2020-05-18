@@ -499,9 +499,13 @@ class DateOperator(object):
             if matched:
                 query[key] = translated
                 continue
-            if not isinstance(value, dict):
+            if isinstance(value, dict):
+                DateOperator.apply(value)
                 continue
-            DateOperator.apply(value)
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        DateOperator.apply(item)
 
     @staticmethod
     def translate(value):
