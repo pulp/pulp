@@ -703,7 +703,7 @@ def _add_profiles_to_consumer_map_and_get_hashes(consumer_ids, consumer_map):
     :rtype:              list
     """
     profiles = UnitProfile.get_collection().find(
-        {'consumer_id': {'$in': consumer_ids}},
+        {'consumer_id': {'$in': consumer_ids}, 'profile': {'$ne': []}},
         projection=['consumer_id', 'profile_hash'])
     all_profiles_hashes = set()
     for p in profiles:
