@@ -222,6 +222,12 @@ def find_repo_content_units(
 
     for unit_type, unit_ids in type_map.iteritems():
         _model = plugin_api.get_unit_model_by_id(unit_type)
+        # do chunks with izip_longest which zips together passed arguments
+        # so from x1,x2,x3 ... xn arguments it returns [x1[0],x2[0],x3[0],..xn[0]] every iteration
+        # until there's item at least in one of the x. Passing arugments as iter() * X will produces
+        # zipping from same iterator object thus iterating over the same source.
+        # So putting everything together behaves as source [x1,x2,x3,x4,...] is splitted
+        # into chunks of size 1000
         for ids_chunk in izip_longest(*[iter(unit_ids)] * 1000):
             ids_chunk = filter(lambda x: x, ids_chunk)
 
