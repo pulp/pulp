@@ -1,5 +1,5 @@
 from gettext import gettext as _
-from itertools import chain
+from itertools import chain, izip_longest
 import copy
 import logging
 import os
@@ -222,27 +222,37 @@ def find_repo_content_units(
 
     for unit_type, unit_ids in type_map.iteritems():
         _model = plugin_api.get_unit_model_by_id(unit_type)
-        qs = _model.objects(q_obj=units_q, __raw__={'_id': {'$in': list(unit_ids)}})
-        if unit_fields:
-            qs = qs.only(*unit_fields)
+        # do chunks with izip_longest which zips together passed arguments
+        # so from x1,x2,x3 ... xn arguments it returns [x1[0],x2[0],x3[0],..xn[0]] every iteration
+        # until there's item at least in one of the x. Passing arugments as iter() * X will produces
+        # zipping from same iterator object thus iterating over the same source.
+        # So putting everything together behaves as source [x1,x2,x3,x4,...] is splitted
+        # into chunks of size 1000
+        for ids_chunk in izip_longest(*[iter(unit_ids)] * 1000):
+            ids_chunk = filter(lambda x: x, ids_chunk)
 
-        for unit in qs:
-            if skip and skip_count < skip:
-                skip_count += 1
-                continue
+            qs = _model.objects(q_obj=units_q,
+                                __raw__={'_id': {'$in': list(ids_chunk)}})
+            if unit_fields:
+                qs = qs.only(*unit_fields)
 
-            if yield_content_unit:
-                yield unit
-            else:
-                cu = content_units[unit_type][unit.id]
-                cu.unit = unit
-                yield cu
+            for unit in qs:
+                if skip and skip_count < skip:
+                    skip_count += 1
+                    continue
 
-            if limit:
-                if yield_count >= limit:
-                    return
+                if yield_content_unit:
+                    yield unit
+                else:
+                    cu = content_units[unit_type][unit.id]
+                    cu.unit = unit
+                    yield cu
 
-            yield_count += 1
+                if limit:
+                    if yield_count >= limit:
+                        return
+
+                yield_count += 1
 
 
 def find_units_not_downloaded(repo_id):
