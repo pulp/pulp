@@ -149,9 +149,8 @@ class ApplicabilityRegenerationManager(object):
                         continue
                     seen_hashes.add(all_profiles_hash)
                     profiles = consumer_profile_map[consumer_id]['profiles']
-                    if len(profiles_to_process) < batch_size:
-                        profiles_to_process.append((repo_id, all_profiles_hash, profiles))
-                    else:
+                    profiles_to_process.append((repo_id, all_profiles_hash, profiles))
+                    if len(profiles_to_process) >= batch_size:
                         batch_regenerate_applicability_task.apply_async(
                             (profiles_to_process,), **{'group_id': task_group_id})
                         profiles_to_process = []
