@@ -3,6 +3,32 @@ Pulp 2.21 Release Notes
 =======================
 
 
+Pulp 2.21.3
+===========
+
+Bug Fixes
+---------
+
+* Fixed the issue with retrieving alreday calculated applicability profiles.
+* Fixed the issue with missing some of consumers for applicability calculation.
+* Fixed the $date operator for nested mongo search queries.
+* Fixed BSON too large error when removing content from a very large repo.
+
+See the list of :fixedbugs_pulp:`2.21.3`
+
+
+Pulp 2.21.2
+===========
+
+Bug Fixes
+---------
+
+* Fixed cleanup of modular applicability profiles.
+* Fixed publish of an empty repo.
+
+See the list of :fixedbugs_pulp:`2.21.2`
+
+
 Pulp 2.21.1
 ===========
 
