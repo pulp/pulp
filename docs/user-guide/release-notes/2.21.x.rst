@@ -9,9 +9,9 @@ Pulp 2.21.3
 Bug Fixes
 ---------
 
-* Fixed the issue with retrieving alreday calculated applicability profiles.
+* Fixed the issue with retrieving already calculated applicability profiles.
 * Fixed the issue with missing some of consumers for applicability calculation.
-* Fixed the $date operator for nested mongo search queries.
+* Fixed the $date operator for nested Mongo search queries.
 * Fixed BSON too large error when removing content from a very large repo.
 
 See the list of :fixedbugs_pulp:`2.21.3`
