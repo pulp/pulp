@@ -363,9 +363,7 @@ class Publisher(PublishStep):
         :return: Whether or not this publish should be in fast forward mode
         :rtype: bool
         """
-        force_full = False
-        config_force_full = self.get_config().get("force_full", False)
-        force_full = force_full | config_force_full
+        force_full = self.get_config().get("force_full", False)
         delete = self.get_config().get("delete", False)
 
         return not force_full and not delete and self.last_predist_last_published
