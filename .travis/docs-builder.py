@@ -15,7 +15,7 @@ RELEASE_REGEX = "(\s*)(release)(\s*)(=)(\s*)(['\"])(.*)(['\"])(.*)"
 
 LATEST = '3.0'
 
-USERNAME = 'doc_builder'
+USERNAME = 'doc_builder_en'
 HOSTNAME = '8.43.85.236'
 
 SITE_ROOT = '/var/www/docs.pulpproject.org/'
