@@ -1360,8 +1360,7 @@ class RSyncFastForwardUnitPublishStep(UnitModelPluginStep):
 
         """
         extra_src_path = ['.relative'] + published_unit_path
-        if not os.path.exists(os.path.join(working_dir, *extra_src_path)):
-            os.makedirs(os.path.join(working_dir, *extra_src_path))
+        misc.mkdir(os.path.join(working_dir, *extra_src_path))
 
         origin_path = self.get_origin_rel_path(unit)
 

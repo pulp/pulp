@@ -40,16 +40,20 @@ def mkdir(*args, **kwargs):
     """
     Create the specified directory.
     Tolerant of race conditions.
+    Sets umask to 002.
 
     :param args: path[, mode] that goes to os.makedirs
     :param kwargs: path
     :return:
     """
+    mask = os.umask(0002)
     try:
         os.makedirs(*args, **kwargs)
     except OSError, e:
         if e.errno != errno.EEXIST:
             raise
+    finally:
+        os.umask(mask)
 
 
 def get_parent_directory(path):
@@ -96,9 +100,8 @@ def create_symlink(source_path, link_path, directory_permissions=0770):
         link_path = link_path[:-1]
 
     link_parent_dir = os.path.dirname(link_path)
-
     if not os.path.exists(link_parent_dir):
-        os.makedirs(link_parent_dir, mode=directory_permissions)
+        mkdir(link_parent_dir, mode=directory_permissions)
     elif os.path.lexists(link_path):
         if os.path.islink(link_path):
             link_target = os.readlink(link_path)

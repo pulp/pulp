@@ -12,7 +12,7 @@ from xml.sax.saxutils import XMLGenerator
 from pulp.common import error_codes
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
 from pulp.server.util import CHECKSUM_FUNCTIONS
-
+from pulp.plugins.util import misc
 _LOG = logging.getLogger(__name__)
 BUFFER_SIZE = 1024
 
@@ -124,7 +124,7 @@ class MetadataFileContext(object):
             parent_dir = os.path.dirname(self.metadata_file_path)
 
             if not os.path.exists(parent_dir):
-                os.makedirs(parent_dir, mode=0770)
+                misc.mkdir(parent_dir, mode=0770)
 
             elif not os.access(parent_dir, os.R_OK | os.W_OK | os.X_OK):
                 msg = _('Insufficient permissions to write metadata file in directory [%(d)s]')

@@ -9,6 +9,7 @@ import traceback
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.file.distributor import FilePublishProgressReport
+from pulp.plugins.util import misc
 from pulp.server.controllers import repository as repo_controller
 from pulp.server.managers.repo import _common as common_utils
 
@@ -79,7 +80,7 @@ class FileDistributor(Distributor):
             # Set up an empty build_dir
             working_dir = common_utils.get_working_directory()
             build_dir = os.path.join(working_dir, BUILD_DIRNAME)
-            os.makedirs(build_dir)
+            misc.mkdir(build_dir)
 
             self.initialize_metadata(build_dir)
 

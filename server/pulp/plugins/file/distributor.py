@@ -9,6 +9,7 @@ import traceback
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
+from pulp.plugins.util import misc
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.util import copytree
 from pulp.server.db.model.criteria import UnitAssociationCriteria
@@ -86,7 +87,7 @@ class FileDistributor(Distributor):
             # Set up an empty build_dir
             working_dir = common_utils.get_working_directory()
             build_dir = os.path.join(working_dir, BUILD_DIRNAME)
-            os.makedirs(build_dir)
+            misc.mkdir(build_dir)
 
             self.initialize_metadata(build_dir)
 
@@ -148,7 +149,7 @@ class FileDistributor(Distributor):
             build_dir = os.path.join(working_dir, BUILD_DIRNAME)
 
             self._rmtree_if_exists(build_dir)
-            os.makedirs(build_dir)
+            misc.mkdir(build_dir)
 
             self.initialize_metadata(build_dir)
             unit_checksum_set = set()
@@ -361,12 +362,7 @@ class FileDistributor(Distributor):
             # so now we should recreate it.
             dir_path = os.path.dirname(symlink_filename)
             # make sure any required subdirectory exists
-            if not os.path.exists(dir_path):
-                try:
-                    os.makedirs(dir_path)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
+            misc.mkdir(dir_path)
 
             os.symlink(unit.storage_path, symlink_filename)
 
