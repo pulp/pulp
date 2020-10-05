@@ -4,7 +4,7 @@ import errno
 import os
 
 from pulp.plugins.types import database as content_types_db
-from pulp.plugins.util.misc import paginate
+from pulp.plugins.util.misc import mkdir, paginate
 from pulp.server import config as pulp_config
 from pulp.server.controllers import units as units_controller
 from pulp.server.exceptions import InvalidValue, MissingResource
@@ -246,13 +246,7 @@ class ContentQueryManager(object):
         # I'm partitioning the content on the file system based on content type
         storage_dir = pulp_config.config.get('server', 'storage_dir')
         root = os.path.join(storage_dir, 'content', content_type)
-        try:
-            os.makedirs(root)
-        except OSError, e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                raise
+        mkdir(root)
         return root
 
     def request_content_unit_file_path(self, content_type, relative_path):
@@ -273,12 +267,7 @@ class ContentQueryManager(object):
 
         unit_path = os.path.join(self.get_root_content_dir(content_type), relative_path)
         unit_dir = os.path.dirname(unit_path)
-        try:
-            os.makedirs(unit_dir)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                    raise
-
+        mkdir(unit_dir)
         return unit_path
 
 

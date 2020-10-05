@@ -12,6 +12,7 @@ from shutil import copy, Error
 from pulp.common import error_codes
 
 from pulp.server.exceptions import PulpCodedException, PulpExecutionException
+from pulp.plugins.util import misc
 
 
 _logger = logging.getLogger(__name__)
@@ -254,8 +255,7 @@ def copytree(src, dst, symlinks=False, ignore=None):
     else:
         ignored_names = set()
 
-    if not os.path.exists(dst):
-        os.makedirs(dst)
+    misc.mkdir(dst)
     errors = []
     for name in names:
         if name in ignored_names:

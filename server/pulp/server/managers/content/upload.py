@@ -11,6 +11,8 @@ from pulp.common import error_codes
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
+from pulp.plugins.util import misc
+
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
 from pulp.server.db import model
@@ -270,8 +272,7 @@ class ContentUploadManager(object):
         storage_dir = pulp_config.config.get('server', 'storage_dir')
         upload_storage_dir = os.path.join(storage_dir, 'uploads')
 
-        if not os.path.exists(upload_storage_dir):
-            os.makedirs(upload_storage_dir)
+        misc.mkdir(upload_storage_dir)
 
         return upload_storage_dir
 

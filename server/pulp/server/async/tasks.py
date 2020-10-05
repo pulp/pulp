@@ -20,6 +20,8 @@ from mongoengine.errors import NotUniqueError
 
 from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
 from pulp.common import constants, dateutils, tags
+from pulp.plugins.util import misc
+
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource, \
@@ -780,11 +782,7 @@ class Task(PulpTask, ReservedTaskMixin):
         if config.getboolean('profiling', 'enabled') is True:
             self.pr.disable()
             profile_directory = config.get('profiling', 'directory')
-            try:
-                os.makedirs(profile_directory, 0755)
-            except OSError as exc:
-                if exc.errno != errno.EEXIST:
-                    raise
+            misc.mkdir(profile_directory, mode=0755)
             self.pr.dump_stats("%s/%s" % (profile_directory, task_id))
 
 

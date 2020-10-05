@@ -9,6 +9,7 @@ import kobo.shortcuts
 import mongoengine
 
 from pulp.common import dateutils
+from pulp.plugins.util import misc
 from pulp.plugins.util.publish_step import PublishStep
 from pulp.server.config import config as pulp_config
 from pulp.server.exceptions import PulpCodedException
@@ -237,8 +238,7 @@ class RSyncPublishStep(PublishStep):
         """
         if not self.file_list and not self.delete:
             return (True, _("Nothing to sync"))
-        if not os.path.exists(self.src_directory):
-            os.makedirs(self.src_directory)
+        misc.mkdir(self.src_directory)
 
         output = ""
         list_of_files = os.path.join(self.get_working_dir(), str(uuid.uuid4()))

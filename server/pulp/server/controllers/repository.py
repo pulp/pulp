@@ -27,7 +27,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport
-from pulp.plugins.util.misc import paginate
+from pulp.plugins.util.misc import paginate, mkdir
 from pulp.plugins.util.verification import VerificationException, verify_checksum
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, TaskResult,
@@ -35,7 +35,6 @@ from pulp.server.async.tasks import (PulpTask, register_sigterm_handler, Task, T
 from pulp.server.config import config as pulp_conf
 from pulp.server.constants import PULP_STREAM_REQUEST_HEADER
 from pulp.server.content.sources.constants import MAX_CONCURRENT, HEADERS, SSL_VALIDATION
-from pulp.server.content.storage import mkdir
 from pulp.server.controllers import consumer as consumer_controller
 from pulp.server.controllers import distributor as dist_controller
 from pulp.server.controllers import importer as importer_controller

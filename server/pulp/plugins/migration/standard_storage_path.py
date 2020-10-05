@@ -28,7 +28,7 @@ from gettext import gettext as _
 from hashlib import sha256
 from itertools import chain
 
-from pulp.plugins.util.misc import mkdir
+from pulp.plugins.util import misc
 from pulp.server.config import config
 
 
@@ -307,7 +307,7 @@ class Plan(object):
         :type new_path: str
         """
         if os.path.exists(path):
-            mkdir(os.path.dirname(new_path))
+            misc.mkdir(os.path.dirname(new_path))
             shutil.move(path, new_path)
         self.collection.update_one(
             filter={
