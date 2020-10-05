@@ -1,6 +1,7 @@
 import os
 import re
 from logging import getLogger
+from pulp.plugins.util import misc
 
 from M2Crypto import X509
 
@@ -199,8 +200,7 @@ class Bundle:
         Ensure I{root} directory exists.
         """
         path = os.path.dirname(self.path)
-        if not os.path.exists(path):
-            os.makedirs(path)
+        misc.mkdir(path)
 
     def cn(self):
         """
