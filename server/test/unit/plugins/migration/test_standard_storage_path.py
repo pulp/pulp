@@ -229,7 +229,7 @@ class TestPlan(TestCase):
         self.assertEqual(created, unit.return_value)
 
     @patch(MODULE + '.shutil')
-    @patch(MODULE + '.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     @patch('os.path.exists')
     def test_migrate(self, path_exists, mkdir, shutil):
         unit_id = '123'

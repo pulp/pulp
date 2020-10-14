@@ -6,22 +6,7 @@ import tempfile
 from hashlib import sha256
 
 from pulp.server.config import config
-
-
-def mkdir(path):
-    """
-    Create a directory at the specified path.
-    Directory (and intermediate) directories are only created if they
-    don't already exist.
-
-    :param path: The absolute path to the leaf directory to be created.
-    :type path: str
-    """
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+from pulp.plugins.util import misc
 
 
 class ContentStorage(object):
@@ -124,7 +109,7 @@ class FileStorage(ContentStorage):
         destination = unit.storage_path
         if location:
             destination = os.path.join(destination, location.lstrip('/'))
-        mkdir(os.path.dirname(destination))
+        misc.mkdir(os.path.dirname(destination))
         fd, temp_destination = tempfile.mkstemp(dir=os.path.dirname(destination))
 
         # to avoid a file descriptor leak, close the one opened by tempfile.mkstemp which we are not
@@ -212,8 +197,8 @@ class SharedStorage(ContentStorage):
         Open the shared storage.
         The shared storage location is created as needed.
         """
-        mkdir(self.content_dir)
-        mkdir(self.links_dir)
+        misc.mkdir(self.content_dir)
+        misc.mkdir(self.links_dir)
 
     @property
     def shared_dir(self):

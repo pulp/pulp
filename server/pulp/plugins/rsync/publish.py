@@ -9,10 +9,10 @@ import kobo.shortcuts
 import mongoengine
 
 from pulp.common import dateutils
+from pulp.plugins.util import misc
 from pulp.plugins.util.publish_step import PublishStep
 from pulp.server.config import config as pulp_config
 from pulp.server.exceptions import PulpCodedException
-from pulp.server.db.model.repository import RepoPublishResult
 from pulp.server.db.model import Distributor
 
 
@@ -237,8 +237,7 @@ class RSyncPublishStep(PublishStep):
         """
         if not self.file_list and not self.delete:
             return (True, _("Nothing to sync"))
-        if not os.path.exists(self.src_directory):
-            os.makedirs(self.src_directory)
+        misc.mkdir(self.src_directory)
 
         output = ""
         list_of_files = os.path.join(self.get_working_dir(), str(uuid.uuid4()))
@@ -334,19 +333,6 @@ class Publisher(PublishStep):
             scratchpad = self.distributor.scratchpad or {}
             self.last_predist_last_published = scratchpad.get("last_predist_last_published")
 
-        if self.last_published:
-            string_date = dateutils.format_iso8601_datetime(self.last_published)
-        else:
-            string_date = None
-
-        if self.predistributor:
-            search_params = {'repo_id': repo.id,
-                             'distributor_id': self.predistributor["distributor_id"],
-                             'started': {"$gte": string_date}}
-            self.predist_history = RepoPublishResult.get_collection().find(search_params)
-        else:
-            self.predist_history = []
-
         self.remote_path = self.get_remote_repo_path()
 
         if self.is_fastforward():
@@ -377,31 +363,10 @@ class Publisher(PublishStep):
         :return: Whether or not this publish should be in fast forward mode
         :rtype: bool
         """
-        force_full = False
-        for entry in self.predist_history:
-            predistributor_force_full = entry.get("distributor_config", {}).get("force_full",
-                                                                                False)
-            force_full |= predistributor_force_full
-            if entry.get("result", "error") == "error":
-                force_full = True
-
-        if self.last_published:
-            last_published = self.last_published.replace(tzinfo=None)
-        else:
-            last_published = None
-
-        if self.last_deleted:
-            last_deleted = self.last_deleted.replace(tzinfo=None)
-        else:
-            last_deleted = None
-
-        config_force_full = self.get_config().get("force_full", False)
-        force_full = force_full | config_force_full
+        force_full = self.get_config().get("force_full", False)
         delete = self.get_config().get("delete", False)
 
-        return not force_full and not delete and self.last_predist_last_published and \
-            ((last_deleted and last_published and last_published > last_deleted) or
-                not last_deleted)
+        return not force_full and not delete and self.last_predist_last_published
 
     def create_date_range_filter(self, start_date=None, end_date=None):
         """

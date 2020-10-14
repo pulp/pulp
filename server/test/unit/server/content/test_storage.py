@@ -6,7 +6,9 @@ from unittest import TestCase
 from mock import Mock, patch
 
 from pulp.plugins.util import verification
-from pulp.server.content.storage import mkdir, ContentStorage, FileStorage, SharedStorage
+from pulp.plugins.util import misc
+
+from pulp.server.content.storage import ContentStorage, FileStorage, SharedStorage
 
 
 class TestMkdir(TestCase):
@@ -14,22 +16,22 @@ class TestMkdir(TestCase):
     @patch('os.makedirs')
     def test_succeeded(self, _mkdir):
         path = 'path-123'
-        mkdir(path)
+        misc.mkdir(path)
         _mkdir.assert_called_once_with(path)
 
     @patch('os.makedirs')
     def test_already_exists(self, _mkdir):
         path = 'path-123'
-        mkdir(path)
+        misc.mkdir(path)
         _mkdir.assert_called_once_with(path)
         _mkdir.side_effect = OSError(EEXIST, path)
 
     @patch('os.makedirs')
     def test_other_exception(self, _mkdir):
         path = 'path-123'
-        mkdir(path)
+        misc.mkdir(path)
         _mkdir.side_effect = OSError(EPERM, path)
-        self.assertRaises(OSError, mkdir, path)
+        self.assertRaises(OSError, misc.mkdir, path)
 
 
 class TestContentStorage(TestCase):
@@ -88,7 +90,7 @@ class TestFileStorage(TestCase):
     @patch('os.close')
     @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
-    @patch('pulp.server.content.storage.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     def test_put_file_correct_size(self, _mkdir, shutil, tempfile, close, rename):
         path_in = '/tmp/test'
         temp_destination = '/some/file/path'
@@ -112,7 +114,7 @@ class TestFileStorage(TestCase):
     @patch('os.close')
     @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
-    @patch('pulp.server.content.storage.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     def test_put_file_incorrect_size(self, _mkdir, shutil, tempfile, close, remove, rename):
         path_in = '/tmp/test'
         temp_destination = '/some/file/path'
@@ -138,7 +140,7 @@ class TestFileStorage(TestCase):
     @patch('os.close')
     @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
-    @patch('pulp.server.content.storage.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     def test_put_file_no_verify_size(self, _mkdir, shutil, tempfile, close, remove, rename):
         path_in = '/tmp/test'
         temp_destination = '/some/file/path'
@@ -163,7 +165,7 @@ class TestFileStorage(TestCase):
     @patch('os.close')
     @patch('pulp.server.content.storage.tempfile')
     @patch('pulp.server.content.storage.shutil')
-    @patch('pulp.server.content.storage.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     def test_put_file_with_location(self, _mkdir, shutil, tempfile, close, rename):
         path_in = '/tmp/test'
         location = '/a/b/'
@@ -197,7 +199,7 @@ class TestSharedStorage(TestCase):
         self.assertEqual(storage.storage_id, sha256.return_value.hexdigest.return_value)
         self.assertEqual(storage.provider, provider)
 
-    @patch('pulp.server.content.storage.mkdir')
+    @patch('pulp.plugins.util.misc.mkdir')
     @patch('pulp.server.content.storage.SharedStorage.content_dir', 'abcd/')
     @patch('pulp.server.content.storage.SharedStorage.links_dir', 'xyz/')
     def test_open(self, _mkdir):
