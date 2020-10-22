@@ -2,6 +2,16 @@
 Pulp 2.21 Release Notes
 =======================
 
+Pulp 2.21.4
+===========
+
+Bug Fixes
+---------
+
+* Fixed several permissions-issues that blocked pulp2to3 migrations.
+* Fixed several scenarios that resulted in unneccessary force_full publishes.
+
+See the list of :fixedbugs_pulp:`2.21.4`
 
 Pulp 2.21.3
 ===========
