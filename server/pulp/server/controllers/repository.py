@@ -1197,13 +1197,20 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         skip_for_predistributor = published_after_predistributor or not \
             predistributor_last_published
 
-    same_override = dist.last_override_config == config_override
-    if not same_override:
+    if not (dist.last_override_config == config_override):
         # Use raw pymongo not to fire the signal hander
         model.Distributor.objects(
             repo_id=repo_obj.repo_id,
             distributor_id=dist_id).update(set__last_override_config=config_override)
 
+    # do not compare force_full from config override - this particular difference itself does not
+    # determine the need of repo publish; so remove the option from the overrides as they are
+    # not used anywhere else since now
+    last_override = dist.last_override_config.copy()
+    curr_override = config_override.copy()
+    last_override.pop('force_full', False)
+    curr_override.pop('force_full', False)
+    same_override = last_override == curr_override
     # Check if content has not changed since last publish and a predistributor is not defined.
     unchanged_content_and_no_predistributor = last_published and not last_updated and \
         not units_removed and not predistributor_id
