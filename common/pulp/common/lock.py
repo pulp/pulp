@@ -7,8 +7,6 @@ import fcntl
 
 from threading import RLock
 
-from pulp.plugins.util import misc
-
 
 class LockFailed(Exception):
     pass
@@ -94,7 +92,8 @@ class LockFile:
 
     def __mkdir(self, path):
         dir = os.path.dirname(path)
-        misc.mkdir(dir)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
 
 class Lock:
