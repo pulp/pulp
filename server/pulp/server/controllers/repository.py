@@ -234,6 +234,12 @@ def find_repo_content_units(
                                 __raw__={'_id': {'$in': list(ids_chunk)}})
             if unit_fields:
                 qs = qs.only(*unit_fields)
+            
+            # for performace reasons, do server-side counting of units the will be returned in result
+            # before we do actual query to db
+            # if expected count of units in result is zero, continue to next chunk of unit_ids 
+            if qs.count() == 0:
+                continue
 
             for unit in qs:
                 if skip and skip_count < skip:
