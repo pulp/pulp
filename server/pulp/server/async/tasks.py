@@ -737,6 +737,21 @@ class Task(PulpTask, ReservedTaskMixin):
             self._handle_cProfile(task_id)
             common_utils.delete_working_directory()
 
+    def _handle_on_failure_cleanup(self, task_id, exc, einfo):
+        now = datetime.now(dateutils.utc_tz())
+        finish_time = dateutils.format_iso8601_datetime(now)
+        task_status = TaskStatus.objects.get(task_id=task_id)
+        task_status['state'] = constants.CALL_ERROR_STATE
+        task_status['finish_time'] = finish_time
+        task_status['traceback'] = einfo.traceback
+        if not isinstance(exc, PulpException):
+            exc = PulpException(str(exc))
+        task_status['error'] = exc.to_dict()
+        task_status.save()
+        self._handle_cProfile(task_id)
+        common_utils.delete_working_directory()
+
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
         This overrides the error handler run by the worker when the task fails.
@@ -755,22 +770,20 @@ class Task(PulpTask, ReservedTaskMixin):
             _logger.debug(traceback.format_exc())
         else:
             _logger.info(_('Task failed : [%s]') % task_id)
-            # celery will log the traceback
+            # celery will log the traceback, but if not save it for later
+            original_formatted_traceback = traceback.format_exc()
         if kwargs.get('scheduled_call_id') is not None:
             utils.increment_failure_count(kwargs['scheduled_call_id'])
-        if not self.request.called_directly:
-            now = datetime.now(dateutils.utc_tz())
-            finish_time = dateutils.format_iso8601_datetime(now)
-            task_status = TaskStatus.objects.get(task_id=task_id)
-            task_status['state'] = constants.CALL_ERROR_STATE
-            task_status['finish_time'] = finish_time
-            task_status['traceback'] = einfo.traceback
-            if not isinstance(exc, PulpException):
-                exc = PulpException(str(exc))
-            task_status['error'] = exc.to_dict()
-            task_status.save()
-            self._handle_cProfile(task_id)
-            common_utils.delete_working_directory()
+        try:
+            called_directly = self.request.called_directly
+        except Exception:  # a workaround for when celery's internal state is bad
+            # celery won't log so we should
+            _logger.debug(original_formatted_traceback)
+            self._handle_on_failure_cleanup(task_id, exc, einfo)
+            raise
+        if not called_directly:
+            self._handle_on_failure_cleanup(task_id, exc, einfo)
+
 
     def _handle_cProfile(self, task_id):
         """
