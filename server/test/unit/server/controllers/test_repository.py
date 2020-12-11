@@ -29,6 +29,11 @@ class DemoModel(model.ContentUnit):
     _content_type_id = mongoengine.StringField(default='demo_model')
 
 
+class UnitList(list):
+    def count(self):
+        return len(self)
+
+
 @mock.patch('pulp.server.db.model.RepositoryContentUnit.objects')
 class TestGetAssociatedUnitIDs(unittest.TestCase):
     def setUp(self):
@@ -130,7 +135,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         u_filter = mongoengine.Q(key_field='baz')
         u_fields = ['key_field']
         mock_get_model.return_value = DemoModel
-        mock_demo_objects.return_value.only.return_value = [test_unit]
+        mock_demo_objects.return_value.only.return_value = UnitList([test_unit])
         result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
                                                               unit_fields=u_fields))
 
@@ -157,7 +162,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         u_filter = mongoengine.Q(key_field='baz')
         u_fields = ['key_field']
         mock_get_model.return_value = DemoModel
-        mock_demo_objects.return_value.only.return_value = [test_unit]
+        mock_demo_objects.return_value.only.return_value = UnitList([test_unit])
         result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
                                                               unit_fields=u_fields,
                                                               yield_content_unit=True))
@@ -175,7 +180,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         """
         repo = MagicMock(repo_id='foo')
         rcu_list = []
-        unit_list = []
+        unit_list = UnitList()
         for i in range(10):
             unit_id = 'bar_%i' % i
             unit_key = 'key_%i' % i
@@ -203,7 +208,7 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         """
         repo = MagicMock(repo_id='foo')
         rcu_list = []
-        unit_list = []
+        unit_list = UnitList()
         for i in range(10):
             unit_id = 'bar_%i' % i
             unit_key = 'key_%i' % i
@@ -222,6 +227,32 @@ class FindRepoContentUnitsTest(unittest.TestCase):
         self.assertEquals(5, len(result))
         self.assertEquals(result[0].unit_id, 'bar_5')
         self.assertEquals(result[4].unit_id, 'bar_9')
+
+    @patch.object(DemoModel, 'objects')
+    @patch('pulp.server.controllers.repository.plugin_api.get_unit_model_by_id')
+    def test_content_units_query_skip_on_zero_count_test(self, mock_get_model, mock_demo_objects, 
+                                                         mock_rcu_objects):
+        """
+        Test skip on zero number of unit return by qs.count()
+        """
+        repo = MagicMock(repo_id='foo')
+        test_unit = DemoModel(id='bar', key_field='baz')
+        test_rcu = model.RepositoryContentUnit(repo_id='foo',
+                                               unit_type_id='demo_model',
+                                               unit_id='bar')
+        mock_rcu_objects.return_value = [test_rcu]
+
+        u_filter = mongoengine.Q(key_field='baz')
+        u_fields = ['key_field']
+        mock_get_model.return_value = DemoModel
+
+        mock_demo_objects.return_value.only.return_value = UnitList([])
+        result = list(repo_controller.find_repo_content_units(repo, units_q=u_filter,
+                                                              unit_fields=u_fields))
+
+        mock_demo_objects.return_value.only.assert_called_once_with('key_field')
+
+        self.assertEquals(result, [])
 
 
 class FindUnitsNotDownloadedTests(unittest.TestCase):
