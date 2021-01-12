@@ -637,6 +637,7 @@ class ContentUnit(AutoRetryDocument):
 
     meta = {
         'abstract': True,
+        'indexes': ['-_last_updated']
     }
 
     NAMED_TUPLE = _ContentUnitNamedTupleDescriptor()
