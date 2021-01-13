@@ -2,6 +2,18 @@
 Pulp 2.21 Release Notes
 =======================
 
+Pulp 2.21.5
+===========
+
+Bug Fixes
+---------
+
+* Fixed tasks sometimes not being marked as 'failed' on critical errors.
+* Fixed a performance regression when associating units-to-repositories.
+* Added an index on _last_updated to content to allow more-reliable migration to Pulp3.
+
+See the list of :fixedbugs_pulp:`2.21.5`
+
 Pulp 2.21.4
 ===========
 
