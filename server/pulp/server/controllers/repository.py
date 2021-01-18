@@ -1830,4 +1830,4 @@ class LazyUnitDownloadStep(DownloadEventListener):
         else:
             if not os.path.isfile(file_path):
                 raise IOError(_("The path '{path}' does not exist").format(path=file_path))
- 
+
