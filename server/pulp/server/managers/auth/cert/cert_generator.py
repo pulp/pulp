@@ -178,7 +178,7 @@ class SerialNumber:
 
 
 def _make_priv_key():
-    cmd = 'openssl genrsa 1024'
+    cmd = 'openssl genrsa 2048'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
     exit_code = p.returncode
