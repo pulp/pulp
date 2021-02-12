@@ -764,21 +764,17 @@ class Task(PulpTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
+        _logger.debug(traceback.format_exc())
         if isinstance(exc, PulpCodedException):
             _logger.info(_('Task failed : [%(task_id)s] : %(msg)s') %
                          {'task_id': task_id, 'msg': str(exc)})
-            _logger.debug(traceback.format_exc())
         else:
             _logger.info(_('Task failed : [%s]') % task_id)
-            # celery will log the traceback, but if not save it for later
-            original_formatted_traceback = traceback.format_exc()
         if kwargs.get('scheduled_call_id') is not None:
             utils.increment_failure_count(kwargs['scheduled_call_id'])
         try:
             called_directly = self.request.called_directly
         except Exception:  # a workaround for when celery's internal state is bad
-            # celery won't log so we should
-            _logger.debug(original_formatted_traceback)
             self._handle_on_failure_cleanup(task_id, exc, einfo)
             raise
         if not called_directly:
