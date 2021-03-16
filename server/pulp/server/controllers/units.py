@@ -5,7 +5,7 @@ from pulp.plugins.types import database as types_db
 from pulp.plugins.util import misc
 
 
-def find_units(units, pagination_size=50):
+def find_units(units, pagination_size=50, fields=None):
     """
     Query for units matching the unit key fields of an iterable of ContentUnit objects.
 
@@ -35,7 +35,10 @@ def find_units(units, pagination_size=50):
             q_object = q_object | unit_q_obj
 
         # Get this group of units
-        query = model_class.objects(q_object)
+        if fields:
+            query = model_class.objects(q_object).only(*fields)
+        else:
+            query = model_class.objects(q_object)
 
         for found_unit in query:
             yield found_unit
