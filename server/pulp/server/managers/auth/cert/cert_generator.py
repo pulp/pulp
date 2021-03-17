@@ -74,7 +74,7 @@ class CertGenerationManager(object):
         sn = SerialNumber()
         serial = sn.getSerialNumber()
 
-        cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
+        cmd = 'openssl x509 -req -sha256 -CA %s -CAkey %s -set_serial %s -days %d' % \
               (ca_cert, ca_key, serial, expiration)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
