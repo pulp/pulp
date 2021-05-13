@@ -1234,7 +1234,7 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
         # Use raw pymongo not to fire the signal hander
         model.Distributor.objects(
             repo_id=repo_obj.repo_id,
-            distributor_id=dist_id).update(set__last_publish=publish_end_timestamp)
+            distributor_id=dist_id).update(set__last_publish=publish_start_timestamp)
 
         result_code = RepoPublishResult.RESULT_SKIPPED
         _logger.debug('publish skipped for repo [%s] with distributor ID [%s]' % (
@@ -1341,7 +1341,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     if not publish_report.canceled_flag:
         # Use raw pymongo not to fire the signal hander
         model.Distributor.objects(repo_id=repo_obj.repo_id, distributor_id=dist_id).\
-            update(set__last_publish=publish_end_timestamp)
+            update(set__last_publish=publish_start_timestamp)
 
     # Add a publish entry
     summary = publish_report.summary
