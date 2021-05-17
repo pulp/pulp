@@ -646,13 +646,15 @@ class Task(PulpTask, ReservedTaskMixin):
         This overrides PulpTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Check task status and skip running the task if task state is 'canceled'.
+        # Check task status and skip running the task if task state is in one of complete states.
         try:
             task_status = TaskStatus.objects.get(task_id=self.request.id)
         except DoesNotExist:
             task_status = None
-        if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
-            _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+        if task_status and task_status['state'] in constants.CALL_COMPLETE_STATES:
+            _logger.debug(
+                "Task is in the %s state, task-id : [%s]" % (task_status['state'], self.request.id)
+            )
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Also update the worker_name to cover cases where apply_async was called without
