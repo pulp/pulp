@@ -1228,7 +1228,7 @@ def check_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_con
                 (skip_for_predistributor or unchanged_content_and_no_predistributor)):
 
         publish_result_coll = RepoPublishResult.get_collection()
-        publish_start_timestamp = _now_timestamp()
+        publish_start_timestamp = _now_timestamp(string=False)
         publish_end_timestamp = _now_timestamp(string=False)
 
         # Use raw pymongo not to fire the signal hander
@@ -1300,7 +1300,7 @@ def _do_publish(repo_obj, dist_id, dist_inst, transfer_repo, conduit, call_confi
     :raises pulp_exceptions.PulpCodedException: if the publish report's success flag is falsey
     """
     publish_result_coll = RepoPublishResult.get_collection()
-    publish_start_timestamp = _now_timestamp()
+    publish_start_timestamp = _now_timestamp(string=False)
     try:
         # Add the register_sigterm_handler decorator to the publish_repo call, so that we can
         # respond to signals by calling the Distributor's cancel_publish_repo() method.
