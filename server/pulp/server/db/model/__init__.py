@@ -957,7 +957,7 @@ class FileContentUnit(ContentUnit):
         Exposes the ability to clean up this unit as an orphan.
         """
         orphan_manger = factory.content_orphan_manager()
-        orphan_manger.delete_orphan_content_units_by_type(self._content_type_id, self.id)
+        orphan_manger.delete_orphan_content_units_by_type(self._content_type_id, [self.id])
 
     def get_symlink_name(self):
         """
