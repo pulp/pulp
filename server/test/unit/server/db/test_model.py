@@ -570,7 +570,7 @@ class TestFileContentUnit(unittest.TestCase):
     def test_clean_orphans(self, orphan_manager_delete_orphan):
         unit = TestFileContentUnit.TestUnit()
         unit.clean_orphans()
-        orphan_manager_delete_orphan.assert_called_once_with(unit._content_type_id, unit.id)
+        orphan_manager_delete_orphan.assert_called_once_with(unit._content_type_id, [unit.id])
 
 
 class TestSharedContentUnit(unittest.TestCase):
