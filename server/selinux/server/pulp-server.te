@@ -29,6 +29,14 @@ corenet_tcp_connect_mongod_port(httpd_t)
 
 allow httpd_t cert_t:file write;
 
+# Needed for pulp-2to3-migration plugin
+optional_policy(`
+    gen_require(`
+        type rhsmcertd_config_t;
+    ')
+    allow httpd_t rhsmcertd_config_t:file read;
+')
+
 ######################################
 #
 # Add some policies under the pulp_manage_puppet selinux boolean to allow httpd access
