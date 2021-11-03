@@ -11,7 +11,7 @@ from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
-from pulp.server.util import CHECKSUM_FUNCTIONS
+from pulp.server.util import CHECKSUM_FUNCTIONS, calculate_checksums
 from pulp.plugins.util import misc
 _LOG = logging.getLogger(__name__)
 BUFFER_SIZE = 1024
@@ -97,8 +97,7 @@ class MetadataFileContext(object):
         file_name = os.path.basename(self.metadata_file_path)
         if self.checksum_type is not None:
             with open(self.metadata_file_path, 'rb') as file_handle:
-                content = file_handle.read()
-                checksum = self.checksum_constructor(content).hexdigest()
+                checksum = self.calculate_checksum(file_handle)
 
             self.checksum = checksum
             file_name_with_checksum = checksum + '-' + file_name
@@ -168,6 +167,12 @@ class MetadataFileContext(object):
         if not self._is_closed(self.metadata_file_handle):
             self.metadata_file_handle.flush()
             self.metadata_file_handle.close()
+
+    def calculate_checksum(self, file_handle):
+        """
+        Calculate checksum of the metadata file.
+        """
+        return calculate_checksums(file_handle, [self.checksum_type])[self.checksum_type]
 
     @staticmethod
     def _is_closed(file_object):
