@@ -56,8 +56,8 @@ class TestCertGeneration(unittest.TestCase):
 
         # Verify
         self.assertTrue(pem.startswith('-----BEGIN RSA PRIVATE KEY-----'))
-        # Verify that the key size is 2048 bits
-        self.assertEqual(len(pem) == 1679)
+        # Verify that the key size is (probably) at least 2048 bits
+        self.assertGreaterEqual(len(pem), 1650)
 
     def test_generation(self):
         # Setup
