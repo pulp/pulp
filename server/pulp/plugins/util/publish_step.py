@@ -265,6 +265,7 @@ class Step(object):
                     self.finalize()
                 except Exception:
                     _logger.exception(_('Finalizing failed'))
+                    raise
             self.post_process()
         except Exception as e:
             tb = sys.exc_info()[2]
