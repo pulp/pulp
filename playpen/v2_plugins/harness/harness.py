@@ -547,7 +547,7 @@ class Harness:
 
 class PulpConnection:
 
-    def __init__(self, host='localhost', port=443, path_prefix='/pulp/api', user='admin', password='admin'):
+    def __init__(self, host='localhost', port=443, path_prefix='/pulp/api', user='admin', password=None):
         self.host = host
         self.port = port
         self.path_prefix = path_prefix
@@ -580,6 +580,8 @@ class PulpConnection:
         if not isinstance(body, types.NoneType):
             body = json.dumps(body)
 
+        if self.password is None:
+            raise RuntimeError("You must provide a password to connect to Pulp")
         raw = ':'.join((self.user, self.password))
         encoded = base64.encodestring(raw)[:-1]
         auth_header = {'Authorization': 'Basic %s' % encoded}

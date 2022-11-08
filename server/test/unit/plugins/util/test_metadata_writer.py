@@ -67,7 +67,7 @@ class MetadataWriterTests(unittest.TestCase):
 
         os.makedirs(parent_path, mode=0000)
         self.assertRaises(RuntimeError, context._open_metadata_file_handle)
-        os.chmod(parent_path, 0777)
+        os.chmod(parent_path, 0700)
 
     def test_open_handle_file_exists(self):
 

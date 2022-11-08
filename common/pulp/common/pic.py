@@ -20,7 +20,7 @@ PORT = 443
 PATH_PREFIX = '/pulp/api'
 AUTH_SCHEME = 'basic'  # can also be 'oauth' (XXX not really)
 USER = 'admin'
-PASSWORD = 'admin'
+PASSWORD = None
 
 LOG_BODIES = True
 
@@ -50,6 +50,8 @@ class RequestError(Exception):
 
 def _auth_header():
     def _basic_auth_header():
+        if PASSWORD is None:
+            raise RuntimeError("You must provide the password to connect to Pulp")
         raw = ':'.join((USER, PASSWORD))
         encoded = base64.encodestring(raw)[:-1]
         return {'Authorization': 'Basic %s' % encoded}
